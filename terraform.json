@@ -1,5 +1,0 @@
-provider "azurerm" {
-    # Whilst version is optional, we /strongly recommend/ using it to pin the version of the Provider being used
-    version = "=2.0.62"
-    subscription_id = "45a2ea24-e10c-4c35-b172-4b956deffbf2"
-  }
