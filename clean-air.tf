@@ -9,14 +9,17 @@ provider "random" {
   version = "=2.1"
 }
 
-terraform {
 
-  backend "azurerm" {
-    storage_account_name = "terraform_backend"
-    container_name = "tfstate"
-    key = "prod.terraform.tfstate"
-  }
-}
+
+# terraform {
+
+#   backend "azurerm" {
+#     storage_account_name = "terraform_backend"
+#     container_name = "tfstate"
+#     key = "prod.terraform.tfstate"
+#   }
+# }
+
 
 resource "azurerm_resource_group" "cleanair_infrastructure_rg" {
   name     = "RG_CLEANAIR_INFRASTRUCTURE"
@@ -25,6 +28,57 @@ resource "azurerm_resource_group" "cleanair_infrastructure_rg" {
       environment = "Terraform Clean Air"
   }
 }
+
+
+resource "random_string" "password" {
+  length = 16
+  special = true
+  override_special = "/@\" "
+}
+
+
+
+resource "azurerm_key_vault" "vm_laqn_keyvault" {
+  name                        = "kvpasswords"
+  location                    = "${azurerm_resource_group.cleanair_infrastructure_rg.location}"
+  resource_group_name         = "${azurerm_resource_group.cleanair_infrastructure_rg.name}"
+  tenant_id = "4395f4a7-e455-4f95-8a9f-1fbaef6384f9"
+  sku {
+    name = "standard"
+  }
+
+  access_policy {
+    tenant_id = "4395f4a7-e455-4f95-8a9f-1fbaef6384f9"
+    object_id = "3725de10-3768-4902-8bf3-2602d00101a2"
+    key_permissions = [
+      "create",
+      "get",
+    ]
+
+    secret_permissions = [
+      "set",
+      "get",
+      "delete",
+    ]
+  }
+
+}
+
+resource "azurerm_key_vault_secret" "cleanair_LAQN_set_password" {
+  name  = "laqn-admin-password"
+  value = "${random_string.password.result}"
+  key_vault_id = "${azurerm_key_vault.vm_laqn_keyvault.id}"
+}
+
+
+
+output "vm_password_result" {
+  value = "${azurerm_key_vault_secret.cleanair_LAQN_set_password.value}"
+}
+
+
+
+
 
 resource "azurerm_virtual_network" "cleanair_vnet" {
     name                = "VNET_CLEANAIR"
@@ -118,49 +172,6 @@ resource "azurerm_storage_account" "cleanair_storageaccount" {
 }
 
 
-resource "azurerm_key_vault" "vm_laqn_keyvault" {
-  name                        = "kvpasswords"
-  location                    = "${azurerm_resource_group.cleanair_infrastructure_rg.location}"
-  resource_group_name         = "${azurerm_resource_group.cleanair_infrastructure_rg.name}"
-  tenant_id = "4395f4a7-e455-4f95-8a9f-1fbaef6384f9"
-  sku {
-    name = "standard"
-  }
-
-  access_policy {
-    tenant_id = "4395f4a7-e455-4f95-8a9f-1fbaef6384f9"
-
-    key_permissions = [
-      "create",
-      "get",
-    ]
-
-    secret_permissions = [
-      "set",
-      "get",
-      "delete",
-    ]
-  }
-
-}
-
-resource "random_string" "password" {
-  length = 16
-  special = true
-  override_special = "/@\" "
-}
-
-data "azurerm_key_vault_secret" "cleanair_LAQN_set_password" {
-  name  = "laqn-admin-password"
-  value = "${random_string.password.result}"
-  key_vault_id = "${azurerm_key_vault.vm_laqn_keyvault.id}"
-}
-
-data "azurerm_key_vault_secret" "cleanair_LAQN_get_password" {
-  name  = "laqn-admin-password"
-  key_vault_id = "${azurerm_key_vault.vm_laqn_keyvault.id}"
-}
-
 resource "azurerm_virtual_machine" "cleanair_LAQN_vm" {
     name                  = "VM_LAQN"
     location              = "uksouth"
@@ -185,7 +196,7 @@ resource "azurerm_virtual_machine" "cleanair_LAQN_vm" {
     os_profile {
         computer_name  = "VM_LAQN"
         admin_username = "atiadmin"
-        admin_password = "${data.azurerm_key_vault_secret.cleanair_LAQN_get_password.value}"
+        admin_password = "${azurerm_key_vault_secret.cleanair_LAQN_set_password.value}"
     }
 
     boot_diagnostics {
