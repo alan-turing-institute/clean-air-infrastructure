@@ -22,3 +22,8 @@ az login
 ```
 az account set --subscription="Azure project allocation for LRF Clean Air project"
 ```
+
+```
+terraform init
+```
+
