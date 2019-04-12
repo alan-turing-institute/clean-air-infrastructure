@@ -27,3 +27,10 @@ az account set --subscription="Azure project allocation for LRF Clean Air projec
 terraform init
 ```
 
+
+
+### Retrieve password
+
+```
+az keyvault secret show --name "laqn-admin-password" --vault-name "kvpasswords" --output table
+```
