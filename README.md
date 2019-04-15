@@ -1,45 +1,71 @@
 # clean-air-infrastructure
 Azure Infrastructure for the Clean Air project
 
+## Prerequisites
+To run this project you will need an `Azure account` (the cloud-computing platform where the infrastructure is deployed), the `Azure CLI` (for managing your Azure subscriptions), the `Azure Python SDK` (for managing the initial setup) and `Terraform` (for configuring the Azure infrastructure).
 
 
-## Getting setup 
+### Azure Account
+If you do not have an `Azure` account already, please [`follow the procedure here`](https://azure.microsoft.com/en-us/) to get started with an `Azure` subscription.
 
-The Azure infrastructure is managed with Terraform. To get started download terraform from [here](https://www.terraform.io) or from the terminal:
+### Azure CLI
+If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started.
+
+### Azure Python SDK
+You can install the `Azure` Python SDK with `pip` using:
 
 ```
-brew install terrafrom
+pip install -r requirements
 ```
 
+### Terraform
+The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
-You will need an Azure account and subscription to get started. You will also need to install the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest).
+```
+brew install terraform
+```
 
+## Getting started
+The following steps are needed to setup the Clean Air cloud infrastructure.
 
-## Configure Azure
-
-To start working with azure first login to your account from the terminal:
+### Setup Azure
+To start working with `Azure`, you must first login to your account from the terminal:
 
 ```
 az login
-````
+```
 
-Check what subscriptions you have:
+Check which `Azure` subscriptions you have access to by running
+
 ```
 az account list --output table
 ```
 
-Then set your default subscription to the clear air project (if you cannot see it in the output generated from the last line you do not have access):
+Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+
 
 ```
-az account set --subscription="Azure project allocation for LRF Clean Air project"
+az account set --subscription "Azure project allocation for LRF Clean Air project"
 ```
 
+### Setup Terraform with Python
+You can create the initial `Terraform` configuration by running
 
-## Setting up the terraform backend
+```
+python initialise_terraform.py
+```
+
+This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
+
+
+
+
+
+### Setting up the terraform backend
 
 **If a azure terraform backend has already been created you can skip this step**
 
-Terraform uses a backend to keep track of the infrastructure state. We use Azure storage to run the backend so that everyone has a synced version of the state. 
+Terraform uses a backend to keep track of the infrastructure state. We use Azure storage to run the backend so that everyone has a synced version of the state.
 
 To set up the terraform backend navigate to `/infrastructure/terraform_backend/` and run:
 
@@ -59,7 +85,7 @@ which creates an execution plan. Check this matches your expectations. If you ar
 terraform apply
 ```
 
-to set up the azure terraform backend infrastructure. You should now be able to see this on the azure portal. 
+to set up the azure terraform backend infrastructure. You should now be able to see this on the azure portal.
 
 
 ## Creating infrastructure
@@ -84,7 +110,7 @@ terraform {
 }
 ```
 
-3. On the azure portal in the `RG_CLEANAIR_INFRASTRUCTURE` resource group, navigate to the `cleanairterraformbackend` storage account, go to `access keys` and copy key1 into the access key field in the `backend.tf` file we just created. 
+3. On the azure portal in the `RG_CLEANAIR_INFRASTRUCTURE` resource group, navigate to the `cleanairterraformbackend` storage account, go to `access keys` and copy key1 into the access key field in the `backend.tf` file we just created.
 
 4. Run the following to configure the backend:
 
@@ -97,7 +123,7 @@ You should see a message saying *'Successfully configured the backend "azurerm"!
 
 1. Open the `variables.tf` file, and ensure the `subscription_id` and `resource_group` variables are correct.
 
-2. Run ```terraform plan``` to check the execution plan. When you are happy run ```terraform apply``` to create the VM infrastructure. 
+2. Run ```terraform plan``` to check the execution plan. When you are happy run ```terraform apply``` to create the VM infrastructure.
 
 
 3. Your VM should spin up and will be viewable on the portal. To connect to it you need to retrieve the VM ip addres and password (stored in a keyvault). You can retrieve them with:
@@ -116,7 +142,7 @@ az keyvault secret show --name "laqn-admin-password" --vault-name "kvpasswords" 
 ssh atiadmin@{vm_public_ip}
 ```
 
-replacing {vm_public_ip} with the vm's public ip. 
+replacing {vm_public_ip} with the vm's public ip.
 
 ### Destroy the VM and all resources
 
@@ -126,4 +152,4 @@ To destroy all the resources created in the previous step run:
 terraform destroy
 ```
 
-You can check everything was removed on the azure portal. 
+You can check everything was removed on the azure portal.

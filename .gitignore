@@ -1,6 +1,8 @@
+# OS X
 .DS_Store
-.terraform
-backend.tf
 
+# Terraform
+.terraform
+infrastructure/backend.tf
 *.tfstate
 *.tfstate.backup
