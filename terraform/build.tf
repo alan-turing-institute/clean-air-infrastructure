@@ -1,26 +1,22 @@
-module "common" {
-  source         = "./common"
+variable "resource_group_infrastructure" {
+  default = "RG_CLEANAIR_INFRASTRUCTURE"
+}
+variable "resource_group_datasources" {
+  default = "RG_CLEANAIR_DATASOURCES"
+}
+
+module "infrastructure" {
+  source         = "./infrastructure"
   location       = "${var.infrastructure_location}"
-  object_id      = "${var.azure_group_id}"
-  resource_group = "RG_CLEANAIR_INFRASTRUCTURE"
+  azure_group_id = "${var.azure_group_id}"
+  resource_group = "${var.resource_group_infrastructure}"
   tenant_id      = "${var.tenant_id}"
 }
-module "laqn" {
-  source         = "./laqn"
-  location       = "${var.infrastructure_location}"
-  resource_group = "RG_CLEANAIR_DATASOURCES"
-  keyvault_id    = "${module.common.keyvault_id}"
-  # resource_group = "${var.infrastructure_resource_group}"
-  # tenant_id       = "${var.tenant_id}"
+
+module "datasources" {
+  source               = "./datasources"
+  boot_diagnostics_uri = "${module.infrastructure.boot_diagnostics_uri}"
+  keyvault_id          = "${module.infrastructure.keyvault_id}"
+  location             = "${var.infrastructure_location}"
+  resource_group       = "${var.resource_group_datasources}"
 }
-
-
-# output "client_id" {
-#     value = "${module.common.client_id}"
-# }
-# output "tenant_id" {
-#     value = "${module.common.tenant_id}"
-# }
-# output "subscription_id " {
-#     value = "${module.common.subscription_id}"
-# }

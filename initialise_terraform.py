@@ -4,9 +4,11 @@ import logging
 import os
 import random
 import string
+import termcolor
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.common.credentials import get_azure_cli_credentials
 from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
 from azure.storage.blob import BlockBlobService
@@ -22,17 +24,22 @@ parser = argparse.ArgumentParser(description='Initialise the Azure infrastructur
 parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND", help="Resource group where the Terraform backend will be stored")
 parser.add_argument("-l", "--location", type=str, default="uksouth", help="Azure datacentre where the Terraform backend will be stored")
 parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend", help="Name of the storage container where the Terraform backend will be stored")
-parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c", help="ID of an Azure group which contains all project developers")
+parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c", help="ID of an Azure group which contains all project developers. Default is Turing's 'All Users' group.")
+# parser.add_argument("-a", "--azure-group-id", type=str, default="09af71ca-7b8f-4a19-94a4-3da19ea84b48", help="ID of an Azure group which contains all project developers. Default is Turing's 'Research Staff - Members' group.") # NB. this is not working
 args = parser.parse_args()
 
+def emphasised(text):
+    return termcolor.colored(text, 'green')
 
 def build_backend():
     # Get subscription
     _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
-    logging.info("Working in subscription: {}".format(subscription_id))
+    subscription_client = get_client_from_cli_profile(SubscriptionClient)
+    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
+    logging.info("Working in subscription: {}".format(emphasised(subscription_name)))
 
     # Create the backend resource group
-    logging.info("Ensuring existence of resource group: {}".format(args.resource_group))
+    logging.info("Ensuring existence of resource group: {}".format(emphasised(args.resource_group)))
     resource_mgmt_client = get_client_from_cli_profile(ResourceManagementClient)
     resource_mgmt_client.resource_groups.create_or_update(args.resource_group, {"location": args.location})
 
@@ -44,7 +51,7 @@ def build_backend():
             storage_account_name = storage_account.name
             break
     if storage_account_name:
-        logging.info("Found existing storage account named: {}".format(storage_account_name))
+        logging.info("Found existing storage account named: {}".format(emphasised(storage_account_name)))
     else:
         storage_account_name = generate_new_storage_account(storage_mgmt_client)
 
@@ -53,7 +60,7 @@ def build_backend():
     storage_account_key = [k.value for k in storage_key_list.keys if k.key_name == "key1"][0]
 
     # Create a container
-    logging.info("Ensuring existence of storage container: {}".format(args.storage_container_name))
+    logging.info("Ensuring existence of storage container: {}".format(emphasised(args.storage_container_name)))
     block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=storage_account_key)
     if not block_blob_service.exists(args.storage_container_name):
         block_blob_service.create_container(args.storage_container_name)
@@ -89,8 +96,8 @@ def build_backend():
         ]
 
     # Write Terraform backend config
-    filepath = os.path.join("infrastructure", "config.tf")
-    logging.info("Writing Terraform backend config to: {}".format(filepath))
+    filepath = os.path.join("terraform", "config.tf")
+    logging.info("Writing Terraform backend config to: {}".format(emphasised(filepath)))
     with open(filepath, "w") as f_config:
         for line in config_file_lines:
             f_config.write(line + "\n")
@@ -108,7 +115,7 @@ def get_valid_storage_account_name(storage_mgmt_client):
 def generate_new_storage_account(storage_mgmt_client):
     """Create a new storage account."""
     storage_account_name = get_valid_storage_account_name(storage_mgmt_client)
-    logging.info("Creating new storage account: {}".format(storage_account_name))
+    logging.info("Creating new storage account: {}".format(emphasised(storage_account_name)))
     storage_async_operation = storage_mgmt_client.storage_accounts.create(
         args.resource_group,
         storage_account_name,
