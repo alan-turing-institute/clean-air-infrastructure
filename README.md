@@ -62,13 +62,13 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 
 ## Building the Clean Air infrastructure with Terraform
-To build the `Terraform` infrastructure to `infrastructure` and run:
+To build the `Terraform` infrastructure go to the `terraform` directory and run:
 
 ```
 terraform init
 ```
 
-If you want to, you can look at the `backend.tf` file, which should contain various details of your `Azure` subscription. **NB. It is important that this file is in `.gitignore` . Do not push this file to the remote repository**
+If you want to, you can look at the `config.tf` file, which should contain various details of your `Azure` subscription. **NB. It is important that this file is in `.gitignore` . Do not push this file to the remote repository**
 
 Then run:
 
@@ -82,62 +82,28 @@ which creates an execution plan. Check this matches your expectations. If you ar
 terraform apply
 ```
 
-to set up the `Terraform` backend infrastructure on `Azure`. You should be able to see this on the `Azure` portal.
+to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
 
-### LAQN VM
-
-
-1. Navigate to the infrastructure directory and create a new file called `config.tf`
-    - **Ensure this file is in `.gitignore` . Do not push this file to the remote repository**
-
-2. Copy the following into the file:
+## Accessing the Clean Air infrastructure
+At this point, the LAQN virtual machine should be spun up and be viewable on the portal.
+To connect to it you need to retrieve its IP address and password (stored in a keyvault). You can retrieve them with:
 
 ```
-terraform {
-  backend "azurerm" {
-
-    storage_account_name = "cleanairterraformbackend"
-    container_name       = "cleanairbackend"
-    key = "cleanairkey"
-    access_key           = ""
-  }
-}
-```
-
-3. On the azure portal in the `RG_CLEANAIR_INFRASTRUCTURE` resource group, navigate to the `cleanairterraformbackend` storage account, go to `access keys` and copy key1 into the access key field in the `backend.tf` file we just created.
-
-4. Run the following to configure the backend:
-
-```
-terraform init
-```
-You should see a message saying *'Successfully configured the backend "azurerm"!'*
-
-### Create the LAQN VM
-
-1. Open the `variables.tf` file, and ensure the `subscription_id` and `resource_group` variables are correct.
-
-2. Run ```terraform plan``` to check the execution plan. When you are happy run ```terraform apply``` to create the VM infrastructure.
-
-
-3. Your VM should spin up and will be viewable on the portal. To connect to it you need to retrieve the VM ip addres and password (stored in a keyvault). You can retrieve them with:
-
-```
-az vm show --resource-group myResourceGroup --name myVM -d --query [publicIps] --o tsv
+az vm list-ip-addresses --resource-group RG_CLEANAIR_DATASOURCES --name LAQN-VM --query "[].virtualMachine.network.publicIpAddresses[].ipAddress" --output tsv
 ```
 
 ```
-az keyvault secret show --name "laqn-admin-password" --vault-name "kvpasswords" --output table
+az keyvault secret show --vault-name "kvcleanairpasswords" --name "laqn-vm-admin-password" --query "value" --output tsv
 ```
 
-4. Test your vm by ssh:
+You can now log in to your virtual machine using `ssh`:
 
 ```
 ssh atiadmin@{vm_public_ip}
 ```
 
-replacing {vm_public_ip} with the vm's public ip.
+replacing {vm_public_ip} with the public IP address that you previously obtained.
 
 ### Destroy the VM and all resources
 
