@@ -49,7 +49,10 @@ az account set --subscription "Azure project allocation for LRF Clean Air projec
 ```
 
 ### Setup Terraform with Python
-You can create the initial `Terraform` configuration by running
+`Terraform` uses a backend to keep track of the infrastructure state.
+We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
+
+To enable this, we have to create an initial `Terraform` configuration by running:
 
 ```
 python initialise_terraform.py
@@ -58,42 +61,34 @@ python initialise_terraform.py
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
-
-
-
-### Setting up the terraform backend
-
-**If a azure terraform backend has already been created you can skip this step**
-
-Terraform uses a backend to keep track of the infrastructure state. We use Azure storage to run the backend so that everyone has a synced version of the state.
-
-To set up the terraform backend navigate to `/infrastructure/terraform_backend/` and run:
+## Building the Clean Air infrastructure with Terraform
+To build the `Terraform` infrastructure to `infrastructure` and run:
 
 ```
 terraform init
 ```
 
-Open the `variables.tf` file and check the subscription_id field is set to your subscription.
+If you want to, you can look at the `backend.tf` file, which should contain various details of your `Azure` subscription. **NB. It is important that this file is in `.gitignore` . Do not push this file to the remote repository**
 
 Then run:
+
 ```
 terraform plan
 ```
+
 which creates an execution plan. Check this matches your expectations. If you are happy then run:
 
 ```
 terraform apply
 ```
 
-to set up the azure terraform backend infrastructure. You should now be able to see this on the azure portal.
+to set up the `Terraform` backend infrastructure on `Azure`. You should be able to see this on the `Azure` portal.
 
-
-## Creating infrastructure
 
 ### LAQN VM
 
 
-1. Navigate to the infrastructure directory and create a new file called `backend.tf`
+1. Navigate to the infrastructure directory and create a new file called `config.tf`
     - **Ensure this file is in `.gitignore` . Do not push this file to the remote repository**
 
 2. Copy the following into the file:

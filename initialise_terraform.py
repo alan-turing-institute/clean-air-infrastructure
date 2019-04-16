@@ -1,17 +1,15 @@
 #! /usr/bin/env python
-import random
-import logging
-import string
 import argparse
+import logging
 import os
+import random
+import string
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.common.credentials import get_azure_cli_credentials
-from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
-from azure.storage.blob import BlockBlobService, ContainerPermissions
+from azure.storage.blob import BlockBlobService
 
 
 # Set up logging
@@ -24,6 +22,7 @@ parser = argparse.ArgumentParser(description='Initialise the Azure infrastructur
 parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND", help="Resource group where the Terraform backend will be stored")
 parser.add_argument("-l", "--location", type=str, default="uksouth", help="Azure datacentre where the Terraform backend will be stored")
 parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend", help="Name of the storage container where the Terraform backend will be stored")
+parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c", help="ID of an Azure group which contains all project developers")
 args = parser.parse_args()
 
 
@@ -59,27 +58,38 @@ def build_backend():
     if not block_blob_service.exists(args.storage_container_name):
         block_blob_service.create_container(args.storage_container_name)
 
-    # Write Terraform backend config
+    # Write Terraform configuration
     config_file_lines = [
         'terraform {',
         '  backend "azurerm" {',
         '    storage_account_name = "{}"'.format(storage_account_name),
         '    container_name       = "{}"'.format(args.storage_container_name),
-        '    key                  = "{}"'.format(storage_account_key),
+        '    key                  = "terraform.tfstate"',
+        '    access_key           = "{}"'.format(storage_account_key),
         '  }',
         '}',
-        '',
         'variable "subscription_id" {',
         '    default = "{}"'.format(subscription_id),
         '}',
-        '',
         'variable "tenant_id" {',
         '    default = "{}"'.format(tenant_id),
         '}',
+        'variable "infrastructure_location" {',
+        '    default = "{}"'.format(args.location),
+        '}',
+        'variable "azure_group_id" {',
+        '    default = "{}"'.format(args.azure_group_id),
+        '}',
+        'variable "diagnostics_storage_uri" {',
+        '    default = "{}"'.format(args.azure_group_id),
+        '}',
+
+        # storage_uri = "${azurerm_storage_account.cleanair_storageaccount.primary_blob_endpoint}"
+
         ]
 
     # Write Terraform backend config
-    filepath = os.path.join("infrastructure", "backend.tf")
+    filepath = os.path.join("infrastructure", "config.tf")
     logging.info("Writing Terraform backend config to: {}".format(filepath))
     with open(filepath, "w") as f_config:
         for line in config_file_lines:
@@ -108,7 +118,8 @@ def generate_new_storage_account(storage_mgmt_client):
             location=args.location
         )
     )
-    storage_async_operation.result() # wait until storage_async_operation has finished
+    # Wait until storage_async_operation has finished before returning
+    storage_async_operation.result()
     return storage_account_name
 
 
