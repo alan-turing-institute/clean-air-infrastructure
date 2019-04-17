@@ -6,3 +6,6 @@
 terraform/config.tf
 *.tfstate
 *.tfstate.backup
+
+# VS
+.vscode/
