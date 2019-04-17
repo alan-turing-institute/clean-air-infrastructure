@@ -1,1 +1,11 @@
+# OS X
 .DS_Store
+
+# Terraform
+.terraform
+terraform/config.tf
+*.tfstate
+*.tfstate.backup
+
+# VS
+.vscode/
