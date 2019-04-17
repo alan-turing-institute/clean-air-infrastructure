@@ -94,8 +94,9 @@ az vm list-ip-addresses --resource-group RG_CLEANAIR_DATASOURCES --name LAQN-VM 
 ```
 
 ```
-az keyvault secret show --vault-name "kvcleanairpasswords" --name "laqn-vm-admin-password" --query "value" --output tsv
+az keyvault secret show --vault-name "$(az keyvault list --resource-group='RG_CLEANAIR_INFRASTRUCTURE' --query '[0].name' --output tsv)" --name "laqn-vm-admin-password" --query "value" --output tsv
 ```
+
 
 You can now log in to your virtual machine using `ssh`:
 

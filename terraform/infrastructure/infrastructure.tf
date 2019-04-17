@@ -8,7 +8,7 @@ resource "azurerm_resource_group" "rg_infrastructure" {
 }
 
 # Generate a random string that persists for the lifetime of the resource group
-resource "random_string" "lower_case_letters" {
+resource "random_string" "lower_case_letters_bootdiagnostics" {
   keepers = {
       resource_group = "${azurerm_resource_group.rg_infrastructure.name}"
   }
@@ -18,10 +18,20 @@ resource "random_string" "lower_case_letters" {
   upper = false
 }
 
+# Generate a random string that persists for the lifetime of the resource group
+resource "random_string" "lower_case_letters_keyvaultname" {
+  keepers = {
+      resource_group = "${azurerm_resource_group.rg_infrastructure.name}"
+  }
+  length = 6
+  number = false
+  special = false
+  upper = false
+}
 
 # Create the keyvault where passwords are stored
 resource "azurerm_key_vault" "kvcleanairpasswords" {
-  name                = "kvcleanairpasswords"
+  name                = "kvcleanairpass${random_string.lower_case_letters_keyvaultname.result}"
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.rg_infrastructure.name}"
   tenant_id           = "${var.tenant_id}"
@@ -51,7 +61,7 @@ resource "azurerm_key_vault" "kvcleanairpasswords" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "bootdiagnostics" {
-    name                     = "bootdiagnostics${random_string.lower_case_letters.result}"
+    name                     = "bootdiagnostics${random_string.lower_case_letters_bootdiagnostics.result}"
     resource_group_name      = "${azurerm_resource_group.rg_infrastructure.name}"
     location                 = "${var.location}"
     account_replication_type = "LRS"
