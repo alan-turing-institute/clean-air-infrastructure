@@ -15,7 +15,7 @@ If you have not already installed the command line interface for `Azure`, please
 You can install the `Azure` Python SDK with `pip` using:
 
 ```
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 ### Terraform
