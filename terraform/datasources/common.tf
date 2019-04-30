@@ -29,14 +29,25 @@ resource "azurerm_network_security_group" "nsg_cleanair_datasources" {
     location            = "${var.location}"
     resource_group_name = "${azurerm_resource_group.rg_cleanair_datasources.name}"
     security_rule {
+        name                       = "GithubWebhook"
+        priority                   = 1000
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "80"
+        source_address_prefix      = "*"
+        destination_address_prefix = "10.0.2.0/24"
+    }
+    security_rule {
         name                       = "SSH"
-        priority                   = 1001
+        priority                   = 2000
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
         source_port_range          = "*"
         destination_port_range     = "22"
-        source_address_prefix      = "193.60.220.240"
+        source_address_prefixes    = ["193.60.220.240", "193.60.220.253"]
         destination_address_prefix = "*"
     }
     tags {

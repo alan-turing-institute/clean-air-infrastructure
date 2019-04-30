@@ -21,6 +21,6 @@ module "datasources" {
   resource_group       = "${var.resource_group_datasources}"
 }
 
-output "path" {
-    value = "${module.datasources.path}"
-}
+# output "path" {
+#     value = "${module.datasources.path}"
+# }

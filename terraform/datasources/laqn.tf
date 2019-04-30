@@ -1,6 +1,13 @@
-# Generate a random string that persists for the lifetime of the resource group
-# NB. we cannot tie this to the creation of the VM, since this creates a dependency cycle
-resource "random_string" "alphanumeric_with_special_laqn" {
+# Generate random strings that persist for the lifetime of the resource group
+# NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
+resource "random_string" "laqn_vm_admin" {
+  keepers = {
+      resource_group = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+  }
+  length = 16
+  special = true
+}
+resource "random_string" "laqn_vm_github" {
   keepers = {
       resource_group = "${azurerm_resource_group.rg_cleanair_datasources.name}"
   }
@@ -12,13 +19,21 @@ resource "random_string" "alphanumeric_with_special_laqn" {
 # Store the admin password in the keyvault
 resource "azurerm_key_vault_secret" "laqn_vm_admin_password" {
   name         = "laqn-vm-admin-password"
-  value        = "${random_string.alphanumeric_with_special_laqn.result}"
+  value        = "${random_string.laqn_vm_admin.result}"
+  key_vault_id = "${var.keyvault_id}"
+}
+
+# Store the github password in the keyvault
+resource "azurerm_key_vault_secret" "laqn_vm_github_password" {
+  name         = "laqn-vm-github-password"
+  value        = "${random_string.laqn_vm_github.result}"
   key_vault_id = "${var.keyvault_id}"
 }
 
 # Create a public IP for the LAQN VM
 resource "azurerm_public_ip" "laqn_public" {
     name                         = "LAQN-PUBLICIP"
+    domain_name_label            = "cleanair-laqn"
     location                     = "${var.location}"
     resource_group_name          = "${azurerm_resource_group.rg_cleanair_datasources.name}"
     allocation_method            = "Dynamic"
@@ -85,23 +100,7 @@ resource "azurerm_virtual_machine" "laqn_vm" {
         storage_uri = "${var.boot_diagnostics_uri}"
     }
 
-    # Copies the laqn script folder to /home/laqndaemon/ on the remote VM
-    provisioner "file" {
-        source      = "${path.module}/../../scripts/datasources/laqn/laqn_test.py"
-        destination = "/laqn_test.py"
-
-        connection {
-            type     = "ssh"
-            user     = "atiadmin"
-            password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
-        }
-    }
-
     tags {
         environment = "Terraform Clean Air"
     }
-}
-
-output "path" {
-    value = "${path.module}/../../scripts/datasources/laqn/"
 }

@@ -15,6 +15,7 @@ users:
 
 # List of packages to install with apt-get
 packages:
+  - apache2
   - build-essential
   - libffi-dev
   - libssl-dev
@@ -22,16 +23,121 @@ packages:
   - python3-pip
   - python3-venv
 
+# Write the Apache config files
+write_files:
+  - path: /000-default.conf
+    content: |
+      <VirtualHost *:80>
+        ServerName cleanair-laqn.uksouth.cloudapp.azure.com
+        DocumentRoot /var/www/html
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+        <Directory />
+          Options FollowSymLinks
+          AllowOverride None
+          Order Deny,Allow
+          Deny from All
+        </Directory>
+        <Directory "/var/www/html">
+            Options FollowSymLinks
+            AllowOverride All
+            Order Allow,Deny
+            Allow from all
+        </Directory>
+      </VirtualHost>
+
+# Write the POST endpoint for the webhook
+write_files:
+  - path: /github.php
+    content: |
+      <?php
+      // Set Variables
+      $SCRIPT_PATH = "/home/laqndaemon/pull_from_github.sh";
+
+      if ( $_POST['payload'] ) {
+        // Only respond to POST requests from Github
+
+        // If there is already a repo, just run a git pull to grab the latest changes
+        shell_exec("{$SCRIPT_PATH}");
+        die("done " . mktime());
+      }
+      ?>
+
+# Write an index page
+write_files:
+  - path: /index.html
+    content: |
+      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <title>LAQN landing page</title>
+      </head>
+      <body>
+        <h1>LAQN landing page</h1
+        <p>Server for github webhooks</p>
+      </body>
+      </html>
+
+
+
+write_files:
+  - path: /pull_from_github.sh
+    content: |
+      cd /home/laqndaemon
+      if [ ! -e clean-air-infrastructure ]; then
+        git clone git@github.com:alan-turing-institute/clean-air-infrastructure.git
+      fi
+      cd clean-air-infrastructure
+      git checkout master
+      git pull
+
+write_files:
+  - path: /known_hosts
+    content: |
+      github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+
+
+
 # Run any additional commands
 runcmd:
+  # Create SSH key and fix file permissions
+  - echo "*** Updating laqndaemon home directory... ***"
+  - mkdir -p /home/laqndaemon/.ssh
+  - ssh-keygen -t rsa -b 4096 -C "laqn@cleanair" -N "" -f /home/laqndaemon/.ssh/id_rsa
+  - mv /known_hosts /home/laqndaemon/.ssh/known_hosts
+  - mv /pull_from_github.sh /home/laqndaemon/pull_from_github.sh
+  - echo "*** Fixing file permissions... ***"
+  - chown -R laqndaemon:laqndaemon /home/laqndaemon
+
   # Clean up installation
   - echo "*** Cleaning up packages... ***"
   - export DEBIAN_FRONTEND=noninteractive
   - apt-get clean
 
-  # Fix file permissions
-  - echo "*** Fixing file permissions... ***"
-  - chown -R laqndaemon:laqndaemon ~laqndaemon
+#   # Setup a simple python http server
+#   - echo "*** Setting up apache server pointing to local disk... ***"
+#   - mkdir -p /home/laqndaemon/webhook
+
+
+# import http.server
+# import socketserver
+
+# PORT = 8080
+# Handler = http.server.SimpleHTTPRequestHandler
+
+# with socketserver.TCPServer(("", PORT), Handler) as httpd:
+#     print("serving at port", PORT)
+#     httpd.serve_forever()
+
+  # Setup apache with default user (www-data)
+  - echo "*** Setting up apache server pointing to local disk... ***"
+  - mv /000-default.conf /etc/apache2/sites-enabled/000-default.conf
+  - mv /github.php /var/www/html/github.php
+  - chown www-data:www-data -R /var/www/
+  # - mkdir /var/www/.ssh
+  # - chmod 0700 /var/www/.ssh
+  # - chmod 0600 /var/www/.ssh/*
 
 final_message:
   "Cloud-init configuration finished after $UPTIME seconds"
