@@ -1,0 +1,37 @@
+#cloud-config
+
+# Update package database on first boot (ie run apt-get update)
+package_update: true
+
+# Upgrade the instance on first boot (ie run apt-get upgrade)
+package_upgrade: true
+
+# Add the atiadmin (default) and laqndaemon users
+users:
+  - default
+  - name: laqndaemon
+    lock_passwd: True
+    sudo: False
+
+# List of packages to install with apt-get
+packages:
+  - build-essential
+  - libffi-dev
+  - libssl-dev
+  - python-dev
+  - python3-pip
+  - python3-venv
+
+# Run any additional commands
+runcmd:
+  # Clean up installation
+  - echo "*** Cleaning up packages... ***"
+  - export DEBIAN_FRONTEND=noninteractive
+  - apt-get clean
+
+  # Fix file permissions
+  - echo "*** Fixing file permissions... ***"
+  - chown -R laqndaemon:laqndaemon ~laqndaemon
+
+final_message:
+  "Cloud-init configuration finished after $UPTIME seconds"
