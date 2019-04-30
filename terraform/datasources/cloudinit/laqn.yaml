@@ -79,8 +79,6 @@ write_files:
       </body>
       </html>
 
-
-
 write_files:
   - path: /pull_from_github.sh
     content: |
