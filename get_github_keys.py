@@ -1,37 +1,26 @@
 #! /usr/bin/env python
-# import argparse
 import logging
-# import os
-# import random
-# import string
 import termcolor
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.common.credentials import get_azure_cli_credentials
-# from azure.mgmt.resource import ResourceManagementClient
+from azure.keyvault import KeyVaultClient
+from azure.mgmt.keyvault import KeyVaultManagementClient
 from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.compute import ComputeManagementClient
-# from azure.mgmt.storage import StorageManagementClient
-# from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuName, Kind
-# from azure.storage.blob import BlockBlobService
-
 
 # Set up logging
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
 logging.getLogger("adal-python").setLevel(logging.WARNING)
 logging.getLogger("azure").setLevel(logging.WARNING)
 
-# # Read command line arguments
-# parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
-# parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND", help="Resource group where the Terraform backend will be stored")
-# parser.add_argument("-l", "--location", type=str, default="uksouth", help="Azure datacentre where the Terraform backend will be stored")
-# parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend", help="Name of the storage container where the Terraform backend will be stored")
-# parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c", help="ID of an Azure group which contains all project developers. Default is Turing's 'All Users' group.")
-# args = parser.parse_args()
-
 def emphasised(text):
     return termcolor.colored(text, 'green')
 
-def get_keys(vm_name, rg_name):
+def get_keys(datasource, rg_name, rg_kv):
+    # Construct resource names
+    vm_name = "{}-VM".format(datasource.upper())
+    secret_name = "{}-vm-github-secret".format(datasource)
+
     # Get subscription
     _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
     subscription_client = get_client_from_cli_profile(SubscriptionClient)
@@ -45,8 +34,21 @@ def get_keys(vm_name, rg_name):
     result = poller.result()  # Blocking till executed
     cmd_output = result.value[0].message
     ssh_key = [l for l in cmd_output.split("\n") if "ssh-rsa" in l][0]
-    logging.info("... please add the following key to the 'Deploy keys' section on github (under clean-air-infrastructure > Settings > Deploy keys)")
+    key_name = emphasised('{}-cleanair'.format(datasource))
+    logging.info("... please add a key called '{}' to the 'Deploy keys' section on github (under clean-air-infrastructure > Settings > Deploy keys)".format(key_name))
     logging.info(emphasised(ssh_key))
 
+    # Read the GitHub secret from the keyvault
+    keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
+    vault = [v for v in keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv) if "kvcleanair" in v.name][0]
+    keyvault_client = get_client_from_cli_profile(KeyVaultClient)
+    github_secret = keyvault_client.get_secret(vault.properties.vault_uri, secret_name, "").value
+    webhook_url = emphasised("http://cleanair-{}.uksouth.cloudapp.azure.com/github".format(datasource))
+    logging.info("... please add the following secret to the 'Secret' section on github (under clean-air-infrastructure > Settings > Webhooks)")
+    logging.info("    the webhook should be called {}".format(webhook_url))
+    logging.info(emphasised(github_secret))
+
+
 if __name__ == "__main__":
-    get_keys("LAQN-VM", "RG_CLEANAIR_DATASOURCES")
+    get_keys("laqn", "RG_CLEANAIR_DATASOURCES", "RG_CLEANAIR_INFRASTRUCTURE")
+    # get_keys("LAQN-VM", "RG_CLEANAIR_DATASOURCES", "laqn-vm-github-secret", "RG_CLEANAIR_INFRASTRUCTURE")
