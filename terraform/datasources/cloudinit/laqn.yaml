@@ -115,6 +115,11 @@ runcmd:
   - echo "*** Setting up apache server pointing to local disk... ***"
   - mv /000-default.conf /etc/apache2/sites-enabled/000-default.conf
 
+  # Create callback file to trigger updates
+  - echo "*** Setting up automatic GitHub updates... ***"
+  - chmod u+x /home/laqndaemon/pull_from_github.sh
+  - echo "* * * * * laqndaemon /home/laqndaemon/pull_from_github.sh" >> /etc/crontab
+
   # Setup minimal Flask server
   - echo "*** Configuring Flask server... ***"
   - echo "127.0.0.1 cleanair-laqn.uksouth.cloudapp.azure.com" >> /etc/hosts
@@ -122,15 +127,10 @@ runcmd:
   - echo "*** Adding GitHub secret... ***"
   - while [ ! -f /tmp/github.secret ]; do sleep 5; done
   - mv /tmp/github.secret /var/www/github.secret
-  - touch /var/www/update_needed
+  - echo "yes" > /var/www/update_needed
   - chmod o+w /var/www/update_needed
   - chown -R www-data:www-data /var/www/
   - systemctl restart apache2
-
-  # Create callback file to trigger updates
-  - echo "*** Setting up automatic updates... ***"
-  - chmod u+x /home/laqndaemon/pull_from_github.sh
-  - echo "* * * * * laqndaemon /home/laqndaemon/pull_from_github.sh" >> /etc/crontab
 
   # Clean up installation
   - echo "*** Cleaning up packages... ***"
