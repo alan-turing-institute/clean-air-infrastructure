@@ -106,11 +106,6 @@ write_files:
 # Run any additional commands
 runcmd:
   # Create SSH key and fix file permissions
-  - ls -alh /
-  - ls /var/www/flask/webhook/__init__.py
-  - ls /var/www/flask/webhook/webhook.wsgi
-  - ls /home/laqndaemon/pull_from_github.sh
-  - ls /home/laqndaemon/.ssh/known_hosts
   - echo "*** Updating laqndaemon home directory... ***"
   - mkdir -p /home/laqndaemon/.ssh
   - ssh-keygen -t rsa -b 4096 -C "laqn@cleanair" -N "" -f /home/laqndaemon/.ssh/id_rsa
@@ -124,13 +119,16 @@ runcmd:
   - echo "*** Configuring Flask server... ***"
   - echo "127.0.0.1 cleanair-laqn.uksouth.cloudapp.azure.com" >> /etc/hosts
   - echo "ServerName cleanair-laqn.uksouth.cloudapp.azure.com" >> /etc/apache2/apache2.conf
+  - echo "*** Adding GitHub secret... ***"
+  - while [ ! -f /tmp/github.secret ]; do sleep 5; done
+  - mv /tmp/github.secret /var/www/github.secret
+  - touch /var/www/update_needed
+  - chmod o+w /var/www/update_needed
   - chown -R www-data:www-data /var/www/
   - systemctl restart apache2
 
   # Create callback file to trigger updates
   - echo "*** Setting up automatic updates... ***"
-  - touch /var/www/update_needed
-  - chmod o+w /var/www/update_needed
   - chmod u+x /home/laqndaemon/pull_from_github.sh
   - echo "* * * * * laqndaemon /home/laqndaemon/pull_from_github.sh" >> /etc/crontab
 

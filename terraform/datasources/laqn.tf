@@ -98,12 +98,35 @@ resource "azurerm_virtual_machine" "laqn_vm" {
         enabled     = "true"
         storage_uri = "${var.boot_diagnostics_uri}"
     }
+
     provisioner "file" {
         content     = "${azurerm_key_vault_secret.laqn_vm_github_secret.value}"
         destination = "/tmp/github.secret"
+        connection {
+            agent    = "false"
+            type     = "ssh"
+            user     = "atiadmin"
+            password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
+        }
     }
 
     tags {
         environment = "Terraform Clean Air"
     }
 }
+
+# resource "null_resource" remoteExecProvisionerWFolder {
+#     provisioner "file" {
+#         content     = "${azurerm_key_vault_secret.laqn_vm_github_secret.value}"
+#         destination = "/github.secret"
+
+#         connection {
+#             host     = "${azurerm_virtual_machine.laqn_vm.ip_address}"
+#             type     = "ssh"
+#             user     = "atiadmin"
+#             password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
+#             agent    = "false"
+#         }
+#     }
+# }
+

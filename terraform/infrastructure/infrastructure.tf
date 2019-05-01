@@ -71,13 +71,6 @@ resource "azurerm_storage_account" "bootdiagnostics" {
     }
 }
 
-# # Generate an SSH key for authenticating to github
-# # NB. This key will be stored in full in the Terraform state file
-# resource "tls_private_key" "githubkey" {
-#   algorithm = "RAS"
-#   rsa_bits  = "4096"
-# }
-
 # Provide outputs which are useful to later Terraform scripts
 output "keyvault_id" {
     value = "${azurerm_key_vault.kvcleanairpasswords.id}"
