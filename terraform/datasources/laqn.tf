@@ -23,9 +23,8 @@ resource "azurerm_key_vault_secret" "laqn_vm_admin_password" {
   key_vault_id = "${var.keyvault_id}"
 }
 
-# Store the github password in the keyvault
-resource "azurerm_key_vault_secret" "laqn_vm_github_password" {
-  name         = "laqn-vm-github-password"
+resource "azurerm_key_vault_secret" "laqn_vm_github_secret" {
+  name         = "laqn-vm-github-secret"
   value        = "${random_string.laqn_vm_github.result}"
   key_vault_id = "${var.keyvault_id}"
 }
@@ -98,6 +97,10 @@ resource "azurerm_virtual_machine" "laqn_vm" {
     boot_diagnostics {
         enabled     = "true"
         storage_uri = "${var.boot_diagnostics_uri}"
+    }
+    provisioner "file" {
+        content     = "${azurerm_key_vault_secret.laqn_vm_github_secret.value}"
+        destination = "/tmp/github.secret"
     }
 
     tags {
