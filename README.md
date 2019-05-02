@@ -114,4 +114,4 @@ To destroy all the resources created in the previous step run:
 terraform destroy
 ```
 
-You can check everything was removed on the azure portal.
+You can check everything was removed on the Azure portal.
