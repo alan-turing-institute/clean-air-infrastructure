@@ -1,23 +1,21 @@
-# Variables used by the VM
-variable "username" {
-    default = "laqndaemon"
-}
-variable "servername" {
-    default = "cleanair-laqn"
+# Derived variables
+locals {
+  username = "${var.datasource}daemon"
+  servername = "cleanair-${var.datasource}"
 }
 
 # Generate random strings that persist for the lifetime of the resource group
 # NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
-resource "random_string" "laqn_vm_admin" {
+resource "random_string" "vm_admin" {
   keepers = {
-      resource_group = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+      resource_group = "${var.resource_group}"
   }
   length = 16
   special = true
 }
-resource "random_string" "laqn_vm_github" {
+resource "random_string" "vm_github" {
   keepers = {
-      resource_group = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+      resource_group = "${var.resource_group}"
   }
   length = 16
   special = true
@@ -25,42 +23,42 @@ resource "random_string" "laqn_vm_github" {
 
 
 # Store the admin password in the keyvault
-resource "azurerm_key_vault_secret" "laqn_vm_admin_password" {
-  name         = "laqn-vm-admin-password"
-  value        = "${random_string.laqn_vm_admin.result}"
+resource "azurerm_key_vault_secret" "vm_admin_password" {
+  name         = "${var.datasource}-vm-admin-password"
+  value        = "${random_string.vm_admin.result}"
   key_vault_id = "${var.keyvault_id}"
 }
 
-resource "azurerm_key_vault_secret" "laqn_vm_github_secret" {
-  name         = "laqn-vm-github-secret"
-  value        = "${random_string.laqn_vm_github.result}"
+resource "azurerm_key_vault_secret" "vm_github_secret" {
+  name         = "${var.datasource}-vm-github-secret"
+  value        = "${random_string.vm_github.result}"
   key_vault_id = "${var.keyvault_id}"
 }
 
-# Create a public IP for the LAQN VM
-resource "azurerm_public_ip" "laqn_public" {
-    name                         = "LAQN-PUBLICIP"
-    domain_name_label            = "cleanair-laqn"
+# Create a public IP for the VM
+resource "azurerm_public_ip" "vm_public_ip" {
+    name                         = "${upper("${var.datasource}")}-PUBLICIP"
+    domain_name_label            = "${local.servername}"
     location                     = "${var.location}"
-    resource_group_name          = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+    resource_group_name          = "${var.resource_group}"
     allocation_method            = "Dynamic"
     tags {
         environment = "Terraform Clean Air"
     }
 }
 
-# Create a network card for the LAQN VM
-resource "azurerm_network_interface" "laqn_nic" {
-    name                      = "LAQN-NIC"
+# Create a network card for the VM
+resource "azurerm_network_interface" "vm_nic" {
+    name                      = "${upper("${var.datasource}")}-NIC"
     location                  = "${var.location}"
-    resource_group_name       = "${azurerm_resource_group.rg_cleanair_datasources.name}"
-    network_security_group_id = "${azurerm_network_security_group.nsg_cleanair_datasources.id}"
+    resource_group_name       = "${var.resource_group}"
+    network_security_group_id = "${var.nsg_id}"
 
     ip_configuration {
-        name                          = "LAQN-NICCFG"
-        subnet_id                     = "${azurerm_subnet.subnet_cleanair_datasources.id}"
+        name                          = "${upper("${var.datasource}")}-NICCFG"
+        subnet_id                     = "${var.subnet_id}"
         private_ip_address_allocation = "Dynamic"
-        public_ip_address_id          = "${azurerm_public_ip.laqn_public.id}"
+        public_ip_address_id          = "${azurerm_public_ip.vm_public_ip.id}"
     }
 
     tags {
@@ -68,12 +66,11 @@ resource "azurerm_network_interface" "laqn_nic" {
     }
 }
 
-
 # Replace templated variables in the apache config file
 data "template_file" "apache_config" {
   template = "${file("${path.module}/provisioning_files/github_webhook/apache.conf")}"
   vars {
-      servername = "${var.servername}"
+      servername = "${local.servername}"
   }
 }
 
@@ -82,45 +79,45 @@ data "template_file" "github_webhook" {
   template = "${file("${path.module}/templates/github_webhook.tpl.yaml")}"
 
   vars {
-    username           = "${var.username}"
-    servername         = "${var.servername}"
+    username           = "${local.username}"
+    servername         = "${local.servername}"
     # NB. the indentation of six spaces here ensures that the file will be inserted at the correct indentation level in the YAML file
     apache_config      = "${indent(6, "${data.template_file.apache_config.rendered}")}"
     flask_webhook      = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_webhook.py")}")}"
     flask_wsgi         = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_wsgi.py")}")}"
     update_application = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/update_application.sh")}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/known_hosts")}")}"
-    github_secret      = "${indent(6, "${azurerm_key_vault_secret.laqn_vm_github_secret.value}")}"
+    github_secret      = "${indent(6, "${azurerm_key_vault_secret.vm_github_secret.value}")}"
   }
 }
 
 
 # Build cloud-config configuration file from fragments
-data "template_cloudinit_config" "laqn_cloudinit_config" {
+data "template_cloudinit_config" "cloudinit_config" {
   part {
-    filename     = "laqn_cloudinit.yaml"
+    filename     = "cloudinit.yaml"
     content_type = "text/cloud-config"
     content      = "${data.template_file.github_webhook.rendered}"
   }
 
   part {
     content_type = "text/cloud-config"
-    content      = "${file("${path.module}/cloudinit/laqn.yaml")}"
+    content      = "${file("${path.module}/cloudinit/${var.datasource}.yaml")}"
     merge_type   = "${var.cloud_init_merge}"
   }
 }
 
-# Create the LAQN VM
-resource "azurerm_virtual_machine" "laqn_vm" {
-    name                          = "LAQN-VM"
+# Create the VM
+resource "azurerm_virtual_machine" "vm" {
+    name                          = "${upper("${var.datasource}")}-VM"
     delete_os_disk_on_termination = true
     location                      = "${var.location}"
-    resource_group_name           = "${azurerm_resource_group.rg_cleanair_datasources.name}"
-    network_interface_ids         = ["${azurerm_network_interface.laqn_nic.id}"]
+    resource_group_name           = "${var.resource_group}"
+    network_interface_ids         = ["${azurerm_network_interface.vm_nic.id}"]
     vm_size                       = "Standard_DS1_v2"
 
     storage_os_disk {
-        name              = "LAQN-OSDISK"
+        name              = "${upper("${var.datasource}")}-OSDISK"
         caching           = "ReadWrite"
         create_option     = "FromImage"
         managed_disk_type = "Standard_LRS"
@@ -134,10 +131,10 @@ resource "azurerm_virtual_machine" "laqn_vm" {
     }
 
     os_profile {
-        computer_name  = "LAQN-VM"
+        computer_name  = "${upper("${var.datasource}")}-VM"
         admin_username = "atiadmin"
-        admin_password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
-        custom_data    = "${data.template_cloudinit_config.laqn_cloudinit_config.rendered}"
+        admin_password = "${azurerm_key_vault_secret.vm_admin_password.value}"
+        custom_data    = "${data.template_cloudinit_config.cloudinit_config.rendered}"
     }
 
     os_profile_linux_config {

@@ -19,5 +19,4 @@ module "datasources" {
   keyvault_id                   = "${module.infrastructure.keyvault_id}"
   location                      = "${var.infrastructure_location}"
   resource_group                = "${var.resource_group_datasources}"
-  infrastructure_resource_group = "${var.resource_group_infrastructure}"
 }
