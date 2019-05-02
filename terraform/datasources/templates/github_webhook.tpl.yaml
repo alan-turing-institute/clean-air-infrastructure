@@ -1,0 +1,90 @@
+#cloud-config
+
+# Update package database on first boot (ie run apt-get update)
+package_update: true
+
+# Upgrade the instance on first boot (ie run apt-get upgrade)
+package_upgrade: true
+
+# Add the atiadmin (default) and ${username} users
+users:
+  - default
+  - name: ${username}
+    lock_passwd: True
+    sudo: False
+
+# List of packages to install with apt-get
+packages:
+  - apache2
+  - build-essential
+  - libapache2-mod-wsgi-py3
+  - libffi-dev
+  - libssl-dev
+  - python3-flask
+  - python3-pip
+
+write_files:
+  # Write the Apache config file
+  - path: /000-default.conf
+    content: |
+      ${apache_config}
+
+  # Flask app acting as the POST endpoint for the GitHub webhook
+  - path: /var/www/flask/webhook/__init__.py
+    content: |
+      ${flask_webhook}
+
+  # Configuration for Flask app
+  - path: /var/www/flask/webhook/webhook.wsgi
+    content: |
+      ${flask_wsgi}
+
+  # Automatically clone or update the GitHub repository
+  - path: /home/${username}/update_application.sh
+    content: |
+      ${update_application}
+
+  # Add GitHub server as a known host
+  - path: /home/${username}/.ssh/known_hosts
+    content: |
+      ${github_known_hosts}
+
+  # Add GitHub secret
+  - path: /var/www/github.secret
+    permissions: "0400"
+    content: |
+      ${github_secret}
+
+# Run any additional commands
+runcmd:
+  # Create SSH key and fix file permissions
+  - echo "*** Updating ${username} home directory... ***"
+  - mkdir -p /home/${username}/.ssh
+  - ssh-keygen -t rsa -b 4096 -C "${username}@cleanair" -N "" -f /home/${username}/.ssh/id_rsa
+  - chown -R ${username}:${username} /home/${username}
+
+  # Setup apache with default user (www-data)
+  - echo "*** Setting up apache server pointing to local disk... ***"
+  - mv /000-default.conf /etc/apache2/sites-enabled/000-default.conf
+
+  # Create callback file to trigger updates
+  - echo "*** Setting up automatic GitHub updates... ***"
+  - chmod u+x /home/${username}/update_application.sh
+  - echo "* * * * * ${username} /home/${username}/update_application.sh" >> /etc/crontab
+
+  # Setup minimal Flask server
+  - echo "*** Configuring Flask server... ***"
+  - echo "127.0.0.1 ${servername}.uksouth.cloudapp.azure.com" >> /etc/hosts
+  - echo "ServerName ${servername}.uksouth.cloudapp.azure.com" >> /etc/apache2/apache2.conf
+  - echo "yes" > /var/www/update_needed
+  - chmod o+w /var/www/update_needed
+  - chown -R www-data:www-data /var/www/
+  - systemctl restart apache2
+
+  # Clean up installation
+  - echo "*** Cleaning up packages... ***"
+  - export DEBIAN_FRONTEND=noninteractive
+  - apt-get clean
+
+final_message:
+  "Cloud-init configuration finished after $UPTIME seconds"

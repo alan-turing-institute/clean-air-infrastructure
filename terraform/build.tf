@@ -14,13 +14,10 @@ module "infrastructure" {
 }
 
 module "datasources" {
-  source               = "./datasources"
-  boot_diagnostics_uri = "${module.infrastructure.boot_diagnostics_uri}"
-  keyvault_id          = "${module.infrastructure.keyvault_id}"
-  location             = "${var.infrastructure_location}"
-  resource_group       = "${var.resource_group_datasources}"
+  source                        = "./datasources"
+  boot_diagnostics_uri          = "${module.infrastructure.boot_diagnostics_uri}"
+  keyvault_id                   = "${module.infrastructure.keyvault_id}"
+  location                      = "${var.infrastructure_location}"
+  resource_group                = "${var.resource_group_datasources}"
+  infrastructure_resource_group = "${var.resource_group_infrastructure}"
 }
-
-# output "path" {
-#     value = "${module.datasources.path}"
-# }

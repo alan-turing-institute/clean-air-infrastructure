@@ -1,3 +1,11 @@
+# Variables used by the VM
+variable "username" {
+    default = "laqndaemon"
+}
+variable "servername" {
+    default = "cleanair-laqn"
+}
+
 # Generate random strings that persist for the lifetime of the resource group
 # NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
 resource "random_string" "laqn_vm_admin" {
@@ -60,6 +68,48 @@ resource "azurerm_network_interface" "laqn_nic" {
     }
 }
 
+
+# Replace templated variables in the apache config file
+data "template_file" "apache_config" {
+  template = "${file("${path.module}/provisioning_files/github_webhook/apache.conf")}"
+  vars {
+      servername = "${var.servername}"
+  }
+}
+
+# Replace templated variables in the cloud-init config file
+data "template_file" "github_webhook" {
+  template = "${file("${path.module}/templates/github_webhook.tpl.yaml")}"
+
+  vars {
+    username           = "${var.username}"
+    servername         = "${var.servername}"
+    # NB. the indentation of six spaces here ensures that the file will be inserted at the correct indentation level in the YAML file
+    apache_config      = "${indent(6, "${data.template_file.apache_config.rendered}")}"
+    flask_webhook      = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_webhook.py")}")}"
+    flask_wsgi         = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_wsgi.py")}")}"
+    update_application = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/update_application.sh")}")}"
+    github_known_hosts = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/known_hosts")}")}"
+    github_secret      = "${indent(6, "${azurerm_key_vault_secret.laqn_vm_github_secret.value}")}"
+  }
+}
+
+
+# Build cloud-config configuration file from fragments
+data "template_cloudinit_config" "laqn_cloudinit_config" {
+  part {
+    filename     = "laqn_cloudinit.yaml"
+    content_type = "text/cloud-config"
+    content      = "${data.template_file.github_webhook.rendered}"
+  }
+
+  part {
+    content_type = "text/cloud-config"
+    content      = "${file("${path.module}/cloudinit/laqn.yaml")}"
+    merge_type   = "${var.cloud_init_merge}"
+  }
+}
+
 # Create the LAQN VM
 resource "azurerm_virtual_machine" "laqn_vm" {
     name                          = "LAQN-VM"
@@ -87,7 +137,7 @@ resource "azurerm_virtual_machine" "laqn_vm" {
         computer_name  = "LAQN-VM"
         admin_username = "atiadmin"
         admin_password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
-        custom_data    = "${file("${path.module}/cloudinit/laqn.yaml")}"
+        custom_data    = "${data.template_cloudinit_config.laqn_cloudinit_config.rendered}"
     }
 
     os_profile_linux_config {
@@ -99,34 +149,7 @@ resource "azurerm_virtual_machine" "laqn_vm" {
         storage_uri = "${var.boot_diagnostics_uri}"
     }
 
-    provisioner "file" {
-        content     = "${azurerm_key_vault_secret.laqn_vm_github_secret.value}"
-        destination = "/tmp/github.secret"
-        connection {
-            agent    = "false"
-            type     = "ssh"
-            user     = "atiadmin"
-            password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
-        }
-    }
-
     tags {
         environment = "Terraform Clean Air"
     }
 }
-
-# resource "null_resource" remoteExecProvisionerWFolder {
-#     provisioner "file" {
-#         content     = "${azurerm_key_vault_secret.laqn_vm_github_secret.value}"
-#         destination = "/github.secret"
-
-#         connection {
-#             host     = "${azurerm_virtual_machine.laqn_vm.ip_address}"
-#             type     = "ssh"
-#             user     = "atiadmin"
-#             password = "${azurerm_key_vault_secret.laqn_vm_admin_password.value}"
-#             agent    = "false"
-#         }
-#     }
-# }
-
