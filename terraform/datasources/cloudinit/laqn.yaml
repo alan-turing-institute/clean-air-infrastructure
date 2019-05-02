@@ -45,7 +45,6 @@ write_files:
   - path: /var/www/flask/webhook/__init__.py
     content: |
       from flask import Flask, jsonify, request
-      import json
       import hashlib
       import hmac
       app = Flask(__name__)
