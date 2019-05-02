@@ -1,5 +1,6 @@
 # Derived variables
 locals {
+  admin_username = "atiadmin"
   username = "${var.datasource}daemon"
   servername = "cleanair-${var.datasource}"
 }
@@ -68,7 +69,7 @@ resource "azurerm_network_interface" "vm_nic" {
 
 # Replace templated variables in the apache config file
 data "template_file" "apache_config" {
-  template = "${file("${path.module}/provisioning_files/github_webhook/apache.conf")}"
+  template = "${file("${path.module}/github_webhook/provisioning/apache.conf")}"
   vars {
       servername = "${local.servername}"
   }
@@ -76,17 +77,17 @@ data "template_file" "apache_config" {
 
 # Replace templated variables in the cloud-init config file
 data "template_file" "github_webhook" {
-  template = "${file("${path.module}/templates/github_webhook.tpl.yaml")}"
+  template = "${file("${path.module}/github_webhook/cloudinit.tpl.yaml")}"
 
   vars {
     username           = "${local.username}"
     servername         = "${local.servername}"
     # NB. the indentation of six spaces here ensures that the file will be inserted at the correct indentation level in the YAML file
     apache_config      = "${indent(6, "${data.template_file.apache_config.rendered}")}"
-    flask_webhook      = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_webhook.py")}")}"
-    flask_wsgi         = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/flask_wsgi.py")}")}"
-    update_application = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/update_application.sh")}")}"
-    github_known_hosts = "${indent(6, "${file("${path.module}/provisioning_files/github_webhook/known_hosts")}")}"
+    flask_webhook      = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_webhook.py")}")}"
+    flask_wsgi         = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_wsgi.py")}")}"
+    update_application = "${indent(6, "${file("${path.module}/github_webhook/provisioning/update_application.sh")}")}"
+    github_known_hosts = "${indent(6, "${file("${path.module}/github_webhook/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.vm_github_secret.value}")}"
   }
 }
@@ -132,7 +133,7 @@ resource "azurerm_virtual_machine" "vm" {
 
     os_profile {
         computer_name  = "${upper("${var.datasource}")}-VM"
-        admin_username = "atiadmin"
+        admin_username = "${local.admin_username}"
         admin_password = "${azurerm_key_vault_secret.vm_admin_password.value}"
         custom_data    = "${data.template_cloudinit_config.cloudinit_config.rendered}"
     }
