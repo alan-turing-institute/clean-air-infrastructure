@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 import hashlib
 import hmac
+import json
 
 app = Flask(__name__)
 
@@ -8,25 +9,37 @@ def verify_signature(data, signature):
     with open("/var/www/github.secret", "r") as f_secret:
         github_secret = f_secret.readlines()[0].strip()
     mac = hmac.new(github_secret.encode(), msg=data, digestmod=hashlib.sha1)
-    return hmac.compare_digest('sha1=' + mac.hexdigest(), signature)
+    return hmac.compare_digest("sha1=" + mac.hexdigest(), signature)
 
 @app.route("/")
 def default():
     return "Flask server for github webhooks"
 
-@app.route("/github", methods=['POST'])
+@app.route("/github", methods=["POST"])
 def github_webhook():
     print("Processing webhook request...")
     request.get_data()
-    signature = request.headers.get('X-Hub-Signature')
+    signature = request.headers.get("X-Hub-Signature")
     data = request.data
     if verify_signature(data, signature):
         print("Verified GitHub signature: {}".format(signature))
-    with open("/var/www/update_needed", "w") as f_output:
-        f_output.write("yes")
-        return jsonify({'msg': 'Ok'})
+        request_dict = request.form.to_dict()
+        try:
+            payload_dict = json.loads(request_dict["payload"])
+            action = payload_dict["action"]
+            merged = payload_dict["pull_request"]["merged"]
+            print("Action was {}, merged was {}".format(action, merged))
+            if action == "closed" and merged:
+                with open("/var/www/update_needed", "w") as f_output:
+                    f_output.write("yes")
+                print("=> called the code updater")
+                return jsonify({"msg": "called code updater"})
+                print("=> no action needed as this is not a merged pull request")
+            return jsonify({"msg": "no action needed as this is not a merged pull request"})
+        except KeyError:
+            pass
     print("Failed to verify GitHub signature: {}".format(signature))
-    return jsonify({'msg': 'invalid hash'})
+    return jsonify({"msg": "invalid hash"})
 
 if __name__ == "__main__":
     app.run()

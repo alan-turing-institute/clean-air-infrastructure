@@ -16,27 +16,21 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 def emphasised(text):
     return termcolor.colored(text, 'green')
 
-def get_keys(datasource, rg_name, rg_kv):
+def get_keys(datasource, rg_name="RG_CLEANAIR_DATASOURCES", rg_kv="RG_CLEANAIR_INFRASTRUCTURE"):
     # Construct resource names
     vm_name = "{}-VM".format(datasource.upper())
     secret_name = "{}-vm-github-secret".format(datasource)
 
-    # Get subscription
-    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
-    subscription_client = get_client_from_cli_profile(SubscriptionClient)
-    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
-    logging.info("Working in subscription: {}".format(emphasised(subscription_name)))
-
     # Read the SSH key from the deployed machine
     logging.info("Obtaining secret from {} in resource group {}...".format(emphasised(vm_name), emphasised(rg_name)))
     compute_mgmt_client = get_client_from_cli_profile(ComputeManagementClient)
-    poller = compute_mgmt_client.virtual_machines.run_command(rg_name, vm_name, {"command_id": "RunShellScript", "script": ["cat /home/laqndaemon/.ssh/id_rsa.pub"]})
+    poller = compute_mgmt_client.virtual_machines.run_command(rg_name, vm_name, {"command_id": "RunShellScript", "script": ["cat /home/{}daemon/.ssh/id_rsa.pub".format(datasource)]})
     result = poller.result()  # Blocking till executed
-    cmd_output = result.value[0].message
-    ssh_key = [l for l in cmd_output.split("\n") if "ssh-rsa" in l][0]
+    ssh_key = [l for l in result.value[0].message.split("\n") if "ssh-rsa" in l][0]
     key_name = emphasised('{}-cleanair'.format(datasource))
-    logging.info("... please add a key called '{}' to the 'Deploy keys' section on github (under clean-air-infrastructure > Settings > Deploy keys)".format(key_name))
-    logging.info(emphasised(ssh_key))
+    logging.info("... please add a key called '{}' to the 'Deploy keys' section on GitHub (under clean-air-infrastructure > Settings > Deploy keys)".format(key_name))
+    logging.info("    leave it as read only (ie. do not enable Write)")
+    logging.info("    its value should be: {}".format(emphasised(ssh_key)))
 
     # Read the GitHub secret from the keyvault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
@@ -44,11 +38,18 @@ def get_keys(datasource, rg_name, rg_kv):
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
     github_secret = keyvault_client.get_secret(vault.properties.vault_uri, secret_name, "").value
     webhook_url = emphasised("http://cleanair-{}.uksouth.cloudapp.azure.com/github".format(datasource))
-    logging.info("... please add the following secret to the 'Secret' section on github (under clean-air-infrastructure > Settings > Webhooks)")
-    logging.info("    the webhook should be called {}".format(webhook_url))
-    logging.info(emphasised(github_secret))
+    logging.info("... please go to clean-air-infrastructure > Settings > Webhooks on GitHub")
+    logging.info("    ensure that there is a webhook called {}".format(webhook_url))
+    logging.info("    then change the 'Secret' for this webhook to {}".format(emphasised(github_secret)))
 
 
 if __name__ == "__main__":
-    get_keys("laqn", "RG_CLEANAIR_DATASOURCES", "RG_CLEANAIR_INFRASTRUCTURE")
-    # get_keys("LAQN-VM", "RG_CLEANAIR_DATASOURCES", "laqn-vm-github-secret", "RG_CLEANAIR_INFRASTRUCTURE")
+    # Get subscription
+    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
+    subscription_client = get_client_from_cli_profile(SubscriptionClient)
+    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
+    logging.info("Working in subscription: {}".format(emphasised(subscription_name)))
+
+    # Get keys for the different datasources
+    get_keys("aqn")
+    get_keys("laqn")
