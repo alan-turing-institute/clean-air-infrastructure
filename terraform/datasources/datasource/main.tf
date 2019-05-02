@@ -1,3 +1,12 @@
+# Setup required providers
+provider "azurerm" {
+  version = "=1.24"
+}
+provider "template" {
+  version = "=2.1"
+}
+
+# Setup variables
 variable "boot_diagnostics_uri" {}
 variable "cloud_init_merge" {
   default     = "list(append)+dict(recurse_array)+str()"

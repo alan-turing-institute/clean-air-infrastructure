@@ -11,5 +11,3 @@ variable "boot_diagnostics_uri" {}
 variable "keyvault_id" {}
 variable "location" {}
 variable "resource_group" {}
-
-
