@@ -1,6 +1,7 @@
 variable "resource_group_infrastructure" {
   default = "RG_CLEANAIR_INFRASTRUCTURE"
 }
+
 variable "resource_group_datasources" {
   default = "RG_CLEANAIR_DATASOURCES"
 }
@@ -20,7 +21,3 @@ module "datasources" {
   location             = "${var.infrastructure_location}"
   resource_group       = "${var.resource_group_datasources}"
 }
-
-# output "path" {
-#     value = "${module.datasources.path}"
-# }
