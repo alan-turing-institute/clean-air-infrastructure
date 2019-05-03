@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod                                            
+metadata:
+  name: laqn      # The only change
+spec:                                                
+  containers:
+    - image: cleanair.azurecr.io/laqn:v1
+      name: laqn                            
+      ports:
+        - containerPort: 80
+  imagePullSecrets:
+    — name: regcred
