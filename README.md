@@ -61,6 +61,21 @@ python initialise_terraform.py
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
+### Setting up webhooks in the GitHub repository
+NB. This only needs to be done once but is documented here for better reproducibility in future.
+
+#### Add deployment keys to GitHub
+- Run `python get_github_keys.py` to get the SSH keys for each of the relevant servers
+- In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
+- Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
+
+
+#### Enable webhook in GitHub
+- In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
+- Set the `Payload URL` to `http://cleanair-laqn.uksouth.cloudapp.azure.com/github.php`
+- Select `Let me select individual events`
+
+
 ## Building the Clean Air infrastructure with Terraform
 To build the `Terraform` infrastructure go to the `terraform` directory and run:
 
