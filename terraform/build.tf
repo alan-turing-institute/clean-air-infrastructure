@@ -1,6 +1,7 @@
 variable "resource_group_infrastructure" {
   default = "RG_CLEANAIR_INFRASTRUCTURE"
 }
+
 variable "resource_group_datasources" {
   default = "RG_CLEANAIR_DATASOURCES"
 }
@@ -14,9 +15,9 @@ module "infrastructure" {
 }
 
 module "datasources" {
-  source                        = "./datasources"
-  boot_diagnostics_uri          = "${module.infrastructure.boot_diagnostics_uri}"
-  keyvault_id                   = "${module.infrastructure.keyvault_id}"
-  location                      = "${var.infrastructure_location}"
-  resource_group                = "${var.resource_group_datasources}"
+  source               = "./datasources"
+  boot_diagnostics_uri = "${module.infrastructure.boot_diagnostics_uri}"
+  keyvault_id          = "${module.infrastructure.keyvault_id}"
+  location             = "${var.infrastructure_location}"
+  resource_group       = "${var.resource_group_datasources}"
 }
