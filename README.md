@@ -73,7 +73,8 @@ NB. This only needs to be done once but is documented here for better reproducib
 #### Enable webhook in GitHub
 - In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
 - Set the `Payload URL` to `http://cleanair-laqn.uksouth.cloudapp.azure.com/github.php`
-- Select `Let me select individual events`
+- Set the `Content type` to `application/json` (not required but preferred)
+- Select `Let me select individual events` and tick `Pull requests` only
 
 
 ## Building the Clean Air infrastructure with Terraform

@@ -23,9 +23,14 @@ def github_webhook():
     data = request.data
     if verify_signature(data, signature):
         print("Verified GitHub signature: {}".format(signature))
-        request_dict = request.form.to_dict()
         try:
-            payload_dict = json.loads(request_dict["payload"])
+            if request.is_json:
+                print("Processing application/json")
+                payload_dict = request.json
+            else:
+                print("Processing application/x-www-form-urlencoded")
+                request_dict = request.form.to_dict()
+                payload_dict = json.loads(request_dict["payload"])
             action = payload_dict["action"]
             merged = payload_dict["pull_request"]["merged"]
             print("Action was {}, merged was {}".format(action, merged))
@@ -38,8 +43,11 @@ def github_webhook():
             return jsonify({"msg": "no action needed as this is not a merged pull request"})
         except KeyError:
             pass
-    print("Failed to verify GitHub signature: {}".format(signature))
-    return jsonify({"msg": "invalid hash"})
+    else:
+        print("Failed to verify GitHub signature: {}".format(signature))
+        return jsonify({"msg": "invalid hash"})
+    print("Unknown issue")
+    return jsonify({"msg": "unknown issue"})
 
 if __name__ == "__main__":
     app.run()
