@@ -63,16 +63,15 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 ### Setting up webhooks in the GitHub repository
 NB. This only needs to be done once but is documented here for better reproducibility in future.
+- Run `python get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 
 #### Add deployment keys to GitHub
-- Run `python get_github_keys.py` to get the SSH keys for each of the relevant servers
 - In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
 - Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
 
-
-#### Enable webhook in GitHub
+#### Enable webhooks in GitHub
 - In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
-- Set the `Payload URL` to `http://cleanair-laqn.uksouth.cloudapp.azure.com/github.php`
+- Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
 - Select `Let me select individual events` and tick `Pull requests` only
 
