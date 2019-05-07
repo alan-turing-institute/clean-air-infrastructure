@@ -15,3 +15,5 @@ deploy:
   script: bash docker_push.sh
   on:
     branch: docker_build
+
+    
