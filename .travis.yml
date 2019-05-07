@@ -7,10 +7,10 @@ branches:
 services:
   - docker
 
-before_install:
+before_deploy:
   - docker build -t cleanairtestcontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
-  - docker push cleanairtestcontainerregistry.azurecr.io/laqn:latest
 
-# deploy:
-#   provider: script
-#   script: bash docker_push
+
+deploy:
+  provider: script
+  script: bash docker_push
