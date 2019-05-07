@@ -10,7 +10,6 @@ services:
 before_deploy:
   - docker build -t cleanairtestcontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
 
-
 deploy:
   provider: script
   script: bash docker_push
