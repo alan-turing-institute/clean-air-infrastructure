@@ -4,9 +4,8 @@ branches:
   only:
   - docker_build
 
-services:
-  - docker
-
+# services:
+#   - docker
 
 deploy:
   provider: script
