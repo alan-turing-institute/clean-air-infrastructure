@@ -7,4 +7,7 @@ branches:
 services:
   - docker
 
-script: bash docker_push
+
+deploy:
+  provider: script
+  script: bash docker_push.sh
