@@ -9,7 +9,9 @@ services:
 
 script:
   - docker build -t cleanairtestcontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
-  
+
 deploy:
   provider: script
   script: bash docker_push.sh
+  on:
+    branch: docker_build
