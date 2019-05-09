@@ -16,3 +16,4 @@ EXPOSE 80
 
 # Run app.py when the container launches
 CMD ["python", "laqn_database.py"]
+

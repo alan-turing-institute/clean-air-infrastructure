@@ -2,7 +2,7 @@ import requests
 import os
 import logging
 import termcolor
-
+import json
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import sessionmaker
@@ -379,6 +379,22 @@ def update_reading_table(session, start_date=None, end_date=None):
         session.commit()
 
 
+def load_db_info():
+    """Check file system is accessable from docker"""
+
+    print(os.getcwd())
+    print(os.path.isdir('/.secrets/'))
+
+    try:
+        with open("/.secrets/secrets.json") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        logging.error("/.secrets folder not found. Check docker bindmount")
+        raise FileNotFoundError
+
+    return data["laqn_db"]
+
+
 def main():
 
     pass
@@ -386,17 +402,18 @@ def main():
 
 if __name__ == '__main__':
 
+    db_info = load_db_info()
     # main()
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
 
     # Connect to the database
-    host = 'laqn-server.postgres.database.azure.com'
-    port = '5432'
-    dbname = 'exampledb'
-    user = 'atiadmin@laqn-server'
-    ssl_mode = 'require'
-    db_password = get_db_password()
+    host = db_info['host']
+    port = db_info['port']
+    dbname = db_info['db_name']
+    user = db_info['user']
+    ssl_mode = db_info['ssl_mode']
+    db_password = db_info['db_password']
 
     connection_string = create_connection_string(host=host,
                                                  port=port,
