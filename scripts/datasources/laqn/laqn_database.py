@@ -380,21 +380,24 @@ def update_reading_table(session, start_date=None, end_date=None):
 
 
 def load_db_info():
-    """Check file system is accessable from docker"""
+    """Check file system is accessable from docker and return database login info"""
+    
+    check_secrets_exist = os.path.isdir('/.secrets/')
 
-    print(os.getcwd())
-    print(os.path.isdir('/.secrets/'))
+    if not check_secrets_exist:
+        logging.error("/.secrets folder does not exist")
+        raise FileNotFoundError("/.secrets folder does not exist")
 
     try:
         with open("/.secrets/secrets.json") as f:
-            data = json.load(f)
-        
+            data = json.load(f)        
         logging.info("/.secrets folder found. Database connection information loaded")
+
     except FileNotFoundError:
         logging.error("/.secrets folder not found. Check docker bindmount")
         raise FileNotFoundError
 
-    return data["laqn_db"]
+    return data
 
 
 def main():
@@ -413,9 +416,9 @@ if __name__ == '__main__':
     host = db_info['host']
     port = db_info['port']
     dbname = db_info['db_name']
-    user = db_info['user']
+    user = db_info['username']
     ssl_mode = db_info['ssl_mode']
-    db_password = db_info['db_password']
+    db_password = db_info['password']
 
     connection_string = create_connection_string(host=host,
                                                  port=port,
@@ -424,8 +427,8 @@ if __name__ == '__main__':
                                                  password=db_password,
                                                  ssl_mode=ssl_mode)
 
-    logging.info("Connecting to db {} on port {}".format(
-        emp1(host), emp1(port)))
+    logging.info("Connecting with connection string: {}".format(
+        emp1(connection_string)))
 
     engine = create_engine(connection_string)
     Base.metadata.create_all(engine)

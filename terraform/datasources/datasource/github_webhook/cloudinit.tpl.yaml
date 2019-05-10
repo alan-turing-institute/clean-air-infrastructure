@@ -22,6 +22,7 @@ packages:
   - libssl-dev
   - python3-flask
   - python3-pip
+  - docker.io
 
 write_files:
   # Write the Apache config file
@@ -62,6 +63,7 @@ write_files:
 
 # Run any additional commands
 runcmd:
+  
   # Create SSH key and fix file permissions
   - echo "*** Updating ${username} home directory... ***"
   - mkdir -p /home/${username}/.ssh
