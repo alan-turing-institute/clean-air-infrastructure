@@ -88,3 +88,15 @@ output "keyvault_id" {
 output "boot_diagnostics_uri" {
   value = "${azurerm_storage_account.bootdiagnostics.primary_blob_endpoint}"
 }
+
+
+# Create azure container registry
+resource "azurerm_container_registry" "acr" {
+  name                     = "CleanAirTestContainerRegistry"
+  resource_group_name      = "${azurerm_resource_group.rg_infrastructure.name}"
+  location                 = "${var.location}"
+  sku                      = "Basic"
+  admin_enabled            = true
+}
+
+
