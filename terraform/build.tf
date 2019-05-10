@@ -20,4 +20,7 @@ module "datasources" {
   keyvault_id          = "${module.infrastructure.keyvault_id}"
   location             = "${var.infrastructure_location}"
   resource_group       = "${var.resource_group_datasources}"
+  acr_login_server     = "${module.infrastructure.acr_login_server}"
+  acr_admin_user       = "${module.infrastructure.acr_admin_user}"
+  acr_admin_password   = "${module.infrastructure.acr_admin_password}"
 }

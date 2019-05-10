@@ -89,6 +89,17 @@ data "template_file" "db_secrets" {
   }
 }
 
+data "template_file" "update_application" {
+  template = "${file("${path.module}/github_webhook/provisioning/update_application.sh")}"
+
+  vars {
+    host = "${var.acr_login_server}"
+    password = "${var.acr_admin_password}"
+    username = "${var.acr_admin_user}"
+  }
+
+}
+
 # Replace templated variables in the cloud-init config file
 data "template_file" "github_webhook" {
   template = "${file("${path.module}/github_webhook/cloudinit.tpl.yaml")}"
@@ -101,7 +112,7 @@ data "template_file" "github_webhook" {
     apache_config      = "${indent(6, "${data.template_file.apache_config.rendered}")}"
     flask_webhook      = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_webhook.py")}")}"
     flask_wsgi         = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_wsgi.py")}")}"
-    update_application = "${indent(6, "${file("${path.module}/github_webhook/provisioning/update_application.sh")}")}"
+    update_application = "${indent(6, "${data.template_file.update_application.rendered}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/github_webhook/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.vm_github_secret.value}")}"
     db_secrets         = "${indent(6, "${data.template_file.db_secrets.rendered}")}"
