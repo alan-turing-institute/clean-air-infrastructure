@@ -1,16 +1,3 @@
-write_files:
-  # Write the Apache config file
-  - path: /.secrets/db_secrets.json
-    content: |
-      {
-        "host": "",
-        "port": 54243,
-        "db_name": "",
-        "user": "",
-        "ssl_mode": "require",
-        "db_password": ""
-      }
-
 runcmd:
   - echo "*** Insert LAQN specific commands in this file ***"
 

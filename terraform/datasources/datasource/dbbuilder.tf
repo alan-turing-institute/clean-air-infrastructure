@@ -24,13 +24,6 @@ resource "azurerm_key_vault_secret" "db_admin_password" {
   key_vault_id = "${var.keyvault_id}"
 }
 
-# # Write the password to file
-
-# resource "local_file" "secrets" {
-#   content  = "${azurerm_key_vault_secret.cleanair_LAQN_postgres_password.value}"
-#   filename = ".secrets/laqn_server_pass.txt"
-# }
-
 resource "azurerm_postgresql_server" "db_server" {
   name                = "${lower("${var.datasource}")}-server"
   location            = "${var.location}"
@@ -81,4 +74,5 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips" {
 #   start_ip_address    = "193.60.220.240"
 #   end_ip_address      = "193.60.220.240"
 # }
+
 

@@ -79,6 +79,16 @@ data "template_file" "apache_config" {
   }
 }
 
+data "template_file" "db_secrets" {
+  template = "${file("${path.module}/github_webhook/provisioning/.db_secrets.json")}"
+  vars {
+    db_host = "${azurerm_postgresql_server.db_server.name}"
+    db_name = "${azurerm_postgresql_database.postgres_database.name}"
+    db_username = "${azurerm_postgresql_server.db_server.administrator_login}"
+    db_password = "${azurerm_key_vault_secret.db_admin_password.value}"
+  }
+}
+
 # Replace templated variables in the cloud-init config file
 data "template_file" "github_webhook" {
   template = "${file("${path.module}/github_webhook/cloudinit.tpl.yaml")}"
@@ -94,6 +104,7 @@ data "template_file" "github_webhook" {
     update_application = "${indent(6, "${file("${path.module}/github_webhook/provisioning/update_application.sh")}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/github_webhook/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.vm_github_secret.value}")}"
+    db_secrets         = "${indent(6, "${data.template_file.db_secrets.rendered}")}"
   }
 }
 
