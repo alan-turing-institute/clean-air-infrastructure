@@ -8,11 +8,12 @@ services:
   - docker
 
 script:
-  - docker build -t cleanaircontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
+  - docker build -t cleanairtestcontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
 
 deploy:
   provider: script
   script: bash docker_push.sh
-
+  on:
+    branch: iss16_tidy_readme
 
     
