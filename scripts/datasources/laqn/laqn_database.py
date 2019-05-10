@@ -388,6 +388,8 @@ def load_db_info():
     try:
         with open("/.secrets/secrets.json") as f:
             data = json.load(f)
+        
+        logging.info("/.secrets folder found. Database connection information loaded")
     except FileNotFoundError:
         logging.error("/.secrets folder not found. Check docker bindmount")
         raise FileNotFoundError
