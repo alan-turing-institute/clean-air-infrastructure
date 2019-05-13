@@ -407,8 +407,9 @@ def main():
 
 if __name__ == '__main__':
 
-    db_info = load_db_info()
+    
     # main()
+    db_info = load_db_info()
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
 
@@ -430,7 +431,7 @@ if __name__ == '__main__':
     logging.info("Connecting with connection string: {}".format(
         emp1(connection_string)))
 
-    engine = create_engine(connection_string)
+    engine = create_engine(connection_string, connect_args = dict('ssl_mode '= ssl_mode))
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -441,5 +442,6 @@ if __name__ == '__main__':
     # # Update the laqn_sites database table
     update_site_list_table(session)
 
+    # Update data in laqn reading table
     update_reading_table(session, start_date='2019-01-01',
                          end_date='2019-01-01')

@@ -42,10 +42,15 @@ write_files:
     content: |
       ${flask_wsgi}
 
-  # Automatically clone or update the GitHub repository
+  # Automatically pull latest docker image
   - path: /home/${username}/update_application.sh
     content: |
       ${update_application}
+
+  # Automatically run the docker image
+  - path: /home/${username}/download_and_insert_data.sh
+    content: |
+      ${download_and_insert_data}      
 
   # Add GitHub server as a known host
   - path: /home/${username}/.ssh/known_hosts

@@ -61,6 +61,15 @@ resource "azurerm_resource_group" "rg_cleanair_datasources" {
   }
 }
 
+resource "azurerm_resource_group" "rg_cleanair_databases" {
+  name     = "${var.resource_group_db}"
+  location = "${var.location}"
+
+  tags {
+    environment = "Terraform Clean Air"
+  }
+}
+
 # Build datasources
 module "aqn" {
   source               = "./datasource"
@@ -69,6 +78,7 @@ module "aqn" {
   keyvault_id          = "${var.keyvault_id}"
   location             = "${azurerm_resource_group.rg_cleanair_datasources.location}"
   resource_group       = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+  resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
   nsg_id               = "${azurerm_network_security_group.nsg_cleanair_datasources.id}"
   subnet_id            = "${azurerm_subnet.subnet_cleanair_datasources.id}"
   acr_login_server     = "${var.acr_login_server}"
@@ -83,6 +93,7 @@ module "laqn" {
   keyvault_id          = "${var.keyvault_id}"
   location             = "${azurerm_resource_group.rg_cleanair_datasources.location}"
   resource_group       = "${azurerm_resource_group.rg_cleanair_datasources.name}"
+  resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
   nsg_id               = "${azurerm_network_security_group.nsg_cleanair_datasources.id}"
   subnet_id            = "${azurerm_subnet.subnet_cleanair_datasources.id}"
   acr_login_server     = "${var.acr_login_server}"

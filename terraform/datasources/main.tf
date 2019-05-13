@@ -14,6 +14,8 @@ variable "keyvault_id" {}
 variable "location" {}
 variable "resource_group" {}
 
+variable "resource_group_db" {}
+
 variable "acr_login_server" {}
 
 variable "acr_admin_user" {}

@@ -27,7 +27,7 @@ resource "azurerm_key_vault_secret" "db_admin_password" {
 resource "azurerm_postgresql_server" "db_server" {
   name                = "${lower("${var.datasource}")}-server"
   location            = "${var.location}"
-  resource_group_name = "${var.resource_group}"
+  resource_group_name = "${var.resource_group_db}"
 
   sku {
     name     = "B_Gen5_2"
@@ -50,7 +50,7 @@ resource "azurerm_postgresql_server" "db_server" {
 
 resource "azurerm_postgresql_database" "postgres_database" {
   name                = "${lower("${var.datasource}")}_db"
-  resource_group_name = "${var.resource_group}"
+  resource_group_name = "${var.resource_group_db}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   charset             = "UTF8"
   collation           = "English_United States.1252"
@@ -58,7 +58,7 @@ resource "azurerm_postgresql_database" "postgres_database" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips" {
   name                = "allow-all-azure-ips"
-  resource_group_name = "${var.resource_group}"
+  resource_group_name = "${var.resource_group_db}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "0.0.0.0"
   end_ip_address      = "0.0.0.0"
@@ -66,7 +66,7 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips_desktop" {
   name                = "allow-turing-desktop-ips"
-  resource_group_name = "${var.resource_group}"
+  resource_group_name = "${var.resource_group_db}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "193.60.220.240"
   end_ip_address      = "193.60.220.240"
@@ -74,7 +74,7 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_desktop" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   name                = "allow-turing-wifi-ips"
-  resource_group_name = "${var.resource_group}"
+  resource_group_name = "${var.resource_group_db}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "193.60.220.253"
   end_ip_address      = "193.60.220.253"
