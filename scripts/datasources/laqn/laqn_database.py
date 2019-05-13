@@ -431,7 +431,7 @@ if __name__ == '__main__':
     logging.info("Connecting with connection string: {}".format(
         emp1(connection_string)))
 
-    engine = create_engine(connection_string, connect_args = dict('ssl_mode '= ssl_mode))
+    engine = create_engine(connection_string)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
