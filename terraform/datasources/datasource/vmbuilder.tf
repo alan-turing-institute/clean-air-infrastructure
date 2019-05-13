@@ -96,6 +96,7 @@ data "template_file" "update_application" {
     host = "${var.acr_login_server}"
     password = "${var.acr_admin_password}"
     username = "${var.acr_admin_user}"
+    datasource = "${var.datasource}"
   }
 
 }
