@@ -80,6 +80,7 @@ runcmd:
   - echo "*** Setting up automatic GitHub updates... ***"
   - chmod u+x /home/${username}/update_application.sh
   - echo "* * * * * ${username} /home/${username}/update_application.sh" >> /etc/crontab
+  - echo "0 * * * * ${username} /home/${username}/run_application.sh" >> /etc/crontab
 
   # Setup minimal Flask server
   - echo "*** Configuring Flask server... ***"

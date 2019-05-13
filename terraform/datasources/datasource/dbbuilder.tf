@@ -65,7 +65,7 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips" {
   end_ip_address      = "0.0.0.0"
 }
 
-resource "azurerm_postgresql_firewall_rule" "azure_ips" {
+resource "azurerm_postgresql_firewall_rule" "azure_ips_desktop" {
   name                = "allow-turing-desktop-ips"
   resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
@@ -73,7 +73,7 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips" {
   end_ip_address      = "193.60.220.240"
 }
 
-resource "azurerm_postgresql_firewall_rule" "azure_ips" {
+resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   name                = "allow-turing-wifi-ips"
   resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
