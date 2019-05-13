@@ -56,7 +56,6 @@ resource "azurerm_postgresql_database" "postgres_database" {
   collation           = "English_United States.1252"
 }
 
-# Allow access to server from azure resources (0.0.0.0 )
 resource "azurerm_postgresql_firewall_rule" "azure_ips" {
   name                = "allow-all-azure-ips"
   resource_group_name = "${var.resource_group}"
@@ -80,15 +79,3 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   start_ip_address    = "193.60.220.253"
   end_ip_address      = "193.60.220.253"
 }
-
-# Allow access to server from localhost (defined ib variables.tf)
-# HACK - using Turing IP for testing, should be changed to azure
-# resource "azurerm_postgresql_firewall_rule" "local_ips" {
-#   name                = "allow-localhost-ip"
-#   resource_group_name = "${var.resource_group}"
-#   server_name         = "${azurerm_postgresql_server.db_server.name}"
-#   start_ip_address    = "193.60.220.240"
-#   end_ip_address      = "193.60.220.240"
-# }
-
-
