@@ -101,8 +101,8 @@ data "template_file" "update_application" {
 
 }
 
-data "template_file" "run_application" {
-  template = "${file("${path.module}/github_webhook/provisioning/run_application.sh")}"
+data "template_file" "download_and_insert_data" {
+  template = "${file("${path.module}/github_webhook/provisioning/download_and_insert_data.sh")}"
 
   vars {
     host = "${var.acr_login_server}"
@@ -126,7 +126,7 @@ data "template_file" "github_webhook" {
     flask_webhook      = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_webhook.py")}")}"
     flask_wsgi         = "${indent(6, "${file("${path.module}/github_webhook/provisioning/flask_wsgi.py")}")}"
     update_application = "${indent(6, "${data.template_file.update_application.rendered}")}"
-    run_application = "${indent(6, "${data.template_file.run_application.rendered}")}"
+    download_and_insert_data = "${indent(6, "${data.template_file.download_and_insert_data.rendered}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/github_webhook/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.vm_github_secret.value}")}"
     db_secrets         = "${indent(6, "${data.template_file.db_secrets.rendered}")}"
