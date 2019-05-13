@@ -12,6 +12,8 @@ users:
   - name: ${username}
     lock_passwd: True
     sudo: False
+    groups: docker
+
 
 # List of packages to install with apt-get
 packages:
