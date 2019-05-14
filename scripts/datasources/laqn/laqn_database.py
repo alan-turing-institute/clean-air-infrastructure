@@ -442,6 +442,8 @@ if __name__ == '__main__':
     # # Update the laqn_sites database table
     update_site_list_table(session)
 
+
     # Update data in laqn reading table
+    today = str(datetime.today().date())
     update_reading_table(session, start_date='2019-01-01',
-                         end_date='2019-01-01')
+                         end_date=today)
