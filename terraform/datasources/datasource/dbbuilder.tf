@@ -44,7 +44,7 @@ resource "azurerm_postgresql_server" "db_server" {
 
   administrator_login          = "${local.admin_username}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
-  version                      = "9.5"
+  version                      = "9.6"
   ssl_enforcement              = "Enabled"
 }
 

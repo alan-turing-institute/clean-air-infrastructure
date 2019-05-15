@@ -5,8 +5,10 @@ import termcolor
 import json
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+import pdb
 
 from datetime import datetime, timedelta
 
@@ -16,9 +18,6 @@ logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
 
 
 ONE_DAY = timedelta(days=1)
-# DataBase specification
-Base = declarative_base()
-
 
 def emp1(text):
     return termcolor.colored(text, 'green')
@@ -89,7 +88,8 @@ def str_to_datetime(date_str):
 
 # Database functions
 
-
+# DataBase specification
+Base = declarative_base()
 class laqn_sites(Base):
     __tablename__ = 'laqn_sites'
 
@@ -102,6 +102,7 @@ class laqn_sites(Base):
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP)
     DateClosed = Column(TIMESTAMP)
+    geom = Column(Geometry(geometry_type = "POINT", srid = 4326, dimension = 2, spatial_index=True))
 
 
 class laqn_reading(Base):
@@ -125,14 +126,30 @@ def site_to_laqn_site_entry(site):
     "Create an laqn_sites entry"
     site_info = dict_clean(site)
 
-    return laqn_sites(SiteCode=site['@SiteCode'],
-                      la_id=site['@LocalAuthorityCode'],
-                      SiteType=site['@SiteType'],
-                      Latitude=site['@Latitude'],
-                      Longitude=site['@Longitude'],
-                      DateOpened=site['@DateOpened'],
-                      DateClosed=site['@DateClosed']
-                      )
+    # Hack to make geom = NULL if longitude and latitude dont exist
+    if (site['@Longitude'] == None) or (site['@Latitude'] == None):
+        out = laqn_sites(SiteCode=site['@SiteCode'],
+                    la_id=site['@LocalAuthorityCode'],
+                    SiteType=site['@SiteType'],
+                    Latitude=site['@Latitude'],
+                    Longitude=site['@Longitude'],
+                    DateOpened=site['@DateOpened'],
+                    DateClosed=site['@DateClosed']            
+                    )
+
+    else:    
+        geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
+        out = laqn_sites(SiteCode=site['@SiteCode'],
+                    la_id=site['@LocalAuthorityCode'],
+                    SiteType=site['@SiteType'],
+                    Latitude=site['@Latitude'],
+                    Longitude=site['@Longitude'],
+                    DateOpened=site['@DateOpened'],
+                    DateClosed=site['@DateClosed'] ,
+                    geom = geom_string          
+                    )     
+
+    return out
 
 
 def laqn_reading_entry(reading):
@@ -171,8 +188,7 @@ def update_site_list_table(session):
 
     # Check if database table is empty
     if len(site_info_query.all()) == 0:
-        logging.info("Database {} is empty. Inserting all entries".format(
-            emp1(dbname)))
+        logging.info("Database is empty. Inserting all entries")
         site_db_entries = create_sitelist(site_info)
         session.add_all(site_db_entries)
         session.commit()
@@ -195,6 +211,8 @@ def update_site_list_table(session):
                 site_entry = site_to_laqn_site_entry(site)
                 session.add(site_entry)
 
+                
+
             else:
 
                 site_data = site_info_query.filter(
@@ -208,13 +226,13 @@ def update_site_list_table(session):
                                                                           emp1(laqn_sites.__tablename__)))
 
                     site_data.DateClosed = site['@DateClosed']
-
+        
         logging.info("Committing any changes to database table {}".format(
             emp1(laqn_sites.__tablename__)))
         session.commit()
 
 
-def check_laqn_entry_exists(reading):
+def check_laqn_entry_exists(session, reading):
     "Check if an laqn entry already exists in the database"
     criteria = and_(laqn_reading.SiteCode == reading.SiteCode, laqn_reading.SpeciesCode ==
                     reading.SpeciesCode, laqn_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
@@ -239,7 +257,7 @@ def add_reading_entries(session, site_code, readings):
         # Check the entry doesn't exist in the database
         new_laqn_reading_entry = laqn_reading_entry(r)
 
-        if not check_laqn_entry_exists(new_laqn_reading_entry)[0]:
+        if not check_laqn_entry_exists(session, new_laqn_reading_entry)[0]:
             all_reading_entries.append(new_laqn_reading_entry)
         else:
             logging.warning(
@@ -367,10 +385,26 @@ def load_db_info():
 
     return data
 
+def load_db_info_local(secrets_fname):
+    "Return database login info on local machine"
+    
+
+
+    with open(secrets_fname) as f:
+        data = json.load(f)        
+    logging.info("local /.secrets folder found. Database connection information loaded")
+
+
+
+    return data
 
 def main():
 
-    db_info = load_db_info()
+    try:
+        db_info = load_db_info()
+    except FileNotFoundError:
+        db_info = load_db_info_local('scripts/datasources/laqn/.secrets/.secrets.json')
+
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
 
@@ -396,20 +430,20 @@ def main():
     session = Session()
 
     # DROP the table
-    # laqn_reading.__table__.drop(engine)
+    # laqn_sites.__table__.drop(engine)
+    # laqn_readings.__table__.drop(engine)
 
     # # Update the laqn_sites database table
     update_site_list_table(session)
 
 
-    # Update data in laqn reading table
-    today = str(datetime.today().date())
+    # # Update data in laqn reading table
+    # today = str(datetime.today().date())
     update_reading_table(session, start_date='2019-01-01',
                          end_date=today)
 
 
 if __name__ == '__main__':
-
     
-    # main()
-    pass
+    main()
+
