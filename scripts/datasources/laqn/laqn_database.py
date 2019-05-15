@@ -37,7 +37,7 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 
 def get_site_info():
-    """Get info on all laqn sites"""
+    "Get info on all laqn sites"
     
     r = requests.get(
         'http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json', timeout=5.)
@@ -49,7 +49,7 @@ def get_site_info():
 
 
 def get_site_reading(sitecode, start_date, end_date):
-    """Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"""
+    "Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"
 
     r = requests.get(
         'http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json'.format(sitecode,
@@ -63,7 +63,7 @@ def get_site_reading(sitecode, start_date, end_date):
 
 
 def drop_duplicates(data):
-    """If the data from the kcl api contains duplicates then drop them"""
+    "If the data from the kcl api contains duplicates then drop them"
 
     drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
 
@@ -113,24 +113,8 @@ class laqn_reading(Base):
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
-def get_db_password():
-    """Get the password for the db. This is stored in a .secrets/ directory"""
-
-    secrets_path = os.path.join(os.getcwd(), "terraform", ".secrets")
-
-    if os.path.isdir(secrets_path):
-
-        with open(os.path.join(secrets_path, 'laqn_server_pass.txt'), 'r') as f:
-
-            return f.read()
-
-    else:
-
-        raise OSError(".secrets/ directory does not exist")
-
-
 def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
-
+    "Create a postgres connection string"
     connection_string = 'postgresql://{}:{}@{}:{}/{}'.format(
         user, password, host, port, dbname)
 
@@ -138,7 +122,7 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 
 
 def site_to_laqn_site_entry(site):
-
+    "Create an laqn_sites entry"
     site_info = dict_clean(site)
 
     return laqn_sites(SiteCode=site['@SiteCode'],
@@ -152,7 +136,7 @@ def site_to_laqn_site_entry(site):
 
 
 def laqn_reading_entry(reading):
-
+    "Create an laqn_read entry"
     reading = dict_clean(reading)
 
     return laqn_reading(SiteCode=reading['@SiteCode'],
@@ -162,7 +146,7 @@ def laqn_reading_entry(reading):
 
 
 def create_sitelist(site_info):
-    """Return a list of laqn_site objects"""
+    "Return a list of laqn_site objects"
 
     all_sites = []
 
@@ -176,7 +160,7 @@ def create_sitelist(site_info):
 
 
 def update_site_list_table(session):
-    """Update the site info"""
+    "Update the site info"
 
     # # Update site info
     logging.info("Requesting site info from {}".format(emp1("kcl API")))
@@ -231,7 +215,7 @@ def update_site_list_table(session):
 
 
 def check_laqn_entry_exists(reading):
-
+    "Check if an laqn entry already exists in the database"
     criteria = and_(laqn_reading.SiteCode == reading.SiteCode, laqn_reading.SpeciesCode ==
                     reading.SpeciesCode, laqn_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
 
@@ -246,7 +230,7 @@ def check_laqn_entry_exists(reading):
 
 
 def add_reading_entries(session, site_code, readings):
-    """Pass a list of dictionaries for readings and put them into db"""
+    "Pass a list of dictionaries for readings and put them into db"
     all_reading_entries = []
     for r in readings:
 
@@ -265,7 +249,7 @@ def add_reading_entries(session, site_code, readings):
 
 
 def datetime_floor(dtime):
-    """Set the time to midnight for a given datetime"""
+    "Set the time to midnight for a given datetime"
     return datetime.combine(
         dtime, datetime.min.time())
 
@@ -364,7 +348,7 @@ def update_reading_table(session, start_date=None, end_date=None):
 
 
 def load_db_info():
-    """Check file system is accessable from docker and return database login info"""
+    "Check file system is accessable from docker and return database login info"
     
     check_secrets_exist = os.path.isdir('/.secrets/')
 
