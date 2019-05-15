@@ -438,9 +438,9 @@ def main():
 
 
     # # Update data in laqn reading table
-    # today = str(datetime.today().date())
-    update_reading_table(session, start_date='2019-01-01',
-                         end_date=today)
+    today =  datetime.today().date()
+    update_reading_table(session, start_date = str(today - ONE_DAY),
+                         end_date = str(today))
 
 
 if __name__ == '__main__':
