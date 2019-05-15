@@ -28,7 +28,7 @@ def emp2(text):
     return termcolor.colored(text, 'red')
 
 
-def connected_to_internet(url='http://www.google.com/', timeout=5):
+def connected_to_internet(url='http://www.google.com/', timeout=5):    
     try:
         _ = requests.get(url, timeout=timeout)
         return True
@@ -37,26 +37,19 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 
 def get_site_info():
-    """
-    Get info on all laqn sites
-    """
+    """Get info on all laqn sites"""
+    
     r = requests.get(
         'http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json', timeout=5.)
 
     if r.status_code == 200:
-
         site_list = r.json()['Sites']['Site']
 
         return site_list
 
 
 def get_site_reading(sitecode, start_date, end_date):
-    """
-    Request data for a given {sitecode} between {start_date} and {end_date}.
-
-    Dates given in %yyyy-mm-dd%
-
-    """
+    """Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"""
 
     r = requests.get(
         'http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json'.format(sitecode,
@@ -70,9 +63,7 @@ def get_site_reading(sitecode, start_date, end_date):
 
 
 def drop_duplicates(data):
-    """
-    If the data from the kcl api contains duplicates then drop them
-    """
+    """If the data from the kcl api contains duplicates then drop them"""
 
     drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
 
@@ -94,7 +85,6 @@ def dict_clean(dictionary):
 
 
 def str_to_datetime(date_str):
-
     return datetime.strptime(date_str, '%Y-%m-%d')
 
 # Database functions
@@ -124,9 +114,7 @@ class laqn_reading(Base):
 
 
 def get_db_password():
-    """
-    Get the password for the db. This is stored in a .secrets/ directory
-    """
+    """Get the password for the db. This is stored in a .secrets/ directory"""
 
     secrets_path = os.path.join(os.getcwd(), "terraform", ".secrets")
 
@@ -174,9 +162,7 @@ def laqn_reading_entry(reading):
 
 
 def create_sitelist(site_info):
-    """
-    Return a list of laqn_site objects
-    """
+    """Return a list of laqn_site objects"""
 
     all_sites = []
 
@@ -190,8 +176,7 @@ def create_sitelist(site_info):
 
 
 def update_site_list_table(session):
-    """
-    """
+    """Update the site info"""
 
     # # Update site info
     logging.info("Requesting site info from {}".format(emp1("kcl API")))
@@ -261,9 +246,7 @@ def check_laqn_entry_exists(reading):
 
 
 def add_reading_entries(session, site_code, readings):
-    """
-    Pass a list of dictionaries for readings and put them into db
-    """
+    """Pass a list of dictionaries for readings and put them into db"""
     all_reading_entries = []
     for r in readings:
 
@@ -288,8 +271,7 @@ def datetime_floor(dtime):
 
 
 def get_data_range(site, start_date, end_date):
-    """
-    Get the dates that data is available for a site between start_date and end_date
+    """Get the dates that data is available for a site between start_date and end_date
     If no data is available between these dates returns None
     """
 
@@ -404,13 +386,6 @@ def load_db_info():
 
 def main():
 
-    pass
-
-
-if __name__ == '__main__':
-
-    
-    # main()
     db_info = load_db_info()
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
@@ -447,3 +422,10 @@ if __name__ == '__main__':
     today = str(datetime.today().date())
     update_reading_table(session, start_date='2019-01-01',
                          end_date=today)
+
+
+if __name__ == '__main__':
+
+    
+    # main()
+    pass
