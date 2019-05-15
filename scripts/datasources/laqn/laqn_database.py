@@ -329,6 +329,8 @@ def update_reading_table(session, start_date=None, end_date=None):
     end_date: date to get data to. If None will get till today, or when site closed.
     """
 
+    logging.info("Attempting to download data between {} and {}".format(emp1(start_date), emp1(end_date)))
+
     site_info_query = session.query(laqn_sites)
     laqn_readings_query = session.query(laqn_reading)
 
@@ -428,9 +430,7 @@ if __name__ == '__main__':
                                                  password=db_password,
                                                  ssl_mode=ssl_mode)
 
-    logging.info("Connecting with connection string: {}".format(
-        emp1(connection_string)))
-
+   
     engine = create_engine(connection_string)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
