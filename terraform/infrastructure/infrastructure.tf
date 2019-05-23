@@ -88,3 +88,26 @@ output "keyvault_id" {
 output "boot_diagnostics_uri" {
   value = "${azurerm_storage_account.bootdiagnostics.primary_blob_endpoint}"
 }
+
+
+# Create azure container registry
+resource "azurerm_container_registry" "acr" {
+  name                     = "CleanAirContainerRegistry"
+  resource_group_name      = "${azurerm_resource_group.rg_infrastructure.name}"
+  location                 = "${var.location}"
+  sku                      = "Basic"
+  admin_enabled            = true
+}
+
+
+output "acr_login_server" {
+  value = "${azurerm_container_registry.acr.login_server}"
+}
+
+output "acr_admin_user" {
+  value = "${azurerm_container_registry.acr.admin_username}"
+}
+
+output "acr_admin_password" {
+  value = "${azurerm_container_registry.acr.admin_password}"
+}

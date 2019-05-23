@@ -20,4 +20,10 @@ variable "keyvault_id" {}
 variable "location" {}
 variable "nsg_id" {}
 variable "resource_group" {}
+
+variable "resource_group_db" {}
 variable "subnet_id" {}
+
+variable "acr_login_server" {}
+variable "acr_admin_user" {}
+variable "acr_admin_password" {}

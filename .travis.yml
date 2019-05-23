@@ -1,14 +1,10 @@
 language: python
 
-branches:
-  only:
-  - master
-
 services:
   - docker
 
 script:
-  - docker build -t cleanairtestcontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
+  - docker build -t cleanaircontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
 
 deploy:
   provider: script

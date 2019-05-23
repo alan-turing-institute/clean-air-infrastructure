@@ -9,3 +9,5 @@ terraform/config.tf
 
 # VS
 .vscode/
+
+*.secrets/
