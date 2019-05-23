@@ -2,16 +2,15 @@
 # NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
 resource "random_string" "db_password" {
   keepers = {
-    network_card = "${var.resource_group}"
+    resource_group = "${var.resource_group}"
   }
-
   length  = 16
   special = true
 }
 
 resource "random_string" "db_admin" {
   keepers = {
-    network_card = "${var.resource_group}"
+    resource_group = "${var.resource_group}"
   }
 
   length  = 16
