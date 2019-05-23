@@ -80,7 +80,7 @@ data "template_file" "apache_config" {
 }
 
 data "template_file" "db_secrets" {
-  template = "${file("${path.module}/github_webhook/provisioning/.db_secrets.json")}"
+  template = "${file("${path.module}/database_setup/provisioning/.db_secrets.json")}"
   vars {
     db_host = "${azurerm_postgresql_server.db_server.name}"
     db_name = "${azurerm_postgresql_database.postgres_database.name}"
