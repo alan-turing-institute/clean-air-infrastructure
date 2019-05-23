@@ -48,9 +48,9 @@ write_files:
       ${update_application}
 
   # Automatically run the docker image
-  - path: /home/${username}/download_and_insert_data.sh
+  - path: /home/${username}/run_application.sh
     content: |
-      ${download_and_insert_data}      
+      ${run_application}      
 
   # Add GitHub server as a known host
   - path: /home/${username}/.ssh/known_hosts
