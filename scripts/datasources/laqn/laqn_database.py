@@ -126,28 +126,20 @@ def site_to_laqn_site_entry(site):
     "Create an laqn_sites entry"
     site_info = dict_clean(site)
 
-    # Hack to make geom = NULL if longitude and latitude dont exist
-    if (site['@Longitude'] == None) or (site['@Latitude'] == None):
-        out = laqn_sites(SiteCode=site['@SiteCode'],
-                    la_id=site['@LocalAuthorityCode'],
-                    SiteType=site['@SiteType'],
-                    Latitude=site['@Latitude'],
-                    Longitude=site['@Longitude'],
-                    DateOpened=site['@DateOpened'],
-                    DateClosed=site['@DateClosed']            
-                    )
 
-    else:    
-        geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
-        out = laqn_sites(SiteCode=site['@SiteCode'],
-                    la_id=site['@LocalAuthorityCode'],
-                    SiteType=site['@SiteType'],
-                    Latitude=site['@Latitude'],
-                    Longitude=site['@Longitude'],
-                    DateOpened=site['@DateOpened'],
-                    DateClosed=site['@DateClosed'] ,
-                    geom = geom_string          
-                    )     
+    # Hack to make geom = NULL if longitude and latitude dont exist
+    kwargs = {}
+    if (site['@Longitude'] == None) or (site['@Latitude'] == None):
+       kwargs["geom_string"] = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude']) 
+    out = laqn_sites(SiteCode=site['@SiteCode'],
+                la_id=site['@LocalAuthorityCode'],
+                SiteType=site['@SiteType'],
+                Latitude=site['@Latitude'],
+                Longitude=site['@Longitude'],
+                DateOpened=site['@DateOpened'],
+                DateClosed=site['@DateClosed'],
+                **kwargs      
+    )
 
     return out
 
