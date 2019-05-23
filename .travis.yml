@@ -6,6 +6,10 @@ services:
 script:
   - docker build -t cleanaircontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
 
+  - echo "$TRAVIS_COMMIT"
+  - echo "$TRAVIS_BRANCH"
+  - echo "$TRAVIS_PULL_REQUEST_SHA"
+
 deploy:
   provider: script
   script: bash docker_push.sh
