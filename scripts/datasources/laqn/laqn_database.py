@@ -128,18 +128,27 @@ def site_to_laqn_site_entry(site):
 
 
     # Hack to make geom = NULL if longitude and latitude dont exist
-    kwargs = {}
     if (site['@Longitude'] == None) or (site['@Latitude'] == None):
-       kwargs["geom_string"] = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude']) 
-    out = laqn_sites(SiteCode=site['@SiteCode'],
-                la_id=site['@LocalAuthorityCode'],
-                SiteType=site['@SiteType'],
-                Latitude=site['@Latitude'],
-                Longitude=site['@Longitude'],
-                DateOpened=site['@DateOpened'],
-                DateClosed=site['@DateClosed'],
-                **kwargs      
-    )
+        out = laqn_sites(SiteCode=site['@SiteCode'],
+                    la_id=site['@LocalAuthorityCode'],
+                    SiteType=site['@SiteType'],
+                    Latitude=site['@Latitude'],
+                    Longitude=site['@Longitude'],
+                    DateOpened=site['@DateOpened'],
+                    DateClosed=site['@DateClosed']            
+                    )
+
+    else:    
+        geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
+        out = laqn_sites(SiteCode=site['@SiteCode'],
+                    la_id=site['@LocalAuthorityCode'],
+                    SiteType=site['@SiteType'],
+                    Latitude=site['@Latitude'],
+                    Longitude=site['@Longitude'],
+                    DateOpened=site['@DateOpened'],
+                    DateClosed=site['@DateClosed'] ,
+                    geom = geom_string          
+                    ) 
 
     return out
 
@@ -392,10 +401,17 @@ def load_db_info_local(secrets_fname):
 
 def main():
 
-    try:
-        db_info = load_db_info()
-    except FileNotFoundError:
-        db_info = load_db_info_local('scripts/datasources/laqn/.secrets/.secrets.json')
+    # try:
+    #     db_info = load_db_info()
+    # except FileNotFoundError:
+    #     db_info = load_db_info_local('scripts/datasources/laqn/.secrets/.secrets.json')
+
+    db_info = dict(host = "testkuber123.postgres.database.azure.com",
+                    port = 5432,
+                    db_name = "test_db", 
+                    username = "ati@testkuber123",
+                    ssl_mode = "require",
+                    password = "Password1" )
 
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
@@ -434,6 +450,7 @@ def main():
     update_reading_table(session, start_date = str(today - ONE_DAY),
                          end_date = str(today))
 
+    logging.info("LAQN jobs finished")
 
 if __name__ == '__main__':
     

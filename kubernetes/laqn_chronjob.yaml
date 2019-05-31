@@ -1,0 +1,18 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: laqn
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: laqn
+            image: kubertest123.azurecr.io/laqn:latest
+            imagePullPolicy: "Always"
+          imagePullSecrets:
+            - name: regcred
+
+          restartPolicy: OnFailure
