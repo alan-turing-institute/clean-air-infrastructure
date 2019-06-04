@@ -28,8 +28,10 @@ parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4
 # parser.add_argument("-a", "--azure-group-id", type=str, default="09af71ca-7b8f-4a19-94a4-3da19ea84b48", help="ID of an Azure group which contains all project developers. Default is Turing's 'Research Staff - Members' group.") # NB. this is not working
 args = parser.parse_args()
 
+
 def emphasised(text):
     return termcolor.colored(text, 'green')
+
 
 def build_backend():
     # Get subscription
@@ -90,10 +92,7 @@ def build_backend():
         'variable "diagnostics_storage_uri" {',
         '    default = "{}"'.format(args.azure_group_id),
         '}',
-
-        # storage_uri = "${azurerm_storage_account.cleanair_storageaccount.primary_blob_endpoint}"
-
-        ]
+    ]
 
     # Write Terraform backend config
     filepath = os.path.join("terraform", "config.tf")

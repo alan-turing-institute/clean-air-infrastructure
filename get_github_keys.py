@@ -13,8 +13,10 @@ logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r
 logging.getLogger("adal-python").setLevel(logging.WARNING)
 logging.getLogger("azure").setLevel(logging.WARNING)
 
+
 def emphasised(text):
     return termcolor.colored(text, 'green')
+
 
 def get_keys(datasource, rg_name="RG_CLEANAIR_DATASOURCES", rg_kv="RG_CLEANAIR_INFRASTRUCTURE"):
     # Construct resource names
