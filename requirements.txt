@@ -1,3 +1,9 @@
 azure
 azure-cli-core
+geoalchemy2
+pycodestyle
+pyflakes
+pylint
+requests
+sqlalchemy
 termcolor
