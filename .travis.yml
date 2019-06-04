@@ -11,7 +11,7 @@ script:
   # Check PEP8 compliance (ignoring long lines)
   - pycodestyle --statistics --ignore=E501 --count *.py scripts #tests
   # Run pylint for stricter error checking
-  - pylint scripts/datasources/* #tests
+  - pylint *py scripts/datasources/* #tests
 
   # Build docker images
   - docker build -t cleanaircontainerregistry.azurecr.io/laqn:latest scripts/datasources/laqn/.
