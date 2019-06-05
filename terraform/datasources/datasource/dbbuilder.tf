@@ -1,8 +1,15 @@
+locals {
+  admin_username = "atiadmin_${var.datasource}"
+
+    version   = "latest"
+  }
+
+
 # Generate random strings that persist for the lifetime of the resource group
 # NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
 resource "random_string" "db_password" {
   keepers = {
-    resource_group = "${var.resource_group}"
+    resource_group = "${var.resource_group_db}"
   }
   length  = 16
   special = true
@@ -10,12 +17,14 @@ resource "random_string" "db_password" {
 
 resource "random_string" "db_admin" {
   keepers = {
-    resource_group = "${var.resource_group}"
+    resource_group = "${var.resource_group_db}"
   }
 
   length  = 16
   special = true
 }
+
+
 
 resource "azurerm_key_vault_secret" "db_admin_password" {
   name         = "${var.datasource}-db-admin-password"
@@ -30,7 +39,7 @@ resource "azurerm_postgresql_server" "db_server" {
 
   sku {
     name     = "B_Gen5_2"
-    capacity = 2
+    capacity = 1
     tier     = "Basic"
     family   = "Gen5"
   }
@@ -78,3 +87,10 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   start_ip_address    = "193.60.220.253"
   end_ip_address      = "193.60.220.253"
 }
+
+
+
+# resource "local_file" "database_secrets" {
+#     sensitive_content     = "asd\nsaasd\n"
+#     filename = "/var/tmp/.secrets/.${lower("${var.datasource}")}_secret.json"
+# }

@@ -9,18 +9,6 @@ resource "azurerm_resource_group" "rg_infrastructure" {
 }
 
 # Generate a random string that persists for the lifetime of the resource group
-resource "random_string" "lower_case_letters_bootdiagnostics" {
-  keepers = {
-    resource_group = "${azurerm_resource_group.rg_infrastructure.name}"
-  }
-
-  length  = 9
-  number  = false
-  special = false
-  upper   = false
-}
-
-# Generate a random string that persists for the lifetime of the resource group
 resource "random_string" "lower_case_letters_keyvaultname" {
   keepers = {
     resource_group = "${azurerm_resource_group.rg_infrastructure.name}"
@@ -67,28 +55,10 @@ resource "azurerm_key_vault" "kvcleanairpasswords" {
   }
 }
 
-# Create storage account for boot diagnostics
-resource "azurerm_storage_account" "bootdiagnostics" {
-  name                     = "bootdiagnostics${random_string.lower_case_letters_bootdiagnostics.result}"
-  resource_group_name      = "${azurerm_resource_group.rg_infrastructure.name}"
-  location                 = "${var.location}"
-  account_replication_type = "LRS"
-  account_tier             = "Standard"
-
-  tags {
-    environment = "Terraform Clean Air"
-  }
-}
-
 # Provide outputs which are useful to later Terraform scripts
 output "keyvault_id" {
   value = "${azurerm_key_vault.kvcleanairpasswords.id}"
 }
-
-output "boot_diagnostics_uri" {
-  value = "${azurerm_storage_account.bootdiagnostics.primary_blob_endpoint}"
-}
-
 
 # Create azure container registry
 resource "azurerm_container_registry" "acr" {
@@ -99,11 +69,9 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled            = true
 }
 
-
 output "acr_login_server" {
   value = "${azurerm_container_registry.acr.login_server}"
 }
-
 output "acr_admin_user" {
   value = "${azurerm_container_registry.acr.admin_username}"
 }
