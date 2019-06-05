@@ -11,3 +11,4 @@ terraform/config.tf
 .vscode/
 
 *.secrets/
+*.tgz
