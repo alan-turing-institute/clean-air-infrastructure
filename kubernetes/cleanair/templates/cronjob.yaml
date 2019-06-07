@@ -1,3 +1,4 @@
+
 {{- $chart_name := .Chart.Name }}
 {{- $chart_version := .Chart.Version | replace "+" "_" }}
 {{- $release_name := .Release.Name }}
@@ -25,9 +26,9 @@ spec:
           - image: "{{ $job.image.repository }}:{{ $job.image.tag }}"
             imagePullPolicy: {{ $job.image.imagePullPolicy }}
             name: {{ $job.name }}
-            imagePullSecrets:
-              - name: {{ $job.image.imagePullSecret }}
             {{- with $job.env }}
+            imagePullSecrets:
+            - name: regcred
             env:
 {{ toYaml . | indent 12 }}
             {{- end }}
@@ -47,25 +48,22 @@ spec:
             {{- end }}
               {{- end }}
           {{- with $job.nodeSelector }}
-            nodeSelector:
+          nodeSelector:
 {{ toYaml . | indent 12 }}
           {{- end }}
           {{- with $job.affinity }}
-            affinity:
+          affinity:
 {{ toYaml . | indent 12 }}
-            {{- end }}
-            {{- with $job.tolerations }}
-            tolerations:
+          {{- end }}
+          {{- with $job.tolerations }}
+          tolerations:
 {{ toYaml . | indent 12 }}
-            {{- end }}
-            restartPolicy: {{ $job.restartPolicy }}
-            {{- with $job.volumes }}
-            volumes:
+          {{- end }}
+          restartPolicy: {{ $job.restartPolicy }}
+          {{- with $job.volumes }}
+          volumes:
 {{ toYaml . | indent 12 }}
           {{- end }}
   schedule: {{ $job.schedule | quote }}
   successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit }}
 {{- end }}
-
-      
-        

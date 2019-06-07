@@ -2,10 +2,9 @@ jobs:
   # first cron
   - name: laqn
     image:
-      repository: cleanairtesting.azurecr.io/laqn
+      repository: cleanaircontainerregistry.azurecr.io/laqn
       tag: latest
       pullPolicy: Always
-      imagePullSecret: regcred
     schedule: "* * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3

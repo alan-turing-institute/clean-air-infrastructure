@@ -151,6 +151,8 @@ Start the cluster dashboard with:
 minikube dashboard
 ```
 
+Next install [helm](https://helm.sh/docs/using_helm/). 
+
 ### Adding secrets
 
 The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the kubernetes cluster. 
