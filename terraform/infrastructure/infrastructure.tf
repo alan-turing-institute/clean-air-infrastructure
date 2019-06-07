@@ -69,6 +69,13 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled            = true
 }
 
+resource "local_file" "regcred" {
+    sensitive_content     = "${azurerm_container_registry.acr.login_server}\n${azurerm_container_registry.acr.admin_username}\n${azurerm_container_registry.acr.admin_password}"
+    filename = "${path.cwd}/.secrets/.regred_secret.json"
+}
+
+
+
 output "acr_login_server" {
   value = "${azurerm_container_registry.acr.login_server}"
 }
@@ -79,3 +86,4 @@ output "acr_admin_user" {
 output "acr_admin_password" {
   value = "${azurerm_container_registry.acr.admin_password}"
 }
+

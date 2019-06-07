@@ -39,7 +39,7 @@ resource "azurerm_postgresql_server" "db_server" {
 
   sku {
     name     = "B_Gen5_2"
-    capacity = 1
+    capacity = 2
     tier     = "Basic"
     family   = "Gen5"
   }
@@ -90,7 +90,17 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
 
 
 
-# resource "local_file" "database_secrets" {
-#     sensitive_content     = "asd\nsaasd\n"
-#     filename = "/var/tmp/.secrets/.${lower("${var.datasource}")}_secret.json"
-# }
+data "template_file" "database_secrets" {
+  template = "${file("${path.module}/database_setup/provisioning/.db_secrets.json")}"
+  vars {
+    db_host = "${azurerm_postgresql_server.db_server.name}"
+    db_name = "${azurerm_postgresql_database.postgres_database.name}"
+    db_username = "${azurerm_postgresql_server.db_server.administrator_login}"
+    db_password = "${azurerm_key_vault_secret.db_admin_password.value}"
+  }
+}
+
+resource "local_file" "database_secrets_file" {
+    sensitive_content     = "${data.template_file.database_secrets.rendered}"
+    filename = "${path.cwd}/.secrets/.${lower("${var.datasource}")}_secret.json"
+}

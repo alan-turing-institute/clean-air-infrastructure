@@ -121,7 +121,7 @@ ssh atiadmin@{vm_public_ip}
 
 replacing {vm_public_ip} with the public IP address that you previously obtained.
 
-### Destroy the VM and all resources
+### Destroy all resources
 
 To destroy all the resources created in the previous step run:
 
@@ -135,6 +135,34 @@ You can check everything was removed on the Azure portal.
 ## Configuring CI pipeline
 To add the Azure container registry (ACR) login details to Travis, navigate to the Azure portal and find the ACR username and password. Navigate to Travis repository -> settings and add these as environment variables: ACR_USERNAME ACR_PASSWORD 
 
+## Configure local Kubernetes Cluster:
 
+Install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) on your machine 
+
+
+To start the cluster run: 
+```
+minikube start
+```
+
+Start the cluster dashboard with:
+
+```
+minikube dashboard
+```
+
+### Adding secrets
+
+The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the kubernetes cluster. 
+
+```
+kubectl create secret docker-registry regcred --docker-server=<servername> --docker-username=<username>--docker-password=<password> --docker-email=<your-email>
+```
+
+Next create a secret for each database secret file:
+
+```
+kubectl create secret generic <datasource>cred --from-file=<file>
+```
 
 
