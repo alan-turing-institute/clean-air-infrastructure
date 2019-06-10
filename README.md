@@ -168,3 +168,9 @@ kubectl create secret generic <datasource>cred --from-file=<file>
 ```
 
 
+### Helm Cheatsheet
+
+To see the rendered manifest file:
+```
+helm install cleanair --dry-run --debug
+```

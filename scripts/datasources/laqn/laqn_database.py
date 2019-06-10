@@ -368,50 +368,31 @@ def update_reading_table(session, start_date=None, end_date=None):
 
 def load_db_info():
     "Check file system is accessable from docker and return database login info"
-    
-    check_secrets_exist = os.path.isdir('/.secrets/')
+    import glob
+
+    check_secrets_exist = os.path.isdir('/secrets/laqncred/')
+
+    print(glob.glob('/secrets/laqncred/', recursive=True))
 
     if not check_secrets_exist:
-        logging.error("/.secrets folder does not exist")
-        raise FileNotFoundError("/.secrets folder does not exist")
+        logging.error("/secrets folder does not exist")
+        raise FileNotFoundError("/secrets folder does not exist")
 
     try:
-        with open("/.secrets/secrets.json") as f:
+        with open("/secrets/laqncred/.laqn_secret.json") as f:
             data = json.load(f)        
-        logging.info("/.secrets folder found. Database connection information loaded")
+        logging.info("/secrets folder found. Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error("/.secrets folder not found. Check docker bindmount")
+        logging.error("/secrets folder not found. Check docker bindmount")
         raise FileNotFoundError
 
     return data
 
-def load_db_info_local(secrets_fname):
-    "Return database login info on local machine"
-    
-
-
-    with open(secrets_fname) as f:
-        data = json.load(f)        
-    logging.info("local /.secrets folder found. Database connection information loaded")
-
-
-
-    return data
 
 def main():
 
-    # try:
-    #     db_info = load_db_info()
-    # except FileNotFoundError:
-    #     db_info = load_db_info_local('scripts/datasources/laqn/.secrets/.secrets.json')
-
-    db_info = dict(host = "testkuber123.postgres.database.azure.com",
-                    port = 5432,
-                    db_name = "test_db", 
-                    username = "ati@testkuber123",
-                    ssl_mode = "require",
-                    password = "Password1" )
+    db_info = load_db_info()
 
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))

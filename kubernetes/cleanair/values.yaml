@@ -4,9 +4,13 @@ jobs:
     image:
       repository: cleanaircontainerregistry.azurecr.io/laqn
       tag: latest
-      pullPolicy: Always
+      imagePullPolicy: Always
     schedule: "* * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
+    volumes:
+    - name: laqncred
+      secret:
+        secretName: laqncred
