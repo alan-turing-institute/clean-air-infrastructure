@@ -5,6 +5,7 @@ import termcolor
 import json
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.sql import text
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -389,6 +390,11 @@ def load_db_info():
 
     return data
 
+def install_gis(engine):
+    logging.info("Ensuring postgis extention installed")
+    connection = engine.connect()
+    connection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+    connection.close()
 
 def main():
 
@@ -417,6 +423,9 @@ def main():
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
+
+    # Ensure GIS installed
+    install_gis(engine)
 
     # DROP the table
     # laqn_sites.__table__.drop(engine)

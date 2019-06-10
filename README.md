@@ -99,6 +99,13 @@ terraform apply
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
+## Adding PostGIS to databases
+
+Some databases require the postgis extention to be installed on the database. Connect to the database and run
+
+```
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
 
 ## Accessing the Clean Air infrastructure
 At this point, the LAQN virtual machine should be spun up and be viewable on the portal.
