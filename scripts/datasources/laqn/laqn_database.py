@@ -1,3 +1,6 @@
+"""
+Get data from the LAQN network via the API maintained by Kings Colleage London (https://www.londonair.org.uk/Londonair/API/)
+"""
 import argparse
 import requests
 import os
@@ -13,12 +16,6 @@ from sqlalchemy.ext.declarative import declarative_base
 import pdb
 
 from datetime import datetime, timedelta
-
-
-logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                    datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-
-
 
 def days(d):
     "Time delta in days"
@@ -255,6 +252,7 @@ def check_laqn_entry_exists(session, reading):
 
 def add_reading_entries(session, site_code, readings):
     "Pass a list of dictionaries for readings and put them into db"
+
     all_reading_entries = []
     for r in readings:
 
@@ -266,8 +264,8 @@ def add_reading_entries(session, site_code, readings):
         if not check_laqn_entry_exists(session, new_laqn_reading_entry)[0]:
             all_reading_entries.append(new_laqn_reading_entry)
         else:
-            logging.warning(
-                "Entry for {} exists in database".format(emp2(site_code)))
+            logging.debug(
+                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(emp2(site_code), emp2(r['@MeasurementDateGMT']), emp2(r['@SpeciesCode'])))
 
     session.add_all(all_reading_entries)
 
@@ -311,7 +309,7 @@ def get_data_range(site, start_date, end_date):
         return (get_data_from, get_data_to)
 
 
-def update_reading_table(session, start_date=None, end_date=None):
+def update_reading_table(session, start_date=None, end_date=None, force = False):
     """
     Add missing reading data to the database
 
@@ -348,8 +346,9 @@ def update_reading_table(session, start_date=None, end_date=None):
             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
-            # If no database entries for that date try to get them
-            if len(readings_in_db) == 0:
+            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
+            # If the date is not today and the force flag is not True assumes the data is in the database and does not attempt to get it
+            if (len(readings_in_db) == 0) or (datetime.today().date() == date.date()) or (force):
 
                 logging.info("Getting data for site {} for date: {}".format(
                     emp2(site.SiteCode), emp2(date_range[i].date())))
@@ -361,12 +360,13 @@ def update_reading_table(session, start_date=None, end_date=None):
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
-                    logging.warning("Request for data for {} between dates {} and {} failed".format(
+                    logging.info("Request for data for {} between dates {} and {} failed".format(
                         site.SiteCode, date, (date + days(1)).date()))
-
+          
             else:
-                logging.info("Data already in db for site {} for date: {}".format(
-                    emp2(site.SiteCode), emp2(date_range[i].date())))
+
+                logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
+                emp2(site.SiteCode), emp2(date_range[i].date())))     
 
         session.commit()
 
@@ -417,7 +417,19 @@ def process_args():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-n", "--ndays", type=int, help="The number of days to request data for. ndays=1 will get today (from midnight)")
     group.add_argument("-s", "--start", type=str, help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")  
+    parser.add_argument('-f', "--force", action="store_true", help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
+    parser.add_argument("-d", "--debug", action="store_true", help="Set the logger level to debug")
     args = parser.parse_args()
+
+
+    if args.debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                    datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
+  
 
 
     # Set the end date
@@ -434,13 +446,13 @@ def process_args():
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59")))
+    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
 
-    return args.start, args.end
+    return args.start, args.end, args.force
 
 def main():
 
-    start_date, end_date = process_args()
+    start_date, end_date, force = process_args()
 
     db_info = load_db_info()
 
@@ -462,7 +474,6 @@ def main():
                                                  password=db_password,
                                                  ssl_mode=ssl_mode)
 
-   
     engine = create_engine(connection_string)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
@@ -478,7 +489,7 @@ def main():
 
     # # Update data in laqn reading table
     update_reading_table(session, start_date = str(start_date),
-                         end_date = str(end_date))
+                         end_date = str(end_date), force = force)
 
     logging.info("LAQN jobs finished")
 
