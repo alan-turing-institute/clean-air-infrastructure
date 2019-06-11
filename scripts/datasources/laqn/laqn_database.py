@@ -18,7 +18,10 @@ logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
 
-ONE_DAY = timedelta(days=1)
+
+def days(d):
+    "Time delta in days"
+    return timedelta(days = d)
 
 def emp1(text):
     return termcolor.colored(text, 'green')
@@ -342,7 +345,7 @@ def update_reading_table(session, start_date=None, end_date=None):
 
             # Query readings in the database for this date ignoring species
             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
-                and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + ONE_DAY)).all()
+                and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
             # If no database entries for that date try to get them
             if len(readings_in_db) == 0:
@@ -351,14 +354,14 @@ def update_reading_table(session, start_date=None, end_date=None):
                     emp2(site.SiteCode), emp2(date_range[i].date())))
 
                 d = get_site_reading(site.SiteCode, str(
-                    date.date()), str((date + ONE_DAY).date()))
+                    date.date()), str((date + days(1)).date()))
 
                 if d is not None:
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
                     logging.warning("Request for data for {} between dates {} and {} failed".format(
-                        site.SiteCode, date, (date + ONE_DAY).date()))
+                        site.SiteCode, date, (date + days(1)).date()))
 
             else:
                 logging.info("Data already in db for site {} for date: {}".format(
@@ -371,23 +374,36 @@ def load_db_info():
     "Check file system is accessable from docker and return database login info"
     import glob
 
-    check_secrets_exist = os.path.isdir('/secrets/laqncred/')
+    mount_dir = '/secrets/laqncred/'
+    local_dir = './terraform/.secrets/'
+    secret_file = '.laqn_secret.json'
 
-    print(glob.glob('/secrets/laqncred/', recursive=True))
+    # Check if the following directories exist
+    check_secrets_mount = os.path.isdir(mount_dir)
+    check_local_dir = os.path.isdir(local_dir)
 
-    if not check_secrets_exist:
-        logging.error("/secrets folder does not exist")
-        raise FileNotFoundError("/secrets folder does not exist")
+    secret_fname = None
+    if check_secrets_mount:
+        logging.info("{} is mounted".format(mount_dir))
+        secret_fname = os.path.join(mount_dir, secret_file)
 
+    elif check_local_dir:
+        logging.info("{} exists locally".format(check_local_dir))
+        secret_fname = os.path.join(local_dir, secret_file)
+
+    else:
+        raise FileNotFoundError("Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
+
+    
     try:
-        with open("/secrets/laqncred/.laqn_secret.json") as f:
+        with open(secret_fname) as f:
             data = json.load(f)        
-        logging.info("/secrets folder found. Database connection information loaded")
+        logging.info("Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error("/secrets folder not found. Check docker bindmount")
+        logging.error("Database secrets could not be found. Ensure secret_file exists")
         raise FileNotFoundError
-
+  
     return data
 
 def main():
@@ -428,7 +444,7 @@ def main():
 
     # # Update data in laqn reading table
     today =  datetime.today().date()
-    update_reading_table(session, start_date = str(today - ONE_DAY),
+    update_reading_table(session, start_date = str(today - days(1)),
                          end_date = str(today))
 
     logging.info("LAQN jobs finished")
