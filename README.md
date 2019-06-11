@@ -181,3 +181,13 @@ To see the rendered manifest file:
 ```
 helm install cleanair --dry-run --debug
 ```
+
+## Data Source docker files
+
+Datasources consist of a docker image which collect data from an API and store them in a database. These images are stored in an Azure Container Registry and are pulled by the Kubernetes cluster. However, it may be useful to run these locally on occasion:
+
+The following command runs the laqn docker image and mounts the secrets file to the correct location in the container. 
+
+```
+docker run -v <localdirectorycontaininglaqnsecretfile>:/secrets/laqncred/ <laqnimage>
+```

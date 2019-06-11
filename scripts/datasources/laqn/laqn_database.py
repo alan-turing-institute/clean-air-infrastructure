@@ -347,8 +347,8 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
-            # If the date is not today and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or (datetime.today().date() == date.date()) or (force):
+            # If the date is not today or and the force flag is not True assumes the data is in the database and does not attempt to get it
+            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()) < 1) or (force):
 
                 logging.info("Getting data for site {} for date: {}".format(
                     emp2(site.SiteCode), emp2(date_range[i].date())))
@@ -414,8 +414,8 @@ def process_args():
     parser = argparse.ArgumentParser(description='Get LAQN data from the KCL API')
 
     parser.add_argument("-e", "--end", type=str, default="today", help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-n", "--ndays", type=int, help="The number of days to request data for. ndays=1 will get today (from midnight)")
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for. ndays=1 will get today (from midnight)")
     group.add_argument("-s", "--start", type=str, help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")  
     parser.add_argument('-f', "--force", action="store_true", help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
     parser.add_argument("-d", "--debug", action="store_true", help="Set the logger level to debug")
