@@ -347,8 +347,8 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
-            # If the date is not today or and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()) < 1) or (force):
+            # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
+            if (len(readings_in_db) == 0) or ( (datetime.today().date() - date.date() ).days < 2) or (force):
 
                 logging.info("Getting data for site {} for date: {}".format(
                     emp2(site.SiteCode), emp2(date_range[i].date())))
