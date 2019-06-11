@@ -1,3 +1,4 @@
+import argparse
 import requests
 import os
 import logging
@@ -406,7 +407,40 @@ def load_db_info():
   
     return data
 
+
+def process_args():
+
+    # Read command line arguments
+    parser = argparse.ArgumentParser(description='Get LAQN data from the KCL API')
+
+    parser.add_argument("-e", "--end", type=str, default="today", help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-n", "--ndays", type=int, help="The number of days to request data for. ndays=1 will get today (from midnight)")
+    group.add_argument("-s", "--start", type=str, help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")  
+    args = parser.parse_args()
+
+
+    # Set the end date
+    if args.end == 'today':
+        args.end = datetime.today().date()
+    else:
+        args.end = datetime.strptime(args.end, "%Y-%m-%d").date()
+
+    # Set the start date
+    if args.ndays is not None:
+        if args.ndays < 1:
+            raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
+        args.start = args.end - days(args.ndays - 1)
+    else:
+        args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
+
+    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59")))
+
+    return args.start, args.end
+
 def main():
+
+    start_date, end_date = process_args()
 
     db_info = load_db_info()
 
@@ -443,13 +477,14 @@ def main():
 
 
     # # Update data in laqn reading table
-    today =  datetime.today().date()
-    update_reading_table(session, start_date = str(today - days(1)),
-                         end_date = str(today))
+    update_reading_table(session, start_date = str(start_date),
+                         end_date = str(end_date))
 
     logging.info("LAQN jobs finished")
 
+
 if __name__ == '__main__':
+    
     
     main()
 
