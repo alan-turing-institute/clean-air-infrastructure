@@ -74,8 +74,6 @@ resource "local_file" "regcred" {
     filename = "${path.cwd}/.secrets/.regred_secret.json"
 }
 
-
-
 output "acr_login_server" {
   value = "${azurerm_container_registry.acr.login_server}"
 }

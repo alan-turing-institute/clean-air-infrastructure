@@ -66,8 +66,9 @@ def get_forecast(API_KEY, latitude, longitude, time = None):
     if r.status_code == 200:        
         # Do some processing
         # Ensure timezone is correct
+        data = out.json() # Retrieve the data
 
-        return r
+        return data
 
 
 def get_site_reading(sitecode, start_date, end_date):
