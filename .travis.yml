@@ -5,7 +5,14 @@ services:
 
 script:
   # Ensure we build every docker image
+
+  # Datasources
   - docker build -t "$ACR_SERVER"/laqn:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/laqn/.
+  - docker build -t "$ACR_SERVER"/AQE:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/AQE/.
+  - docker build -t "$ACR_SERVER"/darksky:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/darksky/.
+  - docker build -t "$ACR_SERVER"/ECMWF:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/ECMWF/.
+
+  # Push to ACR
   - bash docker_push.sh
 
     

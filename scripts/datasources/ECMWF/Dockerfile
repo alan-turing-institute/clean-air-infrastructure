@@ -11,5 +11,5 @@ COPY . /app
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Run app.py when the container launches
-CMD ["python", "darksky_database.py"]
+CMD ["python", "ECMWF_database.py"]
 

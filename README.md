@@ -171,6 +171,8 @@ terraform destroy
 
 You can check everything was removed on the Azure portal.
 
+Then login to TravisCI and delete the Azure Container repo environment variables. 
+
 
 <!-- ## Configuring CI pipeline
 To add the Azure container registry (ACR) login details to Travis, navigate to the Azure portal and find the ACR username and password. Navigate to Travis repository -> settings and add these as environment variables: ACR_USERNAME ACR_PASSWORD  -->
