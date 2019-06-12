@@ -18,11 +18,11 @@ jobs:
 
 deployments:
   # First deployment
-  - name: API-deployment
-    label: API
+  - name: api-deployment
+    label: api
     replicas: 2
     image:
-      repository: cleanaircontainerregistry.azurecr.io/API
+      repository: cleanaircontainerregistry.azurecr.io/api
       tag: latest
       imagePullPolicy: Always
     ports:
