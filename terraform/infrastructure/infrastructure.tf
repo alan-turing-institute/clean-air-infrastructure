@@ -67,12 +67,24 @@ resource "azurerm_container_registry" "acr" {
   location                 = "${var.location}"
   sku                      = "Basic"
   admin_enabled            = true
+
+  provisioner "local-exec" {
+    command = "travis env set ACR_SERVER ${azurerm_container_registry.acr.login_server} --private"
+  }
+  provisioner "local-exec" {
+    command = "travis env set ACR_USERNAME ${azurerm_container_registry.acr.admin_username} --private"
+  }
+  provisioner "local-exec" {
+    command = "travis env set ACR_PASSWORD ${azurerm_container_registry.acr.admin_password} --private"
+  }
 }
 
+# Write the container registry secrets to file
 resource "local_file" "regcred" {
     sensitive_content     = "${azurerm_container_registry.acr.login_server}\n${azurerm_container_registry.acr.admin_username}\n${azurerm_container_registry.acr.admin_password}"
     filename = "${path.cwd}/.secrets/.regred_secret.json"
 }
+
 
 output "acr_login_server" {
   value = "${azurerm_container_registry.acr.login_server}"

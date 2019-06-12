@@ -25,6 +25,31 @@ The Azure infrastructure is managed with `Terraform`. To get started [download `
 brew install terraform
 ```
 
+### Travis CI CLI
+ Ensure you have Ruby installed:
+```
+ruby -v
+```
+
+Then install the Travis CI CLI with:
+
+```
+gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
+```
+
+Verify with
+```
+travis version
+```
+
+If this fails ensure Gems user_dir is on the path:
+
+```
+cat << EOF >> ~/.bash_profile
+export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
+EOF
+```
+
 ## Getting started
 The following steps are needed to setup the Clean Air cloud infrastructure.
 
@@ -46,6 +71,14 @@ Then set your default subscription to the Clean Air project (if you cannot see i
 
 ```
 az account set --subscription "Azure project allocation for LRF Clean Air project"
+```
+
+### Login to Travis CLI 
+
+Login to travis with your github credentials, making sure you are in the clean air repository (travis automatically detects your repository):
+
+```
+travis login --pro
 ```
 
 ### Setup Terraform with Python
