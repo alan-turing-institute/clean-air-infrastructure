@@ -12,6 +12,61 @@ metadata:
   name: "{{ $release_name }}-{{ $deployment.name }}"
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
+    app: {{ $deployment.name }}
+spec:
+  replicas: {{ $deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $deployment.name }}
+    spec:
+      containers:
+      - image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+        imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
+        name: {{ $deployment.name }}
+        ports:
+          - containerPort: {{ $deployment.ports.containerPort }}
+      imagePullSecrets:
+          - name: regcred
 
+            {{- with $deployment.env }}            
+            env:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+            {{- if $deployment.command }}
+            command: {{ $deployment.command }}
+            {{- end }}
+            {{- with $deployment.args }}
+            args:
+{{ toYaml . | indent 12 }}
+            {{- with $deployment.resources }}
+            resources:
+{{ toYaml . | indent 14 }}
+            {{- end }}
+            {{- with $deployment.volumeMounts }}
+            volumeMounts:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+              {{- end }}
+          {{- with $deployment.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $deployment.affinity }}
+          affinity:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $deployment.tolerations }}
+          tolerations:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          restartPolicy: {{ $deployment.restartPolicy }}
+          {{- with $deployment.volumes }}
+          volumes:
+{{ toYaml . | indent 12 }}
+          {{- end }}
 
 {{- end }}

@@ -33,6 +33,7 @@ spec:
           
           imagePullSecrets:
           - name: regcred
+          
             {{- with $job.env }}            
             env:
 {{ toYaml . | indent 12 }}

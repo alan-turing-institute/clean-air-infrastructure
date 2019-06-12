@@ -15,7 +15,15 @@ jobs:
       secret:
         secretName: laqncred
 
+
 deployments:
   # First deployment
-  - name: API
+  - name: API-deployment
+    label: API
     replicas: 2
+    image:
+      repository: cleanaircontainerregistry.azurecr.io/API
+      tag: latest
+      imagePullPolicy: Always
+    ports:
+      containerPort: 5000
