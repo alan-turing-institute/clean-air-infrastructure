@@ -373,7 +373,7 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
 
 def load_db_info():
     "Check file system is accessable from docker and return database login info"
-    import glob
+  
 
     mount_dir = '/secrets/laqncred/'
     local_dir = './terraform/.secrets/'
@@ -475,6 +475,8 @@ def main():
                                                  ssl_mode=ssl_mode)
 
     engine = create_engine(connection_string)
+    with engine.connect() as conn:
+        conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
