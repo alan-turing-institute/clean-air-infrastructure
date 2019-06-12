@@ -60,7 +60,7 @@ output "keyvault_id" {
   value = "${azurerm_key_vault.kvcleanairpasswords.id}"
 }
 
-# Create azure container registry
+# Create azure container registry and upload the secrets to travis
 resource "azurerm_container_registry" "acr" {
   name                     = "CleanAirContainerRegistry"
   resource_group_name      = "${azurerm_resource_group.rg_infrastructure.name}"

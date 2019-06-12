@@ -94,7 +94,7 @@ python initialise_terraform.py
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
-### Setting up webhooks in the GitHub repository
+<!-- ### Setting up webhooks in the GitHub repository
 NB. This only needs to be done once but is documented here for better reproducibility in future.
 - Run `python get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 
@@ -106,7 +106,7 @@ NB. This only needs to be done once but is documented here for better reproducib
 - In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
 - Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
-- Select `Let me select individual events` and tick `Pull requests` only
+- Select `Let me select individual events` and tick `Pull requests` only -->
 
 
 ## Building the Clean Air infrastructure with Terraform
@@ -172,8 +172,8 @@ terraform destroy
 You can check everything was removed on the Azure portal.
 
 
-## Configuring CI pipeline
-To add the Azure container registry (ACR) login details to Travis, navigate to the Azure portal and find the ACR username and password. Navigate to Travis repository -> settings and add these as environment variables: ACR_USERNAME ACR_PASSWORD 
+<!-- ## Configuring CI pipeline
+To add the Azure container registry (ACR) login details to Travis, navigate to the Azure portal and find the ACR username and password. Navigate to Travis repository -> settings and add these as environment variables: ACR_USERNAME ACR_PASSWORD  -->
 
 ## Configure local Kubernetes Cluster:
 
@@ -213,6 +213,12 @@ kubectl create secret generic <datasource>cred --from-file=<file>
 To see the rendered manifest file:
 ```
 helm install cleanair --dry-run --debug
+```
+
+To install run:
+
+```
+helm install cleanair
 ```
 
 ## Data Source docker files
