@@ -4,6 +4,7 @@ services:
   - docker
 
 script:
+  # Ensure we build every docker image
   - docker build -t "$ACR_SERVER"/laqn:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/laqn/.
   - bash docker_push.sh
 
