@@ -178,60 +178,59 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 #     return all_sites
 
 
-def update_site_list_table(session):
-    "Update the site info"
+# def update_site_list_table(session):
+#     "Update the site info"
 
-    # # Update site info
-    logging.info("Requesting site info from {}".format(emp1("kcl API")))
-    site_info = get_site_info()
+#     logging.info("Requesting site info from {}".format(emp1("kcl API")))
+#     site_info = get_site_info()
 
-    # Query site_info entires
-    site_info_query = session.query(laqn_sites)
+#     # Query site_info entires
+#     site_info_query = session.query(laqn_sites)
 
-    # Check if database table is empty
-    if len(site_info_query.all()) == 0:
-        logging.info("Database is empty. Inserting all entries")
-        site_db_entries = create_sitelist(site_info)
-        session.add_all(site_db_entries)
-        session.commit()
+#     # Check if database table is empty
+#     if len(site_info_query.all()) == 0:
+#         logging.info("Database is empty. Inserting all entries")
+#         site_db_entries = create_sitelist(site_info)
+#         session.add_all(site_db_entries)
+#         session.commit()
 
-    # If not empty check it has latest information
-    else:
-        # Check if site exists and database is up to date
-        logging.info("Crosscheck entries in database table {}".format(
-            emp1(laqn_sites.__tablename__)))
+#     # If not empty check it has latest information
+#     else:
+#         # Check if site exists and database is up to date
+#         logging.info("Crosscheck entries in database table {}".format(
+#             emp1(laqn_sites.__tablename__)))
 
-        for site in site_info:
+#         for site in site_info:
 
-            # Check if site exists
-            site_exists = session.query(exists().where(
-                laqn_sites.SiteCode == site['@SiteCode'])).scalar()
+#             # Check if site exists
+#             site_exists = session.query(exists().where(
+#                 laqn_sites.SiteCode == site['@SiteCode'])).scalar()
 
-            if not site_exists:
-                logging.info("Site {} not in {}. Creating entry".format(emp1(site['@SiteCode']),
-                                                                        emp1(laqn_sites.__tablename__)))
-                site_entry = site_to_laqn_site_entry(site)
-                session.add(site_entry)
+#             if not site_exists:
+#                 logging.info("Site {} not in {}. Creating entry".format(emp1(site['@SiteCode']),
+#                                                                         emp1(laqn_sites.__tablename__)))
+#                 site_entry = site_to_laqn_site_entry(site)
+#                 session.add(site_entry)
 
                 
 
-            else:
+#             else:
 
-                site_data = site_info_query.filter(
-                    laqn_sites.SiteCode == site['@SiteCode']).first()
+#                 site_data = site_info_query.filter(
+#                     laqn_sites.SiteCode == site['@SiteCode']).first()
 
-                date_site_closed = site_data.DateClosed
+#                 date_site_closed = site_data.DateClosed
 
-                if ((site['@DateClosed'] != "") and date_site_closed is None):
+#                 if ((site['@DateClosed'] != "") and date_site_closed is None):
 
-                    logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
-                                                                          emp1(laqn_sites.__tablename__)))
+#                     logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
+#                                                                           emp1(laqn_sites.__tablename__)))
 
-                    site_data.DateClosed = site['@DateClosed']
+#                     site_data.DateClosed = site['@DateClosed']
         
-        logging.info("Committing any changes to database table {}".format(
-            emp1(laqn_sites.__tablename__)))
-        session.commit()
+#         logging.info("Committing any changes to database table {}".format(
+#             emp1(laqn_sites.__tablename__)))
+#         session.commit()
 
 
 # def check_laqn_entry_exists(session, reading):
