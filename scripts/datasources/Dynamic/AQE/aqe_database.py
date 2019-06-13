@@ -16,6 +16,8 @@ from sqlalchemy.ext.declarative import declarative_base
 import pdb
 
 from datetime import datetime, timedelta
+from io import BytesIO
+from xml.dom import minidom
 
 def days(d):
     "Time delta in days"
@@ -37,54 +39,64 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
         return False
 
 
+def site_list_xml_to_list(dom_object):
+    """ 
+    Covert dom object to a list of dictionaries. Each dictionary is an site containing site information"""
+
+    return [dict(s.attributes.items()) for s in dom_object.getElementsByTagName("Site")]
+
+
 def get_site_info():
-    "Get info on all laqn sites"
+    """
+    Get info on all aqe sites    
     
+    Returns: A dom object (https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom)
+    """    
 
     r = requests.get(
-        'http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json', timeout=5.)
+        'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site', timeout=5.)
 
     if r.status_code == 200:
-        site_list = r.json()['Sites']['Site']
-
-        return site_list
-
-
-def get_site_reading(sitecode, start_date, end_date):
-    "Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"
+        dom1 = minidom.parse(BytesIO(r.content))
+        return site_list_xml_to_list(dom1)
 
 
 
-    r = requests.get(
-       'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{sitecode}/{start_year}/{end_year}'.format(sitecode=sitecode, start_year=start_year, end_year=end_year))
-
-    if r.status_code == 200:
-
-        data = r.json()['AirQualityData']['Data']
-
-        return drop_duplicates(data)
+# def get_site_reading(sitecode, start_date, end_date):
+#     "Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"
 
 
-def drop_duplicates(data):
-    "If the data from the data contains duplicates then drop them"
 
-    drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
+#     r = requests.get(
+#        'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{sitecode}/{start_year}/{end_year}'.format(sitecode=sitecode, start_year=start_year, end_year=end_year))
 
-    if len(drop_list) != len(data):
-        logging.warning("Dropped data")
-        return drop_list
+#     if r.status_code == 200:
 
-    else:
-        return data
+#         data = r.json()['AirQualityData']['Data']
+
+#         return drop_duplicates(data)
 
 
-# def dict_clean(dictionary):
+# def drop_duplicates(data):
+#     "If the data from the data contains duplicates then drop them"
 
-#     for key in dictionary.keys():
-#         if dictionary[key] == '':
-#             dictionary[key] = None
+#     drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
 
-#     return dictionary
+#     if len(drop_list) != len(data):
+#         logging.warning("Dropped data")
+#         return drop_list
+
+#     else:
+#         return data
+
+
+def dict_clean(dictionary):
+
+    for key in dictionary.keys():
+        if dictionary[key] == '':
+            dictionary[key] = None
+
+    return dictionary
 
 
 # def str_to_datetime(date_str):
@@ -96,13 +108,16 @@ def drop_duplicates(data):
 Base = declarative_base()
 class aqe_sites(Base):
     __tablename__ = 'aqe_sites'
-    SiteCode = Column(String(4), primary_key=True, nullable=False)
-    la_id = Column(Integer, nullable=False)
+    SiteCode = Column(String(5), primary_key=True, nullable=False)
+    SiteName = Column(String(), nullable = False)
     SiteType = Column(String(20), nullable=False)
     Latitude = Column(DOUBLE_PRECISION)
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP)
     DateClosed = Column(TIMESTAMP)
+
+    SiteLink =  Column(String)
+    DataManager = Column(String)     
     geom = Column(Geometry(geometry_type = "POINT", srid = 4326, dimension = 2, spatial_index=True))
 
 
@@ -123,35 +138,37 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
     return connection_string
 
 
-# def site_to_laqn_site_entry(site):
-#     "Create an laqn_sites entry"
-#     site_info = dict_clean(site)
+def site_to_aqe_site_entry(site):
+    "Create an laqn_sites entry"
 
+    site = dict_clean(site)
 
-#     # Hack to make geom = NULL if longitude and latitude dont exist
-#     if (site['@Longitude'] == None) or (site['@Latitude'] == None):
-#         out = laqn_sites(SiteCode=site['@SiteCode'],
-#                     la_id=site['@LocalAuthorityCode'],
-#                     SiteType=site['@SiteType'],
-#                     Latitude=site['@Latitude'],
-#                     Longitude=site['@Longitude'],
-#                     DateOpened=site['@DateOpened'],
-#                     DateClosed=site['@DateClosed']            
-#                     )
-
-#     else:    
-#         geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
-#         out = laqn_sites(SiteCode=site['@SiteCode'],
-#                     la_id=site['@LocalAuthorityCode'],
-#                     SiteType=site['@SiteType'],
-#                     Latitude=site['@Latitude'],
-#                     Longitude=site['@Longitude'],
-#                     DateOpened=site['@DateOpened'],
-#                     DateClosed=site['@DateClosed'] ,
-#                     geom = geom_string          
-#                     ) 
-
-#     return out
+    # Hack to make geom = NULL if longitude and latitude dont exist
+    if (site['Longitude'] == None) or (site['Latitude'] == None):
+        out = aqe_sites(SiteCode=site['SiteCode'],       
+                    SiteName=site['SiteName'],
+                    SiteType=site['SiteType'],                    
+                    Latitude=site['Latitude'],
+                    Longitude=site['Longitude'],
+                    DateOpened=site['DateOpened'],
+                    DateClosed=site['DateClosed'],           
+                    SiteLink=site['SiteLink'],
+                    DataManager=site['DataManager']
+                    )
+    else:    
+        geom_string = 'SRID=4326;POINT({} {})'.format(site['Longitude'], site['Latitude'])    
+        out = aqe_sites(SiteCode=site['SiteCode'],       
+                    SiteName=site['SiteName'],
+                    SiteType=site['SiteType'],                    
+                    Latitude=site['Latitude'],
+                    Longitude=site['Longitude'],
+                    DateOpened=site['DateOpened'],
+                    DateClosed=site['DateClosed'],           
+                    SiteLink=site['SiteLink'],
+                    DataManager=site['DataManager'], 
+                    geom = geom_string  
+                    )
+    return out
 
 
 # def laqn_reading_entry(reading):
@@ -164,73 +181,64 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 #                         Value=reading['@Value'])
 
 
-# def create_sitelist(site_info):
-#     "Return a list of laqn_site objects"
+def create_sitelist(site_info):
+    "Return a list of laqn_site objects"
 
-#     all_sites = []
+    all_sites = []
 
-#     for site in site_info:
-
-#         all_sites.append(
-#             site_to_laqn_site_entry(site)
-#         )
-
-#     return all_sites
+    for site in site_info:
+        all_sites.append(
+            site_to_aqe_site_entry(site)
+        )
+    return all_sites
 
 
-# def update_site_list_table(session):
-#     "Update the site info"
+def update_site_list_table(session):
+    "Update the site info"
 
-#     logging.info("Requesting site info from {}".format(emp1("kcl API")))
-#     site_info = get_site_info()
+    logging.info("Requesting site info from {}".format(emp1("AQE API")))
+    site_info = get_site_info()
 
-#     # Query site_info entires
-#     site_info_query = session.query(laqn_sites)
+    # Query site_info entires
+    site_info_query = session.query(aqe_sites)
 
-#     # Check if database table is empty
-#     if len(site_info_query.all()) == 0:
-#         logging.info("Database is empty. Inserting all entries")
-#         site_db_entries = create_sitelist(site_info)
-#         session.add_all(site_db_entries)
-#         session.commit()
+    # Check if database table is empty
+    if len(site_info_query.all()) == 0:
+        logging.info("Database is empty. Inserting all entries")
+        site_db_entries = create_sitelist(site_info)
+        session.add_all(site_db_entries)
+        session.commit()
 
-#     # If not empty check it has latest information
-#     else:
-#         # Check if site exists and database is up to date
-#         logging.info("Crosscheck entries in database table {}".format(
-#             emp1(laqn_sites.__tablename__)))
+    # If not empty check it has latest information
+    else:
+        # Check if site exists and database is up to date
+        logging.info("Crosscheck entries in database table {}".format(
+            emp1(aqe_sites.__tablename__)))
 
-#         for site in site_info:
+        for site in site_info:
+            # Check if site exists
+            site_exists = session.query(exists().where(
+                aqe_sites.SiteCode == site['@SiteCode'])).scalar()
 
-#             # Check if site exists
-#             site_exists = session.query(exists().where(
-#                 laqn_sites.SiteCode == site['@SiteCode'])).scalar()
+            if not site_exists:
+                logging.info("Site {} not in {}. Creating entry".format(emp1(site['@SiteCode']),
+                                                                        emp1(aqe_sites.__tablename__)))
+                site_entry = site_to_aqe_site_entry(site)
+                session.add(site_entry)                
+            else:
 
-#             if not site_exists:
-#                 logging.info("Site {} not in {}. Creating entry".format(emp1(site['@SiteCode']),
-#                                                                         emp1(laqn_sites.__tablename__)))
-#                 site_entry = site_to_laqn_site_entry(site)
-#                 session.add(site_entry)
+                site_data = site_info_query.filter(
+                    aqe_sites.SiteCode == site['@SiteCode']).first()
 
-                
+                date_site_closed = site_data.DateClosed
+                if ((site['@DateClosed'] != "") and date_site_closed is None):
 
-#             else:
-
-#                 site_data = site_info_query.filter(
-#                     laqn_sites.SiteCode == site['@SiteCode']).first()
-
-#                 date_site_closed = site_data.DateClosed
-
-#                 if ((site['@DateClosed'] != "") and date_site_closed is None):
-
-#                     logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
-#                                                                           emp1(laqn_sites.__tablename__)))
-
-#                     site_data.DateClosed = site['@DateClosed']
-        
-#         logging.info("Committing any changes to database table {}".format(
-#             emp1(laqn_sites.__tablename__)))
-#         session.commit()
+                    logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
+                                                                          emp1(aqe_sites.__tablename__)))
+                    site_data.DateClosed = site['@DateClosed']        
+        logging.info("Committing any changes to database table {}".format(
+            emp1(aqe_sites.__tablename__)))
+        session.commit()
 
 
 # def check_laqn_entry_exists(session, reading):
