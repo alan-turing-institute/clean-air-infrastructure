@@ -16,8 +16,9 @@ from sqlalchemy.ext.declarative import declarative_base
 import pdb
 
 from datetime import datetime, timedelta
-from io import BytesIO
+from io import BytesIO, StringIO
 from xml.dom import minidom
+import csv
 
 def days(d):
     "Time delta in days"
@@ -62,20 +63,36 @@ def get_site_info():
 
 
 
-# def get_site_reading(sitecode, start_date, end_date):
-#     "Request data for a given {sitecode} between {start_date} and {end_date}. Dates given in %yyyy-mm-dd%"
+def get_site_reading(sitecode, start_date, end_date):
+    """
+    Request data for a given {sitecode} between {start_date} and {end_date}. 
+    Dates given in %yyyy-mm-dd%
+    """
+
+    r = requests.get(
+       'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{}/{}/{}'.format(sitecode, start_date, end_date))
+
+
+    if r.status_code == 200:
+
+        return process_site_reading(r.content)
 
 
 
-#     r = requests.get(
-#        'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{sitecode}/{start_year}/{end_year}'.format(sitecode=sitecode, start_year=start_year, end_year=end_year))
+def process_site_reading(content):
+    """
+    Process a site reading. 
+    Returns a list of dictionaires
+    """
 
-#     if r.status_code == 200:
 
-#         data = r.json()['AirQualityData']['Data']
+    reader = csv.reader(StringIO(content.decode()))
 
-#         return drop_duplicates(data)
+    # Get the header and the content
+    header = reader.__next__()
+    readings = [row for row in reader]
 
+    return header, readings
 
 # def drop_duplicates(data):
 #     "If the data from the data contains duplicates then drop them"
@@ -121,13 +138,13 @@ class aqe_sites(Base):
     geom = Column(Geometry(geometry_type = "POINT", srid = 4326, dimension = 2, spatial_index=True))
 
 
-# class laqn_reading(Base):
-#     __tablename__ = 'laqn_readings'
+class aqe_reading(Base):
+    __tablename__ = 'laqn_readings'
 
-#     SiteCode = Column(String(4), primary_key=True, nullable=False)
-#     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-#     MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)
-#     Value = Column(DOUBLE_PRECISION, nullable=True)
+    SiteCode = Column(String(5), primary_key=True, nullable=False)
+    SpeciesCode = Column(String(4), primary_key=True, nullable=False)
+    MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)
+    Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
 def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
@@ -218,24 +235,24 @@ def update_site_list_table(session):
         for site in site_info:
             # Check if site exists
             site_exists = session.query(exists().where(
-                aqe_sites.SiteCode == site['@SiteCode'])).scalar()
+                aqe_sites.SiteCode == site['SiteCode'])).scalar()
 
             if not site_exists:
-                logging.info("Site {} not in {}. Creating entry".format(emp1(site['@SiteCode']),
+                logging.info("Site {} not in {}. Creating entry".format(emp1(site['SiteCode']),
                                                                         emp1(aqe_sites.__tablename__)))
                 site_entry = site_to_aqe_site_entry(site)
                 session.add(site_entry)                
             else:
 
                 site_data = site_info_query.filter(
-                    aqe_sites.SiteCode == site['@SiteCode']).first()
+                    aqe_sites.SiteCode == site['SiteCode']).first()
 
                 date_site_closed = site_data.DateClosed
-                if ((site['@DateClosed'] != "") and date_site_closed is None):
+                if ((site['DateClosed'] != "") and date_site_closed is None):
 
-                    logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
+                    logging.info("Site {} has closed. Updating {}".format(emp1(site['SiteCode']),
                                                                           emp1(aqe_sites.__tablename__)))
-                    site_data.DateClosed = site['@DateClosed']        
+                    site_data.DateClosed = site['DateClosed']        
         logging.info("Committing any changes to database table {}".format(
             emp1(aqe_sites.__tablename__)))
         session.commit()
@@ -315,23 +332,23 @@ def update_site_list_table(session):
 #         return (get_data_from, get_data_to)
 
 
-# def update_reading_table(session, start_date=None, end_date=None, force = False):
-#     """
-#     Add missing reading data to the database
+def update_reading_table(session, start_date=None, end_date=None, force = False):
+    """
+    Add missing reading data to the database
 
-#     start date: date to get data from (yyyy-mm-dd). If None will get from site opening date.
-#     end_date: date to get data to. If None will get till today, or when site closed.
-#     """
+    start date: date to get data from (yyyy-mm-dd). If None will get from site opening date.
+    end_date: date to get data to. If None will get till today, or when site closed.
+    """
 
-#     logging.info("Attempting to download data between {} and {}".format(emp1(start_date), emp1(end_date)))
+    logging.info("Attempting to download data between {} and {}".format(emp1(start_date), emp1(end_date)))
 
-#     site_info_query = session.query(laqn_sites)
-#     laqn_readings_query = session.query(laqn_reading)
+    site_info_query = session.query(aqe_sites)
+    aqe_readings_query = session.query(aqe_reading)
 
-#     for site in site_info_query:
+    for site in site_info_query:
 
-#         site_query = laqn_readings_query.filter(
-#             laqn_reading.SiteCode == site.SiteCode)
+        site_query = aqe_readings_query.filter(
+            aqe_reading.SiteCode == site.SiteCode)
 
 #         # What dates can we get data for
 #         date_from_to = get_data_range(site, start_date, end_date)
@@ -500,5 +517,6 @@ def main():
 if __name__ == '__main__':
     
     
-    main()
+    # main()
+    pass
 
