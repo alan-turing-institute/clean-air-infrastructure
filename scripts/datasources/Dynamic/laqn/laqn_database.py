@@ -126,7 +126,8 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 
 def site_to_laqn_site_entry(site):
     "Create an laqn_sites entry"
-    site_info = dict_clean(site)
+    
+    site = dict_clean(site)
 
 
     # Hack to make geom = NULL if longitude and latitude dont exist
