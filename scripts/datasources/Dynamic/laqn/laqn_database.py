@@ -400,6 +400,7 @@ def load_db_info():
     try:
         with open(secret_fname) as f:
             data = json.load(f)        
+            print(data)
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:

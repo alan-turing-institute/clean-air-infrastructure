@@ -11,6 +11,4 @@ COPY . /app
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Run app.py when the container launches
-ENTRYPOINT ["python"] 
-
-CMD = ["laqn_database.py"]
+ENTRYPOINT ["python", "laqn_database.py"]
