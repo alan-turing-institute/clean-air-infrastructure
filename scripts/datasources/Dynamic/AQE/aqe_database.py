@@ -75,11 +75,11 @@ def get_site_reading(sitecode, start_date, end_date):
 
     if r.status_code == 200:
 
-        return process_site_reading(r.content)
+        return process_site_reading(sitecode, r.content)
 
 
 
-def process_site_reading(content):
+def process_site_reading(sitecode, content):
     """
     Process a site reading. 
     Returns a list of dictionaires
@@ -92,7 +92,27 @@ def process_site_reading(content):
     header = reader.__next__()
     readings = [row for row in reader]
 
-    return header, readings
+    
+   
+    species = [s.split(": ")[1].split(" ")[0] for s in header[1:]]
+
+    readings_processed = []
+
+    for r in readings:
+        
+        for s in range(len(r) - 1):
+            
+            reading_dict = dict(SiteCode = sitecode,
+                                SpeciesCode = species[s],
+                                MeasurementDateGMT = r[0],
+                                Value = r[s])
+
+            readings_processed.append(reading_dict)
+
+    return readings_processed
+
+
+
 
 # def drop_duplicates(data):
 #     "If the data from the data contains duplicates then drop them"
