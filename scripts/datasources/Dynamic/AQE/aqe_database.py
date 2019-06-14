@@ -1,5 +1,5 @@
 """
-Get data from the LAQN network via the API maintained by Kings Colleage London (https://www.londonair.org.uk/Londonair/API/)
+Get data from the AQE network via the API
 """
 import argparse
 import requests
@@ -92,8 +92,6 @@ def process_site_reading(sitecode, content):
     header = reader.__next__()
     readings = [row for row in reader]
 
-    
-   
     species = [s.split(": ")[1].split(" ")[0] for s in header[1:]]
 
     readings_processed = []
@@ -102,10 +100,10 @@ def process_site_reading(sitecode, content):
         
         for s in range(len(r) - 1):
             
-            reading_dict = dict(SiteCode = sitecode,
-                                SpeciesCode = species[s],
-                                MeasurementDateGMT = r[0],
-                                Value = r[s])
+            reading_dict = {'@SiteCode': sitecode,
+                                '@SpeciesCode': species[s],
+                                '@MeasurementDateGMT': r[0],
+                                '@Value': r[s+1] }
 
             readings_processed.append(reading_dict)
 
@@ -114,17 +112,17 @@ def process_site_reading(sitecode, content):
 
 
 
-# def drop_duplicates(data):
-#     "If the data from the data contains duplicates then drop them"
+def drop_duplicates(data):
+    "If the data from the AQE data contains duplicates then drop them"
 
-#     drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
+    drop_list = [dict(t) for t in {tuple(d.items()) for d in data}]
 
-#     if len(drop_list) != len(data):
-#         logging.warning("Dropped data")
-#         return drop_list
+    if len(drop_list) != len(data):
+        logging.warning("Dropped data")
+        return drop_list
 
-#     else:
-#         return data
+    else:
+        return data
 
 
 def dict_clean(dictionary):
@@ -136,8 +134,8 @@ def dict_clean(dictionary):
     return dictionary
 
 
-# def str_to_datetime(date_str):
-#     return datetime.strptime(date_str, '%Y-%m-%d')
+def str_to_datetime(date_str):
+    return datetime.strptime(date_str, '%Y-%m-%d')
 
 # Database functions
 
@@ -159,7 +157,7 @@ class aqe_sites(Base):
 
 
 class aqe_reading(Base):
-    __tablename__ = 'laqn_readings'
+    __tablename__ = 'aqe_readings'
 
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
@@ -176,7 +174,7 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 
 
 def site_to_aqe_site_entry(site):
-    "Create an laqn_sites entry"
+    "Create an aqe_sites entry"
 
     site = dict_clean(site)
 
@@ -208,18 +206,18 @@ def site_to_aqe_site_entry(site):
     return out
 
 
-# def laqn_reading_entry(reading):
-#     "Create an laqn_read entry"
-#     reading = dict_clean(reading)
+def aqe_reading_entry(reading):
+    "Create an aqe_read entry"
+    reading = dict_clean(reading)
 
-#     return laqn_reading(SiteCode=reading['@SiteCode'],
-#                         SpeciesCode=reading['@SpeciesCode'],
-#                         MeasurementDateGMT=reading['@MeasurementDateGMT'],
-#                         Value=reading['@Value'])
+    return aqe_reading(SiteCode=reading['@SiteCode'],
+                        SpeciesCode=reading['@SpeciesCode'],
+                        MeasurementDateGMT=reading['@MeasurementDateGMT'],
+                        Value=reading['@Value'])
 
 
 def create_sitelist(site_info):
-    "Return a list of laqn_site objects"
+    "Return a list of aqe_site objects"
 
     all_sites = []
 
@@ -278,78 +276,78 @@ def update_site_list_table(session):
         session.commit()
 
 
-# def check_laqn_entry_exists(session, reading):
-#     "Check if an laqn entry already exists in the database"
-#     criteria = and_(laqn_reading.SiteCode == reading.SiteCode, laqn_reading.SpeciesCode ==
-#                     reading.SpeciesCode, laqn_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
+def check_aqe_entry_exists(session, reading):
+    "Check if an aqe entry already exists in the database"
+    criteria = and_(aqe_reading.SiteCode == reading.SiteCode, aqe_reading.SpeciesCode ==
+                    reading.SpeciesCode, aqe_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
 
-#     ret = session.query(exists().where(criteria)).scalar()
+    ret = session.query(exists().where(criteria)).scalar()
 
-#     if ret:
-#         query = session.query(laqn_reading).filter(criteria)
-#     else:
-#         query = None
+    if ret:
+        query = session.query(aqe_reading).filter(criteria)
+    else:
+        query = None
 
-#     return ret, query
-
-
-# def add_reading_entries(session, site_code, readings):
-#     "Pass a list of dictionaries for readings and put them into db"
-
-#     all_reading_entries = []
-#     for r in readings:
-
-#         r['@SiteCode'] = site_code
-
-#         # Check the entry doesn't exist in the database
-#         new_laqn_reading_entry = laqn_reading_entry(r)
-
-#         if not check_laqn_entry_exists(session, new_laqn_reading_entry)[0]:
-#             all_reading_entries.append(new_laqn_reading_entry)
-#         else:
-#             logging.debug(
-#                 "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(emp2(site_code), emp2(r['@MeasurementDateGMT']), emp2(r['@SpeciesCode'])))
-
-#     session.add_all(all_reading_entries)
+    return ret, query
 
 
-# def datetime_floor(dtime):
-#     "Set the time to midnight for a given datetime"
-#     return datetime.combine(
-#         dtime, datetime.min.time())
+def add_reading_entries(session, site_code, readings):
+    "Pass a list of dictionaries for readings and put them into db"
+
+    all_reading_entries = []
+    for r in readings:
+
+        # r['SiteCode'] = site_code
+
+        # Check the entry doesn't exist in the database
+        new_aqe_reading_entry = aqe_reading_entry(r)
+
+        if not check_aqe_entry_exists(session, new_aqe_reading_entry)[0]:
+            all_reading_entries.append(new_aqe_reading_entry)
+        else:
+            logging.debug(
+                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(emp2(site_code), emp2(r['@MeasurementDateGMT']), emp2(r['@SpeciesCode'])))
+
+    session.add_all(all_reading_entries)
 
 
-# def get_data_range(site, start_date, end_date):
-#     """Get the dates that data is available for a site between start_date and end_date
-#     If no data is available between these dates returns None
-#     """
+def datetime_floor(dtime):
+    "Set the time to midnight for a given datetime"
+    return datetime.combine(
+        dtime, datetime.min.time())
 
-#     if start_date is None:
-#         get_data_from = datetime_floor(site.DateOpened)
-#     else:
-#         get_data_from = max(
-#             [datetime_floor(site.DateOpened), datetime_floor(str_to_datetime(start_date))])
 
-#     if end_date is None:
-#         get_data_to = min(
-#             [datetime_floor(datetime.today()), datetime_floor(site.DateClosed)])
+def get_data_range(site, start_date, end_date):
+    """Get the dates that data is available for a site between start_date and end_date
+    If no data is available between these dates returns None
+    """
 
-#     else:
-#         if site.DateClosed is None:
-#             get_data_to = datetime_floor(str_to_datetime(end_date))
-#         else:
-#             # Site is closed to get data until that point
-#             get_data_to = min(
-#                 [datetime_floor(str_to_datetime(end_date)),
-#                     datetime_floor(site.DateClosed)]
-#             )
+    if start_date is None:
+        get_data_from = datetime_floor(site.DateOpened)
+    else:
+        get_data_from = max(
+            [datetime_floor(site.DateOpened), datetime_floor(str_to_datetime(start_date))])
 
-#     delta = get_data_to - get_data_from  # Number of days available for a site
+    if end_date is None:
+        get_data_to = min(
+            [datetime_floor(datetime.today()), datetime_floor(site.DateClosed)])
 
-#     if delta.days < 0:
-#         return None
-#     else:
-#         return (get_data_from, get_data_to)
+    else:
+        if site.DateClosed is None:
+            get_data_to = datetime_floor(str_to_datetime(end_date))
+        else:
+            # Site is closed to get data until that point
+            get_data_to = min(
+                [datetime_floor(str_to_datetime(end_date)),
+                    datetime_floor(site.DateClosed)]
+            )
+
+    delta = get_data_to - get_data_from  # Number of days available for a site
+
+    if delta.days < 0:
+        return None
+    else:
+        return (get_data_from, get_data_to)
 
 
 def update_reading_table(session, start_date=None, end_date=None, force = False):
@@ -370,48 +368,48 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
         site_query = aqe_readings_query.filter(
             aqe_reading.SiteCode == site.SiteCode)
 
-#         # What dates can we get data for
-#         date_from_to = get_data_range(site, start_date, end_date)
+        # What dates can we get data for
+        date_from_to = get_data_range(site, start_date, end_date)
 
-#         if date_from_to is None:
-#             logging.info("No data is available for site {} between {} and {}".format(
-#                 emp2(site.SiteCode), emp2(start_date), emp2(end_date)))
-#             continue
+        if date_from_to is None:
+            logging.info("No data is available for site {} between {} and {}".format(
+                emp2(site.SiteCode), emp2(start_date), emp2(end_date)))
+            continue
 
-#         # List of dates to get data for
-#         delta = date_from_to[1] - date_from_to[0]
-#         date_range = [date_from_to[0] +
-#                       timedelta(i) for i in range(delta.days+1)]
+        # List of dates to get data for
+        delta = date_from_to[1] - date_from_to[0]
+        date_range = [date_from_to[0] +
+                      timedelta(i) for i in range(delta.days+1)]
 
-#         for i, date in enumerate(date_range):
+        for i, date in enumerate(date_range):
 
-#             # Query readings in the database for this date ignoring species
-#             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
-#                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
+            # Query readings in the database for this date ignoring species
+            readings_in_db = site_query.distinct(aqe_reading.MeasurementDateGMT).filter(
+                and_(aqe_reading.MeasurementDateGMT >= date, aqe_reading.MeasurementDateGMT < date + days(1))).all()
 
-#             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
-#             # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
-#             if (len(readings_in_db) == 0) or ( (datetime.today().date() - date.date() ).days < 2) or (force):
+            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
+            # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
+            if (len(readings_in_db) == 0) or ( (datetime.today().date() - date.date() ).days < 2) or (force):
 
-#                 logging.info("Getting data for site {} for date: {}".format(
-#                     emp2(site.SiteCode), emp2(date_range[i].date())))
+                logging.info("Getting data for site {} for date: {}".format(
+                    emp2(site.SiteCode), emp2(date_range[i].date())))
 
-#                 d = get_site_reading(site.SiteCode, str(
-#                     date.date()), str((date + days(1)).date()))
+                d = get_site_reading(site.SiteCode, str(
+                    date.date()), str((date + days(1)).date()))
+                
+                if d is not None:
+                    add_reading_entries(session, site.SiteCode, d)
 
-#                 if d is not None:
-#                     add_reading_entries(session, site.SiteCode, d)
-
-#                 else:
-#                     logging.info("Request for data for {} between dates {} and {} failed".format(
-#                         site.SiteCode, date, (date + days(1)).date()))
+                else:
+                    logging.info("Request for data for {} between dates {} and {} failed".format(
+                        site.SiteCode, date, (date + days(1)).date()))
           
-#             else:
+            else:
 
-#                 logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-#                 emp2(site.SiteCode), emp2(date_range[i].date())))     
+                logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
+                emp2(site.SiteCode), emp2(date_range[i].date())))     
 
-#         session.commit()
+        session.commit()
 
 
 def load_db_info():
@@ -487,7 +485,7 @@ def process_args():
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
+    logging.info("AQE data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
 
     return args.start, args.end, args.force
 
@@ -497,7 +495,7 @@ def main():
 
     db_info = load_db_info()
 
-    logging.info("Starting laqn_database script")
+    logging.info("Starting aqe_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
 
     # Connect to the database
@@ -527,9 +525,9 @@ def main():
     update_site_list_table(session)
 
 
-#     # # Update data in laqn reading table
-#     update_reading_table(session, start_date = str(start_date),
-#                          end_date = str(end_date), force = force)
+    # # Update data in aqe reading table
+    update_reading_table(session, start_date = str(start_date),
+                         end_date = str(end_date), force = force)
 
     logging.info("AQE jobs finished")
 
@@ -537,6 +535,6 @@ def main():
 if __name__ == '__main__':
     
     
-    # main()
-    pass
+    main()
+    # pass
 
