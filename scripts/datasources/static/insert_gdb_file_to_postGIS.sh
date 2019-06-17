@@ -10,5 +10,3 @@ echo "Inserting into $HOST"
 
 ogr2ogr -f PostgreSQL "PG:$PG" /data/static_data.gdb -overwrite -progress --config PG_USE_COPY YES -overwrite -progress --config PG_USE_COPY YES
 
-# Potentially working:
-# ogr2ogr -f PostgreSQL PG:'host=ukmap-server.postgres.database.azure.com port=5432 dbname=ukmap_db user=atiadmin_ukmap@ukmap-server password=QgE3OYG{qMe$XpYi sslmode=require' /data/static_data.gdb -overwrite -progress --config PG_USE_COPY YES
