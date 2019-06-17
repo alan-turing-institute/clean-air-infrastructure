@@ -140,6 +140,11 @@ NB: To run the next step ensure Travis runs a build (this will place the docker 
 
 The following static datasets need to be manually inserted into the corresponding databases:
 
+Login to the container registry:
+
+```
+docker login <AzureContainerReg>
+```
 
 ```
 docker run -it -v <absolutepathtosecrets>/.ukmap_secret.json:/.secrets/.secret.json -v /<AbsolutePathToUKMapGDBFolder>/UKMap.gdb:/data/static_data.gdb <AzureContainerReg>/insert_static_datasource:latest
