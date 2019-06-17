@@ -12,6 +12,9 @@ script:
   # - docker build -t "$ACR_SERVER"/darksky:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/darksky/.
   # - docker build -t "$ACR_SERVER"/ECMWF:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/ECMWF/.
 
+  # Static datasources
+  - docker build -t $ACR_SERVER/insert_static_datasource:latest scripts/datasources/static/.
+
   # Push to ACR
   - bash docker_push.sh
 

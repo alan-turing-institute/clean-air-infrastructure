@@ -132,34 +132,18 @@ terraform apply
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
-## Adding PostGIS to databases
+## Add static resources
 
-Some databases require the postgis extention to be installed on the database. Connect to the database and run
+Terraform will now have created a number of databases. In addition, it creates a hidden folder called `.secrets` in the terraform directory which contains login information for the databases (these are also stored in the cleanair KeyVault). 
+
+NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform. 
+
+The following static datasets need to be manually inserted into the corresponding databases:
+
 
 ```
-CREATE EXTENSION IF NOT EXISTS postgis;
+docker run -it -v <absolutepathtosecrets>/.ukmap_secret.json:/.secrets/.secret.json -v /<AbsolutePathToUKMapGDBFolder>/UKMap.gdb:/data/static_data.gdb <AzureContainerReg>/insert_static_datasource:latest
 ```
-
-## Accessing the Clean Air infrastructure
-At this point, the LAQN virtual machine should be spun up and be viewable on the portal.
-To connect to it you need to retrieve its IP address and password (stored in a keyvault). You can retrieve them with:
-
-```
-az vm list-ip-addresses --resource-group RG_CLEANAIR_DATASOURCES --name LAQN-VM --query "[].virtualMachine.network.publicIpAddresses[].ipAddress" --output tsv
-```
-
-```
-az keyvault secret show --vault-name "$(az keyvault list --resource-group='RG_CLEANAIR_INFRASTRUCTURE' --query '[0].name' --output tsv)" --name "laqn-vm-admin-password" --query "value" --output tsv
-```
-
-
-You can now log in to your virtual machine using `ssh`:
-
-```
-ssh atiadmin@{vm_public_ip}
-```
-
-replacing {vm_public_ip} with the public IP address that you previously obtained.
 
 ### Destroy all resources
 
