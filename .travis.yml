@@ -8,7 +8,7 @@ script:
 
   # Datasources
   - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/dynamic/laqn/.
-  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/dynamic/aqe.
+  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/dynamic/aqe/.
   # - docker build -t "$ACR_SERVER"/darksky:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/darksky/.
   # - docker build -t "$ACR_SERVER"/ECMWF:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/ECMWF/.
 
