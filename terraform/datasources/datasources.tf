@@ -80,6 +80,7 @@ module "laqn" {
   acr_login_server     = "${var.acr_login_server}"
   acr_admin_user       = "${var.acr_admin_user}"
   acr_admin_password   = "${var.acr_admin_password}"
+  db_size              = 5120
 }
 
 module "aqe" {
@@ -91,6 +92,19 @@ module "aqe" {
   acr_login_server     = "${var.acr_login_server}"
   acr_admin_user       = "${var.acr_admin_user}"
   acr_admin_password   = "${var.acr_admin_password}"
+  db_size              = 
+  5120
+}
+module "ukmap" {
+  source               = "./datasource"
+  datasource           = "ukmap"
+  keyvault_id          = "${var.keyvault_id}"
+  location             = "${azurerm_resource_group.rg_cleanair_databases.location}"
+  resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
+  acr_login_server     = "${var.acr_login_server}"
+  acr_admin_user       = "${var.acr_admin_user}"
+  acr_admin_password   = "${var.acr_admin_password}"
+  db_size              = 1048576
 }
 
 # module "laqn" {
