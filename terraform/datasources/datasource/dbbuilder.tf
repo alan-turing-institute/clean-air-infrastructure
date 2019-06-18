@@ -88,6 +88,13 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
+resource "azurerm_postgresql_firewall_rule" "oscar_ips_wifi" {
+  name                = "allow-oscar-wifi-ips"
+  resource_group_name = "${var.resource_group_db}"
+  server_name         = "${azurerm_postgresql_server.db_server.name}"
+  start_ip_address    = "5.69.25.83"
+  end_ip_address      = "5.69.25.83"
+}
 
 
 data "template_file" "database_secrets" {
