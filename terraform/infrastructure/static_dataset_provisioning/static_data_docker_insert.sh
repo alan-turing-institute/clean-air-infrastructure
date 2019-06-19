@@ -8,8 +8,8 @@ realpath() {
     echo $(cd "$folder"; pwd)/$(basename "$path"); 
 }
 
-# Login to ACR. Will prompt for details
-docker login ${acr_login_server}
+# Login to ACR. 
+az acr login -n ${acr_name}
 
 # Pull docker image
 docker pull ${acr_login_server}/insert_static_datasource:latest

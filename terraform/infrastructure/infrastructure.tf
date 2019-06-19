@@ -89,6 +89,7 @@ data "template_file" "static_data_docker_template" {
   template = "${file("${path.module}/static_dataset_provisioning/static_data_docker_insert.sh")}"
   vars {
     acr_login_server = "${azurerm_container_registry.acr.login_server}"
+    acr_name         = "${azurerm_container_registry.acr.name}"
   }
 }
 
