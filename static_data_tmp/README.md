@@ -1,0 +1,1 @@
+Insert static datasets into this folder. They must be .gdb files. Do not commit to git.
