@@ -134,27 +134,22 @@ to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should 
 
 ## Add static resources
 
-Terraform will now have created a number of databases. In addition, it creates a hidden folder called `.secrets` in the terraform directory which contains login information for the databases (these are also stored in the cleanair KeyVault). 
+Terraform will now have created a number of databases. We need to add static datasets to the database. 
 
-NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform. 
+NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform). Either push the the repo, or go to travis and rerun the last build. 
 
-The following static datasets need to be manually inserted into the corresponding databases:
+1. All static datasources are .gdb files. Copy the .gdb files into the `static_data_tmp` directory. 
 
-1. Login to the container registry:
+2. When terraform created the Azure Container registry it created a local (gitignored) file: `/terraform/.secrets/static_data_docker_insert.sh`. From the root of the repository run:
 
 ```
-docker login <AzureContainerReg>
+bash terraform/.secrets/static_data_docker_insert.sh
 ```
 
-2. Ensure PostGIS extention is installed in database. Execute the following SQL code in the database:
-```
-CREATE EXTENSION IF NOT EXISTS postgis;
-```
+This will login to the ACR, and prompt for login information. This can be found in the `terraform/.secrets/.regfred_secret.json` file.
 
-3. Run the docker image with the database secret and datafile mounted:
-```
-docker run -it -v <absolutepathtosecrets>/.ukmap_secret.json:/.secrets/.secret.json -v /<AbsolutePathToUKMapGDBFolder>/UKMap.gdb:/data/static_data.gdb <AzureContainerReg>/insert_static_datasource:latest
-```
+TODO: This could use the az acr login command (and avoid having to provide credential information)
+
 
 ### Destroy all resources
 
