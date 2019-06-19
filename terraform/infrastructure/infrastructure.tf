@@ -85,6 +85,19 @@ resource "local_file" "regcred" {
     filename = "${path.cwd}/.secrets/.regred_secret.json"
 }
 
+data "template_file" "static_data_docker_template" {
+  template = "${file("${path.module}/static_dataset_provisioning/static_data_docker_insert.sh")}"
+  vars {
+    acr_login_server = "${azurerm_container_registry.acr.login_server}"
+  }
+}
+
+resource "local_file" "static_data_docker_file" {
+    sensitive_content     = "${data.template_file.static_data_docker_template.rendered}"
+    filename = "${path.cwd}/.secrets/static_data_docker_insert.sh"
+}
+
+
 
 output "acr_login_server" {
   value = "${azurerm_container_registry.acr.login_server}"
