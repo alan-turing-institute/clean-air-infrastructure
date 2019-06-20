@@ -10,51 +10,11 @@ from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy.orm import sessionmaker
 
 SQL_CODE = """
-DROP TABLE IF EXISTS ukmap_4236;
-CREATE TABLE ukmap_4236 AS
-SELECT  objectid
-,geographic_entity_type
-,geographic_type_number
-,date_of_feature_edit
-,feature_type
-,landuse
-,altertative_style_code
-,owner_user_name
-,building_name
-,primary_number
-,primary_number_suffix
-,secondary_number
-,secondary_number_suffix
-,number_end_of_range
-,number_end_of_range_suffix
-,road_name_primary
-,road_name_secondary
-,locality_name
-,area_name
-,county_region_name
-,country
-,postcode
-,address_range_type
-,blpu_number
-,address_type
-,cartographic_annotation_point
-,name_of_point_of_interest
-,description_of_point_of_interest
-,retail_classification_code
-,retail_description
-,above_retail_type
-,road_number_code
-,catrographic_display_angle
-,source_of_height_data
-,height_of_base_of_building
-,height_of_top_of_building
-,calcaulated_height_of_building
-,shape_length
-,shape_area
-,ST_Transform(ST_MakeValid(shape), 4326)
-FROM public.base_hb0_complete_merged
-WHERE ST_GeometryType(ST_Transform(ST_MakeValid(shape), 4326))='ST_MultiPolygon';
-CREATE INDEX ukmap_4326_gix ON ukmap_4326 USING GIST(shape);
+ALTER TABLE public.base_hb0_complete_merged
+ ALTER COLUMN shape TYPE geometry(MULTIPOLYGON, 27700) USING ST_Transform(ST_SetSRID(geom,4326),27700);
+
+ALTER TABLE public.base_hb0_complete_merged
+ RENAME TO ukmap; 
 """
 
 def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
