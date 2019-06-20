@@ -160,9 +160,10 @@ Then login to TravisCI and delete the Azure Container repo environment variables
 
 
 
-## Configure local Kubernetes Cluster:
+## Configure Kubernetes Cluster:
 
-Install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) on your machine 
+### Local cluster
+You can set up a local cluster on your machine. To do this install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 
 
 To start the cluster run: 
@@ -176,26 +177,33 @@ Start the cluster dashboard with:
 minikube dashboard
 ```
 
-Next install [helm](https://helm.sh/docs/using_helm/). 
+Next follow these instruction to [install helm](https://helm.sh/docs/using_helm/). 
 
 ### Adding secrets
 
-The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the kubernetes cluster. 
+The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the Kubernetes cluster. 
 
+The ACR login details are in a file called .regcred_secret.json
 ```
 kubectl create secret docker-registry regcred --docker-server=<servername> --docker-username=<username>--docker-password=<password> --docker-email=<your-email>
 ```
 
 Next create a secret for each database secret file:
-
 ```
 kubectl create secret generic <datasource>cred --from-file=<file>
 ```
 
 
-### Helm Cheatsheet
+### Configure the cluster with Helm
 
-To see the rendered manifest file:
+Go to the `/kubernetes` directory and run:
+
+```
+helm package cleanair
+```
+
+
+To see the rendered manifest file which will be installed on the kuberenets cluster run:
 ```
 helm install cleanair --dry-run --debug
 ```
@@ -205,6 +213,8 @@ To install run:
 ```
 helm install cleanair
 ```
+
+Now you to the minikube dashboard and you can see everything that was installed.
 
 ## Data Source docker files
 
