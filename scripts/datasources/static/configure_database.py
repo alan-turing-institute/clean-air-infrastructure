@@ -54,7 +54,7 @@ SELECT  objectid
 ,ST_Transform(ST_MakeValid(shape), 4326)
 FROM public.base_hb0_complete_merged
 WHERE ST_GeometryType(ST_Transform(ST_MakeValid(shape), 4326))='ST_MultiPolygon';
-CREATE INDEX ukmap_4326_gix ON oukmap_4326 USING GIST(shape);
+CREATE INDEX ukmap_4326_gix ON ukmap_4326 USING GIST(shape);
 """
 
 def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
