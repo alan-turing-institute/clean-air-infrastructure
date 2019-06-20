@@ -146,10 +146,6 @@ NB: To run the next step ensure Travis runs a build (this will place the docker 
 bash terraform/.secrets/static_data_docker_insert.sh
 ```
 
-This will login to the ACR, and prompt for login information. This can be found in the `terraform/.secrets/.regfred_secret.json` file.
-
-
-
 ### Destroy all resources
 
 To destroy all the resources created in the previous step run:
