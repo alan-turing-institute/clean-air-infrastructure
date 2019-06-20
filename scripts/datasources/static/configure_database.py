@@ -9,12 +9,14 @@ from sqlalchemy.sql import text
 from geoalchemy2 import Geometry, WKTElement
 from sqlalchemy.orm import sessionmaker
 
+
+# NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
 SQL_CODE = """
 ALTER TABLE public.base_hb0_complete_merged
- ALTER COLUMN shape TYPE geometry(MULTIPOLYGON, 27700) USING ST_Transform(ST_SetSRID(geom,4326),27700);
-
-ALTER TABLE public.base_hb0_complete_merged
  RENAME TO ukmap; 
+
+
+CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);
 """
 
 def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
