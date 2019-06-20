@@ -148,7 +148,6 @@ bash terraform/.secrets/static_data_docker_insert.sh
 
 This will login to the ACR, and prompt for login information. This can be found in the `terraform/.secrets/.regfred_secret.json` file.
 
-TODO: This could use the az acr login command (and avoid having to provide credential information)
 
 
 ### Destroy all resources
@@ -164,8 +163,6 @@ You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables. 
 
 
-<!-- ## Configuring CI pipeline
-To add the Azure container registry (ACR) login details to Travis, navigate to the Azure portal and find the ACR username and password. Navigate to Travis repository -> settings and add these as environment variables: ACR_USERNAME ACR_PASSWORD  -->
 
 ## Configure local Kubernetes Cluster:
 
