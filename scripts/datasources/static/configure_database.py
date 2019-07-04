@@ -12,6 +12,8 @@ from sqlalchemy.orm import sessionmaker
 
 # NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
 SQL_CODE = """
+ALTER TABLE public.base_hb0_complete_merged
+RENAME TO ukmap; 
 SELECT
 objectid,
 geographic_entity_type,
