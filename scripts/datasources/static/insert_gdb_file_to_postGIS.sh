@@ -13,4 +13,4 @@ echo "Inserting .gdb file into $HOST"
 
 ogr2ogr -f PostgreSQL "PG:$PG" /data/static_data.gdb -overwrite -progress --config PG_USE_COPY YES -overwrite -progress --config PG_USE_COPY YES
 
-python3 app/configure_database.py
+# python3 app/configure_database.py
