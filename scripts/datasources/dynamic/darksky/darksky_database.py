@@ -42,33 +42,33 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
         return False
 
 
-def get_forecast(API_KEY, latitude, longitude, time = None):
-    """Get forecast data from the darksky API. 
+# def get_forecast(API_KEY, latitude, longitude, time = None):
+#     """Get forecast data from the darksky API. 
     
-    Args:
-        API_KEY: The API Key provided by Dark Sky
-        latitude: Latitute of weather forecast
-        longitude: Longitude of weather forecast
-        time: Either be a UNIX time (that is, seconds since midnight GMT on 1 Jan 1970) or a string formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]. 
-                        timezone should either be omitted (to refer to local time for the location being requested), Z (referring to GMT time), 
-                        or +[HH][MM] or -[HH][MM] for an offset from GMT in hours and minutes. 
-                        The timezone is only used for determining the time of the request; 
-                        the response will always be relative to the local time zone.
-    """
+#     Args:
+#         API_KEY: The API Key provided by Dark Sky
+#         latitude: Latitute of weather forecast
+#         longitude: Longitude of weather forecast
+#         time: Either be a UNIX time (that is, seconds since midnight GMT on 1 Jan 1970) or a string formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]. 
+#                         timezone should either be omitted (to refer to local time for the location being requested), Z (referring to GMT time), 
+#                         or +[HH][MM] or -[HH][MM] for an offset from GMT in hours and minutes. 
+#                         The timezone is only used for determining the time of the request; 
+#                         the response will always be relative to the local time zone.
+#     """
     
-    if time is None:
-        request_string = 'https://api.darksky.net/forecast/{}/{},{}'.format(API_KEY, latitude, longitude)    
-    else:
-        request_string = 'https://api.darksky.net/forecast/{}/{},{},{}'.format(API_KEY, latitude, longitude, time)
+#     if time is None:
+#         request_string = 'https://api.darksky.net/forecast/{}/{},{}'.format(API_KEY, latitude, longitude)    
+#     else:
+#         request_string = 'https://api.darksky.net/forecast/{}/{},{},{}'.format(API_KEY, latitude, longitude, time)
 
-    r = requests.get(request_string, timeout=5.)
+#     r = requests.get(request_string, timeout=5.)
     
-    if r.status_code == 200:        
-        # Do some processing
-        # Ensure timezone is correct
-        data = out.json() # Retrieve the data
+#     if r.status_code == 200:        
+#         # Do some processing
+#         # Ensure timezone is correct
+#         data = out.json() # Retrieve the data
 
-        return data
+#         return data
 
 
 # def get_site_reading(sitecode, start_date, end_date):
