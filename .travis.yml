@@ -4,7 +4,16 @@ services:
   - docker
 
 script:
-  # Ensure we build every docker image
+  # # Run all pytest unit tests
+  # - python -m pytest -v tests --cov misinformation --cov-report term-missing
+  # Run pyflakes for error detection
+  - pyflakes *.py scripts #tests
+  # Check PEP8 compliance (ignoring long lines)
+  - pycodestyle --statistics --ignore=E501 --count *.py scripts #tests
+  # Run pylint for stricter error checking
+  - pylint *py scripts/datasources/* #tests
+
+ # Ensure we build every docker image
 
   # Datasources
   - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/dynamic/laqn/.
@@ -18,4 +27,3 @@ script:
   # Push to ACR
   - bash docker_push.sh
 
-    
