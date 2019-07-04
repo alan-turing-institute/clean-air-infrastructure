@@ -75,7 +75,7 @@ def main():
                                                  password=db_password,
                                                  ssl_mode=ssl_mode)
 
-    logging.info("Configuring database{}".format(host))
+    logging.info("Configuring database {}".format(host))
     engine = create_engine(connection_string)
     with engine.connect() as conn:
         conn.execute(SQL_CODE)
