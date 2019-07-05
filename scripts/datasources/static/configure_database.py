@@ -57,11 +57,9 @@ height_of_top_of_building,
 calcaulated_height_of_building,
 shape_length,
 shape_area,
-ST_Transform(ST_MakeValid(shape), 4326) as geom    
+shape as geom    
 INTO ukmap_4326
-FROM ukmap        
-WHERE
-   ST_GeometryType(ST_Transform(ST_MakeValid(shape), 4326))='ST_MultiPolygon';
+FROM ukmap;
 """
 
 SQL_CODE3 = """
