@@ -11,9 +11,12 @@ from sqlalchemy.orm import sessionmaker
 
 
 # NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
-SQL_CODE = """
+SQL_CODE1 = """
 ALTER TABLE public.base_hb0_complete_merged
 RENAME TO ukmap; 
+"""
+
+SQL_CODE2 = """
 SELECT
 objectid,
 geographic_entity_type,
@@ -59,7 +62,9 @@ INTO ukmap_4326
 FROM ukmap        
 WHERE
    ST_GeometryType(ST_Transform(ST_MakeValid(shape), 4326))='ST_MultiPolygon';
-                                                                                                                                                                                                               
+"""
+
+SQL_CODE3 = """
 CREATE INDEX ukmap_4326_gix ON ukmap_4326 USING GIST(geom);                                                                 
 """
 
@@ -122,7 +127,9 @@ def main():
     logging.info("Configuring database {}".format(host))
     engine = create_engine(connection_string)
     with engine.connect() as conn:
-        conn.execute(SQL_CODE)
+        conn.execute(SQL_CODE1)
+        conn.execute(SQL_CODE2)
+        conn.execute(SQL_CODE3)
     logging.info("Database Configuration complete")
 
 
