@@ -185,8 +185,11 @@ def update_site_list_table(session):
             if not site_exists:
                 logging.info("Site %s not in %s. Creating entry", green(
                     site["@SiteCode"]), green(laqn_sites.__tablename__))
-                site_entry = site_to_laqn_site_entry(site)
-                session.add(site_entry)
+                if site['@DateOpened'] == '':
+                    logging.warning("Site {} does not have an opening date. Not adding to database".format(site['@SiteCode']))
+                else:
+                    site_entry = site_to_laqn_site_entry(site)
+                    session.add(site_entry)
 
             else:
                 site_data = site_info_query.filter(
@@ -309,46 +312,6 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
         session.commit()
 
 
-def load_db_info():
-    """
-    Check file system is accessable from docker and return database login info
-    """
-
-    mount_dir = '/secrets/'
-    local_dir = './terraform/.secrets/'
-    secret_file = '.laqn_secret.json'
-
-    # Check if the following directories exist
-    check_secrets_mount = os.path.isdir(mount_dir)
-    check_local_dir = os.path.isdir(local_dir)
-
-    secret_fname = None
-    if check_secrets_mount:
-        logging.info("{} is mounted".format(mount_dir))
-        secret_fname = os.path.join(mount_dir, secret_file)
-
-    elif check_local_dir:
-        logging.info("{} exists locally".format(check_local_dir))
-        secret_fname = os.path.join(local_dir, secret_file)
-
-    else:
-        raise FileNotFoundError(
-            "Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
-
-    try:
-        with open(secret_fname) as f:
-            data = json.load(f)
-           
-        logging.info("Database connection information loaded")
-
-    except FileNotFoundError:
-        logging.error(
-            "Database secrets could not be found. Ensure secret_file exists")
-        raise FileNotFoundError
-
-    return data
-
-
 def process_args():
 
     # Read command line arguments
@@ -401,7 +364,7 @@ def main():
 
     start_date, end_date, force = process_args()
 
-    db_info = load_db_info()
+    db_info = load_db_info('.laqn_secret.json')
 
     logging.info("Starting laqn_database script")
     logging.info("Has internet connection: %s", connected_to_internet())

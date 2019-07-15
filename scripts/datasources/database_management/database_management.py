@@ -95,7 +95,7 @@ def get_data_range(site, start_date, end_date):
     Get the dates that data is available for a site between start_date and end_date
     If no data is available between these dates returns None
     """ 
-    
+
     if not start_date:
         get_data_from = datetime_floor(site.DateOpened)
     else:        
@@ -126,7 +126,7 @@ def get_data_range(site, start_date, end_date):
     return (get_data_from, get_data_to)
 
 
-def load_db_info():
+def load_db_info(secret_file):
     """
     Loads database secrets from a json file.
     Check file system is accessable from docker and return database login info
@@ -134,7 +134,6 @@ def load_db_info():
 
     mount_dir = 'secrets'
     local_dir = './terraform/.secrets/'
-    secret_file = '.laqn_secret.json'
 
     # Check if the following directories exist
     check_secrets_mount = os.path.isdir(mount_dir)

@@ -269,13 +269,6 @@ def add_reading_entries(session, site_code, readings):
 
     session.add_all(all_reading_entries)
 
-
-def datetime_floor(dtime):
-    "Set the time to midnight for a given datetime"
-    return datetime.combine(
-        dtime, datetime.min.time())
-
-
 def update_reading_table(session, start_date=None, end_date=None, force=False):
     """
     Add missing reading data to the database
@@ -340,44 +333,6 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
 
         session.commit()
 
-
-def load_db_info():
-    "Check file system is accessable from docker and return database login info"
-
-    mount_dir = '/secrets/aqecred/'
-    local_dir = './terraform/.secrets/'
-    secret_file = '.aqe_secret.json'
-
-    # Check if the following directories exist
-    check_secrets_mount = os.path.isdir(mount_dir)
-    check_local_dir = os.path.isdir(local_dir)
-
-    secret_fname = None
-    if check_secrets_mount:
-        logging.info("{} is mounted".format(mount_dir))
-        secret_fname = os.path.join(mount_dir, secret_file)
-
-    elif check_local_dir:
-        logging.info("{} exists locally".format(check_local_dir))
-        secret_fname = os.path.join(local_dir, secret_file)
-
-    else:
-        raise FileNotFoundError(
-            "Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
-
-    try:
-        with open(secret_fname) as f:
-            data = json.load(f)
-        logging.info("Database connection information loaded")
-
-    except FileNotFoundError:
-        logging.error(
-            "Database secrets could not be found. Ensure secret_file exists")
-        raise FileNotFoundError
-
-    return data
-
-
 def process_args():
 
     # Read command line arguments
@@ -429,7 +384,7 @@ def main():
 
     start_date, end_date, force = process_args()
 
-    db_info = load_db_info()
+    db_info = load_db_info('.aqe_secret.json')
 
     logging.info("Starting aqe_database script")
     logging.info("Has internet connection: {}".format(connected_to_internet()))
