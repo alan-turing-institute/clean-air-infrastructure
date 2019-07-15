@@ -516,11 +516,8 @@ def main():
 
     # Update data in laqn reading table
     today = datetime.today().date()
-    update_reading_table(session,
-                         start_date=str(today - ONE_DAY),
-                         end_date=str(today))
 
-    # # Update data in laqn reading table
+    # Update data in laqn reading table
     update_reading_table(session, start_date=str(start_date),
                          end_date=str(end_date), force=force)
 
