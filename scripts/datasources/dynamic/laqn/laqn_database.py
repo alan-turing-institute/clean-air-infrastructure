@@ -1,40 +1,29 @@
-<<<<<<< HEAD:scripts/datasources/dynamic/laqn/laqn_database.py
 """
 Get data from the LAQN network via the API maintained by Kings Colleage London (https://www.londonair.org.uk/Londonair/API/)
 """
 import argparse
 import requests
-=======
-from datetime import datetime, timedelta
->>>>>>> master:scripts/datasources/laqn/laqn_database.py
 import os
 import json
 import logging
 import termcolor
-import requests
+
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-<<<<<<< HEAD:scripts/datasources/dynamic/laqn/laqn_database.py
-from sqlalchemy.sql import text
-from geoalchemy2 import Geometry, WKTElement
-from sqlalchemy.orm import sessionmaker
-=======
->>>>>>> master:scripts/datasources/laqn/laqn_database.py
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
-<<<<<<< HEAD:scripts/datasources/dynamic/laqn/laqn_database.py
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+
 def days(d):
     "Time delta in days"
     return timedelta(days = d)
-=======
 
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
 ONE_DAY = timedelta(days=1)
->>>>>>> master:scripts/datasources/laqn/laqn_database.py
 
 
 def green(text):
