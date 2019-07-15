@@ -105,7 +105,6 @@ def str_to_datetime(date_str):
 # Database tables
 Base = declarative_base()
 
-
 class laqn_sites(Base):
     """
     Table of LAQN sites
@@ -400,7 +399,7 @@ def load_db_info():
     Check file system is accessable from docker and return database login info
     """
 
-    mount_dir = 'secrets'
+    mount_dir = '/secrets/'
     local_dir = './terraform/.secrets/'
     secret_file = '.laqn_secret.json'
 
