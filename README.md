@@ -223,5 +223,5 @@ Datasources consist of a docker image which collect data from an API and store t
 The following command runs the laqn docker image and mounts the secrets file to the correct location in the container. 
 
 ```
-docker run -v <localdirectorycontaininglaqnsecretfile>:/secrets/laqncred/ <laqnimage>
+docker run -v <localdirectorycontaininglaqnsecretfile>:/secrets/ <laqnimage>
 ```

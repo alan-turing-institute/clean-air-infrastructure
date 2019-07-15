@@ -101,6 +101,23 @@ def str_to_datetime(date_str):
     """
     return datetime.strptime(date_str, "%Y-%m-%d")
 
+def emptystr_2_none(x):
+    """
+    Convert empty strings to None
+    """
+
+    if isinstance(x, str) and (x == ''):
+        return None
+    else:
+        return x
+
+def map_dict(d1, f):
+    """
+    Map a function to every item in a dictionary
+    """
+
+    d2 = {k: f(v) for k, v in d1.items()}
+    return d2
 
 # Database tables
 Base = declarative_base()
@@ -147,6 +164,9 @@ def site_to_laqn_site_entry(site):
     """
     Create an laqn_sites entry
     """
+    
+    site = map_dict(site, emptystr_2_none)
+
     # Hack to make geom = NULL if longitude and latitude dont exist
     if (site['@Longitude'] is None) or (site['@Latitude'] is None):
         out = laqn_sites(SiteCode=site['@SiteCode'],
