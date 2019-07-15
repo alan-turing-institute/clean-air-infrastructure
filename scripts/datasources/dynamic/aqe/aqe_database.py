@@ -20,9 +20,11 @@ from io import BytesIO, StringIO
 from xml.dom import minidom
 import csv
 
+
 def days(d):
     "Time delta in days"
-    return timedelta(days = d)
+    return timedelta(days=d)
+
 
 def emp1(text):
     return termcolor.colored(text, 'green')
@@ -32,7 +34,7 @@ def emp2(text):
     return termcolor.colored(text, 'red')
 
 
-def connected_to_internet(url='http://www.google.com/', timeout=5):    
+def connected_to_internet(url='http://www.google.com/', timeout=5):
     try:
         _ = requests.get(url, timeout=timeout)
         return True
@@ -50,9 +52,9 @@ def site_list_xml_to_list(dom_object):
 def get_site_info():
     """
     Get info on all aqe sites    
-    
+
     Returns: A dom object (https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom)
-    """    
+    """
 
     r = requests.get(
         'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site', timeout=5.)
@@ -62,7 +64,6 @@ def get_site_info():
         return site_list_xml_to_list(dom1)
 
 
-
 def get_site_reading(sitecode, start_date, end_date):
     """
     Request data for a given {sitecode} between {start_date} and {end_date}. 
@@ -70,13 +71,11 @@ def get_site_reading(sitecode, start_date, end_date):
     """
 
     r = requests.get(
-       'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{}/{}/{}'.format(sitecode, start_date, end_date))
-
+        'http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{}/{}/{}'.format(sitecode, start_date, end_date))
 
     if r.status_code == 200:
 
         return process_site_reading(sitecode, r.content)
-
 
 
 def process_site_reading(sitecode, content):
@@ -84,7 +83,6 @@ def process_site_reading(sitecode, content):
     Process a site reading. 
     Returns a list of dictionaires
     """
-
 
     reader = csv.reader(StringIO(content.decode()))
 
@@ -97,19 +95,17 @@ def process_site_reading(sitecode, content):
     readings_processed = []
 
     for r in readings:
-        
+
         for s in range(len(r) - 1):
-            
+
             reading_dict = {'@SiteCode': sitecode,
-                                '@SpeciesCode': species[s],
-                                '@MeasurementDateGMT': r[0],
-                                '@Value': r[s+1] }
+                            '@SpeciesCode': species[s],
+                            '@MeasurementDateGMT': r[0],
+                            '@Value': r[s+1]}
 
             readings_processed.append(reading_dict)
 
     return readings_processed
-
-
 
 
 def drop_duplicates(data):
@@ -139,21 +135,25 @@ def str_to_datetime(date_str):
 
 # Database functions
 
+
 # DataBase specification
 Base = declarative_base()
+
+
 class aqe_sites(Base):
     __tablename__ = 'aqe_sites'
     SiteCode = Column(String(5), primary_key=True, nullable=False)
-    SiteName = Column(String(), nullable = False)
+    SiteName = Column(String(), nullable=False)
     SiteType = Column(String(20), nullable=False)
     Latitude = Column(DOUBLE_PRECISION)
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP)
     DateClosed = Column(TIMESTAMP)
 
-    SiteLink =  Column(String)
-    DataManager = Column(String)     
-    geom = Column(Geometry(geometry_type = "POINT", srid = 4326, dimension = 2, spatial_index=True))
+    SiteLink = Column(String)
+    DataManager = Column(String)
+    geom = Column(Geometry(geometry_type="POINT", srid=4326,
+                           dimension=2, spatial_index=True))
 
 
 class aqe_reading(Base):
@@ -180,29 +180,30 @@ def site_to_aqe_site_entry(site):
 
     # Hack to make geom = NULL if longitude and latitude dont exist
     if (site['Longitude'] == None) or (site['Latitude'] == None):
-        out = aqe_sites(SiteCode=site['SiteCode'],       
-                    SiteName=site['SiteName'],
-                    SiteType=site['SiteType'],                    
-                    Latitude=site['Latitude'],
-                    Longitude=site['Longitude'],
-                    DateOpened=site['DateOpened'],
-                    DateClosed=site['DateClosed'],           
-                    SiteLink=site['SiteLink'],
-                    DataManager=site['DataManager']
-                    )
-    else:    
-        geom_string = 'SRID=4326;POINT({} {})'.format(site['Longitude'], site['Latitude'])    
-        out = aqe_sites(SiteCode=site['SiteCode'],       
-                    SiteName=site['SiteName'],
-                    SiteType=site['SiteType'],                    
-                    Latitude=site['Latitude'],
-                    Longitude=site['Longitude'],
-                    DateOpened=site['DateOpened'],
-                    DateClosed=site['DateClosed'],           
-                    SiteLink=site['SiteLink'],
-                    DataManager=site['DataManager'], 
-                    geom = geom_string  
-                    )
+        out = aqe_sites(SiteCode=site['SiteCode'],
+                        SiteName=site['SiteName'],
+                        SiteType=site['SiteType'],
+                        Latitude=site['Latitude'],
+                        Longitude=site['Longitude'],
+                        DateOpened=site['DateOpened'],
+                        DateClosed=site['DateClosed'],
+                        SiteLink=site['SiteLink'],
+                        DataManager=site['DataManager']
+                        )
+    else:
+        geom_string = 'SRID=4326;POINT({} {})'.format(
+            site['Longitude'], site['Latitude'])
+        out = aqe_sites(SiteCode=site['SiteCode'],
+                        SiteName=site['SiteName'],
+                        SiteType=site['SiteType'],
+                        Latitude=site['Latitude'],
+                        Longitude=site['Longitude'],
+                        DateOpened=site['DateOpened'],
+                        DateClosed=site['DateClosed'],
+                        SiteLink=site['SiteLink'],
+                        DataManager=site['DataManager'],
+                        geom=geom_string
+                        )
     return out
 
 
@@ -211,9 +212,9 @@ def aqe_reading_entry(reading):
     reading = dict_clean(reading)
 
     return aqe_reading(SiteCode=reading['@SiteCode'],
-                        SpeciesCode=reading['@SpeciesCode'],
-                        MeasurementDateGMT=reading['@MeasurementDateGMT'],
-                        Value=reading['@Value'])
+                       SpeciesCode=reading['@SpeciesCode'],
+                       MeasurementDateGMT=reading['@MeasurementDateGMT'],
+                       Value=reading['@Value'])
 
 
 def create_sitelist(site_info):
@@ -259,7 +260,7 @@ def update_site_list_table(session):
                 logging.info("Site {} not in {}. Creating entry".format(emp1(site['SiteCode']),
                                                                         emp1(aqe_sites.__tablename__)))
                 site_entry = site_to_aqe_site_entry(site)
-                session.add(site_entry)                
+                session.add(site_entry)
             else:
 
                 site_data = site_info_query.filter(
@@ -270,7 +271,7 @@ def update_site_list_table(session):
 
                     logging.info("Site {} has closed. Updating {}".format(emp1(site['SiteCode']),
                                                                           emp1(aqe_sites.__tablename__)))
-                    site_data.DateClosed = site['DateClosed']        
+                    site_data.DateClosed = site['DateClosed']
         logging.info("Committing any changes to database table {}".format(
             emp1(aqe_sites.__tablename__)))
         session.commit()
@@ -350,7 +351,7 @@ def get_data_range(site, start_date, end_date):
         return (get_data_from, get_data_to)
 
 
-def update_reading_table(session, start_date=None, end_date=None, force = False):
+def update_reading_table(session, start_date=None, end_date=None, force=False):
     """
     Add missing reading data to the database
 
@@ -358,7 +359,8 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
     end_date: date to get data to. If None will get till today, or when site closed.
     """
 
-    logging.info("Attempting to download data between {} and {}".format(emp1(start_date), emp1(end_date)))
+    logging.info("Attempting to download data between {} and {}".format(
+        emp1(start_date), emp1(end_date)))
 
     site_info_query = session.query(aqe_sites)
     aqe_readings_query = session.query(aqe_reading)
@@ -387,34 +389,33 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
             readings_in_db = site_query.distinct(aqe_reading.MeasurementDateGMT).filter(
                 and_(aqe_reading.MeasurementDateGMT >= date, aqe_reading.MeasurementDateGMT < date + days(1))).all()
 
-            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
+            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data.
             # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or ( (datetime.today().date() - date.date() ).days < 2) or (force):
+            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()).days < 2) or (force):
 
                 logging.info("Getting data for site {} for date: {}".format(
                     emp2(site.SiteCode), emp2(date_range[i].date())))
 
                 d = get_site_reading(site.SiteCode, str(
                     date.date()), str((date + days(1)).date()))
-                
+
                 if d is not None:
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
                     logging.info("Request for data for {} between dates {} and {} failed".format(
                         site.SiteCode, date, (date + days(1)).date()))
-          
+
             else:
 
                 logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                emp2(site.SiteCode), emp2(date_range[i].date())))     
+                    emp2(site.SiteCode), emp2(date_range[i].date())))
 
         session.commit()
 
 
 def load_db_info():
     "Check file system is accessable from docker and return database login info"
-  
 
     mount_dir = '/secrets/aqecred/'
     local_dir = './terraform/.secrets/'
@@ -434,18 +435,19 @@ def load_db_info():
         secret_fname = os.path.join(local_dir, secret_file)
 
     else:
-        raise FileNotFoundError("Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
+        raise FileNotFoundError(
+            "Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
 
-    
     try:
         with open(secret_fname) as f:
-            data = json.load(f)        
+            data = json.load(f)
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error("Database secrets could not be found. Ensure secret_file exists")
+        logging.error(
+            "Database secrets could not be found. Ensure secret_file exists")
         raise FileNotFoundError
-  
+
     return data
 
 
@@ -454,14 +456,18 @@ def process_args():
     # Read command line arguments
     parser = argparse.ArgumentParser(description='Get AQE data')
 
-    parser.add_argument("-e", "--end", type=str, default="today", help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
+    parser.add_argument("-e", "--end", type=str, default="today",
+                        help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for. ndays=1 will get today (from midnight)")
-    group.add_argument("-s", "--start", type=str, help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")  
-    parser.add_argument('-f', "--force", action="store_true", help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
-    parser.add_argument("-d", "--debug", action="store_true", help="Set the logger level to debug")
+    group.add_argument("-n", "--ndays", type=int, default=2,
+                       help="The number of days to request data for. ndays=1 will get today (from midnight)")
+    group.add_argument("-s", "--start", type=str,
+                       help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")
+    parser.add_argument('-f', "--force", action="store_true",
+                        help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Set the logger level to debug")
     args = parser.parse_args()
-
 
     if args.debug:
         log_level = logging.DEBUG
@@ -469,8 +475,8 @@ def process_args():
         log_level = logging.INFO
 
     logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                    datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
-  
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
+
     # Set the end date
     if args.end == 'today':
         args.end = datetime.today().date()
@@ -480,14 +486,17 @@ def process_args():
     # Set the start date
     if args.ndays is not None:
         if args.ndays < 1:
-            raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
+            raise argparse.ArgumentTypeError(
+                "Argument --ndays must be greater than 0")
         args.start = args.end - days(args.ndays - 1)
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("AQE data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
+    logging.info("AQE data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
+        emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
 
     return args.start, args.end, args.force
+
 
 def main():
 
@@ -519,22 +528,18 @@ def main():
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
- 
 
     # Update the aqe_sites database table
     update_site_list_table(session)
 
-
     # # Update data in aqe reading table
-    update_reading_table(session, start_date = str(start_date),
-                         end_date = str(end_date), force = force)
+    update_reading_table(session, start_date=str(start_date),
+                         end_date=str(end_date), force=force)
 
     logging.info("AQE jobs finished")
 
 
 if __name__ == '__main__':
-    
-    
+
     main()
     # pass
-

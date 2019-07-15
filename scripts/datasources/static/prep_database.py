@@ -21,24 +21,23 @@ def create_connection_string(host, port, dbname, user, password, ssl_mode='requi
 
 def load_db_info():
     "Check file system is accessable from docker and return database login info"
-  
+
     mount_dir = '/.secrets/'
     secret_file = '.secret.json'
 
     # Check if the following directories exist
     secret_fname = os.path.join(mount_dir, secret_file)
 
-
-    
     try:
         with open(secret_fname) as f:
-            data = json.load(f)        
+            data = json.load(f)
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error("Database secrets could not be found. Ensure secret_file exists")
+        logging.error(
+            "Database secrets could not be found. Ensure secret_file exists")
         raise FileNotFoundError
-  
+
     return data
 
 
@@ -47,10 +46,9 @@ def main():
     log_level = logging.INFO
 
     logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                    datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
 
     db_info = load_db_info()
-
 
     # Connect to the database
     host = db_info['host']
@@ -75,6 +73,5 @@ def main():
 
 
 if __name__ == '__main__':
-    
-    main()
 
+    main()

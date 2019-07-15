@@ -24,6 +24,7 @@ logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
 
 ONE_DAY = timedelta(days=1)
 
+
 def emp1(text):
     return termcolor.colored(text, 'green')
 
@@ -32,7 +33,7 @@ def emp2(text):
     return termcolor.colored(text, 'red')
 
 
-# def connected_to_internet(url='http://www.google.com/', timeout=5):    
+# def connected_to_internet(url='http://www.google.com/', timeout=5):
 #     try:
 #         _ = requests.get(url, timeout=timeout)
 #         return True
@@ -41,27 +42,27 @@ def emp2(text):
 
 
 # def get_forecast(API_KEY, latitude, longitude, time = None):
-#     """Get forecast data from the darksky API. 
-    
+#     """Get forecast data from the darksky API.
+
 #     Args:
 #         API_KEY: The API Key provided by Dark Sky
 #         latitude: Latitute of weather forecast
 #         longitude: Longitude of weather forecast
-#         time: Either be a UNIX time (that is, seconds since midnight GMT on 1 Jan 1970) or a string formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone]. 
-#                         timezone should either be omitted (to refer to local time for the location being requested), Z (referring to GMT time), 
-#                         or +[HH][MM] or -[HH][MM] for an offset from GMT in hours and minutes. 
-#                         The timezone is only used for determining the time of the request; 
+#         time: Either be a UNIX time (that is, seconds since midnight GMT on 1 Jan 1970) or a string formatted as follows: [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS][timezone].
+#                         timezone should either be omitted (to refer to local time for the location being requested), Z (referring to GMT time),
+#                         or +[HH][MM] or -[HH][MM] for an offset from GMT in hours and minutes.
+#                         The timezone is only used for determining the time of the request;
 #                         the response will always be relative to the local time zone.
 #     """
-    
+
 #     if time is None:
-#         request_string = 'https://api.darksky.net/forecast/{}/{},{}'.format(API_KEY, latitude, longitude)    
+#         request_string = 'https://api.darksky.net/forecast/{}/{},{}'.format(API_KEY, latitude, longitude)
 #     else:
 #         request_string = 'https://api.darksky.net/forecast/{}/{},{},{}'.format(API_KEY, latitude, longitude, time)
 
 #     r = requests.get(request_string, timeout=5.)
-    
-#     if r.status_code == 200:        
+
+#     if r.status_code == 200:
 #         # Do some processing
 #         # Ensure timezone is correct
 #         data = out.json() # Retrieve the data
@@ -157,11 +158,11 @@ def emp2(text):
 #                     Latitude=site['@Latitude'],
 #                     Longitude=site['@Longitude'],
 #                     DateOpened=site['@DateOpened'],
-#                     DateClosed=site['@DateClosed']            
+#                     DateClosed=site['@DateClosed']
 #                     )
 
-#     else:    
-#         geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
+#     else:
+#         geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])
 #         out = laqn_sites(SiteCode=site['@SiteCode'],
 #                     la_id=site['@LocalAuthorityCode'],
 #                     SiteType=site['@SiteType'],
@@ -169,8 +170,8 @@ def emp2(text):
 #                     Longitude=site['@Longitude'],
 #                     DateOpened=site['@DateOpened'],
 #                     DateClosed=site['@DateClosed'] ,
-#                     geom = geom_string          
-#                     ) 
+#                     geom = geom_string
+#                     )
 
 #     return out
 
@@ -234,7 +235,6 @@ def emp2(text):
 #                 site_entry = site_to_laqn_site_entry(site)
 #                 session.add(site_entry)
 
-                
 
 #             else:
 
@@ -249,7 +249,7 @@ def emp2(text):
 #                                                                           emp1(laqn_sites.__tablename__)))
 
 #                     site_data.DateClosed = site['@DateClosed']
-        
+
 #         logging.info("Committing any changes to database table {}".format(
 #             emp1(laqn_sites.__tablename__)))
 #         session.commit()
@@ -402,7 +402,7 @@ def emp2(text):
 
 #     try:
 #         with open("/secrets/laqncred/.laqn_secret.json") as f:
-#             data = json.load(f)        
+#             data = json.load(f)
 #         logging.info("/secrets folder found. Database connection information loaded")
 
 #     except FileNotFoundError:
@@ -433,7 +433,7 @@ def emp2(text):
 #                                                  password=db_password,
 #                                                  ssl_mode=ssl_mode)
 
-   
+
 #     engine = create_engine(connection_string)
 #     Base.metadata.create_all(engine)
 #     Session = sessionmaker(bind=engine)
@@ -455,7 +455,6 @@ def emp2(text):
 #     logging.info("LAQN jobs finished")
 
 # if __name__ == '__main__':
-    
+
 #     # main()
 #     pass
-

@@ -18,7 +18,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 def days(d):
     "Time delta in days"
-    return timedelta(days = d)
+    return timedelta(days=d)
+
 
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -117,7 +118,8 @@ class laqn_sites(Base):
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP)
     DateClosed = Column(TIMESTAMP)
-    geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
+    geom = Column(Geometry(geometry_type="POINT", srid=4326,
+                           dimension=2, spatial_index=True))
 
 
 class laqn_reading(Base):
@@ -135,7 +137,8 @@ def create_connection_string(host, port, dbname, user, password):
     """
     Create a postgres connection string
     """
-    connection_string = "postgresql://{}:{}@{}:{}/{}".format(user, password, host, port, dbname)
+    connection_string = "postgresql://{}:{}@{}:{}/{}".format(
+        user, password, host, port, dbname)
     return connection_string
 
 
@@ -148,25 +151,26 @@ def site_to_laqn_site_entry(site):
     # Hack to make geom = NULL if longitude and latitude dont exist
     if (site['@Longitude'] == None) or (site['@Latitude'] == None):
         out = laqn_sites(SiteCode=site['@SiteCode'],
-                    la_id=site['@LocalAuthorityCode'],
-                    SiteType=site['@SiteType'],
-                    Latitude=site['@Latitude'],
-                    Longitude=site['@Longitude'],
-                    DateOpened=site['@DateOpened'],
-                    DateClosed=site['@DateClosed']            
-                    )
+                         la_id=site['@LocalAuthorityCode'],
+                         SiteType=site['@SiteType'],
+                         Latitude=site['@Latitude'],
+                         Longitude=site['@Longitude'],
+                         DateOpened=site['@DateOpened'],
+                         DateClosed=site['@DateClosed']
+                         )
 
-    else:    
-        geom_string = 'SRID=4326;POINT({} {})'.format(site['@Longitude'], site['@Latitude'])    
+    else:
+        geom_string = 'SRID=4326;POINT({} {})'.format(
+            site['@Longitude'], site['@Latitude'])
         out = laqn_sites(SiteCode=site['@SiteCode'],
-                    la_id=site['@LocalAuthorityCode'],
-                    SiteType=site['@SiteType'],
-                    Latitude=site['@Latitude'],
-                    Longitude=site['@Longitude'],
-                    DateOpened=site['@DateOpened'],
-                    DateClosed=site['@DateClosed'] ,
-                    geom = geom_string          
-                    ) 
+                         la_id=site['@LocalAuthorityCode'],
+                         SiteType=site['@SiteType'],
+                         Latitude=site['@Latitude'],
+                         Longitude=site['@Longitude'],
+                         DateOpened=site['@DateOpened'],
+                         DateClosed=site['@DateClosed'],
+                         geom=geom_string
+                         )
 
     return out
 
@@ -214,7 +218,8 @@ def update_site_list_table(session):
     # If not empty check it has latest information
     else:
         # Check if site exists and database is up to date
-        logging.info("Crosscheck entries in database table %s", green(laqn_sites.__tablename__))
+        logging.info("Crosscheck entries in database table %s",
+                     green(laqn_sites.__tablename__))
 
         for site in site_info:
 
@@ -223,7 +228,8 @@ def update_site_list_table(session):
                 laqn_sites.SiteCode == site["@SiteCode"])).scalar()
 
             if not site_exists:
-                logging.info("Site %s not in %s. Creating entry", green(site["@SiteCode"]), green(laqn_sites.__tablename__))
+                logging.info("Site %s not in %s. Creating entry", green(
+                    site["@SiteCode"]), green(laqn_sites.__tablename__))
                 site_entry = site_to_laqn_site_entry(site)
                 session.add(site_entry)
 
@@ -235,11 +241,13 @@ def update_site_list_table(session):
 
                 if ((site["@DateClosed"] != "") and date_site_closed is None):
 
-                    logging.info("Site %s has closed. Updating %s", green(site["@SiteCode"]), green(laqn_sites.__tablename__))
+                    logging.info("Site %s has closed. Updating %s", green(
+                        site["@SiteCode"]), green(laqn_sites.__tablename__))
 
                     site_data.DateClosed = site["@DateClosed"]
 
-        logging.info("Committing any changes to database table %s", green(laqn_sites.__tablename__))
+        logging.info("Committing any changes to database table %s",
+                     green(laqn_sites.__tablename__))
         session.commit()
 
 
@@ -322,7 +330,7 @@ def get_data_range(site, start_date, end_date):
     return (get_data_from, get_data_to)
 
 
-def update_reading_table(session, start_date=None, end_date=None, force = False):
+def update_reading_table(session, start_date=None, end_date=None, force=False):
     """
     Add missing reading data to the database
 
@@ -330,7 +338,8 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
     end_date: date to get data to. If None will get till today, or when site closed.
     """
 
-    logging.info("Attempting to download data between %s and %s", green(start_date), green(end_date))
+    logging.info("Attempting to download data between %s and %s",
+                 green(start_date), green(end_date))
 
     site_info_query = session.query(laqn_sites)
     laqn_readings_query = session.query(laqn_reading)
@@ -344,12 +353,14 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
         date_from_to = get_data_range(site, start_date, end_date)
 
         if date_from_to is None:
-            logging.info("No data is available for site %s between %s and %s", red(site.SiteCode), red(start_date), red(end_date))
+            logging.info("No data is available for site %s between %s and %s", red(
+                site.SiteCode), red(start_date), red(end_date))
             continue
 
         # List of dates to get data for
         delta = date_from_to[1] - date_from_to[0]
-        date_range = [date_from_to[0] + timedelta(i) for i in range(delta.days + 1)]
+        date_range = [date_from_to[0] +
+                      timedelta(i) for i in range(delta.days + 1)]
 
         for i, date in enumerate(date_range):
 
@@ -357,11 +368,12 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
-            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data. 
+            # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data.
             # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or ( (datetime.today().date() - date.date() ).days < 2) or (force):
+            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()).days < 2) or (force):
 
-                logging.info("Getting data for site %s for date: %s", red(site.SiteCode), red(date_range[i].date()))
+                logging.info("Getting data for site %s for date: %s", red(
+                    site.SiteCode), red(date_range[i].date()))
 
                 d = get_site_reading(site.SiteCode, str(
                     date.date()), str((date + days(1)).date()))
@@ -372,11 +384,11 @@ def update_reading_table(session, start_date=None, end_date=None, force = False)
                 else:
                     logging.info("Request for data for {} between dates {} and {} failed".format(
                         site.SiteCode, date, (date + days(1)).date()))
-          
+
             else:
 
                 logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                emp2(site.SiteCode), emp2(date_range[i].date())))     
+                    emp2(site.SiteCode), emp2(date_range[i].date())))
 
         session.commit()
 
@@ -385,7 +397,6 @@ def load_db_info():
     """
     Check file system is accessable from docker and return database login info
     """
-  
 
     mount_dir = '/secrets/laqncred/'
     local_dir = './terraform/.secrets/'
@@ -405,35 +416,41 @@ def load_db_info():
         secret_fname = os.path.join(local_dir, secret_file)
 
     else:
-        raise FileNotFoundError("Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
+        raise FileNotFoundError(
+            "Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
 
-    
     try:
         with open(secret_fname) as f:
-            data = json.load(f)        
+            data = json.load(f)
             print(data)
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error("Database secrets could not be found. Ensure secret_file exists")
+        logging.error(
+            "Database secrets could not be found. Ensure secret_file exists")
         raise FileNotFoundError
-  
+
     return data
 
 
 def process_args():
 
     # Read command line arguments
-    parser = argparse.ArgumentParser(description='Get LAQN data from the KCL API')
+    parser = argparse.ArgumentParser(
+        description='Get LAQN data from the KCL API')
 
-    parser.add_argument("-e", "--end", type=str, default="today", help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
+    parser.add_argument("-e", "--end", type=str, default="today",
+                        help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for. ndays=1 will get today (from midnight)")
-    group.add_argument("-s", "--start", type=str, help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")  
-    parser.add_argument('-f', "--force", action="store_true", help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
-    parser.add_argument("-d", "--debug", action="store_true", help="Set the logger level to debug")
+    group.add_argument("-n", "--ndays", type=int, default=2,
+                       help="The number of days to request data for. ndays=1 will get today (from midnight)")
+    group.add_argument("-s", "--start", type=str,
+                       help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")
+    parser.add_argument('-f', "--force", action="store_true",
+                        help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Set the logger level to debug")
     args = parser.parse_args()
-
 
     if args.debug:
         log_level = logging.DEBUG
@@ -441,9 +458,7 @@ def process_args():
         log_level = logging.INFO
 
     logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                    datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
-  
-
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
 
     # Set the end date
     if args.end == 'today':
@@ -454,15 +469,16 @@ def process_args():
     # Set the start date
     if args.ndays is not None:
         if args.ndays < 1:
-            raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
+            raise argparse.ArgumentTypeError(
+                "Argument --ndays must be greater than 0")
         args.start = args.end - days(args.ndays - 1)
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
+    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
+        emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
 
     return args.start, args.end, args.force
-
 
     start_date, end_date, force = process_args()
 
@@ -501,13 +517,12 @@ def process_args():
                          end_date=str(today))
 
     # # Update data in laqn reading table
-    update_reading_table(session, start_date = str(start_date),
-                         end_date = str(end_date), force = force)
+    update_reading_table(session, start_date=str(start_date),
+                         end_date=str(end_date), force=force)
 
     logging.info("LAQN jobs finished")
 
 
 if __name__ == '__main__':
-    
-    
+
     main()
