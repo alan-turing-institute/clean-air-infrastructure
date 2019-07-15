@@ -5,20 +5,19 @@ To use the darksky API you need to register an account, where you will be provid
 """
 
 import requests
-import os
+
 import logging
 import termcolor
-import json
-from sqlalchemy import Column, Integer, String, create_engine, exists, and_
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from sqlalchemy.sql import text
-from geoalchemy2 import Geometry, WKTElement
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-import pdb
+# import json
+# from sqlalchemy import Column, Integer, String, create_engine, exists, and_
+# from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+# from sqlalchemy.sql import text
+# from geoalchemy2 import Geometry, WKTElement
+# from sqlalchemy.orm import sessionmaker
+# from sqlalchemy.ext.declarative import declarative_base
+# import pdb
 
-from datetime import datetime, timedelta
-
+from datetime import timedelta
 
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -77,7 +76,7 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 #     r = requests.get(
 #         'http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json'.format(sitecode,
-#                                                                                                         start_date, end_date))
+# start_date, end_date))
 
 #     if r.status_code == 200:
 
@@ -245,10 +244,10 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 #                 date_site_closed = site_data.DateClosed
 
-#                 if ((site['@DateClosed'] != "") and date_site_closed is None):
+# if ((site['@DateClosed'] != "") and date_site_closed is None):
 
 #                     logging.info("Site {} has closed. Updating {}".format(emp1(site['@SiteCode']),
-#                                                                           emp1(laqn_sites.__tablename__)))
+# emp1(laqn_sites.__tablename__)))
 
 #                     site_data.DateClosed = site['@DateClosed']
 
@@ -260,7 +259,8 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 # def check_laqn_entry_exists(session, reading):
 #     "Check if an laqn entry already exists in the database"
 #     criteria = and_(laqn_reading.SiteCode == reading.SiteCode, laqn_reading.SpeciesCode ==
-#                     reading.SpeciesCode, laqn_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
+# reading.SpeciesCode, laqn_reading.MeasurementDateGMT ==
+# reading.MeasurementDateGMT)
 
 #     ret = session.query(exists().where(criteria)).scalar()
 
@@ -322,7 +322,8 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 #                     datetime_floor(site.DateClosed)]
 #             )
 
-#     delta = get_data_to - get_data_from  # Number of days available for a site
+# delta = get_data_to - get_data_from  # Number of days available for a
+# site
 
 #     if delta.days < 0:
 #         return None
@@ -365,7 +366,8 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 #             # Query readings in the database for this date ignoring species
 #             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
-#                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + ONE_DAY)).all()
+# and_(laqn_reading.MeasurementDateGMT >= date,
+# laqn_reading.MeasurementDateGMT < date + ONE_DAY)).all()
 
 #             # If no database entries for that date try to get them
 #             if len(readings_in_db) == 0:

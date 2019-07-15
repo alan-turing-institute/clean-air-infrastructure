@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import timedelta, datetime
 
 
 def days(d):
@@ -146,10 +147,8 @@ def site_to_laqn_site_entry(site):
     """
     Create an laqn_sites entry
     """
-    site_info = dict_clean(site)
-
     # Hack to make geom = NULL if longitude and latitude dont exist
-    if (site['@Longitude'] == None) or (site['@Latitude'] == None):
+    if (site['@Longitude'] is None) or (site['@Latitude'] is None):
         out = laqn_sites(SiteCode=site['@SiteCode'],
                          la_id=site['@LocalAuthorityCode'],
                          SiteType=site['@SiteType'],
@@ -285,7 +284,7 @@ def add_reading_entries(session, site_code, readings):
             all_reading_entries.append(new_laqn_reading_entry)
         else:
             logging.debug(
-                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(emp2(site_code), emp2(r['@MeasurementDateGMT']), emp2(r['@SpeciesCode'])))
+                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(green(site_code), green(r['@MeasurementDateGMT']), green(r['@SpeciesCode'])))
 
     session.add_all(all_reading_entries)
 
@@ -359,8 +358,7 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
 
         # List of dates to get data for
         delta = date_from_to[1] - date_from_to[0]
-        date_range = [date_from_to[0] +
-                      timedelta(i) for i in range(delta.days + 1)]
+        date_range = [date_from_to[0] + timedelta(i) for i in range(delta.days + 1)]
 
         for i, date in enumerate(date_range):
 
@@ -369,8 +367,11 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
                 and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
 
             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data.
-            # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()).days < 2) or (force):
+            # If the date is not today or yesterday and the force flag is not
+            # True assumes the data is in the database and does not attempt to
+            # get it
+            if (len(readings_in_db) == 0) or (
+                    (datetime.today().date() - date.date()).days < 2) or (force):
 
                 logging.info("Getting data for site %s for date: %s", red(
                     site.SiteCode), red(date_range[i].date()))
@@ -388,7 +389,7 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
             else:
 
                 logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                    emp2(site.SiteCode), emp2(date_range[i].date())))
+                    green(site.SiteCode), green(date_range[i].date())))
 
         session.commit()
 
@@ -476,9 +477,12 @@ def process_args():
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
     logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
-        emp1(args.start), emp1(args.end), emp2("00:00:00"), emp2("23:59:59"), emp1(args.force)))
+        red(args.start), red(args.end), green("00:00:00"), green("23:59:59"), red(args.force)))
 
     return args.start, args.end, args.force
+
+
+def main():
 
     start_date, end_date, force = process_args()
 

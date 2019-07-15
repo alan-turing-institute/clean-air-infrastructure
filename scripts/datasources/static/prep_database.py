@@ -1,17 +1,11 @@
-
-import argparse
 import os
 import logging
-import termcolor
 import json
-from sqlalchemy import Column, Integer, String, create_engine, exists, and_
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from sqlalchemy.sql import text
-from geoalchemy2 import Geometry, WKTElement
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
 
 
-def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
+def create_connection_string(
+        host, port, dbname, user, password, ssl_mode='require'):
     "Create a postgres connection string"
     connection_string = 'postgresql://{}:{}@{}:{}/{}'.format(
         user, password, host, port, dbname)

@@ -7,13 +7,12 @@ import os
 import logging
 import termcolor
 import json
-from sqlalchemy import Column, Integer, String, create_engine, exists, and_
+from sqlalchemy import Column, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from sqlalchemy.sql import text
-from geoalchemy2 import Geometry, WKTElement
+from geoalchemy2 import Geometry
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-import pdb
+
 
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
@@ -43,16 +42,17 @@ def connected_to_internet(url='http://www.google.com/', timeout=5):
 
 
 def site_list_xml_to_list(dom_object):
-    """ 
-    Covert dom object to a list of dictionaries. Each dictionary is an site containing site information"""
+    """
+    Covert dom object to a list of dictionaries. Each dictionary is an site containing site information
+    """
 
-    return [dict(s.attributes.items()) for s in dom_object.getElementsByTagName("Site")]
+    return [dict(s.attributes.items())
+            for s in dom_object.getElementsByTagName("Site")]
 
 
 def get_site_info():
     """
-    Get info on all aqe sites    
-
+    Get info on all aqe sites
     Returns: A dom object (https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom)
     """
 
@@ -66,7 +66,7 @@ def get_site_info():
 
 def get_site_reading(sitecode, start_date, end_date):
     """
-    Request data for a given {sitecode} between {start_date} and {end_date}. 
+    Request data for a given {sitecode} between {start_date} and {end_date}.
     Dates given in %yyyy-mm-dd%
     """
 
@@ -80,7 +80,7 @@ def get_site_reading(sitecode, start_date, end_date):
 
 def process_site_reading(sitecode, content):
     """
-    Process a site reading. 
+    Process a site reading.
     Returns a list of dictionaires
     """
 
@@ -101,7 +101,7 @@ def process_site_reading(sitecode, content):
             reading_dict = {'@SiteCode': sitecode,
                             '@SpeciesCode': species[s],
                             '@MeasurementDateGMT': r[0],
-                            '@Value': r[s+1]}
+                            '@Value': r[s + 1]}
 
             readings_processed.append(reading_dict)
 
@@ -165,7 +165,8 @@ class aqe_reading(Base):
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
-def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
+def create_connection_string(
+        host, port, dbname, user, password, ssl_mode='require'):
     "Create a postgres connection string"
     connection_string = 'postgresql://{}:{}@{}:{}/{}'.format(
         user, password, host, port, dbname)
@@ -179,7 +180,7 @@ def site_to_aqe_site_entry(site):
     site = dict_clean(site)
 
     # Hack to make geom = NULL if longitude and latitude dont exist
-    if (site['Longitude'] == None) or (site['Latitude'] == None):
+    if (site['Longitude'] is None) or (site['Latitude'] is None):
         out = aqe_sites(SiteCode=site['SiteCode'],
                         SiteName=site['SiteName'],
                         SiteType=site['SiteType'],
@@ -279,8 +280,9 @@ def update_site_list_table(session):
 
 def check_aqe_entry_exists(session, reading):
     "Check if an aqe entry already exists in the database"
-    criteria = and_(aqe_reading.SiteCode == reading.SiteCode, aqe_reading.SpeciesCode ==
-                    reading.SpeciesCode, aqe_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
+    criteria = and_(aqe_reading.SiteCode == reading.SiteCode,
+                    aqe_reading.SpeciesCode == reading.SpeciesCode,
+                    aqe_reading.MeasurementDateGMT == reading.MeasurementDateGMT)
 
     ret = session.query(exists().where(criteria)).scalar()
 
@@ -380,8 +382,7 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
 
         # List of dates to get data for
         delta = date_from_to[1] - date_from_to[0]
-        date_range = [date_from_to[0] +
-                      timedelta(i) for i in range(delta.days+1)]
+        date_range = [date_from_to[0] + timedelta(i) for i in range(delta.days + 1)]
 
         for i, date in enumerate(date_range):
 
@@ -390,8 +391,11 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
                 and_(aqe_reading.MeasurementDateGMT >= date, aqe_reading.MeasurementDateGMT < date + days(1))).all()
 
             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data.
-            # If the date is not today or yesterday and the force flag is not True assumes the data is in the database and does not attempt to get it
-            if (len(readings_in_db) == 0) or ((datetime.today().date() - date.date()).days < 2) or (force):
+            # If the date is not today or yesterday and the force flag is not
+            # True assumes the data is in the database and does not attempt to
+            # get it
+            if (len(readings_in_db) == 0) or (
+                    (datetime.today().date() - date.date()).days < 2) or (force):
 
                 logging.info("Getting data for site {} for date: {}".format(
                     emp2(site.SiteCode), emp2(date_range[i].date())))

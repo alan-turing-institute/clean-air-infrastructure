@@ -1,19 +1,12 @@
-import argparse
 import os
 import logging
-import termcolor
 import json
-from sqlalchemy import Column, Integer, String, create_engine, exists, and_
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from sqlalchemy.sql import text
-from geoalchemy2 import Geometry, WKTElement
-from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy import create_engine
 
 # NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
 SQL_CODE1 = """
 ALTER TABLE public.base_hb0_complete_merged
-RENAME TO ukmap; 
+RENAME TO ukmap;
 """
 
 SQL_CODE2 = """
@@ -57,17 +50,18 @@ height_of_top_of_building,
 calcaulated_height_of_building,
 shape_length,
 shape_area,
-shape as geom    
+shape as geom
 INTO ukmap_4326
 FROM ukmap;
 """
 
 SQL_CODE3 = """
-CREATE INDEX ukmap_4326_gix ON ukmap_4326 USING GIST(geom);                                                                 
+CREATE INDEX ukmap_4326_gix ON ukmap_4326 USING GIST(geom);
 """
 
 
-def create_connection_string(host, port, dbname, user, password, ssl_mode='require'):
+def create_connection_string(
+        host, port, dbname, user, password, ssl_mode='require'):
     "Create a postgres connection string"
     connection_string = 'postgresql://{}:{}@{}:{}/{}'.format(
         user, password, host, port, dbname)
