@@ -211,7 +211,6 @@ def site_to_aqe_site_entry(site):
 def aqe_reading_entry(reading):
     "Create an aqe_read entry"
     reading = dict_clean(reading)
-
     return aqe_reading(SiteCode=reading['@SiteCode'],
                        SpeciesCode=reading['@SpeciesCode'],
                        MeasurementDateGMT=reading['@MeasurementDateGMT'],
@@ -240,7 +239,7 @@ def update_site_list_table(session):
     site_info_query = session.query(aqe_sites)
 
     # Check if database table is empty
-    if len(site_info_query.all()) == 0:
+    if not site_info_query.all():
         logging.info("Database is empty. Inserting all entries")
         site_db_entries = create_sitelist(site_info)
         session.add_all(site_db_entries)
