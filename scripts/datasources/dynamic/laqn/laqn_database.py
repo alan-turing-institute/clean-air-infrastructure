@@ -1,6 +1,7 @@
 """
 Get data from the LAQN network via the API maintained by Kings Colleage London (https://www.londonair.org.uk/Londonair/API/)
 """
+
 import argparse
 import requests
 import os
@@ -399,7 +400,7 @@ def load_db_info():
     Check file system is accessable from docker and return database login info
     """
 
-    mount_dir = '/secrets/laqncred/'
+    mount_dir = 'secrets'
     local_dir = './terraform/.secrets/'
     secret_file = '.laqn_secret.json'
 
@@ -423,7 +424,7 @@ def load_db_info():
     try:
         with open(secret_fname) as f:
             data = json.load(f)
-            print(data)
+           
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
