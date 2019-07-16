@@ -17,7 +17,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import timedelta, datetime
 
-from database_management import *
+
+from database_management.database_management import *
 import pdb
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)

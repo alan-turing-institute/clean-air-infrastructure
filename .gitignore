@@ -19,3 +19,6 @@ terraform/config.tf
 # Static data files
 static_data_tmp/*
 !static_data_tmp/README.md
+
+# Python 
+*__pycache__
