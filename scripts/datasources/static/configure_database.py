@@ -4,7 +4,7 @@ import json
 from sqlalchemy import create_engine
 
 # NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
-SQL_CODE1 = """
+SQL_CODE = """
 ALTER TABLE public.base_hb0_complete_merged
 RENAME TO ukmap;
 CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);

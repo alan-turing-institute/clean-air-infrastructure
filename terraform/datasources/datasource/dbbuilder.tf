@@ -92,8 +92,8 @@ resource "azurerm_postgresql_firewall_rule" "oscar_ips_wifi" {
   name                = "allow-oscar-wifi-ips"
   resource_group_name = "${var.resource_group_db}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
-  start_ip_address    = "5.69.25.83"
-  end_ip_address      = "5.69.25.83"
+  start_ip_address    = "94.12.116.182"
+  end_ip_address      = "94.12.116.182"
 }
 
 

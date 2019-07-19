@@ -106,3 +106,26 @@ module "ukmap" {
   db_size              = 1048576
 }
 
+# module "oshighway" {
+#   source               = "./datasource"
+#   datasource           = "oshighway"
+#   keyvault_id          = "${var.keyvault_id}"
+#   location             = "${azurerm_resource_group.rg_cleanair_databases.location}"
+#   resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
+#   acr_login_server     = "${var.acr_login_server}"
+#   acr_admin_user       = "${var.acr_admin_user}"
+#   acr_admin_password   = "${var.acr_admin_password}"
+#   db_size              = 1048576
+# }
+
+# module "streetcanyon" {
+#   source               = "./datasource"
+#   datasource           = "streetcanyon"
+#   keyvault_id          = "${var.keyvault_id}"
+#   location             = "${azurerm_resource_group.rg_cleanair_databases.location}"
+#   resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
+#   acr_login_server     = "${var.acr_login_server}"
+#   acr_admin_user       = "${var.acr_admin_user}"
+#   acr_admin_password   = "${var.acr_admin_password}"
+#   db_size              = 1048576
+# }
