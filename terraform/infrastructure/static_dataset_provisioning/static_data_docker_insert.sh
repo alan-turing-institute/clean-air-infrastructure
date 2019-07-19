@@ -8,6 +8,7 @@ realpath() {
     echo $(cd "$folder"; pwd)/$(basename "$path"); 
 }
 
+
 # Login to ACR. 
 az acr login -n ${acr_name}
 
@@ -38,3 +39,16 @@ docker run -it \
   -v $full_secret_path:/.secrets/.secret.json \
   -v $full_data_path:/data/Canyons  \
   ${acr_login_server}/insert_static_datasource:latest
+
+
+# Insert road node and then configure the database 
+full_data_path=$(realpath static_data_tmp/RoadLink)
+full_secret_path=$(realpath terraform/.secrets/.static_secret.json)
+
+echo $full_data_path
+echo $full_secret_path
+
+docker run -it \
+  -v $full_secret_path:/.secrets/.secret.json \
+  -v $full_data_path:/data/RoadLink  \
+  ${acr_login_server}/insert_static_datasource:latest true

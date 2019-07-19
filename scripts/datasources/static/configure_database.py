@@ -4,10 +4,20 @@ import json
 from sqlalchemy import create_engine
 
 # NB: NEED TO ADD A LINE OF CODE TO CHANGE THE SRID ON column shape to 4326
-SQL_CODE = """
+SQL_CODE1 = """
 ALTER TABLE public.base_hb0_complete_merged
 RENAME TO ukmap;
 CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);
+"""
+
+SQL_CODE2 = """
+ALTER TABLE canyonslondon_erase
+RENAME TO canyonslondon;
+CREATE INDEX canyonslondon_4326_gix ON canyonslondon USING GIST(wkb_geometry);
+"""
+
+SQL_CODE3 = """
+CREATE INDEX roadlink_4326_gix ON roadlink USING GIST(wkb_geometry);
 """
 
 
@@ -68,10 +78,20 @@ def main():
 
     logging.info("Configuring database {}".format(host))
     engine = create_engine(connection_string)
-    with engine.connect() as conn:
-        conn.execute(SQL_CODE)       
-    logging.info("Database Configuration complete")
 
+    logging.info("Executing: {}".format(SQL_CODE1))
+    with engine.connect() as conn:
+        conn.execute(SQL_CODE1)       
+
+    logging.info("Executing: {}".format(SQL_CODE2))
+    with engine.connect() as conn:
+        conn.execute(SQL_CODE2) 
+
+    logging.info("Executing: {}".format(SQL_CODE3))
+    with engine.connect() as conn:
+        conn.execute(SQL_CODE3) 
+
+    logging.info("Database configuration complete")
 
 if __name__ == '__main__':
 
