@@ -94,9 +94,9 @@ module "aqe" {
   acr_admin_password   = "${var.acr_admin_password}"
   db_size              =  5120
 }
-module "ukmap" {
+module "static" {
   source               = "./datasource"
-  datasource           = "ukmap"
+  datasource           = "static"
   keyvault_id          = "${var.keyvault_id}"
   location             = "${azurerm_resource_group.rg_cleanair_databases.location}"
   resource_group_db    = "${azurerm_resource_group.rg_cleanair_databases.name}"
@@ -127,5 +127,5 @@ module "ukmap" {
 #   acr_login_server     = "${var.acr_login_server}"
 #   acr_admin_user       = "${var.acr_admin_user}"
 #   acr_admin_password   = "${var.acr_admin_password}"
-#   db_size              = 1048576
+#   db_size              = 5120
 # }

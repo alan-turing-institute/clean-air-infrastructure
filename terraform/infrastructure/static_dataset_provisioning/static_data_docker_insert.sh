@@ -14,9 +14,9 @@ az acr login -n ${acr_name}
 # Pull docker image
 docker pull ${acr_login_server}/insert_static_datasource:latest
 
-# Run docker image
+# Insert ukmap data
 full_data_path=$(realpath static_data_tmp/UKMap.gdb)
-full_secret_path=$(realpath terraform/.secrets/.ukmap_secret.json)
+full_secret_path=$(realpath terraform/.secrets/.static_secret.json)
 
 echo $full_data_path
 echo $full_secret_path
@@ -26,3 +26,15 @@ docker run -it \
   -v $full_data_path:/data/static_data.gdb  \
   ${acr_login_server}/insert_static_datasource:latest
 
+
+# Insert street canyons
+full_data_path=$(realpath static_data_tmp/CanyonsLondon_Erase)
+full_secret_path=$(realpath terraform/.secrets/.static_secret.json)
+
+echo $full_data_path
+echo $full_secret_path
+
+docker run -it \
+  -v $full_secret_path:/.secrets/.secret.json \
+  -v $full_data_path:/data/Canyons  \
+  ${acr_login_server}/insert_static_datasource:latest

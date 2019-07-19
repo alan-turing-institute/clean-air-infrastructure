@@ -11,7 +11,6 @@ CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);
 """
 
 
-
 def create_connection_string(
         host, port, dbname, user, password, ssl_mode='require'):
     "Create a postgres connection string"
