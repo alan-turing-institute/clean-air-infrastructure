@@ -15,9 +15,6 @@ from sqlalchemy import Column, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
-
-
 from database_management import database_management as dbm
 
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
