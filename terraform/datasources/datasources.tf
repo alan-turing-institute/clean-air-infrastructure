@@ -103,7 +103,7 @@ module "static" {
   acr_login_server     = "${var.acr_login_server}"
   acr_admin_user       = "${var.acr_admin_user}"
   acr_admin_password   = "${var.acr_admin_password}"
-  db_size              = 10240
+  db_size              = 20480
 }
 
 # module "oshighway" {

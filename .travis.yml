@@ -18,12 +18,7 @@ script:
   # Datasources
   - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/laqn.Dockerfile scripts/datasources/. 
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/aqe.Dockerfile scripts/datasources/.
-  # - docker build -t "$ACR_SERVER"/darksky:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/darksky/.
-  # - docker build -t "$ACR_SERVER"/ECMWF:$TRAVIS_PULL_REQUEST_SHA scripts/datasources/ECMWF/.
-
-  # Static datasources
-  - docker build -t $ACR_SERVER/insert_static_datasource:latest scripts/datasources/static/.
-
+  
   # Push to ACR
   - bash docker_push.sh
 

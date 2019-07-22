@@ -7,14 +7,10 @@ terraform/config.tf
 *.tfstate
 *.tfstate.backup
 
-
-
 # VS
 .vscode/
-
 *.secrets/
 *.tgz
-
 
 # Static data files
 static_data_tmp/*
