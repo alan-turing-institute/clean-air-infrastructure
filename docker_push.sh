@@ -7,7 +7,3 @@ echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SE
 # DataSources
 docker push $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA
 docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA 
-
-docker push $ACR_SERVER/insert_static_datasource:latest
-# docker push "$ACR_SERVER"/darksky:$TRAVIS_PULL_REQUEST_SHA 
-# docker push "$ACR_SERVER"/ECMWF:$TRAVIS_PULL_REQUEST_SHA 
