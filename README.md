@@ -132,7 +132,7 @@ terraform apply
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
-## Add static resources
+## Add static resources (Only run if you are setting up the infrastructure - not required if already exists)
 
 Terraform will now have created a number of databases. We need to add static datasets to the database. 
 
