@@ -81,17 +81,18 @@ def main():
 
     logging.info("Executing: {}".format(SQL_CODE1))
     with engine.connect() as conn:
-        conn.execute(SQL_CODE1)       
+        conn.execute(SQL_CODE1)
 
     logging.info("Executing: {}".format(SQL_CODE2))
     with engine.connect() as conn:
-        conn.execute(SQL_CODE2) 
+        conn.execute(SQL_CODE2)
 
     logging.info("Executing: {}".format(SQL_CODE3))
     with engine.connect() as conn:
-        conn.execute(SQL_CODE3) 
+        conn.execute(SQL_CODE3)
 
     logging.info("Database configuration complete")
+
 
 if __name__ == '__main__':
 

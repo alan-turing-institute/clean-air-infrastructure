@@ -1,19 +1,12 @@
-import argparse
 import requests
 import os
 import logging
 import termcolor
 import json
-
 from datetime import timedelta, datetime
 
-from sqlalchemy import Column, String, create_engine, exists, and_
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from geoalchemy2 import Geometry
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-import pdb
 ONE_DAY = timedelta(days=1)
+
 
 def days(d):
     "Time delta in days"
@@ -26,7 +19,7 @@ def green(text):
 
 def red(text):
     return termcolor.colored(text, "red")
-    
+
 
 def connected_to_internet(url="http://www.google.com/", timeout=5):
     try:
@@ -34,6 +27,7 @@ def connected_to_internet(url="http://www.google.com/", timeout=5):
         return True
     except requests.ConnectionError:
         return False
+
 
 def dict_clean(dictionary):
     """
@@ -43,6 +37,7 @@ def dict_clean(dictionary):
         if not dictionary[key]:
             dictionary[key] = None
     return dictionary
+
 
 def drop_duplicates(data):
     """
@@ -74,6 +69,7 @@ def emptystr_2_none(x):
     else:
         return x
 
+
 def map_dict(d1, f):
     """
     Map a function to every item in a dictionary
@@ -94,11 +90,11 @@ def get_data_range(site, start_date, end_date):
     """
     Get the dates that data is available for a site between start_date and end_date
     If no data is available between these dates returns None
-    """ 
+    """
 
     if not start_date:
         get_data_from = datetime_floor(site.DateOpened)
-    else:        
+    else:
         get_data_from = max([datetime_floor(site.DateOpened), datetime_floor(str_to_datetime(start_date))])
 
     if not end_date:
@@ -117,7 +113,6 @@ def get_data_range(site, start_date, end_date):
                 [datetime_floor(str_to_datetime(end_date)),
                  datetime_floor(site.DateClosed)]
             )
-            
 
     delta = get_data_to - get_data_from  # Number of days available for a site
 
@@ -155,7 +150,7 @@ def load_db_info(secret_file):
     try:
         with open(secret_fname) as f:
             data = json.load(f)
-           
+
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
@@ -165,6 +160,7 @@ def load_db_info(secret_file):
 
     return data
 
+
 def create_connection_string(host, port, dbname, user, password):
     """
     Create a postgres connection string
@@ -172,4 +168,3 @@ def create_connection_string(host, port, dbname, user, password):
     connection_string = "postgresql://{}:{}@{}:{}/{}".format(
         user, password, host, port, dbname)
     return connection_string
-

@@ -4,22 +4,17 @@ Get data from the LAQN network via the API maintained by Kings Colleage London (
 
 import argparse
 import requests
-import os
-import json
 import logging
-import termcolor
 
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import timedelta, datetime
 
+from database_management import database_management as dbm
 
-from database_management.database_management import *
-import pdb
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                     datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
 
@@ -47,7 +42,7 @@ def get_site_reading(sitecode, start_date, end_date):
 
     if r.status_code == 200:
         data = r.json()["AirQualityData"]["Data"]
-        return drop_duplicates(data)
+        return dbm.drop_duplicates(data)
     return None
 
 
@@ -73,7 +68,6 @@ class laqn_sites(Base):
                            dimension=2, spatial_index=True))
 
 
-
 class laqn_reading(Base):
     """
     Table of LAQN readings
@@ -85,21 +79,12 @@ class laqn_reading(Base):
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
-def create_connection_string(host, port, dbname, user, password):
-    """
-    Create a postgres connection string
-    """
-    connection_string = "postgresql://{}:{}@{}:{}/{}".format(
-        user, password, host, port, dbname)
-    return connection_string
-
-
 def site_to_laqn_site_entry(site):
     """
     Create an laqn_sites entry
     """
-    
-    site = map_dict(site, emptystr_2_none)
+
+    site = dbm.map_dict(site, dbm.emptystr_2_none)
 
     # Hack to make geom = NULL if longitude and latitude dont exist
     if (site['@Longitude'] is None) or (site['@Latitude'] is None):
@@ -132,7 +117,7 @@ def laqn_reading_entry(reading):
     """
     Create an laqn_read entry
     """
-    reading = dict_clean(reading)
+    reading = dbm.dict_clean(reading)
     return laqn_reading(SiteCode=reading["@SiteCode"],
                         SpeciesCode=reading["@SpeciesCode"],
                         MeasurementDateGMT=reading["@MeasurementDateGMT"],
@@ -158,7 +143,7 @@ def update_site_list_table(session):
     """
 
     # Update site info
-    logging.info("Requesting site info from %s", green("KCL API"))
+    logging.info("Requesting site info from %s", dbm.green("KCL API"))
     site_info = get_site_info()
 
     # Query site_info entires
@@ -175,7 +160,7 @@ def update_site_list_table(session):
     else:
         # Check if site exists and database is up to date
         logging.info("Crosscheck entries in database table %s",
-                     green(laqn_sites.__tablename__))
+                     dbm.green(laqn_sites.__tablename__))
 
         for site in site_info:
 
@@ -184,8 +169,8 @@ def update_site_list_table(session):
                 laqn_sites.SiteCode == site["@SiteCode"])).scalar()
 
             if not site_exists:
-                logging.info("Site %s not in %s. Creating entry", green(
-                    site["@SiteCode"]), green(laqn_sites.__tablename__))
+                logging.info("Site %s not in %s. Creating entry", dbm.green(
+                    site["@SiteCode"]), dbm.green(laqn_sites.__tablename__))
                 if site['@DateOpened'] == '':
                     logging.warning("Site {} does not have an opening date. Not adding to database".format(site['@SiteCode']))
                 else:
@@ -200,13 +185,13 @@ def update_site_list_table(session):
 
                 if ((site["@DateClosed"] != "") and date_site_closed is None):
 
-                    logging.info("Site %s has closed. Updating %s", green(
-                        site["@SiteCode"]), green(laqn_sites.__tablename__))
+                    logging.info("Site %s has closed. Updating %s", dbm.green(
+                        site["@SiteCode"]), dbm.green(laqn_sites.__tablename__))
 
                     site_data.DateClosed = site["@DateClosed"]
 
         logging.info("Committing any changes to database table %s",
-                     green(laqn_sites.__tablename__))
+                     dbm.green(laqn_sites.__tablename__))
         session.commit()
 
 
@@ -244,7 +229,7 @@ def add_reading_entries(session, site_code, readings):
             all_reading_entries.append(new_laqn_reading_entry)
         else:
             logging.debug(
-                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(green(site_code), green(r['@MeasurementDateGMT']), green(r['@SpeciesCode'])))
+                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(dbm.green(site_code), dbm.green(r['@MeasurementDateGMT']), dbm.green(r['@SpeciesCode'])))
 
     session.add_all(all_reading_entries)
 
@@ -258,22 +243,22 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
     """
 
     logging.info("Attempting to download data between %s and %s",
-                 green(start_date), green(end_date))
+                 dbm.green(start_date), dbm.green(end_date))
 
     site_info_query = session.query(laqn_sites)
     laqn_readings_query = session.query(laqn_reading)
 
     for site in site_info_query:
-     
+
         site_query = laqn_readings_query.filter(
             laqn_reading.SiteCode == site.SiteCode)
 
-        # What dates can we get data for        
-        date_from_to = get_data_range(site, start_date, end_date)
+        # What dates can we get data for
+        date_from_to = dbm.get_data_range(site, start_date, end_date)
 
         if date_from_to is None:
-            logging.info("No data is available for site %s between %s and %s", red(
-                site.SiteCode), red(start_date), red(end_date))
+            logging.info("No data is available for site %s between %s and %s", dbm.red(
+                site.SiteCode), dbm.red(start_date), dbm.red(end_date))
             continue
 
         # List of dates to get data for
@@ -282,9 +267,9 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
 
         for i, date in enumerate(date_range):
 
-              # Query readings in the database for this date ignoring species
+            # Query readings in the database for this date ignoring species
             readings_in_db = site_query.distinct(laqn_reading.MeasurementDateGMT).filter(
-                and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + days(1))).all()
+                and_(laqn_reading.MeasurementDateGMT >= date, laqn_reading.MeasurementDateGMT < date + dbm.days(1))).all()
 
             # If no database entries for that date or the date trying to get data for is today, or the force flag is set to true then try and get data.
             # If the date is not today or yesterday and the force flag is not
@@ -293,22 +278,22 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
             if (len(readings_in_db) == 0) or (
                     (datetime.today().date() - date.date()).days < 2) or (force):
 
-                logging.info("Getting data for site %s for date: %s", red(
-                    site.SiteCode), red(date_range[i].date()))
+                logging.info("Getting data for site %s for date: %s", dbm.red(
+                    site.SiteCode), dbm.red(date_range[i].date()))
 
-                d = get_site_reading(site.SiteCode, str(date.date()), str((date + days(1)).date()))
+                d = get_site_reading(site.SiteCode, str(date.date()), str((date + dbm.days(1)).date()))
 
                 if d is not None:
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
                     logging.info("Request for data for {} between dates {} and {} failed".format(
-                        site.SiteCode, date, (date + days(1)).date()))
+                        site.SiteCode, date, (date + dbm.days(1)).date()))
 
             else:
 
                 logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                    green(site.SiteCode), green(date_range[i].date())))
+                    dbm.green(site.SiteCode), dbm.green(date_range[i].date())))
 
         session.commit()
 
@@ -351,12 +336,12 @@ def process_args():
         if args.ndays < 1:
             raise argparse.ArgumentTypeError(
                 "Argument --ndays must be greater than 0")
-        args.start = args.end - days(args.ndays - 1)
+        args.start = args.end - dbm.days(args.ndays - 1)
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
     logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
-        red(args.start), red(args.end), green("00:00:00"), green("23:59:59"), red(args.force)))
+        dbm.red(args.start), dbm.red(args.end), dbm.green("00:00:00"), dbm.green("23:59:59"), dbm.red(args.force)))
 
     return args.start, args.end, args.force
 
@@ -365,10 +350,10 @@ def main():
 
     start_date, end_date, force = process_args()
 
-    db_info = load_db_info('.laqn_secret.json')
+    db_info = dbm.load_db_info('.laqn_secret.json')
 
     logging.info("Starting laqn_database script")
-    logging.info("Has internet connection: %s", connected_to_internet())
+    logging.info("Has internet connection: %s", dbm.connected_to_internet())
 
     # Connect to the database
     host = db_info["host"]
@@ -377,11 +362,11 @@ def main():
     user = db_info["username"]
     db_password = db_info["password"]
 
-    connection_string = create_connection_string(host=host,
-                                                 port=port,
-                                                 dbname=dbname,
-                                                 user=user,
-                                                 password=db_password)
+    connection_string = dbm.create_connection_string(host=host,
+                                                    port=port,
+                                                    dbname=dbname,
+                                                    user=user,
+                                                    password=db_password)
 
     engine = create_engine(connection_string)
     with engine.connect() as conn:
@@ -392,7 +377,7 @@ def main():
 
     # Update the laqn_sites database table
     update_site_list_table(session)
- 
+
     print(start_date, end_date)
     # Update data in laqn reading table
     update_reading_table(session, start_date=str(start_date),
