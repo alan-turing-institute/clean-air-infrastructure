@@ -11,7 +11,7 @@ script:
   # Check PEP8 compliance (ignoring long lines)
   - pycodestyle --statistics --ignore=E501 --count *.py scripts #tests
   # Run pylint for stricter error checking
-  - pylint *py scripts/datasources/* #tests
+  - pylint *py scripts/datasources/*py #tests
 
  # Ensure we build every docker image
 

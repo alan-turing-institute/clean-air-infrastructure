@@ -3,15 +3,17 @@ Get data from the LAQN network via the API maintained by Kings Colleage London (
 """
 
 import argparse
-import requests
 import logging
+from datetime import timedelta, datetime
+import requests
+
 
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import timedelta, datetime
+
 
 from database_management import database_management as dbm
 
@@ -133,7 +135,7 @@ def create_sitelist(site_info):
         if site['@DateOpened'] != '':
             all_sites.append(site_to_laqn_site_entry(site))
         else:
-            logging.warning("Site {} does not have an opening date. Not adding to database".format(site['@SiteCode']))
+            logging.warning("Site %s does not have an opening date. Not adding to database", site['@SiteCode'])
     return all_sites
 
 
@@ -172,7 +174,7 @@ def update_site_list_table(session):
                 logging.info("Site %s not in %s. Creating entry", dbm.green(
                     site["@SiteCode"]), dbm.green(laqn_sites.__tablename__))
                 if site['@DateOpened'] == '':
-                    logging.warning("Site {} does not have an opening date. Not adding to database".format(site['@SiteCode']))
+                    logging.warning("Site %s does not have an opening date. Not adding to database", site['@SiteCode'])
                 else:
                     site_entry = site_to_laqn_site_entry(site)
                     session.add(site_entry)
@@ -229,7 +231,7 @@ def add_reading_entries(session, site_code, readings):
             all_reading_entries.append(new_laqn_reading_entry)
         else:
             logging.debug(
-                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(dbm.green(site_code), dbm.green(r['@MeasurementDateGMT']), dbm.green(r['@SpeciesCode'])))
+                "Entry sitecode: %s, measurementDateGMT: %s, speciedCode: %s exists in database", dbm.green(site_code), dbm.green(r['@MeasurementDateGMT']), dbm.green(r['@SpeciesCode']))
 
     session.add_all(all_reading_entries)
 
@@ -275,7 +277,7 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
             # If the date is not today or yesterday and the force flag is not
             # True assumes the data is in the database and does not attempt to
             # get it
-            if (len(readings_in_db) == 0) or (
+            if readings_in_db or (
                     (datetime.today().date() - date.date()).days < 2) or (force):
 
                 logging.info("Getting data for site %s for date: %s", dbm.red(
@@ -287,13 +289,13 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
-                    logging.info("Request for data for {} between dates {} and {} failed".format(
-                        site.SiteCode, date, (date + dbm.days(1)).date()))
+                    logging.info("Request for data for %s between dates %s and %s failed",
+                                 site.SiteCode, date, (date + dbm.days(1)).date())
 
             else:
 
-                logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                    dbm.green(site.SiteCode), dbm.green(date_range[i].date())))
+                logging.info("Data already in db for site %s for date: %s. Not requesting data. To request data include the -f flag ",
+                             dbm.green(site.SiteCode), dbm.green(date_range[i].date()))
 
         session.commit()
 
@@ -340,8 +342,8 @@ def process_args():
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("LAQN data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
-        dbm.red(args.start), dbm.red(args.end), dbm.green("00:00:00"), dbm.green("23:59:59"), dbm.red(args.force)))
+    logging.info("LAQN data. Request Start date = %s to: End date = %s. Data is collected from %s on the start date until %s on the end date. Force is set %s - when True will try to write each entry to the database",
+                 dbm.red(args.start), dbm.red(args.end), dbm.green("00:00:00"), dbm.green("23:59:59"), dbm.red(args.force))
 
     return args.start, args.end, args.force
 
@@ -363,10 +365,10 @@ def main():
     db_password = db_info["password"]
 
     connection_string = dbm.create_connection_string(host=host,
-                                                    port=port,
-                                                    dbname=dbname,
-                                                    user=user,
-                                                    password=db_password)
+                                                     port=port,
+                                                     dbname=dbname,
+                                                     user=user,
+                                                     password=db_password)
 
     engine = create_engine(connection_string)
     with engine.connect() as conn:

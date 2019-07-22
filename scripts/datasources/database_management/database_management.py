@@ -136,11 +136,11 @@ def load_db_info(secret_file):
 
     secret_fname = None
     if check_secrets_mount:
-        logging.info("{} is mounted".format(mount_dir))
+        logging.info("%s is mounted", mount_dir)
         secret_fname = os.path.join(mount_dir, secret_file)
 
     elif check_local_dir:
-        logging.info("{} exists locally".format(check_local_dir))
+        logging.info("%s exists locally", check_local_dir)
         secret_fname = os.path.join(local_dir, secret_file)
 
     else:

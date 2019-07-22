@@ -1,11 +1,14 @@
 """
 Get data from the AQE network via the API
 """
-
-import argparse
-import requests
 import logging
+import argparse
 from datetime import timedelta, datetime
+from io import BytesIO, StringIO
+from xml.dom import minidom
+import csv
+import requests
+
 
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String, create_engine, exists, and_
@@ -13,9 +16,7 @@ from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from io import BytesIO, StringIO
-from xml.dom import minidom
-import csv
+
 
 from database_management import database_management as dbm
 
@@ -44,6 +45,7 @@ def get_site_info():
     if r.status_code == 200:
         dom1 = minidom.parse(BytesIO(r.content))
         return site_list_xml_to_list(dom1)
+    return None
 
 
 def get_site_reading(sitecode, start_date, end_date):
@@ -58,6 +60,7 @@ def get_site_reading(sitecode, start_date, end_date):
     if r.status_code == 200:
 
         return process_site_reading(sitecode, r.content)
+    return None
 
 
 def process_site_reading(sitecode, content):
@@ -119,15 +122,6 @@ class aqe_reading(Base):
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
-def create_connection_string(
-        host, port, dbname, user, password, ssl_mode='require'):
-    "Create a postgres connection string"
-    connection_string = 'postgresql://{}:{}@{}:{}/{}'.format(
-        user, password, host, port, dbname)
-
-    return connection_string
-
-
 def site_to_aqe_site_entry(site):
     "Create an aqe_sites entry"
 
@@ -186,7 +180,7 @@ def create_sitelist(site_info):
 def update_site_list_table(session):
     "Update the site info"
 
-    logging.info("Requesting site info from {}".format(dbm.green("AQE API")))
+    logging.info("Requesting site info from %s", dbm.green("AQE API"))
     site_info = get_site_info()
 
     # Query site_info entires
@@ -202,8 +196,8 @@ def update_site_list_table(session):
     # If not empty check it has latest information
     else:
         # Check if site exists and database is up to date
-        logging.info("Crosscheck entries in database table {}".format(
-            dbm.green(aqe_sites.__tablename__)))
+        logging.info("Crosscheck entries in database table %s",
+                     dbm.green(aqe_sites.__tablename__))
 
         for site in site_info:
             # Check if site exists
@@ -211,8 +205,8 @@ def update_site_list_table(session):
                 aqe_sites.SiteCode == site['SiteCode'])).scalar()
 
             if not site_exists:
-                logging.info("Site {} not in {}. Creating entry".format(dbm.green(site['SiteCode']),
-                                                                        dbm.green(aqe_sites.__tablename__)))
+                logging.info("Site %s not in %s. Creating entry", dbm.green(site['SiteCode']),
+                             dbm.green(aqe_sites.__tablename__))
                 site_entry = site_to_aqe_site_entry(site)
                 session.add(site_entry)
             else:
@@ -223,11 +217,11 @@ def update_site_list_table(session):
                 date_site_closed = site_data.DateClosed
                 if ((site['DateClosed'] != "") and date_site_closed is None):
 
-                    logging.info("Site {} has closed. Updating {}".format(dbm.green(site['SiteCode']),
-                                                                          dbm.green(aqe_sites.__tablename__)))
+                    logging.info("Site %s has closed. Updating %s", dbm.green(site['SiteCode']),
+                                 dbm.green(aqe_sites.__tablename__))
                     site_data.DateClosed = site['DateClosed']
-        logging.info("Committing any changes to database table {}".format(
-            dbm.green(aqe_sites.__tablename__)))
+        logging.info("Committing any changes to database table %s",
+                     dbm.green(aqe_sites.__tablename__))
         session.commit()
 
 
@@ -262,7 +256,7 @@ def add_reading_entries(session, site_code, readings):
             all_reading_entries.append(new_aqe_reading_entry)
         else:
             logging.debug(
-                "Entry sitecode: {}, measurementDateGMT: {}, speciedCode: {} exists in database".format(dbm.red(site_code), dbm.red(r['@MeasurementDateGMT']), dbm.red(r['@SpeciesCode'])))
+                "Entry sitecode: %s, measurementDateGMT: %s, speciedCode: %s exists in database", dbm.red(site_code), dbm.red(r['@MeasurementDateGMT']), dbm.red(r['@SpeciesCode']))
 
     session.add_all(all_reading_entries)
 
@@ -275,8 +269,8 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
     end_date: date to get data to. If None will get till today, or when site closed.
     """
 
-    logging.info("Attempting to download data between {} and {}".format(
-        dbm.green(start_date), dbm.green(end_date)))
+    logging.info("Attempting to download data between %s and %s",
+                 dbm.green(start_date), dbm.green(end_date))
 
     site_info_query = session.query(aqe_sites)
     aqe_readings_query = session.query(aqe_reading)
@@ -290,8 +284,8 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
         date_from_to = dbm.get_data_range(site, start_date, end_date)
 
         if date_from_to is None:
-            logging.info("No data is available for site {} between {} and {}".format(
-                dbm.red(site.SiteCode), dbm.red(start_date), dbm.red(end_date)))
+            logging.info("No data is available for site %s between %s and %s",
+                         dbm.red(site.SiteCode), dbm.red(start_date), dbm.red(end_date))
             continue
 
         # List of dates to get data for
@@ -308,11 +302,11 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
             # If the date is not today or yesterday and the force flag is not
             # True assumes the data is in the database and does not attempt to
             # get it
-            if (len(readings_in_db) == 0) or (
+            if readings_in_db or (
                     (datetime.today().date() - date.date()).days < 2) or (force):
 
-                logging.info("Getting data for site {} for date: {}".format(
-                    dbm.red(site.SiteCode), dbm.red(date_range[i].date())))
+                logging.info("Getting data for site %s for date: %s",
+                             dbm.red(site.SiteCode), dbm.red(date_range[i].date()))
 
                 d = get_site_reading(site.SiteCode, str(
                     date.date()), str((date + dbm.days(1)).date()))
@@ -321,13 +315,13 @@ def update_reading_table(session, start_date=None, end_date=None, force=False):
                     add_reading_entries(session, site.SiteCode, d)
 
                 else:
-                    logging.info("Request for data for {} between dates {} and {} failed".format(
-                        site.SiteCode, date, (date + dbm.days(1)).date()))
+                    logging.info("Request for data for %s between dates %s and %s failed",
+                                 site.SiteCode, date, (date + dbm.days(1)).date())
 
             else:
 
-                logging.info("Data already in db for site {} for date: {}. Not requesting data. To request data include the -f flag ".format(
-                    dbm.red(site.SiteCode), dbm.red(date_range[i].date())))
+                logging.info("Data already in db for site %s for date: %s. Not requesting data. To request data include the -f flag ",
+                             dbm.red(site.SiteCode), dbm.red(date_range[i].date()))
 
         session.commit()
 
@@ -373,8 +367,8 @@ def process_args():
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("AQE data. Request Start date = {} to: End date = {}. Data is collected from {} on the start date until {} on the end date. Force is set {} - when True will try to write each entry to the database".format(
-        dbm.green(args.start), dbm.green(args.end), dbm.red("00:00:00"), dbm.red("23:59:59"), dbm.green(args.force)))
+    logging.info("AQE data. Request Start date = %s to: End date = %s. Data is collected from %s on the start date until %s on the end date. Force is set %s - when True will try to write each entry to the database",
+                 dbm.green(args.start), dbm.green(args.end), dbm.red("00:00:00"), dbm.red("23:59:59"), dbm.green(args.force))
 
     return args.start, args.end, args.force
 
@@ -386,22 +380,20 @@ def main():
     db_info = dbm.load_db_info('.aqe_secret.json')
 
     logging.info("Starting aqe_database script")
-    logging.info("Has internet connection: {}".format(dbm.connected_to_internet()))
+    logging.info("Has internet connection: %s", dbm.connected_to_internet())
 
     # Connect to the database
     host = db_info['host']
     port = db_info['port']
     dbname = db_info['db_name']
     user = db_info['username']
-    ssl_mode = db_info['ssl_mode']
     db_password = db_info['password']
 
-    connection_string = create_connection_string(host=host,
-                                                 port=port,
-                                                 dbname=dbname,
-                                                 user=user,
-                                                 password=db_password,
-                                                 ssl_mode=ssl_mode)
+    connection_string = dbm.create_connection_string(host=host,
+                                                     port=port,
+                                                     dbname=dbname,
+                                                     user=user,
+                                                     password=db_password)
 
     engine = create_engine(connection_string)
     with engine.connect() as conn:
