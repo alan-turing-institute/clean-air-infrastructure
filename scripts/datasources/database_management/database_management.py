@@ -1,12 +1,14 @@
-import requests
+
 import os
 import logging
-import termcolor
+import argparse
 import json
 from datetime import timedelta, datetime
+import requests
+import termcolor
+
 
 ONE_DAY = timedelta(days=1)
-
 
 def days(d):
     "Time delta in days"
@@ -168,3 +170,50 @@ def create_connection_string(host, port, dbname, user, password):
     connection_string = "postgresql://{}:{}@{}:{}/{}".format(
         user, password, host, port, dbname)
     return connection_string
+
+
+def process_args():
+
+    # Read command line arguments
+    parser = argparse.ArgumentParser(description='Get sensor data')
+
+    parser.add_argument("-e", "--end", type=str, default="today",
+                        help="The last date to get data for in international standard date notation (YYYY-MM-DD)")
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument("-n", "--ndays", type=int, default=2,
+                       help="The number of days to request data for. ndays=1 will get today (from midnight)")
+    group.add_argument("-s", "--start", type=str,
+                       help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")
+    parser.add_argument('-f', "--force", action="store_true",
+                        help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Set the logger level to debug")
+    args = parser.parse_args()
+
+    if args.debug:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=log_level)
+
+    # Set the end date
+    if args.end == 'today':
+        args.end = datetime.today().date()
+    else:
+        args.end = datetime.strptime(args.end, "%Y-%m-%d").date()
+
+    # Set the start date
+    if args.ndays is not None:
+        if args.ndays < 1:
+            raise argparse.ArgumentTypeError(
+                "Argument --ndays must be greater than 0")
+        args.start = args.end - days(args.ndays - 1)
+    else:
+        args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
+
+    logging.info("AQE data. Request Start date = %s to: End date = %s. Data is collected from %s on the start date until %s on the end date. Force is set %s - when True will try to write each entry to the database",
+                 green(args.start), green(args.end), red("00:00:00"), red("23:59:59"), green(args.force))
+
+    return args.start, args.end, args.force

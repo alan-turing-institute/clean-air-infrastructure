@@ -9,7 +9,7 @@ script:
   # Run pyflakes for error detection
   - pyflakes *.py scripts #tests
   # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=E501 --count *.py scripts #tests
+  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --count *.py scripts #tests
   # Run pylint for stricter error checking
   - pylint *py scripts/datasources/*py #tests
 
