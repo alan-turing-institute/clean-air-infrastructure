@@ -1,17 +1,16 @@
-
-import os
-import logging
 import argparse
 import json
-from datetime import timedelta, datetime
+import logging
+import os
 import requests
 import termcolor
-
+from datetime import timedelta, datetime
 
 ONE_DAY = timedelta(days=1)
 
+
 def days(d):
-    "Time delta in days"
+    """Time delta in days"""
     return timedelta(days=d)
 
 
@@ -32,9 +31,7 @@ def connected_to_internet(url="http://www.google.com/", timeout=5):
 
 
 def dict_clean(dictionary):
-    """
-    Coerce missing keys to 'None'
-    """
+    """Coerce missing keys to 'None'"""
     for key in dictionary.keys():
         if not dictionary[key]:
             dictionary[key] = None
@@ -42,9 +39,7 @@ def dict_clean(dictionary):
 
 
 def drop_duplicates(data):
-    """
-    If the data from the api contains duplicates then drop them
-    """
+    """If the data from the API contains duplicates then drop them"""
     deduped_list = [dict(t) for t in {tuple(d.items()) for d in data}]
     n_dropped = len(deduped_list) - len(data)
 
@@ -55,17 +50,12 @@ def drop_duplicates(data):
 
 
 def str_to_datetime(date_str):
-    """
-    Get a datetime from a known-format string
-    """
+    """Get a datetime from a known-format string"""
     return datetime.strptime(date_str, "%Y-%m-%d")
 
 
 def emptystr_2_none(x):
-    """
-    Convert empty strings to None
-    """
-
+    """Convert empty strings to None"""
     if isinstance(x, str) and (x == ''):
         return None
     else:
@@ -73,18 +63,13 @@ def emptystr_2_none(x):
 
 
 def map_dict(d1, f):
-    """
-    Map a function to every item in a dictionary
-    """
-
+    """Map a function to every item in a dictionary"""
     d2 = {k: f(v) for k, v in d1.items()}
     return d2
 
 
 def datetime_floor(dtime):
-    """
-    Set the time to midnight for a given datetime
-    """
+    """Set the time to midnight for a given datetime"""
     return datetime.combine(dtime, datetime.min.time())
 
 
@@ -93,7 +78,6 @@ def get_data_range(site, start_date, end_date):
     Get the dates that data is available for a site between start_date and end_date
     If no data is available between these dates returns None
     """
-
     if not start_date:
         get_data_from = datetime_floor(site.DateOpened)
     else:
@@ -146,18 +130,16 @@ def load_db_info(secret_file):
         secret_fname = os.path.join(local_dir, secret_file)
 
     else:
-        raise FileNotFoundError(
-            "Database secrets could not be found. Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
+        raise FileNotFoundError("Database secrets could not be found. "
+                                "Check that either {} is mounted or {} exists locally".format(mount_dir, local_dir))
 
     try:
         with open(secret_fname) as f:
             data = json.load(f)
-
         logging.info("Database connection information loaded")
 
     except FileNotFoundError:
-        logging.error(
-            "Database secrets could not be found. Ensure secret_file exists")
+        logging.error("Database secrets could not be found. Ensure secret_file exists")
         raise FileNotFoundError
 
     return data
@@ -173,7 +155,6 @@ def create_connection_string(host, port, dbname, user, password):
 
 
 def process_args():
-
     # Read command line arguments
     parser = argparse.ArgumentParser(description='Get sensor data')
 
@@ -183,11 +164,12 @@ def process_args():
     group.add_argument("-n", "--ndays", type=int, default=2,
                        help="The number of days to request data for. ndays=1 will get today (from midnight)")
     group.add_argument("-s", "--start", type=str,
-                       help="The first date to get data for in international standard date notation (YYYY-MM-DD). If --ndays is provided this argument is ignored. Will get data from midnight")
+                       help="The first date to get data for in international standard date notation (YYYY-MM-DD). "
+                            "If --ndays is provided this argument is ignored. Will get data from midnight")
     parser.add_argument('-f', "--force", action="store_true",
-                        help="Attempt to write to database even if data for that date is already in database. This is done for todays date regardless of whether -f is given")
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Set the logger level to debug")
+                        help="Attempt to write to database even if data for that date is already in database. "
+                             "This is done for todays date regardless of whether -f is given")
+    parser.add_argument("-d", "--debug", action="store_true", help="Set the logger level to debug")
     args = parser.parse_args()
 
     if args.debug:
@@ -213,7 +195,9 @@ def process_args():
     else:
         args.start = datetime.strptime(args.start, "%Y-%m-%d").date()
 
-    logging.info("AQE data. Request Start date = %s to: End date = %s. Data is collected from %s on the start date until %s on the end date. Force is set %s - when True will try to write each entry to the database",
+    logging.info("AQE data. Request Start date = %s to: End date = %s. "
+                 "Data is collected from %s on the start date until %s on the end date. "
+                 "Force is set %s - when True will try to write each entry to the database",
                  green(args.start), green(args.end), red("00:00:00"), red("23:59:59"), green(args.force))
 
     return args.start, args.end, args.force

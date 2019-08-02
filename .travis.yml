@@ -9,16 +9,17 @@ script:
   # Run pyflakes for error detection
   - pyflakes *.py scripts #tests
   # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --count *.py scripts #tests
+  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --max-line-length=120 --count *.py scripts #tests
   # Run pylint for stricter error checking
   - pylint *py scripts/datasources/*py #tests
 
- # Ensure we build every docker image
+  # Ensure we build every docker image
+  # ----------------------------------
 
   # Datasources
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/laqn.Dockerfile scripts/datasources/. 
+  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/laqn.Dockerfile scripts/datasources/.
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/aqe.Dockerfile scripts/datasources/.
-  
+
   # Push to ACR
   - bash docker_push.sh
 
