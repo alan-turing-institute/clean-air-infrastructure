@@ -1,10 +1,10 @@
 # Setup required providers
 provider "azurerm" {
-  version = "=1.24"
+  version = "~>1.24"
 }
 
 provider "template" {
-  version = "=2.1"
+  version = "~>2.1"
 }
 
 # Setup variables

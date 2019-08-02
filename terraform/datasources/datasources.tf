@@ -65,7 +65,7 @@ resource "azurerm_resource_group" "rg_cleanair_databases" {
   name     = "${var.resource_group_db}"
   location = "${var.location}"
 
-  tags {
+  tags = {
     environment = "Terraform Clean Air"
   }
 }

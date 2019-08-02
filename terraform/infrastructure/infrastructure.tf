@@ -3,7 +3,7 @@ resource "azurerm_resource_group" "rg_infrastructure" {
   name     = "${var.resource_group}"
   location = "${var.location}"
 
-  tags {
+  tags = {
     environment = "Terraform Clean Air"
   }
 }
@@ -25,11 +25,8 @@ resource "azurerm_key_vault" "kvcleanairpasswords" {
   name                = "kvcleanairpass${random_string.lower_case_letters_keyvaultname.result}"
   location            = "${var.location}"
   resource_group_name = "${azurerm_resource_group.rg_infrastructure.name}"
+  sku_name            = "standard"
   tenant_id           = "${var.tenant_id}"
-
-  sku {
-    name = "standard"
-  }
 
   access_policy {
     tenant_id = "${var.tenant_id}"
@@ -50,7 +47,7 @@ resource "azurerm_key_vault" "kvcleanairpasswords" {
     ]
   }
 
-  tags {
+  tags = {
     environment = "Terraform Clean Air"
   }
 }
@@ -87,7 +84,7 @@ resource "local_file" "regcred" {
 
 data "template_file" "static_data_docker_template" {
   template = "${file("${path.module}/static_dataset_provisioning/static_data_docker_insert.sh")}"
-  vars {
+  vars = {
     acr_login_server = "${azurerm_container_registry.acr.login_server}"
     acr_name         = "${azurerm_container_registry.acr.name}"
   }

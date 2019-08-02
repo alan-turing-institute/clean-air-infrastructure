@@ -16,5 +16,8 @@ terraform/config.tf
 static_data_tmp/*
 !static_data_tmp/README.md
 
-# Python 
+# pyenv
+.python-version
+
+# Python
 *__pycache__

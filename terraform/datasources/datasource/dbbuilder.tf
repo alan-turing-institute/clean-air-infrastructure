@@ -1,8 +1,8 @@
+# Derived variables
 locals {
   admin_username = "atiadmin_${var.datasource}"
-
-    version   = "latest"
-  }
+  version        = "latest"
+}
 
 
 # Generate random strings that persist for the lifetime of the resource group
@@ -23,8 +23,6 @@ resource "random_string" "db_admin" {
   length  = 16
   special = true
 }
-
-
 
 resource "azurerm_key_vault_secret" "db_admin_password" {
   name         = "${var.datasource}-db-admin-password"
@@ -99,7 +97,7 @@ resource "azurerm_postgresql_firewall_rule" "oscar_ips_wifi" {
 
 data "template_file" "database_secrets" {
   template = "${file("${path.module}/database_setup/provisioning/.db_secrets.json")}"
-  vars {
+  vars = {
     db_host = "${azurerm_postgresql_server.db_server.name}"
     db_name = "${azurerm_postgresql_database.postgres_database.name}"
     db_username = "${azurerm_postgresql_server.db_server.administrator_login}"
