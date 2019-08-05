@@ -4,7 +4,7 @@ Get data from the LAQN network via the API maintained by Kings College London:
 """
 import logging
 import requests
-from database_management import database_management as dbm
+from .database_management import database_management as dbm
 from datetime import timedelta, datetime
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, String, create_engine, exists, and_

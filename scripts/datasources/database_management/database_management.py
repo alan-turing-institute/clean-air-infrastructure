@@ -87,18 +87,14 @@ def get_data_range(site, start_date, end_date):
         if not site.DateClosed:
             get_data_to = datetime.today()
         else:
-            get_data_to = min(
-                [datetime_floor(datetime.today()), datetime_floor(site.DateClosed)])
+            get_data_to = min([datetime_floor(datetime.today()), datetime_floor(site.DateClosed)])
 
     else:
         if not site.DateClosed:
             get_data_to = datetime_floor(str_to_datetime(end_date))
         else:
             # Site is closed to get data until that point
-            get_data_to = min(
-                [datetime_floor(str_to_datetime(end_date)),
-                 datetime_floor(site.DateClosed)]
-            )
+            get_data_to = min([datetime_floor(str_to_datetime(end_date)), datetime_floor(site.DateClosed)])
 
     delta = get_data_to - get_data_from  # Number of days available for a site
 

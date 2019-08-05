@@ -13,8 +13,8 @@ terraform/config.tf
 *.tgz
 
 # Static data files
-static_data_tmp/*
-!static_data_tmp/README.md
+static_data_local/*
+!static_data_local/README.md
 
 # pyenv
 .python-version

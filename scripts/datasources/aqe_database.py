@@ -4,7 +4,7 @@ Get data from the AQE network via the API
 import csv
 import logging
 import requests
-from database_management import database_management as dbm
+from .database_management import database_management as dbm
 from datetime import timedelta, datetime
 from geoalchemy2 import Geometry
 from io import BytesIO, StringIO
@@ -304,8 +304,7 @@ def main():
     with engine.connect() as conn:
         conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
     Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session = sessionmaker(bind=engine)()
 
     # Update the aqe_sites database table
     update_site_list_table(session)
