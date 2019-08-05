@@ -7,18 +7,18 @@ script:
   # # Run all pytest unit tests
   # - python -m pytest -v tests --cov misinformation --cov-report term-missing
   # Run pyflakes for error detection
-  - pyflakes *.py scripts #tests
+  - pyflakes *.py docker #tests
   # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --max-line-length=120 --count *.py scripts #tests
+  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --max-line-length=120 --count *.py docker #tests
   # Run pylint for stricter error checking
-  - pylint *py scripts/datasources/*py #tests
+  - pylint *py docker/datasources/*py #tests
 
   # Ensure we build every docker image
   # ----------------------------------
 
   # Datasources
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/laqn.Dockerfile scripts/datasources/.
-  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f scripts/datasources/aqe.Dockerfile scripts/datasources/.
+  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f docker/datasources/laqn.Dockerfile docker/datasources/.
+  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f docker/datasources/aqe.Dockerfile docker/datasources/.
 
   # Push to ACR
   - bash docker_push.sh

@@ -13,7 +13,7 @@ realpath() {
 az acr login -n ${acr_name}
 
 # Static datasources
-docker build -t ${acr_login_server}/insert_static_datasource:latest scripts/datasources/static/.
+docker build -t ${acr_login_server}/insert_static_datasource:latest docker/datasources/static/.
 
 # Insert ukmap data
 full_data_path=$(realpath static_data_local/UKMap.gdb)
