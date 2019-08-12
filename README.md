@@ -141,16 +141,15 @@ to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should 
 
 
 ### Add static resources (Only run if you are setting up the infrastructure - not required if already exists)
-Terraform will now have created a number of databases.
-We need to add the static datasets to the database.
-If you have access to the Turing Research Engineering OneDrive, you will find these in `The Alan Turing Institute > Research Engineering - Documents > Projects > cleanair > static_data`
+Terraform will now have created a number of databases. We need to add the datasets to the database.
+
 
 NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform).
 Either push the the repo, or go to travis and rerun the last build.
 
-1. All static datasources are .gdb files. Copy the .gdb files into the `static_data_local` directory.
+1. Run `download_static_datasets.py` to download the static datasets from Azure blob storage.
 
-2. When terraform created the Azure Container registry it created a local (gitignored) file: `/terraform/.secrets/static_data_docker_insert.sh`. From the root of the repository run:
+2. When terraform created the Azure Container registry it created a local (gitignored) file: `/terraform/.secrets/static_data_docker_insert.sh`. From the root of the repository run the following to insert the datasets:
 
 ```
 bash terraform/.secrets/static_data_docker_insert.sh
