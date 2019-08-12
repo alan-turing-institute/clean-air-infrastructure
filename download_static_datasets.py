@@ -22,7 +22,7 @@ def emphasised(text):
 def get_blob_service():
 
     # Get subscription
-    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
+    _, subscription_id, _tenant_id = get_azure_cli_credentials(with_tenant=True)
     subscription_client = get_client_from_cli_profile(SubscriptionClient)
     subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
     logging.info("Working in subscription: %s, ", emphasised(subscription_name))
@@ -57,21 +57,16 @@ def download_blobs(block_blob_service, blob_container, target_directory):
     create_dir_if_not_exists(target_directory)
 
     for blob in generator:
-    
+
         target_file = os.path.join(target_directory, blob.name)
+        logging.info("Downloading: %s from container: %s to location: %s", emphasised(blob.name), blob_container, emphasised(target_file))
+        block_blob_service.get_blob_to_path(blob_container, blob.name, target_file)
 
-        # Only download file if it does not exists already
-        if not os.path.exists(target_file):
-            logging.info("Downloading: %s from container: %s to location: %s", emphasised(blob.name), blob_container, emphasised(target_file))
-            block_blob_service.get_blob_to_path(blob_container, blob.name, target_file)
+        with zipfile.ZipFile(target_file, "r") as zip_ref:
+            zip_ref.extractall(target_directory)
+            os.remove(target_file)
 
-            with zipfile.ZipFile(target_file, "r") as zip_ref:
-                zip_ref.extractall(target_directory)
-                os.remove(target_file)
-
-            logging.info("Downloading complete")
-        else:
-            logging.info("Blob: %s already downloaded to location: %s", emphasised(blob.name), emphasised(target_file))
+        logging.info("Downloading complete")
 
 
 def download_static_data():
