@@ -1,6 +1,6 @@
 colorlog
+geoalchemy2
+psycopg2
 requests
 sqlalchemy
 termcolor
-psycopg2
-geoalchemy2

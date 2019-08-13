@@ -7,7 +7,7 @@ class Updater():
     """Manage interactions with the Azure databases"""
     def __init__(self, *args, **kwargs):
         self.api = APIReader(*args, **kwargs)
-        self.db = Connector(*args, **kwargs)
+        self.dbcnxn = Connector(*args, **kwargs)
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
     def get_available_readings(self, site_list_query):

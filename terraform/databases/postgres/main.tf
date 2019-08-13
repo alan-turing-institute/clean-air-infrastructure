@@ -1,39 +1,37 @@
-# Derived variables
-locals {
-  admin_username = "atiadmin_${var.datasource}"
-  version        = "latest"
-}
+# # Create the DB admin name
+# resource "random_string" "db_admin_name" {
+#   keepers = {
+#     resource_group = "${var.resource_group}"
+#   }
+#   length  = 16
+#   special = true
+# }
 
-
-# Generate random strings that persist for the lifetime of the resource group
-# NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
-resource "random_string" "db_password" {
-  keepers = {
-    resource_group = "${var.resource_group_db}"
-  }
-  length  = 16
-  special = true
-}
-
-resource "random_string" "db_admin" {
-  keepers = {
-    resource_group = "${var.resource_group_db}"
-  }
-
-  length  = 16
-  special = true
-}
-
-resource "azurerm_key_vault_secret" "db_admin_password" {
-  name         = "${var.datasource}-db-admin-password"
-  value        = "${random_string.db_password.result}"
+resource "azurerm_key_vault_secret" "db_admin_name" {
+  name         = "${var.db_name}-db-admin-name"
+  value        = "atiadmin_${var.db_name}"
   key_vault_id = "${var.keyvault_id}"
 }
 
+# Create the DB admin password
+resource "random_string" "db_admin_password" {
+  keepers = {
+    resource_group = "${var.resource_group}"
+  }
+  length  = 16
+  special = true
+}
+resource "azurerm_key_vault_secret" "db_admin_password" {
+  name         = "${var.db_name}-db-admin-password"
+  value        = "${random_string.db_admin_password.result}"
+  key_vault_id = "${var.keyvault_id}"
+}
+
+# Create the database server
 resource "azurerm_postgresql_server" "db_server" {
-  name                = "${lower("${var.datasource}")}-server"
+  name                = "${lower("${var.db_name}")}-server"
   location            = "${var.location}"
-  resource_group_name = "${var.resource_group_db}"
+  resource_group_name = "${var.resource_group}"
 
   sku {
     name     = "B_Gen5_2"
@@ -48,15 +46,16 @@ resource "azurerm_postgresql_server" "db_server" {
     geo_redundant_backup  = "Disabled"
   }
 
-  administrator_login          = "${local.admin_username}"
+  administrator_login          = "${azurerm_key_vault_secret.db_admin_name.value}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   version                      = "9.6"
   ssl_enforcement              = "Enabled"
 }
 
-resource "azurerm_postgresql_database" "postgres_database" {
-  name                = "${lower("${var.datasource}")}_db"
-  resource_group_name = "${var.resource_group_db}"
+# Create the database
+resource "azurerm_postgresql_database" "this" {
+  name                = "${lower("${var.db_name}")}_db"
+  resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   charset             = "UTF8"
   collation           = "English_United States.1252"
@@ -64,7 +63,7 @@ resource "azurerm_postgresql_database" "postgres_database" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips" {
   name                = "allow-all-azure-ips"
-  resource_group_name = "${var.resource_group_db}"
+  resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "0.0.0.0"
   end_ip_address      = "0.0.0.0"
@@ -72,7 +71,7 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips_desktop" {
   name                = "allow-turing-desktop-ips"
-  resource_group_name = "${var.resource_group_db}"
+  resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "193.60.220.240"
   end_ip_address      = "193.60.220.240"
@@ -80,32 +79,23 @@ resource "azurerm_postgresql_firewall_rule" "azure_ips_desktop" {
 
 resource "azurerm_postgresql_firewall_rule" "azure_ips_wifi" {
   name                = "allow-turing-wifi-ips"
-  resource_group_name = "${var.resource_group_db}"
+  resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.db_server.name}"
   start_ip_address    = "193.60.220.253"
   end_ip_address      = "193.60.220.253"
 }
 
-resource "azurerm_postgresql_firewall_rule" "oscar_ips_wifi" {
-  name                = "allow-oscar-wifi-ips"
-  resource_group_name = "${var.resource_group_db}"
-  server_name         = "${azurerm_postgresql_server.db_server.name}"
-  start_ip_address    = "94.12.116.182"
-  end_ip_address      = "94.12.116.182"
-}
-
-
 data "template_file" "database_secrets" {
-  template = "${file("${path.module}/database_setup/provisioning/.db_secrets.json")}"
+  template = "${file("${path.module}/templates/.db_secrets.json")}"
   vars = {
     db_host = "${azurerm_postgresql_server.db_server.name}"
-    db_name = "${azurerm_postgresql_database.postgres_database.name}"
+    db_name = "${azurerm_postgresql_database.this.name}"
     db_username = "${azurerm_postgresql_server.db_server.administrator_login}"
     db_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   }
 }
 
 resource "local_file" "database_secrets_file" {
-    sensitive_content     = "${data.template_file.database_secrets.rendered}"
-    filename = "${path.cwd}/.secrets/.${lower("${var.datasource}")}_secret.json"
+    sensitive_content = "${data.template_file.database_secrets.rendered}"
+    filename          = "${path.cwd}/.secrets/.${lower("${var.db_name}")}_secret.json"
 }

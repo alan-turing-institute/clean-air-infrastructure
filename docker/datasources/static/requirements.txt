@@ -1,4 +1,0 @@
-sqlalchemy
-termcolor
-psycopg2
-geoalchemy2

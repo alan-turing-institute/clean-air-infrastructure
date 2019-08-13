@@ -86,7 +86,7 @@ def build_backend():
         'variable "tenant_id" {',
         '    default = "{}"'.format(tenant_id),
         '}',
-        'variable "infrastructure_location" {',
+        'variable "location" {',
         '    default = "{}"'.format(args.location),
         '}',
         'variable "azure_group_id" {',

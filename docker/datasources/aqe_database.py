@@ -15,7 +15,7 @@ class AQEDatabase(Updater):
         super().__init__(*args, **kwargs)
 
         # Ensure that tables exist
-        aqe_tables.initialise(self.db.engine)
+        aqe_tables.initialise(self.dbcnxn.engine)
 
     def request_site_entries(self):
         """
@@ -65,7 +65,7 @@ class AQEDatabase(Updater):
         self.logger.info("Starting AQE site list update...")
 
         # Open a DB session
-        with self.db.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             # Reload site information and update the database accordingly
             self.logger.info("Requesting site info from %s", green("aeat.com API"))
             site_entries = [aqe_tables.build_site_entry(site) for site in self.request_site_entries()]
@@ -79,7 +79,7 @@ class AQEDatabase(Updater):
         self.logger.info("Starting AQE readings update...")
 
         # Open a DB session
-        with self.db.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
             site_info_query = session.query(aqe_tables.AQESite)
             self.logger.info("Requesting readings from %s for %s sites",
