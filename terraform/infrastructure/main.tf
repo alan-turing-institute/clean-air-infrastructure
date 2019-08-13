@@ -97,7 +97,7 @@ data "template_file" "static_data_docker_template" {
 
 resource "local_file" "static_data_docker_file" {
     sensitive_content = "${data.template_file.static_data_docker_template.rendered}"
-    filename          = "${path.cwd}/.secrets/static_data_docker_insert.sh"
+    filename          = "${path.cwd}/../static_data_local/insert_static_data.sh"
 }
 
 

@@ -12,8 +12,8 @@ az acr login -n ${acr_name}
 
 # Build static datasources docker image
 docker build -t ${acr_login_server}/upload_static_dataset:latest \
-    -f docker/dockerfiles/upload_static_dataset.Dockerfile
-    docker/datasources/static/.
+    -f docker/dockerfiles/upload_static_dataset.Dockerfile \
+    docker
 
 # Set path to database secrets
 db_secret_path=$(realpath terraform/.secrets/)

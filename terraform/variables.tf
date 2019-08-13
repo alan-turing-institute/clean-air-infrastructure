@@ -7,8 +7,7 @@ variable "rg_datasources" {
   description = "Resource group for datasources"
   default = "RG_CLEANAIR_DATASOURCES"
 }
-
 variable "rg_infrastructure" {
-  description = "Resource group for datasources"
+  description = "Resource group for infrastructure"
   default = "RG_CLEANAIR_INFRASTRUCTURE"
 }

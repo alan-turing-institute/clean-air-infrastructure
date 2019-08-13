@@ -152,7 +152,7 @@ Either push the the repo, or go to travis and rerun the last build.
 2. When terraform created the Azure Container registry it created a local (gitignored) file: `/terraform/.secrets/static_data_docker_insert.sh`. From the root of the repository run the following to insert the datasets:
 
 ```
-bash terraform/.secrets/static_data_docker_insert.sh
+bash static_data_local/insert_static_data.sh
 ```
 
 

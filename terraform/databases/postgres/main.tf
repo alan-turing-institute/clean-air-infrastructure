@@ -97,5 +97,5 @@ data "template_file" "database_secrets" {
 
 resource "local_file" "database_secrets_file" {
     sensitive_content = "${data.template_file.database_secrets.rendered}"
-    filename          = "${path.cwd}/.secrets/.${lower("${var.db_name}")}_secret.json"
+    filename          = "${path.cwd}/.secrets/.db_${lower("${var.db_name}")}_secret.json"
 }
