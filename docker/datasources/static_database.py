@@ -75,4 +75,3 @@ class StaticDatabase():
             self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
             with self.dbcnxn.engine.connect() as conn:
                 conn.execute(sql_code)
-
