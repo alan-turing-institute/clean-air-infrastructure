@@ -1,12 +1,3 @@
-# Setup required providers
-provider "azurerm" {
-  version = "~>1.24"
-}
-
-provider "random" {
-  version = "~>2.1"
-}
-
 # Create the infrastructure resource group
 resource "azurerm_resource_group" "infrastructure" {
   name     = "${var.resource_group}"

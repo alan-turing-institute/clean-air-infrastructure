@@ -2,9 +2,9 @@
 resource "azurerm_resource_group" "databases" {
   name     = "${var.resource_group}"
   location = "${var.location}"
-
   tags = {
     environment = "Terraform Clean Air"
+    segment     = "Databases"
   }
 }
 

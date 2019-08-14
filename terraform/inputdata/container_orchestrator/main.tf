@@ -88,16 +88,6 @@ data "template_file" "run_application" {
     registry_password = "${var.acr_admin_password}"
   }
 }
-# # ... application updater
-# data "template_file" "update_application" {
-#   template = "${file("${path.module}/templates/update_application.template.sh")}"
-#   vars = {
-#     host = "${var.acr_login_server}"
-#     password = "${var.acr_admin_password}"
-#     username = "${var.acr_admin_user}"
-#     datasource = "${var.datasource}"
-#   }
-# }
 # ... database secrets
 data "local_file" "db_secrets" {
   filename = "${path.module}/../../.secrets/.db_inputs_secret.json"
@@ -119,15 +109,6 @@ data "template_file" "cloudinit" {
     db_secrets         = "${indent(6, "${data.local_file.db_secrets.content}")}"
   }
 }
-
-# # Build cloud-config configuration file from fragments
-# data "template_cloudinit_config" "orchestrator" {
-#   part {
-#     filename     = "cloudinit.yaml"
-#     content_type = "text/cloud-config"
-#     content      = "${data.template_file.cloudinit.rendered}"
-#   }
-# }
 
 # Create the VM
 resource "azurerm_virtual_machine" "vm" {
@@ -167,38 +148,3 @@ resource "azurerm_virtual_machine" "vm" {
     segment     = "Input data / Container orchestrator"
   }
 }
-
-
-
-
-
-# # provider "azurerm" {
-# #   version = "~>1.24"
-# # }
-
-# # provider "template" {
-# #   version = "~>2.1"
-# # }
-
-# # # Setup variables
-# # variable "datasource" {}
-# # variable "keyvault_id" {}
-# # variable "location" {}
-# # variable "resource_group_db" {}
-# # variable "acr_login_server" {}
-# # variable "db_size" {}
-
-
-
-# # # Generate random strings that persist for the lifetime of the resource group
-# # # NB. we cannot tie these to the creation of the VM, since this creates a dependency cycle
-
-
-# # resource "random_string" "vm_github" {
-# #   keepers = {
-# #     resource_group = "${var.resource_group}"
-# #   }
-
-# #   length  = 16
-# #   special = true
-# # }
