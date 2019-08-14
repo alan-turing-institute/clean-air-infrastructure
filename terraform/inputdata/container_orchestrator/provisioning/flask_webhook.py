@@ -35,11 +35,11 @@ def github_webhook():
             merged = payload_dict["pull_request"]["merged"]
             print("Action was {}, merged was {}".format(action, merged))
             if action == "closed" and merged:
-                with open("/var/www/update_needed", "w") as f_output:
+                with open("/var/www/latest_commit_hash", "w") as f_output:
                     f_output.write(payload_dict["pull_request"]['head']['sha'])
                 print("=> called the code updater")
                 return jsonify({"msg": "called code updater"})
-                print("=> no action needed as this is not a merged pull request")
+            print("=> no action needed as this is not a merged pull request")
             return jsonify({"msg": "no action needed as this is not a merged pull request"})
         except KeyError:
             pass

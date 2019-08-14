@@ -14,17 +14,27 @@ users:
     sudo: False
     groups: docker
 
+apt:
+  # Preserves the existing /etc/apt/sources.list
+  preserve_sources_list: true
+
+  # Add repositories
+  sources:
+    microsoft-azure-cli.list:
+      source: "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ bionic main"
+      keyid: EB3E94ADBE1229CF
 
 # List of packages to install with apt-get
 packages:
   - apache2
+  - azure-cli
   - build-essential
   - libapache2-mod-wsgi-py3
   - libffi-dev
   - libssl-dev
   - python3-flask
   - python3-pip
-  - docker.io
+  # - docker.io
 
 write_files:
   # Write the Apache config file
@@ -42,15 +52,10 @@ write_files:
     content: |
       ${flask_wsgi}
 
-  # Automatically pull latest docker image
-  - path: /home/${username}/update_application.sh
-    content: |
-      ${update_application}
-
   # Automatically run the docker image
   - path: /home/${username}/run_application.sh
     content: |
-      ${run_application}      
+      ${run_application}
 
   # Add GitHub server as a known host
   - path: /home/${username}/.ssh/known_hosts
@@ -64,13 +69,13 @@ write_files:
       ${github_secret}
 
   # Add database secrets
-  - path: /.secrets/secrets.json
+  - path: /.secrets/.db_inputs_secret.json
     content: |
       ${db_secrets}
 
 # Run any additional commands
 runcmd:
-  
+
   # Create SSH key and fix file permissions
   - echo "*** Updating ${username} home directory... ***"
   - mkdir -p /home/${username}/.ssh
@@ -83,16 +88,17 @@ runcmd:
 
   # Create callback file to trigger updates
   - echo "*** Setting up automatic GitHub updates... ***"
-  - chmod u+x /home/${username}/update_application.sh
-  - echo "* * * * * ${username} /home/${username}/update_application.sh" >> /etc/crontab
+  - chmod u+x /home/${username}/run_application.sh
+  # - chmod u+x /home/${username}/update_application.sh
+  # - echo "* * * * * ${username} /home/${username}/update_application.sh" >> /etc/crontab
   - echo "0 * * * * ${username} /home/${username}/run_application.sh" >> /etc/crontab
 
   # Setup minimal Flask server
   - echo "*** Configuring Flask server... ***"
   - echo "127.0.0.1 ${servername}.uksouth.cloudapp.azure.com" >> /etc/hosts
   - echo "ServerName ${servername}.uksouth.cloudapp.azure.com" >> /etc/apache2/apache2.conf
-  - echo "yes" > /var/www/update_needed
-  - chmod o+w /var/www/update_needed
+  - echo "${latest_commit_hash}" > /var/www/latest_commit_hash
+  - chmod o+w /var/www/latest_commit
   - chown -R www-data:www-data /var/www/
   - systemctl restart apache2
 

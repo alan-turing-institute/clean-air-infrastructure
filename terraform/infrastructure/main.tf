@@ -11,9 +11,9 @@ provider "random" {
 resource "azurerm_resource_group" "infrastructure" {
   name     = "${var.resource_group}"
   location = "${var.location}"
-
   tags = {
     environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
   }
 }
 
@@ -22,7 +22,6 @@ resource "random_string" "keyvaultnamesuffix" {
   keepers = {
     resource_group = "${azurerm_resource_group.infrastructure.name}"
   }
-
   length  = 9
   number  = false
   special = false
@@ -58,6 +57,7 @@ resource "azurerm_key_vault" "cleanair" {
 
   tags = {
     environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
   }
 }
 
@@ -78,12 +78,16 @@ resource "azurerm_container_registry" "cleanair" {
   provisioner "local-exec" {
     command = "travis env set ACR_PASSWORD ${azurerm_container_registry.cleanair.admin_password} --private"
   }
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
+  }
 }
 
 # Write the container registry secrets to file
 resource "local_file" "acr_secret" {
-    sensitive_content     = "${azurerm_container_registry.cleanair.login_server}\n${azurerm_container_registry.cleanair.admin_username}\n${azurerm_container_registry.cleanair.admin_password}"
-    filename = "${path.cwd}/.secrets/.acr_secret.json"
+  sensitive_content     = "${azurerm_container_registry.cleanair.login_server}\n${azurerm_container_registry.cleanair.admin_username}\n${azurerm_container_registry.cleanair.admin_password}"
+  filename = "${path.cwd}/.secrets/.acr_secret.json"
 }
 
 # Build the static dataset deployment script
@@ -96,8 +100,8 @@ data "template_file" "static_data_docker_template" {
 }
 
 resource "local_file" "static_data_docker_file" {
-    sensitive_content = "${data.template_file.static_data_docker_template.rendered}"
-    filename          = "${path.cwd}/../static_data_local/insert_static_data.sh"
+  sensitive_content = "${data.template_file.static_data_docker_template.rendered}"
+  filename          = "${path.cwd}/../static_data_local/insert_static_data.sh"
 }
 
 

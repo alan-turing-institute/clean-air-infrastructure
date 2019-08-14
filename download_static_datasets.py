@@ -24,7 +24,7 @@ def get_blob_service(resource_group, storage_container_name):
     _, subscription_id, _tenant_id = get_azure_cli_credentials(with_tenant=True)
     subscription_client = get_client_from_cli_profile(SubscriptionClient)
     subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
-    logging.info("Working in subscription: %s, ", emphasised(subscription_name))
+    logging.info("Working in subscription: %s", emphasised(subscription_name))
 
     # Get the account key for this storage account
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)

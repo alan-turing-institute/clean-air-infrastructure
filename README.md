@@ -170,11 +170,45 @@ NB. This only needs to be done once but is documented here for better reproducib
 - In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
 - Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
-- Select `Let me select individual events` and tick `Pull requests` only -->
+- Select `Let me select individual events` and tick `Pull requests` only
 
 
 
-## Configure Kubernetes Cluster:
+## Data Source docker files
+Datasources consist of a docker image which collect data from an API and store them in a database. These images are stored in an Azure Container Registry and are pulled by the Kubernetes cluster. However, it may be useful to run these locally on occasion:
+
+The following command runs the laqn docker image and mounts the secrets file to the correct location in the container.
+
+```
+docker run -v <localdirectorycontaininglaqnsecretfile>:/secrets/ <laqnimage>
+```
+
+## Removing Terraform infrastructure
+To destroy all the resources created by `Terraform` run:
+
+```
+terraform destroy
+```
+
+You can check everything was removed on the Azure portal.
+Then login to TravisCI and delete the Azure Container repo environment variables. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- ## Configure Kubernetes Cluster:
 
 ### Local cluster
 You can set up a local cluster on your machine. To do this install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
@@ -230,24 +264,4 @@ helm install cleanair
 
 Now you to the minikube dashboard and you can see everything that was installed.
 
-## Data Source docker files
-
-Datasources consist of a docker image which collect data from an API and store them in a database. These images are stored in an Azure Container Registry and are pulled by the Kubernetes cluster. However, it may be useful to run these locally on occasion:
-
-The following command runs the laqn docker image and mounts the secrets file to the correct location in the container.
-
-```
-docker run -v <localdirectorycontaininglaqnsecretfile>:/secrets/ <laqnimage>
-```
-
-
-
-## Removing Terraform infrastructure
-To destroy all the resources created by `Terraform` run:
-
-```
-terraform destroy
-```
-
-You can check everything was removed on the Azure portal.
-Then login to TravisCI and delete the Azure Container repo environment variables.
+-->
