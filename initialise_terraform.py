@@ -21,11 +21,14 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 
 # Read command line arguments
 parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
-parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND", help="Resource group where the Terraform backend will be stored")
-parser.add_argument("-l", "--location", type=str, default="uksouth", help="Azure datacentre where the Terraform backend will be stored")
-parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend", help="Name of the storage container where the Terraform backend will be stored")
-parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c", help="ID of an Azure group which contains all project developers. Default is Turing's 'All Users' group.")
-# parser.add_argument("-a", "--azure-group-id", type=str, default="09af71ca-7b8f-4a19-94a4-3da19ea84b48", help="ID of an Azure group which contains all project developers. Default is Turing's 'Research Staff - Members' group.") # NB. this is not working
+parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND",
+                    help="Resource group where the Terraform backend will be stored")
+parser.add_argument("-l", "--location", type=str, default="uksouth",
+                    help="Azure datacentre where the Terraform backend will be stored")
+parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend",
+                    help="Name of the storage container where the Terraform backend will be stored")
+parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
+                    help="ID of an Azure group which contains all developers. Default is Turing's 'All Users' group.")
 args = parser.parse_args()
 
 
@@ -83,7 +86,7 @@ def build_backend():
         'variable "tenant_id" {',
         '    default = "{}"'.format(tenant_id),
         '}',
-        'variable "infrastructure_location" {',
+        'variable "location" {',
         '    default = "{}"'.format(args.location),
         '}',
         'variable "azure_group_id" {',
@@ -106,7 +109,8 @@ def get_valid_storage_account_name(storage_mgmt_client):
     """Keep generating storage account names until a valid one is found."""
     while True:
         storage_account_name = "terraformstorage"
-        storage_account_name += "".join([random.choice(string.ascii_lowercase + string.digits) for n in range(24 - len(storage_account_name))])
+        storage_account_name += "".join([random.choice(string.ascii_lowercase + string.digits)
+                                         for n in range(24 - len(storage_account_name))])
         if storage_mgmt_client.storage_accounts.check_name_availability(storage_account_name).name_available:
             return storage_account_name
 

@@ -1,2 +1,0 @@
-runcmd:
-  - echo "*** Insert AQN specific commands in this file ***"

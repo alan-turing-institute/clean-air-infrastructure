@@ -9,5 +9,15 @@ terraform/config.tf
 
 # VS
 .vscode/
-
 *.secrets/
+*.tgz
+
+# Static data files
+static_data_local/*
+!static_data_local/README.md
+
+# pyenv
+.python-version
+
+# Python
+*__pycache__
