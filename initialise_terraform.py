@@ -71,7 +71,7 @@ def build_backend():
         block_blob_service.create_container(args.storage_container_name)
 
     # Write Terraform configuration
-    config_file_lines = [
+    terraform_config_file_lines = [
         'terraform {',
         '  backend "azurerm" {',
         '    storage_account_name = "{}"'.format(storage_account_name),
@@ -79,29 +79,54 @@ def build_backend():
         '    key                  = "terraform.tfstate"',
         '    access_key           = "{}"'.format(storage_account_key),
         '  }',
+        '}'
+    ]
+        # 'variable "subscription_id" {',
+        # '    default = "{}"'.format(subscription_id),
+        # '}',
+        # 'variable "tenant_id" {',
+        # '    default = "{}"'.format(tenant_id),
+        # '}',
+        # 'variable "location" {',
+        # '    default = "{}"'.format(args.location),
+        # '}',
+        # 'variable "azure_group_id" {',
+        # '    default = "{}"'.format(args.azure_group_id),
+        # '}',
+        # 'variable "diagnostics_storage_uri" {',
+        # '    default = "{}"'.format(args.azure_group_id),
+        # '}',
+    terraform_variables_file_lines = [
+        'output "subscription_id" {',
+        '    value = "{}"'.format(subscription_id),
         '}',
-        'variable "subscription_id" {',
-        '    default = "{}"'.format(subscription_id),
+        'output "tenant_id" {',
+        '    value = "{}"'.format(tenant_id),
         '}',
-        'variable "tenant_id" {',
-        '    default = "{}"'.format(tenant_id),
+        'output "location" {',
+        '    value = "{}"'.format(args.location),
         '}',
-        'variable "location" {',
-        '    default = "{}"'.format(args.location),
+        'output "azure_group_id" {',
+        '    value = "{}"'.format(args.azure_group_id),
         '}',
-        'variable "azure_group_id" {',
-        '    default = "{}"'.format(args.azure_group_id),
-        '}',
-        'variable "diagnostics_storage_uri" {',
-        '    default = "{}"'.format(args.azure_group_id),
+        'output "diagnostics_storage_uri" {',
+        '    value = "{}"'.format(args.azure_group_id),
         '}',
     ]
 
     # Write Terraform backend config
-    filepath = os.path.join("terraform", "config.tf")
+    os.makedirs(os.path.join("terraform", "configuration"))
+    filepath = os.path.join("terraform", "backend_config.tf")
     logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
     with open(filepath, "w") as f_config:
-        for line in config_file_lines:
+        for line in terraform_config_file_lines:
+            f_config.write(line + "\n")
+
+    # Write Terraform common variables
+    filepath = os.path.join("terraform", "configuration", "outputs.tf")
+    logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
+    with open(filepath, "w") as f_config:
+        for line in terraform_variables_file_lines:
             f_config.write(line + "\n")
 
 

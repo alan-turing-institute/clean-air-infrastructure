@@ -1,3 +1,8 @@
+# Load useful modules
+module "configuration" {
+  source = "../../configuration"
+}
+
 # Generate an admin password that persists for the lifetime of the resource group
 resource "random_string" "admin_password" {
   keepers = {
@@ -88,10 +93,10 @@ data "template_file" "run_application" {
     registry_password = "${var.acr_admin_password}"
   }
 }
-# ... database secrets
-data "local_file" "db_secrets" {
-  filename = "${path.module}/../../.secrets/.db_inputs_secret.json"
-}
+# # ... database secrets
+# data "local_file" "db_secrets" {
+#   filename = "${path.module}/../../.secrets/.db_inputs_secret.json"
+# }
 # ... cloud-init config file
 data "template_file" "cloudinit" {
   template = "${file("${path.module}/templates/cloudinit.template.yaml")}"
@@ -106,12 +111,12 @@ data "template_file" "cloudinit" {
     run_application    = "${indent(6, "${data.template_file.run_application.rendered}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.orchestrator_github_secret.value}")}"
-    db_secrets         = "${indent(6, "${data.local_file.db_secrets.content}")}"
+    # db_secrets         = "${indent(6, "${data.local_file.db_secrets.content}")}"
   }
 }
 
 # Create the VM
-resource "azurerm_virtual_machine" "vm" {
+resource "azurerm_virtual_machine" "orchestrator" {
   name                          = "${local.machine}-vm"
   delete_os_disk_on_termination = true
   location                      = "${var.location}"
@@ -119,18 +124,8 @@ resource "azurerm_virtual_machine" "vm" {
   network_interface_ids         = ["${azurerm_network_interface.orchestrator.id}"]
   vm_size                       = "Standard_B1s"
 
-  storage_os_disk {
-    name              = "${local.machine}-osdisk"
-    caching           = "ReadWrite"
-    create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
-  }
-
-  storage_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
-    version   = "latest"
+  identity {
+    type = "SystemAssigned"
   }
 
   os_profile {
@@ -143,8 +138,45 @@ resource "azurerm_virtual_machine" "vm" {
   os_profile_linux_config {
     disable_password_authentication = false
   }
+
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+
+  storage_os_disk {
+    name              = "${local.machine}-osdisk"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Input data / Container orchestrator"
   }
+}
+
+# Give the managed identity for this VM access to the key vault
+resource "azurerm_role_assignment" "orchestrator" {
+  name                 = "${azurerm_virtual_machine.orchestrator.name}"
+  scope                = "${module.configuration.subscription_id}"
+  role_definition_name = "Reader"
+  principal_id         = "${lookup(azurerm_virtual_machine.orchestrator.identity[0], "principal_id")}"
+}
+
+resource "azurerm_key_vault_access_policy" "allow_orchestrator" {
+  key_vault_id = "${var.keyvault_id}"
+  tenant_id    = "${module.configuration.tenant_id}"
+  object_id    = "${azurerm_role_assignment.orchestrator.principal_id}"
+  key_permissions = [
+    "get",
+    "list",
+  ]
+  secret_permissions = [
+    "get",
+    "list",
+  ]
 }

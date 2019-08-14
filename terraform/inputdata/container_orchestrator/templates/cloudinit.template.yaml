@@ -68,10 +68,10 @@ write_files:
     content: |
       ${github_secret}
 
-  # Add database secrets
-  - path: /.secrets/.db_inputs_secret.json
-    content: |
-      ${db_secrets}
+  # # Add database secrets
+  # - path: /.secrets/.db_inputs_secret.json
+  #   content: |
+  #     $db_secrets
 
 # Run any additional commands
 runcmd:
