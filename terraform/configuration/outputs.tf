@@ -10,6 +10,3 @@ output "location" {
 output "azure_group_id" {
     value = "35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c"
 }
-output "diagnostics_storage_uri" {
-    value = "35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c"
-}

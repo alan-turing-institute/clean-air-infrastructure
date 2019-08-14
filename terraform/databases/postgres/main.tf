@@ -1,7 +1,7 @@
 resource "azurerm_key_vault_secret" "db_admin_name" {
   name         = "${var.db_name}-db-admin-name"
   value        = "atiadmin_${var.db_name}"
-  key_vault_id = "${var.keyvault_id}"
+  key_vault_id = "${var.key_vault_id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Databases / Postgres"
@@ -19,7 +19,7 @@ resource "random_string" "db_admin_password" {
 resource "azurerm_key_vault_secret" "db_admin_password" {
   name         = "${var.db_name}-db-admin-password"
   value        = "${random_string.db_admin_password.result}"
-  key_vault_id = "${var.keyvault_id}"
+  key_vault_id = "${var.key_vault_id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Databases / Postgres"

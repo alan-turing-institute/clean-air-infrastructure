@@ -1,8 +1,13 @@
+# Load configuration module
+module "configuration" {
+  source = "../../configuration"
+}
+
 # Set up a virtual network with associated subnet and security group
 resource "azurerm_virtual_network" "input_data" {
   name                = "VNET_CLEANAIR_INPUT_DATA"
   address_space       = ["10.10.0.0/16"]
-  location            = "${var.location}"
+  location            = "${module.configuration.location}"
   resource_group_name = "${var.resource_group}"
   tags = {
     environment = "Terraform Clean Air"

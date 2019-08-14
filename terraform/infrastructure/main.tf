@@ -1,7 +1,12 @@
+# Load configuration module
+module "configuration" {
+  source = "../configuration"
+}
+
 # Create the infrastructure resource group
 resource "azurerm_resource_group" "infrastructure" {
   name     = "${var.resource_group}"
-  location = "${var.location}"
+  location = "${module.configuration.location}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
@@ -22,14 +27,14 @@ resource "random_string" "keyvaultnamesuffix" {
 # Create the keyvault where passwords are stored
 resource "azurerm_key_vault" "cleanair" {
   name                = "kvcleanair-${random_string.keyvaultnamesuffix.result}"
-  location            = "${var.location}"
+  location            = "${azurerm_resource_group.infrastructure.location}"
   resource_group_name = "${azurerm_resource_group.infrastructure.name}"
   sku_name            = "standard"
-  tenant_id           = "${var.tenant_id}"
+  tenant_id           = "${module.configuration.tenant_id}"
 
   access_policy {
-    tenant_id = "${var.tenant_id}"
-    object_id = "${var.azure_group_id}"
+    tenant_id = "${module.configuration.tenant_id}"
+    object_id = "${module.configuration.azure_group_id}"
 
     key_permissions = [
       "create",
@@ -56,7 +61,7 @@ resource "azurerm_key_vault" "cleanair" {
 resource "azurerm_container_registry" "cleanair" {
   name                     = "CleanAirContainerRegistry"
   resource_group_name      = "${azurerm_resource_group.infrastructure.name}"
-  location                 = "${var.location}"
+  location                 = "${azurerm_resource_group.infrastructure.location}"
   sku                      = "Basic"
   admin_enabled            = true
 
@@ -81,6 +86,30 @@ resource "local_file" "acr_secret" {
   filename = "${path.cwd}/.secrets/.acr_secret.json"
 }
 
+# Generate a random string that persists for the lifetime of the resource group
+resource "random_string" "bootdiagnosticssuffix" {
+  keepers = {
+    resource_group = "${azurerm_resource_group.infrastructure.name}"
+  }
+  length  = 9
+  number  = false
+  special = false
+  upper   = false
+}
+
+# Create storage account for boot diagnostics
+resource "azurerm_storage_account" "bootdiagnostics" {
+    name                        = "bootdiagnostics${random_string.bootdiagnosticssuffix.result}"
+    resource_group_name         = "${azurerm_resource_group.infrastructure.name}"
+    location                    = "${azurerm_resource_group.infrastructure.location}"
+    account_tier                = "Standard"
+    account_replication_type    = "LRS"
+    tags = {
+      environment = "Terraform Clean Air"
+      segment     = "Infrastructure"
+    }
+}
+
 # # Build the static dataset deployment script
 # data "template_file" "static_data_docker_template" {
 #   template = "${file("${path.module}/templates/static_data_docker_insert.template.sh")}"
@@ -88,7 +117,6 @@ resource "local_file" "acr_secret" {
 #     acr_login_server = "${azurerm_container_registry.cleanair.login_server}"
 #     acr_name         = "${azurerm_container_registry.cleanair.name}"
 #   }
-}
 
 # resource "local_file" "static_data_docker_file" {
 #   sensitive_content = "${data.template_file.static_data_docker_template.rendered}"

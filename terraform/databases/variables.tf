@@ -1,5 +1,9 @@
 # Setup variables
-variable "keyvault_id" {}
-variable "location" {}
+variable "key_vault_id" {}
 variable "resource_group" {}
+
+locals {
+  inputs_db_name = "inputs"
+}
+
 

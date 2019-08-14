@@ -70,7 +70,10 @@ def build_backend():
     if not block_blob_service.exists(args.storage_container_name):
         block_blob_service.create_container(args.storage_container_name)
 
-    # Write Terraform configuration
+    # Create directories for configuration files
+    os.makedirs(os.path.join("terraform", "configuration"))
+
+    # Write Terraform backend configuration
     terraform_config_file_lines = [
         'terraform {',
         '  backend "azurerm" {',
@@ -81,41 +84,6 @@ def build_backend():
         '  }',
         '}'
     ]
-        # 'variable "subscription_id" {',
-        # '    default = "{}"'.format(subscription_id),
-        # '}',
-        # 'variable "tenant_id" {',
-        # '    default = "{}"'.format(tenant_id),
-        # '}',
-        # 'variable "location" {',
-        # '    default = "{}"'.format(args.location),
-        # '}',
-        # 'variable "azure_group_id" {',
-        # '    default = "{}"'.format(args.azure_group_id),
-        # '}',
-        # 'variable "diagnostics_storage_uri" {',
-        # '    default = "{}"'.format(args.azure_group_id),
-        # '}',
-    terraform_variables_file_lines = [
-        'output "subscription_id" {',
-        '    value = "{}"'.format(subscription_id),
-        '}',
-        'output "tenant_id" {',
-        '    value = "{}"'.format(tenant_id),
-        '}',
-        'output "location" {',
-        '    value = "{}"'.format(args.location),
-        '}',
-        'output "azure_group_id" {',
-        '    value = "{}"'.format(args.azure_group_id),
-        '}',
-        'output "diagnostics_storage_uri" {',
-        '    value = "{}"'.format(args.azure_group_id),
-        '}',
-    ]
-
-    # Write Terraform backend config
-    os.makedirs(os.path.join("terraform", "configuration"))
     filepath = os.path.join("terraform", "backend_config.tf")
     logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
     with open(filepath, "w") as f_config:
@@ -123,6 +91,24 @@ def build_backend():
             f_config.write(line + "\n")
 
     # Write Terraform common variables
+    terraform_variables_file_lines = [
+        'output "subscription_id" {',
+        '    description = "ID of the Azure subscription to deploy into"',
+        '    value = "{}"'.format(subscription_id),
+        '}',
+        'output "tenant_id" {',
+        '    description = "ID of a tenant with appropriate permissions to create infrastructure"',
+        '    value = "{}"'.format(tenant_id),
+        '}',
+        'output "location" {',
+        '    description = "Name of the Azure location to build in"',
+        '    value = "{}"'.format(args.location),
+        '}',
+        'output "azure_group_id" {',
+        '    description = "ID of a group containing all accounts that will be allowed to access the infrastructure"',
+        '    value = "{}"'.format(args.azure_group_id),
+        '}',
+    ]
     filepath = os.path.join("terraform", "configuration", "outputs.tf")
     logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
     with open(filepath, "w") as f_config:

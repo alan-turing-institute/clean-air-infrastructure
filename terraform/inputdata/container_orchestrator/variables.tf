@@ -1,9 +1,7 @@
 # Setup variables
-variable "acr_admin_password" {}
-variable "acr_admin_user" {}
-variable "acr_login_server" {}
-variable "keyvault_id" {}
-variable "location" {}
+variable "boot_diagnostics_uri" {}
+variable "registry_server" {}
+variable "key_vault_id" {}
 variable "nsg_id" {}
 variable "resource_group" {}
 variable "subnet_id" {}

@@ -3,7 +3,8 @@
 
 # Terraform
 .terraform
-terraform/config.tf
+terraform/backend_config.tf
+terraform/configuration/
 *.tfstate
 *.tfstate.backup
 
