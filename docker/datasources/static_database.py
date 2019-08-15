@@ -47,7 +47,6 @@ class StaticDatabase():
         with suppress(KeyError):
             table_name = self.table_names[self.static_filename]
             extra_args += ["-nln", table_name]
-             
 
         # Run ogr2ogr
         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
@@ -76,7 +75,7 @@ class StaticDatabase():
 
         elif self.static_filename == "HexGrid":
             sql_code = """CREATE INDEX hex_grid_gix ON hex_grid USING GIST(wkb_geometry);"""
-            self.logger.info("Configuring HexGrid data...")                 
+            self.logger.info("Configuring HexGrid data...")
 
         if sql_code:
             self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
