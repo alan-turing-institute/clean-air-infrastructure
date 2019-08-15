@@ -39,7 +39,7 @@ class StaticDatabase():
 
         # Add additional arguments if the input data contains shape files
         extra_args = []
-        if glob.glob("data/{}/*.shp".format(self.static_filename)):
+        if glob.glob("/data/{}/*.shp".format(self.static_filename)):
             extra_args = ["-nlt", "PROMOTE_TO_MULTI",
                           "-lco", "precision=NO"]
 
@@ -47,6 +47,7 @@ class StaticDatabase():
         with suppress(KeyError):
             table_name = self.table_names[self.static_filename]
             extra_args += ["-nln", table_name]
+             
 
         # Run ogr2ogr
         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
@@ -74,12 +75,8 @@ class StaticDatabase():
             self.logger.info("Configuring RoadLink data...")
 
         elif self.static_filename == "HexGrid":
-            sql_code = """;"""
-            self.logger.info("Configuring HexGrid data...")
-
-        elif self.static_filename == "LondonBoundary":
-            sql_code = """;"""
-            self.logger.info("Configuring LondonBoundary data...")   
+            sql_code = """CREATE INDEX hex_grid_gix ON hex_grid USING GIST(wkb_geometry);"""
+            self.logger.info("Configuring HexGrid data...")                 
 
         if sql_code:
             self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
