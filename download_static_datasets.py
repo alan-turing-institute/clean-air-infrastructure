@@ -71,7 +71,7 @@ def download_blobs(blob_service, blob_container, target_directory):
 
 def download_static_data(parent_dir, blob_service):
     # Containers to download data from
-    containers = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon"]
+    containers = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
 
     # Get the directory locations (robust to working directory)
     target_dir = os.path.join(parent_dir, "static_data_local")
