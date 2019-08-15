@@ -149,13 +149,14 @@ brew install postgresql postgis
 
 Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_input_secret.json`:
 
-```
+```json
 {
     "username": "<username>",
     "password": "<password>",
     "host": "host.docker.internal",
     "port": 5432,
-    "db_name": "cleanair_db"
+    "db_name": "cleanair_db",
+    "ssl_mode": "prefer"
 }
 ```
 

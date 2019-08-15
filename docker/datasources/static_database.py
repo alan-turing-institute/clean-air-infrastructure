@@ -13,7 +13,9 @@ class StaticDatabase():
     table_names = {
         "UKMap.gdb": "ukmap",
         "Canyons": "canyonslondon",
-        "RoadLink": "roadlink",
+        "RoadLink": "os_highways_links",
+        "HexGrid": "hex_grid",
+        "LondonBoundary": "london_boundary"
     }
 
     """Manage interactions with the static database on Azure"""
@@ -68,8 +70,16 @@ class StaticDatabase():
             self.logger.info("Configuring Street Canyons data...")
 
         elif self.static_filename == "RoadLink":
-            sql_code = """CREATE INDEX roadlink_4326_gix ON roadlink USING GIST(wkb_geometry);"""
+            sql_code = """CREATE INDEX roadlink_4326_gix ON os_highways_links USING GIST(wkb_geometry);"""
             self.logger.info("Configuring RoadLink data...")
+
+        elif self.static_filename == "HexGrid":
+            sql_code = """;"""
+            self.logger.info("Configuring HexGrid data...")
+
+        elif self.static_filename == "LondonBoundary":
+            sql_code = """;"""
+            self.logger.info("Configuring LondonBoundary data...")   
 
         if sql_code:
             self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
