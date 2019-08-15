@@ -49,10 +49,8 @@ class APIReader():
         # Convert these to datetimes by setting the timestamp to midnight at the start of the day
         return list(map(lambda d: datetime.datetime.combine(d, datetime.datetime.min.time()), available_dates))
 
-    @staticmethod
-    def get_response(api_endpoint, timeout=60.0):
+    def get_response(self, api_endpoint, timeout=60.0):
         """Return the response from an API"""
         response = requests.get(api_endpoint, timeout=timeout)
-        if response.status_code == 200:
-            return response
-        return None
+        response.raise_for_status()
+        return response
