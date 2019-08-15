@@ -29,12 +29,12 @@ packages:
   - apache2
   - azure-cli
   - build-essential
+  - docker.io
   - libapache2-mod-wsgi-py3
   - libffi-dev
   - libssl-dev
   - python3-flask
   - python3-pip
-  # - docker.io
 
 write_files:
   # Write the Apache config file

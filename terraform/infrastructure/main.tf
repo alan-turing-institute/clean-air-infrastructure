@@ -31,30 +31,27 @@ resource "azurerm_key_vault" "cleanair" {
   resource_group_name = "${azurerm_resource_group.infrastructure.name}"
   sku_name            = "standard"
   tenant_id           = "${module.configuration.tenant_id}"
-
-  access_policy {
-    tenant_id = "${module.configuration.tenant_id}"
-    object_id = "${module.configuration.azure_group_id}"
-
-    key_permissions = [
-      "create",
-      "delete",
-      "get",
-      "list",
-    ]
-
-    secret_permissions = [
-      "set",
-      "delete",
-      "get",
-      "list",
-    ]
-  }
-
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
   }
+}
+resource "azurerm_key_vault_access_policy" "allow_group" {
+  key_vault_id = "${azurerm_key_vault.cleanair.id}"
+  tenant_id    = "${module.configuration.tenant_id}"
+  object_id    = "${module.configuration.azure_group_id}"
+  key_permissions = [
+    "create",
+    "delete",
+    "get",
+    "list",
+  ]
+  secret_permissions = [
+    "set",
+    "delete",
+    "get",
+    "list",
+  ]
 }
 
 # Create azure container registry and upload the secrets to travis
@@ -88,27 +85,27 @@ resource "local_file" "acr_secret" {
 
 # Write the container registry secrets to the key vault
 resource "azurerm_key_vault_secret" "container_registry_login_server" {
-  name         = "container_registry_login_server"
+  name         = "${var.registry_login_server_secret}"
   value        = "${azurerm_container_registry.cleanair.login_server}"
-  key_vault_id = "${var.key_vault_id}"
+  key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
   }
 }
 resource "azurerm_key_vault_secret" "container_registry_admin_password" {
-  name         = "container_registry_admin_password"
+  name         = "${var.registry_admin_password_secret}"
   value        = "${azurerm_container_registry.cleanair.admin_password}"
-  key_vault_id = "${var.key_vault_id}"
+  key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
   }
 }
 resource "azurerm_key_vault_secret" "container_registry_admin_username" {
-  name         = "container_registry_admin_username"
+  name         = "${var.registry_admin_username_secret}"
   value        = "${azurerm_container_registry.cleanair.admin_username}"
-  key_vault_id = "${var.key_vault_id}"
+  key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
@@ -120,7 +117,7 @@ resource "random_string" "bootdiagnosticssuffix" {
   keepers = {
     resource_group = "${azurerm_resource_group.infrastructure.name}"
   }
-  length  = 9
+  length  = 5
   number  = false
   special = false
   upper   = false
@@ -128,7 +125,7 @@ resource "random_string" "bootdiagnosticssuffix" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "bootdiagnostics" {
-    name                        = "bootdiagnostics${random_string.bootdiagnosticssuffix.result}"
+    name                        = "cleanairdiagnostics${random_string.bootdiagnosticssuffix.result}"
     resource_group_name         = "${azurerm_resource_group.infrastructure.name}"
     location                    = "${azurerm_resource_group.infrastructure.location}"
     account_tier                = "Standard"

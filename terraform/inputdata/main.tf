@@ -21,14 +21,9 @@ module "networking" {
 
 # Set up a virtual machine to orchestrate the containers
 module "container_orchestrator" {
-  source                          = "./container_orchestrator"
-  boot_diagnostics_uri            = "${var.boot_diagnostics_uri}"
-  inputs_db_admin_name_secret     = "${var.inputs_db_admin_name_secret}"
-  inputs_db_admin_password_secret = "${var.inputs_db_admin_password_secret}"
-  key_vault_id                    = "${var.key_vault_id}"
-  key_vault_name                  = "${var.key_vault_name}"
-  nsg_id                          = "${module.networking.nsg_id}"
-  registry_server                 = "${var.registry_server}"
-  resource_group                  = "${azurerm_resource_group.input_data.name}"
-  subnet_id                       = "${module.networking.subnet_id}"
+  source                         = "./container_orchestrator"
+  infrastructure                 = "${var.infrastructure}"
+  machine_name                   = "container-orchestrator"
+  networking                     = module.networking
+  resource_group                 = "${azurerm_resource_group.input_data.name}"
 }
