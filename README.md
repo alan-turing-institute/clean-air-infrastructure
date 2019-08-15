@@ -11,7 +11,7 @@ To run this project you will need:
 - the `Azure Python SDK` (for managing the initial setup)
 - `Terraform` (for configuring the Azure infrastructure)
 - the `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
-
+- `Docker` (For building and testing images locally)
 
 ### Azure Account
 If you do not have an `Azure` account already, please [`follow the procedure here`](https://azure.microsoft.com/en-us/) to get started with an `Azure` subscription.
