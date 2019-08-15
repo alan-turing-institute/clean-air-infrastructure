@@ -139,6 +139,25 @@ terraform apply
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
+### Running without Azure
+
+It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
+
+```bash
+brew install postgresql postgis
+```
+
+Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_input_secret.json`:
+
+```
+{
+    "username": "<username>",
+    "password": "<password>",
+    "host": "host.docker.internal",
+    "port": 5432,
+    "db_name": "cleanair_db"
+}
+```
 
 ### Add static resources (Only run if you are setting up the infrastructure - not required if already exists)
 Terraform will now have created a number of databases. We need to add the datasets to the database.
