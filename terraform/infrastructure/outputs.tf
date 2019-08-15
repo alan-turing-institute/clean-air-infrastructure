@@ -11,6 +11,9 @@ output "registry_server" {
 output "key_vault_id" {
   value = "${azurerm_key_vault.cleanair.id}"
 }
+output "key_vault_name" {
+  value = "${azurerm_key_vault.cleanair.name}"
+}
 output "boot_diagnostics_uri" {
   value = "${azurerm_storage_account.bootdiagnostics.primary_blob_endpoint}"
 }

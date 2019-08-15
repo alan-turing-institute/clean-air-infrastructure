@@ -2,8 +2,8 @@
 variable "key_vault_id" {}
 variable "resource_group" {}
 
-locals {
-  inputs_db_name = "inputs"
-}
+# locals {
+#   inputs_db_name = "inputs"
+# }
 
 

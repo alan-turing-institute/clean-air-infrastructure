@@ -1,14 +1,16 @@
 #! /bin/bash
+
+# Load latest commit hash (as pushed from GitHub)
 latest_commit_hash="$(cat /var/www/latest_commit_hash)"
+
+# Log in to the Azure CLI
 az login --identity  # sign in using the managed identity for this machine
 
+# Retrieve the container registry details from the key vault
+registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${inputs_db_admin_name_secret} --query "value" -o tsv)
+registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${inputs_db_admin_password_secret} --query "value" -o tsv)
 
-# az keyvault secret show --id ${key_vault_id} --name inputs-db-admin-name --query "value"
-
-registry_username=$(az keyvault secret show --id ${key_vault_id} --name inputs-db-admin-name --query "value" -o tsv)
-registry_password=$(az keyvault secret show --id ${key_vault_id} --name inputs-db-admin-password --query "value" -o tsv)
-
-
+# Run the containers
 for datasource in "aqe" "laqn"; do
     az container create --resource-group ${resource_group} \
                         --name $datasource-app \

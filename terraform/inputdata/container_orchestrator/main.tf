@@ -87,9 +87,11 @@ data "template_file" "apache_config" {
 data "template_file" "run_application" {
   template = "${file("${path.module}/templates/run_application.template.sh")}"
   vars = {
-    key_vault_id     = "${var.key_vault_id}"
-    resource_group  = "${var.resource_group}"
-    registry_server = "${var.registry_server}"
+    inputs_db_admin_name_secret     = "${var.inputs_db_admin_name_secret}"
+    inputs_db_admin_password_secret = "${var.inputs_db_admin_password_secret}"
+    key_vault_name                  = "${var.key_vault_name}"
+    resource_group                  = "${var.resource_group}"
+    registry_server                 = "${var.registry_server}"
   }
 }
 # # ... database secrets
@@ -167,7 +169,7 @@ resource "azurerm_virtual_machine" "orchestrator" {
 data "azurerm_subscription" "primary" {}
 resource "azurerm_role_assignment" "orchestrator" {
   scope                = "${data.azurerm_subscription.primary.id}"
-  role_definition_name = "Reader"
+  role_definition_name = "Contributor"
   principal_id         = "${lookup(azurerm_virtual_machine.orchestrator.identity[0], "principal_id")}"
 }
 

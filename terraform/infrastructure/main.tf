@@ -86,6 +86,35 @@ resource "local_file" "acr_secret" {
   filename = "${path.cwd}/.secrets/.acr_secret.json"
 }
 
+# Write the container registry secrets to the key vault
+resource "azurerm_key_vault_secret" "container_registry_login_server" {
+  name         = "container_registry_login_server"
+  value        = "${azurerm_container_registry.cleanair.login_server}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
+  }
+}
+resource "azurerm_key_vault_secret" "container_registry_admin_password" {
+  name         = "container_registry_admin_password"
+  value        = "${azurerm_container_registry.cleanair.admin_password}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
+  }
+}
+resource "azurerm_key_vault_secret" "container_registry_admin_username" {
+  name         = "container_registry_admin_username"
+  value        = "${azurerm_container_registry.cleanair.admin_username}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure"
+  }
+}
+
 # Generate a random string that persists for the lifetime of the resource group
 resource "random_string" "bootdiagnosticssuffix" {
   keepers = {
