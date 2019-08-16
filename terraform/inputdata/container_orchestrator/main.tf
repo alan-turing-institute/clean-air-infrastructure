@@ -87,17 +87,18 @@ data "template_file" "apache_config" {
 data "template_file" "run_application" {
   template = "${file("${path.module}/templates/run_application.template.sh")}"
   vars = {
-    registry_admin_username_secret = "${var.infrastructure.registry_admin_username_secret}"
-    registry_admin_password_secret = "${var.infrastructure.registry_admin_password_secret}"
-    registry_server                = "${var.infrastructure.registry_server}"
+    db_admin_password_secret       = "${var.databases.inputs_db_admin_password_secret}"
+    db_admin_username_secret       = "${var.databases.inputs_db_admin_name_secret}"
+    db_server_name_secret          = "${var.databases.inputs_db_server_name_secret}"
     key_vault_name                 = "${var.infrastructure.key_vault_name}"
+    registry_admin_password_secret = "${var.infrastructure.registry_admin_password_secret}"
+    registry_admin_username_secret = "${var.infrastructure.registry_admin_username_secret}"
+    registry_server                = "${var.infrastructure.registry_server}"
     resource_group                 = "${var.resource_group}"
   }
 }
-# # ... database secrets
-# data "local_file" "db_secrets" {
-#   filename = "${path.module}/../../.secrets/.db_inputs_secret.json"
-# }
+
+
 # ... cloud-init config file
 data "template_file" "cloudinit" {
   template = "${file("${path.module}/templates/cloudinit.template.yaml")}"
@@ -112,7 +113,6 @@ data "template_file" "cloudinit" {
     run_application    = "${indent(6, "${data.template_file.run_application.rendered}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.orchestrator_github_secret.value}")}"
-    # db_secrets         = "${indent(6, "${data.local_file.db_secrets.content}")}"
   }
 }
 

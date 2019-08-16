@@ -10,10 +10,19 @@ az login --identity  # sign in using the managed identity for this machine
 
 # Retrieve the container registry details from the key vault
 echo "Retrieving the container registry details from Azure..."
-registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_secret} --query "value" -o tsv)
 registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_password_secret} --query "value" -o tsv)
-echo "registry_username: $registry_username"
+registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_secret} --query "value" -o tsv)
 # echo "registry_password: $registry_password"
+echo "registry_username: $registry_username"
+
+# Retrieve the database details from the key vault
+echo "Retrieving the database details from Azure..."
+db_admin_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_password_secret} --query "value" -o tsv)
+db_admin_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_username_secret} --query "value" -o tsv)
+db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_server_name_secret} --query "value" -o tsv)
+# echo "db_admin_password: $db_admin_password"
+echo "db_admin_username: $db_admin_username"
+echo "db_server_name: $db_server_name"
 
 # Log in to the container repository
 echo "Logging in to the Azure Container Repository..."
@@ -21,13 +30,14 @@ az acr login --name $registry_username
 
 # Get database secrets
 database_secrets="{
-                        \"host\": \"inputs-server.postgres.database.azure.com\",
+                        \"host\": \"$db_server_name.postgres.database.azure.com\",
                         \"port\": 5432,
                         \"db_name\": \"inputs_db\",
-                        \"username\": \"atiadmin_inputs@inputs-server\",
-                        \"password\": \"rjoE6_r13Kq&lQV5\",
+                        \"username\": \"$db_admin_username@$db_server_name\",
+                        \"password\": \"$db_admin_password\",
                         \"ssl_mode\": \"require\"
 }"
+# echo "database_secrets: $database_secrets"
 
 # Run the containers
 echo "Running the container instances..."

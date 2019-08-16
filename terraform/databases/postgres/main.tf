@@ -1,3 +1,14 @@
+# Store the DB server name in the keyvault
+resource "azurerm_key_vault_secret" "db_server_name" {
+  name         = "${var.db_name}-db-server-name"
+  value        = "${lower("${var.db_name}")}-server"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+# Store the DB admin name in the keyvault
 resource "azurerm_key_vault_secret" "db_admin_name" {
   name         = "${var.db_name}-db-admin-name"
   value        = "atiadmin_${var.db_name}"
@@ -16,6 +27,7 @@ resource "random_string" "db_admin_password" {
   length  = 16
   special = true
 }
+# ... and store it in the key vault
 resource "azurerm_key_vault_secret" "db_admin_password" {
   name         = "${var.db_name}-db-admin-password"
   value        = "${random_string.db_admin_password.result}"
@@ -26,9 +38,10 @@ resource "azurerm_key_vault_secret" "db_admin_password" {
   }
 }
 
+
 # Create the database server
 resource "azurerm_postgresql_server" "db_server" {
-  name                = "${lower("${var.db_name}")}-server"
+  name                = "${azurerm_key_vault_secret.db_server_name.value}"
   location            = "${var.location}"
   resource_group_name = "${var.resource_group}"
 

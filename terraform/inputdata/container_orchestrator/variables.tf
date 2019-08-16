@@ -1,5 +1,6 @@
 # Setup variables
 variable "admin_username" { default = "atiadmin" }
+variable "databases" {}
 variable "infrastructure" {}
 variable "machine_name" {}
 variable "networking" {}

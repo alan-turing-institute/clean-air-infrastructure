@@ -22,6 +22,7 @@ module "networking" {
 # Set up a virtual machine to orchestrate the containers
 module "container_orchestrator" {
   source                         = "./container_orchestrator"
+  databases                      = "${var.databases}"
   infrastructure                 = "${var.infrastructure}"
   machine_name                   = "container-orchestrator"
   networking                     = module.networking

@@ -15,6 +15,7 @@ module "databases" {
 
 module "inputdata" {
   source         = "./inputdata"
+  databases      = module.databases
   infrastructure = module.infrastructure
   resource_group = "${var.rg_input_data}"
 }

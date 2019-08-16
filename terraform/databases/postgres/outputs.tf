@@ -5,3 +5,6 @@ output "db_admin_name_secret" {
 output "db_admin_password_secret" {
   value = "${azurerm_key_vault_secret.db_admin_password.name}"
 }
+output "db_server_name_secret" {
+  value = "${azurerm_key_vault_secret.db_server_name.name}"
+}
