@@ -49,6 +49,7 @@ for datasource in "aqe" "laqn"; do
                         --registry-username "$registry_username" \
                         --registry-password "$registry_password" \
                         --cpu 1 --memory 1 \
+                        --environment-variables NO_COLOUR=1 \
                         --secrets .db_inputs_secret.json="$database_secrets" \
                         --secrets-mount-path /secrets \
                         --restart-policy OnFailure
