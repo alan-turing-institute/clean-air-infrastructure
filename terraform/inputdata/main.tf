@@ -21,10 +21,10 @@ module "networking" {
 
 # Set up a virtual machine to orchestrate the containers
 module "container_orchestrator" {
-  source                         = "./container_orchestrator"
-  databases                      = "${var.databases}"
-  infrastructure                 = "${var.infrastructure}"
-  machine_name                   = "container-orchestrator"
-  networking                     = module.networking
-  resource_group                 = "${azurerm_resource_group.input_data.name}"
+  source         = "./container_orchestrator"
+  databases      = "${var.databases}"
+  infrastructure = "${var.infrastructure}"
+  machine_name   = "container-orchestrator"
+  networking     = module.networking
+  resource_group = "${azurerm_resource_group.input_data.name}"
 }

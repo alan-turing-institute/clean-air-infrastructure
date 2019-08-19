@@ -71,7 +71,7 @@ def build_backend():
         block_blob_service.create_container(args.storage_container_name)
 
     # Create directories for configuration files
-    os.makedirs(os.path.join("terraform", "configuration"))
+    os.makedirs(os.path.join("terraform", "configuration"), exist_ok=True)
 
     # Write Terraform backend configuration
     terraform_config_file_lines = [
@@ -93,20 +93,20 @@ def build_backend():
     # Write Terraform common variables
     terraform_variables_file_lines = [
         'output "subscription_id" {',
-        '    description = "ID of the Azure subscription to deploy into"',
-        '    value = "{}"'.format(subscription_id),
+        '  description = "ID of the Azure subscription to deploy into"',
+        '  value       = "{}"'.format(subscription_id),
         '}',
         'output "tenant_id" {',
-        '    description = "ID of a tenant with appropriate permissions to create infrastructure"',
-        '    value = "{}"'.format(tenant_id),
+        '  description = "ID of a tenant with appropriate permissions to create infrastructure"',
+        '  value       = "{}"'.format(tenant_id),
         '}',
         'output "location" {',
-        '    description = "Name of the Azure location to build in"',
-        '    value = "{}"'.format(args.location),
+        '  description = "Name of the Azure location to build in"',
+        '  value       = "{}"'.format(args.location),
         '}',
         'output "azure_group_id" {',
-        '    description = "ID of a group containing all accounts that will be allowed to access the infrastructure"',
-        '    value = "{}"'.format(args.azure_group_id),
+        '  description = "ID of a group containing all accounts that will be allowed to access the infrastructure"',
+        '  value       = "{}"'.format(args.azure_group_id),
         '}',
     ]
     filepath = os.path.join("terraform", "configuration", "outputs.tf")

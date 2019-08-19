@@ -11,3 +11,6 @@ output "inputs_db_admin_password_keyname" {
 output "inputs_db_server_name_keyname" {
   value = "${module.inputs.this_db_server_name_keyname}"
 }
+output "resource_group_name" {
+  value = "${azurerm_resource_group.this.name}"
+}

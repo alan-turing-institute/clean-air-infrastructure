@@ -167,8 +167,8 @@ resource "azurerm_virtual_machine" "orchestrator" {
 
 locals {
   orchestrator_identity = "${lookup(azurerm_virtual_machine.orchestrator.identity[0], "principal_id")}"
-  input_data_scope = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INPUT_DATA"
-  infrastructure_scope = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INFRASTRUCTURE"
+  input_data_scope      = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INPUT_DATA"
+  infrastructure_scope  = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INFRASTRUCTURE"
 }
 
 # Create a role with appropriate permissions to run container instances createcontainers run_container
@@ -178,7 +178,7 @@ resource "azurerm_role_definition" "createcontainers" {
   description = "Create and run container instances"
 
   permissions {
-    actions     = [
+    actions = [
       "Microsoft.ContainerInstance/containerGroups/read",
       "Microsoft.ContainerInstance/containerGroups/write",
       "Microsoft.Resources/subscriptions/resourcegroups/read"
@@ -192,9 +192,9 @@ resource "azurerm_role_definition" "createcontainers" {
 
 # Grant the managed identity for this VM "Reader" access to create conainer
 resource "azurerm_role_assignment" "orchestrator_run_container_instance" {
-  scope                = "${local.input_data_scope}"
-  role_definition_id   = "${azurerm_role_definition.createcontainers.id}"
-  principal_id         = "${local.orchestrator_identity}"
+  scope              = "${local.input_data_scope}"
+  role_definition_id = "${azurerm_role_definition.createcontainers.id}"
+  principal_id       = "${local.orchestrator_identity}"
 }
 
 # Grant the managed identity for this VM "ACRPull" access to the container registry
