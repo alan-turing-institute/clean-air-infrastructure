@@ -10,10 +10,10 @@ class LondonBoundary(StaticTableConnector):
         # Reflect the table
         self.table = self.get_table_instance('london_boundary')
 
-
+    @property
     def convex_hull(self):
         """
-        Return the convex hull of the London Boundary
+        Return the convex hull of the London Boundary as a query object
         """
 
         with self.open_session() as session:
