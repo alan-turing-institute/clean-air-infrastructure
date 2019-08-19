@@ -12,16 +12,16 @@ az login --identity  # sign in using the managed identity for this machine
 echo "Retrieving the container registry details from Azure..."
 registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_password_secret} --query "value" -o tsv)
 registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_secret} --query "value" -o tsv)
-# echo "registry_password: $registry_password"
 echo "registry_username: $registry_username"
+echo "registry_password: **********"
 
 # Retrieve the database details from the key vault
 echo "Retrieving the database details from Azure..."
 db_admin_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_password_secret} --query "value" -o tsv)
 db_admin_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_username_secret} --query "value" -o tsv)
 db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_server_name_secret} --query "value" -o tsv)
-# echo "db_admin_password: $db_admin_password"
 echo "db_admin_username: $db_admin_username"
+echo "db_admin_password: **********"
 echo "db_server_name: $db_server_name"
 
 # Log in to the container repository
@@ -43,14 +43,15 @@ database_secrets="{
 echo "Running the container instances..."
 for datasource in "aqe" "laqn"; do
     echo "az container create --resource-group ${resource_group} --name $datasource-app --image ${registry_server}/$datasource:$latest_commit_hash --registry-username \"$registry_username\" --registry-password \"$registry_password\" --cpu 1 --memory 1"
-    az container create --resource-group ${resource_group} \
-                        --name $datasource-instance \
-                        --image ${registry_server}/$datasource:$latest_commit_hash \
-                        --registry-username "$registry_username" \
-                        --registry-password "$registry_password" \
-                        --cpu 1 --memory 1 \
+    az container create --cpu 1 \
                         --environment-variables NO_COLOUR=1 \
+                        --image ${registry_server}/$datasource:$latest_commit_hash \
+                        --memory 1 \
+                        --name $datasource-instance \
+                        --registry-password "$registry_password" \
+                        --registry-username "$registry_username" \
+                        --resource-group ${resource_group} \
+                        --restart-policy OnFailure \
                         --secrets .db_inputs_secret.json="$database_secrets" \
-                        --secrets-mount-path /secrets \
-                        --restart-policy OnFailure
+                        --secrets-mount-path /secrets
 done

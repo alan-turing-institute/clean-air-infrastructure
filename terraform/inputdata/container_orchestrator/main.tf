@@ -171,59 +171,39 @@ locals {
   infrastructure_scope = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INFRASTRUCTURE"
 }
 
-# # Grant the managed identity for this VM "Reader" access to the subscription
-# resource "azurerm_role_assignment" "orchestrator_on_rg_input_data2" {
-#   scope                = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INPUT_DATA"
-#   role_definition_name = "Reader"
-#   principal_id         = "${local.orchestrator_identity}"
-# }
-
-
-# Grant the managed identity for this VM "Reader" access to create conainer
-resource "azurerm_role_definition" "createcontainers" {
-  name        = "Create containers"
+# Create a role with appropriate permissions to run container instances
+resource "azurerm_role_definition" "run_container" {
+  name        = "Run containers"
   scope       = "${local.input_data_scope}"
   description = "Create and run container instances"
 
   permissions {
     actions     = [
+      "Microsoft.ContainerInstance/containerGroups/read",
       "Microsoft.ContainerInstance/containerGroups/write",
       "Microsoft.Resources/subscriptions/resourcegroups/read"
     ]
     not_actions = []
   }
-
   assignable_scopes = [
     "${local.input_data_scope}"
   ]
 }
 
-resource "azurerm_role_assignment" "orchestrator_on_rg_input_data" {
+# Grant the managed identity for this VM "Reader" access to create conainer
+resource "azurerm_role_assignment" "orchestrator_run_container_instance" {
   scope                = "${local.input_data_scope}"
   role_definition_id   = "${azurerm_role_definition.createcontainers.id}"
   principal_id         = "${local.orchestrator_identity}"
 }
 
-
-
-# resource "azurerm_role_assignment" "orchestrator_on_rg_infrastructure" {
-#   scope                = "${local.infrastructure_scope}"
-#   role_definition_name = "Reader"
-#   principal_id         = "${local.orchestrator_identity}"
-# }
-
-
 # Grant the managed identity for this VM "ACRPull" access to the container registry
-resource "azurerm_role_assignment" "orchestrator_on_container_registry" {
+resource "azurerm_role_assignment" "orchestrator_get_image" {
   scope                = "${var.infrastructure.registry_id}"
   role_definition_name = "AcrPull"
   principal_id         = "${local.orchestrator_identity}"
 }
-# resource "azurerm_role_assignment" "orchestrator_on_key_vault" {
-#   scope                = "${var.infrastructure.key_vault_id}"
-#   role_definition_name = "Reader"
-#   principal_id         = "${local.orchestrator_identity}"
-# }
+
 # Grant the managed identity for this VM "get" and "list" access to the key vault
 resource "azurerm_key_vault_access_policy" "allow_orchestrator" {
   key_vault_id = "${var.infrastructure.key_vault_id}"

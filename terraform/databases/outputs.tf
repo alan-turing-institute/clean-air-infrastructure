@@ -1,4 +1,7 @@
 # Provide outputs which are useful to later Terraform scripts
+output "inputs_db_name" {
+  value = "${module.inputs.db_name}"
+}
 output "inputs_db_admin_name_secret" {
   value = "${module.inputs.db_admin_name_secret}"
 }
