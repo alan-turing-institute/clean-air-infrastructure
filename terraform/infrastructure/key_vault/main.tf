@@ -7,7 +7,7 @@ module "configuration" {
 # Create the keyvault where passwords are stored
 # ----------------------------------------------
 resource "azurerm_key_vault" "this" {
-  name                = "terraformcleanair"
+  name                = "cleanair-secrets"
   location            = "${var.location}"
   resource_group_name = "${var.resource_group}"
   sku_name            = "standard"

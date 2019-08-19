@@ -1,13 +1,13 @@
 # Setup variables
-variable "rg_databases" {
+variable "resource_group_databases" {
   description = "Resource group for databases"
   default     = "RG_CLEANAIR_DATABASES"
 }
-variable "rg_input_data" {
+variable "resource_group_data_collection" {
   description = "Resource group for data collection"
-  default     = "RG_CLEANAIR_INPUT_DATA"
+  default     = "RG_CLEANAIR_DATA_COLLECTION"
 }
-variable "rg_infrastructure" {
+variable "resource_group_infrastructure" {
   description = "Resource group for infrastructure"
   default     = "RG_CLEANAIR_INFRASTRUCTURE"
 }

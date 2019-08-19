@@ -7,7 +7,7 @@ module "configuration" {
 # Create azure container registry and upload the secrets to travis
 # ----------------------------------------------------------------
 resource "azurerm_container_registry" "this" {
-  name                = "CleanAirContainerRegistry"
+  name                = "docker-images"
   resource_group_name = "${var.resource_group}"
   location            = "${var.location}"
   sku                 = "Basic"
@@ -27,12 +27,6 @@ resource "azurerm_container_registry" "this" {
     segment     = "Infrastructure"
   }
 }
-
-# # Write the container registry secrets to file
-# resource "local_file" "acr_secret" {
-#   sensitive_content = "${azurerm_container_registry.this.login_server}\n${azurerm_container_registry.this.admin_username}\n${azurerm_container_registry.this.admin_password}"
-#   filename          = "${path.cwd}/.secrets/.acr_secret.json"
-# }
 
 # Write the container registry secrets to the key vault
 # -----------------------------------------------------
@@ -63,6 +57,3 @@ resource "azurerm_key_vault_secret" "this_admin_username" {
     segment     = "Infrastructure"
   }
 }
-
-
-

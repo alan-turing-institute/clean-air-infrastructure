@@ -4,18 +4,18 @@ module "configuration" {
 
 module "infrastructure" {
   source         = "./infrastructure"
-  resource_group = "${var.rg_infrastructure}"
+  resource_group = "${var.resource_group_infrastructure}"
 }
 
 module "databases" {
   source         = "./databases"
   infrastructure = module.infrastructure
-  resource_group = "${var.rg_databases}"
+  resource_group = "${var.resource_group_databases}"
 }
 
-module "inputdata" {
-  source         = "./inputdata"
+module "data_collection" {
+  source         = "./data_collection"
   databases      = module.databases
   infrastructure = module.infrastructure
-  resource_group = "${var.rg_input_data}"
+  resource_group = "${var.resource_group_data_collection}"
 }
