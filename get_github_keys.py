@@ -19,15 +19,15 @@ def emphasised(text):
     return termcolor.colored(text, 'green')
 
 
-def get_keys(machine, rg_name="RG_CLEANAIR_DATASOURCES", rg_kv="RG_CLEANAIR_INFRASTRUCTURE"):
+def get_keys(machine, rg_name="RG_CLEANAIR_DATA_COLLECTION", rg_kv="RG_CLEANAIR_INFRASTRUCTURE"):
     # Construct resource names
-    vm_name = "{}-VM".format(machine)
-    secret_name = "{}-vm-github-secret".format(vm_name)
+    vm_name = "{}-vm".format(machine)
+    secret_name = "{}-github-secret".format(machine)
 
     # Read the SSH key from the deployed machine
     logging.info("Obtaining secret from %s in resource group %s...", emphasised(vm_name), emphasised(rg_name))
     compute_mgmt_client = get_client_from_cli_profile(ComputeManagementClient)
-    remote_cmd = {"command_id": "RunShellScript", "script": ["cat /home/{}daemon/.ssh/id_rsa.pub".format(vm_name)]}
+    remote_cmd = {"command_id": "RunShellScript", "script": ["cat /home/dockerdaemon/.ssh/id_rsa.pub"]}
     poller = compute_mgmt_client.virtual_machines.run_command(rg_name, vm_name, remote_cmd)
     result = poller.result()  # Blocking till executed
     ssh_key = [l for l in result.value[0].message.split("\n") if "ssh-rsa" in l][0]
@@ -39,10 +39,11 @@ def get_keys(machine, rg_name="RG_CLEANAIR_DATASOURCES", rg_kv="RG_CLEANAIR_INFR
 
     # Read the GitHub secret from the keyvault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
-    vault = [v for v in keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv) if "kvcleanair" in v.name][0]
+    print(keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv))
+    vault = [v for v in keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv) if "cleanair" in v.name][0]
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
     github_secret = keyvault_client.get_secret(vault.properties.vault_uri, secret_name, "").value
-    webhook_url = "http://cleanair-{}.uksouth.cloudapp.azure.com/github".format(vm_name)
+    webhook_url = "http://{}.uksouth.cloudapp.azure.com/github".format(machine)
     logging.info("... please go to clean-air-infrastructure > Settings > Webhooks on GitHub")
     logging.info("    ensure that there is a webhook called %s", emphasised(webhook_url))
     logging.info("    then change the 'Secret' for this webhook to %s", emphasised(github_secret))
