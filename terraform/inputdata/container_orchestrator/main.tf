@@ -14,7 +14,7 @@ resource "random_string" "admin_password" {
 resource "azurerm_key_vault_secret" "orchestrator_admin_password" {
   name         = "${var.machine_name}-admin-password"
   value        = "${random_string.admin_password.result}"
-  key_vault_id = "${var.infrastructure.key_vault_id}"
+  key_vault_id = "${var.infrastructure.key_vault.id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Input data / Container orchestrator"
@@ -32,7 +32,7 @@ resource "random_string" "github_secret" {
 resource "azurerm_key_vault_secret" "orchestrator_github_secret" {
   name         = "${var.machine_name}-github-secret"
   value        = "${random_string.github_secret.result}"
-  key_vault_id = "${var.infrastructure.key_vault_id}"
+  key_vault_id = "${var.infrastructure.key_vault.id}"
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Input data / Container orchestrator"
@@ -90,10 +90,10 @@ data "template_file" "run_application" {
     db_admin_password_keyname       = "${var.databases.inputs_db_admin_password_keyname}"
     db_admin_username_keyname       = "${var.databases.inputs_db_admin_name_keyname}"
     db_server_name_keyname          = "${var.databases.inputs_db_server_name_keyname}"
-    key_vault_name                  = "${var.infrastructure.key_vault_name}"
-    registry_admin_password_keyname = "${var.infrastructure.registry_admin_password_keyname}"
-    registry_admin_username_keyname = "${var.infrastructure.registry_admin_username_keyname}"
-    registry_server                 = "${var.infrastructure.registry_server}"
+    key_vault_name                  = "${var.infrastructure.key_vault.name}"
+    registry_admin_password_keyname = "${var.infrastructure.containers.admin_password_keyname}"
+    registry_admin_username_keyname = "${var.infrastructure.containers.admin_username_keyname}"
+    registry_server                 = "${var.infrastructure.containers.server_name}"
     resource_group                  = "${var.resource_group}"
   }
 }
@@ -127,7 +127,7 @@ resource "azurerm_virtual_machine" "orchestrator" {
 
   boot_diagnostics {
     enabled     = true
-    storage_uri = "${var.infrastructure.boot_diagnostics_uri}"
+    storage_uri = "${var.infrastructure.boot_diagnostics.primary_blob_endpoint}"
   }
 
   identity {
@@ -172,7 +172,7 @@ locals {
 }
 
 # Create a role with appropriate permissions to run container instances createcontainers run_container
-resource "azurerm_role_definition" "createcontainers" {
+resource "azurerm_role_definition" "run_containers" {
   name        = "Run containers"
   scope       = "${local.input_data_scope}"
   description = "Create and run container instances"
@@ -193,20 +193,20 @@ resource "azurerm_role_definition" "createcontainers" {
 # Grant the managed identity for this VM "Reader" access to create conainer
 resource "azurerm_role_assignment" "orchestrator_run_container_instance" {
   scope              = "${local.input_data_scope}"
-  role_definition_id = "${azurerm_role_definition.createcontainers.id}"
+  role_definition_id = "${azurerm_role_definition.run_containers.id}"
   principal_id       = "${local.orchestrator_identity}"
 }
 
 # Grant the managed identity for this VM "ACRPull" access to the container registry
 resource "azurerm_role_assignment" "orchestrator_get_image" {
-  scope                = "${var.infrastructure.registry_id}"
+  scope                = "${var.infrastructure.containers.id}"
   role_definition_name = "AcrPull"
   principal_id         = "${local.orchestrator_identity}"
 }
 
 # Grant the managed identity for this VM "get" and "list" access to the key vault
 resource "azurerm_key_vault_access_policy" "allow_orchestrator" {
-  key_vault_id = "${var.infrastructure.key_vault_id}"
+  key_vault_id = "${var.infrastructure.key_vault.id}"
   tenant_id    = "${module.configuration.tenant_id}"
   object_id    = "${local.orchestrator_identity}"
   key_permissions = [

@@ -18,7 +18,7 @@ module "inputs" {
   source         = "./postgres"
   db_name        = "inputs"
   db_size        = 5120
-  key_vault_id   = "${var.key_vault_id}"
+  key_vault_id   = "${var.infrastructure.key_vault.id}"
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"
 }

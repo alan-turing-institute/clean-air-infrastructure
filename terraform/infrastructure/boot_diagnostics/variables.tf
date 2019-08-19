@@ -1,6 +1,3 @@
 # Setup variables
-variable "infrastructure" {}
+variable "location" {}
 variable "resource_group" {}
-
-
-
