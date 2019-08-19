@@ -22,7 +22,10 @@ class Updater():
         for site, start_date, end_date in sites_with_data:
             self.logger.info("Attempting to download data for %s between %s and %s",
                              green(site.SiteCode), green(start_date), green(end_date))
-            site_readings += self.request_site_readings(site.SiteCode, start_date, end_date)
+
+            response = self.request_site_readings(site.SiteCode, start_date, end_date)
+            if response:
+                site_readings += response
         return site_readings
 
     def request_site_entries(self):

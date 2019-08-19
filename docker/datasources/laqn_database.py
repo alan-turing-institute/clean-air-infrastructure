@@ -2,6 +2,7 @@
 Get data from the LAQN network via the API maintained by Kings College London:
   (https://www.londonair.org.uk/Londonair/API/)
 """
+import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
 
@@ -28,6 +29,9 @@ class LAQNDatabase(Updater):
                 self.logger.warning("Excluded %i sites which do not have an opening date from the database",
                                     len(raw_data) - len(processed_data))
             return processed_data
+        except (requests.exceptions.HTTPError) as e:
+            self.logger.warning("Request to %s failed: %s", endpoint, e)
+            return None
         except (TypeError, KeyError):
             return None
 
@@ -38,7 +42,7 @@ class LAQNDatabase(Updater):
         """
         try:
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
-                site_code, str(start_date), str(end_date)
+                site_code, str(start_date.date()), str(end_date.date())
             )
             raw_data = self.api.get_response(endpoint, timeout=5.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
@@ -47,6 +51,9 @@ class LAQNDatabase(Updater):
             for reading in processed_data:
                 reading["@SiteCode"] = site_code
             return processed_data
+        except (requests.exceptions.HTTPError) as e:
+            self.logger.warning("Request to %s failed: %s", endpoint, e)
+            return None
         except (TypeError, KeyError):
             return None
 

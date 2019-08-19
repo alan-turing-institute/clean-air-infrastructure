@@ -53,6 +53,5 @@ class APIReader():
     def get_response(api_endpoint, timeout=60.0):
         """Return the response from an API"""
         response = requests.get(api_endpoint, timeout=timeout)
-        if response.status_code == 200:
-            return response
-        return None
+        response.raise_for_status()
+        return response

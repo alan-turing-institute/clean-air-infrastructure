@@ -81,19 +81,19 @@ resource "local_file" "acr_secret" {
   filename = "${path.cwd}/.secrets/.acr_secret.json"
 }
 
-# Build the static dataset deployment script
-data "template_file" "static_data_docker_template" {
-  template = "${file("${path.module}/templates/static_data_docker_insert.template.sh")}"
-  vars = {
-    acr_login_server = "${azurerm_container_registry.cleanair.login_server}"
-    acr_name         = "${azurerm_container_registry.cleanair.name}"
-  }
+# # Build the static dataset deployment script
+# data "template_file" "static_data_docker_template" {
+#   template = "${file("${path.module}/templates/static_data_docker_insert.template.sh")}"
+#   vars = {
+#     acr_login_server = "${azurerm_container_registry.cleanair.login_server}"
+#     acr_name         = "${azurerm_container_registry.cleanair.name}"
+#   }
 }
 
-resource "local_file" "static_data_docker_file" {
-  sensitive_content = "${data.template_file.static_data_docker_template.rendered}"
-  filename          = "${path.cwd}/../static_data_local/insert_static_data.sh"
-}
+# resource "local_file" "static_data_docker_file" {
+#   sensitive_content = "${data.template_file.static_data_docker_template.rendered}"
+#   filename          = "${path.cwd}/../static_data_local/insert_static_data.sh"
+# }
 
 
 

@@ -4,6 +4,7 @@ Get data from the AQE network via the API
 import csv
 import io
 from xml.dom import minidom
+import requests
 from .databases import Updater, aqe_tables
 from .loggers import green
 
@@ -28,6 +29,9 @@ class AQEDatabase(Updater):
             dom = minidom.parse(io.BytesIO(raw_data))
             # Convert DOM object to a list of dictionaries. Each dictionary is an site containing site information
             return [dict(s.attributes.items()) for s in dom.getElementsByTagName("Site")]
+        except (requests.exceptions.HTTPError) as e:
+            self.logger.warning("Request to %s failed: %s", endpoint, e)
+            return None
         except (TypeError, KeyError):
             return None
 
