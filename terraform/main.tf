@@ -9,7 +9,6 @@ module "infrastructure" {
 
 module "databases" {
   source         = "./databases"
-  # key_vault_id   = "${module.infrastructure.key_vault_id}"
   infrastructure = module.infrastructure
   resource_group = "${var.rg_databases}"
 }

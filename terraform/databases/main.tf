@@ -1,9 +1,11 @@
 # Load configuration module
+# -------------------------
 module "configuration" {
   source = "../configuration"
 }
 
 # Ensure the databases resource group exists
+# ------------------------------------------
 resource "azurerm_resource_group" "this" {
   name     = "${var.resource_group}"
   location = "${module.configuration.location}"
@@ -14,6 +16,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 # Create the inputs database
+# --------------------------
 module "inputs" {
   source         = "./postgres"
   db_name        = "inputs"

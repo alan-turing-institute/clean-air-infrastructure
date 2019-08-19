@@ -1,9 +1,11 @@
 # Load configuration module
+# -------------------------
 module "configuration" {
   source = "../../configuration"
 }
 
 # Create azure container registry and upload the secrets to travis
+# ----------------------------------------------------------------
 resource "azurerm_container_registry" "this" {
   name                = "CleanAirContainerRegistry"
   resource_group_name = "${var.resource_group}"
@@ -33,6 +35,7 @@ resource "azurerm_container_registry" "this" {
 # }
 
 # Write the container registry secrets to the key vault
+# -----------------------------------------------------
 resource "azurerm_key_vault_secret" "this_login_server" {
   name         = "${var.login_server_keyname}"
   value        = "${azurerm_container_registry.this.login_server}"

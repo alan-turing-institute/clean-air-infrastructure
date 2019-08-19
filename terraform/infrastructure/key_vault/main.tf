@@ -1,9 +1,11 @@
 # Load configuration module
+# -------------------------
 module "configuration" {
   source = "../../configuration"
 }
 
 # Create the keyvault where passwords are stored
+# ----------------------------------------------
 resource "azurerm_key_vault" "this" {
   name                = "terraformcleanair"
   location            = "${var.location}"
@@ -15,6 +17,9 @@ resource "azurerm_key_vault" "this" {
     segment     = "Infrastructure"
   }
 }
+
+# Allow members of the Azure group full access
+# --------------------------------------------
 resource "azurerm_key_vault_access_policy" "allow_group" {
   key_vault_id = "${azurerm_key_vault.this.id}"
   tenant_id    = "${module.configuration.tenant_id}"

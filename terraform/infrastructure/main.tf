@@ -1,9 +1,11 @@
 # Load configuration module
+# -------------------------
 module "configuration" {
   source = "../configuration"
 }
 
 # Create the infrastructure resource group
+# ----------------------------------------
 resource "azurerm_resource_group" "this" {
   name     = "${var.resource_group}"
   location = "${module.configuration.location}"
@@ -14,6 +16,7 @@ resource "azurerm_resource_group" "this" {
 }
 
 # Create boot diagnostics storage
+# -------------------------------
 module "boot_diagnostics" {
   source         = "./boot_diagnostics"
   location       = "${azurerm_resource_group.this.location}"
@@ -21,6 +24,7 @@ module "boot_diagnostics" {
 }
 
 # Create keyvault
+# ---------------
 module "key_vault" {
   source         = "./key_vault"
   location       = "${azurerm_resource_group.this.location}"
@@ -28,6 +32,7 @@ module "key_vault" {
 }
 
 # Create container registry
+# -------------------------
 module "containers" {
   source         = "./containers"
   key_vault      = module.key_vault

@@ -1,4 +1,5 @@
-# Provide outputs which are useful to later Terraform scripts
+# Outputs which are useful to later Terraform scripts
+# ---------------------------------------------------
 output "db_name" {
   value = "${azurerm_postgresql_database.this.name}"
 }

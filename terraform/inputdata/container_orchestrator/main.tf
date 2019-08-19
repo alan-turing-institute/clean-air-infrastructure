@@ -1,9 +1,12 @@
 # Load configuration module
+# -------------------------
 module "configuration" {
   source = "../../configuration"
 }
 
-# Generate an admin password that persists for the lifetime of the resource group
+# Random strings
+# --------------
+# :: VM admin password
 resource "random_string" "admin_password" {
   keepers = {
     resource_group = "${var.resource_group}"
@@ -11,6 +14,18 @@ resource "random_string" "admin_password" {
   length  = 16
   special = true
 }
+# :: GitHub secret
+resource "random_string" "github_secret" {
+  keepers = {
+    resource_group = "${var.resource_group}"
+  }
+  length  = 16
+  special = true
+}
+
+# Key vault secrets
+# -----------------
+# :: store the VM admin password in the key vault
 resource "azurerm_key_vault_secret" "orchestrator_admin_password" {
   name         = "${var.machine_name}-admin-password"
   value        = "${random_string.admin_password.result}"
@@ -20,15 +35,7 @@ resource "azurerm_key_vault_secret" "orchestrator_admin_password" {
     segment     = "Input data / Container orchestrator"
   }
 }
-
-# Generate a GitHub secret that persists for the lifetime of the resource group
-resource "random_string" "github_secret" {
-  keepers = {
-    resource_group = "${var.resource_group}"
-  }
-  length  = 16
-  special = true
-}
+# :: store the GitHub secret in the key vault
 resource "azurerm_key_vault_secret" "orchestrator_github_secret" {
   name         = "${var.machine_name}-github-secret"
   value        = "${random_string.github_secret.result}"
@@ -39,51 +46,22 @@ resource "azurerm_key_vault_secret" "orchestrator_github_secret" {
   }
 }
 
-# Create a public IP for the VM
-resource "azurerm_public_ip" "orchestrator" {
-  name                = "${var.machine_name}-public-ip"
-  domain_name_label   = "${var.machine_name}"
-  location            = "${module.configuration.location}"
-  resource_group_name = "${var.resource_group}"
-  allocation_method   = "Dynamic"
-  tags = {
-    environment = "Terraform Clean Air"
-    segment     = "Input data / Container orchestrator"
-  }
-}
 
-# Create a network card for the VM
-resource "azurerm_network_interface" "orchestrator" {
-  name                      = "${var.machine_name}-network-card"
-  location                  = "${module.configuration.location}"
-  resource_group_name       = "${var.resource_group}"
-  network_security_group_id = "${var.networking.nsg_id}"
 
-  ip_configuration {
-    name                          = "${var.machine_name}-ip-configuration"
-    subnet_id                     = "${var.networking.subnet_id}"
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = "${azurerm_public_ip.orchestrator.id}"
-  }
-  tags = {
-    environment = "Terraform Clean Air"
-    segment     = "Input data / Container orchestrator"
-  }
-}
-
+# Construct provisioning files from templates
+# -------------------------------------------
+# :: commit hash
 data "external" "latest_commit_hash" {
   program = ["bash", "${path.module}/provisioning/commit_hash.sh"]
 }
-
-# Replace templated variables:
-# ... apache config file
+# :: apache config file
 data "template_file" "apache_config" {
   template = "${file("${path.module}/templates/apache.template.conf")}"
   vars = {
     servername = "${var.machine_name}"
   }
 }
-# ... application runner
+# :: application runner
 data "template_file" "run_application" {
   template = "${file("${path.module}/templates/run_application.template.sh")}"
   vars = {
@@ -97,9 +75,7 @@ data "template_file" "run_application" {
     resource_group                  = "${var.resource_group}"
   }
 }
-
-
-# ... cloud-init config file
+# :: cloud-init config file
 data "template_file" "cloudinit" {
   template = "${file("${path.module}/templates/cloudinit.template.yaml")}"
   vars = {
@@ -116,13 +92,45 @@ data "template_file" "cloudinit" {
   }
 }
 
-# Create the VM
-resource "azurerm_virtual_machine" "orchestrator" {
+# Create the orchestration VM
+# ---------------------------
+# :: create a public IP
+resource "azurerm_public_ip" "this" {
+  name                = "${var.machine_name}-public-ip"
+  domain_name_label   = "${var.machine_name}"
+  location            = "${module.configuration.location}"
+  resource_group_name = "${var.resource_group}"
+  allocation_method   = "Dynamic"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Input data / Container orchestrator"
+  }
+}
+# :: create a network card
+resource "azurerm_network_interface" "this" {
+  name                      = "${var.machine_name}-network-card"
+  location                  = "${module.configuration.location}"
+  resource_group_name       = "${var.resource_group}"
+  network_security_group_id = "${var.networking.nsg_id}"
+
+  ip_configuration {
+    name                          = "${var.machine_name}-ip-configuration"
+    subnet_id                     = "${var.networking.subnet_id}"
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = "${azurerm_public_ip.this.id}"
+  }
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Input data / Container orchestrator"
+  }
+}
+# :: create the VM
+resource "azurerm_virtual_machine" "this" {
   name                          = "${var.machine_name}-vm"
   delete_os_disk_on_termination = true
   location                      = "${module.configuration.location}"
   resource_group_name           = "${var.resource_group}"
-  network_interface_ids         = ["${azurerm_network_interface.orchestrator.id}"]
+  network_interface_ids         = ["${azurerm_network_interface.this.id}"]
   vm_size                       = "Standard_B1s"
 
   boot_diagnostics {
@@ -166,12 +174,13 @@ resource "azurerm_virtual_machine" "orchestrator" {
 }
 
 locals {
-  orchestrator_identity = "${lookup(azurerm_virtual_machine.orchestrator.identity[0], "principal_id")}"
-  input_data_scope      = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INPUT_DATA"
-  infrastructure_scope  = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INFRASTRUCTURE"
+  orchestrator_identity = "${lookup(azurerm_virtual_machine.this.identity[0], "principal_id")}"
+  input_data_scope      = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
 }
 
-# Create a role with appropriate permissions to run container instances createcontainers run_container
+# Set permissions for managed identity
+# ------------------------------------
+# :: create a role with appropriate permissions to run container instances
 resource "azurerm_role_definition" "run_containers" {
   name        = "Run containers"
   scope       = "${local.input_data_scope}"
@@ -189,22 +198,19 @@ resource "azurerm_role_definition" "run_containers" {
     "${local.input_data_scope}"
   ]
 }
-
-# Grant the managed identity for this VM "Reader" access to create conainer
+# :: grant the managed identity for this VM "Reader" access to create conainer
 resource "azurerm_role_assignment" "orchestrator_run_container_instance" {
   scope              = "${local.input_data_scope}"
   role_definition_id = "${azurerm_role_definition.run_containers.id}"
   principal_id       = "${local.orchestrator_identity}"
 }
-
-# Grant the managed identity for this VM "ACRPull" access to the container registry
+# :: grant the managed identity for this VM "ACRPull" access to the container registry
 resource "azurerm_role_assignment" "orchestrator_get_image" {
   scope                = "${var.infrastructure.containers.id}"
   role_definition_name = "AcrPull"
   principal_id         = "${local.orchestrator_identity}"
 }
-
-# Grant the managed identity for this VM "get" and "list" access to the key vault
+# :: grant the managed identity for this VM "get" and "list" access to the key vault
 resource "azurerm_key_vault_access_policy" "allow_orchestrator" {
   key_vault_id = "${var.infrastructure.key_vault.id}"
   tenant_id    = "${module.configuration.tenant_id}"

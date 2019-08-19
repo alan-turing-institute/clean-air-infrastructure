@@ -1,4 +1,5 @@
-# Setup variables
+# Input variables
+# ---------------
 variable "db_name" {}
 variable "db_size" {}
 variable "key_vault_id" {}

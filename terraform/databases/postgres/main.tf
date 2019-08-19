@@ -110,6 +110,8 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
+# Write output files
+# ------------------
 data "template_file" "database_secrets" {
   template = "${file("${path.module}/templates/db_secrets.template.json")}"
   vars = {

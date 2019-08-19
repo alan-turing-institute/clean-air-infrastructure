@@ -1,4 +1,5 @@
-# Provide outputs which are useful to later Terraform scripts
+# Outputs which are useful to later Terraform scripts
+# ---------------------------------------------------
 output "admin_username_keyname" {
   value = "${azurerm_key_vault_secret.this_admin_username.name}"
 }

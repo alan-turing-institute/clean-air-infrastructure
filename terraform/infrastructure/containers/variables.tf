@@ -1,4 +1,5 @@
-# Setup variables
+# Input variables
+# ---------------
 variable "key_vault" {}
 variable "location" {}
 variable "resource_group" {}
