@@ -167,13 +167,15 @@ Terraform will now have created a number of databases. We need to add the datase
 NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform).
 Either push the the repo, or go to travis and rerun the last build.
 
-1. Run `download_static_datasets.py` to download the static datasets from Azure blob storage.
+1. To download the static datasets from Azure blob storage run:
+```bash
+download_static_datasets.py
+``` 
 
-2. When terraform created the Azure Container registry it created a local (gitignored) file: `/terraform/.secrets/static_data_docker_insert.sh`. From the root of the repository run the following to insert the datasets:
-
-```
-bash static_data_local/insert_static_data.sh
-```
+2. To insert into a database run: 
+```bash
+bash static_data_docker_insert.sh
+``` 
 
 
 ## Setting up webhooks in the GitHub repository

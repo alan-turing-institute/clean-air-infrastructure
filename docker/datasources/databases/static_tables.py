@@ -24,17 +24,3 @@ class StaticTableConnector(Connector):
         Base.prepare()
 
         return getattr(Base.classes, table_name)
-
-
-if __name__ == '__main__':
-
-    mystatic = StaticTableConnector(secretfile = '.db_inputs_secret_local.json')
-    lb = mystatic.get_table_instance('london_boundary')
-
-    with mystatic.open_session() as session:
-        convexhull = session.scalar(func.ST_ConvexHull(lb.wkb_geometry))
-
-    shape = to_shape(WKBElement(convexhull))
-
-    from geoalchemy2.types import WKBElement
-    from geoalchemy2.shape import to_shape
