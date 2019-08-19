@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
 Base = declarative_base()
-
 
 class LAQNSite(Base):
     """Table of LAQN sites"""
@@ -20,15 +20,19 @@ class LAQNSite(Base):
     DateClosed = Column(TIMESTAMP)
     geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 
+    readings = relationship("LAQNReading", back_populates="site")
+        
 
 class LAQNReading(Base):
     """Table of LAQN readings"""
     __tablename__ = "laqn_readings"
-    SiteCode = Column(String(4), primary_key=True, nullable=False)
-    SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)
+    id = Column(Integer, primary_key = True)
+    SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), nullable=False)
+    SpeciesCode = Column(String(4), nullable=False)
+    MeasurementDateGMT = Column(TIMESTAMP, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
+    site = relationship("LAQNSite", back_populates="readings")
 
 def initialise(engine):
     Base.metadata.create_all(engine)
@@ -46,8 +50,7 @@ def build_site_entry(site_dict):
     if site_dict["@Latitude"] and site_dict["@Longitude"]:
         kwargs = {"geom": "SRID=4326;POINT({} {})".format(site_dict["@Longitude"], site_dict["@Latitude"])}
 
-    # Construct the record and return it
-    return LAQNSite(SiteCode=site_dict["@SiteCode"],
+    site = LAQNSite(SiteCode=site_dict["@SiteCode"],
                     la_id=site_dict["@LocalAuthorityCode"],
                     SiteType=site_dict["@SiteType"],
                     Latitude=site_dict["@Latitude"],
@@ -55,6 +58,9 @@ def build_site_entry(site_dict):
                     DateOpened=site_dict["@DateOpened"],
                     DateClosed=site_dict["@DateClosed"],
                     **kwargs)
+    
+    # Construct the record and return it
+    return site
 
 
 def build_reading_entry(reading_dict):
