@@ -91,3 +91,9 @@ class LAQNDatabase(Updater):
             # Commit changes
             self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
             session.commit()
+
+    def get_sites_within_geom(self, geom):
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(laqn_tables.LAQNSite).filter(laqn_tables.LAQNSite.geom.ST_Intersects(geom))
