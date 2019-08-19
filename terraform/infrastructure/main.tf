@@ -85,7 +85,7 @@ resource "local_file" "acr_secret" {
 
 # Write the container registry secrets to the key vault
 resource "azurerm_key_vault_secret" "container_registry_login_server" {
-  name         = "${var.registry_login_server_secret}"
+  name         = "${var.registry_login_server_keyname}"
   value        = "${azurerm_container_registry.cleanair.login_server}"
   key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {
@@ -94,7 +94,7 @@ resource "azurerm_key_vault_secret" "container_registry_login_server" {
   }
 }
 resource "azurerm_key_vault_secret" "container_registry_admin_password" {
-  name         = "${var.registry_admin_password_secret}"
+  name         = "${var.registry_admin_password_keyname}"
   value        = "${azurerm_container_registry.cleanair.admin_password}"
   key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {
@@ -103,7 +103,7 @@ resource "azurerm_key_vault_secret" "container_registry_admin_password" {
   }
 }
 resource "azurerm_key_vault_secret" "container_registry_admin_username" {
-  name         = "${var.registry_admin_username_secret}"
+  name         = "${var.registry_admin_username_keyname}"
   value        = "${azurerm_container_registry.cleanair.admin_username}"
   key_vault_id = "${azurerm_key_vault.cleanair.id}"
   tags = {

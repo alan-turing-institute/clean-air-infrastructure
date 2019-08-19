@@ -10,16 +10,16 @@ az login --identity  # sign in using the managed identity for this machine
 
 # Retrieve the container registry details from the key vault
 echo "Retrieving the container registry details from Azure..."
-registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_password_secret} --query "value" -o tsv)
-registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_secret} --query "value" -o tsv)
+registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_password_keyname} --query "value" -o tsv)
+registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_keyname} --query "value" -o tsv)
 echo "registry_username: $registry_username"
 echo "registry_password: **********"
 
 # Retrieve the database details from the key vault
 echo "Retrieving the database details from Azure..."
-db_admin_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_password_secret} --query "value" -o tsv)
-db_admin_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_username_secret} --query "value" -o tsv)
-db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_server_name_secret} --query "value" -o tsv)
+db_admin_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_password_keyname} --query "value" -o tsv)
+db_admin_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_username_keyname} --query "value" -o tsv)
+db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_server_name_keyname} --query "value" -o tsv)
 echo "db_admin_username: $db_admin_username"
 echo "db_admin_password: **********"
 echo "db_server_name: $db_server_name"
@@ -37,7 +37,6 @@ database_secrets="{
                         \"password\": \"$db_admin_password\",
                         \"ssl_mode\": \"require\"
 }"
-# echo "database_secrets: $database_secrets"
 
 # Run the containers
 echo "Running the container instances..."

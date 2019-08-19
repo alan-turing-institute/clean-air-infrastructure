@@ -87,14 +87,14 @@ data "template_file" "apache_config" {
 data "template_file" "run_application" {
   template = "${file("${path.module}/templates/run_application.template.sh")}"
   vars = {
-    db_admin_password_secret       = "${var.databases.inputs_db_admin_password_secret}"
-    db_admin_username_secret       = "${var.databases.inputs_db_admin_name_secret}"
-    db_server_name_secret          = "${var.databases.inputs_db_server_name_secret}"
-    key_vault_name                 = "${var.infrastructure.key_vault_name}"
-    registry_admin_password_secret = "${var.infrastructure.registry_admin_password_secret}"
-    registry_admin_username_secret = "${var.infrastructure.registry_admin_username_secret}"
-    registry_server                = "${var.infrastructure.registry_server}"
-    resource_group                 = "${var.resource_group}"
+    db_admin_password_keyname       = "${var.databases.inputs_db_admin_password_keyname}"
+    db_admin_username_keyname       = "${var.databases.inputs_db_admin_name_keyname}"
+    db_server_name_keyname          = "${var.databases.inputs_db_server_name_keyname}"
+    key_vault_name                  = "${var.infrastructure.key_vault_name}"
+    registry_admin_password_keyname = "${var.infrastructure.registry_admin_password_keyname}"
+    registry_admin_username_keyname = "${var.infrastructure.registry_admin_username_keyname}"
+    registry_server                 = "${var.infrastructure.registry_server}"
+    resource_group                  = "${var.resource_group}"
   }
 }
 
@@ -171,8 +171,8 @@ locals {
   infrastructure_scope = "/subscriptions/45a2ea24-e10c-4c35-b172-4b956deffbf2/resourcegroups/RG_CLEANAIR_INFRASTRUCTURE"
 }
 
-# Create a role with appropriate permissions to run container instances
-resource "azurerm_role_definition" "run_container" {
+# Create a role with appropriate permissions to run container instances createcontainers run_container
+resource "azurerm_role_definition" "createcontainers" {
   name        = "Run containers"
   scope       = "${local.input_data_scope}"
   description = "Create and run container instances"

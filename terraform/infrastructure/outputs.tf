@@ -1,18 +1,12 @@
 # Provide outputs which are useful to later Terraform scripts
-# output "acr_admin_user" {
-#   value = "${azurerm_container_registry.cleanair.admin_username}"
-# }
-# output "acr_admin_password" {
-#   value = "${azurerm_container_registry.cleanair.admin_password}"
-# }
 output "registry_id" {
   value = "${azurerm_container_registry.cleanair.id}"
 }
-output "registry_admin_username_secret" {
-  value = "${var.registry_admin_username_secret}"
+output "registry_admin_username_keyname" {
+  value = "${var.registry_admin_username_keyname}"
 }
-output "registry_admin_password_secret" {
-  value = "${var.registry_admin_password_secret}"
+output "registry_admin_password_keyname" {
+  value = "${var.registry_admin_password_keyname}"
 }
 output "registry_server" {
   value = "${azurerm_container_registry.cleanair.login_server}"
