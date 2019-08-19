@@ -32,7 +32,7 @@ class LAQNReading(Base):
     id = Column(Integer, primary_key = True)
     SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), nullable=False)
     SpeciesCode = Column(String(4), nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP, nullable=False)
+    MeasurementDateGMT = Column(TIMESTAMP(timezone=True), nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
     site = relationship("LAQNSite", back_populates="readings")

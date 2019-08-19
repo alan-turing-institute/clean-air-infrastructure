@@ -93,7 +93,9 @@ class LAQNDatabase(Updater):
             session.commit()
 
     def get_sites_within_geom(self, geom):
-
+        """
+        Return all the sites that fall within a geometry object
+        """
         with self.dbcnxn.open_session() as session:
 
             return session.query(laqn_tables.LAQNSite).filter(laqn_tables.LAQNSite.geom.ST_Intersects(geom))
