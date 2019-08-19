@@ -5,7 +5,7 @@ module "configuration" {
 
 # Set up a virtual network with associated subnet and security group
 resource "azurerm_virtual_network" "input_data" {
-  name                = "VNET_CLEANAIR_INPUT_DATA"
+  name                = "VNET_CLEANAIR_DATA_COLLECTION"
   address_space       = ["10.10.0.0/16"]
   location            = "${module.configuration.location}"
   resource_group_name = "${var.resource_group}"
@@ -15,13 +15,13 @@ resource "azurerm_virtual_network" "input_data" {
   }
 }
 resource "azurerm_subnet" "input_data" {
-  name                 = "SUBNET_CLEANAIR_INPUT_DATA"
+  name                 = "SUBNET_CLEANAIR_DATA_COLLECTION"
   resource_group_name  = "${azurerm_virtual_network.input_data.resource_group_name}"
   virtual_network_name = "${azurerm_virtual_network.input_data.name}"
   address_prefix       = "10.10.0.0/24"
 }
 resource "azurerm_network_security_group" "input_data" {
-  name                = "NSG_CLEANAIR_INPUT_DATA"
+  name                = "NSG_CLEANAIR_DATA_COLLECTION"
   location            = "${azurerm_virtual_network.input_data.location}"
   resource_group_name = "${azurerm_virtual_network.input_data.resource_group_name}"
 

@@ -11,7 +11,7 @@ resource "random_string" "admin_password" {
   keepers = {
     resource_group = "${var.resource_group}"
   }
-  length  = 16
+  length  = 20
   special = true
 }
 # :: GitHub secret
@@ -19,7 +19,7 @@ resource "random_string" "github_secret" {
   keepers = {
     resource_group = "${var.resource_group}"
   }
-  length  = 16
+  length  = 20
   special = true
 }
 

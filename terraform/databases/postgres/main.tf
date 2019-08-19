@@ -5,7 +5,7 @@ resource "random_string" "db_admin_password" {
   keepers = {
     resource_group = "${var.resource_group}"
   }
-  length  = 16
+  length  = 20
   special = true
 }
 

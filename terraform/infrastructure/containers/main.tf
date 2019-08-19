@@ -7,7 +7,7 @@ module "configuration" {
 # Create azure container registry and upload the secrets to travis
 # ----------------------------------------------------------------
 resource "azurerm_container_registry" "this" {
-  name                = "docker-images"
+  name                = "CleanAirDocker"
   resource_group_name = "${var.resource_group}"
   location            = "${var.location}"
   sku                 = "Basic"

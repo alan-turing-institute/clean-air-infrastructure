@@ -4,7 +4,7 @@ module "configuration" {
 }
 
 # Ensure the input data resource group exists
-resource "azurerm_resource_group" "input_data" {
+resource "azurerm_resource_group" "this" {
   name     = "${var.resource_group}"
   location = "${module.configuration.location}"
   tags = {
@@ -16,7 +16,7 @@ resource "azurerm_resource_group" "input_data" {
 # Set up the necessary networking infrastructure
 module "networking" {
   source         = "./networking"
-  resource_group = "${azurerm_resource_group.input_data.name}"
+  resource_group = "${azurerm_resource_group.this.name}"
 }
 
 # Set up a virtual machine to orchestrate the containers
@@ -26,5 +26,5 @@ module "container_orchestrator" {
   infrastructure = "${var.infrastructure}"
   machine_name   = "container-orchestrator"
   networking     = module.networking
-  resource_group = "${azurerm_resource_group.input_data.name}"
+  resource_group = "${azurerm_resource_group.this.name}"
 }
