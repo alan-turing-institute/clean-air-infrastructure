@@ -13,6 +13,7 @@ from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 import subprocess
 import json
+import docker as dockerapi
 
 # Set up logging
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -36,7 +37,7 @@ def get_blob_service(resource_group, storage_container_name):
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(resource_group, storage_container_name)
     storage_account_key = [k.value for k in storage_key_list.keys if k.key_name == "key1"][0]
 
-    logging.info("Downloading using storage account key")
+    logging.info("Retrieved storage account key for downloading")
     return BlockBlobService(account_name=storage_container_name, account_key=storage_account_key)
 
 
@@ -45,24 +46,22 @@ def download_blobs(blob_service, blob_container, target_directory):
     Download blobs in a container to a target director
 
     Arguments:
-    block_bloc_servce -- An Azure blob storage instance
+    blob_service -- An Azure blob storage instance
     blob_container -- Name of the blob container to download files from
     target_directory -- Local directory to download files to
     """
-
-    generator = blob_service.list_blobs(blob_container)
+    # Ensure that the target directory exists
     os.makedirs(target_directory, exist_ok=True)
-
-    for blob in generator:
+    for blob in blob_service.list_blobs(blob_container):
+        # Write the data to a local file
         target_file = os.path.join(target_directory, blob.name)
-        logging.info("Downloading: %s from container: %s to location: %s",
+        logging.info("Downloading: %s from container: %s to: %s",
                      emphasised(blob.name), emphasised(blob_container), emphasised(target_file))
         blob_service.get_blob_to_path(blob_container, blob.name, target_file)
-
+        # Unzip the data
         with zipfile.ZipFile(target_file, "r") as zip_ref:
             zip_ref.extractall(target_directory)
             os.remove(target_file)
-
         logging.info("Downloading complete")
 
 
@@ -109,10 +108,19 @@ def download_blobs(blob_service, blob_container, target_directory):
 # #     -f docker/dockerfiles/upload_static_dataset.Dockerfile \
 # #     docker
 
-def store_database_secrets(database_secret_prefix, secrets_directory):
+def get_key_vault_and_client():
+    # Load key vault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
     vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
+    return (vault, keyvault_client)
+
+def store_database_secrets(database_secret_prefix, secrets_directory):
+    # Load key vault
+    # keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
+    # vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
+    # keyvault_client = get_client_from_cli_profile(KeyVaultClient)
+    vault, keyvault_client = get_key_vault_and_client()
     # Retrieve secrets from key vault
     db_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-name".format(database_secret_prefix), "").value
     db_server_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-server-name".format(database_secret_prefix), "").value
@@ -132,29 +140,56 @@ def store_database_secrets(database_secret_prefix, secrets_directory):
 
 
 def upload_static_data(dataset, secrets_directory, data_directory):
-    print(dataset, data_directory)
-    # # # Insert street canyons
-    # echo "Now working on Street Canyons data..."
-    # docker run -it \
-    #     -v $db_secret_path:/secrets/ \
-    #     -v $(realpath static_data_local/CanyonsLondon_Erase):/data/Canyons \
-    #     cleanair_upload_static_dataset:latest
+    # Run docker image to upload the data
+    logging.info("Preparing to upload {} data...".format(dataset))
+    latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+    print("latest_commit_hash", latest_commit_hash)
+    vault, keyvault_client = get_key_vault_and_client()
+    print("vault, keyvault_client", vault, keyvault_client)
+    registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
+    print("registry_login_server", registry_login_server)
+    registry_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-username", "").value
+    registry_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-password", "").value
+    # subprocess.run(["docker", "run", "-it",
+    logging.critical(["docker", "run", "-it",
+                    "-v", "{}:/secrets".format(secrets_directory),
+                    "-v", "{}:/data".format(data_directory),
+                    "{}:{}".format(registry_login_server, latest_commit_hash)])
+    # client = dockerapi.from_env()
 
-    # datafiles = {
-    #     "canyonslondon": "CanyonsLondon_Erase",
-    #     "RoadLink": "RoadLink",
-    #     "RoadLink": "RoadLink",
-    # }
+    # -v $(realpath static_data_local/CanyonsLondon_Erase):/data/Canyons \
+    # -v $(realpath static_data_local/RoadLink):/data/RoadLink \
+    # -v $(realpath static_data_local/Hex350_grid_GLA):/data/HexGrid \
+    # -v $(realpath static_data_local/ESRI):/data/LondonBoundary \
+    # -v $(realpath static_data_local/UKMap.gdb):/data/UKMap.gdb \
 
+        # "UKMap.gdb": "ukmap",
+        # "Canyons": "canyonslondon",
+        # "RoadLink": "os_highways_links",
+        # "HexGrid": "hex_grid",
+        # "LondonBoundary": "london_boundary"
 
-    cmd = ["docker", "run", "-it", "-v", "{}:/secrets".format(secrets_directory), "-v", "{}:/data".format(data_directory)]
-    print(cmd)
+    dataset_to_directory = {
+        "canyonslondon": "CanyonsLondon_Erase",
+        "glahexgrid": "Hex350_grid_GLA",
+        "londonboundary": "ESRI",
+        "oshighwayroadlink": "RoadLink",
+        "ukmap": "UKMap.gdb",
+    }
 
+    local_data = os.path.join(data_directory, dataset_to_directory[dataset])
+    mounted_data = os.path.join("/data", dataset)
+
+    client = dockerapi.DockerClient()
+    client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
+    # image = client.images.pull("{}/static:{}".format(registry_login_server, latest_commit_hash))
+    # print("image.id", image.id)
+    # os.system("ls {}".format(secrets_directory))
+    # os.system("ls {}".format(data_directory))
+    output = client.containers.run("{}/static:{}".format(registry_login_server, latest_commit_hash), volumes={secrets_directory: {'bind': '/secrets', 'mode': 'ro'}, local_data: {'bind': mounted_data, 'mode': 'ro'}}, stdout=True, stderr=True)
+    print(output)
 
 def main():
-#     # Get the scipts directory
-#     PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
-
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Download static datasets")
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
@@ -166,7 +201,7 @@ def main():
     args = parser.parse_args()
 
     # List of available datasets
-    datasets = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
+    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap"]
 
     # build_docker_image("cleanair-inputs-db") #-server-name", "cleanair-inputs-db-admin-password", "cleanair-inputs-db-admin-name")
 

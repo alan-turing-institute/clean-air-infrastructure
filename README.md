@@ -165,6 +165,8 @@ This will build all of the Docker images and add them to the registry.
 ## Add static resources (Only run if you are setting up the infrastructure - not required if already exists)
 Terraform will now have created a number of databases. We need to add the datasets to the database.
 
+**If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
+
 NB: To run the next step ensure Travis runs a build (this will place the docker files in the azure container registry that was provisioned by terraform).
 Either push the the repo, or go to travis and rerun the last build.
 
