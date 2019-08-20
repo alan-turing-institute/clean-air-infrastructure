@@ -55,6 +55,8 @@ class StaticDatabase():
                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
                         "--config", "PG_USE_COPY", "YES",
                         "-t_srs", "EPSG:4326"] + extra_args)
+        self.logger.info("Uploading GIS data to %s on %s",
+                         self.dbcnxn.connection_info["db_name"], self.dbcnxn.connection_info["host"])
         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
                         "--config", "PG_USE_COPY", "YES",
