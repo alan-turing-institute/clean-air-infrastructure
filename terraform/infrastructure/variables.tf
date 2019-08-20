@@ -1,13 +1,14 @@
-# Setup variables
-variable "azure_group_id" {
-  description = "ID of a group containing all accounts that will be allowed to access the infrastructure"
-}
-variable "location" {
-  description = "Name of the Azure location to build in"
-}
+# Input variables
+# ---------------
 variable "resource_group" {
   description = "Name of the resource group which infrastructure will be placed in"
 }
-variable "tenant_id" {
-  description = "ID of a tenant with appropriate permissions to create infrastructure"
+variable "registry_admin_username_keyname" {
+  default = "container-registry-admin-username"
+}
+variable "registry_admin_password_keyname" {
+  default = "container-registry-admin-password"
+}
+variable "registry_login_server_keyname" {
+  default = "container-registry-login-server"
 }

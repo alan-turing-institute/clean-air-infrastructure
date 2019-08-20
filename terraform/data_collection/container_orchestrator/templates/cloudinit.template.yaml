@@ -29,12 +29,12 @@ packages:
   - apache2
   - azure-cli
   - build-essential
+  - docker.io
   - libapache2-mod-wsgi-py3
   - libffi-dev
   - libssl-dev
   - python3-flask
   - python3-pip
-  # - docker.io
 
 write_files:
   # Write the Apache config file
@@ -68,14 +68,8 @@ write_files:
     content: |
       ${github_secret}
 
-  # Add database secrets
-  - path: /.secrets/.db_inputs_secret.json
-    content: |
-      ${db_secrets}
-
 # Run any additional commands
 runcmd:
-
   # Create SSH key and fix file permissions
   - echo "*** Updating ${username} home directory... ***"
   - mkdir -p /home/${username}/.ssh
@@ -96,7 +90,7 @@ runcmd:
   - echo "127.0.0.1 ${servername}.uksouth.cloudapp.azure.com" >> /etc/hosts
   - echo "ServerName ${servername}.uksouth.cloudapp.azure.com" >> /etc/apache2/apache2.conf
   - echo "${latest_commit_hash}" > /var/www/latest_commit_hash
-  - chmod o+w /var/www/latest_commit
+  - chmod o+w /var/www/latest_commit_hash
   - chown -R www-data:www-data /var/www/
   - systemctl restart apache2
 

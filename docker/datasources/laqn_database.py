@@ -32,8 +32,8 @@ class LAQNDatabase(Updater):
                 self.logger.warning("Excluded %i sites which do not have an opening date from the database",
                                     len(raw_data) - len(processed_data))
             return processed_data
-        except (requests.exceptions.HTTPError) as e:
-            self.logger.warning("Request to %s failed: %s", endpoint, e)
+        except requests.exceptions.HTTPError as error:
+            self.logger.warning("Request to %s failed: %s", endpoint, error)
             return None
         except (TypeError, KeyError):
             return None
@@ -73,7 +73,7 @@ class LAQNDatabase(Updater):
             site_entries = [laqn_tables.build_site_entry(site) for site in self.request_site_entries()]
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
-            self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -92,7 +92,7 @@ class LAQNDatabase(Updater):
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
 
     def get_sites_within_geom(self, boundary_geom):
