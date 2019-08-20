@@ -34,10 +34,10 @@ class Connector():
             try:
                 with open(secret_fname) as f_secret:
                     data = json.load(f_secret)
-                self.logger.info("Database connection information loaded from %s", secret_fname)
+                self.logger.info("Database connection information loaded from %s", green(secret_fname))
                 return data
             except json.decoder.JSONDecodeError:
-                self.logger.debug("Database connection information could not be loaded from %s", secret_fname)
+                self.logger.debug("Database connection information could not be loaded from %s", red(secret_fname))
 
         raise FileNotFoundError("Database secrets could not be loaded from {}".format(secret_file))
 

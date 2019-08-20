@@ -34,7 +34,7 @@ def get_blob_service(resource_group, storage_container_name):
     # logging.info("Working in subscription: %s", emphasised(subscription_name))
 
     # Get the account key for this storage account
-    logging.info("Retrieving key for storage account %s", storage_container_name)
+    logging.info("Retrieving key for storage account: %s", emphasised(storage_container_name))
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(resource_group, storage_container_name)
     storage_account_key = [k.value for k in storage_key_list.keys if k.key_name == "key1"][0]
@@ -47,9 +47,10 @@ def download_blobs(blob_service, blob_container, target_directory):
     os.makedirs(target_directory, exist_ok=True)
     for blob in blob_service.list_blobs(blob_container):
         # Write the data to a local file
+        logging.info("Downloading: %s", emphasised(blob.name))
+        logging.info("... from container: %s", emphasised(blob_container))
+        logging.info("... to: %s", emphasised(target_directory))
         target_file = os.path.join(target_directory, blob.name)
-        logging.info("Downloading: %s from container: %s to: %s",
-                     emphasised(blob.name), emphasised(blob_container), emphasised(target_file))
         blob_service.get_blob_to_path(blob_container, blob.name, target_file)
         # Unzip the data
         with zipfile.ZipFile(target_file, "r") as zip_ref:
@@ -111,19 +112,16 @@ def upload_static_data(dataset, secrets_directory, data_directory):
     # Get latest commit hash
     latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
 
-    # Local volumes to mount
-    local_data = os.path.join(data_directory, dataset_to_directory[dataset])
-    mounted_data = os.path.join("/data", dataset)
-
     # Log in to the registry
     client = dockerapi.DockerClient()
     client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
 
     # Construct Docker arguments
     image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
+    local_data = os.path.join(data_directory, dataset_to_directory[dataset])
     mounts = {
         secrets_directory: {"bind": "/secrets", "mode": "ro"},
-        local_data: {"bind": mounted_data, "mode": "ro"}
+        local_data: {"bind": os.path.join("/data", dataset), "mode": "ro"}
     }
 
     # Run the job, parsing log messages and re-logging them
