@@ -28,7 +28,7 @@ class StaticDatabase():
         # Static files will be in /data
         try:
             self.data_directory = os.listdir("/data")[0]
-            self.logger.critical("data_directory: %s", self.data_directory)
+            self.logger.debug("data_directory: %s", self.data_directory)
         except FileNotFoundError:
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
 
@@ -44,15 +44,18 @@ class StaticDatabase():
             extra_args = ["-nlt", "PROMOTE_TO_MULTI",
                           "-lco", "precision=NO"]
 
-        # Set table name if it exists
-        with suppress(KeyError):
-            # table_name = self.table_names[self.data_directory]
-            # extra_args += ["-nln", table_name]
-            extra_args += ["-nln", self.data_directory]
+        # # Set table name if it exists
+        # with suppress(KeyError):
+        #     # table_name = self.table_names[self.data_directory]
+        #     # extra_args += ["-nln", table_name]
+        #     extra_args += ["-nln", self.data_directory]
 
         # Run ogr2ogr
-        # subprocess.run(["ogr2ogr", "-overwrite", "-progress",
         print(["ogr2ogr", "-overwrite", "-progress",
+                        "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
+                        "--config", "PG_USE_COPY", "YES",
+                        "-t_srs", "EPSG:4326"] + extra_args)
+        subprocess.run(["ogr2ogr", "-overwrite", "-progress",
                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
                         "--config", "PG_USE_COPY", "YES",
                         "-t_srs", "EPSG:4326"] + extra_args)

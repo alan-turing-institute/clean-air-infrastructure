@@ -17,39 +17,32 @@ import docker as dockerapi
 
 # Set up logging
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-logging.getLogger("adal-python").setLevel(logging.WARNING)
+# logging.getLogger("adal-python").setLevel(logging.WARNING)
 logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 def emphasised(text):
-    return termcolor.colored(text, 'green')
+    return termcolor.colored(text, "green")
 
 
 def get_blob_service(resource_group, storage_container_name):
-    # Get subscription
-    _, subscription_id = get_azure_cli_credentials()
-    subscription_client = get_client_from_cli_profile(SubscriptionClient)
-    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
-    logging.info("Working in subscription: %s", emphasised(subscription_name))
+    """Get a BlockBlobService for a given storage container in a known resource group"""
+    # # Get subscription
+    # _, subscription_id = get_azure_cli_credentials()
+    # subscription_client = get_client_from_cli_profile(SubscriptionClient)
+    # subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
+    # logging.info("Working in subscription: %s", emphasised(subscription_name))
 
     # Get the account key for this storage account
+    logging.info("Retrieving key for storage account %s", storage_container_name)
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(resource_group, storage_container_name)
     storage_account_key = [k.value for k in storage_key_list.keys if k.key_name == "key1"][0]
-
-    logging.info("Retrieved storage account key for downloading")
     return BlockBlobService(account_name=storage_container_name, account_key=storage_account_key)
 
 
 def download_blobs(blob_service, blob_container, target_directory):
-    """
-    Download blobs in a container to a target director
-
-    Arguments:
-    blob_service -- An Azure blob storage instance
-    blob_container -- Name of the blob container to download files from
-    target_directory -- Local directory to download files to
-    """
+    """Download blobs from a container to a target directory"""
     # Ensure that the target directory exists
     os.makedirs(target_directory, exist_ok=True)
     for blob in blob_service.list_blobs(blob_container):
@@ -65,63 +58,19 @@ def download_blobs(blob_service, blob_container, target_directory):
         logging.info("Downloading complete")
 
 
-# def download_static_data(container, target_dir, blob_service):
-#     # Containers to download data from
-#     containers = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
-
-#     # Download blobs
-#     for container in containers:
-#         download_blobs(blob_service, container, target_dir)
-
-# def build_docker_image(database_secret_prefix):
-#     # Build static datasources docker image
-#     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
-#     vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
-#     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
-#     # db_server_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-server-name".format(database_secret_prefix), "").value
-#     # db_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-username".format(database_secret_prefix), "").value
-#     # db_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-password".format(database_secret_prefix), "").value
-#     container_registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
-
-
-#     latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
-
-#     # print("db_server_name", db_server_name)
-#     # print("db_admin_username", db_admin_username)
-#     # print("db_admin_password", db_admin_password)
-#     print("latest_commit_hash", latest_commit_hash, type(latest_commit_hash))
-#     # acr_server =
-
-#     # cmd = ["docker", "build", "-t", "{}/static:{}".format(container_registry_login_server, latest_commit_hash), "-f", "docker/dockerfiles/upload_static_dataset.Dockerfile", "docker/."]
-#     # print(cmd)
-#     # print(" ".join(cmd))
-
-#     # cmd = ["docker", "push", "{}/static:{}".format(container_registry_login_server, latest_commit_hash)]
-#     # print(cmd)
-#     # print(" ".join(cmd))
-
-#     # client = dockerapi.from_env()
-
-#     # client.images.build(path="docker/dockerfiles/upload_static_dataset.Dockerfile", tag="{}/static:{}".format(container_registry_login_server, latest_commit_hash))
-
-#     # docker build -t cleanair_upload_static_dataset:latest \
-# #     -f docker/dockerfiles/upload_static_dataset.Dockerfile \
-# #     docker
-
 def get_key_vault_and_client():
+    """Get the key vault and key vault client for Clean Air secrets"""
     # Load key vault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
     vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
     return (vault, keyvault_client)
 
-def store_database_secrets(database_secret_prefix, secrets_directory):
-    # Load key vault
-    # keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
-    # vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
-    # keyvault_client = get_client_from_cli_profile(KeyVaultClient)
-    vault, keyvault_client = get_key_vault_and_client()
+
+def build_database_secrets(database_secret_prefix, secrets_directory):
+    """Build temporary JSON file containing database secrets"""
     # Retrieve secrets from key vault
+    vault, keyvault_client = get_key_vault_and_client()
     db_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-name".format(database_secret_prefix), "").value
     db_server_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-server-name".format(database_secret_prefix), "").value
     db_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-username".format(database_secret_prefix), "").value
@@ -140,8 +89,9 @@ def store_database_secrets(database_secret_prefix, secrets_directory):
 
 
 def upload_static_data(dataset, secrets_directory, data_directory):
+    """Upload static data to the database"""
     # Run docker image to upload the data
-    logging.info("Preparing to upload {} data...".format(dataset))
+    logging.info("Preparing to upload %s data...", emphasised(dataset))
 
     # List of dataset names inside each directory
     dataset_to_directory = {
@@ -165,17 +115,29 @@ def upload_static_data(dataset, secrets_directory, data_directory):
     local_data = os.path.join(data_directory, dataset_to_directory[dataset])
     mounted_data = os.path.join("/data", dataset)
 
-    # Log in to the registry and run the job
+    # Log in to the registry
     client = dockerapi.DockerClient()
     client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
-    container = client.containers.run("{}/static:{}".format(registry_login_server, latest_commit_hash), volumes={secrets_directory: {'bind': '/secrets', 'mode': 'ro'}, local_data: {'bind': mounted_data, 'mode': 'ro'}}, stdout=True, stderr=True, detach=True)
 
-    # Parse log messages and re-log them
+    # Construct Docker arguments
+    image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
+    mounts = {
+        secrets_directory: {"bind": "/secrets", "mode": "ro"},
+        local_data: {"bind": mounted_data, "mode": "ro"}
+    }
+
+    # Run the job, parsing log messages and re-logging them
+    container = client.containers.run(image, volumes=mounts, stdout=True, stderr=True, detach=True)
     for line in container.logs(stream=True):
         line = line.decode("utf-8")
-        lvl = [l for l in ("CRITICAL", "WARNING", "ERROR", "INFO", "DEBUG") if l in line.split(":")[2]][0]
-        msg = ":".join(line.split(":")[3:]).strip()
-        getattr(logging, lvl.lower())(msg)
+        try:
+            lvl = [l for l in ("CRITICAL", "WARNING", "ERROR", "INFO", "DEBUG") if l in line.split(":")[2]][0]
+        except IndexError:
+            lvl = "INFO"
+        msg = ":".join(line.split(":")[3:])
+        if not msg:
+            msg = line
+        getattr(logging, lvl.lower())(msg.strip())
 
 
 def main():
@@ -192,16 +154,12 @@ def main():
     # List of available datasets
     datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap"]
 
-    # build_docker_image("cleanair-inputs-db") #-server-name", "cleanair-inputs-db-admin-password", "cleanair-inputs-db-admin-name")
-
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)
 
-    # db_secrets = get_database_secrets("cleanair-inputs-db")
-
     # Write the database secrets to a temporary directory
     with tempfile.TemporaryDirectory() as secrets_directory:
-        store_database_secrets("cleanair-inputs-db", secrets_directory)
+        build_database_secrets("cleanair-inputs-db", secrets_directory)
 
         # Download the static data
         for dataset in datasets:
@@ -210,21 +168,5 @@ def main():
                 upload_static_data(dataset, secrets_directory, data_directory)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-
-    # tmp_directory = tempfile.TemporaryDirectory()
-
-    # print("PARENT_DIR", tmp_directory)
-
-
-#     download_static_data(tmp_directory, block_blob_service)
-
-#     # Build the docker image
-#    # Run ogr2ogr
-#         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
-#                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.static_filename),
-#                         "--config", "PG_USE_COPY", "YES",
-#                         "-t_srs", "EPSG:4326"] + extra_args)
-
