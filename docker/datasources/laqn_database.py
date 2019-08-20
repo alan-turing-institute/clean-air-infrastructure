@@ -128,7 +128,25 @@ class LAQNDatabase(Updater):
 
         interest_point_query = self.__get_interest_points_query(boundary_geom, start_date, end_date)
 
+        # Get query results in pandas dataframe
         df = pd.read_sql(interest_point_query.statement, self.dbcnxn.engine)
-        df['epoch'] = df['MeasurementDateGMT'].apply(lambda x: calendar.timegm(x.timetuple()))
 
-        return df
+        # Add and rename columns
+        df['epoch'] = df['MeasurementDateGMT'].apply(lambda x: calendar.timegm(x.timetuple()))
+        df['src'] = 'laqn'
+
+        # Get the columns of interest
+        df_subset = df[['src', 'SiteCode', 'MeasurementDateGMT', 'epoch', 'Latitude', 'Longitude']].copy()
+        
+        # Rename columns
+        df_subset.rename(columns={'MeasurementDateGMT': 'datetime',
+                                  'SiteCode': 'id', 
+                                  'Latitude': 'lat',
+                                  'Longitude': 'lon'}, inplace=True)
+
+        # Drop duplicate rows
+        return df_subset.drop_duplicates().sort_values(['id', 'datetime'])
+
+
+# column_names = ['src', 'id', 'datetime', 'epoch', 'lat', 'lon']
+# column_types = [np.int, np.int, np.str, np.int, np.float64, np.float64]

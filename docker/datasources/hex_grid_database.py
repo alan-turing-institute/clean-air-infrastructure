@@ -43,8 +43,15 @@ class HexGrid(StaticTableConnector):
         df['key'] = 0
         full_df = df.merge(timestamps_df, how='outer')
 
-        full_df['datetime']= pd.to_datetime(full_df['datetime']) 
-        full_df['src'] = 0
+        # Add columns
+        full_df['datetime'] = pd.to_datetime(full_df['datetime']) 
+        full_df['src'] = 'hex_grid'
         full_df['epoch'] = full_df['datetime'].apply(lambda x: calendar.timegm(x.timetuple()))
 
-        return full_df
+         # Get the columns of interest
+        df_subset = full_df[['src', 'ogc_fid', 'datetime', 'epoch', 'lat', 'lon']].copy()
+        
+        # Rename columns
+        df_subset.rename(columns={'ogc_fid': 'id'}, inplace=True)
+
+        return df_subset
