@@ -6,6 +6,7 @@ try:
 except KeyError:
     disable_colours = False
 
+
 def bold(text):
     if disable_colours:
         return text

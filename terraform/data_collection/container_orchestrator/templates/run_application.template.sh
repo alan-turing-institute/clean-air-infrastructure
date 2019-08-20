@@ -2,7 +2,6 @@
 
 # Load latest commit hash (as pushed from GitHub)
 latest_commit_hash="$(cat /var/www/latest_commit_hash)"
-latest_commit_hash="1adb4a552945bf16ed3f73facf7e55f9040ae6c4"
 
 # Log in to the Azure CLI
 echo "Logging in to the Azure CLI..."
@@ -13,7 +12,6 @@ echo "Retrieving the container registry details from Azure..."
 registry_password=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_password_keyname} --query "value" -o tsv)
 registry_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${registry_admin_username_keyname} --query "value" -o tsv)
 echo "registry_username: $registry_username"
-echo "registry_password: **********"
 
 # Retrieve the database details from the key vault
 echo "Retrieving the database details from Azure..."
@@ -21,7 +19,6 @@ db_admin_password=$(az keyvault secret show --vault-name ${key_vault_name} --nam
 db_admin_username=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_admin_username_keyname} --query "value" -o tsv)
 db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name ${db_server_name_keyname} --query "value" -o tsv)
 echo "db_admin_username: $db_admin_username"
-echo "db_admin_password: **********"
 echo "db_server_name: $db_server_name"
 
 # Log in to the container repository
@@ -41,7 +38,7 @@ database_secrets="{
 # Run the containers
 echo "Running the container instances..."
 for datasource in "aqe" "laqn"; do
-    echo "az container create --resource-group ${resource_group} --name $datasource-app --image ${registry_server}/$datasource:$latest_commit_hash --registry-username \"$registry_username\" --registry-password \"$registry_password\" --cpu 1 --memory 1"
+    echo ":: working on $datasource"
     az container create --cpu 1 \
                         --environment-variables NO_COLOUR=1 \
                         --image ${registry_server}/$datasource:$latest_commit_hash \

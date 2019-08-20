@@ -24,7 +24,7 @@ module "container_orchestrator" {
   source         = "./container_orchestrator"
   databases      = "${var.databases}"
   infrastructure = "${var.infrastructure}"
-  machine_name   = "container-orchestrator"
+  machine_name   = "cleanair-orchestrator"
   networking     = module.networking
   resource_group = "${azurerm_resource_group.this.name}"
 }
