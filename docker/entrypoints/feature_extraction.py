@@ -17,7 +17,7 @@ if __name__ == '__main__':
     hex_grid = HexGrid(secretfile = '.db_inputs_local_secret.json')
     
     
-    # Feature Extraction
+    ## Feature Extraction
 
     # Set the dates to extract features between
     start_date = '2019-01-01'
