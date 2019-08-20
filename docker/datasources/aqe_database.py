@@ -75,7 +75,7 @@ class AQEDatabase(Updater):
             site_entries = [aqe_tables.build_site_entry(site) for site in self.request_site_entries()]
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
-            self.logger.info("Committing any changes to database table %s", green(aqe_tables.AQESite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQESite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -94,5 +94,5 @@ class AQEDatabase(Updater):
             session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing any changes to database table %s", green(aqe_tables.AQEReading.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQEReading.__tablename__))
             session.commit()

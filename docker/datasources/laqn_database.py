@@ -70,7 +70,7 @@ class LAQNDatabase(Updater):
             site_entries = [laqn_tables.build_site_entry(site) for site in self.request_site_entries()]
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
-            self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -89,5 +89,5 @@ class LAQNDatabase(Updater):
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
