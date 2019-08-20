@@ -8,6 +8,7 @@ from contextlib import suppress
 from .databases import Connector
 from .loggers import get_logger, green
 
+
 class StaticDatabase():
     """Manage interactions with the static database on Azure"""
     def __init__(self, **kwargs):
@@ -16,6 +17,7 @@ class StaticDatabase():
         self.data_directory = None
 
     def upload_static_files(self):
+        """Upload static data to the inputs database"""
         # Static files will be in /data
         try:
             self.data_directory = os.listdir("/data")[0]

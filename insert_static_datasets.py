@@ -1,23 +1,25 @@
+"""
+Insert static datasets into the database
+"""
 import argparse
+import json
 import logging
 import os
+import subprocess
 import tempfile
 import zipfile
+import docker
 import termcolor
 from azure.common.client_factory import get_client_from_cli_profile
-from azure.common.credentials import get_azure_cli_credentials
-from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlockBlobService
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
-import subprocess
-import json
-import docker as dockerapi
+
 
 # Set up logging
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-# logging.getLogger("adal-python").setLevel(logging.WARNING)
+logging.getLogger("adal-python").setLevel(logging.WARNING)
 logging.getLogger("azure").setLevel(logging.WARNING)
 
 
@@ -27,13 +29,6 @@ def emphasised(text):
 
 def get_blob_service(resource_group, storage_container_name):
     """Get a BlockBlobService for a given storage container in a known resource group"""
-    # # Get subscription
-    # _, subscription_id = get_azure_cli_credentials()
-    # subscription_client = get_client_from_cli_profile(SubscriptionClient)
-    # subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
-    # logging.info("Working in subscription: %s", emphasised(subscription_name))
-
-    # Get the account key for this storage account
     logging.info("Retrieving key for storage account: %s", emphasised(storage_container_name))
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(resource_group, storage_container_name)
@@ -59,23 +54,23 @@ def download_blobs(blob_service, blob_container, target_directory):
         logging.info("Downloading complete")
 
 
-def get_key_vault_and_client():
+def get_key_vault_uri_and_client():
     """Get the key vault and key vault client for Clean Air secrets"""
     # Load key vault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
     vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
-    return (vault, keyvault_client)
+    return (vault.properties.vault_uri, keyvault_client)
 
 
-def build_database_secrets(database_secret_prefix, secrets_directory):
+def build_database_secrets(secret_prefix, secrets_directory):
     """Build temporary JSON file containing database secrets"""
     # Retrieve secrets from key vault
-    vault, keyvault_client = get_key_vault_and_client()
-    db_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-name".format(database_secret_prefix), "").value
-    db_server_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-server-name".format(database_secret_prefix), "").value
-    db_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-username".format(database_secret_prefix), "").value
-    db_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-password".format(database_secret_prefix), "").value
+    vault_uri, keyvault_client = get_key_vault_uri_and_client()
+    db_name = keyvault_client.get_secret(vault_uri, "{}-name".format(secret_prefix), "").value
+    db_server_name = keyvault_client.get_secret(vault_uri, "{}-server-name".format(secret_prefix), "").value
+    db_admin_username = keyvault_client.get_secret(vault_uri, "{}-admin-username".format(secret_prefix), "").value
+    db_admin_password = keyvault_client.get_secret(vault_uri, "{}-admin-password".format(secret_prefix), "").value
     database_secrets = {
         "host": "{}.postgres.database.azure.com".format(db_server_name),
         "port": 5432,
@@ -104,16 +99,16 @@ def upload_static_data(dataset, secrets_directory, data_directory):
     }
 
     # Get registry details
-    vault, keyvault_client = get_key_vault_and_client()
-    registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
-    registry_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-username", "").value
-    registry_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-password", "").value
+    vault_uri, keyvault_client = get_key_vault_uri_and_client()
+    registry_login_server = keyvault_client.get_secret(vault_uri, "container-registry-login-server", "").value
+    registry_admin_username = keyvault_client.get_secret(vault_uri, "container-registry-admin-username", "").value
+    registry_admin_password = keyvault_client.get_secret(vault_uri, "container-registry-admin-password", "").value
 
     # Get latest commit hash
     latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
 
     # Log in to the registry
-    client = dockerapi.DockerClient()
+    client = docker.DockerClient()
     client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
 
     # Construct Docker arguments
