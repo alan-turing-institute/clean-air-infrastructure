@@ -15,7 +15,7 @@ import pandas as pd
 if __name__ == '__main__':
 
     # Import datasources
-    laqndb = LAQNDatabase(end = '2019-01-01', ndays = 2, secretfile = '.db_inputs_local_secret.json')
+    laqndb = LAQNDatabase(end = '2019-01-05', ndays = 10, secretfile = '.db_inputs_local_secret.json')
     # laqndb.update_site_list_table()
     # laqndb.update_reading_table()
 
@@ -28,7 +28,8 @@ if __name__ == '__main__':
 
     start_date = '2019-01-01'
     end_date = '2019-01-02'
-    out = hg.interest_points(start_date, end_date)
+    out = hg.get_interest_points(start_date, end_date)
+    out2 = laqndb.get_interest_points(lb.convex_hull, start_date, end_date)
     
     # convexhull = lb.convex_hull
     # shape = to_shape(WKBElement(convexhull))

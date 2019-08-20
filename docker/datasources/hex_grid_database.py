@@ -25,10 +25,11 @@ class HexGrid(StaticTableConnector):
                                  func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"))
 
 
-    def interest_points(self, start_date, end_date):
+    def get_interest_points(self, start_date, end_date):
         """
         Return a pandas dataframe of interest points in time
         (between the start date and end date) and space (lat/lon)
+        Interest points are the geometric centroids of the geoms in the hexgrid table
         """
         
         df = pd.read_sql(self.__geom_centroids.statement, self.engine)

@@ -5,7 +5,10 @@ Get data from the LAQN network via the API maintained by Kings College London:
 import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
-
+from sqlalchemy import func
+from datetime import datetime
+import pandas as pd 
+import calendar
 
 class LAQNDatabase(Updater):
     def __init__(self, *args, **kwargs):
@@ -92,10 +95,40 @@ class LAQNDatabase(Updater):
             self.logger.info("Committing any changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
             session.commit()
 
-    def get_sites_within_geom(self, geom):
+    def get_sites_within_geom(self, boundary_geom):
         """
         Return all the sites that fall within a geometry object
         """
         with self.dbcnxn.open_session() as session:
 
-            return session.query(laqn_tables.LAQNSite).filter(laqn_tables.LAQNSite.geom.ST_Intersects(geom))
+            return session.query(laqn_tables.LAQNSite).\
+                           filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
+
+
+    def __get_interest_points_query(self, boundary_geom, start_date, end_date):
+        """Return an sqlalchemy query object with filters laqn readings 
+        that are within a boundary geometry and taken between a start_date and end_date. 
+        Adds the latitude and longitude to each reading
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(laqn_tables.LAQNReading, laqn_tables.LAQNSite.Latitude, laqn_tables.LAQNSite.Longitude).\
+                                join(laqn_tables.LAQNSite).\
+                                filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom)).\
+                                filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) <= datetime.strptime(end_date, '%Y-%m-%d')).\
+                                filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) >= datetime.strptime(start_date, '%Y-%m-%d'))
+
+    def get_interest_points(self, boundary_geom, start_date, end_date):
+        """
+        Return a pandas dataframe of interest points in time
+        (between the start date and end date) and space (lat/lon)
+        Interest points are the locations of LAQN sensors within the london boundary at each time that a reading was captured
+        """
+
+        interest_point_query = self.__get_interest_points_query(boundary_geom, start_date, end_date)
+
+        df = pd.read_sql(interest_point_query.statement, self.dbcnxn.engine)
+        df['epoch'] = df['MeasurementDateGMT'].apply(lambda x: calendar.timegm(x.timetuple()))
+
+        return df
