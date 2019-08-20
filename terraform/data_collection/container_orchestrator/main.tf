@@ -67,6 +67,7 @@ data "template_file" "run_application" {
   vars = {
     db_admin_password_keyname       = "${var.databases.inputs.db_admin_password_keyname}"
     db_admin_username_keyname       = "${var.databases.inputs.db_admin_name_keyname}"
+    db_name                         = "${var.databases.inputs.db_name}"
     db_server_name_keyname          = "${var.databases.inputs.db_server_name_keyname}"
     key_vault_name                  = "${var.infrastructure.key_vault.name}"
     registry_admin_password_keyname = "${var.infrastructure.containers.admin_password_keyname}"

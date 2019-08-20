@@ -29,7 +29,7 @@ az acr login --name $registry_username
 database_secrets="{
                         \"host\": \"$db_server_name.postgres.database.azure.com\",
                         \"port\": 5432,
-                        \"db_name\": \"inputs_db\",
+                        \"db_name\": \"${db_name}\",
                         \"username\": \"$db_admin_username@$db_server_name\",
                         \"password\": \"$db_admin_password\",
                         \"ssl_mode\": \"require\"
