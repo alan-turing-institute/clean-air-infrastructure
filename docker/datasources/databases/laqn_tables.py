@@ -37,6 +37,10 @@ class LAQNReading(Base):
 
     site = relationship("LAQNSite", back_populates="readings")
 
+    def __repr__(self):
+        return "<LAQNReading(SiteCode='%s', SpeciesCode='%s', MeasurementDateGMT='%s', Value='%s'" % (
+                self.SiteCode, self.SpeciesCode, self.MeasurementDateGMT, self.Value)
+
 def initialise(engine):
     Base.metadata.create_all(engine)
 
