@@ -13,5 +13,5 @@ if __name__ == "__main__":
     # Upload static files
     staticdb.upload_static_files()
 
-    # Configure database
-    staticdb.configure_database()
+    # Configure database tables
+    staticdb.configure_tables()
