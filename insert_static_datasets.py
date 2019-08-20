@@ -142,33 +142,8 @@ def store_database_secrets(database_secret_prefix, secrets_directory):
 def upload_static_data(dataset, secrets_directory, data_directory):
     # Run docker image to upload the data
     logging.info("Preparing to upload {} data...".format(dataset))
-    latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
-    print("latest_commit_hash", latest_commit_hash)
-    vault, keyvault_client = get_key_vault_and_client()
-    print("vault, keyvault_client", vault, keyvault_client)
-    registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
-    print("registry_login_server", registry_login_server)
-    registry_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-username", "").value
-    registry_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-password", "").value
-    # subprocess.run(["docker", "run", "-it",
-    logging.critical(["docker", "run", "-it",
-                    "-v", "{}:/secrets".format(secrets_directory),
-                    "-v", "{}:/data".format(data_directory),
-                    "{}:{}".format(registry_login_server, latest_commit_hash)])
-    # client = dockerapi.from_env()
 
-    # -v $(realpath static_data_local/CanyonsLondon_Erase):/data/Canyons \
-    # -v $(realpath static_data_local/RoadLink):/data/RoadLink \
-    # -v $(realpath static_data_local/Hex350_grid_GLA):/data/HexGrid \
-    # -v $(realpath static_data_local/ESRI):/data/LondonBoundary \
-    # -v $(realpath static_data_local/UKMap.gdb):/data/UKMap.gdb \
-
-        # "UKMap.gdb": "ukmap",
-        # "Canyons": "canyonslondon",
-        # "RoadLink": "os_highways_links",
-        # "HexGrid": "hex_grid",
-        # "LondonBoundary": "london_boundary"
-
+    # List of dataset names inside each directory
     dataset_to_directory = {
         "canyonslondon": "CanyonsLondon_Erase",
         "glahexgrid": "Hex350_grid_GLA",
@@ -177,17 +152,31 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         "ukmap": "UKMap.gdb",
     }
 
+    # Get registry details
+    vault, keyvault_client = get_key_vault_and_client()
+    registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
+    registry_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-username", "").value
+    registry_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-admin-password", "").value
+
+    # Get latest commit hash
+    latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+
+    # Local volumes to mount
     local_data = os.path.join(data_directory, dataset_to_directory[dataset])
     mounted_data = os.path.join("/data", dataset)
 
+    # Log in to the registry and run the job
     client = dockerapi.DockerClient()
     client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
-    # image = client.images.pull("{}/static:{}".format(registry_login_server, latest_commit_hash))
-    # print("image.id", image.id)
-    # os.system("ls {}".format(secrets_directory))
-    # os.system("ls {}".format(data_directory))
-    output = client.containers.run("{}/static:{}".format(registry_login_server, latest_commit_hash), volumes={secrets_directory: {'bind': '/secrets', 'mode': 'ro'}, local_data: {'bind': mounted_data, 'mode': 'ro'}}, stdout=True, stderr=True)
-    print(output)
+    container = client.containers.run("{}/static:{}".format(registry_login_server, latest_commit_hash), volumes={secrets_directory: {'bind': '/secrets', 'mode': 'ro'}, local_data: {'bind': mounted_data, 'mode': 'ro'}}, stdout=True, stderr=True, detach=True)
+
+    # Parse log messages and re-log them
+    for line in container.logs(stream=True):
+        line = line.decode("utf-8")
+        lvl = [l for l in ("CRITICAL", "WARNING", "ERROR", "INFO", "DEBUG") if l in line.split(":")[2]][0]
+        msg = ":".join(line.split(":")[3:]).strip()
+        getattr(logging, lvl.lower())(msg)
+
 
 def main():
     # Read command line arguments

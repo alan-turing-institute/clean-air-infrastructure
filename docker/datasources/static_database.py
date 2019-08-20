@@ -50,11 +50,12 @@ class StaticDatabase():
             # extra_args += ["-nln", table_name]
             extra_args += ["-nln", self.data_directory]
 
-        # # Run ogr2ogr
+        # Run ogr2ogr
         # subprocess.run(["ogr2ogr", "-overwrite", "-progress",
-        #                 "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
-        #                 "--config", "PG_USE_COPY", "YES",
-        #                 "-t_srs", "EPSG:4326"] + extra_args)
+        print(["ogr2ogr", "-overwrite", "-progress",
+                        "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
+                        "--config", "PG_USE_COPY", "YES",
+                        "-t_srs", "EPSG:4326"] + extra_args)
 
     def configure_database(self):
         sql_code = None
