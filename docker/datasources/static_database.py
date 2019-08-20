@@ -65,23 +65,23 @@ class StaticDatabase():
     def configure_database(self):
         sql_code = None
 
-        if self.data_directory == "UKMap.gdb":
+        if self.data_directory == "ukmap": #"UKMap.gdb":
             sql_code = """CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);"""
             self.logger.info("Configuring UKMap data...")
 
-        elif self.data_directory == "Canyons":
+        elif self.data_directory == "canyonslondon": #"Canyons":
             sql_code = """CREATE INDEX canyonslondon_4326_gix ON canyonslondon USING GIST(wkb_geometry);"""
             self.logger.info("Configuring Street Canyons data...")
 
-        elif self.data_directory == "RoadLink":
+        elif self.data_directory == "oshighwayroadlink": #"RoadLink":
             sql_code = """CREATE INDEX roadlink_4326_gix ON os_highways_links USING GIST(wkb_geometry);"""
             self.logger.info("Configuring RoadLink data...")
 
-        elif self.data_directory == "HexGrid":
+        elif self.data_directory == "glahexgrid": #"HexGrid":
             sql_code = """CREATE INDEX hex_grid_gix ON hex_grid USING GIST(wkb_geometry);"""
             self.logger.info("Configuring HexGrid data...")
 
         if sql_code:
-            self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
+            self.logger.info("Preparing to run the following SQL code: %s", sql_code)
             # with self.dbcnxn.engine.connect() as conn:
             #     conn.execute(sql_code)
