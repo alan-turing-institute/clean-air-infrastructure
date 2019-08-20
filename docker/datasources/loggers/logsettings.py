@@ -20,7 +20,7 @@ def get_logger(name, verbosity=0):
     stream = logging.root.handlers[0]
     if disable_colours:
         stream.setFormatter(
-            logging.Formatter(r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S")
+            logging.Formatter(r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S"))
     else:
         stream.setFormatter(
             colorlog.ColoredFormatter(r"%(asctime)s %(log_color)s%(levelname)8s%(reset)s: %(message)s",
