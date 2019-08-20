@@ -26,6 +26,9 @@ if __name__ == '__main__':
     # Get the points just within that site
     sites_within_boundary = laqndb.get_sites_within_geom(lb.convex_hull)
 
+    start_date = '2019-01-01'
+    end_date = '2019-01-02'
+    out = hg.interest_points(start_date, end_date)
     
     # convexhull = lb.convex_hull
     # shape = to_shape(WKBElement(convexhull))
