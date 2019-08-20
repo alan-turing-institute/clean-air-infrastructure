@@ -5,7 +5,7 @@ from ..loggers import get_logger, bold
 
 class APIReader():
     """Manage interactions with an external API"""
-    def __init__(self, end, ndays, **kwargs):
+    def __init__(self, end = 'today', ndays = 2, **kwargs):
         # Set up logging
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
