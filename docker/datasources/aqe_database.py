@@ -29,8 +29,8 @@ class AQEDatabase(Updater):
             dom = minidom.parse(io.BytesIO(raw_data))
             # Convert DOM object to a list of dictionaries. Each dictionary is an site containing site information
             return [dict(s.attributes.items()) for s in dom.getElementsByTagName("Site")]
-        except (requests.exceptions.HTTPError) as e:
-            self.logger.warning("Request to %s failed: %s", endpoint, e)
+        except requests.exceptions.HTTPError as error:
+            self.logger.warning("Request to %s failed: %s", endpoint, error)
             return None
         except (TypeError, KeyError):
             return None
@@ -75,7 +75,7 @@ class AQEDatabase(Updater):
             site_entries = [aqe_tables.build_site_entry(site) for site in self.request_site_entries()]
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
-            self.logger.info("Committing any changes to database table %s", green(aqe_tables.AQESite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQESite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -94,5 +94,5 @@ class AQEDatabase(Updater):
             session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing any changes to database table %s", green(aqe_tables.AQESite.__tablename__))
+            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQEReading.__tablename__))
             session.commit()

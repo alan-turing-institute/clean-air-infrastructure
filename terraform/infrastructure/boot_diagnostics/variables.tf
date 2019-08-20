@@ -1,7 +1,4 @@
 # Input variables
 # ---------------
-variable "infrastructure" {}
+variable "location" {}
 variable "resource_group" {}
-
-
-
