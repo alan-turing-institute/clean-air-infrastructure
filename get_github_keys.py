@@ -31,9 +31,8 @@ def get_keys(machine, rg_name="RG_CLEANAIR_DATA_COLLECTION", rg_kv="RG_CLEANAIR_
     poller = compute_mgmt_client.virtual_machines.run_command(rg_name, vm_name, remote_cmd)
     result = poller.result()  # Blocking till executed
     ssh_key = [l for l in result.value[0].message.split("\n") if "ssh-rsa" in l][0]
-    key_name = emphasised('{}-cleanair'.format(vm_name))
     logging.info("... please go to clean-air-infrastructure > Settings > Deploy keys on GitHub")
-    logging.info("    ensure that there is a key called %s", key_name)
+    logging.info("    ensure that there is a key called %s", emphasised(vm_name))
     logging.info("    ensure it is read-only (ie. do not enable write)")
     logging.info("    its value should be: %s", emphasised(ssh_key))
 
@@ -56,5 +55,5 @@ if __name__ == "__main__":
     subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
     logging.info("Working in subscription: %s", emphasised(subscription_name))
 
-    # Get keys for the different datasources
-    get_keys("container-orchestrator")
+    # Get keys for all relevant VMs
+    get_keys("cleanair-orchestrator")
