@@ -1,6 +1,6 @@
-import colorlog
 import logging
 import os
+import colorlog
 
 
 logging.basicConfig(level=logging.INFO)
@@ -24,9 +24,9 @@ def get_logger(name, verbosity=0):
     else:
         stream.setFormatter(
             colorlog.ColoredFormatter(r"%(asctime)s %(log_color)s%(levelname)8s%(reset)s: %(message)s",
-                                    datefmt=r"%Y-%m-%d %H:%M:%S",
-                                    log_colors={"DEBUG": "cyan",
-                                                "WARNING": "yellow",
-                                                "ERROR": "red",
-                                                "CRITICAL": "bold_red"}))
+                                      datefmt=r"%Y-%m-%d %H:%M:%S",
+                                      log_colors={"DEBUG": "cyan",
+                                                  "WARNING": "yellow",
+                                                  "ERROR": "red",
+                                                  "CRITICAL": "bold_red"}))
     return logger
