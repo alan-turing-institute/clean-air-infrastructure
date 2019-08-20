@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import tempfile
 import zipfile
 import termcolor
 from azure.common.client_factory import get_client_from_cli_profile
@@ -8,6 +9,10 @@ from azure.common.credentials import get_azure_cli_credentials
 from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlockBlobService
+from azure.keyvault import KeyVaultClient
+from azure.mgmt.keyvault import KeyVaultManagementClient
+import subprocess
+import docker as dockerapi
 
 # Set up logging
 logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -35,13 +40,6 @@ def get_blob_service(resource_group, storage_container_name):
     return BlockBlobService(account_name=storage_container_name, account_key=storage_account_key)
 
 
-def create_dir_if_not_exists(d):
-
-    if not os.path.exists(d):
-        logging.info("Directory: %s does not exist. Creating directory", emphasised(d))
-        os.makedirs(d)
-
-
 def download_blobs(blob_service, blob_container, target_directory):
     """
     Download blobs in a container to a target director
@@ -53,10 +51,9 @@ def download_blobs(blob_service, blob_container, target_directory):
     """
 
     generator = blob_service.list_blobs(blob_container)
-    create_dir_if_not_exists(target_directory)
+    os.makedirs(target_directory, exist_ok=True)
 
     for blob in generator:
-
         target_file = os.path.join(target_directory, blob.name)
         logging.info("Downloading: %s from container: %s to location: %s",
                      emphasised(blob.name), emphasised(blob_container), emphasised(target_file))
@@ -69,21 +66,52 @@ def download_blobs(blob_service, blob_container, target_directory):
         logging.info("Downloading complete")
 
 
-def download_static_data(parent_dir, blob_service):
-    # Containers to download data from
-    containers = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
+# def download_static_data(container, target_dir, blob_service):
+#     # Containers to download data from
+#     containers = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
 
-    # Get the directory locations (robust to working directory)
-    target_dir = os.path.join(parent_dir, "static_data_local")
+#     # Download blobs
+#     for container in containers:
+#         download_blobs(blob_service, container, target_dir)
 
-    # Download blobs
-    for container in containers:
-        download_blobs(blob_service, container, target_dir)
+def build_docker_image(database_secret_prefix):
+    # Build static datasources docker image
+    keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
+    vault = [v for v in keyvault_mgmt_client.vaults.list_by_subscription() if "cleanair" in v.name][0]
+    keyvault_client = get_client_from_cli_profile(KeyVaultClient)
+    # db_server_name = keyvault_client.get_secret(vault.properties.vault_uri, "{}-server-name".format(database_secret_prefix), "").value
+    # db_admin_username = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-username".format(database_secret_prefix), "").value
+    # db_admin_password = keyvault_client.get_secret(vault.properties.vault_uri, "{}-admin-password".format(database_secret_prefix), "").value
+    container_registry_login_server = keyvault_client.get_secret(vault.properties.vault_uri, "container-registry-login-server", "").value
 
+
+    latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
+
+    # print("db_server_name", db_server_name)
+    # print("db_admin_username", db_admin_username)
+    # print("db_admin_password", db_admin_password)
+    print("latest_commit_hash", latest_commit_hash, type(latest_commit_hash))
+    # acr_server =
+
+    cmd = ["docker", "build", "-t", "{}/static:{}".format(container_registry_login_server, latest_commit_hash), "-f", "docker/dockerfiles/upload_static_dataset.Dockerfile", "docker/."]
+    print(cmd)
+    print(" ".join(cmd))
+
+    cmd = ["docker", "push", "{}/static:{}".format(container_registry_login_server, latest_commit_hash)]
+    print(cmd)
+    print(" ".join(cmd))
+
+    client = dockerapi.from_env()
+
+    client.images.build(path="docker/dockerfiles/upload_static_dataset.Dockerfile", tag="{}/static:{}".format(container_registry_login_server, latest_commit_hash))
+
+    # docker build -t cleanair_upload_static_dataset:latest \
+#     -f docker/dockerfiles/upload_static_dataset.Dockerfile \
+#     docker
 
 if __name__ == '__main__':
-    # Get the scipts directory
-    PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
+#     # Get the scipts directory
+#     PARENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Download static datasets")
@@ -95,8 +123,31 @@ if __name__ == '__main__':
                         help="Name of the storage container where the Terraform backend will be stored")
     args = parser.parse_args()
 
-    # Get a block blob service
-    block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)
+    # List of available datasets
+    datasets = ["londonboundary", "ukmap", "oshighwayroadlink", "canyonslondon", "glahexgrid"]
 
-    # Download the static data
-    download_static_data(PARENT_DIR, block_blob_service)
+    build_docker_image("cleanair-inputs-db") #-server-name", "cleanair-inputs-db-admin-password", "cleanair-inputs-db-admin-name")
+
+    # # Get a block blob service
+    # block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)
+
+    # # Download the static data
+    # for dataset in datasets:
+    #     with tempfile.TemporaryDirectory() as temp_dir:
+    #         download_blobs(block_blob_service, dataset, temp_dir)
+    #         upload_static_data
+
+    # tmp_directory = tempfile.TemporaryDirectory()
+
+    # print("PARENT_DIR", tmp_directory)
+
+
+#     download_static_data(tmp_directory, block_blob_service)
+
+#     # Build the docker image
+#    # Run ogr2ogr
+#         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
+#                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.static_filename),
+#                         "--config", "PG_USE_COPY", "YES",
+#                         "-t_srs", "EPSG:4326"] + extra_args)
+

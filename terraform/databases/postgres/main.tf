@@ -22,8 +22,8 @@ resource "azurerm_key_vault_secret" "db_server_name" {
   }
 }
 # :: store the database admin name in the keyvault
-resource "azurerm_key_vault_secret" "db_admin_name" {
-  name         = "${var.db_name}-db-admin-name"
+resource "azurerm_key_vault_secret" "db_admin_username" {
+  name         = "${var.db_name}-db-admin-username"
   value        = "atiadmin"
   key_vault_id = "${var.key_vault_id}"
   tags = {
@@ -68,7 +68,7 @@ resource "azurerm_postgresql_server" "this" {
     geo_redundant_backup  = "Disabled"
   }
 
-  administrator_login          = "${azurerm_key_vault_secret.db_admin_name.value}"
+  administrator_login          = "${azurerm_key_vault_secret.db_admin_username.value}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   version                      = "9.6"
   ssl_enforcement              = "Enabled"

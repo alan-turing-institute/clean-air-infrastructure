@@ -38,7 +38,6 @@ def get_keys(machine, rg_name="RG_CLEANAIR_DATA_COLLECTION", rg_kv="RG_CLEANAIR_
 
     # Read the GitHub secret from the keyvault
     keyvault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
-    print(keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv))
     vault = [v for v in keyvault_mgmt_client.vaults.list_by_resource_group(rg_kv) if "cleanair" in v.name][0]
     keyvault_client = get_client_from_cli_profile(KeyVaultClient)
     github_secret = keyvault_client.get_secret(vault.properties.vault_uri, secret_name, "").value
