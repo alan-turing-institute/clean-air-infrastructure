@@ -28,6 +28,7 @@ class StaticDatabase():
         # Static files will be in /data
         try:
             self.static_filename = os.listdir("/data")[0]
+            self.logger.critical("static_filename: %s", self.static_filename)
         except FileNotFoundError:
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
 
@@ -48,24 +49,20 @@ class StaticDatabase():
             table_name = self.table_names[self.static_filename]
             extra_args += ["-nln", table_name]
 
-        # Run ogr2ogr
-        subprocess.run(["ogr2ogr", "-overwrite", "-progress",
-                        "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.static_filename),
-                        "--config", "PG_USE_COPY", "YES",
-                        "-t_srs", "EPSG:4326"] + extra_args)
+        # # Run ogr2ogr
+        # subprocess.run(["ogr2ogr", "-overwrite", "-progress",
+        #                 "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.static_filename),
+        #                 "--config", "PG_USE_COPY", "YES",
+        #                 "-t_srs", "EPSG:4326"] + extra_args)
 
     def configure_database(self):
         sql_code = None
 
         if self.static_filename == "UKMap.gdb":
-            # sql_code = """ALTER TABLE public.base_hb0_complete_merged RENAME TO ukmap;
-            #               CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);"""
             sql_code = """CREATE INDEX ukmap_4326_gix ON ukmap USING GIST(shape);"""
             self.logger.info("Configuring UKMap data...")
 
         elif self.static_filename == "Canyons":
-            # sql_code = """ALTER TABLE canyonslondon_erase RENAME TO canyonslondon;
-            #               CREATE INDEX canyonslondon_4326_gix ON canyonslondon USING GIST(wkb_geometry);"""
             sql_code = """CREATE INDEX canyonslondon_4326_gix ON canyonslondon USING GIST(wkb_geometry);"""
             self.logger.info("Configuring Street Canyons data...")
 
@@ -79,5 +76,5 @@ class StaticDatabase():
 
         if sql_code:
             self.logger.debug("Preparing to run the following SQL code: %s", sql_code)
-            with self.dbcnxn.engine.connect() as conn:
-                conn.execute(sql_code)
+            # with self.dbcnxn.engine.connect() as conn:
+            #     conn.execute(sql_code)
