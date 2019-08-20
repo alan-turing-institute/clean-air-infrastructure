@@ -16,7 +16,7 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 def emphasised(text):
-    return termcolor.colored(text, 'green')
+    return termcolor.colored(text, "cyan")
 
 
 def get_keys(machine, rg_name="RG_CLEANAIR_DATA_COLLECTION", rg_kv="RG_CLEANAIR_INFRASTRUCTURE"):

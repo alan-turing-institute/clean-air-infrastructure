@@ -24,6 +24,7 @@ class StaticDatabase():
             self.logger.debug("data_directory: %s", self.data_directory)
         except FileNotFoundError:
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
+        os.listdir(os.path.join("/data", self.data_directory))
 
         # Ensure that that the table exists and get the connection string
         _ = self.dbcnxn.engine
@@ -38,12 +39,12 @@ class StaticDatabase():
                           "-lco", "precision=NO"]
 
         # Set table name
-        with suppress(KeyError):
-            extra_args += ["-nln", self.data_directory]
+        table_name = self.data_directory.replace(".gdb", "")
+        extra_args += ["-nln", table_name]
 
         # Run ogr2ogr
         self.logger.info("Uploading static GIS data to %s in %s",
-                         green(self.data_directory), green(self.dbcnxn.connection_info["db_name"]))
+                         green(table_name), green(self.dbcnxn.connection_info["db_name"]))
         subprocess.run(["ogr2ogr", "-overwrite", "-progress",
                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
                         "--config", "PG_USE_COPY", "YES",

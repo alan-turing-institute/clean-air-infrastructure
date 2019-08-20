@@ -24,7 +24,7 @@ logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 def emphasised(text):
-    return termcolor.colored(text, "green")
+    return termcolor.colored(text, "cyan")
 
 
 def get_blob_service(resource_group, storage_container_name):
@@ -113,10 +113,11 @@ def upload_static_data(dataset, secrets_directory, data_directory):
 
     # Construct Docker arguments
     image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
-    local_data = os.path.join(data_directory, dataset_to_directory[dataset])
+    local_path = os.path.join(data_directory, dataset_to_directory[dataset])
+    remote_path = dataset + ".gdb" if local_path.endswith(".gdb") else dataset
     mounts = {
         secrets_directory: {"bind": "/secrets", "mode": "ro"},
-        local_data: {"bind": os.path.join("/data", dataset), "mode": "ro"}
+        local_path: {"bind": os.path.join("/data", remote_path), "mode": "ro"}
     }
 
     # Run the job, parsing log messages and re-logging them
