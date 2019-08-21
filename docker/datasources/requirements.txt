@@ -1,3 +1,4 @@
+boto3
 colorlog
 geoalchemy2
 psycopg2
