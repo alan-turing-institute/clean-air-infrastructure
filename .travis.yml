@@ -6,20 +6,23 @@ services:
 script:
   # # Run all pytest unit tests
   # - python -m pytest -v tests --cov misinformation --cov-report term-missing
+
   # Run pyflakes for error detection
   - pyflakes *.py docker #tests
+
   # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=E501 --ignore=R0801 --max-line-length=120 --count *.py docker #tests
+  - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count *.py docker #tests
+
   # Run pylint for stricter error checking
-  - pylint *py docker --disable=R0801 #tests
+  - pylint *.py docker --disable=R0801,F0010 #tests
 
-  # Ensure we build every docker image
-  # ----------------------------------
-
-  # Datasources
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/update_laqn_database.Dockerfile docker/.
+  # Build all docker images
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/update_aqe_database.Dockerfile docker/.
+  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/update_laqn_database.Dockerfile docker/.
+  - docker build -t $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/upload_static_dataset.Dockerfile docker/.
 
-  # Push to ACR
-  - bash docker_push.sh
-
+  # Push all our docker images to the container registry
+  - echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SERVER"
+  - docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA
+  - docker push $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA
+  - docker push $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA

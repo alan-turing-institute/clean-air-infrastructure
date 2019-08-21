@@ -21,9 +21,19 @@ resource "azurerm_key_vault_secret" "db_server_name" {
     segment     = "Databases / Postgres"
   }
 }
+# :: store the database name in the keyvault
+resource "azurerm_key_vault_secret" "db_name" {
+  name         = "${var.db_name}-db-name"
+  value        = "${replace(lower("${var.db_name}"), "-", "_")}_db"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
 # :: store the database admin name in the keyvault
-resource "azurerm_key_vault_secret" "db_admin_name" {
-  name         = "${var.db_name}-db-admin-name"
+resource "azurerm_key_vault_secret" "db_admin_username" {
+  name         = "${var.db_name}-db-admin-username"
   value        = "atiadmin"
   key_vault_id = "${var.key_vault_id}"
   tags = {
@@ -68,7 +78,7 @@ resource "azurerm_postgresql_server" "this" {
     geo_redundant_backup  = "Disabled"
   }
 
-  administrator_login          = "${azurerm_key_vault_secret.db_admin_name.value}"
+  administrator_login          = "${azurerm_key_vault_secret.db_admin_username.value}"
   administrator_login_password = "${azurerm_key_vault_secret.db_admin_password.value}"
   version                      = "9.6"
   ssl_enforcement              = "Enabled"
@@ -81,7 +91,7 @@ resource "azurerm_postgresql_server" "this" {
 
 # :: create the database
 resource "azurerm_postgresql_database" "this" {
-  name                = "${replace(lower("${var.db_name}"), "-", "_")}_db"
+  name                = "${azurerm_key_vault_secret.db_name.value}"
   resource_group_name = "${var.resource_group}"
   server_name         = "${azurerm_postgresql_server.this.name}"
   charset             = "UTF8"
@@ -113,19 +123,3 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
-# Write output files
-# ------------------
-data "template_file" "database_secrets" {
-  template = "${file("${path.module}/templates/db_secrets.template.json")}"
-  vars = {
-    db_host     = "${azurerm_postgresql_server.this.name}"
-    db_name     = "${azurerm_postgresql_database.this.name}"
-    db_username = "${azurerm_postgresql_server.this.administrator_login}"
-    db_password = "${azurerm_key_vault_secret.db_admin_password.value}"
-  }
-}
-
-resource "local_file" "database_secrets_file" {
-  sensitive_content = "${data.template_file.database_secrets.rendered}"
-  filename          = "${path.cwd}/.secrets/.db_${lower("${var.db_name}")}_secret.json"
-}

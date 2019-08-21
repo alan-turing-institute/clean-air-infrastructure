@@ -33,7 +33,7 @@ args = parser.parse_args()
 
 
 def emphasised(text):
-    return termcolor.colored(text, 'green')
+    return termcolor.colored(text, "cyan")
 
 
 def build_backend():

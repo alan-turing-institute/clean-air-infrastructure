@@ -1,6 +1,7 @@
 azure
 azure-cli-core
 colorlog
+docker
 geoalchemy2
 pycodestyle
 pyflakes
