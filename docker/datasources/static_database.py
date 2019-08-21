@@ -63,6 +63,9 @@ class StaticDatabase():
         elif self.data_directory == "glahexgrid":
             sql_code = """CREATE INDEX glahexgrid_gix ON glahexgrid USING GIST(wkb_geometry);"""
 
+        elif self.data_directory == "scootdetectors":
+            sql_code = """CREATE INDEX scootdetectors_gix ON scootdetectors USING GIST(wkb_geometry);"""
+
         if sql_code:
             self.logger.info("Running SQL code: %s", green(sql_code))
             with self.dbcnxn.engine.connect() as conn:

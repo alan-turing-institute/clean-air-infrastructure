@@ -95,6 +95,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         "glahexgrid": "Hex350_grid_GLA",
         "londonboundary": "ESRI",
         "oshighwayroadlink": "RoadLink",
+        "scootdetectors": "scoot_detectors",
         "ukmap": "UKMap.gdb",
     }
 
@@ -146,7 +147,7 @@ def main():
     args = parser.parse_args()
 
     # List of available datasets
-    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap"]
+    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)
