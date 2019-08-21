@@ -61,7 +61,7 @@ class Connector():
         try:
             # Use the engine to create a new session
             session = sessionmaker(bind=self.engine)()
-            self.check_internet_connection()
+            # self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError):
             # Rollback database interactions if there is a problem

@@ -95,7 +95,7 @@ class LAQNDatabase(Updater):
             self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
 
-    def get_sites_within_geom(self, boundary_geom):
+    def __get_sites_within_geom(self, boundary_geom):
         """
         Return all the sites that fall within a geometry object
         """
@@ -119,7 +119,6 @@ class LAQNDatabase(Updater):
                                  laqn_tables.LAQNSite.geom.label('geom')
                                  ).filter(laqn_tables.LAQNSite.geom.\
                                         ST_Intersects(boundary_geom)) 
-
 
     def __query_interest_points(self, boundary_geom):
         """

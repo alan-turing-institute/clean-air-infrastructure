@@ -5,6 +5,7 @@ from datasources import LondonBoundary, LAQNDatabase, HexGrid
 from datasources.databases import  laqn_tables, Connector
 from geoalchemy2.types import WKBElement
 from geoalchemy2.shape import to_shape
+from sqlalchemy import func
 import matplotlib.pyplot as plt
 import pandas as pd 
     
@@ -19,22 +20,34 @@ if __name__ == '__main__':
     conn = Connector(secretfile = '.db_inputs_local_secret.json')
     ## Feature Extraction
 
-    # Set the dates to extract features between
-    start_date = '2019-01-01'
-    end_date = '2019-01-02'
+    # # Set the dates to extract features between
+    # start_date = '2019-01-01'
+    # end_date = '2019-01-02'
 
     hex_interest_points = hex_grid.query_interest_points()
     laqn_interest_points = laqn.query_interest_points(london_boundary.convex_hull)
     
+    BUFFER_SIZES_DICT = {
+    '500': ['500', 0.005], #~500m
+    '1000':  ['1c', 0.001], #~1000m
+    '100': ['100', 0.0001], #~100m
+    '200': ['200', 0.0002] #~200m
+}
 
-    all_interest_points = hex_interest_points.union(laqn_interest_points)
+    # # Make it a sub query
+    all_interest_points = hex_interest_points.union(laqn_interest_points).subquery()
+
+
+    with conn.open_session() as session:
+        buffers = session.query(func.ST_Buffer(all_interest_points.c.geom, 5.)).all()
+
 
     # # Get interest points
     # hex_interest_points = hex_grid.get_interest_points(start_date, end_date)
     # laqn_interest_points = laqn.get_interest_points(london_boundary.convex_hull, start_date, end_date)
     
     # with conn.open_session() as session:
-    #     print(session.query(laqn_tables.LAQNReading).all())
+    #     session.query(func.ST_Buffer(all_interest_points.c.geom, 5.)).all()
     
     # interest_points = pd.concat([hex_interest_points, laqn_interest_points])
    
