@@ -27,21 +27,23 @@ if __name__ == '__main__':
     hex_interest_points = hex_grid.query_interest_points()
     laqn_interest_points = laqn.query_interest_points(london_boundary.convex_hull)
     
-    BUFFER_SIZES_DICT = {
-    '500': ['500', 0.005], #~500m
-    '1000':  ['1c', 0.001], #~1000m
-    '100': ['100', 0.0001], #~100m
-    '200': ['200', 0.0002] #~200m
-}
 
     # # Make it a sub query
     all_interest_points = hex_interest_points.union(laqn_interest_points).subquery()
 
+    buff_size = [500., 1000., 100., 200.] #size in m
 
+
+    # Get buffers of different sizes
+    query_funcs = [func.ST_Buffer(all_interest_points.c.geom, size/1e6).label(str(size)) for size in buff_size]
     with conn.open_session() as session:
-        buffers = session.query(func.ST_Buffer(all_interest_points.c.geom, 5.)).all()
+        buffers = session.query(*query_funcs)
 
+    a_buff = buffers.first()
+    shapes = [to_shape(b) for b in a_buff]
 
+    for s in shapes:
+        plt.plot(*s.exterior.xy)
     # # Get interest points
     # hex_interest_points = hex_grid.get_interest_points(start_date, end_date)
     # laqn_interest_points = laqn.get_interest_points(london_boundary.convex_hull, start_date, end_date)

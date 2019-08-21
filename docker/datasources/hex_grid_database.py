@@ -25,7 +25,7 @@ class HexGrid(StaticTableConnector):
                                  'hexgrid_' + cast(self.table.ogc_fid, String(4)).label('id'), 
                                  func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
                                  func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
-                                 self.table.wkb_geometry.label('geom'))
+                                 func.ST_Centroid(self.table.wkb_geometry).label('geom'))
 
 
     def get_interest_points(self, start_date, end_date):
