@@ -1,5 +1,5 @@
 from .databases import Updater, StaticTableConnector
-from sqlalchemy import func
+from sqlalchemy import func, cast, String, text
 import pandas as pd
 import calendar
 import numpy as np 
@@ -13,16 +13,19 @@ class HexGrid(StaticTableConnector):
         # Reflect the table
         self.table = self.get_table_instance('hex_grid')
 
-    @property
-    def __geom_centroids(self):
+
+    def query_interest_points(self):
         """
-        Return the geometric centers of the hexgrid as a query object
+        Return interest points where interest points are
+            the geometric centroids of the hexgrid as a query object
         """
 
         with self.open_session() as session:
-            return session.query(self.table.ogc_fid, 
+            return session.query(
+                                 'hexgrid_' + cast(self.table.ogc_fid, String(4)).label('id'), 
                                  func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
-                                 func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"))
+                                 func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
+                                 self.table.wkb_geometry.label('geom'))
 
 
     def get_interest_points(self, start_date, end_date):
@@ -32,7 +35,7 @@ class HexGrid(StaticTableConnector):
         Interest points are the geometric centroids of the geoms in the hexgrid table
         """
         
-        df = pd.read_sql(self.__geom_centroids.statement, self.engine)
+        df = pd.read_sql(self.geom_centroids.statement, self.engine)
 
         time_range = pd.date_range(start_date, end_date, freq='H')
         # timestamps = [str(x) for x in time_range]

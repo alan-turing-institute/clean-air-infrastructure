@@ -5,7 +5,7 @@ Get data from the LAQN network via the API maintained by Kings College London:
 import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
-from sqlalchemy import func
+from sqlalchemy import func, text
 from datetime import datetime
 import pandas as pd 
 import calendar
@@ -105,10 +105,26 @@ class LAQNDatabase(Updater):
                            filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
 
 
-    def __get_interest_points_query(self, boundary_geom, start_date, end_date):
-        """Return an sqlalchemy query object with filters laqn readings 
-        that are within a boundary geometry and taken between a start_date and end_date. 
-        Adds the latitude and longitude to each reading
+    def query_interest_points(self, boundary_geom):
+        """
+        Return interest points where interest points are
+            the locations of laqn sites
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query('laqn_' + laqn_tables.LAQNSite.SiteCode.label('id'), 
+                                 laqn_tables.LAQNSite.Latitude.label("lat"),
+                                 laqn_tables.LAQNSite.Longitude.label("lon"), 
+                                 laqn_tables.LAQNSite.geom.label('geom')
+                                 ).filter(laqn_tables.LAQNSite.geom.\
+                                        ST_Intersects(boundary_geom)) 
+
+
+    def __query_interest_points(self, boundary_geom):
+        """
+        Return interest points where interest points are
+            the locations of laqn sites
         """
 
         with self.dbcnxn.open_session() as session:

@@ -2,7 +2,7 @@ import sys
 sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/docker/')
 
 from datasources import LondonBoundary, LAQNDatabase, HexGrid
-from datasources.databases import  laqn_tables
+from datasources.databases import  laqn_tables, Connector
 from geoalchemy2.types import WKBElement
 from geoalchemy2.shape import to_shape
 import matplotlib.pyplot as plt
@@ -16,21 +16,32 @@ if __name__ == '__main__':
     london_boundary = LondonBoundary(secretfile = '.db_inputs_local_secret.json')
     hex_grid = HexGrid(secretfile = '.db_inputs_local_secret.json')
     
-    
+    conn = Connector(secretfile = '.db_inputs_local_secret.json')
     ## Feature Extraction
 
     # Set the dates to extract features between
     start_date = '2019-01-01'
     end_date = '2019-01-02'
 
-    # Get interest points
-    hex_interest_points = hex_grid.get_interest_points(start_date, end_date)
-    laqn_interest_points = laqn.get_interest_points(london_boundary.convex_hull, start_date, end_date)
+    hex_interest_points = hex_grid.query_interest_points()
+    laqn_interest_points = laqn.query_interest_points(london_boundary.convex_hull)
     
 
-    # # Get the points just within that site
-    # sites_within_boundary = laqndb.get_sites_within_geom(lb.convex_hull)
+    all_interest_points = hex_interest_points.union(laqn_interest_points)
 
+    # # Get interest points
+    # hex_interest_points = hex_grid.get_interest_points(start_date, end_date)
+    # laqn_interest_points = laqn.get_interest_points(london_boundary.convex_hull, start_date, end_date)
+    
+    # with conn.open_session() as session:
+    #     print(session.query(laqn_tables.LAQNReading).all())
+    
+    # interest_points = pd.concat([hex_interest_points, laqn_interest_points])
+   
+   
+    # # # Get the points just within that site
+    # sites_within_boundary = laqn.get_sites_within_geom(london_boundary.convex_hull)
+    # hex_grid_locs = hex_grid.geom_centroids
 
 
     # convexhull = lb.convex_hull
