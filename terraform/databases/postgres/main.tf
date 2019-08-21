@@ -123,19 +123,3 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
-# Write output files
-# ------------------
-data "template_file" "database_secrets" {
-  template = "${file("${path.module}/templates/db_secrets.template.json")}"
-  vars = {
-    db_host     = "${azurerm_postgresql_server.this.name}"
-    db_name     = "${azurerm_postgresql_database.this.name}"
-    db_username = "${azurerm_postgresql_server.this.administrator_login}"
-    db_password = "${azurerm_key_vault_secret.db_admin_password.value}"
-  }
-}
-
-resource "local_file" "database_secrets_file" {
-  sensitive_content = "${data.template_file.database_secrets.rendered}"
-  filename          = "${path.cwd}/.secrets/.db_${lower("${var.db_name}")}_secret.json"
-}
