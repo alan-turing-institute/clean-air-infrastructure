@@ -35,7 +35,7 @@ class LAQNDatabase(Updater):
         except (TypeError, KeyError):
             return None
 
-    def request_site_readings(self, site_code, start_date, end_date):
+    def request_site_readings(self, start_date, end_date, site_code):
         """
         Request all readings for {site_code} between {start_date} and {end_date}
         Remove duplicates and add the site_code
@@ -85,7 +85,7 @@ class LAQNDatabase(Updater):
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_available_readings(site_info_query)
+            site_readings = self.get_readings_by_site(site_info_query)
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes

@@ -14,8 +14,5 @@ if __name__ == "__main__":
 
     scootdb = datasources.ScootDatabase(**vars(args))
 
-    # Update the laqn_sites database table
-    scootdb.update_site_list_table()
-
-    # Update data in laqn reading table
+    # Update data in scoot reading table
     scootdb.update_reading_table()

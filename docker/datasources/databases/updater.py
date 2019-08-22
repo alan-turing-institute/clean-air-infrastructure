@@ -10,7 +10,7 @@ class Updater():
         self.dbcnxn = Connector(*args, **kwargs)
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
-    def get_available_readings(self, site_list_query):
+    def get_readings_by_site(self, site_list_query):
         # Restrict to sites which were open during the requested time period
         site_availabilities = [self.api.get_available_datetimes(site) for site in site_list_query]
         sites_with_data = [(site, *dates) for site, dates in zip(site_list_query, site_availabilities) if dates]
@@ -23,7 +23,7 @@ class Updater():
             self.logger.info("Attempting to download data for %s between %s and %s",
                              green(site.SiteCode), green(start_date), green(end_date))
 
-            response = self.request_site_readings(site.SiteCode, start_date, end_date)
+            response = self.request_site_readings(start_date, end_date, site_code=site.SiteCode)
             if response:
                 site_readings += response
         return site_readings
@@ -32,10 +32,9 @@ class Updater():
         """Request all sites. Remove any that do not have an opening date."""
         raise NotImplementedError("Must be implemented by child classes")
 
-    def request_site_readings(self, site_code, start_date, end_date):
+    def request_site_readings(self, start_date, end_date, **kwargs):
         """
-        Request all readings for {site_code} between {start_date} and {end_date}.
-        Remove duplicates and add the site_code.
+        Request all readings between {start_date} and {end_date}, removing duplicates.
         """
         raise NotImplementedError("Must be implemented by child classes")
 

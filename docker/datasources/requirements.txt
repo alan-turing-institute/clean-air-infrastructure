@@ -1,7 +1,10 @@
 boto3
 colorlog
 geoalchemy2
+pandas
 psycopg2
+python-dateutil
+pytz
 requests
 sqlalchemy
 termcolor
