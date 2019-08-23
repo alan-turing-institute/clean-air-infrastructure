@@ -75,7 +75,7 @@ class LAQNDatabase(Updater):
 
     def update_reading_table(self):
         """Update the database with new sensor readings."""
-        self.logger.info("Starting LAQN readings update...")
+        self.logger.info("Starting %s readings update...", green("LAQN"))
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
@@ -89,5 +89,8 @@ class LAQNDatabase(Updater):
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
+            self.logger.info("Committing %s records to database table %s",
+                            green(len(site_readings)),
+                            green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
+        self.logger.info("Finished %s readings update...", green("LAQN"))

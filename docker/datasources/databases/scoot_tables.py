@@ -13,7 +13,8 @@ class ScootReading(Base):
     DetectorID = Column(String(9), primary_key=True, nullable=False) # DETSCN
     Region = Column(String(5), primary_key=True, nullable=False) # REGION
     DetectorFault = Column(Boolean) # DET
-    FlowThisMinute = Column(DOUBLE_PRECISION) # FLOW_ACTUAL / 60
+    FlowThisInterval = Column(Integer) # FLOW_ACTUAL / 60
+    IntervalMinutes = Column(Integer)
     OccupancyPercentage = Column(DOUBLE_PRECISION) # OCCU_ACTUAL
     CongestionPercentage = Column(DOUBLE_PRECISION) # CONG_ACTUAL
     SaturationPercentage = Column(DOUBLE_PRECISION) # SATU_ACTUAL

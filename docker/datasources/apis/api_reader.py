@@ -12,6 +12,8 @@ class APIReader():
         # Set the date range
         if end == "today":
             self.end_date = datetime.datetime.today().date()
+        elif end == "yesterday":
+            self.end_date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
         else:
             self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
         self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))

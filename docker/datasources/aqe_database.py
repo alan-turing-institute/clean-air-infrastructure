@@ -80,7 +80,7 @@ class AQEDatabase(Updater):
 
     def update_reading_table(self):
         """"Update the database with new sensor readings."""
-        self.logger.info("Starting AQE readings update...")
+        self.logger.info("Starting %s readings update...", green("AQE"))
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
@@ -94,5 +94,8 @@ class AQEDatabase(Updater):
             session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQEReading.__tablename__))
+            self.logger.info("Committing %s records to database table %s",
+                            green(len(site_readings)),
+                            green(aqe_tables.AQEReading.__tablename__))
             session.commit()
+        self.logger.info("Finished %s readings update...", green("AQE"))
