@@ -48,26 +48,118 @@ class StaticDatabase():
                         "-nln", self.table_name] + extra_args)
 
     def configure_tables(self):
+        """Tidy up the databases by doing the following:
+
+        Adding an index on the geometry column
+        Dropping (some) duplicate rows
+        Dropping duplicate/unnecessary columns
+        Converting some column types
+        Adding a primary key
+        """
         self.logger.info("Configuring database table: %s", green(self.table_name))
         sql_code = None
 
-        if self.data_directory == "ukmap":
-            sql_code = """CREATE INDEX ukmap_gix ON ukmap USING GIST(shape);"""
-
-        elif self.data_directory == "canyonslondon":
-            sql_code = """CREATE INDEX canyonslondon_gix ON canyonslondon USING GIST(wkb_geometry);"""
-
-        elif self.data_directory == "oshighwayroadlink":
-            sql_code = """CREATE INDEX oshighwayroadlink_gix ON oshighwayroadlink USING GIST(wkb_geometry);"""
+        if self.data_directory == "canyonslondon":
+            sql_code = """CREATE INDEX canyonslondon_gix ON canyonslondon USING GIST(wkb_geometry);
+                          ALTER TABLE canyonslondon
+                              DROP COLUMN ave_relhma,
+                              DROP COLUMN identifier,
+                              DROP COLUMN identifi_2,
+                              DROP COLUMN length,
+                              DROP COLUMN min_length,
+                              DROP COLUMN max_length,
+                              DROP COLUMN objectid_1,
+                              DROP COLUMN objectid_2,
+                              DROP COLUMN objectid,
+                              DROP COLUMN ogc_fid,
+                              DROP COLUMN shape_le_1,
+                              DROP COLUMN sum_length,
+                              DROP COLUMN sum_shape_;
+                          ALTER TABLE canyonslondon
+                              ALTER fictitious TYPE bool
+                              USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;
+                          ALTER TABLE canyonslondon ADD PRIMARY KEY (toid);"""
 
         elif self.data_directory == "glahexgrid":
-            sql_code = """CREATE INDEX glahexgrid_gix ON glahexgrid USING GIST(wkb_geometry);"""
+            sql_code = """CREATE INDEX glahexgrid_gix ON glahexgrid USING GIST(wkb_geometry);
+                          ALTER TABLE glahexgrid
+                              DROP COLUMN col_id,
+                              DROP COLUMN ogc_fid,
+                              DROP COLUMN row_id;
+                          ALTER TABLE glahexgrid ADD PRIMARY KEY (hex_id);"""
+
+        elif self.data_directory == "londonboundary":
+            sql_code = """CREATE INDEX londonboundary_gix ON londonboundary USING GIST(wkb_geometry);
+                          ALTER TABLE londonboundary
+                              DROP COLUMN ogc_fid,
+                              DROP COLUMN sub_2006,
+                              DROP COLUMN sub_2009;
+                          ALTER TABLE londonboundary
+                              ALTER ons_inner TYPE bool
+                              USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;
+                          ALTER TABLE londonboundary ADD PRIMARY KEY (gss_code);"""
+
+        elif self.data_directory == "oshighwayroadlink":
+            sql_code = """CREATE INDEX oshighwayroadlink_gix ON oshighwayroadlink USING GIST(wkb_geometry);
+                          ALTER TABLE oshighwayroadlink
+                              DROP COLUMN cyclefacil,
+                              DROP COLUMN elevatio_1,
+                              DROP COLUMN elevationg,
+                              DROP COLUMN identifi_1,
+                              DROP COLUMN identifier,
+                              DROP COLUMN ogc_fid,
+                              DROP COLUMN roadstruct,
+                              DROP COLUMN roadwidtha,
+                              DROP COLUMN roadwidthm;
+                          ALTER TABLE oshighwayroadlink
+                              ALTER fictitious TYPE bool
+                              USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;
+                          ALTER TABLE oshighwayroadlink ADD PRIMARY KEY (toid);"""
 
         elif self.data_directory == "scootdetectors":
-            sql_code = """CREATE INDEX scootdetectors_gix ON scootdetectors USING GIST(wkb_geometry);"""
+            sql_code = """CREATE INDEX scootdetectors_gix ON scootdetectors USING GIST(wkb_geometry);
+                          DELETE FROM scootdetectors WHERE ogc_fid NOT IN
+                              (SELECT DISTINCT ON (detector_n) ogc_fid FROM scootdetectors);
+                          ALTER TABLE scootdetectors
+                              DROP COLUMN dataset,
+                              DROP COLUMN docname,
+                              DROP COLUMN docpath,
+                              DROP COLUMN loop_type,
+                              DROP COLUMN objectid,
+                              DROP COLUMN ogc_fid,
+                              DROP COLUMN unique_id;
+                          ALTER TABLE scootdetectors ADD PRIMARY KEY (detector_n);"""
+
+        elif self.data_directory == "ukmap.gdb":
+            sql_code = """CREATE INDEX ukmap_gix ON ukmap USING GIST(shape);
+                          ALTER TABLE ukmap
+                              DROP COLUMN geographic_entity_type,
+                              DROP COLUMN calcaulated_height_of_building;
+                          ALTER TABLE ukmap
+                              RENAME COLUMN altertative_style_code TO alternative_style_code;
+                          ALTER TABLE ukmap
+                              RENAME COLUMN catrographic_display_angle TO cartographic_display_angle;
+                          ALTER TABLE ukmap
+                              ALTER alternative_style_code TYPE int,
+                              ALTER blpu_number TYPE int,
+                              ALTER calculated_height_of_building TYPE float,
+                              ALTER cartographic_annotation_point TYPE int,
+                              ALTER cartographic_display_angle TYPE int,
+                              ALTER date_of_feature_edit TYPE int,
+                              ALTER geographic_type_number TYPE int,
+                              ALTER height_of_base_of_building TYPE float,
+                              ALTER height_of_top_of_building TYPE float,
+                              ALTER number_end_of_range TYPE int,
+                              ALTER primary_number TYPE int,
+                              ALTER retail_classification_code TYPE int,
+                              ALTER secondary_number TYPE int,
+                              ALTER source_of_height_data TYPE int;
+                          ALTER TABLE ukmap ADD PRIMARY KEY (objectid);"""
 
         if sql_code:
-            self.logger.info("Running SQL code: %s", green(sql_code))
+            self.logger.info("Running SQL code:")
+            for line in sql_code.split("\n"):
+                self.logger.info(green(line.strip()))
             with self.dbcnxn.engine.connect() as conn:
                 conn.execute(sql_code)
 

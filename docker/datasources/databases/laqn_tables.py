@@ -12,8 +12,6 @@ class LAQNSite(Base):
     SiteCode = Column(String(4), primary_key=True, nullable=False)
     la_id = Column(Integer, nullable=False)
     SiteType = Column(String(20), nullable=False)
-    os_grid_x = Column(DOUBLE_PRECISION)
-    os_grid_y = Column(DOUBLE_PRECISION)
     Latitude = Column(DOUBLE_PRECISION)
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP, nullable=False)
