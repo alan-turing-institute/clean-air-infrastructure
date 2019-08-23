@@ -4,11 +4,15 @@ FROM python:3
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the datasources directory contents into the container
-COPY datasources /app/datasources
+# Copy the requirements file into the container
+# -> this reduces rebuilding by separating code changes from dependency changes
+COPY datasources/requirements.txt /app/requirements.txt
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org -r datasources/requirements.txt
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
+
+# Copy the datasources directory contents into the container
+COPY datasources /app/datasources
 
 # Copy the run script into the container
 COPY entrypoints/update_aqe_database.py /app
