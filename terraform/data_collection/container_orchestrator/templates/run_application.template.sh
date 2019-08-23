@@ -42,7 +42,7 @@ for datasource in "aqe" "laqn"; do
     az container create --cpu 1 \
                         --environment-variables NO_TEXT_COLOUR=1 \
                         --image ${registry_server}/$datasource:$latest_commit_hash \
-                        --memory 1 \
+                        --memory 8 \
                         --name $datasource-instance \
                         --registry-password "$registry_password" \
                         --registry-username "$registry_username" \
