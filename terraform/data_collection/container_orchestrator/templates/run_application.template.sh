@@ -21,19 +21,32 @@ db_server_name=$(az keyvault secret show --vault-name ${key_vault_name} --name $
 echo "... db_admin_username: $db_admin_username"
 echo "... db_server_name:    $db_server_name"
 
+# Retrieve the database details from the key vault
+echo "Retrieving the database details from Azure..."
+scoot_aws_key_id=$(az keyvault secret show --vault-name ${key_vault_name} --name ${scoot_aws_key_id_keyname} --query "value" -o tsv)
+scoot_aws_key=$(az keyvault secret show --vault-name ${key_vault_name} --name ${scoot_aws_key_keyname} --query "value" -o tsv)
+
+
 # Log in to the container repository
 echo "Logging in to the Azure Container Repository..."
 az acr login --name $registry_username
 
 # Get database secrets
 database_secrets="{
-                        \"host\": \"$db_server_name.postgres.database.azure.com\",
-                        \"port\": 5432,
-                        \"db_name\": \"${db_name}\",
-                        \"username\": \"$db_admin_username@$db_server_name\",
-                        \"password\": \"$db_admin_password\",
-                        \"ssl_mode\": \"require\"
+    \"host\": \"$db_server_name.postgres.database.azure.com\",
+    \"port\": 5432,
+    \"db_name\": \"${db_name}\",
+    \"username\": \"$db_admin_username@$db_server_name\",
+    \"password\": \"$db_admin_password\",
+    \"ssl_mode\": \"require\"
 }"
+
+# Get AWS secrets
+aws_secrets="{
+    \"aws_key_id\": \"$scoot_aws_key_id\",
+    \"aws_key\": \"$scoot_aws_key\"
+}"
+
 
 # Run the containers
 echo "Running the container instances..."
@@ -48,6 +61,6 @@ for datasource in "aqe" "laqn"; do
                         --registry-username "$registry_username" \
                         --resource-group ${resource_group} \
                         --restart-policy OnFailure \
-                        --secrets .db_inputs_secret.json="$database_secrets" \
+                        --secrets db_secrets.json="$database_secrets" aws_secrets.json="$aws_secrets" \
                         --secrets-mount-path /secrets
 done

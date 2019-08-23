@@ -133,12 +133,10 @@ class StaticDatabase():
         elif self.data_directory == "ukmap.gdb":
             sql_code = """CREATE INDEX ukmap_gix ON ukmap USING GIST(shape);
                           ALTER TABLE ukmap
-                              DROP COLUMN geographic_entity_type,
-                              DROP COLUMN calcaulated_height_of_building;
-                          ALTER TABLE ukmap
-                              RENAME COLUMN altertative_style_code TO alternative_style_code;
-                          ALTER TABLE ukmap
-                              RENAME COLUMN catrographic_display_angle TO cartographic_display_angle;
+                              DROP COLUMN calcaulated_height_of_building,
+                              DROP COLUMN geographic_entity_type;
+                          ALTER TABLE ukmap RENAME COLUMN altertative_style_code TO alternative_style_code;
+                          ALTER TABLE ukmap RENAME COLUMN catrographic_display_angle TO cartographic_display_angle;
                           ALTER TABLE ukmap
                               ALTER alternative_style_code TYPE int,
                               ALTER blpu_number TYPE int,

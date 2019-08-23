@@ -11,7 +11,7 @@ class ScootReading(Base):
     __tablename__ = "scoot_readings"
     MeasurementDateUTC = Column(TIMESTAMP, primary_key=True, nullable=False) # TIMESTAMP
     DetectorID = Column(String(9), primary_key=True, nullable=False) # DETSCN
-    Region = Column(String(5), primary_key=True, nullable=False) # REGION
+    Region = Column(String(5)) # REGION
     DetectorFault = Column(Boolean) # DET
     FlowThisInterval = Column(Integer) # FLOW_ACTUAL / 60
     IntervalMinutes = Column(Integer)
@@ -26,11 +26,3 @@ class ScootReading(Base):
 
 def initialise(engine):
     Base.metadata.create_all(engine)
-
-
-def build_reading_entry(reading_dict):
-    """
-    Create a ScootReading entry
-    """
-    # Construct the record and return it
-    return ScootReading(**reading_dict)

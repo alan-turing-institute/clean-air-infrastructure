@@ -108,12 +108,13 @@ travis login --pro
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 
-To enable this, we have to create an initial `Terraform` configuration by running:
+To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```
-python initialise_terraform.py
+python setup/initialise_terraform.py <AWS_KEY_ID> <AWS_KEY>
 ```
 
+Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 

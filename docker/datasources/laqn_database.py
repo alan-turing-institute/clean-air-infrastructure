@@ -5,12 +5,16 @@ Get data from the LAQN network via the API maintained by Kings College London:
 import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
+from .apis import APIReader
 
 
 class LAQNDatabase(Updater):
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
+
+        # Add an API reader
+        self.api = APIReader(**kwargs)
 
         # Ensure that tables exist
         laqn_tables.initialise(self.dbcnxn.engine)
@@ -85,7 +89,7 @@ class LAQNDatabase(Updater):
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_readings_by_site(site_info_query)
+            site_readings = self.api.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
@@ -94,3 +98,8 @@ class LAQNDatabase(Updater):
                             green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update...", green("LAQN"))
+
+    def update_remote_tables(self):
+        """Update all relevant tables on the remote database"""
+        self.update_site_list_table()
+        self.update_reading_table()

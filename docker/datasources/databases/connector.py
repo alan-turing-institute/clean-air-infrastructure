@@ -54,14 +54,15 @@ class Connector():
         return self._engine
 
     @contextmanager
-    def open_session(self):
+    def open_session(self, skip_check=False):
         """
         Create a session as a context manager which will thereby self-close
         """
         try:
             # Use the engine to create a new session
             session = sessionmaker(bind=self.engine)()
-            self.check_internet_connection()
+            if not skip_check:
+                self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError):
             # Rollback database interactions if there is a problem

@@ -110,10 +110,11 @@ def upload_static_data(dataset, secrets_directory, data_directory):
 
     # Log in to the registry
     client = docker.DockerClient()
-    client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
+    # client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
 
     # Construct Docker arguments
-    image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
+    # image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
+    image = "static:test"
     local_path = os.path.join(data_directory, dataset_to_directory[dataset])
     remote_path = dataset + ".gdb" if local_path.endswith(".gdb") else dataset
     mounts = {
@@ -147,7 +148,8 @@ def main():
     args = parser.parse_args()
 
     # List of available datasets
-    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
+    # datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
+    datasets = ["ukmap"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)

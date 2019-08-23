@@ -14,3 +14,11 @@ output "azure_group_id" {
   description = "ID of a group containing all accounts that will be allowed to access the infrastructure"
   value       = "35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c"
 }
+output "scoot_aws_key_id" {
+  description = "AWS key ID for accessing TfL SCOOT data"
+  value       = "AKIA3TRZKGMASFDQB63G"
+}
+output "scoot_aws_key" {
+  description = "AWS key for accessing TfL SCOOT data"
+  value       = "183WJJUMVKjyqs4sq9vBUL9Q0aXHkKo1CP5ozfYi"
+}

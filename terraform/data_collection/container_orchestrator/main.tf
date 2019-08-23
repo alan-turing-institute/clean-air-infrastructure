@@ -74,6 +74,8 @@ data "template_file" "run_application" {
     registry_admin_username_keyname = "${var.infrastructure.containers.admin_username_keyname}"
     registry_server                 = "${var.infrastructure.containers.server_name}"
     resource_group                  = "${var.resource_group}"
+    scoot_aws_key_id_keyname        = "${var.infrastructure.key_vault.scoot_aws_key_id_keyname}"
+    scoot_aws_key_keyname           = "${var.infrastructure.key_vault.scoot_aws_key_keyname}"
   }
 }
 # :: cloud-init config file
