@@ -3,11 +3,13 @@ from .laqn_database import LAQNDatabase
 from .static_database import StaticDatabase
 from .london_boundary_database import LondonBoundary
 from .hex_grid_database import HexGrid
+from .ukmap import UKMap
 
 __all__ = [
     "AQEDatabase",
     "LAQNDatabase",
     "StaticDatabase",
     "LondonBoundary",
-    "HexGrid"
+    "HexGrid",
+    "UKMap"
 ]

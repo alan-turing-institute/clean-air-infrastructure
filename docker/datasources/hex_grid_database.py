@@ -22,7 +22,7 @@ class HexGrid(StaticTableConnector):
 
         with self.open_session() as session:
             return session.query(
-                                 'hexgrid_' + cast(self.table.ogc_fid, String(4)).label('id'), 
+                                 ('hexgrid_' + cast(self.table.ogc_fid, String(4))).label('id'), 
                                  func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
                                  func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
                                  func.ST_Centroid(self.table.wkb_geometry).label('geom'))

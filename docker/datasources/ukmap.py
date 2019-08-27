@@ -1,14 +1,14 @@
 from .databases import Updater, StaticTableConnector
 from sqlalchemy import func
 
-class LondonBoundary(StaticTableConnector):
+class UKMap(StaticTableConnector):
 
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('london_boundary')
+        self.table = self.get_table_instance('ukmap')
 
     @property
     def convex_hull(self):
@@ -18,7 +18,3 @@ class LondonBoundary(StaticTableConnector):
 
         with self.open_session() as session:
             return session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
-
-    def query_all(self):
-        with self.open_session() as session:
-            return session.query(self.table)

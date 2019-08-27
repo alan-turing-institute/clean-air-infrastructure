@@ -113,7 +113,7 @@ class LAQNDatabase(Updater):
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query('laqn_' + laqn_tables.LAQNSite.SiteCode.label('id'), 
+            return session.query(('laqn_' + laqn_tables.LAQNSite.SiteCode).label('id'), 
                                  laqn_tables.LAQNSite.Latitude.label("lat"),
                                  laqn_tables.LAQNSite.Longitude.label("lon"), 
                                  laqn_tables.LAQNSite.geom.label('geom')
