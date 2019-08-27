@@ -1,5 +1,6 @@
 azure
 azure-cli-core
+azure-keyvault
 colorlog
 docker
 geoalchemy2

@@ -1,24 +1,49 @@
+# Read SCOOT AWS keys from the configuration key vault and expose them as outputs
+# :: subscription ID
+data "external" "subscription_id" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "subscription-id", "--query", "{value: value}"]
+}
 output "subscription_id" {
   description = "ID of the Azure subscription to deploy into"
-  value       = "45a2ea24-e10c-4c35-b172-4b956deffbf2"
+  value       = "${data.external.subscription_id.result.value}"
+}
+# :: tenant ID
+data "external" "tenant_id" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "tenant-id", "--query", "{value: value}"]
 }
 output "tenant_id" {
   description = "ID of a tenant with appropriate permissions to create infrastructure"
-  value       = "4395f4a7-e455-4f95-8a9f-1fbaef6384f9"
+  value       = "${data.external.tenant_id.result.value}"
+}
+# :: location
+data "external" "location" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "location", "--query", "{value: value}"]
 }
 output "location" {
   description = "Name of the Azure location to build in"
-  value       = "uksouth"
+  value       = "${data.external.location.result.value}"
+}
+# :: Azure group ID
+data "external" "azure_group_id" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "azure-group-id", "--query", "{value: value}"]
 }
 output "azure_group_id" {
   description = "ID of a group containing all accounts that will be allowed to access the infrastructure"
-  value       = "35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c"
+  value       = "${data.external.azure_group_id.result.value}"
 }
-output "scoot_aws_key_id" {
-  description = "AWS key ID for accessing TfL SCOOT data"
-  value       = "AKIA3TRZKGMASFDQB63G"
+# :: SCOOT AWS key
+data "external" "scoot_aws_key" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "scoot-aws-key", "--query", "{value: value}"]
 }
 output "scoot_aws_key" {
   description = "AWS key for accessing TfL SCOOT data"
-  value       = "183WJJUMVKjyqs4sq9vBUL9Q0aXHkKo1CP5ozfYi"
+  value       = "${data.external.scoot_aws_key.result.value}"
+}
+# :: SCOOT AWS key ID
+data "external" "scoot_aws_key_id" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "scoot-aws-key-id", "--query", "{value: value}"]
+}
+output "scoot_aws_key_id" {
+  description = "AWS key ID for accessing TfL SCOOT data"
+  value       = "${data.external.scoot_aws_key_id.result.value}"
 }
