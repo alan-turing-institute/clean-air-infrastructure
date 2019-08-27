@@ -160,7 +160,7 @@ The live datasets (like LAQN or AQE) are populated using daily jobs that create 
 We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
-- Run `python get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
+- Run `python setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 - In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
 - Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
 
@@ -180,7 +180,7 @@ We will do this manually, using a Docker image from the Azure container registry
 Running the command
 
 ```
-python insert_static_datasets.py
+python setup/insert_static_datasets.py
 ```
 
 will download the static datasets to temporary local storage and then upload them to the database.
