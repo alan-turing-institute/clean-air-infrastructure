@@ -5,7 +5,7 @@ Get data from the LAQN network via the API maintained by Kings College London:
 import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
-from sqlalchemy import func, text
+from sqlalchemy import func, text, and_
 from datetime import datetime
 import pandas as pd 
 import calendar
@@ -95,73 +95,96 @@ class LAQNDatabase(Updater):
             self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
 
-    def __get_sites_within_geom(self, boundary_geom):
-        """
-        Return all the sites that fall within a geometry object
-        """
-        with self.dbcnxn.open_session() as session:
-
-            return session.query(laqn_tables.LAQNSite).\
-                           filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
-
-
-    def query_interest_points(self, boundary_geom):
+    def __query_interest_points(self, boundary_geom, include_sites = None):
         """
         Return interest points where interest points are
-            the locations of laqn sites
+            the locations of laqn sites.
+        Keyword arguments:
+            include_sites -- A list of SiteCodes to include. If None then gets all
+    
         """
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(('laqn_' + laqn_tables.LAQNSite.SiteCode).label('id'), 
+            result = session.query(
+                                 (laqn_tables.LAQNSite.SiteCode).label('id'), 
                                  laqn_tables.LAQNSite.Latitude.label("lat"),
                                  laqn_tables.LAQNSite.Longitude.label("lon"), 
                                  laqn_tables.LAQNSite.geom.label('geom')
-                                 ).filter(laqn_tables.LAQNSite.geom.\
-                                        ST_Intersects(boundary_geom)) 
+                                )
+                                
+            if not include_sites:
+                return result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
+            
+            else:
+                return result.filter(and_(
+                                          laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
+                                          laqn_tables.LAQNSite.SiteCode.in_(include_sites))
+                                         )
 
-    def __query_interest_points(self, boundary_geom):
+
+    def query_interest_point_buffers(self, buffer_sizes, boundary_geom, include_sites = None):
         """
-        Return interest points where interest points are
-            the locations of laqn sites
+        Return a set of buffers of size buffer_sizes around interest points
+
+        arguments:
+            interest_point_query -- A query object returned by the query_interest_points method
+            buffer_sizes- A list of buffer sizes
         """
 
+        interest_point_query = self.__query_interest_points(boundary_geom, include_sites).subquery()
+
+        query_funcs = [func.ST_Buffer(interest_point_query.c.geom, size).label('buffer_' + str(size)) for size in buffer_sizes]
+       
         with self.dbcnxn.open_session() as session:
+            return session.query(interest_point_query.c.id, 
+                                 interest_point_query.c.lat,
+                                 interest_point_query.c.lon,            
+                                 *query_funcs)
 
-            return session.query(laqn_tables.LAQNReading, laqn_tables.LAQNSite.Latitude, laqn_tables.LAQNSite.Longitude).\
-                                join(laqn_tables.LAQNSite).\
-                                filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom)).\
-                                filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) <= datetime.strptime(end_date, '%Y-%m-%d')).\
-                                filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) >= datetime.strptime(start_date, '%Y-%m-%d'))
 
-    def get_interest_points(self, boundary_geom, start_date, end_date):
-        """
-        Return a pandas dataframe of interest points in time
-        (between the start date and end date) and space (lat/lon)
-        Interest points are the locations of LAQN sensors within the london boundary at each time that a reading was captured
-        """
+#     def __query_interest_points(self, boundary_geom):
+#         """
+#         Return interest points where interest points are
+#             the locations of laqn sites
+#         """
 
-        interest_point_query = self.__get_interest_points_query(boundary_geom, start_date, end_date)
+#         with self.dbcnxn.open_session() as session:
 
-        # Get query results in pandas dataframe
-        df = pd.read_sql(interest_point_query.statement, self.dbcnxn.engine)
+#             return session.query(laqn_tables.LAQNReading, laqn_tables.LAQNSite.Latitude, laqn_tables.LAQNSite.Longitude).\
+#                                 join(laqn_tables.LAQNSite).\
+#                                 filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom)).\
+#                                 filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) <= datetime.strptime(end_date, '%Y-%m-%d')).\
+#                                 filter(func.date(laqn_tables.LAQNReading.MeasurementDateGMT) >= datetime.strptime(start_date, '%Y-%m-%d'))
 
-        # Add and rename columns
-        df['epoch'] = df['MeasurementDateGMT'].apply(lambda x: calendar.timegm(x.timetuple()))
-        df['src'] = 'laqn'
+#     def get_interest_points(self, boundary_geom, start_date, end_date):
+#         """
+#         Return a pandas dataframe of interest points in time
+#         (between the start date and end date) and space (lat/lon)
+#         Interest points are the locations of LAQN sensors within the london boundary at each time that a reading was captured
+#         """
 
-        # Get the columns of interest
-        df_subset = df[['src', 'SiteCode', 'MeasurementDateGMT', 'epoch', 'Latitude', 'Longitude']].copy()
+#         interest_point_query = self.__get_interest_points_query(boundary_geom, start_date, end_date)
+
+#         # Get query results in pandas dataframe
+#         df = pd.read_sql(interest_point_query.statement, self.dbcnxn.engine)
+
+#         # Add and rename columns
+#         df['epoch'] = df['MeasurementDateGMT'].apply(lambda x: calendar.timegm(x.timetuple()))
+#         df['src'] = 'laqn'
+
+#         # Get the columns of interest
+#         df_subset = df[['src', 'SiteCode', 'MeasurementDateGMT', 'epoch', 'Latitude', 'Longitude']].copy()
         
-        # Rename columns
-        df_subset.rename(columns={'MeasurementDateGMT': 'datetime',
-                                  'SiteCode': 'id', 
-                                  'Latitude': 'lat',
-                                  'Longitude': 'lon'}, inplace=True)
+#         # Rename columns
+#         df_subset.rename(columns={'MeasurementDateGMT': 'datetime',
+#                                   'SiteCode': 'id', 
+#                                   'Latitude': 'lat',
+#                                   'Longitude': 'lon'}, inplace=True)
 
-        # Drop duplicate rows
-        return df_subset.drop_duplicates().sort_values(['id', 'datetime'])
+#         # Drop duplicate rows
+#         return df_subset.drop_duplicates().sort_values(['id', 'datetime'])
 
 
-# column_names = ['src', 'id', 'datetime', 'epoch', 'lat', 'lon']
-# column_types = [np.int, np.int, np.str, np.int, np.float64, np.float64]
+# # column_names = ['src', 'id', 'datetime', 'epoch', 'lat', 'lon']
+# # column_types = [np.int, np.int, np.str, np.int, np.float64, np.float64]
