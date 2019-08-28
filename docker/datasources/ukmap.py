@@ -20,6 +20,9 @@ class UKMap(StaticTableConnector):
             return session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
 
     def query_buffer_intersection(self, buffer_query, buffer_col):
+        """
+        Gets the intersection between buffers and the ukmap geoms
+        """
 
         buffer_query = buffer_query.subquery()
 
@@ -40,9 +43,7 @@ class UKMap(StaticTableConnector):
                                 func.ST_Intersects(self.table.shape, buffer_query.c[buffer_col])
                                 ))
 
-    def __compose_function(self, f1, f2):
 
-        return lambda x: func.coalesce(f1(f2(x)), 0.0)
 
     def __query_features(self, buffer_intersection_subquery, feature_func, func_label):
 

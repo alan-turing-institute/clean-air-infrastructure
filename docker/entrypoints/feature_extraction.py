@@ -28,17 +28,25 @@ if __name__ == '__main__':
     
 
     # Get interest points
-    laqn_buffers = laqn.query_interest_point_buffers([0.001], london_boundary.convex_hull, include_sites=None)
+    laqn_buffers = laqn.query_interest_point_buffers([0.001], london_boundary.convex_hull, include_sites=["ST4", "LC1", "BT4"])
     laqn_buffers_df = geopandas.GeoDataFrame.from_postgis(laqn_buffers.statement, 
                                                           conn.engine, 
                                                           geom_col='buffer_0.001')
     
-
+    # Get intersection between ukmap features and laqn buffers
     ukmap_buffer_intersection = ukmap.query_buffer_intersection(laqn_buffers, 'buffer_0.001')
 
-    generator = ukmap.query_features(ukmap_buffer_intersection)
-    gen = list(generator)
 
+\
+    map_q = ukmap.query_features(ukmap_buffer_intersection)
+    gen = list(map_q)
+
+    buff_sub = laqn_buffers.subquery()
+    map_sub = gen[2].subquery()
+   
+    with conn.open_session() as session:
+
+        out = session.query(buff_sub.c.id, buff_sub.c.lat, buff_sub.c.lon, func.coalesce(map_sub.c.total_grass_area, 0.0)).outerjoin(map_sub, map_sub.c.id == buff_sub.c.id)
 
 
     # ukmap_buffer_intersection_df = geopandas.GeoDataFrame.from_postgis(ukmap_buffer_intersection.statement, 
