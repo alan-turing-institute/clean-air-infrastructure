@@ -53,6 +53,8 @@ class Connector():
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine
 
+    # connect_args={"options": "-c statement_timeout=1000"}
+
     @contextmanager
     def open_session(self, skip_check=False):
         """

@@ -4,7 +4,6 @@ FROM osgeo/gdal:ubuntu-full-latest
 # Install jq for parsing json files
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
-    jq \
     libpq-dev \
     python3 \
     python3-pip
@@ -30,5 +29,3 @@ COPY entrypoints/upload_static_dataset.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python3", "upload_static_dataset.py"]
-
-# ENTRYPOINT ["/bin/bash", "/app/insert_gdb_file_to_postGIS.sh"]
