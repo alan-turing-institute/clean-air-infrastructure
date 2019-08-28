@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+"""
+Setup initial Azure infrastructure used by Terraform
+"""
 import argparse
 import logging
 import os
@@ -155,7 +157,8 @@ def parsed_arguments():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
+    """Setup initial Azure infrastructure used by Terraform"""
     # Set up logging
     logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
                         datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
@@ -164,3 +167,7 @@ if __name__ == "__main__":
 
     # Build the backend
     build_backend(parsed_arguments())
+
+
+if __name__ == "__main__":
+    main()

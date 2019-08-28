@@ -1,12 +1,17 @@
 azure
 azure-cli-core
 azure-keyvault
+boto3
 colorlog
 docker
 geoalchemy2
+pandas
+psycopg2-binary
 pycodestyle
 pyflakes
 pylint
+python-dateutil
+pytz
 requests
 sqlalchemy
 termcolor

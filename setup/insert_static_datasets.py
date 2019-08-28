@@ -9,21 +9,16 @@ import subprocess
 import tempfile
 import zipfile
 import termcolor
+import docker
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlockBlobService
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
-import docker
-
-
-# Set up logging
-logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-logging.getLogger("adal-python").setLevel(logging.WARNING)
-logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 def emphasised(text):
+    """Emphasise text"""
     return termcolor.colored(text, "cyan")
 
 
@@ -136,6 +131,13 @@ def upload_static_data(dataset, secrets_directory, data_directory):
 
 
 def main():
+    """Insert static datasets into the database"""
+    # Set up logging
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
+    logging.getLogger("adal-python").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
+
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Download static datasets")
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
