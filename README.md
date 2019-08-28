@@ -26,7 +26,7 @@ If you have not already installed the command line interface for `Azure`, please
 You can install the `Azure` Python SDK with `pip` using:
 
 ```
-pip install -r docker/requirements.txt
+pip install -r containers/requirements.txt
 ```
 
 
