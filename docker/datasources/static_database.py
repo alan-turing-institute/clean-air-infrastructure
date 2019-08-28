@@ -61,7 +61,7 @@ class StaticDatabase():
 
         if self.data_directory == "canyonslondon":
             sql_code = """
-            DROP INDEX IF EXISTS canyonslondon_gix ON canyonslondon;
+            DROP INDEX IF EXISTS canyonslondon_gix;
             CREATE INDEX canyonslondon_gix ON canyonslondon USING GIST(wkb_geometry);
             ALTER TABLE canyonslondon
                 DROP COLUMN ave_relhma,
@@ -85,7 +85,7 @@ class StaticDatabase():
 
         elif self.data_directory == "glahexgrid":
             sql_code = """
-            DROP INDEX IF EXISTS glahexgrid_gix ON glahexgrid;
+            DROP INDEX IF EXISTS glahexgrid_gix;
             CREATE INDEX glahexgrid_gix ON glahexgrid USING GIST(wkb_geometry);
             ALTER TABLE glahexgrid
                 DROP COLUMN col_id,
@@ -96,7 +96,7 @@ class StaticDatabase():
 
         elif self.data_directory == "londonboundary":
             sql_code = """
-            DROP INDEX IF EXISTS londonboundary_gix ON londonboundary;
+            DROP INDEX IF EXISTS londonboundary_gix;
             CREATE INDEX londonboundary_gix ON londonboundary USING GIST(wkb_geometry);
             ALTER TABLE londonboundary
                 DROP COLUMN ogc_fid,
@@ -110,7 +110,7 @@ class StaticDatabase():
 
         elif self.data_directory == "oshighwayroadlink":
             sql_code = """
-            DROP INDEX IF EXISTS oshighwayroadlink_gix ON oshighwayroadlink;
+            DROP INDEX IF EXISTS oshighwayroadlink_gix;
             CREATE INDEX oshighwayroadlink_gix ON oshighwayroadlink USING GIST(wkb_geometry);
             ALTER TABLE oshighwayroadlink
                 DROP COLUMN cyclefacil,
@@ -130,7 +130,7 @@ class StaticDatabase():
 
         elif self.data_directory == "scootdetectors":
             sql_code = """
-            DROP INDEX IF EXISTS scootdetectors_gix ON scootdetectors;
+            DROP INDEX IF EXISTS scootdetectors_gix;
             CREATE INDEX scootdetectors_gix ON scootdetectors USING GIST(wkb_geometry);
             DELETE FROM scootdetectors WHERE ogc_fid NOT IN
                 (SELECT DISTINCT ON (detector_n) ogc_fid FROM scootdetectors);
