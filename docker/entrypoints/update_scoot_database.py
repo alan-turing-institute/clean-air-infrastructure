@@ -3,10 +3,12 @@ import json
 import os
 import datasources
 
-if __name__ == "__main__":
+
+def main():
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get Scoot traffic data")
-    parser.add_argument("-e", "--end", type=str, default="yesterday", help="The last date (YYYY-MM-DD) to get data for.")
+    parser.add_argument("-e", "--end", type=str, default="yesterday",
+                        help="The last date (YYYY-MM-DD) to get data for.")
     parser.add_argument("-i", "--aws-key-id", type=str, default="", help="AWS key ID for accessing TfL SCOOT data.")
     parser.add_argument("-k", "--aws-key", type=str, default="", help="AWS key for accessing TfL SCOOT data.")
     parser.add_argument("-n", "--ndays", type=int, default=1, help="The number of days to request data for.")
@@ -31,3 +33,7 @@ if __name__ == "__main__":
 
     # Update the Scoot readings table on the database
     scootdb.update_remote_tables()
+
+
+if __name__ == "__main__":
+    main()

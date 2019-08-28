@@ -9,22 +9,6 @@ class APIReader():
         # Set up logging
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
-        # # Set the date range
-        # if end == "today":
-        #     self.end_date = datetime.datetime.today().date()
-        # elif end == "yesterday":
-        #     self.end_date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
-        # else:
-        #     self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
-        # self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
-        # self.start_time = "00:00:00"
-        # self.end_time = "23:59:59"
-
-        # # Log an introductory message
-        # self.logger.info("Requesting data between the following times:")
-        # self.logger.info("... %s on %s", bold(self.start_time), bold(self.start_date))
-        # self.logger.info("... %s on %s", bold(self.end_time), bold(self.end_date))
-
     def get_readings_by_site(self, site_list_query, start_date, end_date):
         # Restrict to sites which were open during the requested time period
         site_availabilities = [self.get_available_datetimes(site, start_date, end_date) for site in site_list_query]
@@ -34,15 +18,13 @@ class APIReader():
 
         # Get all readings for each site between its start and end dates
         site_readings = []
-        for site, start_date, end_date in sites_with_data:
+        for site, available_start_date, available_end_date in sites_with_data:
             self.logger.info("Attempting to download data for %s between %s and %s",
-                             green(site.SiteCode), green(start_date), green(end_date))
-
-            response = self.request_site_readings(start_date, end_date, site_code=site.SiteCode)
+                             green(site.SiteCode), green(available_start_date), green(available_end_date))
+            response = self.request_site_readings(available_start_date, available_end_date, site_code=site.SiteCode)
             if response:
                 site_readings += response
         return site_readings
-
 
     def request_site_readings(self, start_date, end_date, **kwargs):
         """
@@ -50,8 +32,8 @@ class APIReader():
         """
         raise NotImplementedError("Must be implemented by child classes")
 
-
-    def get_available_datetimes(self, site, start_date, end_date):
+    @staticmethod
+    def get_available_datetimes(site, start_date, end_date):
         """
         Get the dates that data is available for a site between start_date and end_date
         If no data is available between these dates returns None

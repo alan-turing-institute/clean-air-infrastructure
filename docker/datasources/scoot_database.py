@@ -4,18 +4,17 @@ Get data from the Scoot traffic detector network via the S3 bucket maintained by
 """
 import datetime
 import os
+import time
 import boto3
 import botocore
 import pandas
 import pytz
 from dateutil import rrule
 from sqlalchemy import Table
+from sqlalchemy.exc import IntegrityError
 from .databases import Updater, scoot_tables
 from .loggers import green
-# from psycopg2.errors import UniqueViolation
-import time
 
-from sqlalchemy.exc import IntegrityError
 
 class ScootDatabase(Updater):
     def __init__(self, *args, **kwargs):
@@ -59,8 +58,7 @@ class ScootDatabase(Updater):
         file_list = []
         for date in rrule.rrule(rrule.DAILY, dtstart=self.start_date, until=self.end_date):
             year, month, day = date.strftime(r"%Y-%m-%d").split("-")
-            for minute in [str(h).zfill(2)+str(m).zfill(2) for h in range(24) for m in range(60)]:
-            # for minute in [str(h).zfill(2)+str(m).zfill(2) for h in range(1) for m in range(60)]:
+            for minute in [str(h).zfill(2) + str(m).zfill(2) for h in range(24) for m in range(60)]:
                 csv_name = "{y}{m}{d}-{id}.csv".format(y=year, m=month, d=day, id=minute)
                 file_list.append(("Control/TIMSScoot/{y}/{m}/{d}".format(y=year, m=month, d=day), csv_name))
                 if len(file_list) == self.aggregation_size:
@@ -69,27 +67,28 @@ class ScootDatabase(Updater):
         if file_list:
             yield file_list
 
-    def aggregate(self, input_dfs):
+    @staticmethod
+    def aggregate(input_dfs):
         """Aggregate measurements across several minutes"""
         # Combine batch into one dataframe then
         df_combined = pandas.concat(input_dfs, ignore_index=True)
         # Group by DetectorID: each column has its own combination rule
         return df_combined.groupby(["DetectorID"]).agg(
-                         {
-                             "Timestamp": lambda x: int(sum(x) / len(x)),
-                             "DetectorID": "first",
-                             "DetectorFault": any,
-                             "FlowThisInterval": "sum",
-                             "IntervalMinutes": "sum",
-                             "OccupancyPercentage": "mean",
-                             "CongestionPercentage": "mean",
-                             "SaturationPercentage": "mean",
-                             "FlowRawCount": "sum",
-                             "OccupancyRawCount": "sum",
-                             "CongestionRawCount": "sum",
-                             "SaturationRawCount": "count",
-                             "Region": "first",
-                        })
+            {
+                "Timestamp": lambda x: int(sum(x) / len(x)),
+                "DetectorID": "first",
+                "DetectorFault": any,
+                "FlowThisInterval": "sum",
+                "IntervalMinutes": "sum",
+                "OccupancyPercentage": "mean",
+                "CongestionPercentage": "mean",
+                "SaturationPercentage": "mean",
+                "FlowRawCount": "sum",
+                "OccupancyRawCount": "sum",
+                "CongestionRawCount": "sum",
+                "SaturationRawCount": "count",
+                "Region": "first",
+            })
 
     def aggregate_detector_readings(self, filebatch):
         """Request all readings between {start_date} and {end_date}, removing duplicates."""
@@ -116,12 +115,12 @@ class ScootDatabase(Updater):
                                      filename)
                 # Read the CSV files into a dataframe
                 scoot_df = pandas.read_csv(filename, names=self.csv_columns, skipinitialspace=True,
-                                       converters={
-                                           "Timestamp": to_unix,
-                                           "FlowThisInterval": lambda x: float(x) / 60,
-                                           "DetectorFault": lambda x: x.strip() == "Y",
-                                           "Region": lambda x: x.strip(),
-                                       })
+                                           converters={
+                                               "Timestamp": to_unix,
+                                               "FlowThisInterval": lambda x: float(x) / 60,
+                                               "DetectorFault": lambda x: x.strip() == "Y",
+                                               "Region": lambda x: x.strip(),
+                                           })
                 # Remove any sites that are not in our site database
                 scoot_df = scoot_df[scoot_df["DetectorID"].isin(self.detector_ids)]
                 # Set the interval to one minute and append to list of readings
@@ -160,7 +159,7 @@ class ScootDatabase(Updater):
 
         # Load readings from AWS
         self.logger.info("Requesting readings from %s for %s sites",
-                            green("TfL AWS storage"), green(len(self.detector_ids)))
+                         green("TfL AWS storage"), green(len(self.detector_ids)))
 
         initial = time.time()
 
@@ -190,8 +189,8 @@ class ScootDatabase(Updater):
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
-                            green(n_records),
-                            green(scoot_tables.ScootReading.__tablename__))
+                             green(n_records),
+                             green(scoot_tables.ScootReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update", green("Scoot"))
         self.logger.debug("Full DB interaction took %s minutes", (time.time() - initial) / 60.)

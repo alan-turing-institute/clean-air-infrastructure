@@ -25,25 +25,6 @@ class Updater():
         self.logger.info("... %s on %s", green(self.start_time), green(self.start_date))
         self.logger.info("... %s on %s", green(self.end_time), green(self.end_date))
 
-
-    # def request_site_entries(self):
-    #     """Request all sites. Remove any that do not have an opening date."""
-    #     raise NotImplementedError("Must be implemented by child classes")
-
-    # def request_site_readings(self, start_date, end_date, **kwargs):
-    #     """
-    #     Request all readings between {start_date} and {end_date}, removing duplicates.
-    #     """
-    #     raise NotImplementedError("Must be implemented by child classes")
-
-    # def update_site_list_table(self):
-    #     """Update the database with new sites."""
-    #     raise NotImplementedError("Must be implemented by child classes")
-
-    # def update_reading_table(self):
-    #     """Update the database with new sensor readings."""
-    #     raise NotImplementedError("Must be implemented by child classes")
-
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
         raise NotImplementedError("Must be implemented by child classes")

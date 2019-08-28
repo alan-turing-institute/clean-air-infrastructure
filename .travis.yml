@@ -8,13 +8,13 @@ script:
   # - python -m pytest -v tests --cov misinformation --cov-report term-missing
 
   # Run pyflakes for error detection
-  - pyflakes *.py docker #tests
+  - pyflakes setup docker #tests
 
   # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count *.py docker #tests
+  - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count setup docker #tests
 
   # Run pylint for stricter error checking
-  - pylint *.py docker --disable=R0801,F0010 #tests
+  - pylint setup/* docker/* --disable=R0801 #tests
 
   # Build all docker images
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/update_aqe_database.Dockerfile docker/.

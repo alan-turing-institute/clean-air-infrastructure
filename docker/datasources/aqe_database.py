@@ -97,8 +97,8 @@ class AQEDatabase(Updater):
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
-                            green(len(site_readings)),
-                            green(aqe_tables.AQEReading.__tablename__))
+                             green(len(site_readings)),
+                             green(aqe_tables.AQEReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update...", green("AQE"))
 

@@ -1,7 +1,8 @@
 import argparse
 import datasources
 
-if __name__ == "__main__":
+
+def main():
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get LAQN sensor data")
     parser.add_argument("-e", "--end", type=str, default="today", help="The last date (YYYY-MM-DD) to get data for.")
@@ -17,3 +18,6 @@ if __name__ == "__main__":
     # Update the LAQN tables on the database
     laqndb.update_remote_tables()
 
+
+if __name__ == "__main__":
+    main()
