@@ -14,7 +14,7 @@ script:
   - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count setup docker #tests
 
   # Run pylint for stricter error checking
-  - pylint setup/* docker/* --disable=R0801 #tests
+  - pylint setup/* docker/* --disable=R0801,E0401 #tests
 
   # Build all docker images
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f docker/dockerfiles/update_aqe_database.Dockerfile docker/.

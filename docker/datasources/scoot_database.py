@@ -5,13 +5,13 @@ Get data from the Scoot traffic detector network via the S3 bucket maintained by
 import datetime
 import os
 import time
+from dateutil import rrule
+from sqlalchemy import Table
+from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
 import pytz
-from dateutil import rrule
-from sqlalchemy import Table
-from sqlalchemy.exc import IntegrityError
 from .databases import Updater, scoot_tables
 from .loggers import green
 

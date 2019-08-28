@@ -155,6 +155,22 @@ Either push to the GitHub repository, or rerun the last build by going to https:
 This will build all of the Docker images and add them to the registry.
 
 
+## Add static datasets
+Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
+We will do this manually, using a Docker image from the Azure container registry.
+
+**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
+
+From the root directory, running the command
+
+```
+python setup/insert_static_datasets.py
+```
+
+will download the static datasets to temporary local storage and then upload them to the database.
+The process takes approximately 1hr (most of this is for the UKMap data) and you must have internet connectivity throughout.
+
+
 ## Adding live datasets
 The live datasets (like LAQN or AQE) are populated using daily jobs that create an Azure container instance and add the most recent data to the database.
 We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
@@ -169,22 +185,6 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
 - Select `Let me select individual events` and tick `Pull requests` only
-
-
-## Add static datasets
-Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
-We will do this manually, using a Docker image from the Azure container registry.
-
-**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
-
-Running the command
-
-```
-python setup/insert_static_datasets.py
-```
-
-will download the static datasets to temporary local storage and then upload them to the database.
-The process takes approximately 1hr and you must have internet connectivity throughout.
 
 
 
