@@ -6,6 +6,7 @@ import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
 from sqlalchemy import func, text, and_
+from geoalchemy2 import Geography, Geometry
 from datetime import datetime
 import pandas as pd 
 import calendar
@@ -131,8 +132,10 @@ class LAQNDatabase(Updater):
 
         interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
 
-        query_funcs = [func.ST_Buffer(interest_point_query.c.geom, size).label('buffer_' + str(size)) for size in buffer_sizes]
-       
+        # Cast geometry to geography to create buffers so radius can be specified in meters (https://postgis.net/workshops/postgis-intro/geography.html)
+        
+        query_funcs = [interest_point_query.c.geom.cast(Geography).ST_Buffer(size, 1000).cast(Geometry).label('buffer_' + str(size)) for size in buffer_sizes]
+        
         with self.dbcnxn.open_session() as session:
             return session.query(interest_point_query.c.id, 
                                  interest_point_query.c.lat,
