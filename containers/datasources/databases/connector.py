@@ -48,7 +48,7 @@ class Connector():
         """
         if not self._engine:
             cnxn_str = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info)
-            self._engine = create_engine(cnxn_str)
+            self._engine = create_engine(cnxn_str, pool_recycle=280)
             with self._engine.connect() as conn:
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine

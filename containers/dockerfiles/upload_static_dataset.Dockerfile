@@ -1,10 +1,19 @@
 # Use an Ubuntu image with GDAL
 FROM osgeo/gdal:ubuntu-full-latest
 
-# Install jq for parsing json files
+# # Install jq for parsing json files
+# ENV DEBIAN_FRONTEND=noninteractive
+# RUN apt-get update && apt-get install -y \
+#     apt-transport-https \
+#     libpq-dev \
+#     postgresql \
+#     python3 \
+#     python3-pip
+
+# Install psql, python and pip
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    libpq-dev \
+    postgresql \
     python3 \
     python3-pip
 
@@ -16,7 +25,7 @@ WORKDIR /app
 
 # Copy the requirements file into the container
 # -> this reduces rebuilding by separating code changes from dependency changes
-COPY datasources/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 
 # Install any needed packages specified in requirements.txt
 RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
