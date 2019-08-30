@@ -26,7 +26,6 @@ class StaticDatabase():
         except FileNotFoundError:
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
-        self.table_name += "4"
 
         # Ensure that that the table exists and get the connection string
         _ = self.dbcnxn.engine
