@@ -31,10 +31,11 @@ if __name__ == '__main__':
     
 
     # Process interest points
-    buffer_size = 0.01
+    # buffer_size = 0.01
+    buffer_size = 1000
     laqn_buffers = laqn.query_interest_point_buffers([buffer_size], 
                                                      london_boundary.convex_hull, 
-                                                     include_sites=["ST4", "LC1", "BT4"], 
+                                                     include_sites=None,
                                                      num_seg_quarter_circle = 8)
 
     # laqn_buffers_df = pd.read_sql(laqn_buffers.statement, 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
                                                           laqn.dbcnxn.engine, 
                                                           geom_col='buffer_' + str(buffer_size))
     laqn.logger.info("Finish execution")
-    print(laqn_buffers_df)
+
     # # # s = laqn_buffers.subquery()
     # # # with laqn.dbcnxn.open_session() as session:
     # # #     q = session.query(s.c['buffer_' + str(buffer_size)].cast(Geography).ST_Area().label('geom'))
@@ -60,9 +61,13 @@ if __name__ == '__main__':
 
     # # # Process features (Really slow)
     ukmap_features = ukmap.query_features(laqn_buffers, 'buffer_' + str(buffer_size))
+    # print(ukmap_features.statement)
+
 
     laqn.logger.info("Starting executions")
     ukmap_features_df = pd.read_sql(ukmap_features.statement, ukmap.engine)
     laqn.logger.info("Finish execution")
-    # print(ukmap_features_df)
+    print(ukmap_features_df)
     # plt.show()
+
+    

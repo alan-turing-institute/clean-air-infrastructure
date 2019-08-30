@@ -49,7 +49,7 @@ class Connector():
     def get_connection(cls, cnxn_str):
 
         if cnxn_str not in cls.connections:
-            engine = create_engine(cnxn_str, echo = True)
+            engine = create_engine(cnxn_str)
             Session = sessionmaker(bind=engine)
             cls.connections[cnxn_str] = {'engine': engine, 'Session': Session}
             return cls.connections[cnxn_str]
