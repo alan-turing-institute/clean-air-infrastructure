@@ -9,12 +9,16 @@ from ..loggers import get_logger, green, red
 
 
 class Connector():
+
+    connections = {}
+
     def __init__(self, secretfile, **kwargs):
         # Set up logging
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
         self.connection_info = self.load_connection_info(secretfile)
         self._engine = None
+        self._Session = None
 
     def load_connection_info(self, secret_file):
         """
@@ -41,14 +45,28 @@ class Connector():
 
         raise FileNotFoundError("Database secrets could not be loaded from {}".format(secret_file))
 
+    @classmethod
+    def get_connection(cls, cnxn_str):
+
+        if cnxn_str not in cls.connections:
+            engine = create_engine(cnxn_str, echo = True)
+            Session = sessionmaker(bind=engine)
+            cls.connections[cnxn_str] = {'engine': engine, 'Session': Session}
+            return cls.connections[cnxn_str]
+        else:
+            return cls.connections[cnxn_str]
+    
     @property
     def engine(self):
         """
         Create an SQLAlchemy engine
         """
+
         if not self._engine:
             cnxn_str = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info)
-            self._engine = create_engine(cnxn_str)
+            connection = self.get_connection(cnxn_str)
+            self._engine = connection['engine']
+            self._Session = connection['Session']
             with self._engine.connect() as conn:
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine
@@ -60,7 +78,7 @@ class Connector():
         """
         try:
             # Use the engine to create a new session
-            session = sessionmaker(bind=self.engine)()
+            session = self._Session()
             # self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError):
