@@ -158,6 +158,7 @@ This will build all of the Docker images and add them to the registry.
 ## Add static datasets
 Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
 We will do this manually, using a Docker image from the Azure container registry.
+Please note that you may need to increase the available memory under `Docker > Preferences... > Advanced` (the following instructions were tested using 8 GB).
 
 **NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
 

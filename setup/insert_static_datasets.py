@@ -117,7 +117,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
     }
 
     # Run the job, parsing log messages and re-logging them
-    container = client.containers.run(image, volumes=mounts, stdout=True, stderr=True, detach=True, mem_limit="8g")
+    container = client.containers.run(image, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
     for line in container.logs(stream=True):
         line = line.decode("utf-8")
         try:
@@ -128,6 +128,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         if not msg:
             msg = line
         getattr(logging, lvl.lower())(msg.strip())
+    logging.info("Finished uploading %s data", emphasised(dataset))
 
 
 def main():

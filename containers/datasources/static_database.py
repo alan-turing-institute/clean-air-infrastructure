@@ -26,7 +26,7 @@ class StaticDatabase():
         except FileNotFoundError:
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
-        self.table_name += "5"
+        self.table_name += "4"
 
         # Ensure that that the table exists and get the connection string
         _ = self.dbcnxn.engine
@@ -42,9 +42,10 @@ class StaticDatabase():
 
         # Preprocess the UKMap data, keeping only useful columns
         if self.data_directory == "ukmap.gdb":
-            extra_args += ["-dialect", "OGRSQL",
+            extra_args += ["-lco", "FID=geographic_type_number",
+                           "-dialect", "OGRSQL",
                            "-sql", "SELECT " + ", ".join([
-                                "CAST(geographic_type_number AS integer)",
+                                "CAST(geographic_type_number AS integer) AS geographic_type_number",
                                 # NB. The next command is a single string split across mulitple lines for readability
                                 "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-',"
                                              "SUBSTR(date_of_feature_edit, -4, 2), '-',"
@@ -195,8 +196,6 @@ class StaticDatabase():
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx ON ukmap USING GIST(shape);""",
-                """ALTER TABLE ukmap DROP COLUMN ogc_fid;""",
-                """ALTER TABLE ukmap ADD PRIMARY KEY (geographic_type_number);""",
             ]
 
         for sql_command in sql_commands:
@@ -208,11 +207,4 @@ class StaticDatabase():
                     conn.execute(sql_command)
                 except OperationalError:
                     self.logger.warning("Database connection lost while running statement.")
-            # # Run using psql since this is more reliable than the SQLAlchemy connection
-            # subprocess.run(["psql",
-            #                 "-h", self.dbcnxn.connection_info["host"],
-            #                 "-d", self.dbcnxn.connection_info["db_name"],
-            #                 "-U", self.dbcnxn.connection_info["username"],
-            #                 "-p", str(self.dbcnxn.connection_info["port"]),
-            #                 "-c", sql_command], env={"PGPASSWORD": self.dbcnxn.connection_info["password"]})
         self.logger.info("Finished database configuration")
