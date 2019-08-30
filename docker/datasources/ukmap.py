@@ -10,15 +10,6 @@ class UKMap(StaticTableConnector):
         # Reflect the table
         self.table = self.get_table_instance('ukmap')
 
-    @property
-    def convex_hull(self):
-        """
-        Return the convex hull of the London Boundary as a query object
-        """
-
-        with self.open_session() as session:
-            return session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
-
     def __query_buffer_intersection(self, buffer_query, buffer_col):
         """
         Gets the intersection between buffers and the ukmap geoms
@@ -27,8 +18,7 @@ class UKMap(StaticTableConnector):
         buffer_query = buffer_query.subquery()
 
         with self.open_session() as session:
-
-            return session.query(
+            out =  session.query(
                                 buffer_query.c.id,
                                 buffer_query.c.lat,
                                 buffer_query.c.lon,
@@ -36,32 +26,36 @@ class UKMap(StaticTableConnector):
                                 self.table.landuse,
                                 self.table.calcaulated_height_of_building,
                                 func.ST_Intersection(func.ST_MakeValid(self.table.shape), 
-                                                     buffer_query.c[buffer_col]).label("intersection") 
+                                                        buffer_query.c[buffer_col]).label("intersection") 
                                 ).\
                             filter(and_(
                                 func.ST_GeometryType(func.ST_MakeValid(self.table.shape))=='ST_MultiPolygon', 
                                 func.ST_Intersects(self.table.shape, buffer_query.c[buffer_col])
                                 ))
-
+                                
+            return out
 
 
     def __subquery_features(self, buffer_intersection_subquery, feature_func, filter_func):
 
         with self.open_session() as session:
-
-            return session.query(
+            out = session.query(
                             buffer_intersection_subquery.c.id,
                             feature_func.label('aggregate')
                             ).\
                         filter(filter_func).\
                                 group_by(buffer_intersection_subquery.c.id, 
-                                         buffer_intersection_subquery.c.lat,
-                                         buffer_intersection_subquery.c.lon).subquery()
+                                            buffer_intersection_subquery.c.lat,
+                                            buffer_intersection_subquery.c.lon).subquery()
+
+            return out
 
     def query_features(self, buffer_query, buffer_col):
 
+
         # Get buffer intersections
         buffer_intersection_query = self.__query_buffer_intersection(buffer_query, buffer_col).subquery()
+        
 
         # Compose functions 
         sum_area = lambda x: func.sum(func.ST_Area(x))
@@ -83,9 +77,7 @@ class UKMap(StaticTableConnector):
        
 
         buffers_subquery = buffer_query.subquery()
-
         with self.open_session() as session:
-
             out = session.query(buffers_subquery.c.id, 
                                 buffers_subquery.c.lat, 
                                 buffers_subquery.c.lon, 
@@ -106,25 +98,3 @@ class UKMap(StaticTableConnector):
                                     outerjoin(max_building_height, max_building_height.c.id == buffers_subquery.c.id)
                                     
             return out
-
-
-
-        # all_out = []
-        # # Iterate over functions
-        # for key, value in feature_functions.items():
-
-        #     all_out.append( self.__query_features(buffer_intersection_query, value, key) )
-
-       
-
-
-        # return feature_functions
-        # generated_columns = [
-        #     ['total_museum_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.landuse='Museum')"],
-        #     ['total_hospital_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.landuse='Hospitals')"],
-        #     ['total_grass_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.feature_type='Vegetated')"],
-        #     ['total_park_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.landuse='Park' or buffer.landuse='Recreational open space')"],
-        #     ['total_water_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.feature_type='Water')"],
-        #     ['total_flat_area', "sum(ST_Area(buffer.intersected_geom)) filter (where buffer.feature_type='Vegetated' or buffer.feature_type='Water')"],
-        #     ['max_building_height', "max(cast(buffer.calcaulated_height_of_building as float))"],
-        # ]

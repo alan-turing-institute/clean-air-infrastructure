@@ -113,31 +113,37 @@ class LAQNDatabase(Updater):
                                  laqn_tables.LAQNSite.Longitude.label("lon"), 
                                  laqn_tables.LAQNSite.geom.label('geom')
                                 )
-                                
+                    
             if not include_sites:
-                return result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
+                filtered_result = result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
             
             else:
-                return result.filter(and_(
+                filtered_result = result.filter(and_(
                                           laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
                                           laqn_tables.LAQNSite.SiteCode.in_(include_sites))
                                          )
+        return filtered_result
 
 
-    def query_interest_point_buffers(self, buffer_sizes, boundary_geom, include_sites = None):
+    def query_interest_point_buffers(self, buffer_sizes, boundary_geom, include_sites = None, num_seg_quarter_circle = 8):
         """
         Return a set of buffers of size buffer_sizes around the interest points 
         returned by self.query_interest_points
         """
 
         interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
+        
 
         # Cast geometry to geography to create buffers so radius can be specified in meters (https://postgis.net/workshops/postgis-intro/geography.html)
         
-        query_funcs = [interest_point_query.c.geom.cast(Geography).ST_Buffer(size, 1000).cast(Geometry).label('buffer_' + str(size)) for size in buffer_sizes]
+        # query_funcs = [interest_point_query.c.geom.cast(Geography).ST_Buffer(size, num_seg_quarter_circle).cast(Geometry).label('buffer_' + str(size)) for size in buffer_sizes]
+        query_funcs = [interest_point_query.c.geom.ST_Buffer(size, num_seg_quarter_circle).label('buffer_' + str(size)) for size in buffer_sizes]
         
+
         with self.dbcnxn.open_session() as session:
-            return session.query(interest_point_query.c.id, 
-                                 interest_point_query.c.lat,
-                                 interest_point_query.c.lon,            
-                                 *query_funcs)
+            out = session.query(interest_point_query.c.id, 
+                                    interest_point_query.c.lat,
+                                    interest_point_query.c.lon,            
+                                    *query_funcs)
+
+        return out

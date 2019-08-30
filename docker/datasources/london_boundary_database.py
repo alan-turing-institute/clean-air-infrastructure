@@ -21,4 +21,5 @@ class LondonBoundary(StaticTableConnector):
 
     def query_all(self):
         with self.open_session() as session:
-            return session.query(self.table)
+            out = session.query(self.table)
+            return out
