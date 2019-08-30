@@ -1,5 +1,8 @@
 language: python
 
+install:
+  - pip install -r containers/requirements.txt
+
 services:
   - docker
 
