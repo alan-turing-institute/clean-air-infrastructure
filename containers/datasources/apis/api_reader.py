@@ -7,7 +7,8 @@ class APIReader():
     """Manage interactions with an external API"""
     def __init__(self, **kwargs):
         # Set up logging
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
     def get_readings_by_site(self, site_list_query, start_date, end_date):
         # Restrict to sites which were open during the requested time period

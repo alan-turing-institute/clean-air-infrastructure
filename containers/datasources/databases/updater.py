@@ -7,7 +7,8 @@ class Updater():
     """Manage interactions with the Azure databases"""
     def __init__(self, end, ndays, *args, **kwargs):
         self.dbcnxn = Connector(*args, **kwargs)
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
         # Set the date range
         if end == "today":
