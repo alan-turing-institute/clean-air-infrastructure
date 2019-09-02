@@ -164,9 +164,8 @@ class ScootDatabase(Updater):
         self.logger.info("Requesting readings from %s for %s sites",
                          green("TfL AWS storage"), green(len(self.detector_ids)))
 
-        initial = time.time()
-
         # Open a DB session
+        start_session = time.time()
         with self.dbcnxn.open_session() as session:
             n_records = 0
 
@@ -180,15 +179,15 @@ class ScootDatabase(Updater):
                 # In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html this does not seem
                 # to result in a speed-up, but it does provide regular check-points meaning that the final commit
                 # operation takes minutes rather than hours.
-                self.logger.debug("Adding %i record inserts to database session", len(site_readings))
-                start = time.time()
+                self.logger.info("Adding %i record inserts to database session", len(site_readings))
+                start_insert = time.time()
                 try:
                     session.bulk_insert_mappings(scoot_tables.ScootReading, site_readings)
                     n_records += len(site_readings)
                 except IntegrityError:
                     self.logger.error("Ignoring attempt to insert duplicate records!")
                     session.rollback()
-                self.logger.debug("Insertion took %s", time.time() - start)
+                self.logger.info("Insertion took %s", time.time() - start_insert)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
@@ -196,4 +195,4 @@ class ScootDatabase(Updater):
                              green(scoot_tables.ScootReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update", green("Scoot"))
-        self.logger.debug("Full DB interaction took %s minutes", (time.time() - initial) / 60.)
+        self.logger.info("Full database interaction took %s minutes", (time.time() - start_session) / 60.)
