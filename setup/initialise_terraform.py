@@ -103,8 +103,16 @@ def build_backend(args):
 
     # Write secrets to the key vault
     key_vault_client = get_client_from_cli_profile(KeyVaultClient)
-    key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
-    key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
+    if args.aws_key_id:
+        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
+    else:
+        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value:
+            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+    if args.aws_key:
+        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
+    else:
+        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value:
+            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
     key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
     key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
     key_vault_client.set_secret(vault.properties.vault_uri, "location", args.location)
@@ -142,14 +150,12 @@ def generate_new_storage_account(storage_mgmt_client, resource_group, location):
 def parsed_arguments():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
-    # Required arguments
-    parser.add_argument("aws_key_id", type=str, help="AWS key ID for accessing TfL SCOOT data.")
-    parser.add_argument("aws_key", type=str, help="AWS key for accessing TfL SCOOT data.")
-    # Optional arguments
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
                         help="ID of an Azure group containing all developers. Default is Turing's 'All Users' group.")
     parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND",
                         help="Resource group where the Terraform backend will be stored")
+    parser.add_argument("-i", "--aws-key-id", type=str, default=None, help="AWS key ID for accessing TfL SCOOT data.")
+    parser.add_argument("-k", "--aws-key", type=str, default=None, help="AWS key for accessing TfL SCOOT data.")
     parser.add_argument("-l", "--location", type=str, default="uksouth",
                         help="Azure datacentre where the Terraform backend will be stored")
     parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend",
