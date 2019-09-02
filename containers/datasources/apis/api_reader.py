@@ -26,7 +26,7 @@ class APIReader():
                 site_readings += response
         return site_readings
 
-    def request_site_readings(self, start_date, end_date, **kwargs):
+    def request_site_readings(self, start_date, end_date, site_code):
         """
         Request all readings between {start_date} and {end_date}, removing duplicates.
         """
