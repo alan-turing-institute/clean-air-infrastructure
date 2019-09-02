@@ -7,6 +7,7 @@ from xml.dom import minidom
 import requests
 from .databases import Updater, aqe_tables
 from .loggers import green
+from .apis import APIReader
 
 
 class AQEDatabase(Updater):
@@ -14,6 +15,9 @@ class AQEDatabase(Updater):
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
+
+        # Add an API reader
+        self.api = APIReader(**kwargs)
 
         # Ensure that tables exist
         aqe_tables.initialise(self.dbcnxn.engine)
@@ -35,7 +39,7 @@ class AQEDatabase(Updater):
         except (TypeError, KeyError):
             return None
 
-    def request_site_readings(self, site_code, start_date, end_date):
+    def request_site_readings(self, start_date, end_date, site_code):
         """
         Request all readings for {site_code} between {start_date} and {end_date}
         Remove duplicates and add the site_code
@@ -63,9 +67,7 @@ class AQEDatabase(Updater):
             return None
 
     def update_site_list_table(self):
-        """
-        Update the aqe_site table
-        """
+        """Update the aqe_site table"""
         self.logger.info("Starting AQE site list update...")
 
         # Open a DB session
@@ -80,7 +82,7 @@ class AQEDatabase(Updater):
 
     def update_reading_table(self):
         """"Update the database with new sensor readings."""
-        self.logger.info("Starting AQE readings update...")
+        self.logger.info("Starting %s readings update...", green("AQE"))
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
@@ -90,9 +92,17 @@ class AQEDatabase(Updater):
                              green("aeat.com API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_available_readings(site_info_query)
+            site_readings = self.api.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQEReading.__tablename__))
+            self.logger.info("Committing %s records to database table %s",
+                             green(len(site_readings)),
+                             green(aqe_tables.AQEReading.__tablename__))
             session.commit()
+        self.logger.info("Finished %s readings update...", green("AQE"))
+
+    def update_remote_tables(self):
+        """Update all relevant tables on the remote database"""
+        self.update_site_list_table()
+        self.update_reading_table()

@@ -48,20 +48,23 @@ class Connector():
         """
         if not self._engine:
             cnxn_str = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info)
-            self._engine = create_engine(cnxn_str)
+            self._engine = create_engine(cnxn_str, pool_recycle=280)
             with self._engine.connect() as conn:
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine
 
+    # connect_args={"options": "-c statement_timeout=1000"}
+
     @contextmanager
-    def open_session(self):
+    def open_session(self, skip_check=False):
         """
         Create a session as a context manager which will thereby self-close
         """
         try:
             # Use the engine to create a new session
             session = sessionmaker(bind=self.engine)()
-            self.check_internet_connection()
+            if not skip_check:
+                self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError):
             # Rollback database interactions if there is a problem

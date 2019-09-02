@@ -4,7 +4,6 @@
 # Terraform
 .terraform
 terraform/backend_config.tf
-terraform/configuration/
 *.tfstate
 *.tfstate.backup
 
@@ -12,10 +11,6 @@ terraform/configuration/
 .vscode/
 *.secrets/
 *.tgz
-
-# Static data files
-static_data_local/*
-!static_data_local/README.md
 
 # pyenv
 .python-version

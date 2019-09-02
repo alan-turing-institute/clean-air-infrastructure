@@ -37,3 +37,25 @@ resource "azurerm_key_vault_access_policy" "allow_group" {
     "list",
   ]
 }
+
+# Write SCOOT AWS secrets to the keyvault
+# ---------------------------------------
+resource "azurerm_key_vault_secret" "scoot_aws_key_id" {
+  name         = "scoot-aws-key-id"
+  value        = "${module.configuration.scoot_aws_key_id}"
+  key_vault_id = "${azurerm_key_vault.this.id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure / Key Vault"
+  }
+}
+# :: store the database admin name in the keyvault
+resource "azurerm_key_vault_secret" "scoot_aws_key" {
+  name         = "scoot-aws-key"
+  value        = "${module.configuration.scoot_aws_key}"
+  key_vault_id = "${azurerm_key_vault.this.id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Infrastructure / Key Vault"
+  }
+}

@@ -1,3 +1,6 @@
+"""
+Central management of logger settings
+"""
 import logging
 import os
 import colorlog

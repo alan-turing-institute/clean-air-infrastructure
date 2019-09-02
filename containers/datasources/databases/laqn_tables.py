@@ -12,8 +12,6 @@ class LAQNSite(Base):
     SiteCode = Column(String(4), primary_key=True, nullable=False)
     la_id = Column(Integer, nullable=False)
     SiteType = Column(String(20), nullable=False)
-    os_grid_x = Column(DOUBLE_PRECISION)
-    os_grid_y = Column(DOUBLE_PRECISION)
     Latitude = Column(DOUBLE_PRECISION)
     Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP, nullable=False)
@@ -31,12 +29,13 @@ class LAQNReading(Base):
 
 
 def initialise(engine):
+    """Ensure that all tables exist"""
     Base.metadata.create_all(engine)
 
 
 def build_site_entry(site_dict):
     """
-    Create an laqn_site entry, replacing empty strings with None
+    Create an LAQNSite entry, replacing empty strings with None
     """
     # Replace empty strings
     site_dict = {k: (v if v else None) for k, v in site_dict.items()}
@@ -59,7 +58,7 @@ def build_site_entry(site_dict):
 
 def build_reading_entry(reading_dict):
     """
-    Create an laqn_reading entry, replacing empty strings with None
+    Create an LAQNReading entry, replacing empty strings with None
     """
     # Replace empty strings
     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}

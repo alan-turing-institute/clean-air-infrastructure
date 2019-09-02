@@ -9,7 +9,6 @@ output "containers" {
 output "key_vault" {
   value = module.key_vault
 }
-
 output "resource_group_name" {
   value = "${azurerm_resource_group.this.name}"
 }

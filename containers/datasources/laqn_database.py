@@ -5,12 +5,16 @@ Get data from the LAQN network via the API maintained by Kings College London:
 import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
+from .apis import APIReader
 
 
 class LAQNDatabase(Updater):
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
+
+        # Add an API reader
+        self.api = APIReader(**kwargs)
 
         # Ensure that tables exist
         laqn_tables.initialise(self.dbcnxn.engine)
@@ -35,7 +39,7 @@ class LAQNDatabase(Updater):
         except (TypeError, KeyError):
             return None
 
-    def request_site_readings(self, site_code, start_date, end_date):
+    def request_site_readings(self, start_date, end_date, site_code):
         """
         Request all readings for {site_code} between {start_date} and {end_date}
         Remove duplicates and add the site_code
@@ -75,7 +79,7 @@ class LAQNDatabase(Updater):
 
     def update_reading_table(self):
         """Update the database with new sensor readings."""
-        self.logger.info("Starting LAQN readings update...")
+        self.logger.info("Starting %s readings update...", green("LAQN"))
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
@@ -85,9 +89,17 @@ class LAQNDatabase(Updater):
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_available_readings(site_info_query)
+            site_readings = self.api.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
-            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNReading.__tablename__))
+            self.logger.info("Committing %s records to database table %s",
+                             green(len(site_readings)),
+                             green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
+        self.logger.info("Finished %s readings update...", green("LAQN"))
+
+    def update_remote_tables(self):
+        """Update all relevant tables on the remote database"""
+        self.update_site_list_table()
+        self.update_reading_table()

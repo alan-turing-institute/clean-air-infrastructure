@@ -9,21 +9,16 @@ import subprocess
 import tempfile
 import zipfile
 import termcolor
+import docker
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlockBlobService
 from azure.keyvault import KeyVaultClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
-import docker
-
-
-# Set up logging
-logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-logging.getLogger("adal-python").setLevel(logging.WARNING)
-logging.getLogger("azure").setLevel(logging.WARNING)
 
 
 def emphasised(text):
+    """Emphasise text"""
     return termcolor.colored(text, "cyan")
 
 
@@ -95,6 +90,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         "glahexgrid": "Hex350_grid_GLA",
         "londonboundary": "ESRI",
         "oshighwayroadlink": "RoadLink",
+        "scootdetectors": "scoot_detectors",
         "ukmap": "UKMap.gdb",
     }
 
@@ -121,7 +117,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
     }
 
     # Run the job, parsing log messages and re-logging them
-    container = client.containers.run(image, volumes=mounts, stdout=True, stderr=True, detach=True)
+    container = client.containers.run(image, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
     for line in container.logs(stream=True):
         line = line.decode("utf-8")
         try:
@@ -132,9 +128,17 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         if not msg:
             msg = line
         getattr(logging, lvl.lower())(msg.strip())
+    logging.info("Finished uploading %s data", emphasised(dataset))
 
 
 def main():
+    """Insert static datasets into the database"""
+    # Set up logging
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
+    logging.getLogger("adal-python").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
+
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Download static datasets")
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
@@ -146,7 +150,7 @@ def main():
     args = parser.parse_args()
 
     # List of available datasets
-    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap"]
+    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)

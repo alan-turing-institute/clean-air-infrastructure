@@ -26,7 +26,7 @@ If you have not already installed the command line interface for `Azure`, please
 You can install the `Azure` Python SDK with `pip` using:
 
 ```
-pip install -r requirements.txt
+pip install -r containers/requirements.txt
 ```
 
 
@@ -108,12 +108,13 @@ travis login --pro
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 
-To enable this, we have to create an initial `Terraform` configuration by running:
+To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```
-python initialise_terraform.py
+python setup/initialise_terraform.py <AWS_KEY_ID> <AWS_KEY>
 ```
 
+Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
@@ -154,12 +155,29 @@ Either push to the GitHub repository, or rerun the last build by going to https:
 This will build all of the Docker images and add them to the registry.
 
 
+## Add static datasets
+Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
+We will do this manually, using a Docker image from the Azure container registry.
+Please note that you may need to increase the available memory under `Docker > Preferences... > Advanced` (the following instructions were tested using 8 GB).
+
+**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
+
+From the root directory, running the command
+
+```
+python setup/insert_static_datasets.py
+```
+
+will download the static datasets to temporary local storage and then upload them to the database.
+The process takes approximately 1hr (most of this is for the UKMap data) and you must have internet connectivity throughout.
+
+
 ## Adding live datasets
 The live datasets (like LAQN or AQE) are populated using daily jobs that create an Azure container instance and add the most recent data to the database.
 We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
-- Run `python get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
+- Run `python setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 - In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
 - Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
 
@@ -168,22 +186,6 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
 - Select `Let me select individual events` and tick `Pull requests` only
-
-
-## Add static datasets
-Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
-We will do this manually, using a Docker image from the Azure container registry.
-
-**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
-
-Running the command
-
-```
-python insert_static_datasets.py
-```
-
-will download the static datasets to temporary local storage and then upload them to the database.
-The process takes approximately 1hr and you must have internet connectivity throughout.
 
 
 

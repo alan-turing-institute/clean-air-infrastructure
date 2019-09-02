@@ -31,6 +31,7 @@ class AQEReading(Base):
 
 
 def initialise(engine):
+    """Ensure that all tables exist"""
     Base.metadata.create_all(engine)
 
 

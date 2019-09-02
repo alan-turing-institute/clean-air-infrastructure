@@ -1,7 +1,8 @@
 import argparse
 import datasources
 
-if __name__ == "__main__":
+
+def main():
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Insert static datasets")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
@@ -15,3 +16,7 @@ if __name__ == "__main__":
 
     # Configure database tables
     staticdb.configure_tables()
+
+
+if __name__ == "__main__":
+    main()
