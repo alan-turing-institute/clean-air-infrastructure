@@ -26,48 +26,33 @@ if __name__ == '__main__':
     # # Import boundary
     london_boundary = LondonBoundary(secretfile = '.db_inputs_local_secret.json')
     
-
-    london_boundary_df = geopandas.GeoDataFrame.from_postgis(london_boundary.query_all().statement, london_boundary.engine, geom_col='wkb_geometry')
-    
-
     # Process interest points
-    # buffer_size = 0.01
     buffer_size = 1000
     laqn_buffers = laqn.query_interest_point_buffers([buffer_size], 
                                                      london_boundary.convex_hull, 
-                                                     include_sites=None,
+                                                     include_sites=["ST4", "LC1", "BT4"],
                                                      num_seg_quarter_circle = 8)
 
-    # laqn_buffers_df = pd.read_sql(laqn_buffers.statement, 
-    #                                                       laqn.dbcnxn.engine)
+    # Process features (Really slow)
+    ukmap_features = ukmap.query_features(laqn_buffers, 'buffer_' + str(buffer_size))
 
-   
 
-    laqn.logger.info("Starting execution")
+    # Execute query and place into dataframe 
+    ukmap.logger.info("Starting executions")
+    ukmap_features_df = pd.read_sql(ukmap_features.statement, ukmap.engine)
+    ukmap.logger.info("Finish execution")
+    print(ukmap_features_df)
+
+
+    # Plot london with laqn buffers
+    london_boundary_df = geopandas.GeoDataFrame.from_postgis(london_boundary.query_all().statement, london_boundary.engine, geom_col='wkb_geometry')
+    
+    ax_buffers = london_boundary_df.plot(color = 'r', alpha = 0.2) 
+
     laqn_buffers_df = geopandas.GeoDataFrame.from_postgis(laqn_buffers.statement, 
                                                           laqn.dbcnxn.engine, 
                                                           geom_col='buffer_' + str(buffer_size))
-    laqn.logger.info("Finish execution")
 
-    # # # s = laqn_buffers.subquery()
-    # # # with laqn.dbcnxn.open_session() as session:
-    # # #     q = session.query(s.c['buffer_' + str(buffer_size)].cast(Geography).ST_Area().label('geom'))
+    laqn_buffers_df.plot(ax = ax_buffers, color = 'b')
 
-    # # print(np.pi * buffer_size**2, q.first())
-    # # # Plots
-    # ax_buffers = london_boundary_df.plot(color = 'r', alpha = 0.2) 
-    # laqn_buffers_df.plot(ax = ax_buffers, color = 'b')
-    
-
-    # # # Process features (Really slow)
-    ukmap_features = ukmap.query_features(laqn_buffers, 'buffer_' + str(buffer_size))
-    # print(ukmap_features.statement)
-
-
-    laqn.logger.info("Starting executions")
-    ukmap_features_df = pd.read_sql(ukmap_features.statement, ukmap.engine)
-    laqn.logger.info("Finish execution")
-    print(ukmap_features_df)
-    # plt.show()
-
-    
+    plt.show()
