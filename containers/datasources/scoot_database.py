@@ -67,28 +67,31 @@ class ScootDatabase(Updater):
         if file_list:
             yield file_list
 
-    @staticmethod
-    def aggregate(input_dfs):
+    def aggregate(self, input_dfs):
         """Aggregate measurements across several minutes"""
         # Combine batch into one dataframe then
         df_combined = pandas.concat(input_dfs, ignore_index=True)
         # Group by DetectorID: each column has its own combination rule
-        return df_combined.groupby(["DetectorID"]).agg(
-            {
-                "Timestamp": lambda x: int(sum(x) / len(x)),
-                "DetectorID": "first",
-                "DetectorFault": any,
-                "FlowThisInterval": "sum",
-                "IntervalMinutes": "sum",
-                "OccupancyPercentage": "mean",
-                "CongestionPercentage": "mean",
-                "SaturationPercentage": "mean",
-                "FlowRawCount": "sum",
-                "OccupancyRawCount": "sum",
-                "CongestionRawCount": "sum",
-                "SaturationRawCount": "count",
-                "Region": "first",
-            })
+        try:
+            return df_combined.groupby(["DetectorID"]).agg(
+                {
+                    "Timestamp": lambda x: int(sum(x) / len(x)),
+                    "DetectorID": "first",
+                    "DetectorFault": any,
+                    "FlowThisInterval": "sum",
+                    "IntervalMinutes": "sum",
+                    "OccupancyPercentage": "mean",
+                    "CongestionPercentage": "mean",
+                    "SaturationPercentage": "mean",
+                    "FlowRawCount": "sum",
+                    "OccupancyRawCount": "sum",
+                    "CongestionRawCount": "sum",
+                    "SaturationRawCount": "count",
+                    "Region": "first",
+                })
+        except pandas.core.base.DataError:
+            self.logger.warning("Data aggregation failed - returning an empty dataframe")
+            return pandas.DataFrame(columns=df_combined.columns)
 
     def aggregate_detector_readings(self, filebatch):
         """Request all readings between {start_date} and {end_date}, removing duplicates."""
@@ -173,7 +176,7 @@ class ScootDatabase(Updater):
                 # Retrieve aggregated detector readings for this batch of files
                 site_readings = self.aggregate_detector_readings(filebatch)
 
-                # Add readings to the database session - use bulk_save_objects to reduce the ORM overhead
+                # Add readings to the database session - use bulk_insert_mappings to reduce the ORM overhead
                 # In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html this does not seem
                 # to result in a speed-up, but it does provide regular check-points meaning that the final commit
                 # operation takes minutes rather than hours.
