@@ -27,7 +27,7 @@ class LAQNDatabase(Updater, APIReader):
             # Remove sites with no opening date
             processed_data = [site for site in raw_data if site['@DateOpened']]
             if len(processed_data) != len(raw_data):
-                self.logger.warning("Excluded %i sites which do not have an opening date from the database",
+                self.logger.warning("Excluded %i site(s) with no opening date from the database",
                                     len(raw_data) - len(processed_data))
             return processed_data
         except requests.exceptions.HTTPError as error:
