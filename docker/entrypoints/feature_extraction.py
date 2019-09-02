@@ -27,14 +27,16 @@ if __name__ == '__main__':
     london_boundary = LondonBoundary(secretfile = '.db_inputs_local_secret.json')
     
     # Process interest points
-    buffer_size = 1000
-    laqn_buffers = laqn.query_interest_point_buffers([buffer_size], 
+    buffer_size = [1000, 500]
+    laqn_buffers = laqn.query_interest_point_buffers(buffer_size, 
                                                      london_boundary.convex_hull, 
                                                      include_sites=["ST4", "LC1", "BT4"],
                                                      num_seg_quarter_circle = 8)
 
+
+
     # Process features (Really slow)
-    ukmap_features = ukmap.query_features(laqn_buffers, 'buffer_' + str(buffer_size))
+    ukmap_features = ukmap.query_features(laqn_buffers, buffer_size)
 
 
     # Execute query and place into dataframe 
@@ -51,7 +53,7 @@ if __name__ == '__main__':
 
     laqn_buffers_df = geopandas.GeoDataFrame.from_postgis(laqn_buffers.statement, 
                                                           laqn.dbcnxn.engine, 
-                                                          geom_col='buffer_' + str(buffer_size))
+                                                          geom_col='buffer_' + str(buffer_size[0]))
 
     laqn_buffers_df.plot(ax = ax_buffers, color = 'b')
 

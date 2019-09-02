@@ -132,12 +132,10 @@ class LAQNDatabase(Updater):
         """
 
         interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
-        
 
-        # Cast geometry to geography to create buffers so radius can be specified in meters (https://postgis.net/workshops/postgis-intro/geography.html)
-        query_funcs = [func.Geometry(func.ST_Buffer(func.Geography(interest_point_query.c.geom), size, num_seg_quarter_circle)).label('buffer_' + str(size)) for size in buffer_sizes]
-        # query_funcs = [interest_point_query.c.geom.ST_Buffer(size, num_seg_quarter_circle).label('buffer_' + str(size)) for size in buffer_sizes]
+        func_base = lambda x, size: func.Geometry(func.ST_Buffer(func.Geography(x), size, num_seg_quarter_circle))
         
+        query_funcs = [func_base(interest_point_query.c.geom, size).label('buffer_' + str(size)) for size in buffer_sizes]
 
         with self.dbcnxn.open_session() as session:
             out = session.query(interest_point_query.c.id, 

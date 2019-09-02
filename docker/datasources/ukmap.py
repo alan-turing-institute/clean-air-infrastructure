@@ -1,6 +1,7 @@
 from .databases import Updater, StaticTableConnector
 from sqlalchemy import func, and_, or_, cast, Float
 
+
 class UKMap(StaticTableConnector):
 
     def __init__(self, *args, **kwargs):
@@ -10,61 +11,88 @@ class UKMap(StaticTableConnector):
         # Reflect the table
         self.table = self.get_table_instance('ukmap')
 
-    def __query_buffer_intersection(self, buffer_query, buffer_col):
+    def __query_buffer_intersection(self, buffer_query, buffer_cols):
         """
         Gets the intersection between buffers and the ukmap geoms
         """
 
+        self.logger.info("Calculating intersection between ukmap geometries and buffers")
+
         buffer_query = buffer_query.subquery()
 
+        query_items = [buffer_query.c.id,
+                       buffer_query.c.lat,
+                       buffer_query.c.lon,
+                       self.table.feature_type, 
+                       self.table.landuse,
+                       self.table.calcaulated_height_of_building]
+
+        # Get the intersection between the ukmap geometries and the largest buffer
+        largest_intersection = func.ST_Intersection(func.ST_MakeValid(self.table.shape), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
+
+        query_items = query_items + [largest_intersection]
+
+        # If there are other buffers get the intersection between each buffer and the last intersection geomtry
+        if len(buffer_cols) > 1:
+            for buff in buffer_cols[1:]:
+                next_intersection = func.ST_Intersection(func.ST_MakeValid(query_items[-1]), buffer_query.c['buffer_' + buff]).label("intersect_" + buff)
+                query_items.append(next_intersection)
+
+        # Create the query and apply filters
         with self.open_session() as session:
-            out =  session.query(
-                                buffer_query.c.id,
-                                buffer_query.c.lat,
-                                buffer_query.c.lon,
-                                self.table.feature_type, 
-                                self.table.landuse,
-                                self.table.calcaulated_height_of_building,
-                                func.ST_Intersection(func.ST_MakeValid(self.table.shape), 
-                                                        buffer_query.c[buffer_col]).label("intersection") 
-                                ).\
+            out =  session.query(*query_items).\
                             filter(and_(
                                 func.ST_GeometryType(func.ST_MakeValid(self.table.shape))=='ST_MultiPolygon', 
-                                func.ST_Intersects(self.table.shape, buffer_query.c[buffer_col])
+                                func.ST_Intersects(self.table.shape, buffer_query.c['buffer_' + buffer_cols[0]])
                                 ))
-                                
             return out
 
 
-    def query_features(self, buffer_query, buffer_col):
+    def query_features(self, buffer_query, buffer_sizes):
 
+        if not isinstance(buffer_sizes, list):
+            raise TypeError("buffer_sizes object must be a list")
+
+        def __intersected_col_name(size):
+            return 'intersect_' + str(size)
+
+        def __summary_f_list(subquery, buffer_size):
+            """
+            For a given intersected geometry, create summary functions and tag with appropriate label
+            """
+            geom = subquery.c[__intersected_col_name(buffer_size)]
+            return [
+                    sum_area(geom, subquery.c.feature_type=='Museum', s + '_total_museum_area'),
+                    sum_area(geom, subquery.c.landuse=='Hospitals', s + '_total_hospital_area'),
+                    sum_area(geom, subquery.c.feature_type=='Vegetated', s + '_total_grass_area'),
+                    sum_area(geom, and_(subquery.c.feature_type=='Vegetated', 
+                                                      subquery.c.landuse== 'Recreational open space'), s + '_total_park_area'),
+                    sum_area(geom, subquery.c.feature_type=='Water', s + '_total_water_area'),
+                    sum_area(geom, or_(subquery.c.feature_type=='Vegetated', 
+                                                     subquery.c.feature_type == 'Water'), s + '_total_flat_area'),
+                    max_cast(subquery.c.calcaulated_height_of_building, s + '_max_building_height')
+                   ]
+      
+        # Get buffers in decending size order and create column name lists
+        sorted_buffers = sorted(buffer_sizes)[::-1]
+        buffer_sizes = [str(s) for s in sorted_buffers]
 
         # Get buffer intersections
-        buffer_intersection_query = self.__query_buffer_intersection(buffer_query, buffer_col).subquery()
+        buffer_intersection_query = self.__query_buffer_intersection(buffer_query, buffer_sizes).subquery()
         
         # Compose functions 
-        sum_area = lambda x, filt: func.sum(func.ST_Area(func.Geography(x))).filter(filt)
-        
-        max_cast = lambda x: func.max(cast(x, Float))
+        sum_area = lambda x, filt, lab: func.coalesce(func.sum(func.ST_Area(func.Geography(x))).filter(filt), 0.0).label(lab)
+        max_cast = lambda x, lab: func.max(cast(x, Float)).label(lab)
 
-        # Shorthand for geom
-        geom = buffer_intersection_query.c.intersection
+        # Create a list of all the select functions for the query
+        query_list = [buffer_intersection_query.c.id]
 
+        for s in buffer_sizes:
+            query_list = query_list + __summary_f_list(buffer_intersection_query, s)
+
+        # Create the query and aggregate by interest point 
         with self.open_session() as session:
-            out = session.query(
-                            buffer_intersection_query.c.id,
-                            func.coalesce(sum_area(geom, buffer_intersection_query.c.feature_type=='Museum'), 0.0).label('total_museum_area'),
-                            func.coalesce(sum_area(geom, buffer_intersection_query.c.landuse=='Hospitals'), 0.0).label('total_hospital_area'),
-                            func.coalesce(sum_area(geom, buffer_intersection_query.c.feature_type=='Vegetated'), 0.0).label('total_grass_area'),
-
-                            func.coalesce(sum_area(geom, and_(buffer_intersection_query.c.feature_type=='Vegetated', 
-                                                              buffer_intersection_query.c.landuse== 'Recreational open space')), 0.0).label('total_park_area'),
-                            func.coalesce(sum_area(geom, buffer_intersection_query.c.feature_type=='Water'), 0.0).label('total_water_area '),
-                            func.coalesce(sum_area(geom, or_(buffer_intersection_query.c.feature_type=='Vegetated', 
-                                                             buffer_intersection_query.c.feature_type == 'Water')), 0.0).label('total_flat_area'),
-                            max_cast(buffer_intersection_query.c.calcaulated_height_of_building).label('max_building_height')
-                            
-                            ).\
+            out = session.query(*query_list).\
                                 group_by(buffer_intersection_query.c.id, 
                                          buffer_intersection_query.c.lat,
                                          buffer_intersection_query.c.lon)
