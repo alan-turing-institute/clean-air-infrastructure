@@ -50,7 +50,7 @@ aws_secrets="{
 
 # Run the containers
 echo "Running the container instances..."
-for datasource in "aqe" "laqn"; do
+for datasource in "aqe" "laqn" "scoot"; do
     echo ":: working on $datasource"
     az container create --cpu 1 \
                         --environment-variables NO_TEXT_COLOUR=1 \
