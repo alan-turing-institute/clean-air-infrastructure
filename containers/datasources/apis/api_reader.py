@@ -21,7 +21,7 @@ class APIReader():
         site_readings = []
         for site, available_start_date, available_end_date in available_sites:
             self.logger.info("Attempting to download data for %s between %s and %s",
-                            green(site.SiteCode), green(available_start_date), green(available_end_date))
+                             green(site.SiteCode), green(available_start_date), green(available_end_date))
             response = self.request_site_readings(available_start_date, available_end_date, site_code=site.SiteCode)
             if response:
                 site_readings += response
