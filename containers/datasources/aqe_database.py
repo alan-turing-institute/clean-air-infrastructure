@@ -10,14 +10,11 @@ from .loggers import green
 from .apis import APIReader
 
 
-class AQEDatabase(Updater):
+class AQEDatabase(Updater, APIReader):
     """Manage interactions with the AQE database on Azure"""
     def __init__(self, *args, **kwargs):
-        # Initialise the base class
+        # Initialise the base classes
         super().__init__(*args, **kwargs)
-
-        # Add an API reader
-        self.api = APIReader(**kwargs)
 
         # Ensure that tables exist
         aqe_tables.initialise(self.dbcnxn.engine)
@@ -29,7 +26,7 @@ class AQEDatabase(Updater):
         """
         try:
             endpoint = "http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site"
-            raw_data = self.api.get_response(endpoint, timeout=5.0).content
+            raw_data = self.get_response(endpoint, timeout=5.0).content
             dom = minidom.parse(io.BytesIO(raw_data))
             # Convert DOM object to a list of dictionaries. Each dictionary is an site containing site information
             return [dict(s.attributes.items()) for s in dom.getElementsByTagName("Site")]
@@ -48,7 +45,7 @@ class AQEDatabase(Updater):
             endpoint = "http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{}/{}/{}".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.api.get_response(endpoint, timeout=5.0).content
+            raw_data = self.get_response(endpoint, timeout=5.0).content
             # Process CSV data
             csvreader = csv.reader(io.StringIO(raw_data.decode()))
             # Extract species names from the column headers
@@ -92,7 +89,7 @@ class AQEDatabase(Updater):
                              green("aeat.com API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.api.get_readings_by_site(site_info_query, self.start_date, self.end_date)
+            site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes

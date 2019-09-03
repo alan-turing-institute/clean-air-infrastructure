@@ -67,28 +67,31 @@ class ScootDatabase(Updater):
         if file_list:
             yield file_list
 
-    @staticmethod
-    def aggregate(input_dfs):
+    def aggregate(self, input_dfs):
         """Aggregate measurements across several minutes"""
         # Combine batch into one dataframe then
         df_combined = pandas.concat(input_dfs, ignore_index=True)
         # Group by DetectorID: each column has its own combination rule
-        return df_combined.groupby(["DetectorID"]).agg(
-            {
-                "Timestamp": lambda x: int(sum(x) / len(x)),
-                "DetectorID": "first",
-                "DetectorFault": any,
-                "FlowThisInterval": "sum",
-                "IntervalMinutes": "sum",
-                "OccupancyPercentage": "mean",
-                "CongestionPercentage": "mean",
-                "SaturationPercentage": "mean",
-                "FlowRawCount": "sum",
-                "OccupancyRawCount": "sum",
-                "CongestionRawCount": "sum",
-                "SaturationRawCount": "count",
-                "Region": "first",
-            })
+        try:
+            return df_combined.groupby(["DetectorID"]).agg(
+                {
+                    "Timestamp": lambda x: int(sum(x) / len(x)),
+                    "DetectorID": "first",
+                    "DetectorFault": any,
+                    "FlowThisInterval": "sum",
+                    "IntervalMinutes": "sum",
+                    "OccupancyPercentage": "mean",
+                    "CongestionPercentage": "mean",
+                    "SaturationPercentage": "mean",
+                    "FlowRawCount": "sum",
+                    "OccupancyRawCount": "sum",
+                    "CongestionRawCount": "sum",
+                    "SaturationRawCount": "count",
+                    "Region": "first",
+                })
+        except pandas.core.base.DataError:
+            self.logger.warning("Data aggregation failed - returning an empty dataframe")
+            return pandas.DataFrame(columns=df_combined.columns)
 
     def aggregate_detector_readings(self, filebatch):
         """Request all readings between {start_date} and {end_date}, removing duplicates."""
@@ -161,9 +164,8 @@ class ScootDatabase(Updater):
         self.logger.info("Requesting readings from %s for %s sites",
                          green("TfL AWS storage"), green(len(self.detector_ids)))
 
-        initial = time.time()
-
         # Open a DB session
+        start_session = time.time()
         with self.dbcnxn.open_session() as session:
             n_records = 0
 
@@ -173,19 +175,19 @@ class ScootDatabase(Updater):
                 # Retrieve aggregated detector readings for this batch of files
                 site_readings = self.aggregate_detector_readings(filebatch)
 
-                # Add readings to the database session - use bulk_save_objects to reduce the ORM overhead
+                # Add readings to the database session - use bulk_insert_mappings to reduce the ORM overhead
                 # In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html this does not seem
                 # to result in a speed-up, but it does provide regular check-points meaning that the final commit
                 # operation takes minutes rather than hours.
-                self.logger.debug("Adding %i record inserts to database session", len(site_readings))
-                start = time.time()
+                self.logger.info("Adding %i record inserts to database session", len(site_readings))
+                start_insert = time.time()
                 try:
                     session.bulk_insert_mappings(scoot_tables.ScootReading, site_readings)
                     n_records += len(site_readings)
                 except IntegrityError:
                     self.logger.error("Ignoring attempt to insert duplicate records!")
                     session.rollback()
-                self.logger.debug("Insertion took %s", time.time() - start)
+                self.logger.info("Insertion took %.2f seconds", time.time() - start_insert)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
@@ -193,4 +195,4 @@ class ScootDatabase(Updater):
                              green(scoot_tables.ScootReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update", green("Scoot"))
-        self.logger.debug("Full DB interaction took %s minutes", (time.time() - initial) / 60.)
+        self.logger.info("Full database interaction took %.2f minutes", (time.time() - start_session) / 60.)

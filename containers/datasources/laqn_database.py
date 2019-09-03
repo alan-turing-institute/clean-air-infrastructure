@@ -8,13 +8,10 @@ from .loggers import green
 from .apis import APIReader
 
 
-class LAQNDatabase(Updater):
+class LAQNDatabase(Updater, APIReader):
     def __init__(self, *args, **kwargs):
-        # Initialise the base class
+        # Initialise the base classes
         super().__init__(*args, **kwargs)
-
-        # Add an API reader
-        self.api = APIReader(**kwargs)
 
         # Ensure that tables exist
         laqn_tables.initialise(self.dbcnxn.engine)
@@ -26,11 +23,11 @@ class LAQNDatabase(Updater):
         """
         try:
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json"
-            raw_data = self.api.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"]
+            raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"]
             # Remove sites with no opening date
             processed_data = [site for site in raw_data if site['@DateOpened']]
             if len(processed_data) != len(raw_data):
-                self.logger.warning("Excluded %i sites which do not have an opening date from the database",
+                self.logger.warning("Excluded %i site(s) with no opening date from the database",
                                     len(raw_data) - len(processed_data))
             return processed_data
         except requests.exceptions.HTTPError as error:
@@ -48,7 +45,7 @@ class LAQNDatabase(Updater):
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date.date()), str(end_date.date())
             )
-            raw_data = self.api.get_response(endpoint, timeout=5.0).json()["AirQualityData"]["Data"]
+            raw_data = self.get_response(endpoint, timeout=5.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
@@ -89,7 +86,7 @@ class LAQNDatabase(Updater):
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.api.get_readings_by_site(site_info_query, self.start_date, self.end_date)
+            site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
