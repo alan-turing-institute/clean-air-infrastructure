@@ -187,7 +187,7 @@ class ScootDatabase(Updater):
                 except IntegrityError:
                     self.logger.error("Ignoring attempt to insert duplicate records!")
                     session.rollback()
-                self.logger.info("Insertion took %s", time.time() - start_insert)
+                self.logger.info("Insertion took %.2f seconds", time.time() - start_insert)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
@@ -195,4 +195,4 @@ class ScootDatabase(Updater):
                              green(scoot_tables.ScootReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update", green("Scoot"))
-        self.logger.info("Full database interaction took %s minutes", (time.time() - start_session) / 60.)
+        self.logger.info("Full database interaction took %.2f minutes", (time.time() - start_session) / 60.)
