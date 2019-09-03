@@ -12,14 +12,14 @@ class APIReader():
 
     def get_readings_by_site(self, site_list_query, start_date, end_date):
         # Restrict to sites which were open during the requested time period
-        site_availabilities = [self.get_available_datetimes(site, start_date, end_date) for site in site_list_query]
-        sites_with_data = [(site, *[d.date() for d in dates]) for site, dates in zip(site_list_query, site_availabilities) if dates]
+        site_dates = [self.get_available_datetimes(site, start_date, end_date) for site in site_list_query]
+        available_sites = [(s, *[d.date() for d in dates]) for s, dates in zip(site_list_query, site_dates) if dates]
         self.logger.info("%s sites have data between %s and %s",
-                         green(len(sites_with_data)), green(start_date), green(end_date))
+                         green(len(available_sites)), green(start_date), green(end_date))
 
         # Get all readings for each site between its start and end dates
         site_readings = []
-        for site, available_start_date, available_end_date in sites_with_data:
+        for site, available_start_date, available_end_date in available_sites:
             self.logger.info("Attempting to download data for %s between %s and %s",
                             green(site.SiteCode), green(available_start_date), green(available_end_date))
             response = self.request_site_readings(available_start_date, available_end_date, site_code=site.SiteCode)
