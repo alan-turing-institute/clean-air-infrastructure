@@ -18,7 +18,7 @@ class LAQNDatabase(Updater, APIReader):
 
     def request_site_entries(self):
         """
-        Request all laqn sites
+        Request all LAQN sites
         Remove any that do not have an opening date
         """
         try:
@@ -52,8 +52,9 @@ class LAQNDatabase(Updater, APIReader):
             for reading in processed_data:
                 reading["@SiteCode"] = site_code
             return processed_data
-        except (requests.exceptions.HTTPError) as e:
-            self.logger.warning("Request to %s failed: %s", endpoint, e)
+        except requests.exceptions.HTTPError as error:
+            self.logger.warning("Request to %s failed:", endpoint)
+            self.logger.warning(error)
             return None
         except (TypeError, KeyError):
             return None
@@ -75,7 +76,7 @@ class LAQNDatabase(Updater, APIReader):
             session.commit()
 
     def update_reading_table(self):
-        """Update the database with new sensor readings."""
+        """Update the readings table with new sensor readings."""
         self.logger.info("Starting %s readings update...", green("LAQN"))
 
         # Open a DB session
