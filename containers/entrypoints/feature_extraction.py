@@ -1,5 +1,5 @@
 import sys
-sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/docker/')
+sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers/')
 
 from datasources import LondonBoundary, LAQNDatabase, HexGrid, UKMap
 from datasources.databases import  laqn_tables, Connector
@@ -17,14 +17,14 @@ if __name__ == '__main__':
     
 
     # Import datasources
-    laqn = LAQNDatabase(secretfile = '.db_inputs_local_secret.json')
-    hex_grid = HexGrid(secretfile = '.db_inputs_local_secret.json')
+    laqn = LAQNDatabase(end = 'today', ndays = 2, secretfile = '.db_input_secret.json')
+    hex_grid = HexGrid(secretfile = '.db_input_secret.json')
 
     # Import features 
-    ukmap = UKMap(secretfile = '.db_inputs_local_secret.json')
+    ukmap = UKMap(secretfile = '.db_input_secret.json')
 
     # # Import boundary
-    london_boundary = LondonBoundary(secretfile = '.db_inputs_local_secret.json')
+    london_boundary = LondonBoundary(secretfile = '.db_input_secret.json')
     
     # Process interest points
     buffer_sizes = [1000, 500]
