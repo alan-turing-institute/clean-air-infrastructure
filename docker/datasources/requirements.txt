@@ -1,6 +1,0 @@
-colorlog
-geoalchemy2
-psycopg2
-requests
-sqlalchemy
-termcolor

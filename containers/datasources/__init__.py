@@ -1,5 +1,6 @@
 from .aqe_database import AQEDatabase
 from .laqn_database import LAQNDatabase
+from .scoot_database import ScootDatabase
 from .static_database import StaticDatabase
 from .london_boundary_database import LondonBoundary
 from .hex_grid_database import HexGrid
@@ -11,5 +12,6 @@ __all__ = [
     "StaticDatabase",
     "LondonBoundary",
     "HexGrid",
-    "UKMap"
+    "UKMap",
+    "ScootDatabase",
 ]

@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+"""
+Setup initial Azure infrastructure used by Terraform
+"""
 import argparse
 import logging
 import os
@@ -7,6 +9,8 @@ import string
 import termcolor
 from azure.common.client_factory import get_client_from_cli_profile
 from azure.common.credentials import get_azure_cli_credentials
+from azure.mgmt.keyvault import KeyVaultManagementClient
+from azure.keyvault import KeyVaultClient
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.resource.subscriptions import SubscriptionClient
 from azure.mgmt.storage import StorageManagementClient
@@ -14,29 +18,13 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuNa
 from azure.storage.blob import BlockBlobService
 
 
-# Set up logging
-logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-logging.getLogger("adal-python").setLevel(logging.WARNING)
-logging.getLogger("azure").setLevel(logging.WARNING)
-
-# Read command line arguments
-parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
-parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND",
-                    help="Resource group where the Terraform backend will be stored")
-parser.add_argument("-l", "--location", type=str, default="uksouth",
-                    help="Azure datacentre where the Terraform backend will be stored")
-parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend",
-                    help="Name of the storage container where the Terraform backend will be stored")
-parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
-                    help="ID of an Azure group which contains all developers. Default is Turing's 'All Users' group.")
-args = parser.parse_args()
-
-
 def emphasised(text):
-    return termcolor.colored(text, 'green')
+    """Emphasise text"""
+    return termcolor.colored(text, "cyan")
 
 
-def build_backend():
+def build_backend(args):
+    """Build the Terraform backend"""
     # Get subscription
     _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
     subscription_client = get_client_from_cli_profile(SubscriptionClient)
@@ -58,7 +46,7 @@ def build_backend():
     if storage_account_name:
         logging.info("Found existing storage account named: %s", emphasised(storage_account_name))
     else:
-        storage_account_name = generate_new_storage_account(storage_mgmt_client)
+        storage_account_name = generate_new_storage_account(storage_mgmt_client, args.resource_group, args.location)
 
     # Get the account key for this storage account
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(args.resource_group, storage_account_name)
@@ -90,30 +78,45 @@ def build_backend():
         for line in terraform_config_file_lines:
             f_config.write(line + "\n")
 
-    # Write Terraform common variables
-    terraform_variables_file_lines = [
-        'output "subscription_id" {',
-        '  description = "ID of the Azure subscription to deploy into"',
-        '  value       = "{}"'.format(subscription_id),
-        '}',
-        'output "tenant_id" {',
-        '  description = "ID of a tenant with appropriate permissions to create infrastructure"',
-        '  value       = "{}"'.format(tenant_id),
-        '}',
-        'output "location" {',
-        '  description = "Name of the Azure location to build in"',
-        '  value       = "{}"'.format(args.location),
-        '}',
-        'output "azure_group_id" {',
-        '  description = "ID of a group containing all accounts that will be allowed to access the infrastructure"',
-        '  value       = "{}"'.format(args.azure_group_id),
-        '}',
-    ]
-    filepath = os.path.join("terraform", "configuration", "outputs.tf")
-    logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
-    with open(filepath, "w") as f_config:
-        for line in terraform_variables_file_lines:
-            f_config.write(line + "\n")
+    # Create a key vault for storing secrets
+    key_vault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
+    vault = key_vault_mgmt_client.vaults.create_or_update(
+        args.resource_group,
+        "terraform-configuration",
+        {
+            "location": args.location,
+            "properties": {
+                "sku": {
+                    "name": "standard"
+                },
+                "tenant_id": tenant_id,
+                "access_policies": [{
+                    "tenant_id": tenant_id,
+                    "object_id": args.azure_group_id,
+                    "permissions": {
+                        "secrets": ["all"]
+                    }
+                }]
+            }
+        }
+    ).result()
+
+    # Write secrets to the key vault
+    key_vault_client = get_client_from_cli_profile(KeyVaultClient)
+    if args.aws_key_id:
+        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
+    else:
+        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value:
+            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+    if args.aws_key:
+        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
+    else:
+        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value:
+            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
+    key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
+    key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
+    key_vault_client.set_secret(vault.properties.vault_uri, "location", args.location)
+    key_vault_client.set_secret(vault.properties.vault_uri, "azure-group-id", args.azure_group_id)
 
 
 def get_valid_storage_account_name(storage_mgmt_client):
@@ -126,17 +129,17 @@ def get_valid_storage_account_name(storage_mgmt_client):
             return storage_account_name
 
 
-def generate_new_storage_account(storage_mgmt_client):
+def generate_new_storage_account(storage_mgmt_client, resource_group, location):
     """Create a new storage account."""
     storage_account_name = get_valid_storage_account_name(storage_mgmt_client)
     logging.info("Creating new storage account: %s", emphasised(storage_account_name))
     storage_async_operation = storage_mgmt_client.storage_accounts.create(
-        args.resource_group,
+        resource_group,
         storage_account_name,
         StorageAccountCreateParameters(
             sku=Sku(name=SkuName.standard_lrs),
             kind=Kind.storage,
-            location=args.location
+            location=location
         )
     )
     # Wait until storage_async_operation has finished before returning
@@ -144,5 +147,33 @@ def generate_new_storage_account(storage_mgmt_client):
     return storage_account_name
 
 
+def parsed_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
+    parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
+                        help="ID of an Azure group containing all developers. Default is Turing's 'All Users' group.")
+    parser.add_argument("-g", "--resource-group", type=str, default="RG_TERRAFORM_BACKEND",
+                        help="Resource group where the Terraform backend will be stored")
+    parser.add_argument("-i", "--aws-key-id", type=str, default=None, help="AWS key ID for accessing TfL SCOOT data.")
+    parser.add_argument("-k", "--aws-key", type=str, default=None, help="AWS key for accessing TfL SCOOT data.")
+    parser.add_argument("-l", "--location", type=str, default="uksouth",
+                        help="Azure datacentre where the Terraform backend will be stored")
+    parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend",
+                        help="Name of the storage container where the Terraform backend will be stored")
+    return parser.parse_args()
+
+
+def main():
+    """Setup initial Azure infrastructure used by Terraform"""
+    # Set up logging
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
+    logging.getLogger("adal-python").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
+
+    # Build the backend
+    build_backend(parsed_arguments())
+
+
 if __name__ == "__main__":
-    build_backend()
+    main()

@@ -38,10 +38,10 @@ class Connector():
             try:
                 with open(secret_fname) as f_secret:
                     data = json.load(f_secret)
-                self.logger.info("Database connection information loaded from %s", secret_fname)
+                self.logger.info("Database connection information loaded from %s", green(secret_fname))
                 return data
             except json.decoder.JSONDecodeError:
-                self.logger.debug("Database connection information could not be loaded from %s", secret_fname)
+                self.logger.debug("Database connection information could not be loaded from %s", red(secret_fname))
 
         raise FileNotFoundError("Database secrets could not be loaded from {}".format(secret_file))
 
@@ -49,7 +49,7 @@ class Connector():
     def get_connection(cls, cnxn_str):
 
         if cnxn_str not in cls.connections:
-            engine = create_engine(cnxn_str)
+            engine = create_engine(cnxn_str, pool_recycle=280)
             Session = sessionmaker(bind=engine)
             cls.connections[cnxn_str] = {'engine': engine, 'Session': Session}
             return cls.connections[cnxn_str]
@@ -71,15 +71,18 @@ class Connector():
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine
 
+    # connect_args={"options": "-c statement_timeout=1000"}
+
     @contextmanager
-    def open_session(self):
+    def open_session(self, skip_check=False):
         """
         Create a session as a context manager which will thereby self-close
         """
         try:
             # Use the engine to create a new session
             session = self._Session()
-            # self.check_internet_connection()
+            if not skip_check:
+                self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError):
             # Rollback database interactions if there is a problem
