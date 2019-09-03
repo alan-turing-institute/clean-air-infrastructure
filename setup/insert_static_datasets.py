@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import subprocess
+import shutil
 import tempfile
 import zipfile
 import termcolor
@@ -58,25 +59,31 @@ def get_key_vault_uri_and_client():
     return (vault.properties.vault_uri, keyvault_client)
 
 
-def build_database_secrets(secret_prefix, secrets_directory):
+def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
     """Build temporary JSON file containing database secrets"""
-    # Retrieve secrets from key vault
-    vault_uri, keyvault_client = get_key_vault_uri_and_client()
-    db_name = keyvault_client.get_secret(vault_uri, "{}-name".format(secret_prefix), "").value
-    db_server_name = keyvault_client.get_secret(vault_uri, "{}-server-name".format(secret_prefix), "").value
-    db_admin_username = keyvault_client.get_secret(vault_uri, "{}-admin-username".format(secret_prefix), "").value
-    db_admin_password = keyvault_client.get_secret(vault_uri, "{}-admin-password".format(secret_prefix), "").value
-    database_secrets = {
-        "host": "{}.postgres.database.azure.com".format(db_server_name),
-        "port": 5432,
-        "db_name": db_name,
-        "username": "{}@{}".format(db_admin_username, db_server_name),
-        "password": db_admin_password,
-        "ssl_mode": "require"
-    }
-    # Write secrets to a temporary file
-    with open(os.path.join(secrets_directory, "db_secrets.json"), "w") as f_secret:
-        json.dump(database_secrets, f_secret)
+
+    if not local_secret:
+        # Retrieve secrets from key vault
+        vault_uri, keyvault_client = get_key_vault_uri_and_client()
+        db_name = keyvault_client.get_secret(vault_uri, "{}-name".format(secret_prefix), "").value
+        db_server_name = keyvault_client.get_secret(vault_uri, "{}-server-name".format(secret_prefix), "").value
+        db_admin_username = keyvault_client.get_secret(vault_uri, "{}-admin-username".format(secret_prefix), "").value
+        db_admin_password = keyvault_client.get_secret(vault_uri, "{}-admin-password".format(secret_prefix), "").value
+        database_secrets = {
+            "host": "{}.postgres.database.azure.com".format(db_server_name),
+            "port": 5432,
+            "db_name": db_name,
+            "username": "{}@{}".format(db_admin_username, db_server_name),
+            "password": db_admin_password,
+            "ssl_mode": "require"
+        }
+        # Write secrets to a temporary file
+        with open(os.path.join(secrets_directory, "db_secrets.json"), "w") as f_secret:
+            json.dump(database_secrets, f_secret)
+
+    else:
+        logging.info("Using database info specified in localfile %s", emphasised(os.path.basename(local_secret)))
+        shutil.copyfile(local_secret, os.path.join(secrets_directory, "db_secrets.json"))
 
 
 def upload_static_data(dataset, secrets_directory, data_directory):
@@ -147,6 +154,9 @@ def main():
                         help="Resource group where the static datasets will be stored")
     parser.add_argument("-s", "--storage-container-name", type=str, default="londonaqdatasets",
                         help="Name of the storage container where the Terraform backend will be stored")
+    parser.add_argument("-ls", '--local-secret', type=str,
+                        help="Optionally pass the full path of a database secret file")
+
     args = parser.parse_args()
 
     # List of available datasets
@@ -157,7 +167,7 @@ def main():
 
     # Write the database secrets to a temporary directory
     with tempfile.TemporaryDirectory() as secrets_directory:
-        build_database_secrets("cleanair-inputs-db", secrets_directory)
+        build_database_secrets("cleanair-inputs-db", secrets_directory, args.local_secret)
 
         # Download the static data
         for dataset in datasets:
