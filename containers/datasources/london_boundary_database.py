@@ -1,4 +1,4 @@
-from .databases import Updater, StaticTableConnector
+from .databases import StaticTableConnector
 from sqlalchemy import func
 
 class LondonBoundary(StaticTableConnector):
@@ -8,7 +8,7 @@ class LondonBoundary(StaticTableConnector):
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('london_boundary')
+        self.table = self.get_table_instance('londonboundary')
 
     @property
     def convex_hull(self):

@@ -1,6 +1,8 @@
-from .databases import Updater, StaticTableConnector
+from .databases import StaticTableConnector
 from sqlalchemy import func, and_, or_, cast, Float
-
+import pandas as pd
+from dateutil import rrule
+from datetime import datetime
 
 class UKMap(StaticTableConnector):
 
@@ -15,9 +17,7 @@ class UKMap(StaticTableConnector):
         """
         Gets the intersection between buffers and the ukmap geoms
         """
-
-        self.logger.info("Calculating intersection between ukmap geometries and buffers")
-
+        
         buffer_query = buffer_query.subquery()
 
         query_items = [buffer_query.c.id,
@@ -25,7 +25,7 @@ class UKMap(StaticTableConnector):
                        buffer_query.c.lon,
                        self.table.feature_type, 
                        self.table.landuse,
-                       self.table.calcaulated_height_of_building]
+                       self.table.calculated_height_of_building]
 
         # Get the intersection between the ukmap geometries and the largest buffer
         largest_intersection = func.ST_Intersection(func.ST_MakeValid(self.table.shape), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
@@ -48,7 +48,7 @@ class UKMap(StaticTableConnector):
             return out
 
 
-    def query_features(self, buffer_query, buffer_sizes):
+    def query_features(self, buffer_query, buffer_sizes, return_df = True):
 
         if not isinstance(buffer_sizes, list):
             raise TypeError("buffer_sizes object must be a list")
@@ -70,7 +70,7 @@ class UKMap(StaticTableConnector):
                     sum_area(geom, subquery.c.feature_type=='Water', s + '_total_water_area'),
                     sum_area(geom, or_(subquery.c.feature_type=='Vegetated', 
                                                      subquery.c.feature_type == 'Water'), s + '_total_flat_area'),
-                    max_cast(subquery.c.calcaulated_height_of_building, s + '_max_building_height')
+                    max_cast(subquery.c.calculated_height_of_building, s + '_max_building_height')
                    ]
       
         # Get buffers in decending size order and create column name lists
@@ -85,7 +85,7 @@ class UKMap(StaticTableConnector):
         max_cast = lambda x, lab: func.max(cast(x, Float)).label(lab)
 
         # Create a list of all the select functions for the query
-        query_list = [buffer_intersection_query.c.id]
+        query_list = [buffer_intersection_query.c.id, buffer_intersection_query.c.lat, buffer_intersection_query.c.lon ]
 
         for s in buffer_sizes:
             query_list = query_list + __summary_f_list(buffer_intersection_query, s)
@@ -97,4 +97,22 @@ class UKMap(StaticTableConnector):
                                          buffer_intersection_query.c.lat,
                                          buffer_intersection_query.c.lon)
 
-            return out
+            if return_df:
+                self.logger.info("Processing ukmap features... This may take some time")
+                return pd.read_sql(out.statement, self.engine)
+            else:
+                return out
+
+    @staticmethod
+    def expand_static_feature_df(start_date, end_date, feature_df):
+
+        start_date = datetime.strptime(start_date, r"%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, r"%Y-%m-%d").date()
+
+        ids = feature_df['id'].values
+        times = rrule.rrule(rrule.HOURLY, dtstart=start_date, until=end_date)
+        index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=True)], names = ["id", "time"])
+        time_df = pd.DataFrame(index = index).reset_index()
+        time_df_merged = time_df.merge(feature_df)
+
+        return time_df_merged

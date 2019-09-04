@@ -1,8 +1,5 @@
-from .databases import Updater, StaticTableConnector
-from sqlalchemy import func, cast, String, text
-import pandas as pd
-import calendar
-import numpy as np 
+from .databases import StaticTableConnector
+from sqlalchemy import func, cast, String
 
 class HexGrid(StaticTableConnector):
 
@@ -11,7 +8,7 @@ class HexGrid(StaticTableConnector):
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('hex_grid')
+        self.table = self.get_table_instance('glahexgrid')
 
 
     def query_interest_points(self):

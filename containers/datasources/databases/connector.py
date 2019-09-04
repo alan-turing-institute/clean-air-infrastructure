@@ -55,7 +55,7 @@ class Connector():
             return cls.connections[cnxn_str]
         else:
             return cls.connections[cnxn_str]
-    
+
     @property
     def engine(self):
         """

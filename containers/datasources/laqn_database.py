@@ -6,11 +6,8 @@ import requests
 from .databases import Updater, laqn_tables
 from .loggers import green
 from .apis import APIReader
-from sqlalchemy import func, text, and_
-from geoalchemy2 import Geography, Geometry
-from datetime import datetime
-import pandas as pd 
-import calendar
+from sqlalchemy import func, and_
+import pandas as pd
 
 
 class LAQNDatabase(Updater, APIReader):
@@ -118,12 +115,7 @@ class LAQNDatabase(Updater, APIReader):
 
         with self.dbcnxn.open_session() as session:
 
-            result = session.query(
-                                 (laqn_tables.LAQNSite.SiteCode).label('id'), 
-                                 laqn_tables.LAQNSite.Latitude.label("lat"),
-                                 laqn_tables.LAQNSite.Longitude.label("lon"), 
-                                 laqn_tables.LAQNSite.geom.label('geom')
-                                )
+            result = session.query(laqn_tables.LAQNSite)
                     
             if not include_sites:
                 filtered_result = result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
@@ -149,9 +141,38 @@ class LAQNDatabase(Updater, APIReader):
         query_funcs = [func_base(interest_point_query.c.geom, size).label('buffer_' + str(size)) for size in buffer_sizes]
 
         with self.dbcnxn.open_session() as session:
-            out = session.query(interest_point_query.c.id, 
-                                    interest_point_query.c.lat,
-                                    interest_point_query.c.lon,            
+            out = session.query(interest_point_query.c.SiteCode.label('id'), 
+                                    interest_point_query.c.Latitude.label("lat"),
+                                    interest_point_query.c.Longitude.label("lon"), 
                                     *query_funcs)
 
         return out
+
+
+    def query_interest_point_readings(self, start_date, end_date, boundary_geom, include_sites):
+        """
+        Get readings from interest points between dates of interest, passing a list of sites to get readings for
+        """
+
+        # start_date = datetime.strptime(start_date, r"%Y-%m-%d").date()
+        # end_date = datetime.strptime(end_date, r"%Y-%m-%d").date()
+
+        subquery = self.query_interest_points(boundary_geom, include_sites).subquery()
+
+        with self.dbcnxn.open_session() as session:
+
+            result = session.query(subquery.c.SiteCode.label("id"), 
+                                   laqn_tables.LAQNReading.MeasurementDateGMT.label('time'),
+                                   laqn_tables.LAQNReading.SpeciesCode,
+                                   laqn_tables.LAQNReading.Value
+                                   
+                                   
+                                   ).join(laqn_tables.LAQNReading)
+            result = result.filter(laqn_tables.LAQNReading.MeasurementDateGMT.between(start_date, end_date))
+            df = pd.read_sql(result.statement, self.dbcnxn.engine)
+
+            df = pd.pivot_table(df, 
+                                values = 'Value', 
+                                index=['id', 'time'], 
+                                columns = 'SpeciesCode', dropna=False).reset_index()
+            return df

@@ -1,8 +1,7 @@
-from sqlalchemy import create_engine, MetaData, Table, Column, ForeignKey
-from geoalchemy2 import Geometry
+from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 from .connector import Connector
-from ..loggers import get_logger, green
+from ..loggers import get_logger
 
 class StaticTableConnector(Connector):
     """Manage interactions with the static tables in the azure database"""

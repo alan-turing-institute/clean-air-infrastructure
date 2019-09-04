@@ -6,6 +6,7 @@ from geoalchemy2 import Geometry
 
 Base = declarative_base()
 
+
 class LAQNSite(Base):
     """Table of LAQN sites"""
     __tablename__ = "laqn_sites"
@@ -19,10 +20,11 @@ class LAQNSite(Base):
     geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 
     readings = relationship("LAQNReading", back_populates="site")
-        
+
     def __repr__(self):
         return "<LAQNSite(SiteCode='%s', SiteType='%s', Latitude='%s', Longitude='%s', Opened='%s', Closed='%s'" % (
-                self.SiteCode, self.SiteType, self.Latitude, self.Longitude, self.DateOpened, self.DateClosed)
+            self.SiteCode, self.SiteType, self.Latitude, self.Longitude, self.DateOpened, self.DateClosed)
+
 
 class LAQNReading(Base):
     """Table of LAQN readings"""
