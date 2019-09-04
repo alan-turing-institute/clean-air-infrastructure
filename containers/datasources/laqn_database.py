@@ -43,7 +43,7 @@ class LAQNDatabase(Updater, APIReader):
         """
         try:
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
-                site_code, str(start_date.date()), str(end_date.date())
+                site_code, str(start_date), str(end_date)
             )
             raw_data = self.get_response(endpoint, timeout=5.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
