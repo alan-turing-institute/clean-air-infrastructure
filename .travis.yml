@@ -10,14 +10,17 @@ script:
   # # Run all pytest unit tests
   # - python -m pytest -v tests --cov misinformation --cov-report term-missing
 
-  # Run pyflakes for error detection
-  - pyflakes **/*.py
+  # # Run pyflakes for error detection
+  # - pyflakes **/*.py
 
-  # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count **/*.py
+  # # Check PEP8 compliance (ignoring long lines)
+  # - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count **/*.py
+
+  # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
+  - flake8
 
   # Run pylint for stricter error checking
-  - pylint **/*.py
+  - pylint */ --ignore unused
 
   # Build all docker images
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_aqe_database.Dockerfile containers/.

@@ -4,6 +4,7 @@ azure-keyvault
 boto3
 colorlog
 docker
+flake8
 geoalchemy2
 pandas
 psycopg2-binary
