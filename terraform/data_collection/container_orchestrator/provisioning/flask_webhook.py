@@ -5,15 +5,18 @@ import json
 
 app = Flask(__name__)
 
+
 def verify_signature(data, signature):
     with open("/var/www/github.secret", "r") as f_secret:
         github_secret = f_secret.readlines()[0].strip()
     mac = hmac.new(github_secret.encode(), msg=data, digestmod=hashlib.sha1)
     return hmac.compare_digest("sha1=" + mac.hexdigest(), signature)
 
+
 @app.route("/")
 def default():
     return "Flask server for github webhooks"
+
 
 @app.route("/github", methods=["POST"])
 def github_webhook():
@@ -48,6 +51,7 @@ def github_webhook():
         return jsonify({"msg": "invalid hash"})
     print("Unknown issue")
     return jsonify({"msg": "unknown issue"})
+
 
 if __name__ == "__main__":
     app.run()

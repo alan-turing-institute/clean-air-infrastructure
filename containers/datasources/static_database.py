@@ -48,8 +48,8 @@ class StaticDatabase():
                                 "CAST(geographic_type_number AS integer) AS geographic_type_number",
                                 # NB. The next command is a single string split across mulitple lines for readability
                                 "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-',"
-                                             "SUBSTR(date_of_feature_edit, -4, 2), '-',"
-                                             "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
+                                "SUBSTR(date_of_feature_edit, -4, 2), '-',"
+                                "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
                                 "feature_type",
                                 "landuse",
                                 # "CAST(altertative_style_code AS integer) AS alternative_style_code",
@@ -111,7 +111,8 @@ class StaticDatabase():
 
         if self.data_directory == "canyonslondon":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx ON canyonslondon USING GIST(wkb_geometry);""",
+                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
+                   ON canyonslondon USING GIST(wkb_geometry);""",
                 """ALTER TABLE canyonslondon
                        DROP COLUMN ave_relhma,
                        DROP COLUMN identifier,
@@ -134,7 +135,8 @@ class StaticDatabase():
 
         elif self.data_directory == "glahexgrid":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx ON glahexgrid USING GIST(wkb_geometry);""",
+                """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
+                   ON glahexgrid USING GIST(wkb_geometry);""",
                 """ALTER TABLE glahexgrid
                        DROP COLUMN col_id,
                        DROP COLUMN ogc_fid,
@@ -144,7 +146,8 @@ class StaticDatabase():
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx ON londonboundary USING GIST(wkb_geometry);""",
+                """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
+                   ON londonboundary USING GIST(wkb_geometry);""",
                 """ALTER TABLE londonboundary
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
@@ -157,7 +160,8 @@ class StaticDatabase():
 
         elif self.data_directory == "oshighwayroadlink":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx ON oshighwayroadlink USING GIST(wkb_geometry);""",
+                """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
+                   ON oshighwayroadlink USING GIST(wkb_geometry);""",
                 """ALTER TABLE oshighwayroadlink
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
@@ -176,7 +180,8 @@ class StaticDatabase():
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx ON scootdetectors USING GIST(wkb_geometry);""",
+                """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
+                   ON scootdetectors USING GIST(wkb_geometry);""",
                 """DELETE FROM scootdetectors WHERE ogc_fid NOT IN
                        (SELECT DISTINCT ON (detector_n) ogc_fid FROM scootdetectors);""",
                 """ALTER TABLE scootdetectors
