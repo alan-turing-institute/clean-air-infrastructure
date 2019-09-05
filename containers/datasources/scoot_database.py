@@ -34,10 +34,10 @@ class ScootDatabase(Updater):
                             "OccupancyRawCount", "CongestionRawCount", "SaturationRawCount", "Region"]
 
         # How many minutes to combine into a single reading (to reduce how much is written to the database)
-        self.aggregation_size = 5
+        self.aggregation_size = 60
 
         # How many aggregated readings to batch into a single database transaction
-        self.transaction_batch_size = 12
+        self.transaction_batch_size = 2
 
         # Start with an empty list of detector IDs
         self.detector_ids = []
