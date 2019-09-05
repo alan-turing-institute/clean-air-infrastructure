@@ -1,3 +1,6 @@
+"""
+Update scoot database
+"""
 import argparse
 import json
 import os
@@ -5,6 +8,7 @@ import datasources
 
 
 def main():
+    """Update the scoot database"""
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get Scoot traffic data")
     parser.add_argument("-e", "--end", type=str, default="yesterday",

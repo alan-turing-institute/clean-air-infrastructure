@@ -1,8 +1,14 @@
+"""
+Update laqn database
+"""
 import argparse
 import datasources
 
 
 def main():
+    """
+    Update laqn database
+    """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get LAQN sensor data")
     parser.add_argument("-e", "--end", type=str, default="yesterday",

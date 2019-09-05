@@ -1,8 +1,14 @@
+"""
+Update static dataset
+"""
 import argparse
 import datasources
 
 
 def main():
+    """
+    Update static dataset
+    """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Insert static datasets")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")

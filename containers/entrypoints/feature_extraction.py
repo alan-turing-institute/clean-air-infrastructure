@@ -1,10 +1,15 @@
+"""
+Feature extraction
+"""
 import matplotlib.pyplot as plt
 import geopandas
-from datasources import LondonBoundary, LAQNDatabase, HexGrid, UKMap
+from datasources import LondonBoundary, LAQNDatabase, UKMap
 
 
-if __name__ == '__main__':
-
+def main():
+    """
+    Run feature extraction
+    """
     db_info_file = '.db_input_secret_local.json'
 
     start_date = '2019-09-02'
@@ -15,7 +20,7 @@ if __name__ == '__main__':
 
     # Import datasources
     laqn = LAQNDatabase(end='today', ndays=2, secretfile=db_info_file)
-    hex_grid = HexGrid(secretfile=db_info_file)
+    # hex_grid = HexGrid(secretfile=db_info_file)
 
     # Import features
     ukmap = UKMap(secretfile=db_info_file)
@@ -41,6 +46,7 @@ if __name__ == '__main__':
     # Merge static features with time
     ukmap_time_features = ukmap.expand_static_feature_df(start_date, end_date, ukmap_features_df)
     features_with_laqn = ukmap_time_features.merge(laqn_readings, on=['id', 'time'])
+    print(features_with_laqn)
 
     # Plot london with laqn buffers
     london_boundary_df = geopandas.GeoDataFrame.from_postgis(london_boundary.query_all().statement,
@@ -51,3 +57,8 @@ if __name__ == '__main__':
                                                           geom_col='buffer_' + str(buffer_sizes[0]))
     laqn_buffers_df.plot(ax=ax_buffers, color='b')
     plt.show()
+
+
+if __name__ == '__main__':
+
+    main()

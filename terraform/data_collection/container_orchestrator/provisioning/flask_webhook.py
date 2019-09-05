@@ -1,3 +1,6 @@
+"""
+Flask webhook app
+"""
 from flask import Flask, jsonify, request
 import hashlib
 import hmac

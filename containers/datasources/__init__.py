@@ -1,3 +1,6 @@
+"""
+Module for interfacing with the cleanair databases
+"""
 from .aqe_database import AQEDatabase
 from .laqn_database import LAQNDatabase
 from .scoot_database import ScootDatabase

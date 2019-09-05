@@ -1,3 +1,6 @@
+"""
+Loggers
+"""
 from .logsettings import get_logger
 from .logcolours import bold, green, red
 

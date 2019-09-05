@@ -1,25 +1,37 @@
+"""
+log colours
+"""
 import os
 import termcolor
 
 try:
-    disable_colours = bool(os.environ["NO_TEXT_COLOUR"])
+    DISABLE_COLOURS = bool(os.environ["NO_TEXT_COLOUR"])
 except KeyError:
-    disable_colours = False
+    DISABLE_COLOURS = False
 
 
 def bold(text):
-    if disable_colours:
+    """
+    Make text bold
+    """
+    if DISABLE_COLOURS:
         return text
     return termcolor.colored(text, attrs=["bold"])
 
 
 def green(text):
-    if disable_colours:
+    """
+    Make text green
+    """
+    if DISABLE_COLOURS:
         return text
     return termcolor.colored(text, "cyan")
 
 
 def red(text):
-    if disable_colours:
+    """
+    Make text red
+    """
+    if DISABLE_COLOURS:
         return text
     return termcolor.colored(text, "red")

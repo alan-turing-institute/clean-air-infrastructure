@@ -16,3 +16,4 @@ pytz
 requests
 sqlalchemy
 termcolor
+matplotlib
