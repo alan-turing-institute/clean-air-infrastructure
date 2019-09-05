@@ -4,6 +4,7 @@ import pandas as pd
 from dateutil import rrule
 from datetime import datetime
 
+
 class UKMap(StaticTableConnector):
 
     def __init__(self, *args, **kwargs):
@@ -17,13 +18,13 @@ class UKMap(StaticTableConnector):
         """
         Gets the intersection between buffers and the ukmap geoms
         """
-        
+
         buffer_query = buffer_query.subquery()
 
         query_items = [buffer_query.c.id,
                        buffer_query.c.lat,
                        buffer_query.c.lon,
-                       self.table.feature_type, 
+                       self.table.feature_type,
                        self.table.landuse,
                        self.table.calculated_height_of_building]
 

@@ -29,17 +29,17 @@ class LAQNSite(Base):
 class LAQNReading(Base):
     """Table of LAQN readings"""
     __tablename__ = "laqn_readings"
-    id = Column(Integer, primary_key = True)
-    SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), nullable=False)
-    SpeciesCode = Column(String(4), nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP(timezone=True), nullable=False)
+    SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), primary_key=True, nullable=False)
+    SpeciesCode = Column(String(4), primary_key=True, nullable=False)
+    MeasurementDateGMT = Column(TIMESTAMP(timezone=True), primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
     site = relationship("LAQNSite", back_populates="readings")
 
     def __repr__(self):
         return "<LAQNReading(SiteCode='%s', SpeciesCode='%s', MeasurementDateGMT='%s', Value='%s'" % (
-                self.SiteCode, self.SpeciesCode, self.MeasurementDateGMT, self.Value)
+            self.SiteCode, self.SpeciesCode, self.MeasurementDateGMT, self.Value)
+
 
 def initialise(engine):
     """Ensure that all tables exist"""
@@ -66,7 +66,7 @@ def build_site_entry(site_dict):
                     DateOpened=site_dict["@DateOpened"],
                     DateClosed=site_dict["@DateClosed"],
                     **kwargs)
-    
+
     # Construct the record and return it
     return site
 

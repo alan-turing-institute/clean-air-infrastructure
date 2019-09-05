@@ -1,6 +1,7 @@
 from .databases import StaticTableConnector
 from sqlalchemy import func
 
+
 class LondonBoundary(StaticTableConnector):
 
     def __init__(self, *args, **kwargs):

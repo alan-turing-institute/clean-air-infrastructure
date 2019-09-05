@@ -3,13 +3,13 @@ from sqlalchemy.ext.automap import automap_base
 from .connector import Connector
 from ..loggers import get_logger
 
+
 class StaticTableConnector(Connector):
     """Manage interactions with the static tables in the azure database"""
     def __init__(self, *args, **kwargs):
 
-        super().__init__(*args, **kwargs)       
+        super().__init__(*args, **kwargs)
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
-
 
     def get_table_instance(self, table_name):
         """

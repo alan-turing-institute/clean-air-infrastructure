@@ -1,6 +1,7 @@
 from .databases import StaticTableConnector
 from sqlalchemy import func, cast, String
 
+
 class HexGrid(StaticTableConnector):
 
     def __init__(self, *args, **kwargs):
@@ -10,7 +11,6 @@ class HexGrid(StaticTableConnector):
         # Reflect the table
         self.table = self.get_table_instance('glahexgrid')
 
-
     def query_interest_points(self):
         """
         Return interest points where interest points are
@@ -18,10 +18,7 @@ class HexGrid(StaticTableConnector):
         """
 
         with self.open_session() as session:
-            return session.query(
-                                 (cast(self.table.ogc_fid, String(4))).label('id'), 
+            return session.query((cast(self.table.ogc_fid, String(4))).label('id'),
                                  func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
                                  func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
                                  func.ST_Centroid(self.table.wkb_geometry).label('geom'))
-
-

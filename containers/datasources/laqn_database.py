@@ -3,11 +3,11 @@ Get data from the LAQN network via the API maintained by Kings College London:
   (https://www.londonair.org.uk/Londonair/API/)
 """
 import requests
+from sqlalchemy import func, and_
+import pandas as pd
 from .databases import Updater, laqn_tables
 from .loggers import green
 from .apis import APIReader
-from sqlalchemy import func, and_
-import pandas as pd
 
 
 class LAQNDatabase(Updater, APIReader):
@@ -98,56 +98,55 @@ class LAQNDatabase(Updater, APIReader):
             session.commit()
 
         self.logger.info("Finished %s readings update...", green("LAQN"))
-        
+
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
         self.update_site_list_table()
         self.update_reading_table()
 
-    def query_interest_points(self, boundary_geom, include_sites = None):
+    def query_interest_points(self, boundary_geom, include_sites=None):
         """
         Return interest points where interest points are
             the locations of laqn sites within a boundary_geom (e.g. all the sites within London)
         Keyword arguments:
             include_sites -- A list of SiteCodes to include. If None then gets all
-    
         """
 
         with self.dbcnxn.open_session() as session:
 
             result = session.query(laqn_tables.LAQNSite)
-                    
+
             if not include_sites:
                 filtered_result = result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
-            
+
             else:
                 filtered_result = result.filter(and_(
-                                          laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
-                                          laqn_tables.LAQNSite.SiteCode.in_(include_sites))
-                                         )
+                                                laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
+                                                laqn_tables.LAQNSite.SiteCode.in_(include_sites)))
         return filtered_result
 
-
-    def query_interest_point_buffers(self, buffer_sizes, boundary_geom, include_sites = None, num_seg_quarter_circle = 8):
+    def query_interest_point_buffers(self, buffer_sizes, boundary_geom,
+                                     include_sites=None, num_seg_quarter_circle=8):
         """
-        Return a set of buffers of size buffer_sizes around the interest points 
+        Return a set of buffers of size buffer_sizes around the interest points
         returned by self.query_interest_points
         """
 
         interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
 
-        func_base = lambda x, size: func.Geometry(func.ST_Buffer(func.Geography(x), size, num_seg_quarter_circle))
-        
-        query_funcs = [func_base(interest_point_query.c.geom, size).label('buffer_' + str(size)) for size in buffer_sizes]
+        def func_base(x, size):
+            return func.Geometry(func.ST_Buffer(func.Geography(x), size, num_seg_quarter_circle))
+
+        query_funcs = [func_base(interest_point_query.c.geom, size).label('buffer_' + str(size))
+                       for size in buffer_sizes]
 
         with self.dbcnxn.open_session() as session:
-            out = session.query(interest_point_query.c.SiteCode.label('id'), 
-                                    interest_point_query.c.Latitude.label("lat"),
-                                    interest_point_query.c.Longitude.label("lon"), 
-                                    *query_funcs)
+            out = session.query(interest_point_query.c.SiteCode.label('id'),
+                                interest_point_query.c.Latitude.label("lat"),
+                                interest_point_query.c.Longitude.label("lon"),
+                                *query_funcs)
 
         return out
-
 
     def query_interest_point_readings(self, start_date, end_date, boundary_geom, include_sites):
         """
@@ -161,18 +160,16 @@ class LAQNDatabase(Updater, APIReader):
 
         with self.dbcnxn.open_session() as session:
 
-            result = session.query(subquery.c.SiteCode.label("id"), 
+            result = session.query(subquery.c.SiteCode.label("id"),
                                    laqn_tables.LAQNReading.MeasurementDateGMT.label('time'),
                                    laqn_tables.LAQNReading.SpeciesCode,
                                    laqn_tables.LAQNReading.Value
-                                   
-                                   
                                    ).join(laqn_tables.LAQNReading)
             result = result.filter(laqn_tables.LAQNReading.MeasurementDateGMT.between(start_date, end_date))
             df = pd.read_sql(result.statement, self.dbcnxn.engine)
 
-            df = pd.pivot_table(df, 
-                                values = 'Value', 
-                                index=['id', 'time'], 
-                                columns = 'SpeciesCode', dropna=False).reset_index()
+            df = pd.pivot_table(df,
+                                values='Value',
+                                index=['id', 'time'],
+                                columns='SpeciesCode', dropna=False).reset_index()
             return df
