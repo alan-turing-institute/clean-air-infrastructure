@@ -41,15 +41,14 @@ class UKMap(StaticTableConnector):
 
         # Create the query and apply filters
         with self.open_session() as session:
-            out =  session.query(*query_items).\
+            out = session.query(*query_items).\
                             filter(and_(
                                 func.ST_GeometryType(func.ST_MakeValid(self.table.shape))=='ST_MultiPolygon', 
                                 func.ST_Intersects(self.table.shape, buffer_query.c['buffer_' + buffer_cols[0]])
                                 ))
             return out
 
-
-    def query_features(self, buffer_query, buffer_sizes, return_df = True):
+    def query_features(self, buffer_query, buffer_sizes, return_df=True):
 
         if not isinstance(buffer_sizes, list):
             raise TypeError("buffer_sizes object must be a list")
