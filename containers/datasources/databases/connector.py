@@ -1,3 +1,6 @@
+"""
+connector
+"""
 from contextlib import contextmanager
 import json
 import os
@@ -9,6 +12,9 @@ from ..loggers import get_logger, green, red
 
 
 class Connector():
+    """
+    Base class for connecting to databases with sqlalchemy
+    """
 
     connections = {}
 
@@ -18,7 +24,7 @@ class Connector():
 
         self.connection_info = self.load_connection_info(secretfile)
         self._engine = None
-        self._Session = None
+        self._session = None
 
     def load_connection_info(self, secret_file):
         """
@@ -47,14 +53,16 @@ class Connector():
 
     @classmethod
     def get_connection(cls, cnxn_str):
-
+        """
+        Return an engine and Session object associated with the connection string
+        """
         if cnxn_str not in cls.connections:
             engine = create_engine(cnxn_str, pool_recycle=280)
-            Session = sessionmaker(bind=engine)
-            cls.connections[cnxn_str] = {'engine': engine, 'Session': Session}
+            session = sessionmaker(bind=engine)
+            cls.connections[cnxn_str] = {'engine': engine, 'Session': session}
             return cls.connections[cnxn_str]
-        else:
-            return cls.connections[cnxn_str]
+
+        return cls.connections[cnxn_str]
 
     @property
     def engine(self):
@@ -66,7 +74,7 @@ class Connector():
             cnxn_str = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info)
             connection = self.get_connection(cnxn_str)
             self._engine = connection['engine']
-            self._Session = connection['Session']
+            self._session = connection['Session']
             with self._engine.connect() as conn:
                 conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         return self._engine
@@ -80,7 +88,7 @@ class Connector():
         """
         try:
             # Use the engine to create a new session
-            session = self._Session()
+            session = self._session()
             if not skip_check:
                 self.check_internet_connection()
             yield session
@@ -92,6 +100,9 @@ class Connector():
             session.close()
 
     def check_internet_connection(self, url="http://www.google.com/", timeout=5):
+        """
+        Check can connect to the interet
+        """
         try:
             requests.get(url, timeout=timeout)
             self.logger.info("Internet connection: %s", green("WORKING"))

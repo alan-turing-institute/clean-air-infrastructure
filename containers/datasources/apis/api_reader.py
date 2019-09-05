@@ -1,3 +1,6 @@
+"""
+api reader
+"""
 import datetime
 import requests
 from ..loggers import get_logger, green
@@ -11,6 +14,9 @@ class APIReader():
             self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
     def get_readings_by_site(self, site_list_query, start_date, end_date):
+        """
+        Request a list of readings for a list of sites between start_date and end_date
+        """
         # Restrict to sites which were open during the requested time period
         site_dates = [self.get_available_datetimes(site, start_date, end_date) for site in site_list_query]
         available_sites = [(s, *[d.date() for d in dates]) for s, dates in zip(site_list_query, site_dates) if dates]

@@ -1,9 +1,14 @@
-from .databases import StaticTableConnector
+"""
+Hexgrid
+"""
 from sqlalchemy import func, cast, String
+from .databases import StaticTableConnector
 
 
 class HexGrid(StaticTableConnector):
-
+    """
+    Class to interface with the glahexgrid database table
+    """
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)

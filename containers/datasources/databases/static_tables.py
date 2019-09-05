@@ -1,3 +1,6 @@
+"""
+Static table base class
+"""
 from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 from .connector import Connector
@@ -5,7 +8,9 @@ from ..loggers import get_logger
 
 
 class StaticTableConnector(Connector):
-    """Manage interactions with the static tables in the azure database"""
+    """
+    Base class to manage interactions with the tables in postgresql databases by reflection
+    """
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)

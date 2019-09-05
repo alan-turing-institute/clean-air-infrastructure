@@ -1,6 +1,5 @@
 """
-Get data from the LAQN network via the API maintained by Kings College London:
-  (https://www.londonair.org.uk/Londonair/API/)
+LAQN
 """
 import requests
 from sqlalchemy import func, and_
@@ -11,6 +10,10 @@ from .apis import APIReader
 
 
 class LAQNDatabase(Updater, APIReader):
+    """
+    Get data from the LAQN network via the API maintained by Kings College London:
+    (https://www.londonair.org.uk/Londonair/API/)
+    """
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
         super().__init__(*args, **kwargs)
@@ -121,9 +124,8 @@ class LAQNDatabase(Updater, APIReader):
                 filtered_result = result.filter(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom))
 
             else:
-                filtered_result = result.filter(and_(
-                                                laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
-                                                laqn_tables.LAQNSite.SiteCode.in_(include_sites)))
+                filtered_result = result.filter(and_(laqn_tables.LAQNSite.geom.ST_Intersects(boundary_geom),
+                                                     laqn_tables.LAQNSite.SiteCode.in_(include_sites)))
         return filtered_result
 
     def query_interest_point_buffers(self, buffer_sizes, boundary_geom,
@@ -135,8 +137,8 @@ class LAQNDatabase(Updater, APIReader):
 
         interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
 
-        def func_base(x, size):
-            return func.Geometry(func.ST_Buffer(func.Geography(x), size, num_seg_quarter_circle))
+        def func_base(geom, size):
+            return func.Geometry(func.ST_Buffer(func.Geography(geom), size, num_seg_quarter_circle))
 
         query_funcs = [func_base(interest_point_query.c.geom, size).label('buffer_' + str(size))
                        for size in buffer_sizes]
@@ -167,10 +169,10 @@ class LAQNDatabase(Updater, APIReader):
                                    laqn_tables.LAQNReading.Value
                                    ).join(laqn_tables.LAQNReading)
             result = result.filter(laqn_tables.LAQNReading.MeasurementDateGMT.between(start_date, end_date))
-            df = pd.read_sql(result.statement, self.dbcnxn.engine)
+            df_result = pd.read_sql(result.statement, self.dbcnxn.engine)
 
-            df = pd.pivot_table(df,
-                                values='Value',
-                                index=['id', 'time'],
-                                columns='SpeciesCode', dropna=False).reset_index()
-            return df
+            df_result = pd.pivot_table(df_result,
+                                       values='Value',
+                                       index=['id', 'time'],
+                                       columns='SpeciesCode', dropna=False).reset_index()
+            return df_result

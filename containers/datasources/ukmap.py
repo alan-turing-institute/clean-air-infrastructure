@@ -1,12 +1,17 @@
-from .databases import StaticTableConnector
+"""
+UKMap
+"""
+from datetime import datetime
 from sqlalchemy import func, and_, or_, cast, Float
 import pandas as pd
 from dateutil import rrule
-from datetime import datetime
+from .databases import StaticTableConnector
 
 
 class UKMap(StaticTableConnector):
-
+    """
+    Class for interfacing with the UKMap database table
+    """
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
@@ -53,29 +58,46 @@ class UKMap(StaticTableConnector):
             return out
 
     def query_features(self, buffer_query, buffer_sizes, return_df=True):
+        """
+        Process UKMap features and return as a dataframe or an sqlalchemy object
 
+        Parameters
+        ----------
+        buffer_query: sqlalchemy query object
+            A query object returned by the .query_interest_point_buffers() methods on objects with interest points
+        buffer_sizes: list
+            A list of buffer sizes
+        return_df: bool, optional
+            If set to False will return an sqlalchemy query object. Otherwise returns a pandas dataframe
+
+        """
         if not isinstance(buffer_sizes, list):
             raise TypeError("buffer_sizes object must be a list")
 
         def __intersected_col_name(size):
             return 'intersect_' + str(size)
 
+        def sum_area(geom, filt, lab):
+            return func.coalesce(func.sum(func.ST_Area(func.Geography(geom))).filter(filt), 0.0).label(lab)
+
+        def max_cast(geom, lab):
+            return func.max(cast(geom, Float)).label(lab)
+
         def __summary_f_list(subquery, buffer_size):
             """
             For a given intersected geometry, create summary functions and tag with appropriate label
             """
             geom = subquery.c[__intersected_col_name(buffer_size)]
-            return [
-                    sum_area(geom, subquery.c.feature_type == 'Museum', s + '_total_museum_area'),
-                    sum_area(geom, subquery.c.landuse == 'Hospitals', s + '_total_hospital_area'),
-                    sum_area(geom, subquery.c.feature_type == 'Vegetated', s + '_total_grass_area'),
+            return [sum_area(geom, subquery.c.feature_type == 'Museum', buffer_size + '_total_museum_area'),
+                    sum_area(geom, subquery.c.landuse == 'Hospitals', buffer_size + '_total_hospital_area'),
+                    sum_area(geom, subquery.c.feature_type == 'Vegetated', buffer_size + '_total_grass_area'),
                     sum_area(geom, and_(subquery.c.feature_type == 'Vegetated',
-                                        subquery.c.landuse == 'Recreational open space'), s + '_total_park_area'),
-                    sum_area(geom, subquery.c.feature_type == 'Water', s + '_total_water_area'),
+                                        subquery.c.landuse == 'Recreational open space'),
+                             buffer_size + '_total_park_area'),
+                    sum_area(geom, subquery.c.feature_type == 'Water', buffer_size + '_total_water_area'),
                     sum_area(geom, or_(subquery.c.feature_type == 'Vegetated',
-                                       subquery.c.feature_type == 'Water'), s + '_total_flat_area'),
-                    max_cast(subquery.c.calculated_height_of_building, s + '_max_building_height')
-                   ]
+                                       subquery.c.feature_type == 'Water'), buffer_size + '_total_flat_area'),
+                    max_cast(subquery.c.calculated_height_of_building, buffer_size + '_max_building_height')]
 
         # Get buffers in decending size order and create column name lists
         sorted_buffers = sorted(buffer_sizes)[::-1]
@@ -84,18 +106,11 @@ class UKMap(StaticTableConnector):
         # Get buffer intersections
         buffer_intersection_query = self.__query_buffer_intersection(buffer_query, buffer_sizes).subquery()
 
-        # Compose functions
-        def sum_area(x, filt, lab):
-            return func.coalesce(func.sum(func.ST_Area(func.Geography(x))).filter(filt), 0.0).label(lab)
-
-        def max_cast(x, lab):
-            return func.max(cast(x, Float)).label(lab)
-
         # Create a list of all the select functions for the query
         query_list = [buffer_intersection_query.c.id, buffer_intersection_query.c.lat, buffer_intersection_query.c.lon]
 
-        for s in buffer_sizes:
-            query_list = query_list + __summary_f_list(buffer_intersection_query, s)
+        for size in buffer_sizes:
+            query_list = query_list + __summary_f_list(buffer_intersection_query, size)
 
         # Create the query and aggregate by interest point
         with self.open_session() as session:
@@ -107,12 +122,14 @@ class UKMap(StaticTableConnector):
             if return_df:
                 self.logger.info("Processing ukmap features... This may take some time")
                 return pd.read_sql(out.statement, self.engine)
-            else:
-                return out
+
+            return out
 
     @staticmethod
     def expand_static_feature_df(start_date, end_date, feature_df):
-
+        """
+        Returns a new dataframe with UKMap features merged with hourly timestamps between start_date and end_date
+        """
         start_date = datetime.strptime(start_date, r"%Y-%m-%d").date()
         end_date = datetime.strptime(end_date, r"%Y-%m-%d").date()
 

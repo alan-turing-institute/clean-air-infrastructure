@@ -1,3 +1,6 @@
+"""
+laqn_tables
+"""
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base

@@ -1,3 +1,6 @@
+"""
+Scoot
+"""
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base

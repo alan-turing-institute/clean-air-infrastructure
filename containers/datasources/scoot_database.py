@@ -1,6 +1,5 @@
 """
-Get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
-  (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
+Scoot
 """
 import datetime
 import os
@@ -17,6 +16,10 @@ from .loggers import green
 
 
 class ScootDatabase(Updater):
+    """
+    Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
+    (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
+    """
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)

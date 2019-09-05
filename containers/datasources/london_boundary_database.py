@@ -1,9 +1,14 @@
-from .databases import StaticTableConnector
+"""
+London Boundary
+"""
 from sqlalchemy import func
+from .databases import StaticTableConnector
 
 
 class LondonBoundary(StaticTableConnector):
-
+    """
+    Class to interface with the londonboundary database table
+    """
     def __init__(self, *args, **kwargs):
         # Initialise the base class
         super().__init__(*args, **kwargs)
@@ -21,6 +26,9 @@ class LondonBoundary(StaticTableConnector):
             return session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
 
     def query_all(self):
+        """
+        Return all rows from the database table as an sql query object
+        """
         with self.open_session() as session:
             out = session.query(self.table)
             return out
