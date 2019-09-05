@@ -29,7 +29,8 @@ class UKMap(StaticTableConnector):
                        self.table.calculated_height_of_building]
 
         # Get the intersection between the ukmap geometries and the largest buffer
-        largest_intersection = func.ST_Intersection(func.ST_MakeValid(self.table.shape), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
+        largest_intersection = func.ST_Intersection(func.ST_MakeValid(self.table.shape), 
+                                                    buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
 
         query_items = query_items + [largest_intersection]
 
