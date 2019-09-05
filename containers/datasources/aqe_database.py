@@ -21,7 +21,7 @@ class AQEDatabase(Updater, APIReader):
 
     def request_site_entries(self):
         """
-        Request all laqn sites
+        Request all AQE sites
         Remove any that do not have an opening date
         """
         try:
@@ -60,6 +60,10 @@ class AQEDatabase(Updater, APIReader):
                                                "@MeasurementDateGMT": reading[0],
                                                "@Value": value})
             return processed_readings
+        except requests.exceptions.HTTPError as error:
+            self.logger.warning("Request to %s failed:", endpoint)
+            self.logger.warning(error)
+            return None
         except (TypeError, KeyError):
             return None
 
@@ -78,7 +82,7 @@ class AQEDatabase(Updater, APIReader):
             session.commit()
 
     def update_reading_table(self):
-        """"Update the database with new sensor readings."""
+        """Update the readings table with new sensor readings."""
         self.logger.info("Starting %s readings update...", green("AQE"))
 
         # Open a DB session

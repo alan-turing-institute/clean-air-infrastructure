@@ -15,24 +15,30 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
+    # Parse and interpret arguments
     args = parser.parse_args()
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
-    # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
-    if not (args.aws_key_id and args.aws_key):
-        try:
-            with open(os.path.join("/secrets", "aws_secrets.json")) as f_secret:
-                data = json.load(f_secret)
-                args.aws_key_id = data["aws_key_id"]
-                args.aws_key = data["aws_key"]
-        except json.decoder.JSONDecodeError:
-            raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
+    # Perform update and notify any exceptions
+    try:
+        # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
+        if not (args.aws_key_id and args.aws_key):
+            try:
+                with open(os.path.join("/secrets", "aws_secrets.json")) as f_secret:
+                    data = json.load(f_secret)
+                    args.aws_key_id = data["aws_key_id"]
+                    args.aws_key = data["aws_key"]
+            except json.decoder.JSONDecodeError:
+                raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
 
-    scootdb = datasources.ScootDatabase(**vars(args))
+        scootdb = datasources.ScootDatabase(**vars(args))
 
-    # Update the Scoot readings table on the database
-    scootdb.update_remote_tables()
+        # Update the Scoot readings table on the database
+        scootdb.update_remote_tables()
+    except Exception as error:
+        print("An uncaught exception occurred:", str(error))
+        raise
 
 
 if __name__ == "__main__":
