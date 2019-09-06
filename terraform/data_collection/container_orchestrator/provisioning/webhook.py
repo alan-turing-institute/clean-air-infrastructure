@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 
+
 app = Flask(__name__)
 
 
