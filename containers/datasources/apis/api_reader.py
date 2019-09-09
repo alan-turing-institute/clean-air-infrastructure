@@ -1,5 +1,5 @@
 """
-api reader
+Base class for all datasources that obtain their data by calling a web API
 """
 import datetime
 import requests
