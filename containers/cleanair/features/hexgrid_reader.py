@@ -14,7 +14,7 @@ class HexGridReader(StaticTableConnector):
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('glahexgrid')
+        self.table = self.get_table_instance('glahexgrid', 'datasources')
 
     def query_interest_points(self):
         """

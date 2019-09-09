@@ -17,7 +17,7 @@ class UKMapReader(StaticTableConnector):
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('ukmap')
+        self.table = self.get_table_instance('ukmap', 'datasources')
 
     def __query_buffer_intersection(self, buffer_query, buffer_cols):
         """

@@ -1,17 +1,20 @@
 """
 Tables for AQE data source
 """
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, DDL, event
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geometry
 
 BASE = declarative_base()
+SCHEMA_NAME = 'datasources'
+event.listen(BASE.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS {}".format(SCHEMA_NAME)))
 
 
 class AQESite(BASE):
     """Table of AQE sites"""
     __tablename__ = "aqe_sites"
+    __table_args__ = {'schema' : SCHEMA_NAME}
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SiteName = Column(String(), nullable=False)
     SiteType = Column(String(20), nullable=False)
@@ -27,6 +30,7 @@ class AQESite(BASE):
 class AQEReading(BASE):
     """Table of AQE readings"""
     __tablename__ = "aqe_readings"
+    __table_args__ = {'schema' : SCHEMA_NAME}
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
     MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)

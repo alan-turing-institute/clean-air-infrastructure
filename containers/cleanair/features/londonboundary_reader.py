@@ -14,7 +14,7 @@ class LondonBoundaryReader(StaticTableConnector):
         super().__init__(*args, **kwargs)
 
         # Reflect the table
-        self.table = self.get_table_instance('londonboundary')
+        self.table = self.get_table_instance('londonboundary', 'datasources')
 
     @property
     def convex_hull(self):

@@ -1,18 +1,21 @@
 """
 Tables for LAQN data source
 """
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DDL, event
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
 BASE = declarative_base()
-
+SCHEMA_NAME = 'datasources'
+event.listen(BASE.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS {}".format(SCHEMA_NAME)))
 
 class LAQNSite(BASE):
     """Table of LAQN sites"""
     __tablename__ = "laqn_sites"
+    __table_args__ = {'schema' : SCHEMA_NAME}
+
     SiteCode = Column(String(4), primary_key=True, nullable=False)
     la_id = Column(Integer, nullable=False)
     SiteType = Column(String(20), nullable=False)
@@ -32,7 +35,9 @@ class LAQNSite(BASE):
 class LAQNReading(BASE):
     """Table of LAQN readings"""
     __tablename__ = "laqn_readings"
-    SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), primary_key=True, nullable=False)
+    __table_args__ = {'schema' : SCHEMA_NAME}
+
+    SiteCode = Column(String(4), ForeignKey('{}.laqn_sites.SiteCode'.format(SCHEMA_NAME)), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
     MeasurementDateGMT = Column(TIMESTAMP(timezone=True), primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
@@ -46,6 +51,7 @@ class LAQNReading(BASE):
 
 def initialise(engine):
     """Ensure that all tables exist"""
+    
     BASE.metadata.create_all(engine)
 
 
