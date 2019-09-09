@@ -2,7 +2,7 @@
 Hexgrid
 """
 from sqlalchemy import func, cast, String
-from .databases import StaticTableConnector
+from ..databases import StaticTableConnector
 
 
 class HexGrid(StaticTableConnector):

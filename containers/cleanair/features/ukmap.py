@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import func, and_, or_, cast, Float
 import pandas as pd
 from dateutil import rrule
-from .databases import StaticTableConnector
+from ..databases import StaticTableConnector
 
 
 class UKMap(StaticTableConnector):

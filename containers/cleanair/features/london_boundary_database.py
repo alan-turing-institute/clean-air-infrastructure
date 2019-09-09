@@ -2,7 +2,7 @@
 London Boundary
 """
 from sqlalchemy import func
-from .databases import StaticTableConnector
+from ..databases import StaticTableConnector
 
 
 class LondonBoundary(StaticTableConnector):
