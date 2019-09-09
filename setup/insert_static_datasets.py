@@ -61,8 +61,12 @@ def get_key_vault_uri_and_client():
 
 def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
     """Build temporary JSON file containing database secrets"""
+    if local_secret:
+        # Retrieve secrets from local file
+        logging.info("Using database information from local file %s", emphasised(os.path.basename(local_secret)))
+        shutil.copyfile(local_secret, os.path.join(secrets_directory, "db_secrets.json"))
 
-    if not local_secret:
+    else:
         # Retrieve secrets from key vault
         vault_uri, keyvault_client = get_key_vault_uri_and_client()
         db_name = keyvault_client.get_secret(vault_uri, "{}-name".format(secret_prefix), "").value
@@ -81,9 +85,6 @@ def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
         with open(os.path.join(secrets_directory, "db_secrets.json"), "w") as f_secret:
             json.dump(database_secrets, f_secret)
 
-    else:
-        logging.info("Using database info specified in localfile %s", emphasised(os.path.basename(local_secret)))
-        shutil.copyfile(local_secret, os.path.join(secrets_directory, "db_secrets.json"))
 
 
 def upload_static_data(dataset, secrets_directory, data_directory):
@@ -154,7 +155,7 @@ def main():
                         help="Resource group where the static datasets will be stored")
     parser.add_argument("-s", "--storage-container-name", type=str, default="londonaqdatasets",
                         help="Name of the storage container where the Terraform backend will be stored")
-    parser.add_argument("-ls", '--local-secret', type=str,
+    parser.add_argument("-l", '--local-secret', type=str, default=None
                         help="Optionally pass the full path of a database secret file")
 
     args = parser.parse_args()

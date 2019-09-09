@@ -211,8 +211,10 @@ Create a database called `cleanair_db` and add the following login details (make
 To upload static data to the local database run:
 
 ```
-python setup/insert_static_datasets.py -ls <full-path-to-secret-file>
+python setup/insert_static_datasets.py -l <full-path-to-secret-file>
 ```
+
+where the secret file is a JSON file of the form detailed above.
 
 
 ## Removing Terraform infrastructure
