@@ -12,7 +12,6 @@ class LAQNReader():
     """
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
-        super().__init__(*args, **kwargs)
 
         # Ensure that tables exist
         self.dbcnxn = Connector(*args, **kwargs)
