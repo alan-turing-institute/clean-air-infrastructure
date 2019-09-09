@@ -19,7 +19,7 @@ def main():
     # laqn_include_sites = None
 
     # Import datasources
-    laqn = LAQNReader(end='today', ndays=2, secretfile=db_info_file)
+    laqn = LAQNReader(secretfile=db_info_file)
     # hex_grid = HexGrid(secretfile=db_info_file)
 
     # Import features
