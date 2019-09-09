@@ -225,7 +225,7 @@ terraform destroy
 ```
 
 You can check everything was removed on the Azure portal.
-Then login to TravisCI and delete the Azure Container repo environment variables. -->
+Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
 
