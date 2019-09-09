@@ -4,16 +4,12 @@ Tables for SCOOT data source
 from sqlalchemy import Boolean, Column, Integer, String, DDL, event
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
-
-BASE = declarative_base()
-SCHEMA_NAME = 'datasources'
-event.listen(BASE.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS {}".format(SCHEMA_NAME)))
-
+from . import BASE
 
 class ScootReading(BASE):
     """Table of Scoot readings"""
     __tablename__ = "scoot_readings"
-    __table_args__ = {'schema' : SCHEMA_NAME}
+    __table_args__ = {'schema' : 'datasources'}
     MeasurementDateUTC = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     DetectorID = Column(String(9), primary_key=True, nullable=False)  # DETSCN
     Region = Column(String(5))  # REGION
