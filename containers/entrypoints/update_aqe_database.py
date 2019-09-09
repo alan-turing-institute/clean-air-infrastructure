@@ -2,7 +2,7 @@
 Update aqe database
 """
 import argparse
-import cleanair
+from cleanair import AQEDatabase
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        aqedb = cleanair.AQEDatabase(**vars(args))
+        aqedb = AQEDatabase(**vars(args))
 
         # Update the AQE tables on the database
         aqedb.update_remote_tables()

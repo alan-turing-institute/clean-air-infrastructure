@@ -2,7 +2,7 @@
 Update static dataset
 """
 import argparse
-import cleanair
+from cleanair import StaticDatabase
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        staticdb = cleanair.StaticDatabase(**vars(args))
+        staticdb = StaticDatabase(**vars(args))
 
         # Upload static files
         staticdb.upload_static_files()

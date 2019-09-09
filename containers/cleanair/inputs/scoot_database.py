@@ -11,8 +11,8 @@ import boto3
 import botocore
 import pandas
 import pytz
-from .databases import Updater, scoot_tables
-from .loggers import green
+from ..databases import Updater, scoot_tables
+from ..loggers import green
 
 
 class ScootDatabase(Updater):

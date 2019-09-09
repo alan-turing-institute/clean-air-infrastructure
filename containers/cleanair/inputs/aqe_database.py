@@ -5,9 +5,9 @@ import csv
 import io
 from xml.dom import minidom
 import requests
-from .databases import Updater, aqe_tables
-from .loggers import green
-from .apis import APIReader
+from ..databases import Updater, aqe_tables
+from ..loggers import green
+from ..apis import APIReader
 
 
 class AQEDatabase(Updater, APIReader):

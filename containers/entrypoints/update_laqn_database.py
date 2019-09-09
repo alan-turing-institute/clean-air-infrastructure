@@ -2,7 +2,7 @@
 Update laqn database
 """
 import argparse
-import cleanair
+from cleanair import LAQNDatabase
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        laqndb = cleanair.LAQNDatabase(**vars(args))
+        laqndb = LAQNDatabase(**vars(args))
 
         # Update the LAQN tables on the database
         laqndb.update_remote_tables()

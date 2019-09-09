@@ -6,8 +6,8 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from .databases import Connector
-from .loggers import get_logger, green
+from ..databases import Connector
+from ..loggers import get_logger, green
 
 
 class StaticDatabase():

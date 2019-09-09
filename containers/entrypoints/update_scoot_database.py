@@ -4,7 +4,7 @@ Update scoot database
 import argparse
 import json
 import os
-import cleanair
+from cleanair import ScootDatabase
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
 
-        scootdb = cleanair.ScootDatabase(**vars(args))
+        scootdb = ScootDatabase(**vars(args))
 
         # Update the Scoot readings table on the database
         scootdb.update_remote_tables()
