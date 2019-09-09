@@ -61,7 +61,8 @@ def build_site_entry(site_dict):
     if site_dict["@Latitude"] and site_dict["@Longitude"]:
         kwargs = {"geom": "SRID=4326;POINT({} {})".format(site_dict["@Longitude"], site_dict["@Latitude"])}
 
-    site = LAQNSite(SiteCode=site_dict["@SiteCode"],
+    # Construct the record and return it
+    return LAQNSite(SiteCode=site_dict["@SiteCode"],
                     la_id=site_dict["@LocalAuthorityCode"],
                     SiteType=site_dict["@SiteType"],
                     Latitude=site_dict["@Latitude"],
@@ -69,9 +70,6 @@ def build_site_entry(site_dict):
                     DateOpened=site_dict["@DateOpened"],
                     DateClosed=site_dict["@DateClosed"],
                     **kwargs)
-
-    # Construct the record and return it
-    return site
 
 
 def build_reading_entry(reading_dict):
