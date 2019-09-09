@@ -1,5 +1,5 @@
 """
-connector
+Class for connecting to Azure databases
 """
 from contextlib import contextmanager
 import json

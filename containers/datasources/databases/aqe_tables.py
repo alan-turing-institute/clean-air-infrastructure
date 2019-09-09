@@ -1,5 +1,5 @@
 """
-aqe tables
+Tables for AQE data source
 """
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
