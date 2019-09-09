@@ -1,5 +1,5 @@
 """
-Static table base class
+Static data source tables
 """
 from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base

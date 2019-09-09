@@ -1,5 +1,5 @@
 """
-laqn_tables
+Tables for LAQN data source
 """
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP

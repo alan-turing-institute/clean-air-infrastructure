@@ -1,5 +1,5 @@
 """
-Scoot
+Tables for SCOOT data source
 """
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
