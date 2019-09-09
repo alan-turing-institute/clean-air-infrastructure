@@ -6,6 +6,7 @@ colorlog
 docker
 flake8
 geoalchemy2
+matplotlib
 pandas
 psycopg2-binary
 pycodestyle
@@ -16,4 +17,3 @@ pytz
 requests
 sqlalchemy
 termcolor
-matplotlib
