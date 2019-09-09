@@ -50,7 +50,7 @@ write_files:
   # Configuration for Flask app
   - path: /var/www/flask/app.wsgi
     content: |
-      ${flask_wsgi}
+      ${flask_app_wsgi}
 
   # Automatically run the docker image
   - path: /home/${username}/run_application.sh

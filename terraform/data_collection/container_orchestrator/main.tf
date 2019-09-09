@@ -88,7 +88,7 @@ data "template_file" "cloudinit" {
     # NB. the indentation of six spaces here ensures that the file will be inserted at the correct indentation level in the YAML file
     apache_config      = "${indent(6, "${data.template_file.apache_config.rendered}")}"
     flask_webhook      = "${indent(6, "${file("${path.module}/provisioning/webhook.py")}")}"
-    app_wsgi           = "${indent(6, "${file("${path.module}/provisioning/app.wsgi")}")}"
+    flask_app_wsgi     = "${indent(6, "${file("${path.module}/provisioning/app.wsgi")}")}"
     run_application    = "${indent(6, "${data.template_file.run_application.rendered}")}"
     github_known_hosts = "${indent(6, "${file("${path.module}/provisioning/known_hosts")}")}"
     github_secret      = "${indent(6, "${azurerm_key_vault_secret.orchestrator_github_secret.value}")}"
