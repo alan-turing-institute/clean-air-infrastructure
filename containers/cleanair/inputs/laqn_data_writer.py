@@ -9,7 +9,7 @@ from ..loggers import green
 from ..apis import APIReader
 
 
-class LAQNDatabase(Updater, APIReader):
+class LAQNDataWriter(Updater, APIReader):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)

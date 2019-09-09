@@ -15,7 +15,7 @@ from ..databases import Updater, scoot_tables
 from ..loggers import green
 
 
-class ScootDatabase(Updater):
+class ScootDataWriter(Updater):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
@@ -154,7 +154,7 @@ class ScootDatabase(Updater):
 
     def update_site_list_table(self):
         """"SCOOT sites are available as static data and cannot be dynamically loaded"""
-        self.logger.error("ScootDatabase.update_site_list_table should never be called!")
+        self.logger.error("ScootDataWriter.update_site_list_table should never be called!")
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic data."""

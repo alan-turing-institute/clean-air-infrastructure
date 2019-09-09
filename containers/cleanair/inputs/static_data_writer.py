@@ -10,7 +10,7 @@ from ..databases import Connector
 from ..loggers import get_logger, green
 
 
-class StaticDatabase():
+class StaticDataWriter():
     """Manage interactions with the static database on Azure"""
     def __init__(self, **kwargs):
         self.dbcnxn = Connector(**kwargs)

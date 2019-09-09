@@ -10,8 +10,8 @@ from ..loggers import green
 from ..apis import APIReader
 
 
-class AQEDatabase(Updater, APIReader):
-    """Manage interactions with the AQE database on Azure"""
+class AQEDataWriter(Updater, APIReader):
+    """Manage interactions with the AQE table on Azure"""
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
         super().__init__(*args, **kwargs)
