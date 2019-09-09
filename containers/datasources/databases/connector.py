@@ -15,16 +15,15 @@ class Connector():
     """
     Base class for connecting to databases with sqlalchemy
     """
-
-    connections = {}
+    __engine = None
+    __sessionmaker = None
 
     def __init__(self, secretfile, **kwargs):
         # Set up logging
         self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
+        # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
-        self._engine = None
-        self._session = None
 
     def load_connection_info(self, secret_file):
         """
@@ -51,35 +50,22 @@ class Connector():
 
         raise FileNotFoundError("Database secrets could not be loaded from {}".format(secret_file))
 
-    @classmethod
-    def get_connection(cls, cnxn_str):
-        """
-        Return an engine and Session object associated with the connection string
-        """
-        if cnxn_str not in cls.connections:
-            engine = create_engine(cnxn_str, pool_recycle=280)
-            session = sessionmaker(bind=engine)
-            cls.connections[cnxn_str] = {'engine': engine, 'Session': session}
-            return cls.connections[cnxn_str]
-
-        return cls.connections[cnxn_str]
-
     @property
-    def engine(self):
+    def engine(self, with_postgis=True):
         """
-        Create an SQLAlchemy engine
+        Access the single class-level sqlalchemy engine
         """
-
-        if not self._engine:
-            cnxn_str = "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info)
-            connection = self.get_connection(cnxn_str)
-            self._engine = connection['engine']
-            self._session = connection['Session']
-            with self._engine.connect() as conn:
-                conn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
-        return self._engine
-
-    # connect_args={"options": "-c statement_timeout=1000"}
+        # Initialise the class-level engine if it does not already exist
+        if not self.__engine:
+            self.__engine = create_engine(
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
+            self.__sessionmaker = sessionmaker(bind=self.__engine)
+            # Add postgis extension if requested
+            if with_postgis:
+                with self.__engine.connect() as cnxn:
+                    cnxn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        # Return the class-level engine
+        return self.__engine
 
     @contextmanager
     def open_session(self, skip_check=False):
@@ -88,7 +74,7 @@ class Connector():
         """
         try:
             # Use the engine to create a new session
-            session = self._session()
+            session = self.__sessionmaker()
             if not skip_check:
                 self.check_internet_connection()
             yield session
@@ -101,7 +87,7 @@ class Connector():
 
     def check_internet_connection(self, url="http://www.google.com/", timeout=5):
         """
-        Check can connect to the interet
+        Check that the internet is accessible
         """
         try:
             requests.get(url, timeout=timeout)

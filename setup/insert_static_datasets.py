@@ -86,7 +86,6 @@ def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
             json.dump(database_secrets, f_secret)
 
 
-
 def upload_static_data(dataset, secrets_directory, data_directory):
     """Upload static data to the database"""
     # Run docker image to upload the data
@@ -155,9 +154,8 @@ def main():
                         help="Resource group where the static datasets will be stored")
     parser.add_argument("-s", "--storage-container-name", type=str, default="londonaqdatasets",
                         help="Name of the storage container where the Terraform backend will be stored")
-    parser.add_argument("-l", '--local-secret', type=str, default=None
+    parser.add_argument("-l", '--local-secret', type=str, default=None,
                         help="Optionally pass the full path of a database secret file")
-
     args = parser.parse_args()
 
     # List of available datasets
