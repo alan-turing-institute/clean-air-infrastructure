@@ -15,7 +15,7 @@ from ..databases import Updater, scoot_tables
 from ..loggers import green
 
 
-class ScootDataWriter(Updater):
+class ScootWriter(Updater):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)

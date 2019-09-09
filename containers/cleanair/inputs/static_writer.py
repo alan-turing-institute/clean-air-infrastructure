@@ -10,7 +10,7 @@ from ..databases import Connector
 from ..loggers import get_logger, green
 
 
-class StaticDataWriter():
+class StaticWriter():
     """Manage interactions with the static database on Azure"""
     def __init__(self, **kwargs):
         self.dbcnxn = Connector(**kwargs)
@@ -68,18 +68,18 @@ class StaticDataWriter():
                                # "county_region_name",
                                # "country",
                                "postcode",
-                               #   "address_range_type",
-                               #   "CAST(blpu_number AS integer) AS blpu_number",
-                               #   "address_type",
-                               #   "CAST(cartographic_annotation_point AS integer) AS cartographic_annotation_point",
-                               #   "name_of_point_of_interest",
-                               #   "description_of_point_of_interest",
-                               #   "CAST(retail_classification_code AS integer) AS retail_classification_code",
-                               #   "retail_description",
-                               #   "above_retail_type",
-                               #   "road_number_code",
-                               #   "CAST(catrographic_display_angle AS integer) AS cartographic_display_angle",
-                               #   "CAST(source_of_height_data AS integer) AS source_of_height_data",
+                               # "address_range_type",
+                               # "CAST(blpu_number AS integer) AS blpu_number",
+                               # "address_type",
+                               # "CAST(cartographic_annotation_point AS integer) AS cartographic_annotation_point",
+                               # "name_of_point_of_interest",
+                               # "description_of_point_of_interest",
+                               # "CAST(retail_classification_code AS integer) AS retail_classification_code",
+                               # "retail_description",
+                               # "above_retail_type",
+                               # "road_number_code",
+                               # "CAST(catrographic_display_angle AS integer) AS cartographic_display_angle",
+                               # "CAST(source_of_height_data AS integer) AS source_of_height_data",
                                "CAST(height_of_base_of_building AS float)",
                                # "CAST(height_of_top_of_building AS float) AS height_of_top_of_building",
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",

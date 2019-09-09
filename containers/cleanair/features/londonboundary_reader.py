@@ -5,7 +5,7 @@ from sqlalchemy import func
 from ..databases import StaticTableConnector
 
 
-class LondonBoundary(StaticTableConnector):
+class LondonBoundaryReader(StaticTableConnector):
     """
     Class to interface with the londonboundary database table
     """

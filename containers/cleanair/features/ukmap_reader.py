@@ -8,7 +8,7 @@ from dateutil import rrule
 from ..databases import StaticTableConnector
 
 
-class UKMap(StaticTableConnector):
+class UKMapReader(StaticTableConnector):
     """
     Class for interfacing with the UKMap database table
     """

@@ -5,7 +5,7 @@ from sqlalchemy import func, cast, String
 from ..databases import StaticTableConnector
 
 
-class HexGrid(StaticTableConnector):
+class HexGridReader(StaticTableConnector):
     """
     Class to interface with the glahexgrid database table
     """

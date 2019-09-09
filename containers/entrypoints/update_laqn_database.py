@@ -2,7 +2,7 @@
 Update laqn database
 """
 import argparse
-from cleanair.inputs import LAQNDataWriter
+from cleanair.inputs import LAQNWriter
 
 
 def main():
@@ -24,10 +24,10 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        laqndb = LAQNDataWriter(**vars(args))
+        laqn_writer = LAQNWriter(**vars(args))
 
         # Update the LAQN tables on the database
-        laqndb.update_remote_tables()
+        laqn_writer.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

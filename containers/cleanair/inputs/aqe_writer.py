@@ -10,7 +10,7 @@ from ..loggers import green
 from ..apis import APIReader
 
 
-class AQEDataWriter(Updater, APIReader):
+class AQEWriter(Updater, APIReader):
     """Manage interactions with the AQE table on Azure"""
     def __init__(self, *args, **kwargs):
         # Initialise the base classes

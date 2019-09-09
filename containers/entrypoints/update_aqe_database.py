@@ -2,7 +2,7 @@
 Update aqe database
 """
 import argparse
-from cleanair.inputs import AQEDataWriter
+from cleanair.inputs import AQEWriter
 
 
 def main():
@@ -24,10 +24,10 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        aqedb = AQEDataWriter(**vars(args))
+        aqe_writer = AQEWriter(**vars(args))
 
         # Update the AQE tables on the database
-        aqedb.update_remote_tables()
+        aqe_writer.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

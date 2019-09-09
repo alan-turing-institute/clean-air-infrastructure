@@ -1,12 +1,14 @@
 """
 Module for feature extraction
 """
-from .hex_grid_database import HexGrid
-from .london_boundary_database import LondonBoundary
-from .ukmap import UKMap
+from .hexgrid_reader import HexGridReader
+from .laqn_reader import LAQNReader
+from .londonboundary_reader import LondonBoundaryReader
+from .ukmap_reader import UKMapReader
 
 __all__ = [
-    "HexGrid",
-    "LondonBoundary",
-    "UKMap",
+    "HexGridReader",
+    "LAQNReader",
+    "LondonBoundaryReader",
+    "UKMapReader",
 ]

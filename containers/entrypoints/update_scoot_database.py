@@ -4,7 +4,7 @@ Update scoot database
 import argparse
 import json
 import os
-from cleanair.inputs import ScootDataWriter
+from cleanair.inputs import ScootWriter
 
 
 def main():
@@ -36,10 +36,10 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
 
-        scootdb = ScootDataWriter(**vars(args))
+        scoot_writer = ScootWriter(**vars(args))
 
         # Update the Scoot readings table on the database
-        scootdb.update_remote_tables()
+        scoot_writer.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

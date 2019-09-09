@@ -1,14 +1,14 @@
 """
 Module for input datasources
 """
-from .aqe_data_writer import AQEDataWriter
-from .laqn_data_writer import LAQNDataWriter
-from .scoot_data_writer import ScootDataWriter
-from .static_data_writer import StaticDataWriter
+from .aqe_writer import AQEWriter
+from .laqn_writer import LAQNWriter
+from .scoot_writer import ScootWriter
+from .static_writer import StaticWriter
 
 __all__ = [
-    "AQEDataWriter",
-    "LAQNDataWriter",
-    "ScootDataWriter",
-    "StaticDataWriter",
+    "AQEWriter",
+    "LAQNWriter",
+    "ScootWriter",
+    "StaticWriter",
 ]

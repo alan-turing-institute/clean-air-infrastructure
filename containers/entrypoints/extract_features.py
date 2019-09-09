@@ -3,7 +3,7 @@ Feature extraction
 """
 import matplotlib.pyplot as plt
 import geopandas
-from cleanair.features import LondonBoundary, LAQNDatabase, UKMap
+from cleanair.features import LondonBoundaryReader, LAQNReader, UKMap
 
 
 def main():
@@ -19,14 +19,14 @@ def main():
     # laqn_include_sites = None
 
     # Import datasources
-    laqn = LAQNDatabase(end='today', ndays=2, secretfile=db_info_file)
+    laqn = LAQNReader(end='today', ndays=2, secretfile=db_info_file)
     # hex_grid = HexGrid(secretfile=db_info_file)
 
     # Import features
-    ukmap = UKMap(secretfile=db_info_file)
+    ukmap = UKMapReader(secretfile=db_info_file)
 
     # # Import boundary
-    london_boundary = LondonBoundary(secretfile=db_info_file)
+    london_boundary = LondonBoundaryReader(secretfile=db_info_file)
 
     # Process interest points
     buffer_sizes = [1000, 500, 200, 100, 10]

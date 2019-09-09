@@ -2,7 +2,7 @@
 Update static dataset
 """
 import argparse
-from cleanair.inputs import StaticDataWriter
+from cleanair.inputs import StaticWriter
 
 
 def main():
@@ -19,13 +19,13 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        staticdb = StaticDataWriter(**vars(args))
+        static_writer = StaticWriter(**vars(args))
 
         # Upload static files
-        staticdb.upload_static_files()
+        static_writer.upload_static_files()
 
         # Configure database tables
-        staticdb.configure_tables()
+        static_writer.configure_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
