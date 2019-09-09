@@ -4,7 +4,7 @@ Update scoot database
 import argparse
 import json
 import os
-from cleanair import ScootDatabase
+from cleanair.inputs import ScootDatabase
 
 
 def main():

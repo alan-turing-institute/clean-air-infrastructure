@@ -2,7 +2,7 @@
 Update aqe database
 """
 import argparse
-from cleanair import AQEDatabase
+from cleanair.inputs import AQEDatabase
 
 
 def main():

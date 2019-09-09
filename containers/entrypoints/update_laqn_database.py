@@ -2,7 +2,7 @@
 Update laqn database
 """
 import argparse
-from cleanair import LAQNDatabase
+from cleanair.inputs import LAQNDatabase
 
 
 def main():

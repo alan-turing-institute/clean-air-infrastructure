@@ -2,7 +2,7 @@
 Update static dataset
 """
 import argparse
-from cleanair import StaticDatabase
+from cleanair.inputs import StaticDatabase
 
 
 def main():
