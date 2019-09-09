@@ -3,7 +3,7 @@ Feature extraction
 """
 import matplotlib.pyplot as plt
 import geopandas
-from cleanair.features import LondonBoundaryReader, LAQNReader, UKMap
+from cleanair.features import LondonBoundaryReader, LAQNReader, UKMapReader
 
 
 def main():

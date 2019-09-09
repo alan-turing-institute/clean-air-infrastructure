@@ -2,8 +2,6 @@
 LAQN
 """
 import requests
-from sqlalchemy import func, and_
-import pandas as pd
 from ..databases import Updater, laqn_tables
 from ..loggers import green
 from ..apis import APIReader

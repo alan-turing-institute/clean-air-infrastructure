@@ -1,24 +1,21 @@
 """
 LAQN
 """
-import requests
 from sqlalchemy import func, and_
 import pandas as pd
-from ..databases import Updater, laqn_tables
-from ..loggers import green
-from ..apis import APIReader
+from ..databases import Connector, laqn_tables
 
 
 class LAQNReader():
     """
-    Get data from the LAQN network via the API maintained by Kings College London:
-    (https://www.londonair.org.uk/Londonair/API/)
+    Read and process LAQN data
     """
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
         super().__init__(*args, **kwargs)
 
         # Ensure that tables exist
+        self.dbcnxn = Connector(*args, **kwargs)
         laqn_tables.initialise(self.dbcnxn.engine)
 
     def query_interest_points(self, boundary_geom, include_sites=None):
@@ -28,9 +25,7 @@ class LAQNReader():
         Keyword arguments:
             include_sites -- A list of SiteCodes to include. If None then gets all
         """
-
         with self.dbcnxn.open_session() as session:
-
             result = session.query(laqn_tables.LAQNSite)
 
             if not include_sites:

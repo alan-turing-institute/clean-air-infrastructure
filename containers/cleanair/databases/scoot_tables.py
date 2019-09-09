@@ -5,10 +5,10 @@ from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+BASE = declarative_base()
 
 
-class ScootReading(Base):
+class ScootReading(BASE):
     """Table of Scoot readings"""
     __tablename__ = "scoot_readings"
     MeasurementDateUTC = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
@@ -28,4 +28,4 @@ class ScootReading(Base):
 
 def initialise(engine):
     """Ensure that all tables exist"""
-    Base.metadata.create_all(engine)
+    BASE.metadata.create_all(engine)

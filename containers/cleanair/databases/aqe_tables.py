@@ -6,10 +6,10 @@ from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from geoalchemy2 import Geometry
 
-Base = declarative_base()
+BASE = declarative_base()
 
 
-class AQESite(Base):
+class AQESite(BASE):
     """Table of AQE sites"""
     __tablename__ = "aqe_sites"
     SiteCode = Column(String(5), primary_key=True, nullable=False)
@@ -24,7 +24,7 @@ class AQESite(Base):
     geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 
 
-class AQEReading(Base):
+class AQEReading(BASE):
     """Table of AQE readings"""
     __tablename__ = "aqe_readings"
     SiteCode = Column(String(5), primary_key=True, nullable=False)
@@ -35,7 +35,7 @@ class AQEReading(Base):
 
 def initialise(engine):
     """Ensure that all tables exist"""
-    Base.metadata.create_all(engine)
+    BASE.metadata.create_all(engine)
 
 
 def build_site_entry(site_dict):

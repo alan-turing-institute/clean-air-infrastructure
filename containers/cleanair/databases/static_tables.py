@@ -24,7 +24,7 @@ class StaticTableConnector(Connector):
         # produce our own MetaData object
         metadata = MetaData()
         metadata.reflect(self.engine, only=[table_name])
-        Base = automap_base(metadata=metadata)
-        Base.prepare()
+        base = automap_base(metadata=metadata)
+        base.prepare()
 
-        return getattr(Base.classes, table_name)
+        return getattr(base.classes, table_name)

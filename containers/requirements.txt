@@ -5,7 +5,9 @@ boto3
 colorlog
 docker
 flake8
+flask
 geoalchemy2
+geopandas
 matplotlib
 pandas
 psycopg2-binary

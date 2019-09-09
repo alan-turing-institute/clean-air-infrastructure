@@ -1,29 +1,32 @@
 """
 Flask webhook app
 """
-from flask import Flask, jsonify, request
 import hashlib
 import hmac
 import json
+from flask import Flask, jsonify, request
 
 
-app = Flask(__name__)
+APP = Flask(__name__)
 
 
 def verify_signature(data, signature):
+    """Verify the signature for this request against the known GitHub secret"""
     with open("/var/www/github.secret", "r") as f_secret:
         github_secret = f_secret.readlines()[0].strip()
     mac = hmac.new(github_secret.encode(), msg=data, digestmod=hashlib.sha1)
     return hmac.compare_digest("sha1=" + mac.hexdigest(), signature)
 
 
-@app.route("/")
+@APP.route("/")
 def default():
+    """Default page"""
     return "Flask server for github webhooks"
 
 
-@app.route("/github", methods=["POST"])
+@APP.route("/github", methods=["POST"])
 def github_webhook():
+    """GitHub hook"""
     print("Processing webhook request...")
     request.get_data()
     signature = request.headers.get("X-Hub-Signature")
@@ -50,12 +53,9 @@ def github_webhook():
             return jsonify({"msg": "called code updater"})
         print("=> no action needed as this is not a merged pull request")
         return jsonify({"msg": "no action needed as this is not a merged pull request"})
-    else:
-        print("Failed to verify GitHub signature: {}".format(signature))
-        return jsonify({"msg": "invalid hash"})
-    print("Unknown issue")
-    return jsonify({"msg": "unknown issue"})
+    print("Failed to verify GitHub signature: {}".format(signature))
+    return jsonify({"msg": "invalid hash"})
 
 
 if __name__ == "__main__":
-    app.run()
+    APP.run()

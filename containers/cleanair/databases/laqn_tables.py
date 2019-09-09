@@ -7,10 +7,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
-Base = declarative_base()
+BASE = declarative_base()
 
 
-class LAQNSite(Base):
+class LAQNSite(BASE):
     """Table of LAQN sites"""
     __tablename__ = "laqn_sites"
     SiteCode = Column(String(4), primary_key=True, nullable=False)
@@ -29,7 +29,7 @@ class LAQNSite(Base):
             self.SiteCode, self.SiteType, self.Latitude, self.Longitude, self.DateOpened, self.DateClosed)
 
 
-class LAQNReading(Base):
+class LAQNReading(BASE):
     """Table of LAQN readings"""
     __tablename__ = "laqn_readings"
     SiteCode = Column(String(4), ForeignKey('laqn_sites.SiteCode'), primary_key=True, nullable=False)
@@ -46,7 +46,7 @@ class LAQNReading(Base):
 
 def initialise(engine):
     """Ensure that all tables exist"""
-    Base.metadata.create_all(engine)
+    BASE.metadata.create_all(engine)
 
 
 def build_site_entry(site_dict):
