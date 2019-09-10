@@ -7,7 +7,8 @@ from .updater import Updater
 
 BASE = declarative_base()
 SCHEMA_NAMES = ['datasources', 'buffers', 'modelfits']
-EVENTS = [event.listen(BASE.metadata, 'before_create', DDL("CREATE SCHEMA IF NOT EXISTS {}".format(schema))) for schema in SCHEMA_NAMES]
+EVENTS = [event.listen(BASE.metadata, 'before_create',
+                       DDL("CREATE SCHEMA IF NOT EXISTS {}".format(schema))) for schema in SCHEMA_NAMES]
 
 
 __all__ = [

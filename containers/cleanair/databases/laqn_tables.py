@@ -48,7 +48,7 @@ class LAQNReading(BASE):
 
 def initialise(engine):
     """Ensure that all tables exist"""
-    
+
     BASE.metadata.create_all(engine)
 
 
