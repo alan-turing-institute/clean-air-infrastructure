@@ -10,7 +10,7 @@ from . import BASE
 class AQESite(BASE):
     """Table of AQE sites"""
     __tablename__ = "aqe_sites"
-    __table_args__ = {'schema' : 'datasources'}
+    __table_args__ = {'schema': 'datasources'}
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SiteName = Column(String(), nullable=False)
     SiteType = Column(String(20), nullable=False)
@@ -26,7 +26,7 @@ class AQESite(BASE):
 class AQEReading(BASE):
     """Table of AQE readings"""
     __tablename__ = "aqe_readings"
-    __table_args__ = {'schema' : 'datasources'}
+    __table_args__ = {'schema': 'datasources'}
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
     MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)

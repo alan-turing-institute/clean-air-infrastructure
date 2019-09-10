@@ -5,10 +5,11 @@ from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from . import BASE
 
+
 class ScootReading(BASE):
     """Table of Scoot readings"""
     __tablename__ = "scoot_readings"
-    __table_args__ = {'schema' : 'datasources'}
+    __table_args__ = {'schema': 'datasources'}
     MeasurementDateUTC = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     DetectorID = Column(String(9), primary_key=True, nullable=False)  # DETSCN
     Region = Column(String(5))  # REGION

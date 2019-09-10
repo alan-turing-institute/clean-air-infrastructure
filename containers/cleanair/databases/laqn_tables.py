@@ -11,7 +11,7 @@ from . import BASE
 class LAQNSite(BASE):
     """Table of LAQN sites"""
     __tablename__ = "laqn_sites"
-    __table_args__ = {'schema' : 'datasources'}
+    __table_args__ = {'schema': 'datasources'}
 
     SiteCode = Column(String(4), primary_key=True, nullable=False)
     la_id = Column(Integer, nullable=False)
@@ -32,7 +32,7 @@ class LAQNSite(BASE):
 class LAQNReading(BASE):
     """Table of LAQN readings"""
     __tablename__ = "laqn_readings"
-    __table_args__ = {'schema' : 'datasources'}
+    __table_args__ = {'schema': 'datasources'}
 
     SiteCode = Column(String(4), ForeignKey('datasources.laqn_sites.SiteCode'), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
