@@ -29,7 +29,8 @@ class AQEReading(BASE):
     __table_args__ = {'schema': 'datasources'}
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)
+    MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
+    MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
 
@@ -71,7 +72,8 @@ def build_reading_entry(reading_dict):
     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
     # Construct the record and return it
-    return AQEReading(SiteCode=reading_dict["@SiteCode"],
-                      SpeciesCode=reading_dict["@SpeciesCode"],
-                      MeasurementDateGMT=reading_dict["@MeasurementDateGMT"],
-                      Value=reading_dict["@Value"])
+    return AQEReading(SiteCode=reading_dict["SiteCode"],
+                      SpeciesCode=reading_dict["SpeciesCode"],
+                      MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                      MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                      Value=reading_dict["Value"])

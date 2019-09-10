@@ -10,9 +10,9 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-import pytz
 from ..databases import Updater, scoot_tables
 from ..loggers import green
+from ..timestamps import unix_from_str, utcstr_from_unix
 
 
 class ScootWriter(Updater):
@@ -98,17 +98,6 @@ class ScootWriter(Updater):
 
     def aggregate_detector_readings(self, filebatch):
         """Request all readings between {start_date} and {end_date}, removing duplicates."""
-        def to_unix(naive_string):
-            # Convert naive string to unix timestamp
-            london_tz = pytz.timezone("Europe/London")
-            timestamp_naive = datetime.datetime.strptime(naive_string.strip(), r"%Y-%m-%d %H:%M:%S")
-            timestamp_aware = london_tz.localize(timestamp_naive)
-            return timestamp_aware.timestamp()
-
-        def to_utc_string(timestamp):
-            # Convert unix timestamp to UTC string
-            return datetime.datetime.fromtimestamp(timestamp, pytz.utc).strftime(r"%Y-%m-%d %H:%M:%S")
-
         # Get an AWS client
         client = boto3.client("s3", aws_access_key_id=self.access_key_id, aws_secret_access_key=self.access_key)
 
@@ -122,7 +111,7 @@ class ScootWriter(Updater):
                 # Read the CSV files into a dataframe
                 scoot_df = pandas.read_csv(filename, names=self.csv_columns, skipinitialspace=True,
                                            converters={
-                                               "Timestamp": to_unix,
+                                               "Timestamp": unix_from_str,
                                                "FlowThisInterval": lambda x: float(x) / 60,
                                                "DetectorFault": lambda x: x.strip() == "Y",
                                                "Region": lambda x: x.strip(),
@@ -146,7 +135,7 @@ class ScootWriter(Updater):
 
         # Construct the measurement date and drop the timestamp
         self.logger.debug("Converting date format to UTC")
-        df_combined["MeasurementDateUTC"] = df_combined["Timestamp"].apply(to_utc_string)
+        df_combined["MeasurementDateUTC"] = df_combined["Timestamp"].apply(utcstr_from_unix)
         df_combined.drop(["Timestamp"], axis=1, inplace=True)
 
         # Drop the timestamp and return the dataframe as a list of dictionaries

@@ -1,10 +1,12 @@
 """
 LAQN
 """
+import datetime
 import requests
 from ..databases import Updater, laqn_tables
 from ..loggers import green
 from ..apis import APIReader
+from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
 class LAQNWriter(Updater, APIReader):
@@ -54,6 +56,10 @@ class LAQNWriter(Updater, APIReader):
             # Add the site_code
             for reading in processed_data:
                 reading["@SiteCode"] = site_code
+                timestamp_start = datetime_from_str(reading.pop("@MeasurementDateGMT"), timezone="GMT")
+                timestamp_end = timestamp_start + datetime.timedelta(hours=1)
+                reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
+                reading["MeasurementEndUTC"] = utcstr_from_datetime(timestamp_end)
             return processed_data
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
