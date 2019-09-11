@@ -51,7 +51,7 @@ class Connector():
         raise FileNotFoundError("Database secrets could not be loaded from {}".format(secret_file))
 
     @property
-    def engine(self, with_postgis=True):
+    def engine(self):
         """
         Access the single class-level sqlalchemy engine
         """
@@ -60,12 +60,18 @@ class Connector():
             self.__engine = create_engine(
                 "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
             self.__sessionmaker = sessionmaker(bind=self.__engine)
-            # Add postgis extension if requested
-            if with_postgis:
-                with self.__engine.connect() as cnxn:
-                    cnxn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
         # Return the class-level engine
         return self.__engine
+
+    def ensure_schema(self, schema_name):
+        """Ensure that requested schema exists"""
+        with self.engine.connect() as cnxn:
+            cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
+
+    def ensure_postgis(self):
+        """Ensure postgis extension is installed publicly"""
+        with self.engine.connect() as cnxn:
+            cnxn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
 
     @contextmanager
     def open_session(self, skip_check=False):

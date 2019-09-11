@@ -21,6 +21,9 @@ class LAQNWriter(Updater, APIReader):
         # Ensure that tables exist
         laqn_tables.initialise(self.dbcnxn.engine)
 
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
+
     def request_site_entries(self):
         """
         Request all LAQN sites
@@ -56,7 +59,7 @@ class LAQNWriter(Updater, APIReader):
             # Add the site_code
             for reading in processed_data:
                 reading["@SiteCode"] = site_code
-                timestamp_start = datetime_from_str(reading.pop("@MeasurementDateGMT"), timezone="GMT")
+                timestamp_start = datetime_from_str(reading.pop("@MeasurementDateGMT"), timezone="GMT", rounded=True)
                 timestamp_end = timestamp_start + datetime.timedelta(hours=1)
                 reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
                 reading["MeasurementEndUTC"] = utcstr_from_datetime(timestamp_end)

@@ -21,6 +21,9 @@ class AQEWriter(Updater, APIReader):
         # Ensure that tables exist
         aqe_tables.initialise(self.dbcnxn.engine)
 
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis("datasources")
+
     def request_site_entries(self):
         """
         Request all AQE sites
@@ -56,7 +59,7 @@ class AQEWriter(Updater, APIReader):
             # Process the readings which are in the format: Date, Species1, Species2, ...
             processed_readings = []
             for reading in csvreader:
-                timestamp_end = datetime_from_str(reading[0], timezone="GMT")
+                timestamp_end = datetime_from_str(reading[0], timezone="GMT", rounded=True)
                 timestamp_start = timestamp_end - datetime.timedelta(hours=1)
                 for species_code, value in zip(species, reading[1:]):
                     processed_readings.append({"SiteCode": site_code,
