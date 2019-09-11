@@ -26,14 +26,14 @@ class LAQNSite(BASE):
 
     def __repr__(self):
         return "<LAQNSite(" + ", ".join([
-                   "SiteCode='{}'".format(self.SiteCode),
-                   "la_id='{}'".format(self.la_id),
-                   "SiteType='{}'".format(self.SiteType),
-                   "Latitude='{}'".format(self.Latitude),
-                   "Longitude='{}'".format(self.Longitude),
-                   "DateOpened='{}'".format(self.DateOpened),
-                   "DateClosed='{}'".format(self.DateClosed),
-               ])
+            "SiteCode='{}'".format(self.SiteCode),
+            "la_id='{}'".format(self.la_id),
+            "SiteType='{}'".format(self.SiteType),
+            "Latitude='{}'".format(self.Latitude),
+            "Longitude='{}'".format(self.Longitude),
+            "DateOpened='{}'".format(self.DateOpened),
+            "DateClosed='{}'".format(self.DateClosed),
+            ])
 
 
 class LAQNReading(BASE):
@@ -51,12 +51,12 @@ class LAQNReading(BASE):
 
     def __repr__(self):
         return "<LAQNReading(" + ", ".join([
-                   "SiteCode='{}'".format(self.SiteCode),
-                   "SpeciesCode='{}'".format(self.SpeciesCode),
-                   "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
-                   "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "Value='{}'".format(self.Value),
-               ])
+            "SiteCode='{}'".format(self.SiteCode),
+            "SpeciesCode='{}'".format(self.SpeciesCode),
+            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+            "Value='{}'".format(self.Value),
+            ])
 
 
 def initialise(engine):

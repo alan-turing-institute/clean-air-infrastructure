@@ -51,11 +51,11 @@ def main():
     # Plot london with laqn buffers
     london_boundary_df = geopandas.GeoDataFrame.from_postgis(london_boundary.query_all().statement,
                                                              london_boundary.engine, geom_col='wkb_geometry')
-    # ax_buffers = london_boundary_df.plot(color='r', alpha=0.2)
+    ax_buffers = london_boundary_df.plot(color='r', alpha=0.2)
     laqn_buffers_df = geopandas.GeoDataFrame.from_postgis(laqn_buffers.statement,
                                                           laqn.dbcnxn.engine,
                                                           geom_col='buffer_' + str(buffer_sizes[0]))
-    # laqn_buffers_df.plot(ax=ax_buffers, color='b')
+    laqn_buffers_df.plot(ax=ax_buffers, color='b')
     # plt.show()
 
 

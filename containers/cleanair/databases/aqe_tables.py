@@ -28,17 +28,17 @@ class AQESite(BASE):
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([
-                   "SiteCode='{}'".format(self.SiteCode),
-                   "SiteName='{}'".format(self.SiteName),
-                   "SiteType='{}'".format(self.SiteType),
-                   "Latitude='{}'".format(self.Latitude),
-                   "Latitude='{}'".format(self.Latitude),
-                   "Longitude='{}'".format(self.Longitude),
-                   "DateOpened='{}'".format(self.DateOpened),
-                   "DateClosed='{}'".format(self.DateClosed),
-                   "SiteLink='{}'".format(self.SiteLink),
-                   "DataManager='{}'".format(self.DataManager),
-               ])
+            "SiteCode='{}'".format(self.SiteCode),
+            "SiteName='{}'".format(self.SiteName),
+            "SiteType='{}'".format(self.SiteType),
+            "Latitude='{}'".format(self.Latitude),
+            "Latitude='{}'".format(self.Latitude),
+            "Longitude='{}'".format(self.Longitude),
+            "DateOpened='{}'".format(self.DateOpened),
+            "DateClosed='{}'".format(self.DateClosed),
+            "SiteLink='{}'".format(self.SiteLink),
+            "DataManager='{}'".format(self.DataManager),
+            ])
 
 
 class AQEReading(BASE):
@@ -56,12 +56,12 @@ class AQEReading(BASE):
 
     def __repr__(self):
         return "<AQEReading(" + ", ".join([
-                   "SiteCode='{}'".format(self.SiteCode),
-                   "SpeciesCode='{}'".format(self.SpeciesCode),
-                   "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
-                   "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "Value='{}'".format(self.Value),
-               ])
+            "SiteCode='{}'".format(self.SiteCode),
+            "SpeciesCode='{}'".format(self.SpeciesCode),
+            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+            "Value='{}'".format(self.Value),
+            ])
 
 
 def initialise(engine):

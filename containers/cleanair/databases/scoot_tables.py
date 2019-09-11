@@ -1,7 +1,7 @@
 """
 Tables for SCOOT data source
 """
-from sqlalchemy import Boolean, Column, Integer, String
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from . import BASE
 
@@ -26,19 +26,19 @@ class ScootReading(BASE):
 
     def __repr__(self):
         return "<ScootReading(" + ", ".join([
-                   "DetectorID='{}'".format(self.DetectorID),
-                   "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
-                   "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "NVehiclesInInterval='{}'".format(self.NVehiclesInInterval),
-                   "OccupancyPercentage='{}'".format(self.OccupancyPercentage),
-                   "CongestionPercentage='{}'".format(self.CongestionPercentage),
-                   "SaturationPercentage='{}'".format(self.SaturationPercentage),
-                   "FlowRawCount='{}'".format(self.FlowRawCount),
-                   "OccupancyRawCount='{}'".format(self.OccupancyRawCount),
-                   "CongestionRawCount='{}'".format(self.CongestionRawCount),
-                   "SaturationRawCount='{}'".format(self.SaturationRawCount),
-                   "Region='{}'".format(self.Region),
-               ])
+            "DetectorID='{}'".format(self.DetectorID),
+            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+            "NVehiclesInInterval='{}'".format(self.NVehiclesInInterval),
+            "OccupancyPercentage='{}'".format(self.OccupancyPercentage),
+            "CongestionPercentage='{}'".format(self.CongestionPercentage),
+            "SaturationPercentage='{}'".format(self.SaturationPercentage),
+            "FlowRawCount='{}'".format(self.FlowRawCount),
+            "OccupancyRawCount='{}'".format(self.OccupancyRawCount),
+            "CongestionRawCount='{}'".format(self.CongestionRawCount),
+            "SaturationRawCount='{}'".format(self.SaturationRawCount),
+            "Region='{}'".format(self.Region),
+            ])
 
 
 def initialise(engine):

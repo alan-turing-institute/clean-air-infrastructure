@@ -12,7 +12,7 @@ import botocore
 import pandas
 from ..databases import Updater, scoot_tables
 from ..loggers import green
-from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_unix, utcstr_from_datetime
+from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
 class ScootWriter(Updater):
@@ -161,7 +161,7 @@ class ScootWriter(Updater):
 
             # Construct hourly data
             self.logger.info("Processing data between %s and %s", green(start_time), green(end_time))
-            df_hourly = df_processed.loc[(df_processed["Timestamp"] > start_time.timestamp()) &\
+            df_hourly = df_processed.loc[(df_processed["Timestamp"] > start_time.timestamp()) &
                                          (df_processed["Timestamp"] <= end_time.timestamp())].copy()
 
             # Drop unused columns and aggregate

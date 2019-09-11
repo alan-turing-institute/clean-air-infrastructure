@@ -22,7 +22,7 @@ class AQEWriter(Updater, APIReader):
         aqe_tables.initialise(self.dbcnxn.engine)
 
         # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis("datasources")
+        self.dbcnxn.ensure_postgis()
 
     def request_site_entries(self):
         """

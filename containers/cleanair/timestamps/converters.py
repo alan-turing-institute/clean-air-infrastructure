@@ -57,4 +57,3 @@ def to_nearest_hour(input_datetime):
     if input_datetime.minute >= 30:
         input_datetime += datetime.timedelta(hours=1)
     return input_datetime.replace(minute=0, second=0, microsecond=0)
-
