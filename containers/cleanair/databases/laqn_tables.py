@@ -1,7 +1,7 @@
 """
 Tables for LAQN data source
 """
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
@@ -25,8 +25,15 @@ class LAQNSite(BASE):
     readings = relationship("LAQNReading", back_populates="site")
 
     def __repr__(self):
-        return "<LAQNSite(SiteCode='%s', SiteType='%s', Latitude='%s', Longitude='%s', Opened='%s', Closed='%s'" % (
-            self.SiteCode, self.SiteType, self.Latitude, self.Longitude, self.DateOpened, self.DateClosed)
+        return "<LAQNSite(" + ", ".join([
+                   "SiteCode='{}'".format(self.SiteCode),
+                   "la_id='{}'".format(self.la_id),
+                   "SiteType='{}'".format(self.SiteType),
+                   "Latitude='{}'".format(self.Latitude),
+                   "Longitude='{}'".format(self.Longitude),
+                   "DateOpened='{}'".format(self.DateOpened),
+                   "DateClosed='{}'".format(self.DateClosed)
+               ])
 
 
 class LAQNReading(BASE):
@@ -43,8 +50,13 @@ class LAQNReading(BASE):
     site = relationship("LAQNSite", back_populates="readings")
 
     def __repr__(self):
-        return "<LAQNReading(SiteCode='%s', SpeciesCode='%s', MeasurementDateGMT='%s', Value='%s'" % (
-            self.SiteCode, self.SpeciesCode, self.MeasurementDateGMT, self.Value)
+        return "<LAQNReading(" + ", ".join([
+                   "SiteCode='{}'".format(self.SiteCode),
+                   "SpeciesCode='{}'".format(self.SpeciesCode),
+                   "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+                   "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+                   "Value='{}'".format(self.Value)
+               ])
 
 
 def initialise(engine):
