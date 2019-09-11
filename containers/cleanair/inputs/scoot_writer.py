@@ -12,7 +12,7 @@ import botocore
 import pandas
 from ..databases import Updater, scoot_tables
 from ..loggers import green
-from ..timestamps import unix_from_str, utcstr_from_unix
+from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_unix, utcstr_from_datetime
 
 
 class ScootWriter(Updater):
@@ -32,7 +32,7 @@ class ScootWriter(Updater):
             raise IOError("No AWS connection details were provided!")
 
         # Set up the known column names
-        self.csv_columns = ["TimestampMin", "DetectorID", "DetectorFault", "NVehiclesInInterval",
+        self.csv_columns = ["Timestamp", "DetectorID", "DetectorFault", "NVehiclesInInterval",
                             "OccupancyPercentage", "CongestionPercentage", "SaturationPercentage", "FlowRawCount",
                             "OccupancyRawCount", "CongestionRawCount", "SaturationRawCount", "Region"]
 
@@ -56,28 +56,30 @@ class ScootWriter(Updater):
             detectors = sorted([s[0] for s in session.query(scootdetectors.c.detector_n).distinct()])
         return detectors
 
-    def get_batched_remote_files(self):
-        """Get batched list of remote files grouped by aggregation"""
+    def get_remote_filenames(self):
+        """Get all possible remote file details for the period in question"""
         file_list = []
-        for date in rrule.rrule(rrule.DAILY, dtstart=self.start_date, until=self.end_date):
+        for date in rrule.rrule(rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime):
             year, month, day = date.strftime(r"%Y-%m-%d").split("-")
             for timestring in [str(h).zfill(2) + str(m).zfill(2) for h in range(24) for m in range(60)]:
                 csv_name = "{y}{m}{d}-{timestring}.csv".format(y=year, m=month, d=day, timestring=timestring)
                 file_list.append(("Control/TIMSScoot/{y}/{m}/{d}".format(y=year, m=month, d=day), csv_name))
-                if len(file_list) == self.aggregation_size:
-                    yield file_list
-                    file_list = []
-        if file_list:
-            yield file_list
+        return file_list
 
-    def aggregate_detector_readings(self, filebatch):
-        """Request all readings between {start_date} and {end_date}, removing duplicates."""
+    def validate_remote_data(self):
+        """
+        Request all readings between {start_date} and {end_date}.
+        Remove readings with unknown detector ID or detector faults.
+        """
+        start_aws = time.time()
+        self.logger.info("This will take approximately 20 minutes...")
+
         # Get an AWS client
         client = boto3.client("s3", aws_access_key_id=self.access_key_id, aws_secret_access_key=self.access_key)
 
         # Parse each CSV file into a dataframe and add these to a list
         processed_readings = []
-        for filepath, filename in filebatch:
+        for filepath, filename in self.get_remote_filenames():
             try:
                 client.download_file("surface.data.tfl.gov.uk",
                                      "{path}/{file}".format(path=filepath, file=filename),
@@ -85,7 +87,7 @@ class ScootWriter(Updater):
                 # Read the CSV files into a dataframe
                 scoot_df = pandas.read_csv(filename, names=self.csv_columns, skipinitialspace=True,
                                            converters={
-                                               "TimestampMin": lambda x: unix_from_str(x, timezone="Europe/London"),
+                                               "Timestamp": lambda x: unix_from_str(x, timezone="Europe/London"),
                                                "NVehiclesInInterval": lambda x: float(x) / 60,
                                                "DetectorFault": lambda x: x.strip() == "Y",
                                                "Region": lambda x: x.strip(),
@@ -102,41 +104,21 @@ class ScootWriter(Updater):
             finally:
                 if os.path.isfile(filename):
                     os.remove(filename)
-                self.logger.info("Loaded readings from %s", green(filename))
+                self.logger.debug("Loaded readings from %s", green(filename))
+        # Combine the readings into a single data frame
+        df_combined = pandas.concat(processed_readings, ignore_index=True)
+        self.logger.info("Loaded %s valid readings in %s minutes",
+                         green(df_combined.shape[0]), green("{:.2f}".format((time.time() - start_aws) / 60.)))
+        return df_combined
 
-        # Aggregate a batch of dataframes from a single time period
-        self.logger.info("Aggregating readings from %s CSV files into a single reading per site",
-                         green(len(processed_readings)))
-        df_comb = self.combine_by_detector_id(processed_readings)
-
-        # Construct the measurement dates - ensure that all readings in this set use the same start and end times
-        self.logger.debug("Converting date format to UTC and rounding to the closest hour")
-        df_comb["MeasurementStartUTC"] = df_comb["TimestampMin"].apply(lambda x: utcstr_from_unix(x, rounded=True))
-        df_comb["MeasurementEndUTC"] = df_comb["TimestampMax"].apply(lambda x: utcstr_from_unix(x, rounded=True))
-        df_comb["MeasurementStartUTC"].values[:] = df_comb.mode()["MeasurementStartUTC"][0]  # use modal value
-        df_comb["MeasurementEndUTC"].values[:] = df_comb.mode()["MeasurementEndUTC"][0]  # use modal value
-
-        # Drop temporary columns
-        df_comb.drop(["DetectorFault", "TimestampMin", "TimestampMax"], axis=1, inplace=True)
-
-        # Return the dataframe as a list of dictionaries
-        return list(df_comb.T.to_dict().values())
-
-    def combine_by_detector_id(self, input_dfs):
+    def combine_by_detector_id(self, input_df):
         """Aggregate measurements by detector ID across several readings"""
-        # Combine batch into one dataframe then
-        df_comb = pandas.concat(input_dfs, ignore_index=True)
-        df_comb["TimestampMax"] = df_comb["TimestampMin"]
         # Group by DetectorID: each column has its own combination rule
         try:
             # Scale all summed variables to correct for possible missing values from detector faults
-            # combined_df = df_comb.groupby(["DetectorID"]).agg(
-            return df_comb.groupby(["DetectorID"]).agg(
+            return input_df.groupby(["DetectorID"]).agg(
                 {
-                    "TimestampMin": "min",
-                    "TimestampMax": "max",
                     "DetectorID": "first",
-                    "DetectorFault": any,
                     "NVehiclesInInterval": lambda x: sum(x) * (60. / len(x)),
                     "OccupancyPercentage": "mean",
                     "CongestionPercentage": "mean",
@@ -149,11 +131,12 @@ class ScootWriter(Updater):
                 })
         except pandas.core.base.DataError:
             self.logger.warning("Data aggregation failed - returning an empty dataframe")
-            return pandas.DataFrame(columns=df_comb.columns)
+            return pandas.DataFrame(columns=input_df.columns)
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic data."""
         self.logger.info("Starting %s readings update...", green("Scoot"))
+        start_update = time.time()
 
         # Get the list of known detectors
         self.detector_ids = self.request_site_entries()
@@ -162,39 +145,56 @@ class ScootWriter(Updater):
         self.logger.info("Requesting readings from %s for %s sites",
                          green("TfL AWS storage"), green(len(self.detector_ids)))
 
-        # Open a DB session
-        start_session = time.time()
-        with self.dbcnxn.open_session() as session:
-            n_records = 0
+        # Load all valid remote data into a single dataframe
+        df_processed = self.validate_remote_data()
 
-            # Retrieve files from AWS. Since these CSV files contain very granular data (once per minute) we aggregate
-            # into five-minute chunks (controlled by self.aggregation_size)
-            for filebatch in self.get_batched_remote_files():
-                # Retrieve aggregated detector readings for this batch of files
-                site_readings = self.aggregate_detector_readings(filebatch)
+        # Get the minimum and maximum time in the dataset
+        time_min = datetime_from_unix(df_processed["Timestamp"].min())
+        time_max = datetime_from_unix(df_processed["Timestamp"].max())
 
-                # Add readings to the database session
-                # The following database operations can be slow. However, with the switch to hourly data they are not
-                # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
-                # using bulk insertions does not provide a speed-up but does increase the risk of dataloss. We are
-                # therefore sticking to the higher-level functions here. Use of flush() provides the check-point
-                # behaviour that we were previously looking for.
-                self.logger.info("Inserting %s records to database session", green(len(site_readings)))
-                start_insert = time.time()
+        n_records = 0
+        # Slice processed data into hourly chunks and aggregate these by detector ID
+        for start_time in rrule.rrule(rrule.HOURLY,
+                                      dtstart=time_min.replace(minute=0, second=0, microsecond=0),
+                                      until=time_max):
+            end_time = start_time + datetime.timedelta(hours=1)
+
+            # Construct hourly data
+            self.logger.info("Processing data between %s and %s", green(start_time), green(end_time))
+            df_hourly = df_processed.loc[(df_processed["Timestamp"] > start_time.timestamp()) &\
+                                         (df_processed["Timestamp"] <= end_time.timestamp())].copy()
+
+            # Drop unused columns and aggregate
+            self.logger.info("Aggregating %s readings by site", green(df_hourly.shape[0]))
+            df_hourly.drop(["DetectorFault", "Timestamp"], axis=1, inplace=True)
+            df_aggregated = self.combine_by_detector_id(df_hourly)
+
+            # Add timestamps
+            df_aggregated["MeasurementStartUTC"] = utcstr_from_datetime(start_time)
+            df_aggregated["MeasurementEndUTC"] = utcstr_from_datetime(end_time)
+
+            # Add readings to database
+            start_session = time.time()
+            site_readings = list(df_aggregated.T.to_dict().values())
+            self.logger.info("Inserting %s per-site records into database", green(len(site_readings)))
+
+            # The following database operations can be slow. However, with the switch to hourly data they are not
+            # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
+            # using bulk insertions does not provide a speed-up but does increase the risk of data loss. We are
+            # therefore sticking to the higher-level functions here.
+            with self.dbcnxn.open_session() as session:
                 try:
                     session.add_all([scoot_tables.ScootReading(**site_reading) for site_reading in site_readings])
-                    session.flush()
+                    session.commit()
                     n_records += len(site_readings)
                 except IntegrityError as err:
                     self.logger.error("Ignoring attempt to insert duplicate records!")
                     self.logger.error(str(err))
                     session.rollback()
-                self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_insert)))
+            self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
 
-            # Commit changes
-            self.logger.info("Committing %s records to database table %s",
-                             green(n_records), green(scoot_tables.ScootReading.__tablename__))
-            session.commit()
-        self.logger.info("Finished %s readings update", green("Scoot"))
-        self.logger.info("Full database interaction took %s minutes",
-                         green("{:.2f}".format((time.time() - start_session) / 60.)))
+        # Summarise updates
+        self.logger.info("Committed %s records to database table %s in %s minutes",
+                         green(n_records),
+                         green(scoot_tables.ScootReading.__tablename__),
+                         green("{:.2f}".format((time.time() - start_update) / 60.)))

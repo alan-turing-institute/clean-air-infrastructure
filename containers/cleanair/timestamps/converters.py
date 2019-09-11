@@ -26,9 +26,14 @@ def datetime_from_str(naive_string, timezone, rounded=False):
     return datetime_aware
 
 
+def datetime_from_unix(timestamp):
+    """Convert unix timestamp to datetime"""
+    return datetime.datetime.fromtimestamp(timestamp, pytz.utc)
+
+
 def utcstr_from_unix(timestamp, rounded=False):
     """Convert unix timestamp to UTC string"""
-    datetime_aware = datetime.datetime.fromtimestamp(timestamp, pytz.utc)
+    datetime_aware = datetime_from_unix(timestamp)
     if rounded:
         datetime_aware = to_nearest_hour(datetime_aware)
     return datetime_aware.strftime(r"%Y-%m-%d %H:%M:%S")
@@ -51,5 +56,5 @@ def to_nearest_hour(input_datetime):
     """Rounds to nearest hour by adding a timedelta of one hour if the minute is 30 or later then truncating on hour"""
     if input_datetime.minute >= 30:
         input_datetime += datetime.timedelta(hours=1)
-    return input_datetime.replace(second=0, microsecond=0, minute=0)
+    return input_datetime.replace(minute=0, second=0, microsecond=0)
 
