@@ -25,4 +25,3 @@ module "inputs" {
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"
 }
-

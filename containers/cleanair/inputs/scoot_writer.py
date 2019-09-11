@@ -32,15 +32,15 @@ class ScootWriter(Updater):
             raise IOError("No AWS connection details were provided!")
 
         # Set up the known column names
-        self.csv_columns = ["Timestamp", "DetectorID", "DetectorFault", "FlowThisInterval",
+        self.csv_columns = ["TimestampMin", "DetectorID", "DetectorFault", "NVehiclesInInterval",
                             "OccupancyPercentage", "CongestionPercentage", "SaturationPercentage", "FlowRawCount",
                             "OccupancyRawCount", "CongestionRawCount", "SaturationRawCount", "Region"]
 
         # How many minutes to combine into a single reading (to reduce how much is written to the database)
-        self.aggregation_size = 5
+        self.aggregation_size = 60
 
         # How many aggregated readings to batch into a single database transaction
-        self.transaction_batch_size = 12
+        self.transaction_batch_size = 4
 
         # Start with an empty list of detector IDs
         self.detector_ids = []
@@ -48,10 +48,13 @@ class ScootWriter(Updater):
         # Ensure that tables exist
         scoot_tables.initialise(self.dbcnxn.engine)
 
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
+
     def request_site_entries(self):
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:
-            scootdetectors = Table("scootdetectors", scoot_tables.ScootReading.metadata,
+            scootdetectors = Table("scootdetectors", scoot_tables.ScootReading.metadata, schema="datasources",
                                    autoload=True, autoload_with=self.dbcnxn.engine)
             detectors = sorted([s[0] for s in session.query(scootdetectors.c.detector_n).distinct()])
         return detectors
@@ -70,32 +73,6 @@ class ScootWriter(Updater):
         if file_list:
             yield file_list
 
-    def aggregate(self, input_dfs):
-        """Aggregate measurements across several minutes"""
-        # Combine batch into one dataframe then
-        df_combined = pandas.concat(input_dfs, ignore_index=True)
-        # Group by DetectorID: each column has its own combination rule
-        try:
-            return df_combined.groupby(["DetectorID"]).agg(
-                {
-                    "Timestamp": lambda x: int(sum(x) / len(x)),
-                    "DetectorID": "first",
-                    "DetectorFault": any,
-                    "FlowThisInterval": "sum",
-                    "IntervalMinutes": "sum",
-                    "OccupancyPercentage": "mean",
-                    "CongestionPercentage": "mean",
-                    "SaturationPercentage": "mean",
-                    "FlowRawCount": "sum",
-                    "OccupancyRawCount": "sum",
-                    "CongestionRawCount": "sum",
-                    "SaturationRawCount": "count",
-                    "Region": "first",
-                })
-        except pandas.core.base.DataError:
-            self.logger.warning("Data aggregation failed - returning an empty dataframe")
-            return pandas.DataFrame(columns=df_combined.columns)
-
     def aggregate_detector_readings(self, filebatch):
         """Request all readings between {start_date} and {end_date}, removing duplicates."""
         # Get an AWS client
@@ -111,15 +88,15 @@ class ScootWriter(Updater):
                 # Read the CSV files into a dataframe
                 scoot_df = pandas.read_csv(filename, names=self.csv_columns, skipinitialspace=True,
                                            converters={
-                                               "Timestamp": unix_from_str,
-                                               "FlowThisInterval": lambda x: float(x) / 60,
-                                               "DetectorFault": lambda x: x.strip() == "Y",
+                                               "TimestampMin": lambda x: unix_from_str(x,
+                                                                                       timezone="Europe/London",
+                                                                                       rounded=True),
+                                               "NVehiclesInInterval": lambda x: float(x) / 60,
                                                "Region": lambda x: x.strip(),
                                            })
                 # Remove any sites that are not in our site database
                 scoot_df = scoot_df[scoot_df["DetectorID"].isin(self.detector_ids)]
-                # Set the interval to one minute and append to list of readings
-                scoot_df["IntervalMinutes"] = 1
+                # Append to list of readings
                 processed_readings.append(scoot_df)
             except botocore.exceptions.ClientError:
                 self.logger.error("Failed to retrieve %s. Possibly this file does not exist yet", filename)
@@ -133,13 +110,42 @@ class ScootWriter(Updater):
         self.logger.info("Aggregating %s CSV files into one measurement", green(len(processed_readings)))
         df_combined = self.aggregate(processed_readings)
 
-        # Construct the measurement date and drop the timestamp
+        # Construct the measurement dates and drop the timestamps
         self.logger.debug("Converting date format to UTC")
-        df_combined["MeasurementDateUTC"] = df_combined["Timestamp"].apply(utcstr_from_unix)
-        df_combined.drop(["Timestamp"], axis=1, inplace=True)
+        df_combined["MeasurementStartUTC"] = df_combined["TimestampMin"].apply(utcstr_from_unix)
+        df_combined.drop(["TimestampMin"], axis=1, inplace=True)
+        df_combined["MeasurementEndUTC"] = df_combined["TimestampMax"].apply(utcstr_from_unix)
+        df_combined.drop(["TimestampMax"], axis=1, inplace=True)
 
         # Drop the timestamp and return the dataframe as a list of dictionaries
         return list(df_combined.T.to_dict().values())
+
+    def aggregate(self, input_dfs):
+        """Aggregate measurements across several minutes"""
+        # Combine batch into one dataframe then
+        df_combined = pandas.concat(input_dfs, ignore_index=True)
+        df_combined["TimestampMax"] = df_combined["TimestampMin"]
+        # Group by DetectorID: each column has its own combination rule
+        try:
+            return df_combined.groupby(["DetectorID"]).agg(
+                {
+                    "TimestampMin": "min",
+                    "TimestampMax": "max",
+                    "DetectorID": "first",
+                    "DetectorFault": any,
+                    "NVehiclesInInterval": "sum",
+                    "OccupancyPercentage": "mean",
+                    "CongestionPercentage": "mean",
+                    "SaturationPercentage": "mean",
+                    "FlowRawCount": "sum",
+                    "OccupancyRawCount": "sum",
+                    "CongestionRawCount": "sum",
+                    "SaturationRawCount": "count",
+                    "Region": "first",
+                })
+        except pandas.core.base.DataError:
+            self.logger.warning("Data aggregation failed - returning an empty dataframe")
+            return pandas.DataFrame(columns=df_combined.columns)
 
     def update_site_list_table(self):
         """"SCOOT sites are available as static data and cannot be dynamically loaded"""

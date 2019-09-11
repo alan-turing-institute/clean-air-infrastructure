@@ -32,7 +32,7 @@ class ScootReading(BASE):
                    "DetectorID='{}'".format(self.DetectorID),
                    "Region='{}'".format(self.Region),
                    "DetectorFault='{}'".format(self.DetectorFault),
-                   "FlowThisInterval='{}'".format(self.FlowThisInterval),
+                   "NVehiclesInInterval='{}'".format(self.NVehiclesInInterval),
                    "OccupancyPercentage='{}'".format(self.OccupancyPercentage),
                    "CongestionPercentage='{}'".format(self.CongestionPercentage),
                    "SaturationPercentage='{}'".format(self.SaturationPercentage),

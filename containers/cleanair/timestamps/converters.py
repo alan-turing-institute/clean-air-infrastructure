@@ -36,14 +36,14 @@ def utcstr_from_datetime(timestamp):
     return timestamp.astimezone(pytz.utc).strftime(r"%Y-%m-%d %H:%M:%S")
 
 
-def unix_from_str(naive_string, timezone="Europe/London", rounded=False):
+def unix_from_str(naive_string, timezone, rounded=False):
     """Convert naive string to unix timestamp"""
     return datetime_from_str(naive_string, timezone, rounded).timestamp()
 
 
-def to_nearest_hour(timestamp):
-    """Rounds to nearest hour by adding a timedelta hour if minute >= 30"""
-    if timestamp.minute >= 30:
-        timestamp += datetime.timedelta(hours=1)
-    return timestamp.replace(second=0, microsecond=0, minute=0)
+def to_nearest_hour(input_datetime):
+    """Rounds to nearest hour by adding a timedelta of one hour if the minute is 30 or later then truncating on hour"""
+    if input_datetime.minute >= 30:
+        input_datetime += datetime.timedelta(hours=1)
+    return input_datetime.replace(second=0, microsecond=0, minute=0)
 
