@@ -96,7 +96,8 @@ def build_reading_entry(reading_dict):
     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
     # Construct the record and return it
-    return LAQNReading(SiteCode=reading_dict["@SiteCode"],
+    return LAQNReading(SiteCode=reading_dict["SiteCode"],
                        SpeciesCode=reading_dict["@SpeciesCode"],
-                       MeasurementDateGMT=reading_dict["@MeasurementDateGMT"],
+                       MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                       MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
                        Value=reading_dict["@Value"])

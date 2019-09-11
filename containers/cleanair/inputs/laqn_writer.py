@@ -58,7 +58,7 @@ class LAQNWriter(Updater, APIReader):
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
             for reading in processed_data:
-                reading["@SiteCode"] = site_code
+                reading["SiteCode"] = site_code
                 timestamp_start = datetime_from_str(reading.pop("@MeasurementDateGMT"), timezone="GMT", rounded=True)
                 timestamp_end = timestamp_start + datetime.timedelta(hours=1)
                 reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
