@@ -11,12 +11,10 @@ class ScootReading(BASE):
     __tablename__ = "scoot_readings"
     __table_args__ = {'schema': 'datasources'}
 
+    DetectorID = Column(String(9), primary_key=True, nullable=False)  # DETSCN
     MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
-    DetectorID = Column(String(9), primary_key=True, nullable=False)  # DETSCN
-    Region = Column(String(5))  # REGION
-    DetectorFault = Column(Boolean)  # DET
-    FlowThisInterval = Column(Integer)  # FLOW_ACTUAL / 60
+    NVehiclesInInterval = Column(Integer)  # FLOW_ACTUAL / 60
     OccupancyPercentage = Column(DOUBLE_PRECISION)  # OCCU_ACTUAL
     CongestionPercentage = Column(DOUBLE_PRECISION)  # CONG_ACTUAL
     SaturationPercentage = Column(DOUBLE_PRECISION)  # SATU_ACTUAL
@@ -24,14 +22,13 @@ class ScootReading(BASE):
     OccupancyRawCount = Column(Integer)  # OCCU_COUNT
     CongestionRawCount = Column(Integer)  # CONG_COUNT
     SaturationRawCount = Column(Integer)  # SATU_COUNT
+    Region = Column(String(5))  # REGION
 
     def __repr__(self):
         return "<ScootReading(" + ", ".join([
+                   "DetectorID='{}'".format(self.DetectorID),
                    "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
                    "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "DetectorID='{}'".format(self.DetectorID),
-                   "Region='{}'".format(self.Region),
-                   "DetectorFault='{}'".format(self.DetectorFault),
                    "NVehiclesInInterval='{}'".format(self.NVehiclesInInterval),
                    "OccupancyPercentage='{}'".format(self.OccupancyPercentage),
                    "CongestionPercentage='{}'".format(self.CongestionPercentage),
@@ -39,7 +36,8 @@ class ScootReading(BASE):
                    "FlowRawCount='{}'".format(self.FlowRawCount),
                    "OccupancyRawCount='{}'".format(self.OccupancyRawCount),
                    "CongestionRawCount='{}'".format(self.CongestionRawCount),
-                   "SaturationRawCount='{}'".format(self.SaturationRawCount)
+                   "SaturationRawCount='{}'".format(self.SaturationRawCount),
+                   "Region='{}'".format(self.Region),
                ])
 
 

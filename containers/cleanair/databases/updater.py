@@ -21,13 +21,10 @@ class Updater():
         else:
             self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
         self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
-        self.start_time = "00:00:00"
-        self.end_time = "23:59:59"
 
         # Log an introductory message
-        self.logger.info("Requesting data between the following times:")
-        self.logger.info("... %s on %s", green(self.start_time), green(self.start_date))
-        self.logger.info("... %s on %s", green(self.end_time), green(self.end_date))
+        self.logger.info("Requesting data between the following dates (inclusive):")
+        self.logger.info("... %s and %s", green(self.start_date), green(self.end_date))
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

@@ -37,7 +37,7 @@ class AQESite(BASE):
                    "DateOpened='{}'".format(self.DateOpened),
                    "DateClosed='{}'".format(self.DateClosed),
                    "SiteLink='{}'".format(self.SiteLink),
-                   "DataManager='{}'".format(self.DataManager)
+                   "DataManager='{}'".format(self.DataManager),
                ])
 
 
@@ -60,7 +60,7 @@ class AQEReading(BASE):
                    "SpeciesCode='{}'".format(self.SpeciesCode),
                    "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
                    "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "Value='{}'".format(self.Value)
+                   "Value='{}'".format(self.Value),
                ])
 
 

@@ -19,21 +19,27 @@ def safe_strptime(naive_string, format_str):
 def datetime_from_str(naive_string, timezone, rounded=False):
     """Convert naive string to localised datetime"""
     local_tz = pytz.timezone(timezone)
-    timestamp_naive = safe_strptime(naive_string, r"%Y-%m-%d %H:%M:%S")
+    datetime_naive = safe_strptime(naive_string, r"%Y-%m-%d %H:%M:%S")
     if rounded:
-        timestamp_naive = to_nearest_hour(timestamp_naive)
-    timestamp_aware = local_tz.localize(timestamp_naive)
-    return timestamp_aware
+        datetime_naive = to_nearest_hour(datetime_naive)
+    datetime_aware = local_tz.localize(datetime_naive)
+    return datetime_aware
 
 
-def utcstr_from_unix(timestamp):
+def utcstr_from_unix(timestamp, rounded=False):
     """Convert unix timestamp to UTC string"""
-    return datetime.datetime.fromtimestamp(timestamp, pytz.utc).strftime(r"%Y-%m-%d %H:%M:%S")
+    datetime_aware = datetime.datetime.fromtimestamp(timestamp, pytz.utc)
+    if rounded:
+        datetime_aware = to_nearest_hour(datetime_aware)
+    return datetime_aware.strftime(r"%Y-%m-%d %H:%M:%S")
 
 
-def utcstr_from_datetime(timestamp):
+def utcstr_from_datetime(input_datetime, rounded=False):
     """Convert datetime to UTC string"""
-    return timestamp.astimezone(pytz.utc).strftime(r"%Y-%m-%d %H:%M:%S")
+    datetime_aware = input_datetime.astimezone(pytz.utc)
+    if rounded:
+        datetime_aware = to_nearest_hour(datetime_aware)
+    return datetime_aware.strftime(r"%Y-%m-%d %H:%M:%S")
 
 
 def unix_from_str(naive_string, timezone, rounded=False):

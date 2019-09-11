@@ -32,7 +32,7 @@ class LAQNSite(BASE):
                    "Latitude='{}'".format(self.Latitude),
                    "Longitude='{}'".format(self.Longitude),
                    "DateOpened='{}'".format(self.DateOpened),
-                   "DateClosed='{}'".format(self.DateClosed)
+                   "DateClosed='{}'".format(self.DateClosed),
                ])
 
 
@@ -55,7 +55,7 @@ class LAQNReading(BASE):
                    "SpeciesCode='{}'".format(self.SpeciesCode),
                    "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
                    "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-                   "Value='{}'".format(self.Value)
+                   "Value='{}'".format(self.Value),
                ])
 
 
