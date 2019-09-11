@@ -43,14 +43,14 @@ write_files:
       ${apache_config}
 
   # Flask app acting as the POST endpoint for the GitHub webhook
-  - path: /var/www/flask/webhook/__init__.py
+  - path: /var/www/flask/webhook.py
     content: |
       ${flask_webhook}
 
   # Configuration for Flask app
-  - path: /var/www/flask/webhook/webhook.wsgi
+  - path: /var/www/flask/app.wsgi
     content: |
-      ${flask_wsgi}
+      ${flask_app_wsgi}
 
   # Automatically run the docker image
   - path: /home/${username}/run_application.sh

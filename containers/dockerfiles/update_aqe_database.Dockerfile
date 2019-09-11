@@ -11,8 +11,8 @@ COPY requirements.txt /app/requirements.txt
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Copy the datasources directory contents into the container
-COPY datasources /app/datasources
+# Copy the cleanair directory contents into the container
+COPY cleanair /app/cleanair
 
 # Copy the run script into the container
 COPY entrypoints/update_aqe_database.py /app

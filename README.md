@@ -1,8 +1,6 @@
 # clean-air-infrastructure
 Azure Infrastructure for the Clean Air project
 
-
-
 # Prerequisites
 To run this project you will need:
 
@@ -160,7 +158,7 @@ Static datasets (like StreetCanyons or UKMap) only need to be added to the datab
 We will do this manually, using a Docker image from the Azure container registry.
 Please note that you may need to increase the available memory under `Docker > Preferences... > Advanced` (the following instructions were tested using 8 GB).
 
-**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`.**
+**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`. Ensure you have pushed your latest commit to github if working on a branch**
 
 From the root directory, running the command
 
@@ -170,7 +168,6 @@ python setup/insert_static_datasets.py
 
 will download the static datasets to temporary local storage and then upload them to the database.
 The process takes approximately 1hr (most of this is for the UKMap data) and you must have internet connectivity throughout.
-
 
 ## Adding live datasets
 The live datasets (like LAQN or AQE) are populated using daily jobs that create an Azure container instance and add the most recent data to the database.
@@ -211,6 +208,14 @@ Create a database called `cleanair_db` and add the following login details (make
 }
 ```
 
+To upload static data to the local database run:
+
+```
+python setup/insert_static_datasets.py -l <full-path-to-secret-file>
+```
+
+where the secret file is a JSON file of the form detailed above.
+
 
 ## Removing Terraform infrastructure
 To destroy all the resources created by `Terraform` run:
@@ -220,7 +225,7 @@ terraform destroy
 ```
 
 You can check everything was removed on the Azure portal.
-Then login to TravisCI and delete the Azure Container repo environment variables. -->
+Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
 

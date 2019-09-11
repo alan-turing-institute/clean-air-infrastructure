@@ -8,22 +8,19 @@ services:
 
 script:
   # # Run all pytest unit tests
-  # - python -m pytest -v tests --cov misinformation --cov-report term-missing
+  # - python -m pytest -v tests --cov containers --cov-report term-missing
 
-  # Run pyflakes for error detection
-  - pyflakes **/*.py
-
-  # Check PEP8 compliance (ignoring long lines)
-  - pycodestyle --statistics --ignore=R0801 --max-line-length=120 --count **/*.py
+  # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
+  - flake8
 
   # Run pylint for stricter error checking
-  - pylint **/*.py
+  - pylint */
 
   # Build all docker images
-  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_aqe_database.Dockerfile containers/.
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_laqn_database.Dockerfile containers/.
-  - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_scoot_database.Dockerfile containers/.
-  - docker build -t $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers/.
+  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_aqe_database.Dockerfile containers
+  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_laqn_database.Dockerfile containers
+  - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_scoot_database.Dockerfile containers
+  - docker build -t $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers
 
   # Push all our docker images to the container registry
   - echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SERVER"

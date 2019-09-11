@@ -1,8 +1,14 @@
+"""
+Update static dataset
+"""
 import argparse
-import datasources
+from cleanair.inputs import StaticWriter
 
 
 def main():
+    """
+    Update static dataset
+    """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Insert static datasets")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
@@ -13,13 +19,13 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        staticdb = datasources.StaticDatabase(**vars(args))
+        static_writer = StaticWriter(**vars(args))
 
         # Upload static files
-        staticdb.upload_static_files()
+        static_writer.upload_static_files()
 
         # Configure database tables
-        staticdb.configure_tables()
+        static_writer.configure_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

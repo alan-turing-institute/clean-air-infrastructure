@@ -1,10 +1,14 @@
+"""
+Update scoot database
+"""
 import argparse
 import json
 import os
-import datasources
+from cleanair.inputs import ScootWriter
 
 
 def main():
+    """Update the scoot database"""
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get Scoot traffic data")
     parser.add_argument("-e", "--end", type=str, default="yesterday",
@@ -32,10 +36,10 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
 
-        scootdb = datasources.ScootDatabase(**vars(args))
+        scoot_writer = ScootWriter(**vars(args))
 
         # Update the Scoot readings table on the database
-        scootdb.update_remote_tables()
+        scoot_writer.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
