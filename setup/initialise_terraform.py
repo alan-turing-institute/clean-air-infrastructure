@@ -106,12 +106,16 @@ def build_backend(args):
     if args.aws_key_id:
         key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
     else:
-        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value:
+        if key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value:
+            logging.info("Loaded AWS key ID from existing key vault: %s", emphasised(vault.name))
+        else:
             logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
     if args.aws_key:
         key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
     else:
-        if not key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value:
+        if key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value:
+            logging.info("Loaded AWS key from existing key vault: %s", emphasised(vault.name))
+        else:
             logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
     key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
     key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
