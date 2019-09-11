@@ -36,9 +36,6 @@ class ScootWriter(Updater):
                             "OccupancyPercentage", "CongestionPercentage", "SaturationPercentage", "FlowRawCount",
                             "OccupancyRawCount", "CongestionRawCount", "SaturationRawCount", "Region"]
 
-        # How many minutes to combine into a single reading (to reduce how much is written to the database)
-        self.aggregation_size = 60
-
         # Start with an empty list of detector IDs
         self.detector_ids = []
 
@@ -194,7 +191,7 @@ class ScootWriter(Updater):
             self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
 
         # Summarise updates
-        self.logger.info("Committed %s records to database table %s in %s minutes",
+        self.logger.info("Committed %s records to table %s in %s minutes",
                          green(n_records),
                          green(scoot_tables.ScootReading.__tablename__),
                          green("{:.2f}".format((time.time() - start_update) / 60.)))

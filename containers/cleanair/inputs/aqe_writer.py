@@ -6,9 +6,9 @@ import datetime
 import io
 from xml.dom import minidom
 import requests
+from ..apis import APIReader
 from ..databases import Updater, aqe_tables
 from ..loggers import green
-from ..apis import APIReader
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 

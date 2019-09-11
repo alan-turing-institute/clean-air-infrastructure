@@ -3,9 +3,9 @@ LAQN
 """
 import datetime
 import requests
+from ..apis import APIReader
 from ..databases import Updater, laqn_tables
 from ..loggers import green
-from ..apis import APIReader
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
