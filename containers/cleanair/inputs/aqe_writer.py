@@ -2,12 +2,14 @@
 Get data from the AQE network via the API
 """
 import csv
+import datetime
 import io
 from xml.dom import minidom
 import requests
+from ..apis import APIReader
 from ..databases import Updater, aqe_tables
 from ..loggers import green
-from ..apis import APIReader
+from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
 class AQEWriter(Updater, APIReader):
@@ -18,6 +20,9 @@ class AQEWriter(Updater, APIReader):
 
         # Ensure that tables exist
         aqe_tables.initialise(self.dbcnxn.engine)
+
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
 
     def request_site_entries(self):
         """
@@ -54,11 +59,14 @@ class AQEWriter(Updater, APIReader):
             # Process the readings which are in the format: Date, Species1, Species2, ...
             processed_readings = []
             for reading in csvreader:
+                timestamp_end = datetime_from_str(reading[0], timezone="GMT", rounded=True)
+                timestamp_start = timestamp_end - datetime.timedelta(hours=1)
                 for species_code, value in zip(species, reading[1:]):
-                    processed_readings.append({"@SiteCode": site_code,
-                                               "@SpeciesCode": species_code,
-                                               "@MeasurementDateGMT": reading[0],
-                                               "@Value": value})
+                    processed_readings.append({"SiteCode": site_code,
+                                               "SpeciesCode": species_code,
+                                               "MeasurementStartUTC": utcstr_from_datetime(timestamp_start),
+                                               "MeasurementEndUTC": utcstr_from_datetime(timestamp_end),
+                                               "Value": value})
             return processed_readings
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)

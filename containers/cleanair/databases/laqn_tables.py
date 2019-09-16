@@ -1,7 +1,7 @@
 """
 Tables for LAQN data source
 """
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
@@ -25,8 +25,15 @@ class LAQNSite(BASE):
     readings = relationship("LAQNReading", back_populates="site")
 
     def __repr__(self):
-        return "<LAQNSite(SiteCode='%s', SiteType='%s', Latitude='%s', Longitude='%s', Opened='%s', Closed='%s'" % (
-            self.SiteCode, self.SiteType, self.Latitude, self.Longitude, self.DateOpened, self.DateClosed)
+        return "<LAQNSite(" + ", ".join([
+            "SiteCode='{}'".format(self.SiteCode),
+            "la_id='{}'".format(self.la_id),
+            "SiteType='{}'".format(self.SiteType),
+            "Latitude='{}'".format(self.Latitude),
+            "Longitude='{}'".format(self.Longitude),
+            "DateOpened='{}'".format(self.DateOpened),
+            "DateClosed='{}'".format(self.DateClosed),
+            ])
 
 
 class LAQNReading(BASE):
@@ -36,14 +43,20 @@ class LAQNReading(BASE):
 
     SiteCode = Column(String(4), ForeignKey('datasources.laqn_sites.SiteCode'), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP(timezone=True), primary_key=True, nullable=False)
+    MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
+    MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
     site = relationship("LAQNSite", back_populates="readings")
 
     def __repr__(self):
-        return "<LAQNReading(SiteCode='%s', SpeciesCode='%s', MeasurementDateGMT='%s', Value='%s'" % (
-            self.SiteCode, self.SpeciesCode, self.MeasurementDateGMT, self.Value)
+        return "<LAQNReading(" + ", ".join([
+            "SiteCode='{}'".format(self.SiteCode),
+            "SpeciesCode='{}'".format(self.SpeciesCode),
+            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+            "Value='{}'".format(self.Value),
+            ])
 
 
 def initialise(engine):
@@ -83,7 +96,8 @@ def build_reading_entry(reading_dict):
     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
     # Construct the record and return it
-    return LAQNReading(SiteCode=reading_dict["@SiteCode"],
+    return LAQNReading(SiteCode=reading_dict["SiteCode"],
                        SpeciesCode=reading_dict["@SpeciesCode"],
-                       MeasurementDateGMT=reading_dict["@MeasurementDateGMT"],
+                       MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                       MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
                        Value=reading_dict["@Value"])

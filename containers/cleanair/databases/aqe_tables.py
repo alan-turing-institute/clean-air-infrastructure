@@ -1,8 +1,9 @@
 """
 Tables for AQE data source
 """
-from sqlalchemy import Column, String
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from . import BASE
 
@@ -11,6 +12,7 @@ class AQESite(BASE):
     """Table of AQE sites"""
     __tablename__ = "aqe_sites"
     __table_args__ = {'schema': 'datasources'}
+
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SiteName = Column(String(), nullable=False)
     SiteType = Column(String(20), nullable=False)
@@ -22,15 +24,44 @@ class AQESite(BASE):
     DataManager = Column(String)
     geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 
+    readings = relationship("AQEReading", back_populates="site")
+
+    def __repr__(self):
+        return "<AQESite(" + ", ".join([
+            "SiteCode='{}'".format(self.SiteCode),
+            "SiteName='{}'".format(self.SiteName),
+            "SiteType='{}'".format(self.SiteType),
+            "Latitude='{}'".format(self.Latitude),
+            "Latitude='{}'".format(self.Latitude),
+            "Longitude='{}'".format(self.Longitude),
+            "DateOpened='{}'".format(self.DateOpened),
+            "DateClosed='{}'".format(self.DateClosed),
+            "SiteLink='{}'".format(self.SiteLink),
+            "DataManager='{}'".format(self.DataManager),
+            ])
+
 
 class AQEReading(BASE):
     """Table of AQE readings"""
     __tablename__ = "aqe_readings"
     __table_args__ = {'schema': 'datasources'}
-    SiteCode = Column(String(5), primary_key=True, nullable=False)
+
+    SiteCode = Column(String(5), ForeignKey('datasources.aqe_sites.SiteCode'), primary_key=True, nullable=False)
     SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementDateGMT = Column(TIMESTAMP, primary_key=True, nullable=False)
+    MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
+    MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
+
+    site = relationship("AQESite", back_populates="readings")
+
+    def __repr__(self):
+        return "<AQEReading(" + ", ".join([
+            "SiteCode='{}'".format(self.SiteCode),
+            "SpeciesCode='{}'".format(self.SpeciesCode),
+            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
+            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
+            "Value='{}'".format(self.Value),
+            ])
 
 
 def initialise(engine):
@@ -71,7 +102,8 @@ def build_reading_entry(reading_dict):
     reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
     # Construct the record and return it
-    return AQEReading(SiteCode=reading_dict["@SiteCode"],
-                      SpeciesCode=reading_dict["@SpeciesCode"],
-                      MeasurementDateGMT=reading_dict["@MeasurementDateGMT"],
-                      Value=reading_dict["@Value"])
+    return AQEReading(SiteCode=reading_dict["SiteCode"],
+                      SpeciesCode=reading_dict["SpeciesCode"],
+                      MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                      MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                      Value=reading_dict["Value"])

@@ -28,8 +28,13 @@ class StaticWriter():
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
 
-        # Ensure that that the table exists and get the connection string
-        _ = self.dbcnxn.engine
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
+
+        # Ensure that the datasources schema exists
+        self.dbcnxn.ensure_schema("datasources")
+
+        # Get the connection string
         connection_string = \
             "host={host} port={port} dbname={db_name} user={username} password={password} sslmode={ssl_mode}".format(
                 **self.dbcnxn.connection_info)
@@ -95,6 +100,7 @@ class StaticWriter():
                         "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
                         "--config", "PG_USE_COPY", "YES",
                         "-t_srs", "EPSG:4326",
+                        "-lco", "SCHEMA=datasources",
                         "-nln", self.table_name] + extra_args)
 
     def configure_tables(self):
@@ -112,8 +118,8 @@ class StaticWriter():
         if self.data_directory == "canyonslondon":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
-                   ON canyonslondon USING GIST(wkb_geometry);""",
-                """ALTER TABLE canyonslondon
+                   ON datasources.canyonslondon USING GIST(wkb_geometry);""",
+                """ALTER TABLE datasources.canyonslondon
                    DROP COLUMN ave_relhma,
                    DROP COLUMN identifier,
                    DROP COLUMN identifi_2,
@@ -127,42 +133,42 @@ class StaticWriter():
                    DROP COLUMN shape_le_1,
                    DROP COLUMN sum_length,
                    DROP COLUMN sum_shape_;""",
-                """ALTER TABLE canyonslondon
+                """ALTER TABLE datasources.canyonslondon
                    ALTER fictitious TYPE bool
                    USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE canyonslondon ADD PRIMARY KEY (toid);""",
+                """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
             ]
 
         elif self.data_directory == "glahexgrid":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
-                   ON glahexgrid USING GIST(wkb_geometry);""",
-                """ALTER TABLE glahexgrid
+                   ON datasources.glahexgrid USING GIST(wkb_geometry);""",
+                """ALTER TABLE datasources.glahexgrid
                        DROP COLUMN col_id,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN row_id;""",
-                """ALTER TABLE glahexgrid ADD PRIMARY KEY (hex_id);""",
+                """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
             ]
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
-                   ON londonboundary USING GIST(wkb_geometry);""",
-                """ALTER TABLE londonboundary
+                   ON datasources.londonboundary USING GIST(wkb_geometry);""",
+                """ALTER TABLE datasources.londonboundary
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
                        DROP COLUMN sub_2009;""",
-                """ALTER TABLE londonboundary
+                """ALTER TABLE datasources.londonboundary
                        ALTER ons_inner TYPE bool
                        USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE londonboundary ADD PRIMARY KEY (gss_code);""",
+                """ALTER TABLE datasources.londonboundary ADD PRIMARY KEY (gss_code);""",
             ]
 
         elif self.data_directory == "oshighwayroadlink":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
-                   ON oshighwayroadlink USING GIST(wkb_geometry);""",
-                """ALTER TABLE oshighwayroadlink
+                   ON datasources.oshighwayroadlink USING GIST(wkb_geometry);""",
+                """ALTER TABLE datasources.oshighwayroadlink
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
@@ -172,19 +178,19 @@ class StaticWriter():
                        DROP COLUMN roadstruct,
                        DROP COLUMN roadwidtha,
                        DROP COLUMN roadwidthm;""",
-                """ALTER TABLE oshighwayroadlink
+                """ALTER TABLE datasources.oshighwayroadlink
                     ALTER fictitious TYPE bool
                     USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE oshighwayroadlink ADD PRIMARY KEY (toid);"""
+                """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
             ]
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
-                   ON scootdetectors USING GIST(wkb_geometry);""",
-                """DELETE FROM scootdetectors WHERE ogc_fid NOT IN
-                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM scootdetectors);""",
-                """ALTER TABLE scootdetectors
+                   ON datasources.scootdetectors USING GIST(wkb_geometry);""",
+                """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
+                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM datasources.scootdetectors);""",
+                """ALTER TABLE datasources.scootdetectors
                        DROP COLUMN dataset,
                        DROP COLUMN docname,
                        DROP COLUMN docpath,
@@ -193,14 +199,15 @@ class StaticWriter():
                        DROP COLUMN objectid,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN unique_id;""",
-                """ALTER TABLE scootdetectors RENAME COLUMN itn_date TO date_installed;""",
-                """ALTER TABLE scootdetectors RENAME COLUMN date_updat TO date_updated;""",
-                """ALTER TABLE scootdetectors ADD PRIMARY KEY (detector_n);""",
+                """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
+                """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
+                """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
             ]
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx ON ukmap USING GIST(shape);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx
+                   ON datasources.ukmap USING GIST(shape);""",
             ]
 
         for sql_command in sql_commands:
