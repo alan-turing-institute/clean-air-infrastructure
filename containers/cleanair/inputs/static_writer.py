@@ -118,7 +118,7 @@ class StaticWriter():
         if self.data_directory == "canyonslondon":
             sql_commands = [
                 """ALTER INDEX IF EXISTS canyonslondon_wkb_geometry_geom_idx 
-                   TO canyonslondon_geometry_idx;"""
+                   TO canyonslondon_geometry_idx ON datasources.canyonslondon;"""
                 """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
                    ON datasources.canyonslondon USING GIST(geom);""",
                 """ALTER TABLE datasources.canyonslondon
