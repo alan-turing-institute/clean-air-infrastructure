@@ -118,7 +118,7 @@ class StaticWriter():
         if self.data_directory == "canyonslondon":
             sql_commands = [
                 """ALTER TABLE datasources.canyonslondon
-                   RENAME COLUMN wkb_geometry TO geom"""
+                   RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
                    ON datasources.canyonslondon USING GIST(geom);""",
                 """ALTER TABLE datasources.canyonslondon
