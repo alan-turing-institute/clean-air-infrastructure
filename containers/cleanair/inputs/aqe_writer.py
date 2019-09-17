@@ -7,9 +7,10 @@ import io
 from xml.dom import minidom
 import requests
 from ..apis import APIReader
-from ..databases import Updater, aqe_tables
+from ..databases import Updater, aqe_tables, interest_point_table
 from ..loggers import green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
+from sqlalchemy import Table
 
 
 class AQEWriter(Updater, APIReader):
@@ -17,12 +18,6 @@ class AQEWriter(Updater, APIReader):
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
         super().__init__(*args, **kwargs)
-
-        # Ensure that tables exist
-        aqe_tables.initialise(self.dbcnxn.engine)
-
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
 
     def request_site_entries(self):
         """
@@ -83,10 +78,30 @@ class AQEWriter(Updater, APIReader):
         with self.dbcnxn.open_session() as session:
             # Reload site information and update the database accordingly
             self.logger.info("Requesting site info from %s", green("aeat.com API"))
-            site_entries = [aqe_tables.build_site_entry(site) for site in self.request_site_entries()]
+
+            # Retrieve site entries (discarding any that do not have a known position)
+            site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
+
+            # Add all points to the interest_points table
+            points = [interest_point_table.build_entry("laqn", latitude=s["Latitude"], longitude=s["Longitude"])
+                         for s in site_entries]
+            session.add_all(points)
+
+            # Flush the session and refresh in order to obtain the IDs of these points
+            session.flush()
+            for point in points:
+                session.refresh(point)
+
+            # Add point IDs to each of the site entries
+            for site, point in zip(site_entries, points):
+                site["point_id"] = point.point_id
+
+            # Build the site entries and commit
+            site_entries = [aqe_tables.build_site_entry(site) for site in site_entries]
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
-            self.logger.info("Committing changes to database table %s", green(aqe_tables.AQESite.__tablename__))
+            self.logger.info("Committing changes to database tables %s and %s",
+                green(interest_point_table.InterestPoint.__tablename__), green(aqe_tables.AQESite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -109,7 +124,7 @@ class AQEWriter(Updater, APIReader):
                              green(len(site_readings)),
                              green(aqe_tables.AQEReading.__tablename__))
             session.commit()
-        self.logger.info("Finished %s readings update...", green("AQE"))
+        self.logger.info("Finished %s readings update", green("AQE"))
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

@@ -1,14 +1,14 @@
 """
 Tables for AQE data source
 """
-from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
-from geoalchemy2 import Geometry
-from . import BASE
+# from geoalchemy2 import Geometry
+from . import Base
 
 
-class AQESite(BASE):
+class AQESite(Base):
     """Table of AQE sites"""
     __tablename__ = "aqe_sites"
     __table_args__ = {'schema': 'datasources'}
@@ -16,32 +16,25 @@ class AQESite(BASE):
     SiteCode = Column(String(5), primary_key=True, nullable=False)
     SiteName = Column(String(), nullable=False)
     SiteType = Column(String(20), nullable=False)
-    Latitude = Column(DOUBLE_PRECISION)
-    Longitude = Column(DOUBLE_PRECISION)
     DateOpened = Column(TIMESTAMP)
     DateClosed = Column(TIMESTAMP)
-    SiteLink = Column(String)
-    DataManager = Column(String)
-    geom = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
+    point_id = Column(Integer, ForeignKey('buffers.interest_points.point_id'), nullable=False)
 
     readings = relationship("AQEReading", back_populates="site")
+    interest_points = relationship("InterestPoint", back_populates="aqe_site")
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([
             "SiteCode='{}'".format(self.SiteCode),
             "SiteName='{}'".format(self.SiteName),
             "SiteType='{}'".format(self.SiteType),
-            "Latitude='{}'".format(self.Latitude),
-            "Latitude='{}'".format(self.Latitude),
-            "Longitude='{}'".format(self.Longitude),
             "DateOpened='{}'".format(self.DateOpened),
             "DateClosed='{}'".format(self.DateClosed),
-            "SiteLink='{}'".format(self.SiteLink),
-            "DataManager='{}'".format(self.DataManager),
+            "point_id='{}'".format(self.point_id),
             ])
 
 
-class AQEReading(BASE):
+class AQEReading(Base):
     """Table of AQE readings"""
     __tablename__ = "aqe_readings"
     __table_args__ = {'schema': 'datasources'}
@@ -64,34 +57,18 @@ class AQEReading(BASE):
             ])
 
 
-def initialise(engine):
-    """Ensure that all tables exist"""
-    BASE.metadata.create_all(engine)
-
-
 def build_site_entry(site_dict):
-    """
-    Create an AQESite entry, replacing empty strings with None
-    """
+    """Create an AQESite entry, replacing empty strings with None"""
     # Replace empty strings
     site_dict = {k: (v if v else None) for k, v in site_dict.items()}
-
-    # Only include geom if both latitude and longitude are available
-    kwargs = {}
-    if site_dict["Latitude"] and site_dict["Longitude"]:
-        kwargs = {"geom": "SRID=4326;POINT({} {})".format(site_dict["Longitude"], site_dict["Latitude"])}
 
     # Construct the record and return it
     return AQESite(SiteCode=site_dict["SiteCode"],
                    SiteName=site_dict["SiteName"],
                    SiteType=site_dict["SiteType"],
-                   Latitude=site_dict["Latitude"],
-                   Longitude=site_dict["Longitude"],
                    DateOpened=site_dict["DateOpened"],
                    DateClosed=site_dict["DateClosed"],
-                   SiteLink=site_dict["SiteLink"],
-                   DataManager=site_dict["DataManager"],
-                   **kwargs)
+                   point_id=site_dict["point_id"])
 
 
 def build_reading_entry(reading_dict):

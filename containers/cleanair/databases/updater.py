@@ -2,6 +2,7 @@
 Updater
 """
 import datetime
+from .base import initialise_tables
 from .connector import Connector
 from ..loggers import get_logger, green
 
@@ -28,7 +29,13 @@ class Updater():
 
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
-        self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
+        self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))\
+
+        # Ensure that tables exist
+        initialise_tables(self.dbcnxn.engine)
+
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

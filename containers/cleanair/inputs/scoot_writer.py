@@ -39,12 +39,6 @@ class ScootWriter(Updater):
         # Start with an empty list of detector IDs
         self.detector_ids = []
 
-        # Ensure that tables exist
-        scoot_tables.initialise(self.dbcnxn.engine)
-
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
-
     def request_site_entries(self):
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:

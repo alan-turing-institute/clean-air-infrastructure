@@ -5,6 +5,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 from .connector import Connector
 from ..loggers import get_logger
+# from . import Base
 
 
 class StaticTableConnector(Connector):
@@ -20,9 +21,9 @@ class StaticTableConnector(Connector):
         """
         Get a table class
         """
-
-        # produce our own MetaData object
+        # # produce our own MetaData object
         metadata = MetaData(schema=schema)
+        # metadata = Base.metadata
         metadata.reflect(self.engine, only=[table_name])
         base = automap_base(metadata=metadata)
         base.prepare()

@@ -93,6 +93,10 @@ class StaticWriter():
                                "shape"]) + " FROM BASE_HB0_complete_merged"]
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
 
+        # Force scoot detector geometries to POINT
+        elif self.data_directory == "scootdetectors":
+            extra_args += ["-nlt", "POINT"]
+
         # Run ogr2ogr
         self.logger.info("Uploading static data to table %s in %s",
                          green(self.table_name), green(self.dbcnxn.connection_info["db_name"]))
@@ -148,6 +152,26 @@ class StaticWriter():
                        DROP COLUMN ogc_fid,
                        DROP COLUMN row_id;""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
+                # Create interest_points table if it does not exist
+                """CREATE TABLE IF NOT EXISTS buffers.interest_points (
+                    point_id serial PRIMARY KEY,
+                    source varchar(7),
+                    location geometry(POINT, 4326)
+                );""",
+                """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
+                   ON buffers.interest_points USING GIST(location);""",
+                # Insert grid centroids to interest_points table
+                """INSERT INTO buffers.interest_points(source, location)
+                       SELECT 'hexgrid', ST_centroid(wkb_geometry)
+                       FROM datasources.glahexgrid;""",
+                """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id integer;""",
+                """ALTER TABLE datasources.glahexgrid
+                       ADD CONSTRAINT fk_glahexgrid_id FOREIGN KEY (point_id)
+                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
+                """UPDATE datasources.glahexgrid
+                       SET point_id = buffers.interest_points.point_id
+                       FROM buffers.interest_points
+                       WHERE ST_centroid(datasources.glahexgrid.wkb_geometry) = buffers.interest_points.location;""",
             ]
 
         elif self.data_directory == "londonboundary":
@@ -186,22 +210,45 @@ class StaticWriter():
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
-                   ON datasources.scootdetectors USING GIST(wkb_geometry);""",
+                # Tidy up scootdetectors table
                 """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
                        (SELECT DISTINCT ON (detector_n) ogc_fid FROM datasources.scootdetectors);""",
                 """ALTER TABLE datasources.scootdetectors
+                       DROP COLUMN cell,
                        DROP COLUMN dataset,
                        DROP COLUMN docname,
                        DROP COLUMN docpath,
+                       DROP COLUMN easting,
                        DROP COLUMN loop_id,
                        DROP COLUMN loop_type,
+                       DROP COLUMN northing,
                        DROP COLUMN objectid,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN unique_id;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
                 """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
+                # Create interest_points table if it does not exist
+                """CREATE TABLE IF NOT EXISTS buffers.interest_points (
+                    point_id serial PRIMARY KEY,
+                    source varchar(7),
+                    location geometry(POINT, 4326)
+                );""",
+                """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
+                   ON buffers.interest_points USING GIST(location);""",
+                # Move geometry data to interest_points table
+                """INSERT INTO buffers.interest_points(source, location)
+                       SELECT 'scoot', wkb_geometry
+                       FROM datasources.scootdetectors;""",
+                """ALTER TABLE datasources.scootdetectors ADD COLUMN point_id integer;""",
+                """ALTER TABLE datasources.scootdetectors
+                       ADD CONSTRAINT fk_scootdetectors_id FOREIGN KEY (point_id)
+                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
+                """UPDATE datasources.scootdetectors
+                       SET point_id = buffers.interest_points.point_id
+                       FROM buffers.interest_points
+                       WHERE datasources.scootdetectors.wkb_geometry = buffers.interest_points.location;""",
+                """ALTER TABLE datasources.scootdetectors DROP COLUMN wkb_geometry;""",
             ]
 
         elif self.data_directory == "ukmap.gdb":
@@ -213,7 +260,7 @@ class StaticWriter():
         for sql_command in sql_commands:
             self.logger.info("Running SQL command:")
             for line in sql_command.split("\n"):
-                self.logger.info(green(line.strip()))
+                self.logger.info("  %s", green(line.strip()))
             with self.dbcnxn.engine.connect() as conn:
                 try:
                     conn.execute(sql_command)
