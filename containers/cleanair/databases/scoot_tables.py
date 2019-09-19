@@ -4,8 +4,7 @@ Tables for SCOOT data source
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import DeferredReflection
-from geoalchemy2 import Geometry
-from . import Base
+from .base import Base
 
 
 class ScootReading(Base):

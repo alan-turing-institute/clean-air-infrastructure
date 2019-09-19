@@ -81,7 +81,7 @@ class LAQNWriter(Updater, APIReader):
 
             # Add all points to the interest_points table
             points = [interest_point_table.build_entry("aqe", latitude=s["@Latitude"], longitude=s["@Longitude"])
-                         for s in site_entries]
+                      for s in site_entries]
             session.add_all(points)
 
             # Flush the session and refresh in order to obtain the IDs of these points
@@ -98,7 +98,8 @@ class LAQNWriter(Updater, APIReader):
             self.logger.info("Updating site info database records")
             session.add_all(site_entries)
             self.logger.info("Committing changes to database tables %s and %s",
-                green(interest_point_table.InterestPoint.__tablename__), green(laqn_tables.LAQNSite.__tablename__))
+                             green(interest_point_table.InterestPoint.__tablename__),
+                             green(laqn_tables.LAQNSite.__tablename__))
             session.commit()
 
     def update_reading_table(self):

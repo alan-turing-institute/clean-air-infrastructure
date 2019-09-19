@@ -11,11 +11,10 @@ class LAQNReader():
     Read and process LAQN data
     """
     def __init__(self, *args, **kwargs):
-        # Initialise the base classes
+        pass
+        # # Ensure that tables are initialised
+        # initialise_tables(self.dbcnxn.engine)
 
-        # Ensure that tables exist
-        self.dbcnxn = Connector(*args, **kwargs)
-        laqn_tables.initialise(self.dbcnxn.engine)
 
     def query_interest_points(self, boundary_geom, include_sites=None):
         """

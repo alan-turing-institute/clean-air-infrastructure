@@ -4,8 +4,7 @@ Tables for AQE data source
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
-# from geoalchemy2 import Geometry
-from . import Base
+from .base import Base
 
 
 class AQESite(Base):

@@ -31,7 +31,7 @@ class Updater():
         self.logger.info("Requesting data between the following time points:")
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))\
 
-        # Ensure that tables exist
+        # Ensure that tables are initialised
         initialise_tables(self.dbcnxn.engine)
 
         # Ensure that postgis has been enabled
