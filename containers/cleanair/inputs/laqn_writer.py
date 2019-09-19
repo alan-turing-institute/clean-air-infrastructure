@@ -14,10 +14,6 @@ class LAQNWriter(Writer, APIReader):
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
-    def __init__(self, *args, **kwargs):
-        # Initialise the base classes
-        super().__init__(*args, **kwargs)
-
     def request_site_entries(self):
         """
         Request all LAQN sites

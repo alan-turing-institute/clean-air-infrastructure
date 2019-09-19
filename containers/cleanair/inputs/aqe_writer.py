@@ -14,10 +14,6 @@ from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 class AQEWriter(Writer, APIReader):
     """Manage interactions with the AQE table on Azure"""
-    def __init__(self, *args, **kwargs):
-        # Initialise the base classes
-        super().__init__(*args, **kwargs)
-
     def request_site_entries(self):
         """
         Request all AQE sites
