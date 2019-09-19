@@ -10,12 +10,12 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-from ..databases import Updater, scoot_tables
+from ..databases import Writer, scoot_tables
 from ..loggers import green
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(Updater):
+class ScootWriter(Writer):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)

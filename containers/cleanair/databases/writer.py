@@ -7,7 +7,7 @@ from .connector import Connector
 from ..loggers import get_logger, green
 
 
-class Updater():
+class Writer():
     """Manage interactions with the Azure databases"""
     def __init__(self, end, ndays, *args, **kwargs):
         self.dbcnxn = Connector(*args, **kwargs)

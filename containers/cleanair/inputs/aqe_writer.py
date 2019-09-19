@@ -7,12 +7,12 @@ import io
 from xml.dom import minidom
 import requests
 from ..apis import APIReader
-from ..databases import Updater, aqe_tables, interest_point_table
+from ..databases import Writer, aqe_tables, interest_point_table
 from ..loggers import green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class AQEWriter(Updater, APIReader):
+class AQEWriter(Writer, APIReader):
     """Manage interactions with the AQE table on Azure"""
     def __init__(self, *args, **kwargs):
         # Initialise the base classes
