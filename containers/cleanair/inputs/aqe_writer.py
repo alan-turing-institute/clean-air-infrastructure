@@ -91,7 +91,7 @@ class AQEWriter(Writer, APIReader):
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
             for entry in site_entries:
-                entry["geometry"] = interest_point_table.EWKT_from_lat_long(entry["Latitude"], entry["Longitude"])
+                entry["geometry"] = interest_point_table.build_ewkt(entry["Latitude"], entry["Longitude"])
 
             # Only consider unique sites
             unique_sites = {s["geometry"]: interest_point_table.build_entry("laqn", geometry=s["geometry"])
@@ -130,6 +130,7 @@ class AQEWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
+            # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
             for site_reading in site_readings:
                 session.merge(aqe_tables.build_reading_entry(site_reading))
 

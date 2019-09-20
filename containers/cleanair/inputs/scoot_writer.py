@@ -175,7 +175,9 @@ class ScootWriter(Writer):
             # therefore sticking to the higher-level functions here.
             with self.dbcnxn.open_session() as session:
                 try:
-                    session.add_all([scoot_tables.ScootReading(**site_reading) for site_reading in site_readings])
+                    # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
+                    for site_reading in site_readings:
+                        session.merge(scoot_tables.ScootReading(**site_reading))
                     session.commit()
                     n_records += len(site_readings)
                 except IntegrityError as err:

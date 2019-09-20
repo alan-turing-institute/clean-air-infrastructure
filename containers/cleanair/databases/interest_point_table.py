@@ -29,28 +29,19 @@ class InterestPoint(Base):
             ])
 
 
-def EWKT_from_lat_long(latitude, longitude):
+def build_ewkt(latitude, longitude):
+    """Create an EWKT geometry string from latitude and longitude"""
     return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
 
-def build_entry(source, **kwargs):
-    """
-    Create an InterestPoint entry from a source and position details
-    """
-    # Attempt to extract a geometry argument
-    geometry = kwargs.get("geometry", None)
-
+def build_entry(source, latitude=None, longitude=None, geometry=None):
+    """Create an InterestPoint entry from a source and position details"""
     # Attempt to convert latitude and longitude to geometry
     if not geometry:
-        latitude = kwargs.get("latitude", None)
-        longitude = kwargs.get("longitude", None)
         if latitude and longitude:
-            geometry = EWKT_from_lat_long(latitude, longitude)
+            geometry = build_ewkt(latitude, longitude)
 
     # Construct the record and return it
     if geometry:
-        point_id = kwargs.get("point_id", None)
-        if point_id:
-            return InterestPoint(source=source, location=geometry, point_id=uuid)
         return InterestPoint(source=source, location=geometry)
     return None
