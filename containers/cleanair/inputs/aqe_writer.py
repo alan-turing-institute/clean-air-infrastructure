@@ -5,7 +5,10 @@ import csv
 import datetime
 import io
 from xml.dom import minidom
+from geoalchemy2.functions import ST_AsEWKT
+import pandas
 import requests
+from sqlalchemy.exc import IntegrityError
 from ..apis import APIReader
 from ..databases import Writer, aqe_tables, interest_point_table
 from ..loggers import green
@@ -14,6 +17,9 @@ from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 class AQEWriter(Writer, APIReader):
     """Manage interactions with the AQE table on Azure"""
+    # Set list of primary-key columns
+    reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]
+
     def request_site_entries(self):
         """
         Request all AQE sites
@@ -47,17 +53,27 @@ class AQEWriter(Writer, APIReader):
             header = csvreader.__next__()
             species = [s.split(": ")[1].split(" ")[0] for s in header[1:]]
             # Process the readings which are in the format: Date, Species1, Species2, ...
-            processed_readings = []
+            readings = []
             for reading in csvreader:
                 timestamp_end = datetime_from_str(reading[0], timezone="GMT", rounded=True)
                 timestamp_start = timestamp_end - datetime.timedelta(hours=1)
                 for species_code, value in zip(species, reading[1:]):
-                    processed_readings.append({"SiteCode": site_code,
-                                               "SpeciesCode": species_code,
-                                               "MeasurementStartUTC": utcstr_from_datetime(timestamp_start),
-                                               "MeasurementEndUTC": utcstr_from_datetime(timestamp_end),
-                                               "Value": value})
-            return processed_readings
+                    # Ignore empty values
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        self.logger.debug("Could not interpret '%s' as a measurement", value)
+                        continue
+                    # Construct a new reading
+                    readings.append({"SiteCode": site_code,
+                                     "SpeciesCode": species_code,
+                                     "MeasurementStartUTC": utcstr_from_datetime(timestamp_start),
+                                     "MeasurementEndUTC": utcstr_from_datetime(timestamp_end),
+                                     "Value": float(value)})
+            # Combine any readings taken within the same hour
+            df_readings = pandas.DataFrame(readings)
+            df_combined = df_readings.groupby(self.reading_keys, as_index=False).agg({"Value": "mean"})
+            return list(df_combined.T.to_dict().values())
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
             self.logger.warning(error)
@@ -76,20 +92,21 @@ class AQEWriter(Writer, APIReader):
 
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
+            for entry in site_entries:
+                entry["geometry"] = interest_point_table.EWKT_from_lat_long(entry["Latitude"], entry["Longitude"])
 
-            # Add all points to the interest_points table
-            points = [interest_point_table.build_entry("aqe", latitude=s["Latitude"], longitude=s["Longitude"])
-                      for s in site_entries]
-            session.add_all(points)
+            # Add all distinct sites to the interest_points table
+            session.add_all([interest_point_table.build_entry("aqe", geometry=geom)
+                            for geom in {s["geometry"] for s in site_entries}])
 
-            # Flush the session and refresh in order to obtain the IDs of these points
-            session.flush()
-            for point in points:
-                session.refresh(point)
+            # Get point IDs for each of these points
+            point_id = {_geom: _id for _id, _geom in session.query(
+                interest_point_table.InterestPoint.point_id, ST_AsEWKT(interest_point_table.InterestPoint.location)
+            ).filter(interest_point_table.InterestPoint.source == "aqe")}
 
-            # Add point IDs to each of the site entries
-            for site, point in zip(site_entries, points):
-                site["point_id"] = point.point_id
+            # Add point IDs to the site_entries
+            for entry in site_entries:
+                entry["point_id"] = str(point_id[entry["geometry"]])
 
             # Build the site entries and commit
             self.logger.info("Updating site info database records")
@@ -112,16 +129,16 @@ class AQEWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            # session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
-            readings = [aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings]
-            print(readings)
-            session.add_all(readings)
+            session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(aqe_tables.AQEReading.__tablename__))
-            session.commit()
+            try:
+                session.commit()
+            except IntegrityError:
+                self.logger.warning("Records were not committed as one or more of them were duplicates")
         self.logger.info("Finished %s readings update", green("AQE"))
 
     def update_remote_tables(self):

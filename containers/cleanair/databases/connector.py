@@ -61,13 +61,11 @@ class Connector():
 
     @property
     def engine(self):
-        """
-        Access the single class-level sqlalchemy engine
-        """
+        """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
             self.__engine = create_engine(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info), echo = True)
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
             self.__sessionmaker = sessionmaker(bind=self.__engine)
         # Return the class-level engine
         return self.__engine
@@ -77,10 +75,11 @@ class Connector():
         with self.engine.connect() as cnxn:
             cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
 
-    def ensure_postgis(self):
-        """Ensure postgis extension is installed publicly"""
+    def ensure_extensions(self):
+        """Ensure required extensions are installed publicly"""
         with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            cnxn.execute("CREATE EXTENSION IF NOT EXISTS \"postgis\";")
+            cnxn.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
 
     @contextmanager
     def open_session(self, skip_check=False):
@@ -93,8 +92,9 @@ class Connector():
             if not skip_check:
                 self.check_internet_connection()
             yield session
-        except (SQLAlchemyError, IOError):
+        except (SQLAlchemyError, IOError) as error:
             # Rollback database interactions if there is a problem
+            self.logger.error("Encountered a database error: %s", str(error))
             session.rollback()
         finally:
             # Close the session when finished

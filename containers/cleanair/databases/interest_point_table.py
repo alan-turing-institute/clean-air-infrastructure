@@ -1,8 +1,10 @@
 """
 Table for interest points
 """
+import uuid
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from . import Base
 
@@ -12,9 +14,9 @@ class InterestPoint(Base):
     __tablename__ = "interest_points"
     __table_args__ = {"schema": "buffers"}
 
-    point_id = Column(Integer, primary_key=True)
-    source = Column(String(7))
-    location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
+    source = Column(String(7), primary_key=True)
+    location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
+    point_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
     aqe_site = relationship("AQESite", back_populates="interest_points")
     laqn_site = relationship("LAQNSite", back_populates="interest_points")
@@ -27,14 +29,25 @@ class InterestPoint(Base):
             ])
 
 
-def build_entry(source, latitude, longitude):
+def EWKT_from_lat_long(latitude, longitude):
+    return "SRID=4326;POINT({} {})".format(longitude, latitude)
+
+
+def build_entry(source, **kwargs):
     """
-    Create an InterestPoint entry from a latitude and longitude pair
+    Create an InterestPoint entry from a source and position details
     """
-    # Only consider sites with both latitude and longitude available
-    if not latitude and longitude:
-        return None
+    # Attempt to extract a geometry argument
+    geometry = kwargs.get("geometry", None)
+
+    # Attempt to convert latitude and longitude to geometry
+    if not geometry:
+        latitude = kwargs.get("latitude", None)
+        longitude = kwargs.get("longitude", None)
+        if latitude and longitude:
+            geometry = EWKT_from_lat_long(latitude, longitude)
 
     # Construct the record and return it
-    geometry = "SRID=4326;POINT({} {})".format(longitude, latitude)
-    return InterestPoint(source=source, location=geometry)
+    if geometry:
+        return InterestPoint(source=source, location=geometry)
+    return None

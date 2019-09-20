@@ -16,5 +16,5 @@ class Reader():
         self.dbcnxn.initialise_tables()
         # initialise_tables(self.dbcnxn.engine)
 
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
+        # Ensure that extensions have been enabled
+        self.dbcnxn.ensure_extensions()

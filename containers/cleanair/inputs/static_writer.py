@@ -19,8 +19,8 @@ class StaticWriter():
         self.data_directory = None
         self.table_name = None
 
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
+        # Ensure that extensions have been enabled
+        self.dbcnxn.ensure_extensions()
 
         # Ensure that the datasources schema exists
         self.dbcnxn.ensure_schema("datasources")
@@ -167,10 +167,10 @@ class StaticWriter():
                 """ALTER TABLE datasources.glahexgrid ADD COLUMN centroid geometry(POINT, 4326);""",
                 """UPDATE datasources.glahexgrid SET centroid = ST_centroid(wkb_geometry);""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
-                """INSERT INTO buffers.interest_points(source, location)
-                       SELECT 'hexgrid', centroid
+                """INSERT INTO buffers.interest_points(source, location, point_id)
+                       SELECT 'hexgrid', centroid, uuid_generate_v4()
                        FROM datasources.glahexgrid;""",
-                """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id integer;""",
+                """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id uuid;""",
                 """ALTER TABLE datasources.glahexgrid
                        ADD CONSTRAINT fk_glahexgrid_id FOREIGN KEY (point_id)
                        REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
@@ -234,11 +234,11 @@ class StaticWriter():
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
                 """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
-                # Move geometry data to interest_points table
-                """INSERT INTO buffers.interest_points(source, location)
-                       SELECT 'scoot', wkb_geometry
+                # Move geometry data to interest_points table - note that some detectors share a location
+                """INSERT INTO buffers.interest_points(source, location, point_id)
+                       SELECT DISTINCT on (wkb_geometry) 'scoot', wkb_geometry, uuid_generate_v4()
                        FROM datasources.scootdetectors;""",
-                """ALTER TABLE datasources.scootdetectors ADD COLUMN point_id integer;""",
+                """ALTER TABLE datasources.scootdetectors ADD COLUMN point_id uuid;""",
                 """ALTER TABLE datasources.scootdetectors
                        ADD CONSTRAINT fk_scootdetectors_id FOREIGN KEY (point_id)
                        REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",

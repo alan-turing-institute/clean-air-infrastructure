@@ -34,8 +34,8 @@ class Writer():
         # initialise_tables(self.dbcnxn.engine)
         self.dbcnxn.initialise_tables()
 
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
+        # Ensure that extensions have been enabled
+        self.dbcnxn.ensure_extensions()
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

@@ -116,6 +116,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
 
     # Construct Docker arguments
     image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
+    image = "static:test"
     local_path = os.path.join(data_directory, dataset_to_directory[dataset])
     remote_path = dataset + ".gdb" if local_path.endswith(".gdb") else dataset
     mounts = {

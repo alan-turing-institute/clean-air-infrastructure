@@ -1,9 +1,10 @@
 """
 Tables for LAQN data source
 """
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
 from .base import Base
 
 
@@ -16,7 +17,7 @@ class LAQNSite(Base):
     SiteType = Column(String(20), nullable=False)
     DateOpened = Column(TIMESTAMP, nullable=False)
     DateClosed = Column(TIMESTAMP)
-    point_id = Column(Integer, ForeignKey('buffers.interest_points.point_id'), nullable=False)
+    point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
 
     readings = relationship("LAQNReading", back_populates="site")
     interest_points = relationship("InterestPoint", back_populates="laqn_site")

@@ -2,7 +2,9 @@
 LAQN
 """
 import datetime
+from geoalchemy2.functions import ST_AsEWKT
 import requests
+from sqlalchemy.exc import IntegrityError
 from ..apis import APIReader
 from ..databases import Writer, laqn_tables, interest_point_table
 from ..loggers import green
@@ -74,20 +76,21 @@ class LAQNWriter(Writer, APIReader):
 
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["@Latitude"] and s["@Longitude"]]
+            for entry in site_entries:
+                entry["geometry"] = interest_point_table.EWKT_from_lat_long(entry["@Latitude"], entry["@Longitude"])
 
-            # Add all points to the interest_points table
-            points = [interest_point_table.build_entry("laqn", latitude=s["@Latitude"], longitude=s["@Longitude"])
-                      for s in site_entries]
-            session.add_all(points)
+            # Add all distinct points to the interest_points table
+            session.add_all([interest_point_table.build_entry("laqn", geometry=geom)
+                            for geom in {s["geometry"] for s in site_entries}])
 
-            # Flush the session and refresh in order to obtain the IDs of these points
-            session.flush()
-            for point in points:
-                session.refresh(point)
+            # Get point IDs for each of these points
+            point_id = {_geom: _id for _id, _geom in session.query(
+                interest_point_table.InterestPoint.point_id, ST_AsEWKT(interest_point_table.InterestPoint.location)
+            ).filter(interest_point_table.InterestPoint.source == "laqn")}
 
-            # Add point IDs to each of the site entries
-            for site, point in zip(site_entries, points):
-                site["point_id"] = point.point_id
+            # Add point IDs to the site_entries
+            for entry in site_entries:
+                entry["point_id"] = str(point_id[entry["geometry"]])
 
             # Build the site entries and commit
             self.logger.info("Updating site info database records")
@@ -116,7 +119,10 @@ class LAQNWriter(Writer, APIReader):
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(laqn_tables.LAQNReading.__tablename__))
-            session.commit()
+            try:
+                session.commit()
+            except IntegrityError:
+                self.logger.warning("Records were not committed as one or more of them were duplicates")
 
         self.logger.info("Finished %s readings update", green("LAQN"))
 
