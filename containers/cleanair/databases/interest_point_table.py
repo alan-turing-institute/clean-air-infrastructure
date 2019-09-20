@@ -49,5 +49,8 @@ def build_entry(source, **kwargs):
 
     # Construct the record and return it
     if geometry:
+        point_id = kwargs.get("point_id", None)
+        if point_id:
+            return InterestPoint(source=source, location=geometry, point_id=uuid)
         return InterestPoint(source=source, location=geometry)
     return None

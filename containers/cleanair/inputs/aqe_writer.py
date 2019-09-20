@@ -5,10 +5,8 @@ import csv
 import datetime
 import io
 from xml.dom import minidom
-from geoalchemy2.functions import ST_AsEWKT
 import pandas
 import requests
-from sqlalchemy.exc import IntegrityError
 from ..apis import APIReader
 from ..databases import Writer, aqe_tables, interest_point_table
 from ..loggers import green
@@ -95,22 +93,25 @@ class AQEWriter(Writer, APIReader):
             for entry in site_entries:
                 entry["geometry"] = interest_point_table.EWKT_from_lat_long(entry["Latitude"], entry["Longitude"])
 
-            # Add all distinct sites to the interest_points table
-            session.add_all([interest_point_table.build_entry("aqe", geometry=geom)
-                            for geom in {s["geometry"] for s in site_entries}])
+            # Only consider unique sites
+            unique_sites = {s["geometry"]: interest_point_table.build_entry("laqn", geometry=s["geometry"])
+                            for s in site_entries}
 
-            # Get point IDs for each of these points
-            point_id = {_geom: _id for _id, _geom in session.query(
-                interest_point_table.InterestPoint.point_id, ST_AsEWKT(interest_point_table.InterestPoint.location)
-            ).filter(interest_point_table.InterestPoint.source == "aqe")}
+            # Update the interest_points table and retrieve point IDs
+            point_id = {}
+            for geometry, interest_point in unique_sites.items():
+                merged_point = session.merge(interest_point)
+                session.flush()
+                point_id[geometry] = str(merged_point.point_id)
 
             # Add point IDs to the site_entries
             for entry in site_entries:
-                entry["point_id"] = str(point_id[entry["geometry"]])
+                entry["point_id"] = point_id[entry["geometry"]]
 
-            # Build the site entries and commit
+            # Update the sites table and commit any changes
             self.logger.info("Updating site info database records")
-            session.add_all([aqe_tables.build_site_entry(site) for site in site_entries])
+            for site in site_entries:
+                session.merge(aqe_tables.build_site_entry(site))
             self.logger.info("Committing changes to database tables %s and %s",
                              green(interest_point_table.InterestPoint.__tablename__),
                              green(aqe_tables.AQESite.__tablename__))
@@ -129,16 +130,14 @@ class AQEWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
+            for site_reading in site_readings:
+                session.merge(aqe_tables.build_reading_entry(site_reading))
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(aqe_tables.AQEReading.__tablename__))
-            try:
-                session.commit()
-            except IntegrityError:
-                self.logger.warning("Records were not committed as one or more of them were duplicates")
+            session.commit()
         self.logger.info("Finished %s readings update", green("AQE"))
 
     def update_remote_tables(self):
