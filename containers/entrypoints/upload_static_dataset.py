@@ -21,11 +21,10 @@ def main():
     try:
         static_writer = StaticWriter(**vars(args))
 
-        # Upload static files
-        static_writer.upload_static_files()
+        # Attempt to upload static files and configure the tables if successful
+        if static_writer.upload_static_files():
+            static_writer.configure_tables()
 
-        # Configure database tables
-        static_writer.configure_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

@@ -5,7 +5,6 @@ from sqlalchemy import MetaData
 from sqlalchemy.ext.automap import automap_base
 from .connector import Connector
 from ..loggers import get_logger
-# from . import Base
 
 
 class StaticTableConnector(Connector):

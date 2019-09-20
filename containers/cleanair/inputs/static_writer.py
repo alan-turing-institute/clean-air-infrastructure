@@ -28,11 +28,20 @@ class StaticWriter():
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
 
+        # Ensure that tables are initialised
+        self.dbcnxn.initialise_tables(ignore_reflected=True)
+
         # Ensure that postgis has been enabled
         self.dbcnxn.ensure_postgis()
 
         # Ensure that the datasources schema exists
         self.dbcnxn.ensure_schema("datasources")
+
+        # Check whether table exists
+        existing_table_names = self.dbcnxn.engine.table_names(schema="datasources")
+        if self.table_name in existing_table_names:
+            self.logger.info("Skipping upload for %s as the remote table already exists", green(self.table_name))
+            return False
 
         # Get the connection string
         connection_string = \
@@ -106,6 +115,7 @@ class StaticWriter():
                         "-t_srs", "EPSG:4326",
                         "-lco", "SCHEMA=datasources",
                         "-nln", self.table_name] + extra_args)
+        return True
 
     def configure_tables(self):
         """Tidy up the databases by doing the following:
@@ -152,14 +162,14 @@ class StaticWriter():
                        DROP COLUMN ogc_fid,
                        DROP COLUMN row_id;""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
-                # Create interest_points table if it does not exist
-                """CREATE TABLE IF NOT EXISTS buffers.interest_points (
-                    point_id serial PRIMARY KEY,
-                    source varchar(7),
-                    location geometry(POINT, 4326)
-                );""",
-                """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
-                   ON buffers.interest_points USING GIST(location);""",
+                # # Create interest_points table if it does not exist
+                # """CREATE TABLE IF NOT EXISTS buffers.interest_points (
+                #     point_id serial PRIMARY KEY,
+                #     source varchar(7),
+                #     location geometry(POINT, 4326)
+                # );""",
+                # """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
+                #    ON buffers.interest_points USING GIST(location);""",
                 # Insert grid centroids to interest_points table
                 """INSERT INTO buffers.interest_points(source, location)
                        SELECT 'hexgrid', ST_centroid(wkb_geometry)
@@ -228,14 +238,14 @@ class StaticWriter():
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
                 """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
-                # Create interest_points table if it does not exist
-                """CREATE TABLE IF NOT EXISTS buffers.interest_points (
-                    point_id serial PRIMARY KEY,
-                    source varchar(7),
-                    location geometry(POINT, 4326)
-                );""",
-                """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
-                   ON buffers.interest_points USING GIST(location);""",
+                # # Create interest_points table if it does not exist
+                # """CREATE TABLE IF NOT EXISTS buffers.interest_points (
+                #     point_id serial PRIMARY KEY,
+                #     source varchar(7),
+                #     location geometry(POINT, 4326)
+                # );""",
+                # """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
+                #    ON buffers.interest_points USING GIST(location);""",
                 # Move geometry data to interest_points table
                 """INSERT INTO buffers.interest_points(source, location)
                        SELECT 'scoot', wkb_geometry

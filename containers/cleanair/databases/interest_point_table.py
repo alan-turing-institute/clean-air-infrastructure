@@ -1,22 +1,30 @@
 """
 Table for interest points
 """
-from sqlalchemy.ext.declarative import DeferredReflection
+from geoalchemy2 import Geometry
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from . import Base
 
 
-class InterestPoint(DeferredReflection, Base):
+class InterestPoint(Base):
     """Table of interest points"""
     __tablename__ = "interest_points"
     __table_args__ = {'schema': 'buffers'}
+
+    point_id = Column(Integer, primary_key=True, index=True)
+    source = Column(String(7))
+    location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 
     aqe_site = relationship("AQESite", back_populates="interest_points")
     laqn_site = relationship("LAQNSite", back_populates="interest_points")
 
     def __repr__(self):
-        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
-        return "<InterestPoint(" + ", ".join(vals)
+        return "<InterestPoint(" + ", ".join([
+            "point_id='{}'".format(self.point_id),
+            "source='{}'".format(self.source),
+            "location='{}'".format(self.location),
+            ])
 
 
 def build_entry(source, latitude, longitude):

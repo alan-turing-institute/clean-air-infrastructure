@@ -7,8 +7,10 @@ import os
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from ..loggers import get_logger, green, red
+from .base import Base
 
 
 class Connector():
@@ -24,6 +26,14 @@ class Connector():
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
+
+    def initialise_tables(self, ignore_reflected=False):
+        """Ensure that all table connections exist"""
+        # Consider reflected tables first as these already exist
+        if not ignore_reflected:
+            DeferredReflection.prepare(self.engine)
+        # Next create all other tables
+        Base.metadata.create_all(self.engine, checkfirst=True)
 
     def load_connection_info(self, secret_file):
         """

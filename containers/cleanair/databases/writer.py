@@ -2,7 +2,6 @@
 Table writer
 """
 import datetime
-from .base import initialise_tables
 from .connector import Connector
 from ..loggers import get_logger, green
 
@@ -32,7 +31,8 @@ class Writer():
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
 
         # Ensure that tables are initialised
-        initialise_tables(self.dbcnxn.engine)
+        # initialise_tables(self.dbcnxn.engine)
+        self.dbcnxn.initialise_tables()
 
         # Ensure that postgis has been enabled
         self.dbcnxn.ensure_postgis()

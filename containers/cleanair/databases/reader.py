@@ -1,7 +1,6 @@
 """
 Table reader
 """
-from .base import initialise_tables
 from .connector import Connector
 from ..loggers import get_logger
 
@@ -13,8 +12,9 @@ class Reader():
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
-        # Ensure that tables are initialised
-        initialise_tables(self.dbcnxn.engine)
+        # # Ensure that tables are initialised
+        self.dbcnxn.initialise_tables()
+        # initialise_tables(self.dbcnxn.engine)
 
         # Ensure that postgis has been enabled
         self.dbcnxn.ensure_postgis()
