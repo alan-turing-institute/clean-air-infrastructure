@@ -27,11 +27,10 @@ class Connector():
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
 
-    def initialise_tables(self, ignore_reflected=False):
+    def initialise_tables(self):
         """Ensure that all table connections exist"""
         # Consider reflected tables first as these already exist
-        if not ignore_reflected:
-            DeferredReflection.prepare(self.engine)
+        DeferredReflection.prepare(self.engine)
         # Next create all other tables
         Base.metadata.create_all(self.engine, checkfirst=True)
 
@@ -68,7 +67,7 @@ class Connector():
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
             self.__engine = create_engine(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info), echo = True)
             self.__sessionmaker = sessionmaker(bind=self.__engine)
         # Return the class-level engine
         return self.__engine

@@ -76,7 +76,7 @@ class LAQNWriter(Writer, APIReader):
             site_entries = [s for s in self.request_site_entries() if s["@Latitude"] and s["@Longitude"]]
 
             # Add all points to the interest_points table
-            points = [interest_point_table.build_entry("aqe", latitude=s["@Latitude"], longitude=s["@Longitude"])
+            points = [interest_point_table.build_entry("laqn", latitude=s["@Latitude"], longitude=s["@Longitude"])
                       for s in site_entries]
             session.add_all(points)
 
@@ -90,9 +90,8 @@ class LAQNWriter(Writer, APIReader):
                 site["point_id"] = point.point_id
 
             # Build the site entries and commit
-            site_entries = [laqn_tables.build_site_entry(site) for site in site_entries]
             self.logger.info("Updating site info database records")
-            session.add_all(site_entries)
+            session.add_all([laqn_tables.build_site_entry(site) for site in site_entries])
             self.logger.info("Committing changes to database tables %s and %s",
                              green(interest_point_table.InterestPoint.__tablename__),
                              green(laqn_tables.LAQNSite.__tablename__))
@@ -119,7 +118,7 @@ class LAQNWriter(Writer, APIReader):
                              green(laqn_tables.LAQNReading.__tablename__))
             session.commit()
 
-        self.logger.info("Finished %s readings update...", green("LAQN"))
+        self.logger.info("Finished %s readings update", green("LAQN"))
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

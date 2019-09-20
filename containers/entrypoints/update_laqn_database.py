@@ -1,5 +1,5 @@
 """
-Update laqn database
+Update LAQN database
 """
 import argparse
 from cleanair.inputs import LAQNWriter

@@ -1,5 +1,5 @@
 """
-Update scoot database
+Update SCOOT database
 """
 import argparse
 import json

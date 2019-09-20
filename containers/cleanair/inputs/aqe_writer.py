@@ -78,7 +78,7 @@ class AQEWriter(Writer, APIReader):
             site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
 
             # Add all points to the interest_points table
-            points = [interest_point_table.build_entry("laqn", latitude=s["Latitude"], longitude=s["Longitude"])
+            points = [interest_point_table.build_entry("aqe", latitude=s["Latitude"], longitude=s["Longitude"])
                       for s in site_entries]
             session.add_all(points)
 
@@ -92,9 +92,8 @@ class AQEWriter(Writer, APIReader):
                 site["point_id"] = point.point_id
 
             # Build the site entries and commit
-            site_entries = [aqe_tables.build_site_entry(site) for site in site_entries]
             self.logger.info("Updating site info database records")
-            session.add_all(site_entries)
+            session.add_all([aqe_tables.build_site_entry(site) for site in site_entries])
             self.logger.info("Committing changes to database tables %s and %s",
                              green(interest_point_table.InterestPoint.__tablename__),
                              green(aqe_tables.AQESite.__tablename__))
@@ -113,7 +112,10 @@ class AQEWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
+            # session.add_all([aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings])
+            readings = [aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings]
+            print(readings)
+            session.add_all(readings)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",

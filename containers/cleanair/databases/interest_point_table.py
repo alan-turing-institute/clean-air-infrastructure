@@ -10,9 +10,9 @@ from . import Base
 class InterestPoint(Base):
     """Table of interest points"""
     __tablename__ = "interest_points"
-    __table_args__ = {'schema': 'buffers'}
+    __table_args__ = {"schema": "buffers"}
 
-    point_id = Column(Integer, primary_key=True, index=True)
+    point_id = Column(Integer, primary_key=True)
     source = Column(String(7))
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True))
 

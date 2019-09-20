@@ -6,7 +6,8 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from ..databases import Connector
+from sqlalchemy.schema import CreateSchema
+from ..databases import Connector, InterestPoint
 from ..loggers import get_logger, green
 
 
@@ -18,6 +19,17 @@ class StaticWriter():
         self.data_directory = None
         self.table_name = None
 
+        # Ensure that postgis has been enabled
+        self.dbcnxn.ensure_postgis()
+
+        # Ensure that the datasources schema exists
+        self.dbcnxn.ensure_schema("datasources")
+
+        # Ensure that interest_points table exists
+        if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "buffers"):
+            self.dbcnxn.engine.execute(CreateSchema("buffers"))
+        InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
+
     def upload_static_files(self):
         """Upload static data to the inputs database"""
         # Look for static files in /data then set the file and table names
@@ -28,16 +40,7 @@ class StaticWriter():
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
 
-        # Ensure that tables are initialised
-        self.dbcnxn.initialise_tables(ignore_reflected=True)
-
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
-
-        # Ensure that the datasources schema exists
-        self.dbcnxn.ensure_schema("datasources")
-
-        # Check whether table exists
+        # Check whether table exists - excluding reflected tables
         existing_table_names = self.dbcnxn.engine.table_names(schema="datasources")
         if self.table_name in existing_table_names:
             self.logger.info("Skipping upload for %s as the remote table already exists", green(self.table_name))
@@ -158,21 +161,14 @@ class StaticWriter():
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
                    ON datasources.glahexgrid USING GIST(wkb_geometry);""",
                 """ALTER TABLE datasources.glahexgrid
-                       DROP COLUMN col_id,
-                       DROP COLUMN ogc_fid,
-                       DROP COLUMN row_id;""",
+                       DROP COLUMN centroid_x,
+                       DROP COLUMN centroid_y,
+                       DROP COLUMN ogc_fid;""",
+                """ALTER TABLE datasources.glahexgrid ADD COLUMN centroid geometry(POINT, 4326);""",
+                """UPDATE datasources.glahexgrid SET centroid = ST_centroid(wkb_geometry);""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
-                # # Create interest_points table if it does not exist
-                # """CREATE TABLE IF NOT EXISTS buffers.interest_points (
-                #     point_id serial PRIMARY KEY,
-                #     source varchar(7),
-                #     location geometry(POINT, 4326)
-                # );""",
-                # """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
-                #    ON buffers.interest_points USING GIST(location);""",
-                # Insert grid centroids to interest_points table
                 """INSERT INTO buffers.interest_points(source, location)
-                       SELECT 'hexgrid', ST_centroid(wkb_geometry)
+                       SELECT 'hexgrid', centroid
                        FROM datasources.glahexgrid;""",
                 """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id integer;""",
                 """ALTER TABLE datasources.glahexgrid
@@ -181,7 +177,7 @@ class StaticWriter():
                 """UPDATE datasources.glahexgrid
                        SET point_id = buffers.interest_points.point_id
                        FROM buffers.interest_points
-                       WHERE ST_centroid(datasources.glahexgrid.wkb_geometry) = buffers.interest_points.location;""",
+                       WHERE datasources.glahexgrid.centroid = buffers.interest_points.location;""",
             ]
 
         elif self.data_directory == "londonboundary":
@@ -238,14 +234,6 @@ class StaticWriter():
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
                 """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
-                # # Create interest_points table if it does not exist
-                # """CREATE TABLE IF NOT EXISTS buffers.interest_points (
-                #     point_id serial PRIMARY KEY,
-                #     source varchar(7),
-                #     location geometry(POINT, 4326)
-                # );""",
-                # """CREATE INDEX IF NOT EXISTS interest_points_location_geom_idx
-                #    ON buffers.interest_points USING GIST(location);""",
                 # Move geometry data to interest_points table
                 """INSERT INTO buffers.interest_points(source, location)
                        SELECT 'scoot', wkb_geometry
@@ -263,14 +251,13 @@ class StaticWriter():
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx
-                   ON datasources.ukmap USING GIST(shape);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx ON datasources.ukmap USING GIST(shape);""",
             ]
 
         for sql_command in sql_commands:
             self.logger.info("Running SQL command:")
             for line in sql_command.split("\n"):
-                self.logger.info("  %s", green(line.strip()))
+                self.logger.info(green(line.strip()))
             with self.dbcnxn.engine.connect() as conn:
                 try:
                     conn.execute(sql_command)

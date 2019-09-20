@@ -1,5 +1,5 @@
 """
-Update static dataset
+Upload static datasets
 """
 import argparse
 from cleanair.inputs import StaticWriter
@@ -7,7 +7,7 @@ from cleanair.inputs import StaticWriter
 
 def main():
     """
-    Update static dataset
+    Upload static datasets
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Insert static datasets")
