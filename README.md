@@ -109,7 +109,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```
-python setup/initialise_terraform.py <AWS_KEY_ID> <AWS_KEY>
+python setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
@@ -117,7 +117,13 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 
 ## Building the Clean Air infrastructure with Terraform
-To build the `Terraform` infrastructure go to the `terraform` directory and run:
+To build the `Terraform` infrastructure go to the `terraform` directory 
+
+```
+cd terraform
+```
+
+and run:
 
 ```
 terraform init
@@ -139,7 +145,6 @@ terraform apply
 ```
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
-
 
 
 # Initialising the input databases
@@ -189,29 +194,87 @@ We tell this job which version of the container to run by using GitHub webhooks 
 # Miscellaneous
 
 ## Running without Azure
+
+### Setup a venv
+```python
+pip install virtualenv
+```
+
+```python
+mkdir python-virtual-environments && cd python-virtual-environments
+```
+
+```python 
+python3 -m venv env
+```
+
+```bash
+source env/bin/activate & cd ..
+```
+
+```bash
+pip install -r containers/requirements.txt
+```
+
+### Install postgres and upload static datasets
+
 It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
+
+- Install postgres and start
 
 ```bash
 brew install postgresql postgis
 ```
 
-Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_input_secret.json`:
+```bash
+brew services start postgres
+```
 
-```json
-{
-    "username": "<username>",
-    "password": "<password>",
+- Create a database called 'cleanair_db'. In a terminal run:
+
+```bash
+psql postgres
+```
+
+and then create the database:
+```bash
+CREATE DATABASE cleanair_db;
+```
+
+- Create a secret file with login information for the database with following commands:
+
+```
+mkdir terraform/.secrets & touch terraform/.secrets/.db_input_secret.json  
+```
+
+- Follow all instructions above as per cloud until add static datasets.
+
+- Build the docker images:
+
+```bash
+SHA=$(git rev-parse HEAD) 
+
+docker build -t cleanairdocker.azurecr.io/aqe:$SHA -f containers/dockerfiles/update_aqe_database.Dockerfile containers
+docker build -t cleanairdocker.azurecr.io/laqn:$SHA -f containers/dockerfiles/update_laqn_database.Dockerfile containers
+docker build -t cleanairdocker.azurecr.io/scoot:$SHA -f containers/dockerfiles/update_scoot_database.Dockerfile containers
+docker build -t cleanairdocker.azurecr.io/static:$SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers
+
+
+```
+echo '{
+    "username": "postgres",
+    "password": "password",
     "host": "host.docker.internal",
     "port": 5432,
     "db_name": "cleanair_db",
     "ssl_mode": "prefer"
-}
+}' > terraform/.secrets/.db_input_secret.json
 ```
 
-To upload static data to the local database run:
+- Download static data and insert into the database:
 
 ```
-python setup/insert_static_datasets.py -l <full-path-to-secret-file>
+python setup/insert_static_datasets.py -l terraform/.secrets/.db_input_secret.json
 ```
 
 where the secret file is a JSON file of the form detailed above.
