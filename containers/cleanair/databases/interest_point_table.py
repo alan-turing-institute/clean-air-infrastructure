@@ -6,7 +6,7 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from . import Base
+from .base import Base
 
 
 class InterestPoint(Base):
