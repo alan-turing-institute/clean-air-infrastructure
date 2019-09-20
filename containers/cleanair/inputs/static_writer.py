@@ -47,9 +47,8 @@ class StaticWriter():
             return False
 
         # Get the connection string
-        connection_string = \
-            "host={host} port={port} dbname={db_name} user={username} password={password} sslmode={ssl_mode}".format(
-                **self.dbcnxn.connection_info)
+        connection_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
+                                      "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = []

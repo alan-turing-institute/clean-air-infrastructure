@@ -78,8 +78,8 @@ class Connector():
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""
         with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE EXTENSION IF NOT EXISTS \"postgis\";")
-            cnxn.execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";")
+            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "postgis";')
+            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
 
     @contextmanager
     def open_session(self, skip_check=False):

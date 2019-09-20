@@ -74,4 +74,4 @@ class LAQNReader(Reader):
                                        values='Value',
                                        index=['id', 'time'],
                                        columns='SpeciesCode', dropna=False).reset_index()
-            return df_result
+        return df_result

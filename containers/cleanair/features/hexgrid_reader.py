@@ -23,7 +23,8 @@ class HexGridReader(StaticTableConnector, Reader):
         """
 
         with self.open_session() as session:
-            return session.query((cast(self.table.ogc_fid, String(4))).label('id'),
-                                 func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
-                                 func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
-                                 func.ST_Centroid(self.table.wkb_geometry).label('geom'))
+            interest_points = session.query((cast(self.table.ogc_fid, String(4))).label('id'),
+                                            func.ST_Y(func.ST_Centroid(self.table.wkb_geometry)).label("lat"),
+                                            func.ST_X(func.ST_Centroid(self.table.wkb_geometry)).label("lon"),
+                                            func.ST_Centroid(self.table.wkb_geometry).label('geom'))
+        return interest_points

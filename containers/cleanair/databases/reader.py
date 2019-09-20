@@ -12,9 +12,8 @@ class Reader():
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__, kwargs.get("verbose", 0))
 
-        # # Ensure that tables are initialised
+        # Ensure that tables are initialised
         self.dbcnxn.initialise_tables()
-        # initialise_tables(self.dbcnxn.engine)
 
         # Ensure that extensions have been enabled
         self.dbcnxn.ensure_extensions()

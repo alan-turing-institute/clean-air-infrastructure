@@ -31,7 +31,6 @@ class Writer():
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
 
         # Ensure that tables are initialised
-        # initialise_tables(self.dbcnxn.engine)
         self.dbcnxn.initialise_tables()
 
         # Ensure that extensions have been enabled
