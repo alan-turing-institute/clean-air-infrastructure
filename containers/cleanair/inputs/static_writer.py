@@ -214,8 +214,6 @@ class StaticWriter():
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """ALTER TABLE datasources.ukmap
-                    RENAME COLUMN shape TO geom;""",
                 """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx
                    ON datasources.ukmap USING GIST(shape);""",
             ]
