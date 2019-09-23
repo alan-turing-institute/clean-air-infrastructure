@@ -99,8 +99,8 @@ class StaticWriter():
                                "CAST(height_of_base_of_building AS float)",
                                # "CAST(height_of_top_of_building AS float) AS height_of_top_of_building",
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
-                               "shape_length",
-                               "shape_area",
+                               "shape_length AS geom_length",
+                               "shape_area AS geom_area",
                                "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
 
@@ -134,23 +134,35 @@ class StaticWriter():
         if self.data_directory == "canyonslondon":
             sql_commands = [
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN wkb_geometry TO geom;""",
+                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
+                       ON datasources.canyonslondon USING GIST(geom);""",
                 """ALTER TABLE datasources.canyonslondon
-                   DROP COLUMN ave_relhma,
-                   DROP COLUMN identifier,
-                   DROP COLUMN identifi_2,
-                   DROP COLUMN length,
-                   DROP COLUMN min_length,
-                   DROP COLUMN max_length,
-                   DROP COLUMN objectid_1,
-                   DROP COLUMN objectid_2,
-                   DROP COLUMN objectid,
-                   DROP COLUMN ogc_fid,
-                   DROP COLUMN shape_le_1,
-                   DROP COLUMN sum_length,
-                   DROP COLUMN sum_shape_;""",
+                       DROP COLUMN ave_relhma,
+                       DROP COLUMN identifier,
+                       DROP COLUMN identifi_2,
+                       DROP COLUMN length,
+                       DROP COLUMN min_length,
+                       DROP COLUMN max_length,
+                       DROP COLUMN objectid_1,
+                       DROP COLUMN objectid_2,
+                       DROP COLUMN objectid,
+                       DROP COLUMN ogc_fid,
+                       DROP COLUMN provenance,
+                       DROP COLUMN shape_le_1,
+                       DROP COLUMN sum_length,
+                       DROP COLUMN sum_shape_;""",
                 """ALTER TABLE datasources.canyonslondon
-                   ALTER fictitious TYPE bool
-                   USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                       ALTER fictitious TYPE bool
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.canyonslondon
+                       ALTER operationa TYPE bool
+                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN directiona TO directionality;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
             ]
 
@@ -158,13 +170,13 @@ class StaticWriter():
             sql_commands = [
                 """ALTER TABLE datasources.glahexgrid RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
-                   ON datasources.glahexgrid USING GIST(geom);""",
+                       ON datasources.glahexgrid USING GIST(geom);""",
                 """ALTER TABLE datasources.glahexgrid
                        DROP COLUMN centroid_x,
                        DROP COLUMN centroid_y,
                        DROP COLUMN ogc_fid;""",
                 """ALTER TABLE datasources.glahexgrid ADD COLUMN centroid geometry(POINT, 4326);""",
-                """UPDATE datasources.glahexgrid SET centroid = ST_centroid(wkb_geometry);""",
+                """UPDATE datasources.glahexgrid SET centroid = ST_centroid(geom);""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
                 """INSERT INTO buffers.interest_points(source, location, point_id)
                        SELECT 'hexgrid', centroid, uuid_generate_v4()
@@ -177,13 +189,14 @@ class StaticWriter():
                        SET point_id = buffers.interest_points.point_id
                        FROM buffers.interest_points
                        WHERE datasources.glahexgrid.centroid = buffers.interest_points.location;""",
+                """ALTER TABLE datasources.glahexgrid DROP COLUMN centroid;""",
             ]
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
                 """ALTER TABLE datasources.londonboundary RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
-                   ON datasources.londonboundary USING GIST(geom);""",
+                       ON datasources.londonboundary USING GIST(geom);""",
                 """ALTER TABLE datasources.londonboundary
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
@@ -198,7 +211,7 @@ class StaticWriter():
             sql_commands = [
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
-                   ON datasources.oshighwayroadlink USING GIST(geom);""",
+                       ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
@@ -210,8 +223,8 @@ class StaticWriter():
                        DROP COLUMN roadwidtha,
                        DROP COLUMN roadwidthm;""",
                 """ALTER TABLE datasources.oshighwayroadlink
-                    ALTER fictitious TYPE bool
-                    USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                       ALTER fictitious TYPE bool
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
                 """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
             ]
 
@@ -252,7 +265,7 @@ class StaticWriter():
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx ON datasources.ukmap USING GIST(shape);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
             ]
 
         for sql_command in sql_commands:
