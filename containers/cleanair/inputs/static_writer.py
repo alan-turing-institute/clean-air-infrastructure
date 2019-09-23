@@ -6,7 +6,8 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from ..databases import Connector
+from sqlalchemy.schema import CreateSchema
+from ..databases import Connector, InterestPoint
 from ..loggers import get_logger, green
 
 
@@ -18,6 +19,17 @@ class StaticWriter():
         self.data_directory = None
         self.table_name = None
 
+        # Ensure that extensions have been enabled
+        self.dbcnxn.ensure_extensions()
+
+        # Ensure that the datasources schema exists
+        self.dbcnxn.ensure_schema("datasources")
+
+        # Ensure that interest_points table exists
+        if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "buffers"):
+            self.dbcnxn.engine.execute(CreateSchema("buffers"))
+        InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
+
     def upload_static_files(self):
         """Upload static data to the inputs database"""
         # Look for static files in /data then set the file and table names
@@ -28,16 +40,15 @@ class StaticWriter():
             raise FileNotFoundError("Could not find any static files in /data. Did you mount this path?")
         self.table_name = self.data_directory.replace(".gdb", "")
 
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
-
-        # Ensure that the datasources schema exists
-        self.dbcnxn.ensure_schema("datasources")
+        # Check whether table exists - excluding reflected tables
+        existing_table_names = self.dbcnxn.engine.table_names(schema="datasources")
+        if self.table_name in existing_table_names:
+            self.logger.info("Skipping upload for %s as the remote table already exists", green(self.table_name))
+            return False
 
         # Get the connection string
-        connection_string = \
-            "host={host} port={port} dbname={db_name} user={username} password={password} sslmode={ssl_mode}".format(
-                **self.dbcnxn.connection_info)
+        connection_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
+                                      "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = []
@@ -88,10 +99,14 @@ class StaticWriter():
                                "CAST(height_of_base_of_building AS float)",
                                # "CAST(height_of_top_of_building AS float) AS height_of_top_of_building",
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
-                               "shape_length",
-                               "shape_area",
+                               "shape_length AS geom_length",
+                               "shape_area AS geom_area",
                                "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
+
+        # Force scoot detector geometries to POINT
+        elif self.data_directory == "scootdetectors":
+            extra_args += ["-nlt", "POINT"]
 
         # Run ogr2ogr
         self.logger.info("Uploading static data to table %s in %s",
@@ -102,6 +117,7 @@ class StaticWriter():
                         "-t_srs", "EPSG:4326",
                         "-lco", "SCHEMA=datasources",
                         "-nln", self.table_name] + extra_args)
+        return True
 
     def configure_tables(self):
         """Tidy up the databases by doing the following:
@@ -118,23 +134,35 @@ class StaticWriter():
         if self.data_directory == "canyonslondon":
             sql_commands = [
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN wkb_geometry TO geom;""",
+                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
+                       ON datasources.canyonslondon USING GIST(geom);""",
                 """ALTER TABLE datasources.canyonslondon
-                   DROP COLUMN ave_relhma,
-                   DROP COLUMN identifier,
-                   DROP COLUMN identifi_2,
-                   DROP COLUMN length,
-                   DROP COLUMN min_length,
-                   DROP COLUMN max_length,
-                   DROP COLUMN objectid_1,
-                   DROP COLUMN objectid_2,
-                   DROP COLUMN objectid,
-                   DROP COLUMN ogc_fid,
-                   DROP COLUMN shape_le_1,
-                   DROP COLUMN sum_length,
-                   DROP COLUMN sum_shape_;""",
+                       DROP COLUMN ave_relhma,
+                       DROP COLUMN identifier,
+                       DROP COLUMN identifi_2,
+                       DROP COLUMN length,
+                       DROP COLUMN min_length,
+                       DROP COLUMN max_length,
+                       DROP COLUMN objectid_1,
+                       DROP COLUMN objectid_2,
+                       DROP COLUMN objectid,
+                       DROP COLUMN ogc_fid,
+                       DROP COLUMN provenance,
+                       DROP COLUMN shape_le_1,
+                       DROP COLUMN sum_length,
+                       DROP COLUMN sum_shape_;""",
                 """ALTER TABLE datasources.canyonslondon
-                   ALTER fictitious TYPE bool
-                   USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                       ALTER fictitious TYPE bool
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.canyonslondon
+                       ALTER operationa TYPE bool
+                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN directiona TO directionality;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
             ]
 
@@ -142,19 +170,33 @@ class StaticWriter():
             sql_commands = [
                 """ALTER TABLE datasources.glahexgrid RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
-                   ON datasources.glahexgrid USING GIST(geom);""",
+                       ON datasources.glahexgrid USING GIST(geom);""",
                 """ALTER TABLE datasources.glahexgrid
-                       DROP COLUMN col_id,
-                       DROP COLUMN ogc_fid,
-                       DROP COLUMN row_id;""",
+                       DROP COLUMN centroid_x,
+                       DROP COLUMN centroid_y,
+                       DROP COLUMN ogc_fid;""",
+                """ALTER TABLE datasources.glahexgrid ADD COLUMN centroid geometry(POINT, 4326);""",
+                """UPDATE datasources.glahexgrid SET centroid = ST_centroid(geom);""",
                 """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
+                """INSERT INTO buffers.interest_points(source, location, point_id)
+                       SELECT 'hexgrid', centroid, uuid_generate_v4()
+                       FROM datasources.glahexgrid;""",
+                """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id uuid;""",
+                """ALTER TABLE datasources.glahexgrid
+                       ADD CONSTRAINT fk_glahexgrid_id FOREIGN KEY (point_id)
+                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
+                """UPDATE datasources.glahexgrid
+                       SET point_id = buffers.interest_points.point_id
+                       FROM buffers.interest_points
+                       WHERE datasources.glahexgrid.centroid = buffers.interest_points.location;""",
+                """ALTER TABLE datasources.glahexgrid DROP COLUMN centroid;""",
             ]
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
                 """ALTER TABLE datasources.londonboundary RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
-                   ON datasources.londonboundary USING GIST(geom);""",
+                       ON datasources.londonboundary USING GIST(geom);""",
                 """ALTER TABLE datasources.londonboundary
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
@@ -169,7 +211,7 @@ class StaticWriter():
             sql_commands = [
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
-                   ON datasources.oshighwayroadlink USING GIST(geom);""",
+                       ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
@@ -181,36 +223,49 @@ class StaticWriter():
                        DROP COLUMN roadwidtha,
                        DROP COLUMN roadwidthm;""",
                 """ALTER TABLE datasources.oshighwayroadlink
-                    ALTER fictitious TYPE bool
-                    USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                       ALTER fictitious TYPE bool
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
                 """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
             ]
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
-                """ALTER TABLE datasources.scootdetectors RENAME COLUMN wkb_geometry TO geom;""",
-                """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
-                   ON datasources.scootdetectors USING GIST(geom);""",
+                # Tidy up scootdetectors table
                 """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
                        (SELECT DISTINCT ON (detector_n) ogc_fid FROM datasources.scootdetectors);""",
                 """ALTER TABLE datasources.scootdetectors
+                       DROP COLUMN cell,
                        DROP COLUMN dataset,
                        DROP COLUMN docname,
                        DROP COLUMN docpath,
+                       DROP COLUMN easting,
                        DROP COLUMN loop_id,
                        DROP COLUMN loop_type,
+                       DROP COLUMN northing,
                        DROP COLUMN objectid,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN unique_id;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
                 """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
                 """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
+                # Move geometry data to interest_points table - note that some detectors share a location
+                """INSERT INTO buffers.interest_points(source, location, point_id)
+                       SELECT DISTINCT on (wkb_geometry) 'scoot', wkb_geometry, uuid_generate_v4()
+                       FROM datasources.scootdetectors;""",
+                """ALTER TABLE datasources.scootdetectors ADD COLUMN point_id uuid;""",
+                """ALTER TABLE datasources.scootdetectors
+                       ADD CONSTRAINT fk_scootdetectors_id FOREIGN KEY (point_id)
+                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
+                """UPDATE datasources.scootdetectors
+                       SET point_id = buffers.interest_points.point_id
+                       FROM buffers.interest_points
+                       WHERE datasources.scootdetectors.wkb_geometry = buffers.interest_points.location;""",
+                """ALTER TABLE datasources.scootdetectors DROP COLUMN wkb_geometry;""",
             ]
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_shape_geom_idx
-                   ON datasources.ukmap USING GIST(shape);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
             ]
 
         for sql_command in sql_commands:

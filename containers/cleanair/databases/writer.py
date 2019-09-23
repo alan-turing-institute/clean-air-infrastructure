@@ -1,12 +1,12 @@
 """
-Updater
+Table writer
 """
 import datetime
 from .connector import Connector
 from ..loggers import get_logger, green
 
 
-class Updater():
+class Writer():
     """Manage interactions with the Azure databases"""
     def __init__(self, end, ndays, *args, **kwargs):
         self.dbcnxn = Connector(*args, **kwargs)
@@ -29,6 +29,12 @@ class Updater():
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
+
+        # Ensure that tables are initialised
+        self.dbcnxn.initialise_tables()
+
+        # Ensure that extensions have been enabled
+        self.dbcnxn.ensure_extensions()
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

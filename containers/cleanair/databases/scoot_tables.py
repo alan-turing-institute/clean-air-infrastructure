@@ -3,10 +3,11 @@ Tables for SCOOT data source
 """
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from . import BASE
+from sqlalchemy.ext.declarative import DeferredReflection
+from .base import Base
 
 
-class ScootReading(BASE):
+class ScootReading(Base):
     """Table of Scoot readings"""
     __tablename__ = "scoot_readings"
     __table_args__ = {'schema': 'datasources'}
@@ -41,6 +42,11 @@ class ScootReading(BASE):
             ])
 
 
-def initialise(engine):
-    """Ensure that all tables exist"""
-    BASE.metadata.create_all(engine)
+class ScootDetectors(DeferredReflection, Base):
+    """Table of Scoot detectors"""
+    __tablename__ = "scootdetectors"
+    __table_args__ = {'schema': 'datasources'}
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<ScootDetector(" + ", ".join(vals)

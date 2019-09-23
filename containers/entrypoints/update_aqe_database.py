@@ -1,5 +1,5 @@
 """
-Update aqe database
+Update AQE database
 """
 import argparse
 from cleanair.inputs import AQEWriter

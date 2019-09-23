@@ -1,7 +1,7 @@
 """
 Feature extraction
 """
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import geopandas
 from cleanair.features import LondonBoundaryReader, LAQNReader, UKMapReader
 
@@ -56,7 +56,7 @@ def main():
                                                           laqn.dbcnxn.engine,
                                                           geom_col='buffer_' + str(buffer_sizes[0]))
     laqn_buffers_df.plot(ax=ax_buffers, color='b')
-    # plt.show()
+    plt.show()
 
 
 if __name__ == '__main__':

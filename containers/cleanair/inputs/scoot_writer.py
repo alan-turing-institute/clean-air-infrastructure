@@ -10,12 +10,12 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-from ..databases import Updater, scoot_tables
+from ..databases import Writer, scoot_tables
 from ..loggers import green
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(Updater):
+class ScootWriter(Writer):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
@@ -38,12 +38,6 @@ class ScootWriter(Updater):
 
         # Start with an empty list of detector IDs
         self.detector_ids = []
-
-        # Ensure that tables exist
-        scoot_tables.initialise(self.dbcnxn.engine)
-
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
 
     def request_site_entries(self):
         """Get list of known detectors"""
@@ -181,7 +175,9 @@ class ScootWriter(Updater):
             # therefore sticking to the higher-level functions here.
             with self.dbcnxn.open_session() as session:
                 try:
-                    session.add_all([scoot_tables.ScootReading(**site_reading) for site_reading in site_readings])
+                    # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
+                    for site_reading in site_readings:
+                        session.merge(scoot_tables.ScootReading(**site_reading))
                     session.commit()
                     n_records += len(site_readings)
                 except IntegrityError as err:

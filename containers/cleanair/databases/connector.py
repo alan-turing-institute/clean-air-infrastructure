@@ -7,8 +7,10 @@ import os
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from ..loggers import get_logger, green, red
+from .base import Base
 
 
 class Connector():
@@ -24,6 +26,13 @@ class Connector():
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
+
+    def initialise_tables(self):
+        """Ensure that all table connections exist"""
+        # Consider reflected tables first as these already exist
+        DeferredReflection.prepare(self.engine)
+        # Next create all other tables
+        Base.metadata.create_all(self.engine, checkfirst=True)
 
     def load_connection_info(self, secret_file):
         """
@@ -52,9 +61,7 @@ class Connector():
 
     @property
     def engine(self):
-        """
-        Access the single class-level sqlalchemy engine
-        """
+        """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
             self.__engine = create_engine(
@@ -68,10 +75,11 @@ class Connector():
         with self.engine.connect() as cnxn:
             cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
 
-    def ensure_postgis(self):
-        """Ensure postgis extension is installed publicly"""
+    def ensure_extensions(self):
+        """Ensure required extensions are installed publicly"""
         with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "postgis";')
+            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
 
     @contextmanager
     def open_session(self, skip_check=False):
@@ -84,8 +92,9 @@ class Connector():
             if not skip_check:
                 self.check_internet_connection()
             yield session
-        except (SQLAlchemyError, IOError):
+        except (SQLAlchemyError, IOError) as error:
             # Rollback database interactions if there is a problem
+            self.logger.error("Encountered a database error: %s", str(error))
             session.rollback()
         finally:
             # Close the session when finished

@@ -1,18 +1,16 @@
 """Module for interacting with the Azure Postgres database"""
-from sqlalchemy import DDL, event
-from sqlalchemy.ext.declarative import declarative_base
+from .base import Base
 from .connector import Connector
+from .interest_point_table import InterestPoint
+from .reader import Reader
 from .static_tables import StaticTableConnector
-from .updater import Updater
-
-BASE = declarative_base()
-SCHEMA_NAMES = ['datasources', 'buffers', 'modelfits']
-EVENTS = [event.listen(BASE.metadata, 'before_create',
-                       DDL("CREATE SCHEMA IF NOT EXISTS {}".format(schema))) for schema in SCHEMA_NAMES]
-
+from .writer import Writer
 
 __all__ = [
+    "Base",
     "Connector",
+    "Reader",
     "StaticTableConnector",
-    "Updater",
+    "Writer",
+    "InterestPoint",
 ]

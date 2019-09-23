@@ -3,20 +3,13 @@ LAQN
 """
 from sqlalchemy import func, and_
 import pandas as pd
-from ..databases import Connector, laqn_tables
+from ..databases import laqn_tables, Reader
 
 
-class LAQNReader():
+class LAQNReader(Reader):
     """
     Read and process LAQN data
     """
-    def __init__(self, *args, **kwargs):
-        # Initialise the base classes
-
-        # Ensure that tables exist
-        self.dbcnxn = Connector(*args, **kwargs)
-        laqn_tables.initialise(self.dbcnxn.engine)
-
     def query_interest_points(self, boundary_geom, include_sites=None):
         """
         Return interest points where interest points are
@@ -81,4 +74,4 @@ class LAQNReader():
                                        values='Value',
                                        index=['id', 'time'],
                                        columns='SpeciesCode', dropna=False).reset_index()
-            return df_result
+        return df_result

@@ -2,10 +2,10 @@
 London Boundary
 """
 from sqlalchemy import func
-from ..databases import StaticTableConnector
+from ..databases import StaticTableConnector, Reader
 
 
-class LondonBoundaryReader(StaticTableConnector):
+class LondonBoundaryReader(StaticTableConnector, Reader):
     """
     Class to interface with the londonboundary database table
     """
@@ -21,14 +21,14 @@ class LondonBoundaryReader(StaticTableConnector):
         """
         Return the convex hull of the London Boundary as a query object
         """
-
         with self.open_session() as session:
-            return session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
+            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
+        return hull
 
     def query_all(self):
         """
         Return all rows from the database table as an sql query object
         """
         with self.open_session() as session:
-            out = session.query(self.table)
-            return out
+            rows = session.query(self.table)
+        return rows
