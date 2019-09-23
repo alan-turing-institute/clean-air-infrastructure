@@ -227,7 +227,8 @@ class StaticWriter():
             with self.dbcnxn.engine.connect() as conn:
                 try:
                     conn.execute(sql_command)
-                    conn.close()
                 except OperationalError:
                     self.logger.warning("Database connection lost while running statement.")
+                finally:
+                    conn.close()
         self.logger.info("Finished database configuration")
