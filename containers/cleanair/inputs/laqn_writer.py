@@ -114,9 +114,9 @@ class LAQNWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
-            for site_reading in site_readings:
-                session.merge(laqn_tables.build_reading_entry(site_reading))
+            # Commit the records to the database
+            self.add_records(session, site_records)
+            session.commit()
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
