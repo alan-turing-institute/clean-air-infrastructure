@@ -117,8 +117,7 @@ class StaticWriter():
 
         if self.data_directory == "canyonslondon":
             sql_commands = [
-                """ALTER TABLE datasources.canyonslondon
-                   RENAME COLUMN wkb_geometry TO geom;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN wkb_geometry TO geom;""",
                 """ALTER TABLE datasources.canyonslondon
                    DROP COLUMN ave_relhma,
                    DROP COLUMN identifier,
@@ -141,8 +140,7 @@ class StaticWriter():
 
         elif self.data_directory == "glahexgrid":
             sql_commands = [
-                """ALTER TABLE datasources.glahexgrid
-                RENAME COLUMN wkb_geometry TO geom;""",
+                """ALTER TABLE datasources.glahexgrid RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
                    ON datasources.glahexgrid USING GIST(geom);""",
                 """ALTER TABLE datasources.glahexgrid
@@ -154,8 +152,7 @@ class StaticWriter():
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
-                """ALTER TABLE datasources.londonboundary
-                RENAME COLUMN wkb_geometry TO geom;""",
+                """ALTER TABLE datasources.londonboundary RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
                    ON datasources.londonboundary USING GIST(geom);""",
                 """ALTER TABLE datasources.londonboundary
@@ -170,8 +167,7 @@ class StaticWriter():
 
         elif self.data_directory == "oshighwayroadlink":
             sql_commands = [
-                """ALTER TABLE datasources.oshighwayroadlink
-                RENAME COLUMN wkb_geometry TO geom;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
                    ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
@@ -192,8 +188,7 @@ class StaticWriter():
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
-                """ALTER TABLE datasources.scootdetectors
-                RENAME COLUMN wkb_geometry TO geom;""",
+                """ALTER TABLE datasources.scootdetectors RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
                    ON datasources.scootdetectors USING GIST(geom);""",
                 """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
