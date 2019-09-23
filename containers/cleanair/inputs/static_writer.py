@@ -90,7 +90,7 @@ class StaticWriter():
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
                                "shape_length",
                                "shape_area",
-                               "shape"]) + " FROM BASE_HB0_complete_merged"]
+                               "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
 
         # Run ogr2ogr
@@ -117,8 +117,7 @@ class StaticWriter():
 
         if self.data_directory == "canyonslondon":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
-                   ON datasources.canyonslondon USING GIST(wkb_geometry);""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN wkb_geometry TO geom;""",
                 """ALTER TABLE datasources.canyonslondon
                    DROP COLUMN ave_relhma,
                    DROP COLUMN identifier,
@@ -141,8 +140,9 @@ class StaticWriter():
 
         elif self.data_directory == "glahexgrid":
             sql_commands = [
+                """ALTER TABLE datasources.glahexgrid RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
-                   ON datasources.glahexgrid USING GIST(wkb_geometry);""",
+                   ON datasources.glahexgrid USING GIST(geom);""",
                 """ALTER TABLE datasources.glahexgrid
                        DROP COLUMN col_id,
                        DROP COLUMN ogc_fid,
@@ -152,8 +152,9 @@ class StaticWriter():
 
         elif self.data_directory == "londonboundary":
             sql_commands = [
+                """ALTER TABLE datasources.londonboundary RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
-                   ON datasources.londonboundary USING GIST(wkb_geometry);""",
+                   ON datasources.londonboundary USING GIST(geom);""",
                 """ALTER TABLE datasources.londonboundary
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
@@ -166,8 +167,9 @@ class StaticWriter():
 
         elif self.data_directory == "oshighwayroadlink":
             sql_commands = [
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
-                   ON datasources.oshighwayroadlink USING GIST(wkb_geometry);""",
+                   ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
@@ -186,8 +188,9 @@ class StaticWriter():
 
         elif self.data_directory == "scootdetectors":
             sql_commands = [
+                """ALTER TABLE datasources.scootdetectors RENAME COLUMN wkb_geometry TO geom;""",
                 """CREATE INDEX IF NOT EXISTS scootdetectors_wkb_geometry_geom_idx
-                   ON datasources.scootdetectors USING GIST(wkb_geometry);""",
+                   ON datasources.scootdetectors USING GIST(geom);""",
                 """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
                        (SELECT DISTINCT ON (detector_n) ogc_fid FROM datasources.scootdetectors);""",
                 """ALTER TABLE datasources.scootdetectors
@@ -219,4 +222,6 @@ class StaticWriter():
                     conn.execute(sql_command)
                 except OperationalError:
                     self.logger.warning("Database connection lost while running statement.")
+                finally:
+                    conn.close()
         self.logger.info("Finished database configuration")
