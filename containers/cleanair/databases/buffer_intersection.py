@@ -15,10 +15,10 @@ class IntersectionUKMAP(Base):
     __table_args__ = {'schema': 'buffers'}
 
     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), primary_key=True, nullable=False)
-    geographic_type_number = Column(Integer, ForeignKey('datasources.ukmap.geographic_type_number'), nullable=False)
+    geographic_type_number = Column(Integer, primary_key=True, nullable=False)
   
-    intersect_1000
-    intersect_500
-    intersect_200
-    intersect_100
-    intersect_10
+    intersect_1000 = Column(Geometry(geometry_type='GEOMETRY', srid=4326, dimension=3, spatial_index=True))
+    intersect_500 = Column(Geometry(geometry_type='GEOMETRY', srid=4326, dimension=3, spatial_index=True))
+    intersect_200 = Column(Geometry(geometry_type='GEOMETRY', srid=4326, dimension=3, spatial_index=True))
+    intersect_100 = Column(Geometry(geometry_type='GEOMETRY', srid=4326, dimension=3, spatial_index=True))
+    intersect_10 = Column(Geometry(geometry_type='GEOMETRY', srid=4326, dimension=3, spatial_index=True))

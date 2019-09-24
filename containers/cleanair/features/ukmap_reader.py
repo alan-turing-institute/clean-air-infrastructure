@@ -27,19 +27,19 @@ class UKMapReader(StaticTableConnector, Reader):
         buffer_query = buffer_query.subquery()
 
         query_items = [buffer_query.c.point_id, 
-                       self.table]
+                       self.table.geographic_type_number]
 
         # Get the intersection between the ukmap geometries and the largest buffer
-        largest_intersection = func.ST_Intersection(func.ST_MakeValid(
-            self.table.geom), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
+        largest_intersection = func.ST_Force_2D(func.ST_Intersection(func.ST_MakeValid(
+            self.table.geom), buffer_query.c['buffer_' + buffer_cols[0]])).label("intersect_" + buffer_cols[0])
 
         query_items = query_items + [largest_intersection]
 
         # If there are other buffers get the intersection between each buffer and the last intersection geomtry
         if len(buffer_cols) > 1:
             for buff in buffer_cols[1:]:
-                next_intersection = func.ST_Intersection(func.ST_MakeValid(
-                    query_items[-1]), buffer_query.c['buffer_' + buff]).label("intersect_" + buff)
+                next_intersection = func.ST_Force_2D(func.ST_Intersection(func.ST_MakeValid(
+                    query_items[-1]), buffer_query.c['buffer_' + buff])).label("intersect_" + buff)
                 query_items.append(next_intersection)
 
         # Create the query and apply filters

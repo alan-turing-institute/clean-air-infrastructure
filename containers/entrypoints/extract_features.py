@@ -5,6 +5,7 @@ Feature extraction
 import sys
 sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers')
 import matplotlib.pyplot as plt
+from sqlalchemy import insert
 import geopandas
 from cleanair.features import LondonBoundaryReader, InterestPointReader, UKMapReader
 from cleanair.databases import buffer_intersection
@@ -56,16 +57,27 @@ buffer_sizes = [str(s) for s in sorted_buffers]
 buffer_intersection_query = ukmap.query_buffer_intersection(interest_buffers, buffer_sizes)
 
 
-out = pd.read_sql(buffer_intersection_query.limit(10).statement,
-                                                      interest_points.dbcnxn.engine)
+# out = pd.read_sql(buffer_intersection_query.limit(10).statement,
+#                                                       interest_points.dbcnxn.engine)
+
+# out = geopandas.GeoDataFrame.from_postgis(buffer_intersection_query.limit(10).statement,
+#                                                       interest_points.dbcnxn.engine,
+#                                                       geom_col = 'intersect_1000')
+# print(out)
+
+sel = buffer_intersection_query.subquery().select()
+
+ins = insert(buffer_intersection.IntersectionUKMAP).from_select(['point_id',
+                                                                'geographic_type_number',
+                                                                'intersect_1000',
+                                                                'intersect_500',
+                                                                'intersect_200',
+                                                                'intersect_100',
+                                                                'intersect_10'], sel)
 
 
-
-
-tab = buffer_intersection.IntersectionUKMAP.__table__
-# tab.insert()
-
-
+conn = interest_points.dbcnxn.engine.connect()
+result = conn.execute(ins)
 # # # Process features (Really slow)
 # # ukmap_features_df = ukmap.query_features(laqn_buffers, buffer_sizes)
 # # ukmap.logger.info("ukmap features processed")
