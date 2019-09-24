@@ -190,6 +190,16 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - Select `Let me select individual events` and tick `Pull requests` only
 
 
+## Removing Terraform infrastructure
+To destroy all the resources created by `Terraform` run:
+
+```
+terraform destroy
+```
+
+You can check everything was removed on the Azure portal.
+Then login to TravisCI and delete the Azure Container repo environment variables.
+
 
 # Miscellaneous
 
@@ -247,6 +257,17 @@ CREATE DATABASE cleanair_db;
 mkdir terraform/.secrets & touch terraform/.secrets/.db_input_secret.json  
 ```
 
+```
+echo '{
+    "username": "postgres",
+    "password": "password",
+    "host": "host.docker.internal",
+    "port": 5432,
+    "db_name": "cleanair_db",
+    "ssl_mode": "prefer"
+}' >> terraform/.secrets/.db_input_secret.json
+```
+
 - Follow all instructions above as per cloud until add static datasets.
 
 - Build the docker images:
@@ -258,17 +279,6 @@ docker build -t cleanairdocker.azurecr.io/aqe:$SHA -f containers/dockerfiles/upd
 docker build -t cleanairdocker.azurecr.io/laqn:$SHA -f containers/dockerfiles/update_laqn_database.Dockerfile containers
 docker build -t cleanairdocker.azurecr.io/scoot:$SHA -f containers/dockerfiles/update_scoot_database.Dockerfile containers
 docker build -t cleanairdocker.azurecr.io/static:$SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers
-
-
-```
-echo '{
-    "username": "postgres",
-    "password": "password",
-    "host": "host.docker.internal",
-    "port": 5432,
-    "db_name": "cleanair_db",
-    "ssl_mode": "prefer"
-}' > terraform/.secrets/.db_input_secret.json
 ```
 
 - Download static data and insert into the database:
@@ -277,18 +287,13 @@ echo '{
 python setup/insert_static_datasets.py -l terraform/.secrets/.db_input_secret.json
 ```
 
-where the secret file is a JSON file of the form detailed above.
+### Running docker images
 
-
-## Removing Terraform infrastructure
-To destroy all the resources created by `Terraform` run:
+You can then run docker images. Look at the python files in `containers/entrypoints` for available arguments.
 
 ```
-terraform destroy
+docker run cleanairdocker.azurecr.io/laqn:$SHA --end '2019-01-01' --ndays 5
 ```
-
-You can check everything was removed on the Azure portal.
-Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
 
