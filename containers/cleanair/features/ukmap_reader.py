@@ -19,23 +19,19 @@ class UKMapReader(StaticTableConnector, Reader):
         # Reflect the table
         self.table = self.get_table_instance('ukmap', 'datasources')
 
-    def __query_buffer_intersection(self, buffer_query, buffer_cols):
+    def query_buffer_intersection(self, buffer_query, buffer_cols):
         """
         Gets the intersection between buffers and the ukmap geoms
         """
 
         buffer_query = buffer_query.subquery()
 
-        query_items = [buffer_query.c.id,
-                       buffer_query.c.lat,
-                       buffer_query.c.lon,
-                       self.table.feature_type,
-                       self.table.landuse,
-                       self.table.calculated_height_of_building]
+        query_items = [buffer_query.c.point_id, 
+                       self.table]
 
         # Get the intersection between the ukmap geometries and the largest buffer
         largest_intersection = func.ST_Intersection(func.ST_MakeValid(
-            self.table.shape), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
+            self.table.geom), buffer_query.c['buffer_' + buffer_cols[0]]).label("intersect_" + buffer_cols[0])
 
         query_items = query_items + [largest_intersection]
 
@@ -49,8 +45,8 @@ class UKMapReader(StaticTableConnector, Reader):
         # Create the query and apply filters
         with self.open_session() as session:
             out = session.query(*query_items).filter(and_(
-                func.ST_GeometryType(func.ST_MakeValid(self.table.shape)) == 'ST_MultiPolygon',
-                func.ST_Intersects(self.table.shape, buffer_query.c['buffer_' + buffer_cols[0]])))
+                func.ST_GeometryType(func.ST_MakeValid(self.table.geom)) == 'ST_MultiPolygon',
+                func.ST_Intersects(self.table.geom, buffer_query.c['buffer_' + buffer_cols[0]])))
         return out
 
     def query_features(self, buffer_query, buffer_sizes, return_df=True):
@@ -100,7 +96,7 @@ class UKMapReader(StaticTableConnector, Reader):
         buffer_sizes = [str(s) for s in sorted_buffers]
 
         # Get buffer intersections
-        buffer_intersection_query = self.__query_buffer_intersection(buffer_query, buffer_sizes).subquery()
+        buffer_intersection_query = self.query_buffer_intersection(buffer_query, buffer_sizes).subquery()
 
         # Create a list of all the select functions for the query
         query_list = [buffer_intersection_query.c.id, buffer_intersection_query.c.lat, buffer_intersection_query.c.lon]

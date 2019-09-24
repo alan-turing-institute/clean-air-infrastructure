@@ -22,7 +22,7 @@ class LondonBoundaryReader(StaticTableConnector, Reader):
         Return the convex hull of the London Boundary as a query object
         """
         with self.open_session() as session:
-            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.wkb_geometry)))
+            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(self.table.geom)))
         return hull
 
     def query_all(self):
