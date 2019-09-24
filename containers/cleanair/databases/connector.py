@@ -18,7 +18,7 @@ class Connector():
     Base class for connecting to databases with sqlalchemy
     """
     __engine = None
-    __sessionmaker = None
+    __sessionfactory = None
 
     def __init__(self, secretfile, **kwargs):
         # Set up logging
@@ -65,8 +65,9 @@ class Connector():
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
             self.__engine = create_engine(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
-            self.__sessionmaker = sessionmaker(bind=self.__engine)
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info),
+                pool_pre_ping=True)
+            self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
         return self.__engine
 
@@ -88,13 +89,14 @@ class Connector():
         """
         try:
             # Use the engine to create a new session
-            session = self.__sessionmaker()
+            session = self.__sessionfactory()
             if not skip_check:
                 self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError) as error:
             # Rollback database interactions if there is a problem
-            self.logger.error("Encountered a database error: %s", str(error))
+            self.logger.error("Encountered a database connection error: %s", type(error))
+            self.logger.error(str(error))
             session.rollback()
         finally:
             # Close the session when finished

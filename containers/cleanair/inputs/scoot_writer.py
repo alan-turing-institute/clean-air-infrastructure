@@ -63,7 +63,7 @@ class ScootWriter(Writer):
         Remove readings with unknown detector ID or detector faults.
         """
         start_aws = time.time()
-        self.logger.info("This will take approximately 20 minutes...")
+        self.logger.info("This will take approximately 1 minute for each hour requested...")
 
         # Get an AWS client
         client = boto3.client("s3", aws_access_key_id=self.access_key_id, aws_secret_access_key=self.access_key)
@@ -166,8 +166,8 @@ class ScootWriter(Writer):
 
             # Add readings to database
             start_session = time.time()
-            site_readings = list(df_aggregated.T.to_dict().values())
-            self.logger.info("Inserting %s per-site records into database", green(len(site_readings)))
+            site_records = [scoot_tables.ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
+            self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
 
             # The following database operations can be slow. However, with the switch to hourly data they are not
             # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
@@ -175,14 +175,13 @@ class ScootWriter(Writer):
             # therefore sticking to the higher-level functions here.
             with self.dbcnxn.open_session() as session:
                 try:
-                    # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
-                    for site_reading in site_readings:
-                        session.merge(scoot_tables.ScootReading(**site_reading))
+                    # Commit the records to the database
+                    self.add_records(session, site_records)
                     session.commit()
-                    n_records += len(site_readings)
-                except IntegrityError as err:
-                    self.logger.error("Ignoring attempt to insert duplicate records!")
-                    self.logger.error(str(err))
+                    n_records += len(site_records)
+                except IntegrityError as error:
+                    self.logger.error("Failed to add records to the database: %s", type(error))
+                    self.logger.error(str(error))
                     session.rollback()
             self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
 
