@@ -5,8 +5,8 @@ import argparse
 import json
 import logging
 import os
-import subprocess
 import shutil
+import sys
 import tempfile
 import zipfile
 import termcolor
@@ -61,13 +61,12 @@ def get_key_vault_uri_and_client():
 
 def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
     """Build temporary JSON file containing database secrets"""
+    # Retrieve secrets from local file
     if local_secret:
-        # Retrieve secrets from local file
         logging.info("Using database information from local file %s", emphasised(os.path.basename(local_secret)))
         shutil.copyfile(local_secret, os.path.join(secrets_directory, "db_secrets.json"))
-
+    # Retrieve secrets from key vault
     else:
-        # Retrieve secrets from key vault
         vault_uri, keyvault_client = get_key_vault_uri_and_client()
         db_name = keyvault_client.get_secret(vault_uri, "{}-name".format(secret_prefix), "").value
         db_server_name = keyvault_client.get_secret(vault_uri, "{}-server-name".format(secret_prefix), "").value
@@ -86,7 +85,7 @@ def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
             json.dump(database_secrets, f_secret)
 
 
-def upload_static_data(dataset, secrets_directory, data_directory):
+def upload_static_data(image_name, dataset, secrets_directory, data_directory):
     """Upload static data to the database"""
     # Run docker image to upload the data
     logging.info("Preparing to upload %s data...", emphasised(dataset))
@@ -101,21 +100,7 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         "ukmap": "UKMap.gdb",
     }
 
-    # Get registry details
-    vault_uri, keyvault_client = get_key_vault_uri_and_client()
-    registry_login_server = keyvault_client.get_secret(vault_uri, "container-registry-login-server", "").value
-    registry_admin_username = keyvault_client.get_secret(vault_uri, "container-registry-admin-username", "").value
-    registry_admin_password = keyvault_client.get_secret(vault_uri, "container-registry-admin-password", "").value
-
-    # Get latest commit hash
-    latest_commit_hash = subprocess.check_output(["git", "rev-parse", "HEAD"]).strip().decode("utf-8")
-
-    # Log in to the registry
-    client = docker.DockerClient()
-    client.login(username=registry_admin_username, password=registry_admin_password, registry=registry_login_server)
-
     # Construct Docker arguments
-    image = "{}/static:{}".format(registry_login_server, latest_commit_hash)
     local_path = os.path.join(data_directory, dataset_to_directory[dataset])
     remote_path = dataset + ".gdb" if local_path.endswith(".gdb") else dataset
     mounts = {
@@ -123,8 +108,14 @@ def upload_static_data(dataset, secrets_directory, data_directory):
         local_path: {"bind": os.path.join("/data", remote_path), "mode": "ro"}
     }
 
+    # Check that image exists
+    client = docker.DockerClient()
+    if image_name not in sum([image.tags for image in client.images.list()], []):
+        logging.error("Docker image %s could not be found!", emphasised(image_name))
+        raise ValueError("Docker image {} could not be found!".format(image_name))
+
     # Run the job, parsing log messages and re-logging them
-    container = client.containers.run(image, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
+    container = client.containers.run(image_name, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
     for line in container.logs(stream=True):
         line = line.decode("utf-8")
         try:
@@ -158,6 +149,14 @@ def main():
                         help="Optionally pass the full path of a database secret file")
     args = parser.parse_args()
 
+    # Build the Docker image locally
+    client = docker.DockerClient()
+    image_name = "static:upload"
+    container_path = os.path.realpath(os.path.join(os.path.dirname(sys.argv[0]), "..", "containers"))
+    dockerfile = os.path.join(container_path, "dockerfiles", "upload_static_dataset.Dockerfile")
+    logging.info("Building Docker image: %s", emphasised(image_name))
+    client.images.build(path=container_path, dockerfile=dockerfile, tag=image_name)
+
     # List of available datasets
     datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
 
@@ -172,7 +171,7 @@ def main():
         for dataset in datasets:
             with tempfile.TemporaryDirectory() as data_directory:
                 download_blobs(block_blob_service, dataset, data_directory)
-                upload_static_data(dataset, secrets_directory, data_directory)
+                upload_static_data(image_name, dataset, secrets_directory, data_directory)
 
 
 if __name__ == "__main__":
