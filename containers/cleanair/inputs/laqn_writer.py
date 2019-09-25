@@ -3,13 +3,13 @@ LAQN
 """
 import datetime
 import requests
-from ..apis import APIReader
+from ..mixins import APIRequestMixin
 from ..databases import Writer, laqn_tables, interest_point_table
 from ..loggers import green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class LAQNWriter(Writer, APIReader):
+class LAQNWriter(Writer, APIRequestMixin):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)

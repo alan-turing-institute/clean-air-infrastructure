@@ -7,13 +7,13 @@ import io
 from xml.dom import minidom
 import pandas
 import requests
-from ..apis import APIReader
+from ..mixins import APIRequestMixin
 from ..databases import Writer, aqe_tables, interest_point_table
 from ..loggers import green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class AQEWriter(Writer, APIReader):
+class AQEWriter(Writer, APIRequestMixin):
     """Manage interactions with the AQE table on Azure"""
     # Set list of primary-key columns
     reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]

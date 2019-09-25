@@ -1,12 +1,12 @@
 """
-Base class for all datasources that obtain their data by calling a web API
+Mixin for all datasources that obtain their data by calling a web API
 """
 import datetime
 import requests
 from ..loggers import get_logger, green
 
 
-class APIReader():
+class APIRequestMixin():
     """Manage interactions with an external API"""
     def __init__(self, **kwargs):
         # Set up logging
