@@ -14,12 +14,13 @@ class InterestPoint(Base):
     __tablename__ = "interest_points"
     __table_args__ = {"schema": "buffers"}
 
-    source = Column(String(7), primary_key=True)
+    source = Column(String(10), primary_key=True)
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
     point_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
     aqe_site = relationship("AQESite", back_populates="interest_points")
     laqn_site = relationship("LAQNSite", back_populates="interest_points")
+    rectgrid = relationship("RectGrid", back_populates="interest_points")
 
     def __repr__(self):
         return "<InterestPoint(" + ", ".join([

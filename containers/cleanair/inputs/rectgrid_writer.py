@@ -1,0 +1,89 @@
+"""
+Get data from the AQE network via the API
+"""
+import geopandas
+import numpy as np
+import pandas as pd
+from sqlalchemy.schema import CreateSchema
+from sqlalchemy.exc import IntegrityError
+from ..databases import Connector, RectGrid, interest_point_table
+from ..loggers import get_logger, green
+
+
+class RectGridWriter():
+    """Manage interactions with the RectGrid table on Azure"""
+    def __init__(self, **kwargs):
+        self.dbcnxn = Connector(**kwargs)
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+
+        # super().__init__(end="today", ndays=1, **kwargs)
+        # self.latitude_range = (51.4, 51.6)
+        # self.longitude_range = (-0.2, 0)
+        self.latitude_range = (51.30, 51.69) #0.39
+        self.longitude_range = (-0.49, 0.32) #0.81
+
+        # To get a square(ish) grid we note that a degree of longitude is cos(latitude) times a degree of latitude
+        # For London this means that a degree of latitude is about 1.5 times larger than one of longitude
+        # We therefore alter the step sizes accordingly
+        self.latitude_step = 0.002 #0.002
+        self.longitude_step = 0.003 #0.006
+
+    def build_cell(self, latitude, longitude):
+        return "SRID=4326;POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))".format(\
+            longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
+            longitude - 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
+            longitude + 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
+            longitude + 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
+            longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
+        )
+
+    def add_records(self, session, records):
+        """Commit records to the database"""
+        # Using add_all is faster but will fail if this data was already added
+        try:
+            self.logger.debug("Attempting to add all records.")
+            session.add_all(records)
+        # Using merge takes approximately twice as long, but avoids duplicate key issues
+        except IntegrityError as error:
+            if "psycopg2.errors.UniqueViolation" not in str(error):
+                raise
+            self.logger.debug("Duplicate records found - attempting to merge.")
+            session.rollback()
+            for record in records:
+                session.merge(record)
+
+    def upload_grid_data(self):
+        """Upload grid data"""
+        self.logger.info("Calculating static %s positions...", green("rectgrid"))
+        grid_cells = []
+        for idx_lat, latitude in enumerate(np.arange(*self.latitude_range, self.latitude_step)):
+            for idx_long, longitude in enumerate(np.arange(*self.longitude_range, self.longitude_step)):
+                grid_cells.append({"row_id": idx_lat,
+                                   "column_id": idx_long,
+                                   "geom": self.build_cell(latitude, longitude),
+                                   "point_id": interest_point_table.build_ewkt(latitude, longitude),
+                                   })
+
+        # Ensure that interest_points table exists
+        if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "datasources"):
+            self.dbcnxn.engine.execute(CreateSchema("datasources"))
+        RectGrid.__table__.create(self.dbcnxn.engine, checkfirst=True)
+
+        # Upload data to the database
+        self.logger.info("Starting static %s upload...", green("rectgrid"))
+        with self.dbcnxn.open_session() as session:
+            # Update the interest_points table and retrieve point IDs
+            self.logger.info("Adding %i new interest points...", len(grid_cells))
+            interest_points = [interest_point_table.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
+            # session.add_all(interest_points)
+            self.add_records(session, interest_points)
+            session.flush()
+            for grid_cell, interest_point in zip(grid_cells, interest_points):
+                grid_cell["point_id"] = str(interest_point.point_id)
+
+            # Commit the grid cell records to the database
+            self.logger.info("Adding cells to %s table...", green("rectgrid"))
+            grid_records = [RectGrid(**grid_cell) for grid_cell in grid_cells]
+            self.add_records(session, grid_records)
+            session.commit()

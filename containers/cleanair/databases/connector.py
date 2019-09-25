@@ -71,6 +71,13 @@ class Connector():
         # Return the class-level engine
         return self.__engine
 
+    @property
+    def sessionfactory(self):
+        """Access the class-level sqlalchemy sessionfactory"""
+        if not self.__sessionfactory:
+            _ = self.engine
+        return self.__sessionfactory
+
     def ensure_schema(self, schema_name):
         """Ensure that requested schema exists"""
         with self.engine.connect() as cnxn:
@@ -88,8 +95,8 @@ class Connector():
         Create a session as a context manager which will thereby self-close
         """
         try:
-            # Use the engine to create a new session
-            session = self.__sessionfactory()
+            # Use the session factory to create a new session
+            session = self.sessionfactory()
             if not skip_check:
                 self.check_internet_connection()
             yield session
