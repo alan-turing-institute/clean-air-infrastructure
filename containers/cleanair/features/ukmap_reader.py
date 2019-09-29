@@ -30,6 +30,7 @@ class UKMapReader(StaticTableConnector, Reader):
         # List of filters to apply
         # Each list contains two tupes and an operator (or None). The first tuple contains table columns. The second contains values to filter those columns on.
         # The operator column can apply boolean operators to a zip of the first and second tuple
+
         self.col_filt_op = [[('feature_type',), ('Meseum',), None],
                        [('landuse',), ('Hospitals',), None],
                        [('feature_type',), ('Vegetated',), None],
