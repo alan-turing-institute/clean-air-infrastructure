@@ -10,7 +10,7 @@ class InterestPointReader(Reader):
     """
     Read and process LAQN data
     """
-    def query_interest_points(self, boundary_geom, include_sites=None):
+    def query_interest_points(self, boundary_geom, include_sources=None, exclude_point_ids=None):
         """
         Return interest points where interest points are
             the locations of laqn sites within a boundary_geom (e.g. all the sites within London)
@@ -20,22 +20,25 @@ class InterestPointReader(Reader):
         with self.dbcnxn.open_session() as session:
             result = session.query(interest_point_table.InterestPoint)
 
-            if not include_sites:
-                filtered_result = result.filter(interest_point_table.InterestPoint.location.ST_Intersects(boundary_geom))
+            result = result.filter(interest_point_table.InterestPoint.location.ST_Intersects(boundary_geom))
 
-            else:
-                filtered_result = result.filter(and_(interest_point_table.InterestPoint.location.ST_Intersects(boundary_geom),
-                                                     interest_point_table.InterestPoint.point_id.in_(include_sites)))
-            return filtered_result
+            if include_sources:
+                result = result.filter(and_(interest_point_table.InterestPoint.location.ST_Intersects(boundary_geom),
+                                                     interest_point_table.InterestPoint.source.in_(include_sources)))
+            if exclude_point_ids:
+                result = result.filter(interest_point_table.InterestPoint.point_id.notin_(exclude_point_ids))
+                
+            return result
 
     def query_interest_point_buffers(self, buffer_sizes, boundary_geom,
-                                     include_sites=None, num_seg_quarter_circle=8):
+                                     include_sources=None, exclude_point_ids=None,
+                                     num_seg_quarter_circle=8):
         """
         Return a set of buffers of size buffer_sizes around the interest points
         returned by self.query_interest_points
         """
 
-        interest_point_query = self.query_interest_points(boundary_geom, include_sites).subquery()
+        interest_point_query = self.query_interest_points(boundary_geom, include_sources, exclude_point_ids).subquery()
 
         def func_base(geom, size):
             return func.Geometry(func.ST_Buffer(func.Geography(geom), size, num_seg_quarter_circle))
