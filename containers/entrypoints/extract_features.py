@@ -14,7 +14,7 @@ from cleanair.features import LondonBoundaryReader, InterestPointReader, UKMapRe
 from cleanair.databases import features_tables
 
 
-def main()
+def main():
     # List what sources to process
     sources = ['laqn']
 
@@ -37,6 +37,7 @@ def main()
                                                         include_sources=sources,
                                                         exclude_point_ids = already_in_features_table,
                                                         num_seg_quarter_circle=8)
+
 
     # Calculate ukmap features and insert into database
     # If having a connection open is a problem you can just repeatedly call the main function,

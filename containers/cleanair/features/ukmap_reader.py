@@ -195,8 +195,9 @@ class UKMapReader(StaticTableConnector, Reader):
                 sel = out.subquery().select()
                 ins = insert(features_tables.features_UKMAP).from_select([c.key for c in features_tables.features_UKMAP.__table__.columns], sel)
                 with self.engine.connect() as cnxn:
+                    self.logger.info("Calculating and inserting features into database")
                     cnxn.execute(ins)
-                
+                    self.logger.info("Insertion finished")
             return out
             
                 
