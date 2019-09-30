@@ -1,36 +1,36 @@
 """
 Get data from the AQE network via the API
 """
-import geopandas
 import numpy as np
-import pandas as pd
 from sqlalchemy.schema import CreateSchema
 from sqlalchemy.exc import IntegrityError
-from ..databases import Connector, RectGrid, interest_point_table
+from ..databases import DBWriter, RectGrid, interest_point_table
 from ..loggers import get_logger, green
 
 
-class RectGridWriter():
+class RectGridWriter(DBWriter):
     """Manage interactions with the RectGrid table on Azure"""
     def __init__(self, **kwargs):
-        self.dbcnxn = Connector(**kwargs)
+        # Ensure logging is available
         if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+            self.logger = get_logger(__name__)
 
-        # super().__init__(end="today", ndays=1, **kwargs)
-        # self.latitude_range = (51.4, 51.6)
-        # self.longitude_range = (-0.2, 0)
-        self.latitude_range = (51.30, 51.69) #0.39
-        self.longitude_range = (-0.49, 0.32) #0.81
+        # Bounding box for London
+        self.latitude_range = (51.30, 51.69)
+        self.longitude_range = (-0.49, 0.32)
 
         # To get a square(ish) grid we note that a degree of longitude is cos(latitude) times a degree of latitude
         # For London this means that a degree of latitude is about 1.5 times larger than one of longitude
         # We therefore alter the step sizes accordingly
-        self.latitude_step = 0.002 #0.002
-        self.longitude_step = 0.003 #0.006
+        self.latitude_step = 0.002
+        self.longitude_step = 0.003
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
 
     def build_cell(self, latitude, longitude):
-        return "SRID=4326;POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))".format(\
+        """Build a rectangular cell around a given latitude and longitude"""
+        return "SRID=4326;POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))".format(
             longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
             longitude - 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
             longitude + 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
@@ -53,7 +53,7 @@ class RectGridWriter():
             for record in records:
                 session.merge(record)
 
-    def upload_grid_data(self):
+    def update_remote_tables(self):
         """Upload grid data"""
         self.logger.info("Calculating static %s positions...", green("rectgrid"))
         grid_cells = []

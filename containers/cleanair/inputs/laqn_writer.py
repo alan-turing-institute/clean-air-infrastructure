@@ -3,17 +3,25 @@ LAQN
 """
 import datetime
 import requests
-from ..mixins import APIRequestMixin
-from ..databases import Writer, laqn_tables, interest_point_table
-from ..loggers import green
+from ..mixins import DateRangeMixin, APIRequestMixin
+from ..databases import DBWriter, laqn_tables, interest_point_table
+from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class LAQNWriter(Writer, APIRequestMixin):
+class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
+    def __init__(self, **kwargs):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
     def request_site_entries(self):
         """
         Request all LAQN sites

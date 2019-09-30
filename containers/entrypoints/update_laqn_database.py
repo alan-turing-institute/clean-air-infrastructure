@@ -2,7 +2,9 @@
 Update LAQN database
 """
 import argparse
+import logging
 from cleanair.inputs import LAQNWriter
+from cleanair.loggers import get_log_level
 
 
 def main():
@@ -21,6 +23,10 @@ def main():
     args = parser.parse_args()
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
+
+    # Set logging verbosity
+    kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # Perform update and notify any exceptions
     try:

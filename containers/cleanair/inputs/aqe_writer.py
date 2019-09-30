@@ -7,16 +7,24 @@ import io
 from xml.dom import minidom
 import pandas
 import requests
-from ..mixins import APIRequestMixin
-from ..databases import Writer, aqe_tables, interest_point_table
-from ..loggers import green
+from ..mixins import DateRangeMixin, APIRequestMixin
+from ..databases import DBWriter, aqe_tables, interest_point_table
+from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class AQEWriter(Writer, APIRequestMixin):
+class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """Manage interactions with the AQE table on Azure"""
     # Set list of primary-key columns
     reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]
+
+    def __init__(self, **kwargs):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
 
     def request_site_entries(self):
         """

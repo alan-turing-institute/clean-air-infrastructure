@@ -2,8 +2,7 @@
 Tables for AQE data source
 """
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, Integer, ForeignKey, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from .base import Base

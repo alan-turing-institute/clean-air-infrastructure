@@ -7,15 +7,17 @@ import os
 import subprocess
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import CreateSchema
-from ..databases import Connector, InterestPoint
+from ..databases import DBWriter, InterestPoint
 from ..loggers import get_logger, green
 
 
-class StaticWriter():
+class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
     def __init__(self, **kwargs):
-        self.dbcnxn = Connector(**kwargs)
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
         self.data_directory = None
         self.table_name = None
 
@@ -29,6 +31,9 @@ class StaticWriter():
         if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "buffers"):
             self.dbcnxn.engine.execute(CreateSchema("buffers"))
         InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
@@ -280,3 +285,8 @@ class StaticWriter():
                 finally:
                     conn.close()
         self.logger.info("Finished database configuration")
+
+    def update_remote_tables(self):
+        """Attempt to upload static files and configure the tables if successful"""
+        if self.upload_static_files():
+            self.configure_tables()

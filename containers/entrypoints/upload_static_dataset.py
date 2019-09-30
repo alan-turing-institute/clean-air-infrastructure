@@ -2,7 +2,9 @@
 Upload static datasets
 """
 import argparse
+import logging
 from cleanair.inputs import StaticWriter
+from cleanair.loggers import get_log_level
 
 
 def main():
@@ -17,13 +19,16 @@ def main():
     # Parse and interpret arguments
     args = parser.parse_args()
 
+    # Set logging verbosity
+    kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+
     # Perform update and notify any exceptions
     try:
-        static_writer = StaticWriter(**vars(args))
+        static_writer = StaticWriter(**kwargs)
 
-        # Attempt to upload static files and configure the tables if successful
-        if static_writer.upload_static_files():
-            static_writer.configure_tables()
+        # Upload static tables to the database if they are not present
+        static_writer.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

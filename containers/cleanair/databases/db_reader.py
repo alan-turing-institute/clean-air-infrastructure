@@ -5,12 +5,17 @@ from .connector import Connector
 from ..loggers import get_logger
 
 
-class Reader():
-    """Manage interactions with the Azure databases"""
-    def __init__(self, *args, **kwargs):
-        self.dbcnxn = Connector(*args, **kwargs)
+class DBReader():
+    """
+    Base class for reading from the Azure database
+    """
+    def __init__(self, secretfile):
+        # Ensure logging is available
         if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+            self.logger = get_logger(__name__)
+
+        # Create connector
+        self.dbcnxn = Connector(secretfile)
 
         # Ensure that tables are initialised
         self.dbcnxn.initialise_tables()

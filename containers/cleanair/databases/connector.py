@@ -20,9 +20,10 @@ class Connector():
     __engine = None
     __sessionfactory = None
 
-    def __init__(self, secretfile, **kwargs):
-        # Set up logging
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+    def __init__(self, secretfile):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)

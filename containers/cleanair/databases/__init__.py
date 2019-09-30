@@ -2,17 +2,17 @@
 from .base import Base
 from .connector import Connector
 from .interest_point_table import InterestPoint
-from .reader import Reader
+from .db_reader import DBReader
 from .rectgrid_table import RectGrid
 from .static_tables import StaticTableConnector
-from .writer import Writer
+from .db_writer import DBWriter
 
 __all__ = [
     "Base",
     "Connector",
-    "Reader",
+    "DBReader",
+    "DBWriter",
+    "InterestPoint",
     "RectGrid",
     "StaticTableConnector",
-    "Writer",
-    "InterestPoint",
 ]

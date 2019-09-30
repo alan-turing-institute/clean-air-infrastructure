@@ -3,8 +3,10 @@ Update SCOOT database
 """
 import argparse
 import json
+import logging
 import os
 from cleanair.inputs import ScootWriter
+from cleanair.loggers import get_log_level
 
 
 def main():
@@ -24,6 +26,10 @@ def main():
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
+    # Set logging verbosity
+    kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+
     # Perform update and notify any exceptions
     try:
         # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
@@ -36,7 +42,7 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine SCOOT aws_key_id or aws_key")
 
-        scoot_writer = ScootWriter(**vars(args))
+        scoot_writer = ScootWriter(**kwargs)
 
         # Update the Scoot readings table on the database
         scoot_writer.update_remote_tables()

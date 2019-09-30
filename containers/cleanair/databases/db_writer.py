@@ -1,35 +1,22 @@
 """
 Table writer
 """
-import datetime
 from sqlalchemy.exc import IntegrityError
 from .connector import Connector
-from ..loggers import get_logger, green
+from ..loggers import get_logger
 
 
-class Writer():
-    """Manage interactions with the Azure databases"""
-    def __init__(self, end, ndays, *args, **kwargs):
-        self.dbcnxn = Connector(*args, **kwargs)
+class DBWriter():
+    """
+    Base class for writing to the Azure database
+    """
+    def __init__(self, secretfile):
+        # Ensure logging is available
         if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+            self.logger = get_logger(__name__)
 
-        # Set the date range
-        if end == "today":
-            self.end_date = datetime.datetime.today().date()
-        elif end == "yesterday":
-            self.end_date = (datetime.datetime.today() - datetime.timedelta(days=1)).date()
-        else:
-            self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
-        self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
-
-        # Set the time range
-        self.start_datetime = datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
-        self.end_datetime = datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
-
-        # Log an introductory message
-        self.logger.info("Requesting data between the following time points:")
-        self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
+        # Create connector
+        self.dbcnxn = Connector(secretfile)
 
         # Ensure that tables are initialised
         self.dbcnxn.initialise_tables()
