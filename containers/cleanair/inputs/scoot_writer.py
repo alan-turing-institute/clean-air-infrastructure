@@ -22,6 +22,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
     def __init__(self, aws_key_id, aws_key, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
@@ -37,9 +40,6 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
         # Start with an empty list of detector IDs
         self.detector_ids = []
-
-        # Initialise parent classes
-        super().__init__(**kwargs)
 
     def request_site_entries(self):
         """Get list of known detectors"""

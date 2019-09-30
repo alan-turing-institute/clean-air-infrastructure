@@ -10,7 +10,7 @@ class DBWriter():
     """
     Base class for writing to the Azure database
     """
-    def __init__(self, secretfile):
+    def __init__(self, secretfile, initialise_tables=True):
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
@@ -19,7 +19,8 @@ class DBWriter():
         self.dbcnxn = Connector(secretfile)
 
         # Ensure that tables are initialised
-        self.dbcnxn.initialise_tables()
+        if initialise_tables:
+            self.dbcnxn.initialise_tables()
 
         # Ensure that extensions have been enabled
         self.dbcnxn.ensure_extensions()

@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateSchema
 from ..loggers import get_logger, green, red
 from .base import Base
 
@@ -81,8 +82,8 @@ class Connector():
 
     def ensure_schema(self, schema_name):
         """Ensure that requested schema exists"""
-        with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
+        if not self.engine.dialect.has_schema(self.engine, schema_name):
+            self.engine.execute(CreateSchema(schema_name))
 
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""

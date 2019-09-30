@@ -19,12 +19,12 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]
 
     def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-
-        # Initialise parent classes
-        super().__init__(**kwargs)
 
     def request_site_entries(self):
         """

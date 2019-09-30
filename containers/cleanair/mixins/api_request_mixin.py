@@ -9,12 +9,12 @@ from ..loggers import get_logger, green
 class APIRequestMixin():
     """Manage interactions with an external API"""
     def __init__(self, **kwargs):
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-
-        # Pass unused arguments onwards
-        super().__init__(**kwargs)
 
     def get_readings_by_site(self, site_list_query, start_date, end_date):
         """

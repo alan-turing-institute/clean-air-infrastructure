@@ -85,6 +85,32 @@ def build_database_secrets(secret_prefix, secrets_directory, local_secret=None):
             json.dump(database_secrets, f_secret)
 
 
+def build_docker_image(image_name, dockerfile):
+    """Build a Docker image locally"""
+    client = docker.DockerClient()
+    container_path = os.path.realpath(os.path.join(os.path.dirname(sys.argv[0]), "..", "containers"))
+    dockerfile_path = os.path.join(container_path, "dockerfiles", dockerfile)
+    logging.info("Building Docker image: %s", emphasised(image_name))
+    image, _ = client.images.build(path=container_path, dockerfile=dockerfile_path, tag=image_name)
+    return image
+
+
+def run_container(image_name, mounts):
+    """Run the job, parsing log messages and re-logging them"""
+    client = docker.DockerClient()
+    container = client.containers.run(image_name, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
+    for line in container.logs(stream=True):
+        line = line.decode("utf-8")
+        try:
+            lvl = [l for l in ("CRITICAL", "WARNING", "ERROR", "INFO", "DEBUG") if l in line.split(":")[2]][0]
+        except IndexError:
+            lvl = "INFO"
+        msg = ":".join(line.split(":")[3:])
+        if not msg:
+            msg = line
+        getattr(logging, lvl.lower())(msg.strip())
+
+
 def upload_static_data(image_name, dataset, secrets_directory, data_directory):
     """Upload static data to the database"""
     # Run docker image to upload the data
@@ -114,18 +140,8 @@ def upload_static_data(image_name, dataset, secrets_directory, data_directory):
         logging.error("Docker image %s could not be found!", emphasised(image_name))
         raise ValueError("Docker image {} could not be found!".format(image_name))
 
-    # Run the job, parsing log messages and re-logging them
-    container = client.containers.run(image_name, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
-    for line in container.logs(stream=True):
-        line = line.decode("utf-8")
-        try:
-            lvl = [l for l in ("CRITICAL", "WARNING", "ERROR", "INFO", "DEBUG") if l in line.split(":")[2]][0]
-        except IndexError:
-            lvl = "INFO"
-        msg = ":".join(line.split(":")[3:])
-        if not msg:
-            msg = line
-        getattr(logging, lvl.lower())(msg.strip())
+    # Run the job
+    run_container(image_name, mounts)
     logging.info("Finished uploading %s data", emphasised(dataset))
 
 
@@ -149,13 +165,9 @@ def main():
                         help="Optionally pass the full path of a database secret file")
     args = parser.parse_args()
 
-    # Build the Docker image locally
-    client = docker.DockerClient()
-    image_name = "static:upload"
-    container_path = os.path.realpath(os.path.join(os.path.dirname(sys.argv[0]), "..", "containers"))
-    dockerfile = os.path.join(container_path, "dockerfiles", "upload_static_dataset.Dockerfile")
-    logging.info("Building Docker image: %s", emphasised(image_name))
-    client.images.build(path=container_path, dockerfile=dockerfile, tag=image_name)
+    # Build local Docker images
+    static_image = build_docker_image("static:upload", "upload_static_dataset.Dockerfile")
+    rectgrid_image = build_docker_image("rectgrid:upload", "upload_rectgrid.Dockerfile")
 
     # List of available datasets
     datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
@@ -167,11 +179,15 @@ def main():
     with tempfile.TemporaryDirectory() as secrets_directory:
         build_database_secrets("cleanair-inputs-db", secrets_directory, args.local_secret)
 
-        # Download the static data
+        # Download the static data and add to the database
         for dataset in datasets:
             with tempfile.TemporaryDirectory() as data_directory:
                 download_blobs(block_blob_service, dataset, data_directory)
-                upload_static_data(image_name, dataset, secrets_directory, data_directory)
+                upload_static_data(static_image.tags[0], dataset, secrets_directory, data_directory)
+
+        # Upload the rectgrid to the database
+        logging.info("Preparing to upload %s data...", emphasised("rectgrid"))
+        run_container(rectgrid_image.tags[0], {secrets_directory: {"bind": "/secrets", "mode": "ro"}})
 
 
 if __name__ == "__main__":

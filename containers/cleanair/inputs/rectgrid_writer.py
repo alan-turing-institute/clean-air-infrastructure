@@ -11,6 +11,9 @@ from ..loggers import get_logger, green
 class RectGridWriter(DBWriter):
     """Manage interactions with the RectGrid table on Azure"""
     def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
@@ -24,9 +27,6 @@ class RectGridWriter(DBWriter):
         # We therefore alter the step sizes accordingly
         self.latitude_step = 0.002
         self.longitude_step = 0.003
-
-        # Initialise parent classes
-        super().__init__(**kwargs)
 
     def build_cell(self, latitude, longitude):
         """Build a rectangular cell around a given latitude and longitude"""

@@ -8,6 +8,9 @@ from ..loggers import get_logger, green
 class DateRangeMixin():
     """Manage data ranges"""
     def __init__(self, end, ndays, **kwargs):
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
@@ -28,6 +31,3 @@ class DateRangeMixin():
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
-
-        # Pass unused arguments onwards
-        super().__init__(**kwargs)
