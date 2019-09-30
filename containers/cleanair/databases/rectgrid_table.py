@@ -18,7 +18,7 @@ class RectGrid(Base):
     geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True))
     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
 
-    interest_points = relationship("InterestPoint", back_populates="rectgrid")
+    rectgrid_interest_points = relationship("InterestPoint", back_populates="ip_rectgrid")
 
     def __repr__(self):
         return "<RectGrid(" + ", ".join([

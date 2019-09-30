@@ -18,9 +18,9 @@ class InterestPoint(Base):
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
     point_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
-    aqe_site = relationship("AQESite", back_populates="interest_points")
-    laqn_site = relationship("LAQNSite", back_populates="interest_points")
-    rectgrid = relationship("RectGrid", back_populates="interest_points")
+    ip_aqesite = relationship("AQESite", back_populates="aqe_interest_points")
+    ip_laqnsite = relationship("LAQNSite", back_populates="laqn_interest_points")
+    ip_rectgrid = relationship("RectGrid", back_populates="rectgrid_interest_points")
 
     def __repr__(self):
         return "<InterestPoint(" + ", ".join([
