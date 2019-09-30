@@ -48,8 +48,8 @@ class StaticWriter(DBWriter):
             return False
 
         # Get the connection string
-        connection_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
-                                      "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
+        cnxn_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
+                                "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = []
@@ -112,12 +112,16 @@ class StaticWriter(DBWriter):
         # Run ogr2ogr
         self.logger.info("Uploading static data to table %s in %s",
                          green(self.table_name), green(self.dbcnxn.connection_info["db_name"]))
-        subprocess.run(["ogr2ogr", "-overwrite", "-progress",
-                        "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
-                        "--config", "PG_USE_COPY", "YES",
-                        "-t_srs", "EPSG:4326",
-                        "-lco", "SCHEMA=datasources",
-                        "-nln", self.table_name] + extra_args)
+        try:
+            subprocess.run(["ogr2ogr", "-overwrite", "-progress",
+                            "-f", "PostgreSQL", "PG:{}".format(cnxn_string), "/data/{}".format(self.data_directory),
+                            "--config", "PG_USE_COPY", "YES",
+                            "-t_srs", "EPSG:4326",
+                            "-lco", "SCHEMA=datasources",
+                            "-nln", self.table_name] + extra_args, check=True)
+        except subprocess.CalledProcessError:
+            self.logger.error("Running ogr2ogr failed!")
+            raise
         return True
 
     def configure_tables(self):
