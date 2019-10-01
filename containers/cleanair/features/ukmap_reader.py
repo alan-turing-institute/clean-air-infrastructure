@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy import func, and_, or_, cast, Float, insert
 import pandas as pd
 from dateutil import rrule
-from ..databases import StaticTableConnector, DBReader, features_tables
+from ..databases import DBReader, features_tables, ukmap_table
 from geoalchemy2 import Geometry
 from geoalchemy2.functions import GenericFunction
 
@@ -16,7 +16,7 @@ class ST_Collect(GenericFunction):
     type = Geometry
 
 
-class UKMapReader(StaticTableConnector, DBReader):
+class UKMapReader(DBReader):
     """
     Class for interfacing with the UKMap database table
     """
@@ -24,8 +24,13 @@ class UKMapReader(StaticTableConnector, DBReader):
         # Initialise parent classes
         super().__init__(*args, **kwargs)
 
-        # Reflect the table
-        self.table = self.get_table_instance('ukmap', 'datasources')
+        # # Reflect the table
+        # self.table = self.get_table_instance('ukmap', 'datasources')
+
+        # laqn_tables.LAQNSite
+
+
+
 
         # List of filters to apply
         # Each list contains two tupes and an operator (or None). The first tuple contains table columns. The second contains values to filter those columns on.
@@ -53,8 +58,7 @@ class UKMapReader(StaticTableConnector, DBReader):
 
     @property
     def feature_interest_points(self):
-
-        with self.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             return [i[0] for i in session.query(features_tables.features_UKMAP.point_id).all()]
 
     @staticmethod
@@ -89,12 +93,11 @@ class UKMapReader(StaticTableConnector, DBReader):
 
         buffer_query = buffer_query.subquery()
 
-        query_items = [buffer_query,
-                       self.table]
+        query_items = [buffer_query, ukmap_table.UKMap]
 
         # Get the intersection between the ukmap geometries and the largest buffer
         largest_intersection = func.ST_Force_2D(func.ST_Intersection(func.ST_MakeValid(
-            self.table.geom), buffer_query.c['buffer_' + buffer_cols[0]])).label("intersect_" + buffer_cols[0])
+            ukmap_table.UKMap.geom), buffer_query.c['buffer_' + buffer_cols[0]])).label("intersect_" + buffer_cols[0])
 
         query_items = query_items + [largest_intersection]
 
@@ -106,16 +109,16 @@ class UKMapReader(StaticTableConnector, DBReader):
                 query_items.append(next_intersection)
 
         # Filter intersecting geoms
-        intersect_filters = [and_(func.ST_GeometryType(func.ST_MakeValid(self.table.geom)) == 'ST_MultiPolygon',
-                   func.ST_Intersects(self.table.geom, buffer_query.c['buffer_' + buffer_cols[0]]))]
+        intersect_filters = [and_(func.ST_GeometryType(func.ST_MakeValid(ukmap_table.UKMap.geom)) == 'ST_MultiPolygon',
+                   func.ST_Intersects(ukmap_table.UKMap.geom, buffer_query.c['buffer_' + buffer_cols[0]]))]
 
         # Filter to only data used by aggregation functions
-        function_filters = [self.create_filter(self.table, cf) for cf in self.global_filter()]
+        function_filters = [self.create_filter(ukmap_table.UKMap, cf) for cf in self.global_filter()]
 
         filters = [or_(*function_filters)] + intersect_filters
 
         # Create the query and apply filters
-        with self.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             out = session.query(*query_items).filter(*filters)
             return out
 
@@ -184,17 +187,17 @@ class UKMapReader(StaticTableConnector, DBReader):
             query_list = query_list + __summary_f_list(buffer_intersection_subquery, size)
 
         # Create the query and aggregate by interest point
-        with self.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             out = session.query(*query_list).group_by(buffer_intersection_subquery.c.point_id,
                                                       buffer_intersection_subquery.c.source)
             if return_type == 'df':
                 self.logger.info("Processing ukmap features... This may take some time")
-                return pd.read_sql(out.statement, self.engine)
+                return pd.read_sql(out.statement, self.dbcnxn.engine)
 
             elif return_type == 'insert':
                 sel = out.subquery().select()
                 ins = insert(features_tables.features_UKMAP).from_select([c.key for c in features_tables.features_UKMAP.__table__.columns], sel)
-                with self.engine.connect() as cnxn:
+                with self.dbcnxn.engine.connect() as cnxn:
                     self.logger.info("Calculating and inserting features into database")
                     cnxn.execute(ins)
                     self.logger.info("Insertion finished")

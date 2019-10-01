@@ -1,13 +1,16 @@
 """
 UKMap Feature extraction
 """
+import argparse
+import logging
+from cleanair.loggers import get_log_level
 
-import sys
-sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers')
+# import sys
+# sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers')
 
 import matplotlib.pyplot as plt
 
-import sqlalchemy 
+import sqlalchemy
 from sqlalchemy import func, and_, or_, cast, Float
 import geopandas
 from cleanair.features import LondonBoundaryReader, InterestPointReader, UKMapReader
@@ -15,15 +18,29 @@ from cleanair.databases import features_tables
 
 
 def main():
+    """
+    Extract features
+    """
+    # Read command line arguments
+    parser = argparse.ArgumentParser(description="Get LAQN sensor data")
+    parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
+    parser.add_argument("-v", "--verbose", action="count", default=0)
+
+    # Parse and interpret arguments
+    args = parser.parse_args()
+
+    # Set logging verbosity
+    kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+
+
     # List what sources to process
     sources = ['laqn']
 
-    db_info_file = '.db_input_secret_local.json'
-
     # Import features
-    ukmap = UKMapReader(secretfile=db_info_file)
-    london_boundary = LondonBoundaryReader(secretfile=db_info_file)
-    interest_points = InterestPointReader(secretfile=db_info_file)
+    ukmap = UKMapReader(**kwargs)
+    london_boundary = LondonBoundaryReader(**kwargs)
+    interest_points = InterestPointReader(**kwargs)
 
 
     # # Process interest points (These cannot be chnaged without redfining database schema)
@@ -43,7 +60,7 @@ def main():
     # If having a connection open is a problem you can just repeatedly call the main function,
     # but with a a limit on interest buffers (e.g. interest_buffers.limit(1000))
     # as it only does the calculation for interest points with no features calculated
-    ukmap_features_df = ukmap.query_features(interest_buffers, 
+    ukmap_features_df = ukmap.query_features(interest_buffers,
                                             buffer_sizes, return_type='insert')
 
 

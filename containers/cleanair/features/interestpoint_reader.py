@@ -3,10 +3,10 @@ LAQN
 """
 from sqlalchemy import func, and_
 import pandas as pd
-from ..databases import interest_point_table, Reader, aqe_tables, laqn_tables 
+from ..databases import interest_point_table, DBReader, aqe_tables, laqn_tables
 
 
-class InterestPointReader(Reader):
+class InterestPointReader(DBReader):
     """
     Read and process LAQN data
     """
@@ -27,7 +27,7 @@ class InterestPointReader(Reader):
                                                      interest_point_table.InterestPoint.source.in_(include_sources)))
             if exclude_point_ids:
                 result = result.filter(interest_point_table.InterestPoint.point_id.notin_(exclude_point_ids))
-                
+
             return result
 
     def query_interest_point_buffers(self, buffer_sizes, boundary_geom,
