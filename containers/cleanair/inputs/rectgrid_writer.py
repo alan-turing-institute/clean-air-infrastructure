@@ -58,7 +58,7 @@ class RectGridWriter(DBWriter):
         self.logger.info("Starting static %s upload...", green("rectgrid"))
         with self.dbcnxn.open_session() as session:
             # Update the interest_points table and retrieve point IDs
-            self.logger.info("Adding %i interest points...", len(grid_cells))
+            self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green("interest points"))
             interest_points = [interest_point_table.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
             self.add_records(session, interest_points, flush=True)
             for grid_cell, interest_point in zip(grid_cells, interest_points):
