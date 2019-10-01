@@ -2,10 +2,10 @@
 Hexgrid
 """
 from sqlalchemy import func, cast, String
-from ..databases import StaticTableConnector, DBReader, hexgrid_table
+from ..databases import DBReader, hexgrid_table
 
 
-class HexGridReader(StaticTableConnector, DBReader):
+class HexGridReader(DBReader):
     """
     Class to interface with the glahexgrid database table
     """

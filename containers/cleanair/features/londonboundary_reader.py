@@ -2,10 +2,10 @@
 London Boundary
 """
 from sqlalchemy import func
-from ..databases import StaticTableConnector, DBReader, londonboundary_table
+from ..databases import DBReader, londonboundary_table
 
 
-class LondonBoundaryReader(StaticTableConnector, DBReader):
+class LondonBoundaryReader(DBReader):
     """
     Class to interface with the londonboundary database table
     """
