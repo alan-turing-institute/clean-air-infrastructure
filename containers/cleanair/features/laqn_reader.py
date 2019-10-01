@@ -3,10 +3,10 @@ LAQN
 """
 from sqlalchemy import func, and_
 import pandas as pd
-from ..databases import laqn_tables, Reader
+from ..databases import laqn_tables, DBReader
 
 
-class LAQNReader(Reader):
+class LAQNReader(DBReader):
     """
     Read and process LAQN data
     """

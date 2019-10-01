@@ -10,26 +10,28 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-from ..databases import Writer, scoot_tables
-from ..loggers import green
+from ..databases import DBWriter, scoot_tables
+from ..loggers import get_logger, green
+from ..mixins import DateRangeMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(Writer):
+class ScootWriter(DateRangeMixin, DBWriter):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
-    def __init__(self, *args, **kwargs):
-        # Initialise the base class
-        super().__init__(*args, **kwargs)
+    def __init__(self, aws_key_id, aws_key, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Set up AWS access keys
-        try:
-            self.access_key_id = kwargs["aws_key_id"]
-            self.access_key = kwargs["aws_key"]
-        except KeyError:
-            raise IOError("No AWS connection details were provided!")
+        self.access_key_id = aws_key_id
+        self.access_key = aws_key
 
         # Set up the known column names
         self.csv_columns = ["Timestamp", "DetectorID", "DetectorFault", "NVehiclesInInterval",

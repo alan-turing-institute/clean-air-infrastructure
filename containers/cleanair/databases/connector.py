@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateSchema
 from ..loggers import get_logger, green, red
 from .base import Base
 
@@ -20,9 +21,10 @@ class Connector():
     __engine = None
     __sessionfactory = None
 
-    def __init__(self, secretfile, **kwargs):
-        # Set up logging
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+    def __init__(self, secretfile):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
@@ -71,10 +73,17 @@ class Connector():
         # Return the class-level engine
         return self.__engine
 
+    @property
+    def sessionfactory(self):
+        """Access the class-level sqlalchemy sessionfactory"""
+        if not self.__sessionfactory:
+            _ = self.engine
+        return self.__sessionfactory
+
     def ensure_schema(self, schema_name):
         """Ensure that requested schema exists"""
-        with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
+        if not self.engine.dialect.has_schema(self.engine, schema_name):
+            self.engine.execute(CreateSchema(schema_name))
 
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""
@@ -88,8 +97,8 @@ class Connector():
         Create a session as a context manager which will thereby self-close
         """
         try:
-            # Use the engine to create a new session
-            session = self.__sessionfactory()
+            # Use the session factory to create a new session
+            session = self.sessionfactory()
             if not skip_check:
                 self.check_internet_connection()
             yield session

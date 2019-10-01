@@ -2,7 +2,9 @@
 Update AQE database
 """
 import argparse
+import logging
 from cleanair.inputs import AQEWriter
+from cleanair.loggers import get_log_level
 
 
 def main():
@@ -22,9 +24,13 @@ def main():
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
+    # Set logging verbosity
+    kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+
     # Perform update and notify any exceptions
     try:
-        aqe_writer = AQEWriter(**vars(args))
+        aqe_writer = AQEWriter(**kwargs)
 
         # Update the AQE tables on the database
         aqe_writer.update_remote_tables()

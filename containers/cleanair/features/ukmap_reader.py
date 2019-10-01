@@ -5,15 +5,15 @@ from datetime import datetime
 from sqlalchemy import func, and_, or_, cast, Float
 import pandas as pd
 from dateutil import rrule
-from ..databases import StaticTableConnector, Reader
+from ..databases import StaticTableConnector, DBReader
 
 
-class UKMapReader(StaticTableConnector, Reader):
+class UKMapReader(StaticTableConnector, DBReader):
     """
     Class for interfacing with the UKMap database table
     """
     def __init__(self, *args, **kwargs):
-        # Initialise the base class
+        # Initialise parent classes
         super().__init__(*args, **kwargs)
 
         # Reflect the table

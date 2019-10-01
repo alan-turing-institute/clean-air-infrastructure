@@ -1,15 +1,15 @@
-# Use an Ubuntu image with GDAL
-FROM osgeo/gdal:ubuntu-full-latest
+# # Use an Ubuntu image with GDAL
+# FROM osgeo/gdal:ubuntu-full-latest
 
-# Install psql, python and pip
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y \
-    postgresql \
-    python3 \
-    python3-pip
+# # Install psql, python and pip
+# ENV DEBIAN_FRONTEND=noninteractive
+# RUN apt-get update && apt-get install -y \
+#     postgresql \
+#     python3 \
+#     python3-pip
 
-# Upgrade pip
-RUN pip3 install --upgrade pip
+# Use an official Python runtime as a parent image
+FROM python:3
 
 # Set the working directory to /app
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/upload_static_dataset.py /app
+COPY entrypoints/upload_rectgrid.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python3", "upload_static_dataset.py"]
+ENTRYPOINT ["python3", "upload_rectgrid.py"]

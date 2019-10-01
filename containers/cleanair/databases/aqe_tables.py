@@ -20,8 +20,8 @@ class AQESite(Base):
     DateClosed = Column(TIMESTAMP)
     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
 
-    readings = relationship("AQEReading", back_populates="site")
-    interest_points = relationship("InterestPoint", back_populates="aqe_site")
+    aqe_readings = relationship("AQEReading", back_populates="aqe_site")
+    aqe_interest_points = relationship("InterestPoint", back_populates="ip_aqesite")
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([
@@ -45,7 +45,7 @@ class AQEReading(Base):
     MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
-    site = relationship("AQESite", back_populates="readings")
+    aqe_site = relationship("AQESite", back_populates="aqe_readings")
 
     def __repr__(self):
         return "<AQEReading(" + ", ".join([
