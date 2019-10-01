@@ -10,26 +10,28 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-from ..databases import Writer, scoot_tables
-from ..loggers import green
+from ..databases import DBWriter, scoot_tables
+from ..loggers import get_logger, green
+from ..mixins import DateRangeMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(Writer):
+class ScootWriter(DateRangeMixin, DBWriter):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
-    def __init__(self, *args, **kwargs):
-        # Initialise the base class
-        super().__init__(*args, **kwargs)
+    def __init__(self, aws_key_id, aws_key, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Set up AWS access keys
-        try:
-            self.access_key_id = kwargs["aws_key_id"]
-            self.access_key = kwargs["aws_key"]
-        except KeyError:
-            raise IOError("No AWS connection details were provided!")
+        self.access_key_id = aws_key_id
+        self.access_key = aws_key
 
         # Set up the known column names
         self.csv_columns = ["Timestamp", "DetectorID", "DetectorFault", "NVehiclesInInterval",
@@ -63,7 +65,7 @@ class ScootWriter(Writer):
         Remove readings with unknown detector ID or detector faults.
         """
         start_aws = time.time()
-        self.logger.info("This will take approximately 20 minutes...")
+        self.logger.info("This will take approximately 1 minute for each hour requested...")
 
         # Get an AWS client
         client = boto3.client("s3", aws_access_key_id=self.access_key_id, aws_secret_access_key=self.access_key)
@@ -166,8 +168,8 @@ class ScootWriter(Writer):
 
             # Add readings to database
             start_session = time.time()
-            site_readings = list(df_aggregated.T.to_dict().values())
-            self.logger.info("Inserting %s per-site records into database", green(len(site_readings)))
+            site_records = [scoot_tables.ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
+            self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
 
             # The following database operations can be slow. However, with the switch to hourly data they are not
             # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
@@ -175,14 +177,13 @@ class ScootWriter(Writer):
             # therefore sticking to the higher-level functions here.
             with self.dbcnxn.open_session() as session:
                 try:
-                    # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
-                    for site_reading in site_readings:
-                        session.merge(scoot_tables.ScootReading(**site_reading))
+                    # Commit the records to the database
+                    self.add_records(session, site_records)
                     session.commit()
-                    n_records += len(site_readings)
-                except IntegrityError as err:
-                    self.logger.error("Ignoring attempt to insert duplicate records!")
-                    self.logger.error(str(err))
+                    n_records += len(site_records)
+                except IntegrityError as error:
+                    self.logger.error("Failed to add records to the database: %s", type(error))
+                    self.logger.error(str(error))
                     session.rollback()
             self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
 

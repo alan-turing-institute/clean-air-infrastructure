@@ -2,15 +2,15 @@
 Hexgrid
 """
 from sqlalchemy import func, cast, String
-from ..databases import StaticTableConnector, Reader
+from ..databases import StaticTableConnector, DBReader
 
 
-class HexGridReader(StaticTableConnector, Reader):
+class HexGridReader(StaticTableConnector, DBReader):
     """
     Class to interface with the glahexgrid database table
     """
     def __init__(self, *args, **kwargs):
-        # Initialise the base class
+        # Initialise parent classes
         super().__init__(*args, **kwargs)
 
         # Reflect the table

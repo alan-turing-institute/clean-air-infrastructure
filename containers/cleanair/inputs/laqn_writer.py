@@ -3,17 +3,25 @@ LAQN
 """
 import datetime
 import requests
-from ..apis import APIReader
-from ..databases import Writer, laqn_tables, interest_point_table
-from ..loggers import green
+from ..mixins import DateRangeMixin, APIRequestMixin
+from ..databases import DBWriter, laqn_tables, interest_point_table
+from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class LAQNWriter(Writer, APIReader):
+class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
     def request_site_entries(self):
         """
         Request all LAQN sites
@@ -114,9 +122,11 @@ class LAQNWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
-            for site_reading in site_readings:
-                session.merge(laqn_tables.build_reading_entry(site_reading))
+            site_records = [laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings]
+
+            # Commit the records to the database
+            self.add_records(session, site_records)
+            session.commit()
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",

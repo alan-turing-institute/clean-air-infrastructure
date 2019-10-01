@@ -6,28 +6,29 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from sqlalchemy.schema import CreateSchema
-from ..databases import Connector, InterestPoint
+from ..databases import DBWriter, InterestPoint
 from ..loggers import get_logger, green
 
 
-class StaticWriter():
+class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
     def __init__(self, **kwargs):
-        self.dbcnxn = Connector(**kwargs)
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+        # Initialise parent classes
+        super().__init__(initialise_tables=False, **kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Attributes: directory where local data is held and name of remote table
         self.data_directory = None
         self.table_name = None
 
-        # Ensure that extensions have been enabled
-        self.dbcnxn.ensure_extensions()
-
-        # Ensure that the datasources schema exists
+        # Ensure that the buffers and datasources schemas exist
+        self.dbcnxn.ensure_schema("buffers")
         self.dbcnxn.ensure_schema("datasources")
 
         # Ensure that interest_points table exists
-        if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "buffers"):
-            self.dbcnxn.engine.execute(CreateSchema("buffers"))
         InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
 
     def upload_static_files(self):
@@ -47,8 +48,8 @@ class StaticWriter():
             return False
 
         # Get the connection string
-        connection_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
-                                      "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
+        cnxn_string = " ".join(["host={host}", "port={port}", "user={username}", "password={password}",
+                                "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = []
@@ -111,12 +112,16 @@ class StaticWriter():
         # Run ogr2ogr
         self.logger.info("Uploading static data to table %s in %s",
                          green(self.table_name), green(self.dbcnxn.connection_info["db_name"]))
-        subprocess.run(["ogr2ogr", "-overwrite", "-progress",
-                        "-f", "PostgreSQL", "PG:{}".format(connection_string), "/data/{}".format(self.data_directory),
-                        "--config", "PG_USE_COPY", "YES",
-                        "-t_srs", "EPSG:4326",
-                        "-lco", "SCHEMA=datasources",
-                        "-nln", self.table_name] + extra_args)
+        try:
+            subprocess.run(["ogr2ogr", "-overwrite", "-progress",
+                            "-f", "PostgreSQL", "PG:{}".format(cnxn_string), "/data/{}".format(self.data_directory),
+                            "--config", "PG_USE_COPY", "YES",
+                            "-t_srs", "EPSG:4326",
+                            "-lco", "SCHEMA=datasources",
+                            "-nln", self.table_name] + extra_args, check=True)
+        except subprocess.CalledProcessError:
+            self.logger.error("Running ogr2ogr failed!")
+            raise
         return True
 
     def configure_tables(self):
@@ -280,3 +285,8 @@ class StaticWriter():
                 finally:
                     conn.close()
         self.logger.info("Finished database configuration")
+
+    def update_remote_tables(self):
+        """Attempt to upload static files and configure the tables if successful"""
+        if self.upload_static_files():
+            self.configure_tables()

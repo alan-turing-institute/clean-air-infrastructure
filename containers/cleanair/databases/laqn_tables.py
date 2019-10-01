@@ -19,8 +19,8 @@ class LAQNSite(Base):
     DateClosed = Column(TIMESTAMP)
     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
 
-    readings = relationship("LAQNReading", back_populates="site")
-    interest_points = relationship("InterestPoint", back_populates="laqn_site")
+    laqn_readings = relationship("LAQNReading", back_populates="laqn_site")
+    laqn_interest_points = relationship("InterestPoint", back_populates="ip_laqnsite")
 
     def __repr__(self):
         return "<LAQNSite(" + ", ".join([
@@ -45,7 +45,7 @@ class LAQNReading(Base):
     MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
     Value = Column(DOUBLE_PRECISION, nullable=True)
 
-    site = relationship("LAQNSite", back_populates="readings")
+    laqn_site = relationship("LAQNSite", back_populates="laqn_readings")
 
     def __repr__(self):
         return "<LAQNReading(" + ", ".join([

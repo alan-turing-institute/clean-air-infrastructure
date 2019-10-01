@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateSchema
 from ..loggers import get_logger, green, red
 from .base import Base
 
@@ -18,11 +19,12 @@ class Connector():
     Base class for connecting to databases with sqlalchemy
     """
     __engine = None
-    __sessionmaker = None
+    __sessionfactory = None
 
-    def __init__(self, secretfile, **kwargs):
-        # Set up logging
-        self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+    def __init__(self, secretfile):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
@@ -65,15 +67,23 @@ class Connector():
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
             self.__engine = create_engine(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info))
-            self.__sessionmaker = sessionmaker(bind=self.__engine)
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info),
+                pool_pre_ping=True)
+            self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
         return self.__engine
 
+    @property
+    def sessionfactory(self):
+        """Access the class-level sqlalchemy sessionfactory"""
+        if not self.__sessionfactory:
+            _ = self.engine
+        return self.__sessionfactory
+
     def ensure_schema(self, schema_name):
         """Ensure that requested schema exists"""
-        with self.engine.connect() as cnxn:
-            cnxn.execute("CREATE SCHEMA IF NOT EXISTS {}".format(schema_name))
+        if not self.engine.dialect.has_schema(self.engine, schema_name):
+            self.engine.execute(CreateSchema(schema_name))
 
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""
@@ -87,14 +97,15 @@ class Connector():
         Create a session as a context manager which will thereby self-close
         """
         try:
-            # Use the engine to create a new session
-            session = self.__sessionmaker()
+            # Use the session factory to create a new session
+            session = self.sessionfactory()
             if not skip_check:
                 self.check_internet_connection()
             yield session
         except (SQLAlchemyError, IOError) as error:
             # Rollback database interactions if there is a problem
-            self.logger.error("Encountered a database error: %s", str(error))
+            self.logger.error("Encountered a database connection error: %s", type(error))
+            self.logger.error(str(error))
             session.rollback()
         finally:
             # Close the session when finished

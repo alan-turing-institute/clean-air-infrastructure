@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy import func, and_, or_, cast, Float, insert
 import pandas as pd
 from dateutil import rrule
-from ..databases import StaticTableConnector, Reader, features_tables
+from ..databases import StaticTableConnector, DBReader, features_tables
 from geoalchemy2 import Geometry
 from geoalchemy2.functions import GenericFunction
 
@@ -16,12 +16,12 @@ class ST_Collect(GenericFunction):
     type = Geometry
 
 
-class UKMapReader(StaticTableConnector, Reader):
+class UKMapReader(StaticTableConnector, DBReader):
     """
     Class for interfacing with the UKMap database table
     """
     def __init__(self, *args, **kwargs):
-        # Initialise the base class
+        # Initialise parent classes
         super().__init__(*args, **kwargs)
 
         # Reflect the table
@@ -35,7 +35,7 @@ class UKMapReader(StaticTableConnector, Reader):
                        [('landuse',), ('Hospitals',), None],
                        [('feature_type',), ('Vegetated',), None],
                        [('feature_type', 'landuse',), ('Vegetated', 'Recreational open space'), and_],
-                       [('feature_type',), ('Water',), None], 
+                       [('feature_type',), ('Water',), None],
                        [('feature_type', 'feature_type'), ('Vegetated', 'Water'), or_]
                       ]
 
@@ -50,7 +50,7 @@ class UKMapReader(StaticTableConnector, Reader):
         unique_filters = [i for i in set(flat)]
 
         return [[(i,) for i in j] + [None] for j in unique_filters]
-        
+
     @property
     def feature_interest_points(self):
 
@@ -77,7 +77,7 @@ class UKMapReader(StaticTableConnector, Reader):
         # return col_filt_tuples
 
         args = [getattr(col_obj, tup[0]) == tup[1] for tup in col_filt_tuples]
-    
+
         if operator:
             return operator(*args)
         return args[0]
@@ -89,7 +89,7 @@ class UKMapReader(StaticTableConnector, Reader):
 
         buffer_query = buffer_query.subquery()
 
-        query_items = [buffer_query, 
+        query_items = [buffer_query,
                        self.table]
 
         # Get the intersection between the ukmap geometries and the largest buffer
@@ -108,12 +108,12 @@ class UKMapReader(StaticTableConnector, Reader):
         # Filter intersecting geoms
         intersect_filters = [and_(func.ST_GeometryType(func.ST_MakeValid(self.table.geom)) == 'ST_MultiPolygon',
                    func.ST_Intersects(self.table.geom, buffer_query.c['buffer_' + buffer_cols[0]]))]
-        
+
         # Filter to only data used by aggregation functions
-        function_filters = [self.create_filter(self.table, cf) for cf in self.global_filter()] 
-     
-        filters = [or_(*function_filters)] + intersect_filters 
-       
+        function_filters = [self.create_filter(self.table, cf) for cf in self.global_filter()]
+
+        filters = [or_(*function_filters)] + intersect_filters
+
         # Create the query and apply filters
         with self.open_session() as session:
             out = session.query(*query_items).filter(*filters)
@@ -145,7 +145,7 @@ class UKMapReader(StaticTableConnector, Reader):
 
         def max_cast(geom, lab):
             return func.max(cast(geom, Float)).label(lab)
-            
+
         def __summary_f_list(subquery, buffer_size):
             """
             For a given intersected geometry, create summary functions and tag with appropriate label
@@ -163,7 +163,7 @@ class UKMapReader(StaticTableConnector, Reader):
                             [sum_area, or_(subquery.c.feature_type == 'Vegetated',
                                                     subquery.c.feature_type == 'Water'), 'total_flat_area_'+ buffer_size]
                             ]
-            
+
             agg_funcs = [f(geom, filt, lab) for f, filt, lab in function_list]
             agg_funcs.append(max_cast(subquery.c.calculated_height_of_building, 'max_building_height_'+ buffer_size))
             # agg_funcs.append(func.ST_GeomFromEWKB(ST_Collect(geom)).label('geom_' + buffer_size))
@@ -177,7 +177,7 @@ class UKMapReader(StaticTableConnector, Reader):
         buffer_intersection_subquery = self.query_buffer_intersection(buffer_query, buffer_sizes).subquery()
 
         # Create a list of all the select functions for the query
-        query_list = [buffer_intersection_subquery.c.point_id, 
+        query_list = [buffer_intersection_subquery.c.point_id,
                      buffer_intersection_subquery.c.source]
 
         for size in buffer_sizes:
@@ -199,8 +199,8 @@ class UKMapReader(StaticTableConnector, Reader):
                     cnxn.execute(ins)
                     self.logger.info("Insertion finished")
             return out
-            
-                
+
+
     @staticmethod
     def expand_static_feature_df(start_date, end_date, feature_df):
         """

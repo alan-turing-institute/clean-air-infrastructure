@@ -7,16 +7,24 @@ import io
 from xml.dom import minidom
 import pandas
 import requests
-from ..apis import APIReader
-from ..databases import Writer, aqe_tables, interest_point_table
-from ..loggers import green
+from ..mixins import DateRangeMixin, APIRequestMixin
+from ..databases import DBWriter, aqe_tables, interest_point_table
+from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class AQEWriter(Writer, APIReader):
+class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """Manage interactions with the AQE table on Azure"""
     # Set list of primary-key columns
     reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]
+
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
     def request_site_entries(self):
         """
@@ -94,7 +102,7 @@ class AQEWriter(Writer, APIReader):
                 entry["geometry"] = interest_point_table.build_ewkt(entry["Latitude"], entry["Longitude"])
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: interest_point_table.build_entry("laqn", geometry=s["geometry"])
+            unique_sites = {s["geometry"]: interest_point_table.build_entry("aqe", geometry=s["geometry"])
                             for s in site_entries}
 
             # Update the interest_points table and retrieve point IDs
@@ -130,9 +138,11 @@ class AQEWriter(Writer, APIReader):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            # Using merge rather than add_all takes approximately twice as long, but avoids duplicate key issues
-            for site_reading in site_readings:
-                session.merge(aqe_tables.build_reading_entry(site_reading))
+            site_records = [aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings]
+
+            # Commit the records to the database
+            self.add_records(session, site_records)
+            session.commit()
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
