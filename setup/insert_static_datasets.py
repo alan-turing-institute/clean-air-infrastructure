@@ -95,10 +95,11 @@ def build_docker_image(image_name, dockerfile):
     return image
 
 
-def run_container(image_name, mounts):
+def run_container(image_name, verbosity, mounts):
     """Run the job, parsing log messages and re-logging them"""
     client = docker.DockerClient()
-    container = client.containers.run(image_name, detach=True, remove=True, stderr=True, stdout=True, volumes=mounts)
+    container = client.containers.run(image_name, verbosity, volumes=mounts, detach=True, remove=True,
+                                      stderr=True, stdout=True)
     for line in container.logs(stream=True):
         line = line.decode("utf-8")
         try:
@@ -111,7 +112,7 @@ def run_container(image_name, mounts):
         getattr(logging, lvl.lower())(msg.strip())
 
 
-def upload_static_data(image_name, dataset, secrets_directory, data_directory):
+def upload_static_data(image_name, verbosity, dataset, secrets_directory, data_directory):
     """Upload static data to the database"""
     # Run docker image to upload the data
     logging.info("Preparing to upload %s data...", emphasised(dataset))
@@ -141,18 +142,12 @@ def upload_static_data(image_name, dataset, secrets_directory, data_directory):
         raise ValueError("Docker image {} could not be found!".format(image_name))
 
     # Run the job
-    run_container(image_name, mounts)
+    run_container(image_name, verbosity, mounts)
     logging.info("Finished uploading %s data", emphasised(dataset))
 
 
 def main():
     """Insert static datasets into the database"""
-    # Set up logging
-    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-    logging.getLogger("adal-python").setLevel(logging.WARNING)
-    logging.getLogger("azure").setLevel(logging.WARNING)
-
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Download static datasets")
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
@@ -163,7 +158,18 @@ def main():
                         help="Name of the storage container where the Terraform backend will be stored")
     parser.add_argument("-l", '--local-secret', type=str, default=None,
                         help="Optionally pass the full path of a database secret file")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Increase verbosity by one step for each occurence")
     args = parser.parse_args()
+
+    # Construct verbosity argument
+    verbosity = "-" + ("v" * args.verbose) if args.verbose > 0 else ""
+
+    # Set up logging
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=max(20 - 10 * args.verbose, 10))
+    logging.getLogger("adal-python").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
 
     # Build local Docker images
     static_image = build_docker_image("static:upload", "upload_static_dataset.Dockerfile")
@@ -183,11 +189,11 @@ def main():
         for dataset in datasets:
             with tempfile.TemporaryDirectory() as data_directory:
                 download_blobs(block_blob_service, dataset, data_directory)
-                upload_static_data(static_image.tags[0], dataset, secrets_directory, data_directory)
+                upload_static_data(static_image.tags[0], verbosity, dataset, secrets_directory, data_directory)
 
         # Upload the rectgrid to the database
         logging.info("Preparing to upload %s data...", emphasised("rectgrid"))
-        run_container(rectgrid_image.tags[0], {secrets_directory: {"bind": "/secrets", "mode": "ro"}})
+        run_container(rectgrid_image.tags[0], verbosity, {secrets_directory: {"bind": "/secrets", "mode": "ro"}})
 
 
 if __name__ == "__main__":

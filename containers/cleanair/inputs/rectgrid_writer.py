@@ -3,7 +3,6 @@ Get data from the AQE network via the API
 """
 import numpy as np
 from sqlalchemy.schema import CreateSchema
-from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter, RectGrid, interest_point_table
 from ..loggers import get_logger, green
 
@@ -38,21 +37,6 @@ class RectGridWriter(DBWriter):
             longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
         )
 
-    def add_records(self, session, records):
-        """Commit records to the database"""
-        # Using add_all is faster but will fail if this data was already added
-        try:
-            self.logger.debug("Attempting to add all records.")
-            session.add_all(records)
-        # Using merge takes approximately twice as long, but avoids duplicate key issues
-        except IntegrityError as error:
-            if "psycopg2.errors.UniqueViolation" not in str(error):
-                raise
-            self.logger.debug("Duplicate records found - attempting to merge.")
-            session.rollback()
-            for record in records:
-                session.merge(record)
-
     def update_remote_tables(self):
         """Upload grid data"""
         self.logger.info("Calculating static %s positions...", green("rectgrid"))
@@ -74,16 +58,14 @@ class RectGridWriter(DBWriter):
         self.logger.info("Starting static %s upload...", green("rectgrid"))
         with self.dbcnxn.open_session() as session:
             # Update the interest_points table and retrieve point IDs
-            self.logger.info("Adding %i new interest points...", len(grid_cells))
+            self.logger.info("Adding %i interest points...", len(grid_cells))
             interest_points = [interest_point_table.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
-            # session.add_all(interest_points)
-            self.add_records(session, interest_points)
-            session.flush()
+            self.add_records(session, interest_points, flush=True)
             for grid_cell, interest_point in zip(grid_cells, interest_points):
-                grid_cell["point_id"] = str(interest_point.point_id)
+                grid_cell["point_id"] = interest_point.point_id  # this will be None if the record was not inserted
 
             # Commit the grid cell records to the database
-            self.logger.info("Adding cells to %s table...", green("rectgrid"))
-            grid_records = [RectGrid(**grid_cell) for grid_cell in grid_cells]
+            grid_records = [RectGrid(**grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
+            self.logger.info("Adding %i new cells to %s table...", len(grid_records), green("rectgrid"))
             self.add_records(session, grid_records)
             session.commit()
