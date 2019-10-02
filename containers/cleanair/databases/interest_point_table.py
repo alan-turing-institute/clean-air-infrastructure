@@ -21,6 +21,7 @@ class InterestPoint(Base):
     ip_aqesite = relationship("AQESite", back_populates="aqe_interest_points")
     ip_laqnsite = relationship("LAQNSite", back_populates="laqn_interest_points")
     ip_rectgrid = relationship("RectGrid", back_populates="rectgrid_interest_points")
+    # ip_ukmap_feature = relationship("features_UKMAP", back_populates="ukmap_features")
 
     def __repr__(self):
         return "<InterestPoint(" + ", ".join([

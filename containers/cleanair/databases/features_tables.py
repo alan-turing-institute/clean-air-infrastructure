@@ -14,47 +14,65 @@ class features_UKMAP(Base):
     __tablename__ = "features_ukmap"
     __table_args__ = {'schema': 'buffers'}
 
-    point_id = Column(UUID,  primary_key=True, nullable=False)
-    source = Column(String(7))
+    point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), primary_key=True, nullable=False)
+    geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
 
-    # geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    # geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    # geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    # geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    # geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    # ukmap_features = relationship("InterestPoint", back_populates="ip_ukmap_feature")
 
-    total_museum_area_500 = Column(Float(), nullable = False)
-    total_hospital_area_500 = Column(Float(), nullable = False)
-    total_grass_area_500 = Column(Float(), nullable = False)
-    total_park_area500 = Column(Float(), nullable = False)
-    total_water_area_500 = Column(Float(), nullable = False)
-    total_flat_area_500 = Column(Float(), nullable = False)
-    max_building_height_500 = Column(Float(), nullable = False)
-    total_museum_area_200 = Column(Float(), nullable = False)
-    total_hospital_area_200 = Column(Float(), nullable = False)
-    total_grass_area_200 = Column(Float(), nullable = False)
-    total_park_area200 = Column(Float(), nullable = False)
-    total_water_area_200 = Column(Float(), nullable = False)
-    total_flat_area_200 = Column(Float(), nullable = False)
-    max_building_height_200 = Column(Float(), nullable = False)
-    total_museum_area_1000 = Column(Float(), nullable = False)
-    total_hospital_area_1000 = Column(Float(), nullable = False)
-    total_grass_area_1000 = Column(Float(), nullable = False)
-    total_park_area1000 = Column(Float(), nullable = False)
-    total_water_area_1000 = Column(Float(), nullable = False)
-    total_flat_area_1000 = Column(Float(), nullable = False)
-    max_building_height_1000 = Column(Float(), nullable = False)
-    total_museum_area_100 = Column(Float(), nullable = False)
-    total_hospital_area_100 = Column(Float(), nullable = False)
-    total_grass_area_100 = Column(Float(), nullable = False)
-    total_park_area100 = Column(Float(), nullable = False)
-    total_water_area_100 = Column(Float(), nullable = False)
-    total_flat_area_100 = Column(Float(), nullable = False)
-    max_building_height_100 = Column(Float(), nullable = False)
-    total_museum_area_10 = Column(Float(), nullable = False)
-    total_hospital_area_10 = Column(Float(), nullable = False)
-    total_grass_area_10 = Column(Float(), nullable = False)
-    total_park_area10 = Column(Float(), nullable = False)
-    total_water_area_10 = Column(Float(), nullable = False)
-    total_flat_area_10 = Column(Float(), nullable = False)
-    max_building_height_10 = Column(Float(), nullable = False)
+    # # geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    # # geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    # # geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    # # geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    # # geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+
+    # total_museum_area_500 = Column(Float(), nullable = False)
+    # total_hospital_area_500 = Column(Float(), nullable = False)
+    # total_grass_area_500 = Column(Float(), nullable = False)
+    # total_park_area500 = Column(Float(), nullable = False)
+    # total_water_area_500 = Column(Float(), nullable = False)
+    # total_flat_area_500 = Column(Float(), nullable = False)
+    # max_building_height_500 = Column(Float(), nullable = False)
+    # total_museum_area_200 = Column(Float(), nullable = False)
+    # total_hospital_area_200 = Column(Float(), nullable = False)
+    # total_grass_area_200 = Column(Float(), nullable = False)
+    # total_park_area200 = Column(Float(), nullable = False)
+    # total_water_area_200 = Column(Float(), nullable = False)
+    # total_flat_area_200 = Column(Float(), nullable = False)
+    # max_building_height_200 = Column(Float(), nullable = False)
+    # total_museum_area_1000 = Column(Float(), nullable = False)
+    # total_hospital_area_1000 = Column(Float(), nullable = False)
+    # total_grass_area_1000 = Column(Float(), nullable = False)
+    # total_park_area1000 = Column(Float(), nullable = False)
+    # total_water_area_1000 = Column(Float(), nullable = False)
+    # total_flat_area_1000 = Column(Float(), nullable = False)
+    # max_building_height_1000 = Column(Float(), nullable = False)
+    # total_museum_area_100 = Column(Float(), nullable = False)
+    # total_hospital_area_100 = Column(Float(), nullable = False)
+    # total_grass_area_100 = Column(Float(), nullable = False)
+    # total_park_area100 = Column(Float(), nullable = False)
+    # total_water_area_100 = Column(Float(), nullable = False)
+    # total_flat_area_100 = Column(Float(), nullable = False)
+    # max_building_height_100 = Column(Float(), nullable = False)
+    # total_museum_area_10 = Column(Float(), nullable = False)
+    # total_hospital_area_10 = Column(Float(), nullable = False)
+    # total_grass_area_10 = Column(Float(), nullable = False)
+    # total_park_area10 = Column(Float(), nullable = False)
+    # total_water_area_10 = Column(Float(), nullable = False)
+    # total_flat_area_10 = Column(Float(), nullable = False)
+    # max_building_height_10 = Column(Float(), nullable = False)
+
+    def __repr__(self):
+        return "<features_UKMAP(" + ", ".join([
+            "point_id='{}'".format(self.point_id),
+            "geom_1000='{}'".format(self.geom_1000),
+            ])
+
+    @staticmethod
+    def build_entry(reading_tuple):
+        """
+        Create an AQEReading entry, replacing empty strings with None
+        """
+
+        # Construct the record and return it
+        return features_UKMAP(point_id=str(reading_tuple[0]),
+                              geom_1000=reading_tuple[1])

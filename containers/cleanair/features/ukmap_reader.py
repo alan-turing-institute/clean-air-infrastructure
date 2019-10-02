@@ -6,9 +6,11 @@ import sqlalchemy
 from sqlalchemy import func, and_, or_, cast, Float, insert
 import pandas as pd
 from dateutil import rrule
-from ..databases import DBReader, features_tables, ukmap_table
+from ..databases import DBReader, features_tables, ukmap_table, interest_point_table
 from geoalchemy2 import Geometry
-from geoalchemy2.functions import GenericFunction
+from geoalchemy2.functions import GenericFunction, ST_DWithin, ST_Buffer, ST_Intersection, ST_Union, ST_ForceCollection, ST_Force2D
+# from geoalchemy2 import func
+# from geoalchemy2 import func import ST_DWithin
 
 
 class ST_Collect(GenericFunction):
@@ -29,6 +31,10 @@ class UKMapReader(DBReader):
 
         # laqn_tables.LAQNSite
 
+        self.features = {
+            "total_museum_area": {"landuse": "Museum"},
+        }
+
 
 
 
@@ -43,6 +49,48 @@ class UKMapReader(DBReader):
                        [('feature_type',), ('Water',), None],
                        [('feature_type', 'feature_type'), ('Vegetated', 'Water'), or_]
                       ]
+
+    def calculate_overlap(self, q_interest_points, q_ukmap, distance):
+        with self.dbcnxn.open_session() as session:
+            # # Outer join of queries, resulting in N*M records
+            # _query = session.query(q_interest_points.subquery(), q_ukmap.subquery())
+            # # Keep only those that are within <distance> of one another
+            # _query = _query.filter(ST_DWithin(ukmap_table.UKMap.geom, interest_point_table.InterestPoint.location, distance))
+
+            # Outer join of queries, resulting in N*M records
+            query_closeby = session.query(q_interest_points.subquery(), q_ukmap.subquery())
+            # Keep only those that are within <distance> of one another
+            query_closeby = query_closeby.filter(ST_DWithin(ukmap_table.UKMap.geom, interest_point_table.InterestPoint.location, distance))
+
+            # Construct the intersection
+            # _query = session.query(query_closeby.subquery())
+
+            # print(query_closeby.subquery().c)
+            # ['%(140662564345552 anon)s.source', '%(140662564345552 anon)s.location', '%(140662564345552 anon)s.point_id', '%(140662564345552 anon)s.geographic_type_number', '%(140662564345552 anon)s.date_of_feature_edit', '%(140662564345552 anon)s.feature_type', '%(140662564345552 anon)s.landuse', '%(140662564345552 anon)s.postcode', '%(140662564345552 anon)s.height_of_base_of_building', '%(140662564345552 anon)s.calculated_height_of_building', '%(140662564345552 anon)s.geom_length', '%(140662564345552 anon)s.geom_area', '%(140662564345552 anon)s.geom']
+
+            sq = query_closeby.limit(10).subquery()
+            query_overlap = session.query(sq.c.point_id,
+                ST_ForceCollection(
+                    ST_Union(
+                        ST_Intersection(ST_Buffer(sq.c.location, distance), ST_Force2D(sq.c.geom))
+                    )
+                )
+            ).group_by(sq.c.point_id)
+        return query_overlap
+
+
+    def iterate_features(self, boundary_geom):
+        for feature_name, feature_dict in self.features.items():
+            with self.dbcnxn.open_session() as session:
+                print("Working on", feature_name)
+                _query = session.query(ukmap_table.UKMap).filter(ukmap_table.UKMap.geom.ST_Within(boundary_geom))
+                for column, value in feature_dict.items():
+                    print("  column:", column, "value:", value)
+                    _query = _query.filter(getattr(ukmap_table.UKMap, column) == value)
+            yield _query
+
+        # _query = self.query_interest_points(boundary_geom, include_sources, exclude_point_ids)
+        # return _query
 
 
     def global_filter(self):
@@ -59,7 +107,8 @@ class UKMapReader(DBReader):
     @property
     def feature_interest_points(self):
         with self.dbcnxn.open_session() as session:
-            return [i[0] for i in session.query(features_tables.features_UKMAP.point_id).all()]
+            entries = [i[0] for i in session.query(features_tables.features_UKMAP.point_id).all()]
+        return entries
 
     @staticmethod
     def create_filter(table, filtop):

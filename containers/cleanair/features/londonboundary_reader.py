@@ -18,7 +18,7 @@ class LondonBoundaryReader(DBReader):
         """
         Return the convex hull of the London Boundary as a query object
         """
-        with self.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(londonboundary_table.LondonBoundary.geom)))
         return hull
 
@@ -26,6 +26,6 @@ class LondonBoundaryReader(DBReader):
         """
         Return all rows from the database table as an sql query object
         """
-        with self.open_session() as session:
+        with self.dbcnxn.open_session() as session:
             rows = session.query(londonboundary_table.LondonBoundary)
         return rows
