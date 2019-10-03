@@ -68,6 +68,7 @@ class Connector():
         if not self.__engine:
             self.__engine = create_engine(
                 "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info),
+                # "postgresql://{username}:{password}@{host}:{port}/{db_name}?keepalives=1&keepalives_idle=10".format(**self.connection_info),
                 pool_pre_ping=True)
             self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
