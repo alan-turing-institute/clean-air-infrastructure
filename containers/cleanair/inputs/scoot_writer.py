@@ -10,7 +10,8 @@ from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas
-from ..databases import DBWriter, scoot_tables
+from ..databases import DBWriter
+from ..databases.tables import ScootReading
 from ..loggers import get_logger, green
 from ..mixins import DateRangeMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
@@ -44,7 +45,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
     def request_site_entries(self):
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:
-            scootdetectors = Table("scootdetectors", scoot_tables.ScootReading.metadata, schema="datasources",
+            scootdetectors = Table("scootdetectors", ScootReading.metadata, schema="datasources",
                                    autoload=True, autoload_with=self.dbcnxn.engine)
             detectors = sorted([s[0] for s in session.query(scootdetectors.c.detector_n).distinct()])
         return detectors
@@ -168,7 +169,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
             # Add readings to database
             start_session = time.time()
-            site_records = [scoot_tables.ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
+            site_records = [ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
             self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
 
             # The following database operations can be slow. However, with the switch to hourly data they are not
@@ -190,5 +191,5 @@ class ScootWriter(DateRangeMixin, DBWriter):
         # Summarise updates
         self.logger.info("Committed %s records to table %s in %s minutes",
                          green(n_records),
-                         green(scoot_tables.ScootReading.__tablename__),
+                         green(ScootReading.__tablename__),
                          green("{:.2f}".format((time.time() - start_update) / 60.)))

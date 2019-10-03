@@ -3,7 +3,8 @@ UKMap Feature extraction
 """
 import time
 from sqlalchemy import func, or_
-from ..databases import features_tables, interest_point_table, londonboundary_table, ukmap_table, DBWriter
+from ..databases import DBWriter
+from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersections
 from ..loggers import duration, green
 
 
@@ -30,24 +31,24 @@ class FeatureExtractor(DBWriter):
 
     def query_london_boundary(self):
         with self.dbcnxn.open_session() as session:
-            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(londonboundary_table.LondonBoundary.geom)))
+            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
         return hull
 
     def query_sensor_locations(self, include_sources=None, exclude_point_ids=None):
         boundary_geom = self.query_london_boundary()
         with self.dbcnxn.open_session() as session:
-            _query = session.query(interest_point_table.InterestPoint).filter(interest_point_table.InterestPoint.location.ST_Within(boundary_geom))
+            _query = session.query(InterestPoint).filter(InterestPoint.location.ST_Within(boundary_geom))
             if include_sources:
-                _query = _query.filter(interest_point_table.InterestPoint.source.in_(include_sources))
+                _query = _query.filter(InterestPoint.source.in_(include_sources))
             if exclude_point_ids:
-                _query = _query.filter(interest_point_table.InterestPoint.point_id.notin_(exclude_point_ids))
+                _query = _query.filter(InterestPoint.point_id.notin_(exclude_point_ids))
         return _query
 
     def query_ukmap_features(self, feature_dict):
         with self.dbcnxn.open_session() as session:
-            q_ukmap = session.query(ukmap_table.UKMap.geom, ukmap_table.UKMap.landuse, ukmap_table.UKMap.feature_type)
+            q_ukmap = session.query(UKMap.geom, UKMap.landuse, UKMap.feature_type)
             for column, values in feature_dict.items():
-                q_ukmap = q_ukmap.filter(or_([getattr(ukmap_table.UKMap, column) == value for value in values]))
+                q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_ukmap
 
     def query_sensor_ukmap_intersections(self, q_interest_points, q_ukmap):
@@ -66,6 +67,9 @@ class FeatureExtractor(DBWriter):
 
         # Return the overall query
         return q_intersections
+
+    def update_remote_tables(self):
+        self.process_ukmap()
 
     def process_ukmap(self):
         """For each sensor location, for each feature, extract the UK map geometry for that feature in each of the buffer radii"""
@@ -86,12 +90,12 @@ class FeatureExtractor(DBWriter):
 
             # Convert the query output into database records and merge these into the existing table
             with self.dbcnxn.open_session() as session:
-                site_records = list(filter(None, [features_tables.UKMapIntersections.build_entry(feature_name, result) for result in results]))
+                site_records = list(filter(None, [UKMapIntersections.build_entry(feature_name, result) for result in results]))
                 if site_records:
                     self.add_records(session, site_records)
                     self.logger.info("Committing %s records to database table %s",
                                     green(len(site_records)),
-                                    green(features_tables.UKMapIntersections.__tablename__))
+                                    green(UKMapIntersections.__tablename__))
                     session.commit()
 
 

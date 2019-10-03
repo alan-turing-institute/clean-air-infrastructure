@@ -6,7 +6,8 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from ..databases import DBWriter, InterestPoint
+from ..databases import DBWriter
+from ..databases.tables import InterestPoint
 from ..loggers import get_logger, green
 
 

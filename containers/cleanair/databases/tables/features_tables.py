@@ -1,12 +1,11 @@
 """
 Tables for intersection between datasource and interest points
 """
-
 from sqlalchemy import Column, ForeignKey, String, Integer, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
-from . import Base
+from ..base import Base
 
 
 class UKMapIntersections(Base):
@@ -15,7 +14,7 @@ class UKMapIntersections(Base):
     __table_args__ = {'schema': 'buffers'}
 
     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), primary_key=True, nullable=False)
-    feature_type = Column(String(20), nullable=False)
+    feature_type = Column(String(20), primary_key=True, nullable=False)
     geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))

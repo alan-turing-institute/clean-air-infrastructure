@@ -30,8 +30,8 @@ def main():
     try:
         feature_extractor = FeatureExtractor(**kwargs)
 
-        # Calculate and store UKMap features
-        feature_extractor.process_ukmap()
+        # Update feature tables on the database
+        feature_extractor.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

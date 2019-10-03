@@ -2,7 +2,7 @@
 Table for HexGrid static data
 """
 from sqlalchemy.ext.declarative import DeferredReflection
-from .base import Base
+from ..base import Base
 
 
 class HexGrid(DeferredReflection, Base):

@@ -2,7 +2,7 @@
 Table for UKMap static data
 """
 from sqlalchemy.ext.declarative import DeferredReflection
-from .base import Base
+from ..base import Base
 
 
 class UKMap(DeferredReflection, Base):

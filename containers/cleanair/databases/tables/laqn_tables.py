@@ -5,7 +5,7 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from .base import Base
+from ..base import Base
 
 
 class LAQNSite(Base):
@@ -33,6 +33,21 @@ class LAQNSite(Base):
             "DateClosed='{}'".format(self.DateClosed),
             ])
 
+    @staticmethod
+    def build_entry(site_dict):
+        """
+        Create an LAQNSite entry, replacing empty strings with None
+        """
+        # Replace empty strings
+        site_dict = {k: (v if v else None) for k, v in site_dict.items()}
+
+        # Construct the record and return it
+        return LAQNSite(SiteCode=site_dict["@SiteCode"],
+                        SiteType=site_dict["@SiteType"],
+                        DateOpened=site_dict["@DateOpened"],
+                        DateClosed=site_dict["@DateClosed"],
+                        point_id=site_dict["point_id"])
+
 
 class LAQNReading(Base):
     """Table of LAQN readings"""
@@ -56,32 +71,17 @@ class LAQNReading(Base):
             "Value='{}'".format(self.Value),
             ])
 
+    @staticmethod
+    def build_entry(reading_dict):
+        """
+        Create an LAQNReading entry, replacing empty strings with None
+        """
+        # Replace empty strings
+        reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
-def build_site_entry(site_dict):
-    """
-    Create an LAQNSite entry, replacing empty strings with None
-    """
-    # Replace empty strings
-    site_dict = {k: (v if v else None) for k, v in site_dict.items()}
-
-    # Construct the record and return it
-    return LAQNSite(SiteCode=site_dict["@SiteCode"],
-                    SiteType=site_dict["@SiteType"],
-                    DateOpened=site_dict["@DateOpened"],
-                    DateClosed=site_dict["@DateClosed"],
-                    point_id=site_dict["point_id"])
-
-
-def build_reading_entry(reading_dict):
-    """
-    Create an LAQNReading entry, replacing empty strings with None
-    """
-    # Replace empty strings
-    reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
-
-    # Construct the record and return it
-    return LAQNReading(SiteCode=reading_dict["SiteCode"],
-                       SpeciesCode=reading_dict["@SpeciesCode"],
-                       MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                       MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                       Value=reading_dict["@Value"])
+        # Construct the record and return it
+        return LAQNReading(SiteCode=reading_dict["SiteCode"],
+                        SpeciesCode=reading_dict["@SpeciesCode"],
+                        MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                        MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                        Value=reading_dict["@Value"])
