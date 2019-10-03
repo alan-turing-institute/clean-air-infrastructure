@@ -54,36 +54,36 @@ class UKMapReader(DBReader):
                        [('feature_type', 'feature_type'), ('Vegetated', 'Water'), or_]
                       ]
 
-    def calculate_intersections(self, q_interest_points, q_ukmap):
-        with self.dbcnxn.open_session() as session:
-            # Outer join of queries: resulting in Npoints * Ngeometries records ()
-            q_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()) # -> 105247 rows in 10s (after previous calls)
-            sq_all = q_all.subquery()
-            print("q_all:", sq_all.c)
-            # q_all: ['%(139971669124624 anon)s.source', '%(139971669124624 anon)s.location', '%(139971669124624 anon)s.point_id', '%(139971669124624 anon)s.geom', '%(139971669124624 anon)s.landuse', '%(139971669124624 anon)s.feature_type']
+    # def calculate_intersections(self, q_interest_points, q_ukmap):
+    #     with self.dbcnxn.open_session() as session:
+    #         # Outer join of queries: resulting in Npoints * Ngeometries records ()
+    #         q_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()) # -> 105247 rows in 10s (after previous calls)
+    #         sq_all = q_all.subquery()
+    #         print("q_all:", sq_all.c)
+    #         # q_all: ['%(139971669124624 anon)s.source', '%(139971669124624 anon)s.location', '%(139971669124624 anon)s.point_id', '%(139971669124624 anon)s.geom', '%(139971669124624 anon)s.landuse', '%(139971669124624 anon)s.feature_type']
 
-            # Group them by interest point: resulting in Npoints records
-            q_grouped = session.query(sq_all.c.point_id, func.max(sq_all.c.location).label("location"), ST_Union(ST_Force2D(sq_all.c.geom)).label("geoms")).group_by(sq_all.c.point_id) # -> 41 rows in 215s (after previous calls)
-            sq_grouped = q_grouped.subquery()
-            # print("q_grouped:", sq_grouped.c)
-            # q_grouped: ['%(139971669197520 anon)s.point_id', 'anon_1.location', 'anon_1.geoms']
+    #         # Group them by interest point: resulting in Npoints records
+    #         q_grouped = session.query(sq_all.c.point_id, func.max(sq_all.c.location).label("location"), ST_Union(ST_Force2D(sq_all.c.geom)).label("geoms")).group_by(sq_all.c.point_id) # -> 41 rows in 215s (after previous calls)
+    #         sq_grouped = q_grouped.subquery()
+    #         # print("q_grouped:", sq_grouped.c)
+    #         # q_grouped: ['%(139971669197520 anon)s.point_id', 'anon_1.location', 'anon_1.geoms']
 
-            # # Calculate each of the buffers: resulting in Npoints records
-            # q_overlap = session.query(sq_grouped.c.point_id, *[ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_grouped.c.location), distance)), sq_grouped.c.geoms)) for distance in self.buffer_sizes]) # -> 41 rows in 65s (after previous calls)
-            # print("q_overlap:", q_overlap.subquery().c)
-            # # q_overlap: ['%(140660624295824 anon)s.point_id', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"']
+    #         # # Calculate each of the buffers: resulting in Npoints records
+    #         # q_overlap = session.query(sq_grouped.c.point_id, *[ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_grouped.c.location), distance)), sq_grouped.c.geoms)) for distance in self.buffer_sizes]) # -> 41 rows in 65s (after previous calls)
+    #         # print("q_overlap:", q_overlap.subquery().c)
+    #         # # q_overlap: ['%(140660624295824 anon)s.point_id', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"']
 
-            # Calculate the largest buffer: resulting in Npoints records
-            q_largest_buffer = session.query(sq_grouped.c.point_id, sq_grouped.c.location, ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_grouped.c.location), max(self.buffer_sizes))), sq_grouped.c.geoms)).label("largest_buffer")) # -> 41 rows in 65s (after previous calls)
-            sq_largest_buffer = q_largest_buffer.subquery()
-            # print("q_largest_buffer:", sq_largest_buffer.c)
-            # q_largest_buffer: ['%(140660624295824 anon)s.point_id', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"']
+    #         # Calculate the largest buffer: resulting in Npoints records
+    #         q_largest_buffer = session.query(sq_grouped.c.point_id, sq_grouped.c.location, ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_grouped.c.location), max(self.buffer_sizes))), sq_grouped.c.geoms)).label("largest_buffer")) # -> 41 rows in 65s (after previous calls)
+    #         sq_largest_buffer = q_largest_buffer.subquery()
+    #         # print("q_largest_buffer:", sq_largest_buffer.c)
+    #         # q_largest_buffer: ['%(140660624295824 anon)s.point_id', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"', 'anon_1."ST_ForceCollection_1"']
 
-            # Calculate each of the buffers: resulting in Npoints records
-            q_intersections = session.query(sq_largest_buffer.c.point_id, *[ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_largest_buffer.c.location), distance)), sq_largest_buffer.c.largest_buffer)) for distance in self.buffer_sizes]) # -> 41 rows in 65s (after previous calls)
-            # print("q_intersections:", q_intersections.subquery().c)
+    #         # Calculate each of the buffers: resulting in Npoints records
+    #         q_intersections = session.query(sq_largest_buffer.c.point_id, *[ST_ForceCollection(ST_Intersection(func.Geometry(ST_Buffer(func.Geography(sq_largest_buffer.c.location), distance)), sq_largest_buffer.c.largest_buffer)) for distance in self.buffer_sizes]) # -> 41 rows in 65s (after previous calls)
+    #         # print("q_intersections:", q_intersections.subquery().c)
 
-        return q_intersections
+    #     return q_intersections
 
     # --sysctl net.ipv4.tcp_keepalive_time=7200
 
