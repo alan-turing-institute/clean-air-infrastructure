@@ -43,13 +43,12 @@ class FeatureExtractor(DBWriter):
                 _query = _query.filter(interest_point_table.InterestPoint.point_id.notin_(exclude_point_ids))
         return _query
 
-    def iterate_ukmap_features(self):
-        for feature_name, feature_dict in self.ukmap_features.items():
-            with self.dbcnxn.open_session() as session:
-                q_ukmap = session.query(ukmap_table.UKMap.geom, ukmap_table.UKMap.landuse, ukmap_table.UKMap.feature_type)
-                for column, values in feature_dict.items():
-                    q_ukmap = q_ukmap.filter(or_([getattr(ukmap_table.UKMap, column) == value for value in values]))
-            yield (feature_name, q_ukmap)
+    def query_ukmap_features(self, feature_dict):
+        with self.dbcnxn.open_session() as session:
+            q_ukmap = session.query(ukmap_table.UKMap.geom, ukmap_table.UKMap.landuse, ukmap_table.UKMap.feature_type)
+            for column, values in feature_dict.items():
+                q_ukmap = q_ukmap.filter(or_([getattr(ukmap_table.UKMap, column) == value for value in values]))
+        return q_ukmap
 
     def query_sensor_ukmap_intersections(self, q_interest_points, q_ukmap):
         with self.dbcnxn.open_session() as session:
@@ -70,14 +69,18 @@ class FeatureExtractor(DBWriter):
 
     def process_ukmap(self):
         """For each sensor location, for each feature, extract the UK map geometry for that feature in each of the buffer radii"""
-        # Get list of sensors
+        # Get all sensors of interest
         q_sensors = self.query_sensor_locations(include_sources=self.sources)
 
         # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_name, q_ukmap in self.iterate_ukmap_features():
-            # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
+        for feature_name, feature_dict in self.ukmap_features.items():
             start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_name))
+
+            # Get UKMap geometries for this feature
+            q_ukmap = self.query_ukmap_features(feature_dict)
+
+            # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             results = self.query_sensor_ukmap_intersections(q_sensors, q_ukmap).all()
             self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
 
