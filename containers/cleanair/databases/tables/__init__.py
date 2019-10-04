@@ -2,7 +2,7 @@
 Module for interacting with tables in the Azure Postgres database
 """
 from .aqe_tables import AQESite, AQEReading
-from .features_tables import UKMapIntersections
+from .features_tables import UKMapIntersectionGeoms, UKMapIntersectionValues
 from .hexgrid_table import HexGrid
 from .interest_point_table import InterestPoint
 from .laqn_tables import LAQNSite, LAQNReading

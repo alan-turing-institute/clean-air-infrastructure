@@ -4,7 +4,7 @@ UKMap Feature extraction
 import time
 from sqlalchemy import func, or_, between, cast, Integer
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersections
+from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersectionGeoms, UKMapIntersectionValues
 from ..loggers import duration, green
 
 
@@ -55,7 +55,7 @@ class FeatureExtractor(DBWriter):
                 q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_ukmap
 
-    def query_sensor_ukmap_feature_intersections(self, q_interest_points, q_ukmap):
+    def query_feature_intersection_geoms(self, q_interest_points, q_ukmap):
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: resulting in Npoints * Ngeometries records ()
             sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery() # -> 105247 rows in 10s (after previous calls)
@@ -72,7 +72,7 @@ class FeatureExtractor(DBWriter):
         # Return the overall query
         return q_intersections
 
-    def query_sensor_ukmap_heights(self, q_interest_points, q_ukmap):
+    def query_feature_intersection_values(self, q_interest_points, q_ukmap):
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: resulting in Npoints * Ngeometries records ()
             sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
@@ -110,35 +110,24 @@ class FeatureExtractor(DBWriter):
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             if feature_name == "building_height":
-                # results = self.query_sensor_ukmap_heights(q_sensors, q_ukmap).all()
-                print("query starting")
-                try:
-                    x = self.query_sensor_ukmap_heights(q_sensors, q_ukmap)
-                    print("\n\n\n", x, "\n\n\n")
-                    # results = x.count()
-                    # self.logger.info("Constructed %s records in %s", green(results), green(duration(start, time.time())))
-                    results = x.all()
-                    print(results[:5])
-                    self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
-                except Exception as e:
-                    print("Error:", str(e))
-                    raise
-                print("query ended")
-                raise ValueError("end")
+                results = self.query_feature_intersection_values(q_sensors, q_ukmap).all()
+                self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
+                site_records = list(filter(None, [UKMapIntersectionValues.build_entry(feature_name, result) for result in results]))
             else:
-                results = self.query_sensor_ukmap_feature_intersections(q_sensors, q_ukmap).all()
+                results = self.query_feature_intersection_geoms(q_sensors, q_ukmap).all()
+                self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
+                site_records = list(filter(None, [UKMapIntersectionGeoms.build_entry(feature_name, result) for result in results]))
 
-            # self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
 
-            # # Convert the query output into database records and merge these into the existing table
-            # with self.dbcnxn.open_session() as session:
-            #     site_records = list(filter(None, [UKMapIntersections.build_entry(feature_name, result) for result in results]))
-            #     if site_records:
-            #         self.add_records(session, site_records)
-            #         self.logger.info("Committing %s records to database table %s",
-            #                         green(len(site_records)),
-            #                         green(UKMapIntersections.__tablename__))
-            #         session.commit()
+            # Convert the query output into database records and merge these into the existing table
+            with self.dbcnxn.open_session() as session:
+
+                if site_records:
+                    self.add_records(session, site_records)
+                    self.logger.info("Committing %s records to database table %s",
+                                    green(len(site_records)),
+                                    green(site_records[0].__tablename__))
+                    session.commit()
 
     def update_remote_tables(self):
         self.process_ukmap()
