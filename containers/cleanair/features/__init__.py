@@ -1,8 +1,8 @@
 """
 Module for feature extraction
 """
-from .feature_extractor import FeatureExtractor
+from .ukmap_extractor import UKMapExtractor
 
 __all__ = [
-    "FeatureExtractor",
+    "UKMapExtractor",
 ]

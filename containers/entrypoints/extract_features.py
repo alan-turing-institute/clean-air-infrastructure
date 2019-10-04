@@ -4,7 +4,7 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import FeatureExtractor
+from cleanair.features import UKMapExtractor
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        feature_extractor = FeatureExtractor(**kwargs)
+        feature_extractor = UKMapExtractor(**kwargs)
 
         # Update feature tables on the database
         feature_extractor.update_remote_tables()
