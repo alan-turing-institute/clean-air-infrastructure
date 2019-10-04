@@ -82,14 +82,14 @@ az login
 Check which `Azure` subscriptions you have access to by running
 
 ```
-az account list --output table
+az account list --output table --refresh
 ```
 
 Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
 
 
 ```
-az account set --subscription "Azure project allocation for LRF Clean Air project"
+az account set --subscription "CleanAir"
 ```
 
 
@@ -109,7 +109,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```
-python setup/initialise_terraform.py <AWS_KEY_ID> <AWS_KEY>
+python setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
