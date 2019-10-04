@@ -1,8 +1,8 @@
 """
 Module for feature extraction
 """
-from .ukmap_extractor import UKMapExtractor
+from .static_features import StaticFeatures
 
 __all__ = [
-    "UKMapExtractor",
+    "StaticFeatures",
 ]

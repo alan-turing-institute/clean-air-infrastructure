@@ -7,7 +7,7 @@ from ..base import Base
 
 class UKMap(DeferredReflection, Base):
     """Table of static UKMap data"""
-    __tablename__ = "ukmap"  #ukmap_test"
+    __tablename__ = "ukmap"  # ukmap_test
     __table_args__ = {'schema': 'datasources'}
 
     def __repr__(self):

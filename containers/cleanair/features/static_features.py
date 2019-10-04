@@ -8,7 +8,7 @@ from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapInters
 from ..loggers import duration, green
 
 
-class UKMapExtractor(DBWriter):
+class StaticFeatures(DBWriter):
     """Extract UKMap features which are near to sensor InterestPoints and inside London"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])

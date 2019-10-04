@@ -4,12 +4,12 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import UKMapExtractor
+from cleanair.features import StaticFeatures
 
 
 def main():
     """
-    Extract features
+    Extract static features
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get LAQN sensor data")
@@ -28,10 +28,10 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        feature_extractor = UKMapExtractor(**kwargs)
+        static_feature_extractor = StaticFeatures(**kwargs)
 
-        # Update feature tables on the database
-        feature_extractor.update_remote_tables()
+        # Extract static features into the appropriate tables on the database
+        static_feature_extractor.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
