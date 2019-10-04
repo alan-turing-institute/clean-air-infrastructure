@@ -9,7 +9,7 @@ from ..base import Base
 
 
 class UKMapIntersections(Base):
-    """Intersection between interest points and UKMap museums"""
+    """Intersection between interest points and UKMap geometries"""
     __tablename__ = "ukmap_intersections"
     __table_args__ = {'schema': 'buffers'}
 
@@ -45,23 +45,13 @@ class UKMapIntersections(Base):
                                   geom_100=reading_tuple[4],
                                   geom_10=reading_tuple[5])
 
-    # @staticmethod
-    # def build_entry(feature_type, reading_tuple):
-    #     """
-    #     Create an UKMapIntersections entry, replacing empty strings with None
-    #     """
-    #     # Construct the record and return it
-    #     return UKMapIntersections(point_id=str(reading_tuple[0]),
-    #                               feature_type=feature_type,
-    #                               geom=reading_tuple[1])
-
-
-# class UKMapMuseums(Base):
-#     """Intersection between interest points and UKMap museums"""
-#     __tablename__ = "ukmap_museums"
+# class UKMapValues(Base):
+#     """Intersection between interest points and UKMap geometries"""
+#     __tablename__ = "ukmap_intersections"
 #     __table_args__ = {'schema': 'buffers'}
 
 #     point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), primary_key=True, nullable=False)
+#     feature_type = Column(String(20), primary_key=True, nullable=False)
 #     geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
 #     geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
 #     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
@@ -69,28 +59,31 @@ class UKMapIntersections(Base):
 #     geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
 
 #     def __repr__(self):
-#         return "<UKMapMuseums(" + ", ".join([
-#             "point_id='{}'".format(self.point_id),
-#             "geom_1000='{}'".format(self.geom_1000),
-#             "geom_500='{}'".format(self.geom_500),
-#             "geom_200='{}'".format(self.geom_200),
-#             "geom_100='{}'".format(self.geom_100),
-#             "geom_10='{}'".format(self.geom_10),
+#         return "<UKMapValues(" + ", ".join([
+#                "point_id='{}'".format(self.point_id),
+#                "feature_type='{}'".format(self.feature_type),
+#                "geom_1000='{}'".format(self.geom_1000),
+#                "geom_500='{}'".format(self.geom_500),
+#                "geom_200='{}'".format(self.geom_200),
+#                "geom_100='{}'".format(self.geom_100),
+#                "geom_10='{}'".format(self.geom_10),
 #             ])
 
 #     @staticmethod
-#     def build_entry(reading_tuple):
+#     def build_entry(feature_type, reading_tuple):
 #         """
-#         Create an UKMapMuseums entry, replacing empty strings with None
+#         Create a UKMapValues entry and return it
 #         """
+#         return UKMapValues(point_id=str(reading_tuple[0]),
+#                                   feature_type=feature_type,
+#                                   geom_1000=reading_tuple[1],
+#                                   geom_500=reading_tuple[2],
+#                                   geom_200=reading_tuple[3],
+#                                   geom_100=reading_tuple[4],
+#                                   geom_10=reading_tuple[5])
 
-#         # Construct the record and return it
-#         return UKMapMuseums(point_id=str(reading_tuple[0]),
-#                             geom_1000=reading_tuple[1],
-#                             geom_500=reading_tuple[2],
-#                             geom_200=reading_tuple[3],
-#                             geom_100=reading_tuple[4],
-#                             geom_10=reading_tuple[5])
+
+
 
 
 
