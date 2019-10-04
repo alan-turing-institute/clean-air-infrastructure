@@ -8,7 +8,8 @@ from xml.dom import minidom
 import pandas
 import requests
 from ..mixins import DateRangeMixin, APIRequestMixin
-from ..databases import DBWriter, aqe_tables, interest_point_table
+from ..databases import DBWriter
+from ..databases.tables import AQESite, AQEReading, InterestPoint
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
@@ -99,10 +100,10 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
             for entry in site_entries:
-                entry["geometry"] = interest_point_table.build_ewkt(entry["Latitude"], entry["Longitude"])
+                entry["geometry"] = InterestPoint.build_ewkt(entry["Latitude"], entry["Longitude"])
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: interest_point_table.build_entry("aqe", geometry=s["geometry"])
+            unique_sites = {s["geometry"]: InterestPoint.build_entry("aqe", geometry=s["geometry"])
                             for s in site_entries}
 
             # Update the interest_points table and retrieve point IDs
@@ -119,10 +120,10 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Update the sites table and commit any changes
             self.logger.info("Updating site info database records")
             for site in site_entries:
-                session.merge(aqe_tables.build_site_entry(site))
+                session.merge(AQESite.build_entry(site))
             self.logger.info("Committing changes to database tables %s and %s",
-                             green(interest_point_table.InterestPoint.__tablename__),
-                             green(aqe_tables.AQESite.__tablename__))
+                             green(InterestPoint.__tablename__),
+                             green(AQESite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -132,13 +133,13 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         # Open a DB session
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
-            site_info_query = session.query(aqe_tables.AQESite)
+            site_info_query = session.query(AQESite)
             self.logger.info("Requesting readings from %s for %s sites",
                              green("aeat.com API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            site_records = [aqe_tables.build_reading_entry(site_reading) for site_reading in site_readings]
+            site_records = [AQEReading.build_entry(site_reading) for site_reading in site_readings]
 
             # Commit the records to the database
             self.add_records(session, site_records)
@@ -147,7 +148,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
-                             green(aqe_tables.AQEReading.__tablename__))
+                             green(AQEReading.__tablename__))
             session.commit()
         self.logger.info("Finished %s readings update", green("AQE"))
 

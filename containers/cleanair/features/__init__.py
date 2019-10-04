@@ -1,14 +1,8 @@
 """
 Module for feature extraction
 """
-from .hexgrid_reader import HexGridReader
-from .laqn_reader import LAQNReader
-from .londonboundary_reader import LondonBoundaryReader
-from .ukmap_reader import UKMapReader
+from .static_features import StaticFeatures
 
 __all__ = [
-    "HexGridReader",
-    "LAQNReader",
-    "LondonBoundaryReader",
-    "UKMapReader",
+    "StaticFeatures",
 ]

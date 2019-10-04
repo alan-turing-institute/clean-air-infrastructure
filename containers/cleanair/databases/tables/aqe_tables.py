@@ -5,7 +5,7 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
-from .base import Base
+from ..base import Base
 
 
 class AQESite(Base):
@@ -33,6 +33,20 @@ class AQESite(Base):
             "point_id='{}'".format(self.point_id),
             ])
 
+    @staticmethod
+    def build_entry(site_dict):
+        """Create an AQESite entry, replacing empty strings with None"""
+        # Replace empty strings
+        site_dict = {k: (v if v else None) for k, v in site_dict.items()}
+
+        # Construct the record and return it
+        return AQESite(SiteCode=site_dict["SiteCode"],
+                       SiteName=site_dict["SiteName"],
+                       SiteType=site_dict["SiteType"],
+                       DateOpened=site_dict["DateOpened"],
+                       DateClosed=site_dict["DateClosed"],
+                       point_id=site_dict["point_id"])
+
 
 class AQEReading(Base):
     """Table of AQE readings"""
@@ -56,31 +70,17 @@ class AQEReading(Base):
             "Value='{}'".format(self.Value),
             ])
 
+    @staticmethod
+    def build_entry(reading_dict):
+        """
+        Create an AQEReading entry, replacing empty strings with None
+        """
+        # Replace empty strings
+        reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
-def build_site_entry(site_dict):
-    """Create an AQESite entry, replacing empty strings with None"""
-    # Replace empty strings
-    site_dict = {k: (v if v else None) for k, v in site_dict.items()}
-
-    # Construct the record and return it
-    return AQESite(SiteCode=site_dict["SiteCode"],
-                   SiteName=site_dict["SiteName"],
-                   SiteType=site_dict["SiteType"],
-                   DateOpened=site_dict["DateOpened"],
-                   DateClosed=site_dict["DateClosed"],
-                   point_id=site_dict["point_id"])
-
-
-def build_reading_entry(reading_dict):
-    """
-    Create an AQEReading entry, replacing empty strings with None
-    """
-    # Replace empty strings
-    reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
-
-    # Construct the record and return it
-    return AQEReading(SiteCode=reading_dict["SiteCode"],
-                      SpeciesCode=reading_dict["SpeciesCode"],
-                      MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                      MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                      Value=reading_dict["Value"])
+        # Construct the record and return it
+        return AQEReading(SiteCode=reading_dict["SiteCode"],
+                          SpeciesCode=reading_dict["SpeciesCode"],
+                          MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                          MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                          Value=reading_dict["Value"])

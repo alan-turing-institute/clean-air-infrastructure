@@ -6,7 +6,8 @@ import glob
 import os
 import subprocess
 from sqlalchemy.exc import OperationalError
-from ..databases import DBWriter, InterestPoint
+from ..databases import DBWriter
+from ..databases.tables import InterestPoint
 from ..loggers import get_logger, green
 
 
@@ -271,6 +272,8 @@ class StaticWriter(DBWriter):
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON datasources.ukmap(landuse);""",
+                """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON datasources.ukmap(feature_type);""",
             ]
 
         for sql_command in sql_commands:

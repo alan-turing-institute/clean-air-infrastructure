@@ -3,8 +3,9 @@ LAQN
 """
 import datetime
 import requests
-from ..mixins import DateRangeMixin, APIRequestMixin
-from ..databases import DBWriter, laqn_tables, interest_point_table
+from ..mixins import APIRequestMixin, DateRangeMixin
+from ..databases import DBWriter
+from ..databases.tables import InterestPoint, LAQNSite, LAQNReading
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
@@ -83,10 +84,10 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["@Latitude"] and s["@Longitude"]]
             for entry in site_entries:
-                entry["geometry"] = interest_point_table.build_ewkt(entry["@Latitude"], entry["@Longitude"])
+                entry["geometry"] = InterestPoint.build_ewkt(entry["@Latitude"], entry["@Longitude"])
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: interest_point_table.build_entry("laqn", geometry=s["geometry"])
+            unique_sites = {s["geometry"]: InterestPoint.build_entry("laqn", geometry=s["geometry"])
                             for s in site_entries}
 
             # Update the interest_points table and retrieve point IDs
@@ -103,10 +104,10 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Build the site entries and commit
             self.logger.info("Updating site info database records")
             for site in site_entries:
-                session.merge(laqn_tables.build_site_entry(site))
+                session.merge(LAQNSite.build_entry(site))
             self.logger.info("Committing changes to database tables %s and %s",
-                             green(interest_point_table.InterestPoint.__tablename__),
-                             green(laqn_tables.LAQNSite.__tablename__))
+                             green(InterestPoint.__tablename__),
+                             green(LAQNSite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -116,13 +117,13 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         # Open a DB session
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
-            site_info_query = session.query(laqn_tables.LAQNSite)
+            site_info_query = session.query(LAQNSite)
             self.logger.info("Requesting readings from %s for %s sites",
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            site_records = [laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings]
+            site_records = [LAQNReading.build_entry(site_reading) for site_reading in site_readings]
 
             # Commit the records to the database
             self.add_records(session, site_records)
@@ -131,7 +132,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
-                             green(laqn_tables.LAQNReading.__tablename__))
+                             green(LAQNReading.__tablename__))
             session.commit()
 
         self.logger.info("Finished %s readings update", green("LAQN"))

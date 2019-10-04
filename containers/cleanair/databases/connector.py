@@ -4,6 +4,7 @@ Class for connecting to Azure databases
 from contextlib import contextmanager
 import json
 import os
+import time
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,6 +29,9 @@ class Connector():
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
+
+        # Avoid repeated internet tests
+        self.last_successful_connection = None
 
     def initialise_tables(self):
         """Ensure that all table connections exist"""
@@ -66,8 +70,10 @@ class Connector():
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
+            # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
+            connection_dict = {"options": "keepalives=1&keepalives_idle=10", **self.connection_info}
             self.__engine = create_engine(
-                "postgresql://{username}:{password}@{host}:{port}/{db_name}".format(**self.connection_info),
+                "postgresql://{username}:{password}@{host}:{port}/{db_name}?{options}".format(**connection_dict),
                 pool_pre_ping=True)
             self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
@@ -111,13 +117,18 @@ class Connector():
             # Close the session when finished
             session.close()
 
-    def check_internet_connection(self, url="http://www.google.com/", timeout=5):
+    def check_internet_connection(self, url="http://www.google.com/", timeout=5, interval=10):
         """
         Check that the internet is accessible
+        Repeated checks within `interval` seconds will be skipped
         """
-        try:
-            requests.get(url, timeout=timeout)
-            self.logger.info("Internet connection: %s", green("WORKING"))
-        except requests.ConnectionError:
-            self.logger.error("Internet connection: %s", red("NOT WORKING"))
-            raise IOError("Could not establish an internet connection")
+        if self.last_successful_connection and (time.time() - self.last_successful_connection) < interval:
+            self.logger.debug("Skipping internet connection check")
+        else:
+            try:
+                requests.get(url, timeout=timeout)
+                self.logger.info("Internet connection: %s", green("WORKING"))
+                self.last_successful_connection = time.time()
+            except requests.ConnectionError:
+                self.logger.error("Internet connection: %s", red("NOT WORKING"))
+                raise IOError("Could not establish an internet connection")
