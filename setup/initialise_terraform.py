@@ -103,24 +103,50 @@ def build_backend(args):
 
     # Write secrets to the key vault
     key_vault_client = get_client_from_cli_profile(KeyVaultClient)
-    if args.aws_key_id:
-        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
-    else:
-        if key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value:
-            logging.info("Loaded AWS key ID from existing key vault: %s", emphasised(vault.name))
-        else:
-            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+    logging.info("Ensuring secrets are in key vault: %s", emphasised(vault.name))
+    available_secrets = [s.id.split("/")[-1] for s in key_vault_client.get_secrets(vault.properties.vault_uri)]
+
+    # Add secrets unless they are already in the vault
+    # AWS key
     if args.aws_key:
-        key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
+        if "scoot-aws-key" in available_secrets:
+            kv_aws_key = key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value
+            if kv_aws_key != args.aws_key:
+                logging.warning("AWS key from key vault does not match user-provided version!")
+        else:
+            key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
     else:
-        if key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value:
-            logging.info("Loaded AWS key from existing key vault: %s", emphasised(vault.name))
+        if "scoot-aws-key" in available_secrets:
+            logging.info("AWS key found in existing key vault: %s", emphasised(vault.name))
         else:
             logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
-    key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
-    key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
-    key_vault_client.set_secret(vault.properties.vault_uri, "location", args.location)
-    key_vault_client.set_secret(vault.properties.vault_uri, "azure-group-id", args.azure_group_id)
+    # AWS key ID
+    if args.aws_key_id:
+        if "scoot-aws-key-id" in available_secrets:
+            kv_aws_key_id = key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value
+            if kv_aws_key_id != args.aws_key_id:
+                logging.warning("AWS key ID from key vault does not match user-provided version!")
+        else:
+            key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
+    else:
+        if "scoot-aws-key-id" in available_secrets:
+            logging.info("AWS key ID found in existing key vault: %s", emphasised(vault.name))
+        else:
+            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+    # Subscription ID
+    if "subscription-id" in available_secrets:
+        kv_subscription_id = key_vault_client.get_secret(vault.properties.vault_uri, "subscription-id", "").value
+        if kv_subscription_id != subscription_id:
+            logging.warning("Updating subscription ID in key vault to %s", emphasised(subscription_id))
+            key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
+    else:
+        key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
+    if "tenant-id" not in available_secrets:
+        key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
+    if "location" not in available_secrets:
+        key_vault_client.set_secret(vault.properties.vault_uri, "location", args.location)
+    if "azure-group-id" not in available_secrets:
+        key_vault_client.set_secret(vault.properties.vault_uri, "azure-group-id", args.azure_group_id)
 
 
 def get_valid_storage_account_name(storage_mgmt_client):
