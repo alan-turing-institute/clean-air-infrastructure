@@ -41,11 +41,12 @@ class AQESite(Base):
 
         # Construct the record and return it
         return AQESite(SiteCode=site_dict["SiteCode"],
-                    SiteName=site_dict["SiteName"],
-                    SiteType=site_dict["SiteType"],
-                    DateOpened=site_dict["DateOpened"],
-                    DateClosed=site_dict["DateClosed"],
-                    point_id=site_dict["point_id"])
+                       SiteName=site_dict["SiteName"],
+                       SiteType=site_dict["SiteType"],
+                       DateOpened=site_dict["DateOpened"],
+                       DateClosed=site_dict["DateClosed"],
+                       point_id=site_dict["point_id"])
+
 
 class AQEReading(Base):
     """Table of AQE readings"""
@@ -79,7 +80,7 @@ class AQEReading(Base):
 
         # Construct the record and return it
         return AQEReading(SiteCode=reading_dict["SiteCode"],
-                        SpeciesCode=reading_dict["SpeciesCode"],
-                        MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                        MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                        Value=reading_dict["Value"])
+                          SpeciesCode=reading_dict["SpeciesCode"],
+                          MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                          MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                          Value=reading_dict["Value"])

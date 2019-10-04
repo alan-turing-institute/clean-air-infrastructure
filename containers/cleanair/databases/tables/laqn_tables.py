@@ -81,7 +81,7 @@ class LAQNReading(Base):
 
         # Construct the record and return it
         return LAQNReading(SiteCode=reading_dict["SiteCode"],
-                        SpeciesCode=reading_dict["@SpeciesCode"],
-                        MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                        MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                        Value=reading_dict["@Value"])
+                           SpeciesCode=reading_dict["@SpeciesCode"],
+                           MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
+                           MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
+                           Value=reading_dict["@Value"])

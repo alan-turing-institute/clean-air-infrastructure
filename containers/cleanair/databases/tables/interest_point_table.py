@@ -34,14 +34,13 @@ class InterestPoint(Base):
         """Create an EWKT geometry string from latitude and longitude"""
         return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
-
     @staticmethod
     def build_entry(source, latitude=None, longitude=None, geometry=None):
         """Create an InterestPoint entry from a source and position details"""
         # Attempt to convert latitude and longitude to geometry
         if not geometry:
             if latitude and longitude:
-                geometry = build_ewkt(latitude, longitude)
+                geometry = InterestPoint.build_ewkt(latitude, longitude)
 
         # Construct the record and return it
         if geometry:
