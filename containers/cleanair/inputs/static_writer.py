@@ -163,11 +163,11 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE datasources.canyonslondon
                        ALTER operationa TYPE bool
                        USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN directiona TO directionality;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
             ]
@@ -219,18 +219,42 @@ class StaticWriter(DBWriter):
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
                        ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
+                       DROP COLUMN alternat_1,
+                       DROP COLUMN alternat_2,
+                       DROP COLUMN alternat_3,
+                       DROP COLUMN alternat_4,
+                       DROP COLUMN alternatei,
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
                        DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
+                       DROP COLUMN provenance,
+                       DROP COLUMN roadclas_1,
+                       DROP COLUMN roadname1_,
+                       DROP COLUMN roadname11,
+                       DROP COLUMN roadname2_,
+                       DROP COLUMN roadname21,
                        DROP COLUMN roadstruct,
                        DROP COLUMN roadwidtha,
                        DROP COLUMN roadwidthm;""",
                 """ALTER TABLE datasources.oshighwayroadlink
                        ALTER fictitious TYPE bool
                        USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink
+                       ALTER trunkroad TYPE bool
+                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink
+                       ALTER primaryrou TYPE bool
+                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN directiona TO directionality;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN primaryrou TO primaryroute;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN routehiera TO route_hierarchy;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
             ]
 
