@@ -249,9 +249,11 @@ class StaticWriter(DBWriter):
                        ALTER primaryrou TYPE bool
                        USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN directiona TO directionality;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN formofway TO form_of_way;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN matchstatu TO match_status;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN operationa TO operational;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN primaryrou TO primaryroute;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN primaryrou TO primary_route;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN reasonforc TO reason_for_change;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN roadclassi TO road_classification;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN routehiera TO route_hierarchy;""",
                 """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN shape_leng TO geom_length;""",
