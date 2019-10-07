@@ -18,7 +18,7 @@ class StaticFeatures(DBWriter):
 
         # List of features to extract
         self.ukmap_features = {
-            "building_height": {"feature_type": ["Building"]},
+            "building_height": {"feature_type": ["Building"]},  # 5h30
             "flat": {"feature_type": ["Vegetated", "Water"]},
             "grass": {"feature_type": ["Vegetated"]},
             "hospitals": {"landuse": ["Hospitals"]},
