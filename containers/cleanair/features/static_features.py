@@ -105,17 +105,20 @@ class StaticFeatures(DBWriter):
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
 
+            # Filter out unreasonably tall buildings
+            sq_filtered = session.query(sq_all).filter(sq_all.c.calculated_height_of_building < 999.9).subquery()
+
             # Calculate the distance to each geometry, filtering to restrict to only those records within maximum buffer
             # size: [M < Npoints * Ngeometries records]
-            sq_distance = session.query(sq_all.c.point_id,
-                                        sq_all.c.calculated_height_of_building,
+            sq_distance = session.query(sq_filtered.c.point_id,
+                                        sq_filtered.c.calculated_height_of_building,
                                         func.ST_Distance(
-                                            func.Geography(sq_all.c.location),
-                                            func.Geography(sq_all.c.geom)
+                                            func.Geography(sq_filtered.c.location),
+                                            func.Geography(sq_filtered.c.geom)
                                         ).label("distance")
                                         ).filter(func.ST_DWithin(
-                                            func.Geography(sq_all.c.location),
-                                            func.Geography(sq_all.c.geom),
+                                            func.Geography(sq_filtered.c.location),
+                                            func.Geography(sq_filtered.c.geom),
                                             max(self.buffer_radii_metres)
                                         )).subquery()
 
@@ -161,7 +164,7 @@ class StaticFeatures(DBWriter):
                 columns = [c.key for c in UKMapIntersectionValues.__table__.columns]
                 insert_stmt = insert(UKMapIntersectionValues).from_select(columns, select_stmt)
                 indexes = [UKMapIntersectionValues.point_id, UKMapIntersectionValues.feature_type]
-                merge_stmt = insert_stmt.on_conflict_do_nothing(index_elements=indexes)
+                table_name = UKMapIntersectionValues.__tablename__
             else:
                 # results = self.query_feature_geoms(q_sensors, q_ukmap).all()
                 # site_records = [UKMapIntersectionGeoms.build_entry(feature_type, result) for result in results]
@@ -169,15 +172,18 @@ class StaticFeatures(DBWriter):
                 columns = [c.key for c in UKMapIntersectionGeoms.__table__.columns]
                 insert_stmt = insert(UKMapIntersectionGeoms).from_select(columns, select_stmt)
                 indexes = [UKMapIntersectionGeoms.point_id, UKMapIntersectionGeoms.feature_type]
-                merge_stmt = insert_stmt.on_conflict_do_nothing(index_elements=indexes)
+                table_name = UKMapIntersectionGeoms.__tablename__
 
             # self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
 
-            # Apply the Convert the query output into database records and merge these into the existing table
-            with self.dbcnxn.engine.connect() as cnxn:
-                self.logger.info("Merging features into database table...")
-                cnxn.execute(merge_stmt)
+            # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
+            # with self.dbcnxn.engine.connect() as cnxn:
+            with self.dbcnxn.open_session() as session:
+                self.logger.info("Merging features into database table %s...", green(table_name))
+                # cnxn.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
+                session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
                 self.logger.info("Merging finished")
+                session.commit()
 
             # # Convert the query output into database records and merge these into the existing table
             # with self.dbcnxn.open_session() as session:
