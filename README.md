@@ -23,7 +23,7 @@ If you have not already installed the command line interface for `Azure`, please
 ## Azure Python SDK
 You can install the `Azure` Python SDK with `pip` using:
 
-```
+```bash
 pip install -r containers/requirements.txt
 ```
 
@@ -31,20 +31,20 @@ pip install -r containers/requirements.txt
 ## Terraform
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
-```
+```bash
 brew install terraform
 ```
 
 
 ## Travis CI CLI
  Ensure you have Ruby 1.9.3 or above installed:
-```
+```bash
 ruby -v
 ```
 
 Then install the Travis CI CLI with:
 
-```
+```bash
 gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
 ```
 
@@ -54,7 +54,7 @@ ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future gem insta
 ```
 
 Verify with
-```
+```bash
 travis version
 ```
 
@@ -75,20 +75,20 @@ The following steps are needed to setup the Clean Air cloud infrastructure.
 ## Setup Azure
 To start working with `Azure`, you must first login to your account from the terminal:
 
-```
+```bash
 az login
 ```
 
 Check which `Azure` subscriptions you have access to by running
 
-```
+```bash
 az account list --output table --refresh
 ```
 
 Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
 
 
-```
+```bash
 az account set --subscription "CleanAir"
 ```
 
@@ -97,7 +97,7 @@ az account set --subscription "CleanAir"
 
 Login to travis with your github credentials, making sure you are in the Clean Air repository (travis automatically detects your repository):
 
-```
+```bash
 travis login --pro
 ```
 
@@ -108,7 +108,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
-```
+```bash
 python setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
 ```
 
@@ -119,7 +119,7 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 ## Building the Clean Air infrastructure with Terraform
 To build the `Terraform` infrastructure go to the `terraform` directory and run:
 
-```
+```bash
 terraform init
 ```
 
@@ -128,13 +128,13 @@ If you want to, you can look at the `backend_config.tf` file, which should conta
 
 Then run:
 
-```
+```bash
 terraform plan
 ```
 
 which creates an execution plan. Check this matches your expectations. If you are happy then run:
 
-```
+```bash
 terraform apply
 ```
 
@@ -162,7 +162,7 @@ Please note that you may need to increase the available memory under `Docker > P
 
 From the root directory, running the command
 
-```
+```bash
 python setup/insert_static_datasets.py
 ```
 
