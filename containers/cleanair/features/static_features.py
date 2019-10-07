@@ -1,31 +1,20 @@
 """
-UKMap Feature extraction
+Feature extraction Base  class
 """
 import time
 from sqlalchemy import func, or_, between, cast, Integer
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersectionGeoms, UKMapIntersectionValues
+from ..databases.tables import InterestPoint, LondonBoundary, IntersectionGeoms, IntersectionValues
 from ..loggers import duration, green
 
 
 class StaticFeatures(DBWriter):
-    """Extract UKMap features which are near to sensor InterestPoints and inside London"""
+    """Extract features which are near to sensor InterestPoints and inside London"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
 
         # Initialise parent classes
         super().__init__(**kwargs)
-
-        # List of features to extract
-        self.ukmap_features = {
-            "building_height": {"feature_type": ["Building"]},
-            "flat": {"feature_type": ["Vegetated", "Water"]},
-            "grass": {"feature_type": ["Vegetated"]},
-            "hospitals": {"landuse": ["Hospitals"]},
-            "museums": {"landuse": ["Museum"]},
-            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},
-            "water": {"feature_type": ["Water"]},
-        }
 
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
@@ -46,22 +35,12 @@ class StaticFeatures(DBWriter):
                 _query = _query.filter(InterestPoint.source.in_(include_sources))
         return _query
 
-    def query_ukmap_features(self, feature_name, feature_dict):
-        """Query UKMap, selecting all features matching the requirements in feature_dict"""
-        with self.dbcnxn.open_session() as session:
-            if feature_name == "building_height":
-                q_ukmap = session.query(UKMap.geom, UKMap.calculated_height_of_building, UKMap.feature_type)
-            else:
-                q_ukmap = session.query(UKMap.geom, UKMap.landuse, UKMap.feature_type)
-            for column, values in feature_dict.items():
-                q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
-        return q_ukmap
 
-    def query_feature_geoms(self, q_interest_points, q_ukmap):
+    def query_feature_geoms(self, q_interest_points, q_source):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
-            sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
+            sq_all = session.query(q_interest_points.subquery(), q_source.subquery()).subquery()
 
             # Group these by interest point: [Npoints records]
             sq_grouped = session.query(sq_all.c.point_id,
@@ -96,11 +75,11 @@ class StaticFeatures(DBWriter):
         # Return the overall query
         return q_intersections
 
-    def query_feature_values(self, q_interest_points, q_ukmap):
+    def query_feature_values(self, q_interest_points, q_source):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
-            sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
+            sq_all = session.query(q_interest_points.subquery(), q_source.subquery()).subquery()
 
             # Calculate the distance to each geometry, filtering to restrict to only those records within maximum buffer
             # size: [M < Npoints * Ngeometries records]
@@ -133,7 +112,8 @@ class StaticFeatures(DBWriter):
         # Return the overall query
         return q_grouped
 
-    def calculate_ukmap_intersections(self):
+
+    def calculate_intersections(self):
         """
         For each sensor location, for each feature:
         extract the UK map geometry for that feature in each of the buffer radii
@@ -142,20 +122,20 @@ class StaticFeatures(DBWriter):
         q_sensors = self.query_sensor_locations(include_sources=self.sources)
 
         # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_name, feature_dict in self.ukmap_features.items():
+        for feature_name, feature_dict in self.features.items():
             start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_name))
 
             # Get UKMap geometries for this feature
-            q_ukmap = self.query_ukmap_features(feature_name, feature_dict)
+            q_source = self.query_features(feature_name, feature_dict['feature_dict'])
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
-            if feature_name == "building_height":
-                results = self.query_feature_values(q_sensors, q_ukmap).all()
-                site_records = [UKMapIntersectionValues.build_entry(feature_name, result) for result in results]
+            if feature_dict['type'] == "value":
+                results = self.query_feature_values(q_sensors, q_source).all()
+                site_records = [IntersectionValues.build_entry(feature_name, result) for result in results]
             else:
-                results = self.query_feature_geoms(q_sensors, q_ukmap).all()
-                site_records = [UKMapIntersectionGeoms.build_entry(feature_name, result) for result in results]
+                results = self.query_feature_geoms(q_sensors, q_source).all()
+                site_records = [IntersectionGeoms.build_entry(feature_name, result) for result in results]
             self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
 
             # Convert the query output into database records and merge these into the existing table
@@ -169,4 +149,9 @@ class StaticFeatures(DBWriter):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.calculate_ukmap_intersections()
+        self.calculate_intersections()
+
+    def query_features(self, feature_name, feature_dict):
+        """Query data source, selecting all features matching the requirements in feature_dict.
+           Should be implemented by a subsclass"""
+        raise NotImplementedError("Subclasses should implement self.query_features")

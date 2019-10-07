@@ -4,7 +4,7 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import StaticFeatures
+from cleanair.features import OSHFeatures
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = StaticFeatures(**kwargs)
+        static_feature_extractor = OSHFeatures(**kwargs)
 
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
