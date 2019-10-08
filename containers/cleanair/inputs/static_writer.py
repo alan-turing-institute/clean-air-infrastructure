@@ -103,7 +103,7 @@ class StaticWriter(DBWriter):
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
                                "shape_length AS geom_length",
                                "shape_area AS geom_area",
-                               "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
+                               "shape AS geom3D"]) + " FROM BASE_HB0_complete_merged"]
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
 
         # Force scoot detector geometries to POINT
@@ -300,19 +300,22 @@ class StaticWriter(DBWriter):
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON datasources.ukmap(landuse);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON datasources.ukmap(feature_type);""",
+                """ALTER TABLE datasources.ukmap ADD COLUMN geom geometry;""",
+                """UPDATE datasources.ukmap SET geom = ST_Force2D(ST_MakeValid(geom3D));""",
+                """ALTER TABLE datasources.ukmap DROP COLUMN geom3D;",
             ]
 
         for sql_command in sql_commands:
             self.logger.info("Running SQL command:")
             for line in sql_command.split("\n"):
                 self.logger.info(green(line.strip()))
-            with self.dbcnxn.engine.connect() as conn:
+            with self.dbcnxn.engine.connect() as cnxn:
                 try:
-                    conn.execute(sql_command)
+                    cnxn.execute(sql_command)
                 except OperationalError:
                     self.logger.warning("Database connection lost while running statement.")
                 finally:
-                    conn.close()
+                    cnxn.close()
         self.logger.info("Finished database configuration")
 
     def update_remote_tables(self):
