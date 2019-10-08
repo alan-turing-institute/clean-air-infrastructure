@@ -297,12 +297,12 @@ class StaticWriter(DBWriter):
 
         elif self.data_directory == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON datasources.ukmap(landuse);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON datasources.ukmap(feature_type);""",
                 """ALTER TABLE datasources.ukmap ADD COLUMN geom geometry;""",
                 """UPDATE datasources.ukmap SET geom = ST_Force2D(ST_MakeValid(geom3D));""",
-                """ALTER TABLE datasources.ukmap DROP COLUMN geom3D;",
+                """ALTER TABLE datasources.ukmap DROP COLUMN geom3D;""",
+                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
             ]
 
         for sql_command in sql_commands:
