@@ -19,18 +19,13 @@ class StaticFeatures(DBWriter):
 
         # List of features to extract
         self.ukmap_features = {
-            # "building_height": {"feature_type": ["Building"]},  # 5h30
-            "flat": {"feature_type": ["Vegetated", "Water"]},
-            # restricted took 31m
-            # switching to ST_Collect took 5m
-
-            "building_height": {"feature_type": ["Building"]},  # 5h30
-
-            # "grass": {"feature_type": ["Vegetated"]},
-            # "hospitals": {"landuse": ["Hospitals"]},
-            # "museums": {"landuse": ["Museum"]},
-            # "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},
-            # "water": {"feature_type": ["Water"]},
+            "building_height": {"feature_type": ["Building"]},  # 4h30 (was 5h30 before switching to server-side insert)
+            "flat": {"feature_type": ["Vegetated", "Water"]},   # out of memory after 1h15
+            "grass": {"feature_type": ["Vegetated"]},   # ? was out of memory after 30m
+            "hospitals": {"landuse": ["Hospitals"]},  # ? was 1h15
+            "museums": {"landuse": ["Museum"]},  # ? was 10m
+            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},  # ?
+            "water": {"feature_type": ["Water"]},
         }
 
         # Radius around each interest point used for feature extraction.
@@ -134,7 +129,7 @@ class StaticFeatures(DBWriter):
                                             func.Geography(sq_filtered.c.location),
                                             func.Geography(sq_filtered.c.geom)
                                         ).label("distance")
-                                        )).subquery()
+                                        ).subquery()
 
             # Construct new column for each buffer containing the building height iff the distance is less than the
             # buffer radius: [M records]
@@ -193,7 +188,7 @@ class StaticFeatures(DBWriter):
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             # with self.dbcnxn.engine.connect() as cnxn:
             with self.dbcnxn.open_session() as session:
-                self.logger.info("Merging features into database table %s...", green(table_name))
+                self.logger.info("Constructing features to merge into database table %s...", green(table_name))
                 # cnxn.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
                 session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
                 self.logger.info("Merging finished")
