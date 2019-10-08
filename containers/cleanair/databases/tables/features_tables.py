@@ -47,7 +47,7 @@ class IntersectionGeoms(Base):
 
 class IntersectionValues(Base):
     """Intersection between interest points and UKMap as values"""
-    __tablename__ = "ntersection_values"
+    __tablename__ = "intersection_values"
     __table_args__ = {"schema": "buffers"}
 
     point_id = Column(UUID, ForeignKey("buffers.interest_points.point_id"), primary_key=True, nullable=False)
