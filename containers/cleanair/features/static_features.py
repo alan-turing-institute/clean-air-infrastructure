@@ -24,6 +24,8 @@ class StaticFeatures(DBWriter):
             # restricted took 31m
             # switching to ST_Collect took 5m
 
+            "building_height": {"feature_type": ["Building"]},  # 5h30
+
             # "grass": {"feature_type": ["Vegetated"]},
             # "hospitals": {"landuse": ["Hospitals"]},
             # "museums": {"landuse": ["Museum"]},
@@ -67,11 +69,18 @@ class StaticFeatures(DBWriter):
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
 
+            # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
+            sq_within = session.query(sq_all).filter(func.ST_DWithin(
+                                                         func.Geography(sq_all.c.location),
+                                                         func.Geography(sq_all.c.geom),
+                                                         max(self.buffer_radii_metres)
+                                                    )).subquery()
+
             # Group these by interest point: [Npoints records]
-            sq_grouped = session.query(sq_all.c.point_id,
-                                       func.max(sq_all.c.location).label("location"),
-                                       func.ST_Collect(func.ST_Force2D(func.ST_MakeValid(sq_all.c.geom))).label("geoms")
-                                       ).group_by(sq_all.c.point_id).subquery()
+            sq_grouped = session.query(sq_within.c.point_id,
+                                       func.max(sq_within.c.location).label("location"),
+                                       func.ST_Collect(func.ST_Force2D(func.ST_MakeValid(sq_within.c.geom))).label("geoms")
+                                       ).group_by(sq_within.c.point_id).subquery()
 
             # Calculate the largest buffer: [Npoints records]
             sq_largest_buffer = session.query(sq_grouped.c.point_id,
@@ -108,21 +117,23 @@ class StaticFeatures(DBWriter):
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
 
-            # Filter out unreasonably tall buildings
-            sq_filtered = session.query(sq_all).filter(sq_all.c.calculated_height_of_building < 999.9).subquery()
+            # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
+            sq_within = session.query(sq_all).filter(func.ST_DWithin(
+                                                         func.Geography(sq_all.c.location),
+                                                         func.Geography(sq_all.c.geom),
+                                                         max(self.buffer_radii_metres)
+                                                    )).subquery()
 
-            # Calculate the distance to each geometry, filtering to restrict to only those records within maximum buffer
-            # size: [M < Npoints * Ngeometries records]
+            # Filter out unreasonably tall buildings
+            sq_filtered = session.query(sq_within).filter(sq_within.c.calculated_height_of_building < 999.9).subquery()
+
+            # Calculate the distance to each geometry: [M records]
             sq_distance = session.query(sq_filtered.c.point_id,
                                         sq_filtered.c.calculated_height_of_building,
                                         func.ST_Distance(
                                             func.Geography(sq_filtered.c.location),
                                             func.Geography(sq_filtered.c.geom)
                                         ).label("distance")
-                                        ).filter(func.ST_DWithin(
-                                            func.Geography(sq_filtered.c.location),
-                                            func.Geography(sq_filtered.c.geom),
-                                            max(self.buffer_radii_metres)
                                         )).subquery()
 
             # Construct new column for each buffer containing the building height iff the distance is less than the
