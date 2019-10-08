@@ -2,7 +2,7 @@
 UKMap Feature extraction
 """
 import time
-from sqlalchemy import func, or_, between, cast, Integer, String, literal, select
+from sqlalchemy import func, or_, between, cast, Integer, literal
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersectionGeoms, UKMapIntersectionValues
@@ -19,13 +19,16 @@ class StaticFeatures(DBWriter):
 
         # List of features to extract
         self.ukmap_features = {
-            "building_height": {"feature_type": ["Building"]},  # 5h30
+            # "building_height": {"feature_type": ["Building"]},  # 5h30
             "flat": {"feature_type": ["Vegetated", "Water"]},
-            "grass": {"feature_type": ["Vegetated"]},
-            "hospitals": {"landuse": ["Hospitals"]},
-            "museums": {"landuse": ["Museum"]},
-            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},
-            "water": {"feature_type": ["Water"]},
+            # restricted took 31m
+            # switching to ST_Collect took 5m
+
+            # "grass": {"feature_type": ["Vegetated"]},
+            # "hospitals": {"landuse": ["Hospitals"]},
+            # "museums": {"landuse": ["Museum"]},
+            # "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},
+            # "water": {"feature_type": ["Water"]},
         }
 
         # Radius around each interest point used for feature extraction.
@@ -67,7 +70,7 @@ class StaticFeatures(DBWriter):
             # Group these by interest point: [Npoints records]
             sq_grouped = session.query(sq_all.c.point_id,
                                        func.max(sq_all.c.location).label("location"),
-                                       func.ST_Union(func.ST_Force2D(func.ST_MakeValid(sq_all.c.geom))).label("geoms")
+                                       func.ST_Collect(func.ST_Force2D(func.ST_MakeValid(sq_all.c.geom))).label("geoms")
                                        ).group_by(sq_all.c.point_id).subquery()
 
             # Calculate the largest buffer: [Npoints records]
