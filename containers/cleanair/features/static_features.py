@@ -2,7 +2,8 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, or_, between, cast, Integer
+from sqlalchemy import func, or_, between, cast, Integer, literal
+from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import InterestPoint, LondonBoundary, IntersectionGeoms, IntersectionValues
 from ..loggers import duration, green
@@ -36,17 +37,24 @@ class StaticFeatures(DBWriter):
         return _query
 
 
-    def query_feature_geoms(self, q_interest_points, q_source):
+    def query_feature_geoms(self, feature_type, q_interest_points, q_source):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_source.subquery()).subquery()
 
+            # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
+            sq_within = session.query(sq_all).filter(func.ST_DWithin(
+                                                         func.Geography(sq_all.c.location),
+                                                         func.Geography(sq_all.c.geom),
+                                                         max(self.buffer_radii_metres)
+                                                    )).subquery()
+
             # Group these by interest point: [Npoints records]
-            sq_grouped = session.query(sq_all.c.point_id,
-                                       func.max(sq_all.c.location).label("location"),
-                                       func.ST_Union(func.ST_Force2D(func.ST_MakeValid(sq_all.c.geom))).label("geoms")
-                                       ).group_by(sq_all.c.point_id).subquery()
+            sq_grouped = session.query(sq_within.c.point_id,
+                                       func.max(sq_within.c.location).label("location"),
+                                       func.ST_Collect(func.ST_Force2D(func.ST_MakeValid(sq_within.c.geom))).label("geoms")
+                                       ).group_by(sq_within.c.point_id).subquery()
 
             # Calculate the largest buffer: [Npoints records]
             sq_largest_buffer = session.query(sq_grouped.c.point_id,
@@ -64,36 +72,43 @@ class StaticFeatures(DBWriter):
 
             # Calculate each of the buffers: [Npoints records]
             q_intersections = session.query(sq_largest_buffer.c.point_id,
+                                            literal(feature_type).label("feature_type"),
                                             *[func.ST_ForceCollection(func.ST_Intersection(
                                                 func.Geometry(func.ST_Buffer(
                                                     func.Geography(sq_largest_buffer.c.location),
-                                                    distance
+                                                    radius
                                                 )),
                                                 sq_largest_buffer.c.largest_buffer
-                                                )) for distance in self.buffer_radii_metres])
+                                                )).label("geom_{}".format(radius))
+                                                for radius in self.buffer_radii_metres])
 
         # Return the overall query
         return q_intersections
 
-    def query_feature_values(self, q_interest_points, q_source):
+    def query_feature_values(self, feature_type, q_interest_points, q_source):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_source.subquery()).subquery()
 
-            # Calculate the distance to each geometry, filtering to restrict to only those records within maximum buffer
-            # size: [M < Npoints * Ngeometries records]
-            sq_distance = session.query(sq_all.c.point_id,
-                                        sq_all.c.calculated_height_of_building,
+            # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
+            sq_within = session.query(sq_all).filter(func.ST_DWithin(
+                                                         func.Geography(sq_all.c.location),
+                                                         func.Geography(sq_all.c.geom),
+                                                         max(self.buffer_radii_metres)
+                                                    )).subquery()
+
+            # Filter out unreasonably tall buildings
+            sq_filtered = session.query(sq_within).filter(sq_within.c.calculated_height_of_building < 999.9).subquery()
+
+            # Calculate the distance to each geometry: [M records]
+            sq_distance = session.query(sq_filtered.c.point_id,
+                                        sq_filtered.c.calculated_height_of_building,
                                         func.ST_Distance(
-                                            func.Geography(sq_all.c.location),
-                                            func.Geography(sq_all.c.geom)
+                                            func.Geography(sq_filtered.c.location),
+                                            func.Geography(sq_filtered.c.geom)
                                         ).label("distance")
-                                        ).filter(func.ST_DWithin(
-                                            func.Geography(sq_all.c.location),
-                                            func.Geography(sq_all.c.geom),
-                                            max(self.buffer_radii_metres)
-                                        )).subquery()
+                                        ).subquery()
 
             # Construct new column for each buffer containing the building height iff the distance is less than the
             # buffer radius: [M records]
@@ -105,12 +120,13 @@ class StaticFeatures(DBWriter):
                                        ).subquery()
 
             # Group these by interest point: [Npoints records]
-            q_grouped = session.query(sq_buffers.c.point_id,
-                                      *[func.max(getattr(sq_buffers.c, str(radius)))
-                                        for radius in self.buffer_radii_metres]).group_by(sq_buffers.c.point_id)
+            q_intersections = session.query(sq_buffers.c.point_id,
+                                            literal(feature_type).label("feature_type"),
+                                            *[func.max(getattr(sq_buffers.c, str(radius))).label("value_{}".format(radius))
+                                              for radius in self.buffer_radii_metres]).group_by(sq_buffers.c.point_id)
 
         # Return the overall query
-        return q_grouped
+        return q_intersections
 
 
     def calculate_intersections(self):
@@ -122,30 +138,51 @@ class StaticFeatures(DBWriter):
         q_sensors = self.query_sensor_locations(include_sources=self.sources)
 
         # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_name, feature_dict in self.features.items():
+        for feature_type, feature_dict in self.features.items():
             start = time.time()
-            self.logger.info("Now working on the %s feature", green(feature_name))
+            self.logger.info("Now working on the %s feature", green(feature_type))
 
             # Get UKMap geometries for this feature
-            q_source = self.query_features(feature_name, feature_dict['feature_dict'])
+            q_source = self.query_features(feature_type, feature_dict['feature_dict'])
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             if feature_dict['type'] == "value":
-                results = self.query_feature_values(q_sensors, q_source).all()
-                site_records = [IntersectionValues.build_entry(feature_name, result) for result in results]
+                # results = self.query_feature_values(q_sensors, q_ukmap).all()
+                # site_records = [UKMapIntersectionValues.build_entry(feature_type, result) for result in results]
+                select_stmt = self.query_feature_values(feature_type, q_sensors, q_source).subquery().select()
+                columns = [c.key for c in IntersectionValues.__table__.columns]
+                insert_stmt = insert(IntersectionValues).from_select(columns, select_stmt)
+                indexes = [IntersectionValues.point_id, IntersectionValues.feature_type]
+                table_name = IntersectionValues.__tablename__
             else:
-                results = self.query_feature_geoms(q_sensors, q_source).all()
-                site_records = [IntersectionGeoms.build_entry(feature_name, result) for result in results]
-            self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
+                # results = self.query_feature_geoms(q_sensors, q_ukmap).all()
+                # site_records = [UKMapIntersectionGeoms.build_entry(feature_type, result) for result in results]
+                select_stmt = self.query_feature_geoms(feature_type, q_sensors, q_source).subquery().select()
+                columns = [c.key for c in IntersectionGeoms.__table__.columns]
+                insert_stmt = insert(IntersectionGeoms).from_select(columns, select_stmt)
+                indexes = [IntersectionGeoms.point_id, IntersectionGeoms.feature_type]
+                table_name = IntersectionGeoms.__tablename__
 
-            # Convert the query output into database records and merge these into the existing table
+            # self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
+
+            # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
+            # with self.dbcnxn.engine.connect() as cnxn:
             with self.dbcnxn.open_session() as session:
-                if site_records:
-                    self.add_records(session, site_records)
-                    self.logger.info("Committing %s records to database table %s",
-                                     green(len(site_records)),
-                                     green(site_records[0].__tablename__))
-                    session.commit()
+                self.logger.info("Constructing features to merge into database table %s...", green(table_name))
+                # cnxn.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
+                session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
+                self.logger.info("Merging finished")
+                session.commit()
+
+            # # Convert the query output into database records and merge these into the existing table
+            # with self.dbcnxn.open_session() as session:
+            #     if site_records:
+            #         self.add_records(session, site_records)
+            #         self.logger.info("Committing %s records to database table %s",
+            #                          green(len(site_records)),
+            #                          green(site_records[0].__tablename__))
+            #         session.commit()
+            self.logger.info("Finished adding records in %s", green(duration(start, time.time())))
 
     def update_remote_tables(self):
         """Update all remote tables"""
