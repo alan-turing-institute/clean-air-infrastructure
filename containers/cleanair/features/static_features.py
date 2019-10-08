@@ -167,41 +167,26 @@ class StaticFeatures(DBWriter):
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             if feature_type == "building_height":
-                # results = self.query_feature_values(q_sensors, q_ukmap).all()
-                # site_records = [UKMapIntersectionValues.build_entry(feature_type, result) for result in results]
                 select_stmt = self.query_feature_values(feature_type, q_sensors, q_ukmap).subquery().select()
                 columns = [c.key for c in UKMapIntersectionValues.__table__.columns]
                 insert_stmt = insert(UKMapIntersectionValues).from_select(columns, select_stmt)
                 indexes = [UKMapIntersectionValues.point_id, UKMapIntersectionValues.feature_type]
                 table_name = UKMapIntersectionValues.__tablename__
             else:
-                # results = self.query_feature_geoms(q_sensors, q_ukmap).all()
-                # site_records = [UKMapIntersectionGeoms.build_entry(feature_type, result) for result in results]
                 select_stmt = self.query_feature_geoms(feature_type, q_sensors, q_ukmap).subquery().select()
                 columns = [c.key for c in UKMapIntersectionGeoms.__table__.columns]
                 insert_stmt = insert(UKMapIntersectionGeoms).from_select(columns, select_stmt)
                 indexes = [UKMapIntersectionGeoms.point_id, UKMapIntersectionGeoms.feature_type]
                 table_name = UKMapIntersectionGeoms.__tablename__
 
-            # self.logger.info("Constructed %s records in %s", green(len(results)), green(duration(start, time.time())))
-
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
-            # with self.dbcnxn.engine.connect() as cnxn:
             with self.dbcnxn.open_session() as session:
                 self.logger.info("Constructing features to merge into database table %s...", green(table_name))
-                # cnxn.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
                 session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
-                self.logger.info("Merging finished")
+                self.logger.info("Finished merging features into database")
                 session.commit()
 
-            # # Convert the query output into database records and merge these into the existing table
-            # with self.dbcnxn.open_session() as session:
-            #     if site_records:
-            #         self.add_records(session, site_records)
-            #         self.logger.info("Committing %s records to database table %s",
-            #                          green(len(site_records)),
-            #                          green(site_records[0].__tablename__))
-            #         session.commit()
+            # Print a final timing message
             self.logger.info("Finished adding records in %s", green(duration(start, time.time())))
 
     def update_remote_tables(self):
