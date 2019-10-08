@@ -23,9 +23,9 @@ class StaticFeatures(DBWriter):
             "flat": {"feature_type": ["Vegetated", "Water"]},   # out of memory after 1h15
             "grass": {"feature_type": ["Vegetated"]},   # ? was out of memory after 30m
             "hospitals": {"landuse": ["Hospitals"]},  # ? was 1h15
-            "museums": {"landuse": ["Museum"]},  # ? was 10m
-            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},  # ?
-            "water": {"feature_type": ["Water"]},
+            "museums": {"landuse": ["Museum"]},  # 2m30s
+            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},  # 15m
+            "water": {"feature_type": ["Water"]},  # 5m30
         }
 
         # Radius around each interest point used for feature extraction.
@@ -58,11 +58,11 @@ class StaticFeatures(DBWriter):
                 q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_ukmap
 
-    def query_feature_geoms(self, feature_type, q_interest_points, q_ukmap):
+    def query_feature_geoms(self, feature_type, q_interest_points, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
-            sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
+            sq_all = session.query(q_interest_points.subquery(), q_geometries.subquery()).subquery()
 
             # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
             sq_within = session.query(sq_all).filter(func.ST_DWithin(
@@ -74,7 +74,9 @@ class StaticFeatures(DBWriter):
             # Group these by interest point: [Npoints records]
             sq_grouped = session.query(sq_within.c.point_id,
                                        func.max(sq_within.c.location).label("location"),
-                                       func.ST_Collect(func.ST_Force2D(func.ST_MakeValid(sq_within.c.geom))).label("geoms")
+                                       func.ST_Collect(
+                                           func.ST_Force2D(func.ST_MakeValid(sq_within.c.geom))
+                                       ).label("geoms")
                                        ).group_by(sq_within.c.point_id).subquery()
 
             # Calculate the largest buffer: [Npoints records]
@@ -106,11 +108,11 @@ class StaticFeatures(DBWriter):
         # Return the overall query
         return q_intersections
 
-    def query_feature_values(self, feature_type, q_interest_points, q_ukmap):
+    def query_feature_values(self, feature_type, q_interest_points, q_geometries):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
         with self.dbcnxn.open_session() as session:
             # Outer join of queries: [Npoints * Ngeometries records]
-            sq_all = session.query(q_interest_points.subquery(), q_ukmap.subquery()).subquery()
+            sq_all = session.query(q_interest_points.subquery(), q_geometries.subquery()).subquery()
 
             # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
             sq_within = session.query(sq_all).filter(func.ST_DWithin(
