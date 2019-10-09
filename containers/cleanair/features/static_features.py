@@ -38,23 +38,28 @@ class StaticFeatures(DBWriter):
             hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
         return hull
 
-    def query_sensor_locations(self, include_sources=None):
+    def query_sensor_locations(self, include_sources=None, with_buffers=False):
         """Query InterestPoints, selecting all matching include_sources"""
         boundary_geom = self.query_london_boundary()
         with self.dbcnxn.open_session() as session:
-            _query = session.query(InterestPoint).filter(InterestPoint.location.ST_Within(boundary_geom))
+            columns = [InterestPoint, func.Geography(InterestPoint.location).label("location_geog")]
+            if with_buffers:
+                columns += [func.Geometry(
+                                func.ST_Buffer(func.Geography(InterestPoint.location), radius)
+                            ).label(str(radius)) for radius in self.buffer_radii_metres]
+            _query = session.query(*columns).filter(InterestPoint.location.ST_Within(boundary_geom))
             if include_sources:
                 _query = _query.filter(InterestPoint.source.in_(include_sources))
         return _query
 
-    def query_ukmap_features(self, feature_type, feature_dict):
-        """Query UKMap, selecting all features matching the requirements in feature_dict"""
+    def query_ukmap_features(self, feature_type):
+        """Query UKMap, selecting all features matching the requirements in the feature_dict"""
         with self.dbcnxn.open_session() as session:
             if feature_type == "building_height":
                 q_ukmap = session.query(UKMap.geom, UKMap.calculated_height_of_building, UKMap.feature_type)
             else:
                 q_ukmap = session.query(UKMap.geom, UKMap.landuse, UKMap.feature_type)
-            for column, values in feature_dict.items():
+            for column, values in self.ukmap_features[feature_type].items():
                 q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_ukmap
 
@@ -66,44 +71,30 @@ class StaticFeatures(DBWriter):
 
             # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
             sq_within = session.query(sq_all).filter(func.ST_DWithin(
-                                                         func.Geography(sq_all.c.location),
+                                                         sq_all.c.location_geog,
                                                          func.Geography(sq_all.c.geom),
                                                          max(self.buffer_radii_metres)
                                                     )).subquery()
 
-            # Group these by interest point: [Npoints records]
-            sq_grouped = session.query(sq_within.c.point_id,
-                                       func.max(sq_within.c.location).label("location"),
-                                       func.ST_Collect(
-                                           func.ST_Force2D(func.ST_MakeValid(sq_within.c.geom))
-                                       ).label("geoms")
-                                       ).group_by(sq_within.c.point_id).subquery()
+            # Add intersection columns containing the intersection with each buffer: [M records]
+            sq_with_buffers = session.query(sq_within.c.point_id,
+                                             *[func.ST_Intersection(
+                                                  getattr(sq_within.c, str(radius)),
+                                                  sq_within.c.geom
+                                             ).label("intersection_{}".format(radius)) for radius in self.buffer_radii_metres]
+                                            ).subquery()
 
-            # Calculate the largest buffer: [Npoints records]
-            sq_largest_buffer = session.query(sq_grouped.c.point_id,
-                                              sq_grouped.c.location,
-                                              func.ST_ForceCollection(
-                                                  func.ST_Intersection(
-                                                      func.Geometry(func.ST_Buffer(
-                                                          func.Geography(sq_grouped.c.location),
-                                                          max(self.buffer_radii_metres)
-                                                      )),
-                                                      sq_grouped.c.geoms
-                                                  )
-                                              ).label("largest_buffer")
-                                              ).subquery()
-
-            # Calculate each of the buffers: [Npoints records]
-            q_intersections = session.query(sq_largest_buffer.c.point_id,
-                                            literal(feature_type).label("feature_type"),
-                                            *[func.ST_ForceCollection(func.ST_Intersection(
-                                                func.Geometry(func.ST_Buffer(
-                                                    func.Geography(sq_largest_buffer.c.location),
-                                                    radius
-                                                )),
-                                                sq_largest_buffer.c.largest_buffer
-                                                )).label("geom_{}".format(radius))
-                                                for radius in self.buffer_radii_metres])
+            # Group these by interest point, unioning geometries: [Npoints records]
+            q_intersections = session.query(sq_with_buffers.c.point_id,
+                                       literal(feature_type).label("feature_type"),
+                                       *[func.ST_AsText(
+                                         func.ST_ForceCollection(
+                                             func.ST_Union(
+                                                 getattr(sq_with_buffers.c, "intersection_{}".format(radius))
+                                             )
+                                         )
+                                         ).label("geom_{}".format(radius)) for radius in self.buffer_radii_metres]
+                ).group_by(sq_with_buffers.c.point_id)
 
         # Return the overall query
         return q_intersections
@@ -114,28 +105,31 @@ class StaticFeatures(DBWriter):
             # Outer join of queries: [Npoints * Ngeometries records]
             sq_all = session.query(q_interest_points.subquery(), q_geometries.subquery()).subquery()
 
+            # Add a geography column: [Npoints * Ngeometries records]
+            sq_geography = session.query(sq_all, func.Geography(sq_all.c.geom).label("geom_geog"))
+
             # Restrict to only those within max(radius) of one another: [M < Npoints * Ngeometries records]
-            sq_within = session.query(sq_all).filter(func.ST_DWithin(
-                                                         func.Geography(sq_all.c.location),
-                                                         func.Geography(sq_all.c.geom),
+            sq_within = session.query(sq_geography).filter(func.ST_DWithin(
+                                                         sq_geography.c.location_geog,
+                                                         sq_geography.c.geom_geog,
                                                          max(self.buffer_radii_metres)
                                                     )).subquery()
 
-            # Filter out unreasonably tall buildings
+            # Filter out unreasonably tall buildings: [M records]
             sq_filtered = session.query(sq_within).filter(sq_within.c.calculated_height_of_building < 999.9).subquery()
 
             # Calculate the distance to each geometry: [M records]
             sq_distance = session.query(sq_filtered.c.point_id,
                                         sq_filtered.c.calculated_height_of_building,
                                         func.ST_Distance(
-                                            func.Geography(sq_filtered.c.location),
-                                            func.Geography(sq_filtered.c.geom)
+                                            sq_filtered.c.location_geog,
+                                            sq_filtered.c.geom_geog,
                                         ).label("distance")
                                         ).subquery()
 
             # Construct new column for each buffer containing the building height iff the distance is less than the
             # buffer radius: [M records]
-            sq_buffers = session.query(sq_distance.c.point_id,
+            sq_with_buffers = session.query(sq_distance.c.point_id,
                                        *[(sq_distance.c.calculated_height_of_building *
                                           cast(between(sq_distance.c.distance, 0, radius), Integer)
                                           ).label(str(radius)) for radius in self.buffer_radii_metres
@@ -143,10 +137,10 @@ class StaticFeatures(DBWriter):
                                        ).subquery()
 
             # Group these by interest point: [Npoints records]
-            q_intersections = session.query(sq_buffers.c.point_id,
+            q_intersections = session.query(sq_with_buffers.c.point_id,
                                             literal(feature_type).label("feature_type"),
-                                            *[func.max(getattr(sq_buffers.c, str(radius))).label("value_{}".format(radius))
-                                              for radius in self.buffer_radii_metres]).group_by(sq_buffers.c.point_id)
+                                            *[func.max(getattr(sq_with_buffers.c, str(radius))).label("value_{}".format(radius))
+                                              for radius in self.buffer_radii_metres]).group_by(sq_with_buffers.c.point_id)
 
         # Return the overall query
         return q_intersections
@@ -157,15 +151,15 @@ class StaticFeatures(DBWriter):
         extract the UK map geometry for that feature in each of the buffer radii
         """
         # Get all sensors of interest
-        q_sensors = self.query_sensor_locations(include_sources=self.sources)
+        q_sensors = self.query_sensor_locations(include_sources=self.sources, with_buffers=True)
 
         # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_type, feature_dict in self.ukmap_features.items():
+        for feature_type in self.ukmap_features.keys():
             start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_type))
 
             # Get UKMap geometries for this feature
-            q_ukmap = self.query_ukmap_features(feature_type, feature_dict)
+            q_ukmap = self.query_ukmap_features(feature_type)
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             if feature_type == "building_height":
