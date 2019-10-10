@@ -25,6 +25,16 @@ class StaticWriter(DBWriter):
         self.data_directory = None
         self.table_name = None
 
+        # Map of tables to schemas
+        self.schemas = {
+            "hexgrid": "interest_points",
+            "london_boundary": "static_data",
+            "oshighway_roadlink": "static_data",
+            "ukmap": "static_data",
+            "scoot_detector": "interest_points",
+            "street_canyon": "static_data",
+        }
+
         # Ensure that the buffers and datasources schemas exist
         self.dbcnxn.ensure_schema("dynamic_data")
         self.dbcnxn.ensure_schema("dynamic_features")
@@ -37,15 +47,11 @@ class StaticWriter(DBWriter):
 
     @property
     def schema(self):
-        schemas = {
-            "hexgrid": "interest_points",
-            "london_boundary": "static_data",
-            "oshighway_roadlink": "static_data",
-            "ukmap": "static_data",
-            "scoot_detector": "interest_points",
-            "street_canyon": "static_data",
-        }
-        return schemas[self.table_name]
+        return self.schemas[self.table_name]
+
+    @property
+    def table_schema(self):
+        ".".join(self.schema, self.table_name)
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
@@ -58,7 +64,7 @@ class StaticWriter(DBWriter):
         self.table_name = self.data_directory.replace(".gdb", "")
 
         # Check whether table exists - excluding reflected tables
-        existing_table_names = self.dbcnxn.engine.table_names(schema="datasources")
+        existing_table_names = self.dbcnxn.engine.table_names(schema=self.schema)
         if self.table_name in existing_table_names:
             self.logger.info("Skipping upload for %s as the remote table already exists", green(self.table_name))
             return False
@@ -74,7 +80,7 @@ class StaticWriter(DBWriter):
                           "-lco", "precision=NO"]
 
         # Preprocess the UKMap data, keeping only useful columns
-        if self.data_directory == "ukmap.gdb":
+        if self.table_name == "ukmap":
             extra_args += ["-lco", "FID=geographic_type_number",
                            "-dialect", "OGRSQL",
                            "-dim", "XY",
@@ -95,7 +101,7 @@ class StaticWriter(DBWriter):
             self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
 
         # Force scoot detector geometries to POINT
-        elif self.data_directory == "scootdetectors":
+        elif self.table_name == "scoot_detector":
             extra_args += ["-nlt", "POINT"]
 
         # Run ogr2ogr
@@ -125,12 +131,12 @@ class StaticWriter(DBWriter):
         self.logger.info("Configuring database table: %s", green(self.table_name))
         sql_commands = []
 
-        if self.data_directory == "canyonslondon":
+        if self.table_name == "street_canyon":
             sql_commands = [
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN wkb_geometry TO geom;""",
-                """CREATE INDEX IF NOT EXISTS canyonslondon_wkb_geometry_geom_idx
-                       ON datasources.canyonslondon USING GIST(geom);""",
-                """ALTER TABLE datasources.canyonslondon
+                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS street_canyon_wkb_geometry_geom_idx
+                       ON {} USING GIST(geom);""".format(self.table_schema),
+                """ALTER TABLE {}
                        DROP COLUMN ave_relhma,
                        DROP COLUMN identifier,
                        DROP COLUMN identifi_2,
@@ -144,69 +150,69 @@ class StaticWriter(DBWriter):
                        DROP COLUMN provenance,
                        DROP COLUMN shape_le_1,
                        DROP COLUMN sum_length,
-                       DROP COLUMN sum_shape_;""",
-                """ALTER TABLE datasources.canyonslondon
+                       DROP COLUMN sum_shape_;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER fictitious TYPE bool
-                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE datasources.canyonslondon
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER operationa TYPE bool
-                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN directiona TO directionality;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN matchstatu TO match_status;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN shape_leng TO geom_length;""",
-                """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
+                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
             ]
 
-        elif self.data_directory == "glahexgrid":
+        elif self.table_name == "hexgrid":
             sql_commands = [
-                """ALTER TABLE datasources.glahexgrid RENAME COLUMN wkb_geometry TO geom;""",
-                """CREATE INDEX IF NOT EXISTS glahexgrid_wkb_geometry_geom_idx
-                       ON datasources.glahexgrid USING GIST(geom);""",
-                """ALTER TABLE datasources.glahexgrid
+                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS hexgrid_wkb_geometry_geom_idx
+                       ON {} USING GIST(geom);""".format(self.table_schema),
+                """ALTER TABLE {}
                        DROP COLUMN centroid_x,
                        DROP COLUMN centroid_y,
-                       DROP COLUMN ogc_fid;""",
-                """ALTER TABLE datasources.glahexgrid ADD COLUMN centroid geometry(POINT, 4326);""",
-                """UPDATE datasources.glahexgrid SET centroid = ST_centroid(geom);""",
-                """ALTER TABLE datasources.glahexgrid ADD PRIMARY KEY (hex_id);""",
-                """INSERT INTO buffers.interest_points(source, location, point_id)
+                       DROP COLUMN ogc_fid;""".format(self.table_schema),
+                """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.table_schema),
+                """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (hex_id);""".format(self.table_schema),
+                """INSERT INTO interest_points.meta_point(source, location, point_id)
                        SELECT 'hexgrid', centroid, uuid_generate_v4()
-                       FROM datasources.glahexgrid;""",
-                """ALTER TABLE datasources.glahexgrid ADD COLUMN point_id uuid;""",
-                """ALTER TABLE datasources.glahexgrid
-                       ADD CONSTRAINT fk_glahexgrid_id FOREIGN KEY (point_id)
-                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
-                """UPDATE datasources.glahexgrid
-                       SET point_id = buffers.interest_points.point_id
-                       FROM buffers.interest_points
-                       WHERE datasources.glahexgrid.centroid = buffers.interest_points.location;""",
-                """ALTER TABLE datasources.glahexgrid DROP COLUMN centroid;""",
+                       FROM {};""".format(self.table_schema),
+                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
+                """ALTER TABLE {}
+                       ADD CONSTRAINT fk_hexgrid_id FOREIGN KEY (point_id)
+                       REFERENCES interest_points.meta_point(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
+                """UPDATE {0}
+                       SET point_id = interest_points.meta_point.point_id
+                       FROM interest_points.meta_point
+                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.table_schema),
+                """ALTER TABLE {} DROP COLUMN centroid;""".format(self.table_schema),
             ]
 
-        elif self.data_directory == "londonboundary":
+        elif self.table_name == "london_boundary":
             sql_commands = [
-                """ALTER TABLE datasources.londonboundary RENAME COLUMN wkb_geometry TO geom;""",
-                """CREATE INDEX IF NOT EXISTS londonboundary_wkb_geometry_geom_idx
-                       ON datasources.londonboundary USING GIST(geom);""",
-                """ALTER TABLE datasources.londonboundary
+                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS london_boundary_wkb_geometry_geom_idx
+                       ON {} USING GIST(geom);""".format(self.table_schema),
+                """ALTER TABLE {}
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
-                       DROP COLUMN sub_2009;""",
-                """ALTER TABLE datasources.londonboundary
+                       DROP COLUMN sub_2009;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER ons_inner TYPE bool
-                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE datasources.londonboundary ADD PRIMARY KEY (gss_code);""",
+                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (gss_code);""".format(self.table_schema),
             ]
 
-        elif self.data_directory == "oshighwayroadlink":
+        elif self.table_name == "oshighway_roadlink":
             sql_commands = [
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN wkb_geometry TO geom;""",
-                """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
-                       ON datasources.oshighwayroadlink USING GIST(geom);""",
-                """ALTER TABLE datasources.oshighwayroadlink
+                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS oshighway_roadlink_wkb_geometry_geom_idx
+                       ON {} USING GIST(geom);""".format(self.table_schema),
+                """ALTER TABLE {}
                        DROP COLUMN alternat_1,
                        DROP COLUMN alternat_2,
                        DROP COLUMN alternat_3,
@@ -226,34 +232,34 @@ class StaticWriter(DBWriter):
                        DROP COLUMN roadname21,
                        DROP COLUMN roadstruct,
                        DROP COLUMN roadwidtha,
-                       DROP COLUMN roadwidthm;""",
-                """ALTER TABLE datasources.oshighwayroadlink
+                       DROP COLUMN roadwidthm;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER fictitious TYPE bool
-                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE datasources.oshighwayroadlink
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER trunkroad TYPE bool
-                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE datasources.oshighwayroadlink
+                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {}
                        ALTER primaryrou TYPE bool
-                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN directiona TO directionality;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN formofway TO form_of_way;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN matchstatu TO match_status;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN operationa TO operational;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN primaryrou TO primary_route;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN reasonforc TO reason_for_change;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN roadclassi TO road_classification;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN routehiera TO route_hierarchy;""",
-                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN shape_leng TO geom_length;""",
-                """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
+                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN formofway TO form_of_way;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN primaryrou TO primary_route;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN reasonforc TO reason_for_change;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
             ]
 
-        elif self.data_directory == "scootdetectors":
+        elif self.table_name == "scoot_detector":
             sql_commands = [
-                # Tidy up scootdetectors table
-                """DELETE FROM datasources.scootdetectors WHERE ogc_fid NOT IN
-                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM datasources.scootdetectors);""",
-                """ALTER TABLE datasources.scootdetectors
+                # Tidy up scoot_detector table
+                """DELETE FROM {0} WHERE ogc_fid NOT IN
+                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(self.table_schema),
+                """ALTER TABLE {}
                        DROP COLUMN cell,
                        DROP COLUMN dataset,
                        DROP COLUMN docname,
@@ -264,31 +270,31 @@ class StaticWriter(DBWriter):
                        DROP COLUMN northing,
                        DROP COLUMN objectid,
                        DROP COLUMN ogc_fid,
-                       DROP COLUMN unique_id;""",
-                """ALTER TABLE datasources.scootdetectors RENAME COLUMN itn_date TO date_installed;""",
-                """ALTER TABLE datasources.scootdetectors RENAME COLUMN date_updat TO date_updated;""",
-                """ALTER TABLE datasources.scootdetectors ADD PRIMARY KEY (detector_n);""",
+                       DROP COLUMN unique_id;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN itn_date TO date_installed;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN date_updat TO date_updated;""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (detector_n);""".format(self.table_schema),
                 # Move geometry data to interest_points table - note that some detectors share a location
-                """INSERT INTO buffers.interest_points(source, location, point_id)
+                """INSERT INTO interest_points.meta_point(source, location, point_id)
                        SELECT DISTINCT on (wkb_geometry) 'scoot', wkb_geometry, uuid_generate_v4()
-                       FROM datasources.scootdetectors;""",
-                """ALTER TABLE datasources.scootdetectors ADD COLUMN point_id uuid;""",
-                """ALTER TABLE datasources.scootdetectors
-                       ADD CONSTRAINT fk_scootdetectors_id FOREIGN KEY (point_id)
-                       REFERENCES buffers.interest_points(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""",
-                """UPDATE datasources.scootdetectors
-                       SET point_id = buffers.interest_points.point_id
-                       FROM buffers.interest_points
-                       WHERE datasources.scootdetectors.wkb_geometry = buffers.interest_points.location;""",
-                """ALTER TABLE datasources.scootdetectors DROP COLUMN wkb_geometry;""",
+                       FROM {};""".format(self.table_schema),
+                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
+                """ALTER TABLE {}
+                       ADD CONSTRAINT fk_scoot_detector_id FOREIGN KEY (point_id)
+                       REFERENCES interest_points.meta_point(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
+                """UPDATE {}
+                       SET point_id = interest_points.meta_point.point_id
+                       FROM interest_points.meta_point
+                       WHERE {}.wkb_geometry = interest_points.meta_point.location;""".format(self.table_schema),
+                """ALTER TABLE {} DROP COLUMN wkb_geometry;""".format(self.table_schema),
             ]
 
-        elif self.data_directory == "ukmap.gdb":
+        elif self.table_name == "ukmap.gdb":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
-                """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON datasources.ukmap(landuse);""",
-                """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON datasources.ukmap(feature_type);""",
-                """UPDATE datasources.ukmap SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""",
+                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
+                """UPDATE {} SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""".format(self.table_schema),
             ]
 
         for sql_command in sql_commands:
