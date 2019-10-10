@@ -1,6 +1,6 @@
 # Setup required providers
 provider "azurerm" {
-  version = "~>1.24"
+  version = "~>1.34"
 }
 provider "external" {
   version = "~> 1.2"
