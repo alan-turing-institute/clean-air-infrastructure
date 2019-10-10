@@ -45,9 +45,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
     def request_site_entries(self):
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:
-            scootdetectors = Table("scootdetectors", ScootReading.metadata, schema="datasources",
+            scoot_detector = Table("scoot_detector", ScootReading.metadata, schema="interest_points",
                                    autoload=True, autoload_with=self.dbcnxn.engine)
-            detectors = sorted([s[0] for s in session.query(scootdetectors.c.detector_n).distinct()])
+            detectors = sorted([s[0] for s in session.query(scoot_detector.c.detector_n).distinct()])
         return detectors
 
     def get_remote_filenames(self):
