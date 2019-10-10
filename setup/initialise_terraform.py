@@ -18,18 +18,9 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters, Sku, SkuNa
 from azure.storage.blob import BlockBlobService
 
 
-def emphasised(text):
-    """Emphasise text"""
-    return termcolor.colored(text, "cyan")
-
-
 def build_backend(args):
     """Build the Terraform backend"""
-    # Get subscription
-    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
-    subscription_client = get_client_from_cli_profile(SubscriptionClient)
-    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
-    logging.info("Working in subscription: %s", emphasised(subscription_name))
+    subscription_id, tenant_id = get_azure_credentials()
 
     # Create the backend resource group
     logging.info("Ensuring existence of resource group: %s", emphasised(args.resource_group))
@@ -62,29 +53,34 @@ def build_backend(args):
     os.makedirs(os.path.join("terraform", "configuration"), exist_ok=True)
 
     # Write Terraform backend configuration
-    terraform_config_file_lines = [
-        'terraform {',
-        '  backend "azurerm" {',
-        '    storage_account_name = "{}"'.format(storage_account_name),
-        '    container_name       = "{}"'.format(args.storage_container_name),
-        '    key                  = "terraform.tfstate"',
-        '    access_key           = "{}"'.format(storage_account_key),
-        '  }',
-        '}'
-    ]
-    filepath = os.path.join("terraform", "backend_config.tf")
-    logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
-    with open(filepath, "w") as f_config:
-        for line in terraform_config_file_lines:
-            f_config.write(line + "\n")
+    write_backend_configuration(storage_account_name, args.storage_container_name, storage_account_key)
 
-    # Create a key vault for storing secrets
+    # Ensure that key vault exists for storing secrets
+    vault = ensure_keyvault(args.resource_group, args.location, tenant_id, args.azure_group_id)
+
+    # Ensure all secrets are recorded in the key vault
+    secrets = {"aws_key": args.aws_key,
+               "aws_key_id": args.aws_key_id,
+               "location": args.location,
+               "azure_group_id": args.azure_group_id,
+               "subscription_id": subscription_id,
+               "tenant_id": tenant_id}
+    record_all_secrets(vault.properties.vault_uri, vault.name, secrets)
+
+
+def emphasised(text):
+    """Emphasise text"""
+    return termcolor.colored(text, "cyan")
+
+
+def ensure_keyvault(resource_group, location, tenant_id, azure_group_id):
+    """Ensure that a key vault exists for storing secrets"""
     key_vault_mgmt_client = get_client_from_cli_profile(KeyVaultManagementClient)
-    vault = key_vault_mgmt_client.vaults.create_or_update(
-        args.resource_group,
+    return key_vault_mgmt_client.vaults.create_or_update(
+        resource_group,
         "terraform-configuration",
         {
-            "location": args.location,
+            "location": location,
             "properties": {
                 "sku": {
                     "name": "standard"
@@ -92,7 +88,7 @@ def build_backend(args):
                 "tenant_id": tenant_id,
                 "access_policies": [{
                     "tenant_id": tenant_id,
-                    "object_id": args.azure_group_id,
+                    "object_id": azure_group_id,
                     "permissions": {
                         "secrets": ["all"]
                     }
@@ -100,63 +96,6 @@ def build_backend(args):
             }
         }
     ).result()
-
-    # Write secrets to the key vault
-    key_vault_client = get_client_from_cli_profile(KeyVaultClient)
-    logging.info("Ensuring secrets are in key vault: %s", emphasised(vault.name))
-    available_secrets = [s.id.split("/")[-1] for s in key_vault_client.get_secrets(vault.properties.vault_uri)]
-
-    # Add secrets unless they are already in the vault
-    # AWS key
-    if args.aws_key:
-        if "scoot-aws-key" in available_secrets:
-            kv_aws_key = key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key", "").value
-            if kv_aws_key != args.aws_key:
-                logging.warning("AWS key from key vault does not match user-provided version!")
-        else:
-            key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key", args.aws_key)
-    else:
-        if "scoot-aws-key" in available_secrets:
-            logging.info("AWS key found in existing key vault: %s", emphasised(vault.name))
-        else:
-            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
-    # AWS key ID
-    if args.aws_key_id:
-        if "scoot-aws-key-id" in available_secrets:
-            kv_aws_key_id = key_vault_client.get_secret(vault.properties.vault_uri, "scoot-aws-key-id", "").value
-            if kv_aws_key_id != args.aws_key_id:
-                logging.warning("AWS key ID from key vault does not match user-provided version!")
-        else:
-            key_vault_client.set_secret(vault.properties.vault_uri, "scoot-aws-key-id", args.aws_key_id)
-    else:
-        if "scoot-aws-key-id" in available_secrets:
-            logging.info("AWS key ID found in existing key vault: %s", emphasised(vault.name))
-        else:
-            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
-    # Subscription ID
-    if "subscription-id" in available_secrets:
-        kv_subscription_id = key_vault_client.get_secret(vault.properties.vault_uri, "subscription-id", "").value
-        if kv_subscription_id != subscription_id:
-            logging.warning("Updating subscription ID in key vault to %s", emphasised(subscription_id))
-            key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
-    else:
-        key_vault_client.set_secret(vault.properties.vault_uri, "subscription-id", subscription_id)
-    if "tenant-id" not in available_secrets:
-        key_vault_client.set_secret(vault.properties.vault_uri, "tenant-id", tenant_id)
-    if "location" not in available_secrets:
-        key_vault_client.set_secret(vault.properties.vault_uri, "location", args.location)
-    if "azure-group-id" not in available_secrets:
-        key_vault_client.set_secret(vault.properties.vault_uri, "azure-group-id", args.azure_group_id)
-
-
-def get_valid_storage_account_name(storage_mgmt_client):
-    """Keep generating storage account names until a valid one is found."""
-    while True:
-        storage_account_name = "terraformstorage"
-        storage_account_name += "".join([random.choice(string.ascii_lowercase + string.digits)
-                                         for n in range(24 - len(storage_account_name))])
-        if storage_mgmt_client.storage_accounts.check_name_availability(storage_account_name).name_available:
-            return storage_account_name
 
 
 def generate_new_storage_account(storage_mgmt_client, resource_group, location):
@@ -177,8 +116,103 @@ def generate_new_storage_account(storage_mgmt_client, resource_group, location):
     return storage_account_name
 
 
-def parsed_arguments():
-    """Parse command line arguments"""
+def get_azure_credentials():
+    """Get subscription and tenant IDs"""
+    _, subscription_id, tenant_id = get_azure_cli_credentials(with_tenant=True)
+    subscription_client = get_client_from_cli_profile(SubscriptionClient)
+    subscription_name = subscription_client.subscriptions.get(subscription_id).display_name
+    logging.info("Working in subscription: %s", emphasised(subscription_name))
+    return (subscription_id, tenant_id)
+
+
+def get_valid_storage_account_name(storage_mgmt_client):
+    """Keep generating storage account names until a valid one is found."""
+    while True:
+        storage_account_name = "terraformstorage"
+        storage_account_name += "".join([random.choice(string.ascii_lowercase + string.digits)
+                                         for n in range(24 - len(storage_account_name))])
+        if storage_mgmt_client.storage_accounts.check_name_availability(storage_account_name).name_available:
+            return storage_account_name
+
+
+def record_all_secrets(vault_uri, vault_name, secrets):
+    """Ensure secrets are recorded in the key"""
+    # Write secrets to the key vault
+    key_vault_client = get_client_from_cli_profile(KeyVaultClient)
+    logging.info("Ensuring secrets are in key vault: %s", emphasised(vault_name))
+    available_secrets = [s.id.split("/")[-1] for s in key_vault_client.get_secrets(vault_uri)]
+
+    # Add secrets unless they are already in the vault
+    # AWS key
+    if secrets["aws_key"]:
+        if "scoot-aws-key" in available_secrets:
+            kv_aws_key = key_vault_client.get_secret(vault_uri, "scoot-aws-key", "").value
+            if kv_aws_key != secrets["aws_key"]:
+                logging.warning("AWS key from key vault does not match user-provided version!")
+        else:
+            key_vault_client.set_secret(vault_uri, "scoot-aws-key", secrets["aws_key"])
+    else:
+        if "scoot-aws-key" in available_secrets:
+            logging.info("AWS key found in existing key vault: %s", emphasised(vault_name))
+        else:
+            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
+    # AWS key ID
+    if secrets["aws_key_id"]:
+        if "scoot-aws-key-id" in available_secrets:
+            kv_aws_key_id = key_vault_client.get_secret(vault_uri, "scoot-aws-key-id", "").value
+            if kv_aws_key_id != secrets["aws_key_id"]:
+                logging.warning("AWS key ID from key vault does not match user-provided version!")
+        else:
+            key_vault_client.set_secret(vault_uri, "scoot-aws-key-id", secrets["aws_key_id"])
+    else:
+        if "scoot-aws-key-id" in available_secrets:
+            logging.info("AWS key ID found in existing key vault: %s", emphasised(vault_name))
+        else:
+            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+    # Subscription ID
+    if "subscription-id" in available_secrets:
+        kv_subscription_id = key_vault_client.get_secret(vault_uri, "subscription-id", "").value
+        if kv_subscription_id != secrets["subscription_id"]:
+            logging.warning("Updating subscription ID in key vault to %s", emphasised(secrets["subscription_id"]))
+            key_vault_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
+    else:
+        key_vault_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
+    if "tenant-id" not in available_secrets:
+        key_vault_client.set_secret(vault_uri, "tenant-id", secrets["tenant_id"])
+    if "location" not in available_secrets:
+        key_vault_client.set_secret(vault_uri, "location", secrets["location"])
+    if "azure-group-id" not in available_secrets:
+        key_vault_client.set_secret(vault_uri, "azure-group-id", secrets["azure_group_id"])
+
+
+def write_backend_configuration(storage_account_name, storage_container_name, storage_account_key):
+    """Write Terraform backend configuration"""
+    terraform_config_file_lines = [
+        'terraform {',
+        '  backend "azurerm" {',
+        '    storage_account_name = "{}"'.format(storage_account_name),
+        '    container_name       = "{}"'.format(storage_container_name),
+        '    key                  = "terraform.tfstate"',
+        '    access_key           = "{}"'.format(storage_account_key),
+        '  }',
+        '}'
+    ]
+    filepath = os.path.join("terraform", "backend_config.tf")
+    logging.info("Writing Terraform backend config to: %s", emphasised(filepath))
+    with open(filepath, "w") as f_config:
+        for line in terraform_config_file_lines:
+            f_config.write(line + "\n")
+
+
+def main():
+    """Setup initial Azure infrastructure used by Terraform"""
+    # Set up logging
+    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
+                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
+    logging.getLogger("adal-python").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
+
+    # Parse command line arguments
     parser = argparse.ArgumentParser(description='Initialise the Azure infrastructure needed by Terraform')
     parser.add_argument("-a", "--azure-group-id", type=str, default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
                         help="ID of an Azure group containing all developers. Default is Turing's 'All Users' group.")
@@ -190,19 +224,9 @@ def parsed_arguments():
                         help="Azure datacentre where the Terraform backend will be stored")
     parser.add_argument("-s", "--storage-container-name", type=str, default="terraformbackend",
                         help="Name of the storage container where the Terraform backend will be stored")
-    return parser.parse_args()
-
-
-def main():
-    """Setup initial Azure infrastructure used by Terraform"""
-    # Set up logging
-    logging.basicConfig(format=r"%(asctime)s %(levelname)8s: %(message)s",
-                        datefmt=r"%Y-%m-%d %H:%M:%S", level=logging.INFO)
-    logging.getLogger("adal-python").setLevel(logging.WARNING)
-    logging.getLogger("azure").setLevel(logging.WARNING)
 
     # Build the backend
-    build_backend(parsed_arguments())
+    build_backend(parser.parse_args())
 
 
 if __name__ == "__main__":

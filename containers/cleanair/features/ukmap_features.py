@@ -30,6 +30,6 @@ class UKMapFeatures(StaticFeatures):
                 q_source = session.query(UKMap.geom, UKMap.calculated_height_of_building, UKMap.feature_type)
             else:
                 q_source = session.query(UKMap.geom, UKMap.landuse, UKMap.feature_type)
-            for column, values in feature_dict.items():
+            for column, values in self.features[feature_type]['feature_dict'].items():
                 q_source = q_source.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_source
