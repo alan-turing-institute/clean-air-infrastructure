@@ -4,7 +4,7 @@ Get data from the AQE network via the API
 import numpy as np
 from sqlalchemy.schema import CreateSchema
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, RectGrid
+from ..databases.tables import MetaPoint, RectGrid
 from ..loggers import get_logger, green
 
 
@@ -47,7 +47,7 @@ class RectGridWriter(DBWriter):
                 grid_cells.append({"row_id": idx_lat,
                                    "column_id": idx_long,
                                    "geom": self.build_cell(latitude, longitude),
-                                   "point_id": InterestPoint.build_ewkt(latitude, longitude),
+                                   "point_id": MetaPoint.build_ewkt(latitude, longitude),
                                    })
 
         # Ensure that interest_points table exists
@@ -60,7 +60,7 @@ class RectGridWriter(DBWriter):
         with self.dbcnxn.open_session() as session:
             # Update the interest_points table and retrieve point IDs
             self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green("interest points"))
-            interest_points = [InterestPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
+            interest_points = [MetaPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
             self.add_records(session, interest_points, flush=True)
             for grid_cell, interest_point in zip(grid_cells, interest_points):
                 grid_cell["point_id"] = interest_point.point_id  # this will be None if the record was not inserted

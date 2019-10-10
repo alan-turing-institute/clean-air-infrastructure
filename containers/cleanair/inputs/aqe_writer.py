@@ -9,7 +9,7 @@ import pandas
 import requests
 from ..mixins import DateRangeMixin, APIRequestMixin
 from ..databases import DBWriter
-from ..databases.tables import AQESite, AQEReading, InterestPoint
+from ..databases.tables import AQESite, AQEReading, MetaPoint
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
@@ -100,10 +100,10 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Retrieve site entries (discarding any that do not have a known position)
             site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
             for entry in site_entries:
-                entry["geometry"] = InterestPoint.build_ewkt(entry["Latitude"], entry["Longitude"])
+                entry["geometry"] = MetaPoint.build_ewkt(entry["Latitude"], entry["Longitude"])
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: InterestPoint.build_entry("aqe", geometry=s["geometry"])
+            unique_sites = {s["geometry"]: MetaPoint.build_entry("aqe", geometry=s["geometry"])
                             for s in site_entries}
 
             # Update the interest_points table and retrieve point IDs
@@ -122,7 +122,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             for site in site_entries:
                 session.merge(AQESite.build_entry(site))
             self.logger.info("Committing changes to database tables %s and %s",
-                             green(InterestPoint.__tablename__),
+                             green(MetaPoint.__tablename__),
                              green(AQESite.__tablename__))
             session.commit()
 
