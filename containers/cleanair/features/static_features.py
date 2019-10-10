@@ -56,20 +56,20 @@ class StaticFeatures(DBWriter):
                                                                      max(self.buffer_radii_metres))).subquery()
 
             # Add intersection columns containing the intersection with each buffer: [M records]
-            sq_with_buffers = session.query(sq_within.c.point_id,
+            sq_with_buffers = session.query(sq_within.c.id,
                                             *[func.ST_Intersection(getattr(sq_within.c, str(radius)),
                                                                    sq_within.c.geom).label("intst_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).subquery()
 
             # Group these by interest point, unioning geometries: [Npoints records]
-            q_intersections = session.query(sq_with_buffers.c.point_id,
+            q_intersections = session.query(sq_with_buffers.c.id,
                                             literal(feature_type).label("feature_type"),
                                             *[func.ST_ForceCollection(
                                                 func.ST_Union(getattr(sq_with_buffers.c, "intst_{}".format(radius)))
                                                 ).label("geom_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
-                                            ).group_by(sq_with_buffers.c.point_id)
+                                            ).group_by(sq_with_buffers.c.id)
 
         # Return the overall query
         return q_intersections
@@ -89,7 +89,7 @@ class StaticFeatures(DBWriter):
             sq_filtered = session.query(sq_within).filter(sq_within.c.calculated_height_of_building < 999.9).subquery()
 
             # Calculate the distance to each geometry: [M records]
-            sq_distance = session.query(sq_filtered.c.point_id,
+            sq_distance = session.query(sq_filtered.c.id,
                                         sq_filtered.c.calculated_height_of_building,
                                         func.ST_Distance(sq_filtered.c.location_geog,
                                                          sq_filtered.c.geom_geog).label("distance")
@@ -97,18 +97,18 @@ class StaticFeatures(DBWriter):
 
             # Construct new column for each buffer containing the building height iff the distance is less than the
             # buffer radius: [M records]
-            sq_with_buffers = session.query(sq_distance.c.point_id,
+            sq_with_buffers = session.query(sq_distance.c.id,
                                             *[(sq_distance.c.calculated_height_of_building *
                                                cast(between(sq_distance.c.distance, 0, radius), Integer)
                                                ).label(str(radius)) for radius in self.buffer_radii_metres]).subquery()
 
             # Group these by interest point: [Npoints records]
-            q_intersections = session.query(sq_with_buffers.c.point_id,
+            q_intersections = session.query(sq_with_buffers.c.id,
                                             literal(feature_type).label("feature_type"),
                                             *[func.max(getattr(sq_with_buffers.c,
                                                                str(radius))).label("value_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
-                                            ).group_by(sq_with_buffers.c.point_id)
+                                            ).group_by(sq_with_buffers.c.id)
 
         # Return the overall query
         return q_intersections
