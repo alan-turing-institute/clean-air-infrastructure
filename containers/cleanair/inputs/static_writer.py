@@ -7,7 +7,7 @@ import os
 import subprocess
 from sqlalchemy.exc import OperationalError
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint
+from ..databases.tables import MetaPoint
 from ..loggers import get_logger, green
 
 
@@ -35,15 +35,12 @@ class StaticWriter(DBWriter):
             "street_canyon": "static_data",
         }
 
-        # Ensure that the buffers and datasources schemas exist
-        self.dbcnxn.ensure_schema("dynamic_data")
-        self.dbcnxn.ensure_schema("dynamic_features")
-        self.dbcnxn.ensure_schema("interest_points")
-        self.dbcnxn.ensure_schema("static_data")
-        self.dbcnxn.ensure_schema("static_features")
+        # Ensure that the necessary schemas exist
+        for schema in list(set(self.schemas.values())):
+            self.dbcnxn.ensure_schema(schema)
 
         # Ensure that interest_points table exists
-        InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
+        MetaPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
 
     @property
     def schema(self):
@@ -184,9 +181,9 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_hexgrid_id FOREIGN KEY (point_id)
-                       REFERENCES interest_points.meta_point(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
+                       REFERENCES interest_points.meta_point(id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
                 """UPDATE {0}
-                       SET point_id = interest_points.meta_point.point_id
+                       SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
                        WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.table_schema),
                 """ALTER TABLE {} DROP COLUMN centroid;""".format(self.table_schema),
@@ -281,9 +278,9 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_scoot_detector_id FOREIGN KEY (point_id)
-                       REFERENCES interest_points.meta_point(point_id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
+                       REFERENCES interest_points.meta_point(id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
                 """UPDATE {}
-                       SET point_id = interest_points.meta_point.point_id
+                       SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
                        WHERE {}.wkb_geometry = interest_points.meta_point.location;""".format(self.table_schema),
                 """ALTER TABLE {} DROP COLUMN wkb_geometry;""".format(self.table_schema),

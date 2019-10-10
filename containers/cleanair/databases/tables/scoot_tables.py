@@ -1,9 +1,10 @@
 """
 Tables for SCOOT data source
 """
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import DeferredReflection
+from sqlalchemy.orm import relationship
 from ..base import Base
 
 
@@ -12,7 +13,8 @@ class ScootReading(Base):
     __tablename__ = "scoot_reading"
     __table_args__ = {"schema": "dynamic_data"}
 
-    detector_id = Column(String(9), primary_key=True, nullable=False)  # DETSCN
+    # detector_id = Column(String(9), primary_key=True, nullable=False)  # DETSCN
+    detector_id = Column(String(9), ForeignKey("interest_points.scoot_detector.detector_n"), primary_key=True, nullable=False)  # DETSCN
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     n_vehicles_in_interval = Column(Integer)  # FLOW_ACTUAL / 60
@@ -24,6 +26,9 @@ class ScootReading(Base):
     congestion_raw_count = Column(Integer)  # CONG_COUNT
     saturation_raw_count = Column(Integer)  # SATU_COUNT
     region = Column(String(5))  # REGION
+
+    # Create ScootReading.detector with no reverse relationship
+    detector = relationship("ScootDetector")
 
     def __repr__(self):
         return "<ScootReading(" + ", ".join([
@@ -42,7 +47,7 @@ class ScootReading(Base):
             ])
 
 
-class ScootDetectors(DeferredReflection, Base):
+class ScootDetector(DeferredReflection, Base):
     """Table of Scoot detectors"""
     __tablename__ = "scoot_detector"
     __table_args__ = {"schema": "interest_points"}

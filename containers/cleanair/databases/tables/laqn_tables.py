@@ -2,9 +2,8 @@
 Tables for LAQN data source
 """
 from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from ..base import Base
 
 
