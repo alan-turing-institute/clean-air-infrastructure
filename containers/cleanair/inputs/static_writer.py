@@ -48,7 +48,7 @@ class StaticWriter(DBWriter):
 
     @property
     def table_schema(self):
-        ".".join(self.schema, self.table_name)
+        return "{}.{}".format(self.schema, self.table_name)
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
