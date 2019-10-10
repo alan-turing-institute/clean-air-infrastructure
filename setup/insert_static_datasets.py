@@ -119,11 +119,11 @@ def upload_static_data(image_name, verbosity, dataset, secrets_directory, data_d
 
     # List of dataset names inside each directory
     dataset_to_directory = {
-        "canyonslondon": "CanyonsLondon_Erase",
-        "glahexgrid": "Hex350_grid_GLA",
-        "londonboundary": "ESRI",
-        "oshighwayroadlink": "RoadLink",
-        "scootdetectors": "scoot_detectors",
+        "street_canyon": "CanyonsLondon_Erase",
+        "hexgrid": "Hex350_grid_GLA",
+        "london_boundary": "ESRI",
+        "oshighway_roadlink": "RoadLink",
+        "scoot_detector": "scoot_detectors",
         "ukmap": "UKMap.gdb",
     }
 
@@ -176,7 +176,7 @@ def main():
     rectgrid_image = build_docker_image("rectgrid:upload", "upload_rectgrid.Dockerfile")
 
     # List of available datasets
-    datasets = ["canyonslondon", "glahexgrid", "londonboundary", "oshighwayroadlink", "ukmap", "scootdetectors"]
+    datasets = ["hexgrid", "london_boundary", "oshighway_roadlink", "ukmap", "scoot_detector", "street_canyon"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)

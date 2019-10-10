@@ -26,11 +26,26 @@ class StaticWriter(DBWriter):
         self.table_name = None
 
         # Ensure that the buffers and datasources schemas exist
-        self.dbcnxn.ensure_schema("buffers")
-        self.dbcnxn.ensure_schema("datasources")
+        self.dbcnxn.ensure_schema("dynamic_data")
+        self.dbcnxn.ensure_schema("dynamic_features")
+        self.dbcnxn.ensure_schema("interest_points")
+        self.dbcnxn.ensure_schema("static_data")
+        self.dbcnxn.ensure_schema("static_features")
 
         # Ensure that interest_points table exists
         InterestPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
+
+    @property
+    def schema(self):
+        schemas = {
+            "hexgrid": "interest_points",
+            "london_boundary": "static_data",
+            "oshighway_roadlink": "static_data",
+            "ukmap": "static_data",
+            "scoot_detector": "interest_points",
+            "street_canyon": "static_data",
+        }
+        return schemas[self.table_name]
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
@@ -91,7 +106,7 @@ class StaticWriter(DBWriter):
                             "-f", "PostgreSQL", "PG:{}".format(cnxn_string), "/data/{}".format(self.data_directory),
                             "--config", "PG_USE_COPY", "YES",
                             "-t_srs", "EPSG:4326",
-                            "-lco", "SCHEMA=datasources",
+                            "-lco", "SCHEMA={}".format(self.schema),
                             "-nln", self.table_name] + extra_args, check=True)
         except subprocess.CalledProcessError:
             self.logger.error("Running ogr2ogr failed!")
