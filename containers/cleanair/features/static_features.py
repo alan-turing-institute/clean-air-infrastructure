@@ -114,17 +114,17 @@ class StaticFeatures(DBWriter):
     def calculate_intersections(self):
         """
         For each sensor location, for each feature:
-        extract the UK map geometry for that feature in each of the buffer radii
+        extract the geometry for that feature in each of the buffer radii
         """
         # Get all sensors of interest
         q_sensors = self.query_sensor_locations(include_sources=self.sources, with_buffers=True)
 
-        # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_type in self.ukmap_features:
+        # Iterate over each of the features and calculate the overlap with the sensors
+        for feature_type in self.features:
             start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_type))
 
-            # Get UKMap geometries for this feature
+            # Get geometries for this feature
             q_source = self.query_features(feature_type)
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
@@ -155,7 +155,7 @@ class StaticFeatures(DBWriter):
         """Update all remote tables"""
         self.calculate_intersections()
 
-    def query_features(self, feature_name, feature_dict):
+    def query_features(self, feature_name):
         """Query data source, selecting all features matching the requirements in feature_dict.
            Should be implemented by a subsclass"""
         raise NotImplementedError("Subclasses should implement self.query_features")

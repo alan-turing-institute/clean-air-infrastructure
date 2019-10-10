@@ -25,7 +25,7 @@ class OSHFeatures(StaticFeatures):
         """Query UKMap, selecting all features matching the requirements in feature_dict"""
         with self.dbcnxn.open_session() as session:
             q_source = session.query(OSHighway.geom, OSHighway.route_hierarchy)
-            for column, values in self.features[feature_type]['feature_dict'].items():
+            for column, values in self.features[feature_name]['feature_dict'].items():
                 if not values[0] == '*':
                     q_source = q_source.filter(or_(*[getattr(OSHighway, column) == value for value in values]))
         return q_source
