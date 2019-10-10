@@ -62,6 +62,7 @@ class StaticWriter(DBWriter):
         if self.data_directory == "ukmap.gdb":
             extra_args += ["-lco", "FID=geographic_type_number",
                            "-dialect", "OGRSQL",
+                           "-dim", "XY",
                            "-sql", "SELECT " + ", ".join([
                                "CAST(geographic_type_number AS integer) AS geographic_type_number",
                                # NB. The next command is a single string split across mulitple lines for readability
@@ -70,36 +71,8 @@ class StaticWriter(DBWriter):
                                "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
                                "feature_type",
                                "landuse",
-                               # "CAST(altertative_style_code AS integer) AS alternative_style_code",
-                               # "owner_user_name",
-                               # "building_name",
-                               # "CAST(primary_number AS integer) AS primary_number",
-                               # "primary_number_suffix",
-                               # "CAST(secondary_number AS integer) AS secondary_number",
-                               # "secondary_number_suffix",
-                               # "CAST(number_end_of_range AS integer) AS number_end_of_range",
-                               # "number_end_of_range_suffix",
-                               # "road_name_primary",
-                               # "road_name_secondary",
-                               # "locality_name",
-                               # "area_name",
-                               # "county_region_name",
-                               # "country",
                                "postcode",
-                               # "address_range_type",
-                               # "CAST(blpu_number AS integer) AS blpu_number",
-                               # "address_type",
-                               # "CAST(cartographic_annotation_point AS integer) AS cartographic_annotation_point",
-                               # "name_of_point_of_interest",
-                               # "description_of_point_of_interest",
-                               # "CAST(retail_classification_code AS integer) AS retail_classification_code",
-                               # "retail_description",
-                               # "above_retail_type",
-                               # "road_number_code",
-                               # "CAST(catrographic_display_angle AS integer) AS cartographic_display_angle",
-                               # "CAST(source_of_height_data AS integer) AS source_of_height_data",
                                "CAST(height_of_base_of_building AS float)",
-                               # "CAST(height_of_top_of_building AS float) AS height_of_top_of_building",
                                "CAST(calcaulated_height_of_building AS float) AS calculated_height_of_building",
                                "shape_length AS geom_length",
                                "shape_area AS geom_area",
@@ -163,11 +136,11 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE datasources.canyonslondon
                        ALTER operationa TYPE bool
                        USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
-                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN directiona TO directionality;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.canyonslondon RENAME COLUMN routehiera TO route_hierarchy;""",
                 """ALTER TABLE datasources.canyonslondon RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.canyonslondon ADD PRIMARY KEY (toid);""",
             ]
@@ -219,18 +192,44 @@ class StaticWriter(DBWriter):
                 """CREATE INDEX IF NOT EXISTS oshighwayroadlink_wkb_geometry_geom_idx
                        ON datasources.oshighwayroadlink USING GIST(geom);""",
                 """ALTER TABLE datasources.oshighwayroadlink
+                       DROP COLUMN alternat_1,
+                       DROP COLUMN alternat_2,
+                       DROP COLUMN alternat_3,
+                       DROP COLUMN alternat_4,
+                       DROP COLUMN alternatei,
                        DROP COLUMN cyclefacil,
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
                        DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
+                       DROP COLUMN provenance,
+                       DROP COLUMN roadclas_1,
+                       DROP COLUMN roadname1_,
+                       DROP COLUMN roadname11,
+                       DROP COLUMN roadname2_,
+                       DROP COLUMN roadname21,
                        DROP COLUMN roadstruct,
                        DROP COLUMN roadwidtha,
                        DROP COLUMN roadwidthm;""",
                 """ALTER TABLE datasources.oshighwayroadlink
                        ALTER fictitious TYPE bool
                        USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink
+                       ALTER trunkroad TYPE bool
+                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink
+                       ALTER primaryrou TYPE bool
+                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN directiona TO directionality;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN formofway TO form_of_way;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN matchstatu TO match_status;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN operationa TO operational;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN primaryrou TO primary_route;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN reasonforc TO reason_for_change;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN roadclassi TO road_classification;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN routehiera TO route_hierarchy;""",
+                """ALTER TABLE datasources.oshighwayroadlink RENAME COLUMN shape_leng TO geom_length;""",
                 """ALTER TABLE datasources.oshighwayroadlink ADD PRIMARY KEY (toid);"""
             ]
 
@@ -274,19 +273,20 @@ class StaticWriter(DBWriter):
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON datasources.ukmap USING GIST(geom);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON datasources.ukmap(landuse);""",
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON datasources.ukmap(feature_type);""",
+                """UPDATE datasources.ukmap SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""",
             ]
 
         for sql_command in sql_commands:
             self.logger.info("Running SQL command:")
             for line in sql_command.split("\n"):
                 self.logger.info(green(line.strip()))
-            with self.dbcnxn.engine.connect() as conn:
+            with self.dbcnxn.engine.connect() as cnxn:
                 try:
-                    conn.execute(sql_command)
+                    cnxn.execute(sql_command)
                 except OperationalError:
                     self.logger.warning("Database connection lost while running statement.")
                 finally:
-                    conn.close()
+                    cnxn.close()
         self.logger.info("Finished database configuration")
 
     def update_remote_tables(self):
