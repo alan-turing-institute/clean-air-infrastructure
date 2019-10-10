@@ -66,9 +66,9 @@ resource "azurerm_postgresql_server" "this" {
   resource_group_name = "${var.resource_group}"
 
   sku {
-    name     = "B_Gen5_2"
+    name     = "MO_Gen5_2"
     capacity = 2
-    tier     = "Basic"
+    tier     = "MemoryOptimized"
     family   = "Gen5"
   }
 
@@ -76,6 +76,7 @@ resource "azurerm_postgresql_server" "this" {
     storage_mb            = "${local.db_size_mb}"
     backup_retention_days = 7
     geo_redundant_backup  = "Disabled"
+    auto_grow             = "Enabled"
   }
 
   administrator_login          = "${azurerm_key_vault_secret.db_admin_username.value}"
