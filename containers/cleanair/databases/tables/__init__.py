@@ -2,30 +2,30 @@
 Module for interacting with tables in the Azure Postgres database
 """
 from .aqe_tables import AQESite, AQEReading
-from .features_tables import IntersectionGeoms, IntersectionValues
+from .features_tables import IntersectionGeom, IntersectionValue
 from .hexgrid_table import HexGrid
-from .interest_point_table import InterestPoint
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
-from .rectgrid_table import RectGrid
-from .scoot_tables import ScootReading, ScootDetectors
-from .ukmap_table import UKMap
+from .meta_point_table import MetaPoint
 from .oshighway_table import OSHighway
+from .rectgrid_table import RectGrid
+from .scoot_tables import ScootReading, ScootDetector
+from .ukmap_table import UKMap
 
 
 __all__ = [
     "AQEReading",
     "AQESite",
     "HexGrid",
-    "InterestPoint",
+    "IntersectionGeom",
+    "IntersectionValue",
     "LAQNReading",
     "LAQNSite",
     "LondonBoundary",
+    "MetaPoint",
+    "OSHighway",
     "RectGrid",
-    "ScootDetectors",
+    "ScootDetector",
     "ScootReading",
     "UKMap",
-    "OSHighway",
-    "IntersectionGeoms",
-    "IntersectionValues",
 ]
