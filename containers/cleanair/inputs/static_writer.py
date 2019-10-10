@@ -276,10 +276,11 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_scoot_detector_id FOREIGN KEY (point_id)
                        REFERENCES interest_points.meta_point(id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
-                """UPDATE {}
+                """CREATE UNIQUE INDEX scoot_detector_detector_n_key ON {}(detector_n);""".format(self.table_schema),
+                """UPDATE {0}
                        SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
-                       WHERE {}.geom = interest_points.meta_point.location;""".format(self.table_schema),
+                       WHERE {0}.geom = interest_points.meta_point.location;""".format(self.table_schema),
                 """ALTER TABLE {} DROP COLUMN geom;""".format(self.table_schema),
             ]
 

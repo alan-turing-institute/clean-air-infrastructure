@@ -22,7 +22,7 @@ class IntersectionGeom(Base):
     geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
 
     # Create IntersectionGeom.point with no reverse relationship
-    point = relationship("InterestPoint")
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<IntersectionGeom(" + ", ".join([
@@ -63,7 +63,7 @@ class IntersectionValue(Base):
     value_10 = Column(Float, nullable=False)
 
     # Create IntersectionValue.point with no reverse relationship
-    point = relationship("InterestPoint")
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<IntersectionValue(" + ", ".join([
@@ -90,10 +90,10 @@ class IntersectionValue(Base):
                                  value_10=reading_tuple[5])
 
 
-class ExtractedFeatures(Base):
-    """Extracted features"""
-    __tablename__ = "extracted_features"
-    __table_args__ = {"schema": "buffers"}
+class ModelInput(Base):
+    """Input features for the model"""
+    __tablename__ = "model_input"
+    __table_args__ = {"schema": "dynamic_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     # Building height

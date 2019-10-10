@@ -22,7 +22,7 @@ class AQESite(Base):
     # Create AQESite.readings and AQEReading.site
     readings = relationship("AQEReading", backref="site")
     # Create AQESite.point with no reverse relationship
-    point = relationship("InterestPoint")
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([

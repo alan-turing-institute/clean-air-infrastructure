@@ -19,7 +19,7 @@ class RectGrid(Base):
     geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True))
 
     # Create RectGrid.point with no reverse relationship
-    point = relationship("InterestPoint")
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<RectGrid(" + ", ".join([
