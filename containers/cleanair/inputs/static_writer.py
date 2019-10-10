@@ -73,8 +73,8 @@ class StaticWriter(DBWriter):
         # Add additional arguments if the input data contains shape files
         extra_args = ["-lco", "GEOMETRY_NAME=geom"]
         if glob.glob("/data/{}/*.shp".format(self.data_directory)):
-            extra_args = ["-nlt", "PROMOTE_TO_MULTI",
-                          "-lco", "precision=NO"]
+            extra_args += ["-nlt", "PROMOTE_TO_MULTI",
+                           "-lco", "precision=NO"]
 
         # Preprocess the UKMap data, keeping only useful columns
         if self.table_name == "ukmap":
@@ -130,7 +130,6 @@ class StaticWriter(DBWriter):
 
         if self.table_name == "street_canyon":
             sql_commands = [
-                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS street_canyon_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
@@ -165,7 +164,6 @@ class StaticWriter(DBWriter):
 
         elif self.table_name == "hexgrid":
             sql_commands = [
-                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS hexgrid_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
@@ -175,7 +173,7 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.table_schema),
                 """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.table_schema),
                 """ALTER TABLE {} ADD PRIMARY KEY (hex_id);""".format(self.table_schema),
-                """INSERT INTO interest_points.meta_point(source, location, point_id)
+                """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT 'hexgrid', centroid, uuid_generate_v4()
                        FROM {};""".format(self.table_schema),
                 """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
@@ -191,7 +189,6 @@ class StaticWriter(DBWriter):
 
         elif self.table_name == "london_boundary":
             sql_commands = [
-                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS london_boundary_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
@@ -201,12 +198,12 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {}
                        ALTER ons_inner TYPE bool
                        USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN nonId_area TO non_id_area;""".format(self.table_schema),
                 """ALTER TABLE {} ADD PRIMARY KEY (gss_code);""".format(self.table_schema),
             ]
 
         elif self.table_name == "oshighway_roadlink":
             sql_commands = [
-                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS oshighway_roadlink_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
@@ -291,7 +288,8 @@ class StaticWriter(DBWriter):
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
-                """UPDATE {} SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""".format(self.table_schema),
+                """UPDATE {}
+                       SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""".format(self.table_schema),
             ]
 
         for sql_command in sql_commands:
