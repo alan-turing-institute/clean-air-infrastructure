@@ -5,12 +5,13 @@ import time
 from sqlalchemy import func, between, cast, Integer, literal
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, LondonBoundary, IntersectionGeoms, IntersectionValues
+from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint, UKMap
 from ..loggers import duration, green
 
 
 class StaticFeatures(DBWriter):
-    """Extract features which are near to sensor InterestPoints and inside London"""
+    """Extract features which are near to sensor MetaPoints and inside London"""
+
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
 
@@ -31,16 +32,16 @@ class StaticFeatures(DBWriter):
         return hull
 
     def query_sensor_locations(self, include_sources=None, with_buffers=False):
-        """Query InterestPoints, selecting all matching include_sources"""
+        """Query MetaPoints, selecting all matching include_sources"""
         boundary_geom = self.query_london_boundary()
         with self.dbcnxn.open_session() as session:
-            columns = [InterestPoint, func.Geography(InterestPoint.location).label("location_geog")]
+            columns = [MetaPoint, func.Geography(MetaPoint.location).label("location_geog")]
             if with_buffers:
-                columns += [func.Geometry(func.ST_Buffer(func.Geography(InterestPoint.location), rad)).label(str(rad))
+                columns += [func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), rad)).label(str(rad))
                             for rad in self.buffer_radii_metres]
-            _query = session.query(*columns).filter(InterestPoint.location.ST_Within(boundary_geom))
+            _query = session.query(*columns).filter(MetaPoint.location.ST_Within(boundary_geom))
             if include_sources:
-                _query = _query.filter(InterestPoint.source.in_(include_sources))
+                _query = _query.filter(MetaPoint.source.in_(include_sources))
         return _query
 
     def query_feature_geoms(self, feature_type, q_interest_points, q_geometries):
@@ -131,16 +132,16 @@ class StaticFeatures(DBWriter):
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
             if self.features[feature_type]['type'] == "value":
                 select_stmt = self.query_feature_values(feature_type, q_sensors, q_source).subquery().select()
-                columns = [c.key for c in IntersectionValues.__table__.columns]
-                insert_stmt = insert(IntersectionValues).from_select(columns, select_stmt)
-                indexes = [IntersectionValues.point_id, IntersectionValues.feature_type]
-                table_name = IntersectionValues.__tablename__
+                columns = [c.key for c in IntersectionValue.__table__.columns]
+                insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
+                indexes = [IntersectionValue.point_id, IntersectionValue.feature_type]
+                table_name = IntersectionValue.__tablename__
             else:
                 select_stmt = self.query_feature_geoms(feature_type, q_sensors, q_source).subquery().select()
-                columns = [c.key for c in IntersectionGeoms.__table__.columns]
-                insert_stmt = insert(IntersectionGeoms).from_select(columns, select_stmt)
-                indexes = [IntersectionGeoms.point_id, IntersectionGeoms.feature_type]
-                table_name = IntersectionGeoms.__tablename__
+                columns = [c.key for c in IntersectionGeom.__table__.columns]
+                insert_stmt = insert(IntersectionGeom).from_select(columns, select_stmt)
+                indexes = [IntersectionGeom.point_id, IntersectionGeom.feature_type]
+                table_name = IntersectionGeom.__tablename__
 
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             with self.dbcnxn.open_session() as session:
