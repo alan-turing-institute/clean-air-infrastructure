@@ -95,7 +95,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             for geometry, interest_point in unique_sites.items():
                 merged_point = session.merge(interest_point)
                 session.flush()
-                point_id[geometry] = str(merged_point.point_id)
+                point_id[geometry] = str(merged_point.id)
 
             # Add point IDs to the site_entries
             for entry in site_entries:

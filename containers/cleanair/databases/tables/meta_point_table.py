@@ -16,11 +16,11 @@ class MetaPoint(Base):
 
     source = Column(String(10), primary_key=True)
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
-    id_ = Column("id", UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
     def __repr__(self):
         return "<MetaPoint(" + ", ".join([
-            "id='{}'".format(self.id_),
+            "id='{}'".format(self.id),
             "source='{}'".format(self.source),
             "location='{}'".format(self.location),
             ])
