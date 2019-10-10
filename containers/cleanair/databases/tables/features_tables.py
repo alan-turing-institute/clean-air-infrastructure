@@ -3,6 +3,7 @@ Tables for intersection between datasource and interest points
 """
 from sqlalchemy import Column, ForeignKey, String, Float
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from ..base import Base
 
@@ -19,6 +20,9 @@ class IntersectionGeom(Base):
     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+
+    # Create IntersectionGeom.point with no reverse relationship
+    point = relationship("InterestPoint")
 
     def __repr__(self):
         return "<IntersectionGeom(" + ", ".join([
@@ -57,6 +61,9 @@ class IntersectionValue(Base):
     value_200 = Column(Float, nullable=False)
     value_100 = Column(Float, nullable=False)
     value_10 = Column(Float, nullable=False)
+
+    # Create IntersectionValue.point with no reverse relationship
+    point = relationship("InterestPoint")
 
     def __repr__(self):
         return "<IntersectionValue(" + ", ".join([

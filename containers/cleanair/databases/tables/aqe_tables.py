@@ -20,8 +20,10 @@ class AQESite(Base):
     date_opened = Column(TIMESTAMP)
     date_closed = Column(TIMESTAMP)
 
-    aqe_readings = relationship("AQEReading", back_populates="aqe_site")
-    aqe_interest_points = relationship("InterestPoint", back_populates="ip_aqesite")
+    # Create AQESite.readings and AQEReading.site
+    readings = relationship("AQEReading", backref="site")
+    # Create AQESite.point with no reverse relationship
+    point = relationship("InterestPoint")
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([
@@ -53,13 +55,11 @@ class AQEReading(Base):
     __tablename__ = "aqe_reading"
     __table_args__ = {"schema": "dynamic_data"}
 
-    site_code = Column(String(5), ForeignKey('datasources.aqe_sites.SiteCode'), primary_key=True, nullable=False)
+    site_code = Column(String(5), ForeignKey("interest_points.aqe_site.site_code"), primary_key=True, nullable=False)
     species_code = Column(String(4), primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
-
-    aqe_site = relationship("AQESite", back_populates="aqe_readings")
 
     def __repr__(self):
         return "<AQEReading(" + ", ".join([

@@ -18,7 +18,8 @@ class RectGrid(Base):
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), nullable=False)
     geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True))
 
-    rectgrid_interest_points = relationship("InterestPoint", back_populates="ip_rectgrid")
+    # Create RectGrid.point with no reverse relationship
+    point = relationship("InterestPoint")
 
     def __repr__(self):
         return "<RectGrid(" + ", ".join([

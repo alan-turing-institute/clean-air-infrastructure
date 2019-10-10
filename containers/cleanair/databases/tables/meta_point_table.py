@@ -18,10 +18,6 @@ class MetaPoint(Base):
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
     id_ = Column("id", UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
-    ip_aqesite = relationship("AQESite", back_populates="aqe_interest_points")
-    ip_laqnsite = relationship("LAQNSite", back_populates="laqn_interest_points")
-    ip_rectgrid = relationship("RectGrid", back_populates="rectgrid_interest_points")
-
     def __repr__(self):
         return "<MetaPoint(" + ", ".join([
             "id='{}'".format(self.id_),
