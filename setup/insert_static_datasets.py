@@ -32,8 +32,18 @@ def get_blob_service(resource_group, storage_container_name):
     return BlockBlobService(account_name=storage_container_name, account_key=storage_account_key)
 
 
-def download_blobs(blob_service, blob_container, target_directory):
+def download_blobs(blob_service, dataset, target_directory):
     """Download blobs from a container to a target directory"""
+    # Get the blob container name
+    dataset_to_blob_container = {
+        "street_canyon": "canyonslondon",
+        "hexgrid": "glahexgrid",
+        "london_boundary": "londonboundary",
+        "oshighway_roadlink": "oshighwayroadlink",
+        "scoot_detector": "scootdetectors",
+        "ukmap": "ukmap",
+    }
+    blob_container = dataset_to_blob_container[dataset]
     # Ensure that the target directory exists
     os.makedirs(target_directory, exist_ok=True)
     for blob in blob_service.list_blobs(blob_container):
