@@ -124,3 +124,10 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
+resource "azurerm_postgresql_firewall_rule" "gla_ips_wifi" {
+  name                = "allow-gla-wifi-ips"
+  resource_group_name = "${var.resource_group}"
+  server_name         = "${azurerm_postgresql_server.this.name}"
+  start_ip_address    = "195.99.240.222"
+  end_ip_address      = "195.99.240.222"
+}
