@@ -71,7 +71,7 @@ class StaticWriter(DBWriter):
                                 "dbname={db_name}", "sslmode={ssl_mode}"]).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
-        extra_args = []
+        extra_args = ["-lco", "GEOMETRY_NAME=geom"]
         if glob.glob("/data/{}/*.shp".format(self.data_directory)):
             extra_args = ["-nlt", "PROMOTE_TO_MULTI",
                           "-lco", "precision=NO"]
@@ -130,8 +130,8 @@ class StaticWriter(DBWriter):
 
         if self.table_name == "street_canyon":
             sql_commands = [
-                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS street_canyon_wkb_geometry_geom_idx
+                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS street_canyon_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
                        DROP COLUMN ave_relhma,
@@ -165,8 +165,8 @@ class StaticWriter(DBWriter):
 
         elif self.table_name == "hexgrid":
             sql_commands = [
-                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS hexgrid_wkb_geometry_geom_idx
+                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS hexgrid_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
                        DROP COLUMN centroid_x,
@@ -191,8 +191,8 @@ class StaticWriter(DBWriter):
 
         elif self.table_name == "london_boundary":
             sql_commands = [
-                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS london_boundary_wkb_geometry_geom_idx
+                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS london_boundary_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
                        DROP COLUMN ogc_fid,
@@ -206,8 +206,8 @@ class StaticWriter(DBWriter):
 
         elif self.table_name == "oshighway_roadlink":
             sql_commands = [
-                """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS oshighway_roadlink_wkb_geometry_geom_idx
+                # """ALTER TABLE {} RENAME COLUMN wkb_geometry TO geom;""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS oshighway_roadlink_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
                 """ALTER TABLE {}
                        DROP COLUMN alternat_1,
@@ -272,8 +272,8 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} RENAME COLUMN date_updat TO date_updated;""".format(self.table_schema),
                 """ALTER TABLE {} ADD PRIMARY KEY (detector_n);""".format(self.table_schema),
                 # Move geometry data to interest_points table - note that some detectors share a location
-                """INSERT INTO interest_points.meta_point(source, location, point_id)
-                       SELECT DISTINCT on (wkb_geometry) 'scoot', wkb_geometry, uuid_generate_v4()
+                """INSERT INTO interest_points.meta_point(source, location, id)
+                       SELECT DISTINCT on (geom) 'scoot', geom, uuid_generate_v4()
                        FROM {};""".format(self.table_schema),
                 """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
                 """ALTER TABLE {}
@@ -282,8 +282,8 @@ class StaticWriter(DBWriter):
                 """UPDATE {}
                        SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
-                       WHERE {}.wkb_geometry = interest_points.meta_point.location;""".format(self.table_schema),
-                """ALTER TABLE {} DROP COLUMN wkb_geometry;""".format(self.table_schema),
+                       WHERE {}.geom = interest_points.meta_point.location;""".format(self.table_schema),
+                """ALTER TABLE {} DROP COLUMN geom;""".format(self.table_schema),
             ]
 
         elif self.table_name == "ukmap.gdb":
