@@ -35,9 +35,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
         self.access_key = aws_key
 
         # Set up the known column names
-        self.csv_columns = ["Timestamp", "DetectorID", "DetectorFault", "NVehiclesInInterval",
-                            "OccupancyPercentage", "CongestionPercentage", "SaturationPercentage", "FlowRawCount",
-                            "OccupancyRawCount", "CongestionRawCount", "SaturationRawCount", "Region"]
+        self.csv_columns = ["timestamp", "detector_id", "detector_fault", "n_vehicles_in_interval",
+                            "occupancy_percentage", "congestion_percentage", "saturation_percentage", "flow_raw_count",
+                            "occupancy_raw_count", "congestion_raw_count", "saturation_raw_count", "region"]
 
         # Start with an empty list of detector IDs
         self.detector_ids = []
@@ -81,15 +81,15 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 # Read the CSV files into a dataframe
                 scoot_df = pandas.read_csv(filename, names=self.csv_columns, skipinitialspace=True,
                                            converters={
-                                               "Timestamp": lambda x: unix_from_str(x, timezone="Europe/London"),
-                                               "NVehiclesInInterval": lambda x: float(x) / 60,
-                                               "DetectorFault": lambda x: x.strip() == "Y",
-                                               "Region": lambda x: x.strip(),
+                                               "timestamp": lambda x: unix_from_str(x, timezone="Europe/London"),
+                                               "n_vehicles_in_interval": lambda x: float(x) / 60,
+                                               "detector_fault": lambda x: x.strip() == "Y",
+                                               "region": lambda x: x.strip(),
                                            })
                 # Remove any sites that are not in our site database
-                scoot_df = scoot_df[scoot_df["DetectorID"].isin(self.detector_ids)]
+                scoot_df = scoot_df[scoot_df["detector_id"].isin(self.detector_ids)]
                 # Remove any readings with detector faults
-                scoot_df = scoot_df[~scoot_df["DetectorFault"]]
+                scoot_df = scoot_df[~scoot_df["detector_fault"]]
                 # Append to list of readings
                 processed_readings.append(scoot_df)
             except botocore.exceptions.ClientError:
@@ -107,21 +107,21 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
     def combine_by_detector_id(self, input_df):
         """Aggregate measurements by detector ID across several readings"""
-        # Group by DetectorID: each column has its own combination rule
+        # Group by detector_id: each column has its own combination rule
         try:
             # Scale all summed variables to correct for possible missing values from detector faults
-            return input_df.groupby(["DetectorID"]).agg(
+            return input_df.groupby(["detector_id"]).agg(
                 {
-                    "DetectorID": "first",
-                    "NVehiclesInInterval": lambda x: sum(x) * (60. / len(x)),
-                    "OccupancyPercentage": "mean",
-                    "CongestionPercentage": "mean",
-                    "SaturationPercentage": "mean",
-                    "FlowRawCount": lambda x: sum(x) * (60. / len(x)),
-                    "OccupancyRawCount": lambda x: sum(x) * (60. / len(x)),
-                    "CongestionRawCount": lambda x: sum(x) * (60. / len(x)),
-                    "SaturationRawCount": lambda x: sum(x) * (60. / len(x)),
-                    "Region": "first",
+                    "detector_id": "first",
+                    "n_vehicles_in_interval": lambda x: sum(x) * (60. / len(x)),
+                    "occupancy_percentage": "mean",
+                    "congestion_percentage": "mean",
+                    "saturation_percentage": "mean",
+                    "flow_raw_count": lambda x: sum(x) * (60. / len(x)),
+                    "occupancy_raw_count": lambda x: sum(x) * (60. / len(x)),
+                    "congestion_raw_count": lambda x: sum(x) * (60. / len(x)),
+                    "saturation_raw_count": lambda x: sum(x) * (60. / len(x)),
+                    "region": "first",
                 })
         except pandas.core.base.DataError:
             self.logger.warning("Data aggregation failed - returning an empty dataframe")
@@ -143,8 +143,8 @@ class ScootWriter(DateRangeMixin, DBWriter):
         df_processed = self.validate_remote_data()
 
         # Get the minimum and maximum time in the dataset
-        time_min = datetime_from_unix(df_processed["Timestamp"].min())
-        time_max = datetime_from_unix(df_processed["Timestamp"].max())
+        time_min = datetime_from_unix(df_processed["timestamp"].min())
+        time_max = datetime_from_unix(df_processed["timestamp"].max())
 
         n_records = 0
         # Slice processed data into hourly chunks and aggregate these by detector ID
@@ -155,17 +155,17 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
             # Construct hourly data
             self.logger.info("Processing data between %s and %s", green(start_time), green(end_time))
-            df_hourly = df_processed.loc[(df_processed["Timestamp"] > start_time.timestamp()) &
-                                         (df_processed["Timestamp"] <= end_time.timestamp())].copy()
+            df_hourly = df_processed.loc[(df_processed["timestamp"] > start_time.timestamp()) &
+                                         (df_processed["timestamp"] <= end_time.timestamp())].copy()
 
             # Drop unused columns and aggregate
             self.logger.info("Aggregating %s readings by site", green(df_hourly.shape[0]))
-            df_hourly.drop(["DetectorFault", "Timestamp"], axis=1, inplace=True)
+            df_hourly.drop(["detector_fault", "timestamp"], axis=1, inplace=True)
             df_aggregated = self.combine_by_detector_id(df_hourly)
 
             # Add timestamps
-            df_aggregated["MeasurementStartUTC"] = utcstr_from_datetime(start_time)
-            df_aggregated["MeasurementEndUTC"] = utcstr_from_datetime(end_time)
+            df_aggregated["measurement_start_utc"] = utcstr_from_datetime(start_time)
+            df_aggregated["measurement_end_utc"] = utcstr_from_datetime(end_time)
 
             # Add readings to database
             start_session = time.time()
