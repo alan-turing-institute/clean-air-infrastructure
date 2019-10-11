@@ -195,7 +195,7 @@ It is possible to test code without the Azure infrastructure. This can be achiev
 brew install postgresql postgis
 ```
 
-Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_input_secret.json`:
+Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_secrets.json`:
 
 ```json
 {

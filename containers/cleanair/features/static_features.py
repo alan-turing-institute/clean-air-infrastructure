@@ -1,37 +1,28 @@
 """
-UKMap Feature extraction
+Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, or_, between, cast, Integer, literal
+from sqlalchemy import func, between, cast, Integer, literal
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, LondonBoundary, UKMap, UKMapIntersectionGeoms, UKMapIntersectionValues
+from ..databases.tables import InterestPoint, LondonBoundary, IntersectionGeoms, IntersectionValues
 from ..loggers import duration, green
 
 
 class StaticFeatures(DBWriter):
-    """Extract UKMap features which are near to sensor InterestPoints and inside London"""
-
+    """Extract features which are near to sensor InterestPoints and inside London"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
 
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # List of features to extract
-        self.ukmap_features = {
-            "building_height": {"feature_type": ["Building"]},  # est ~3h [crashed after 45m] (was 1m46s on 100k)
-            "flat": {"feature_type": ["Vegetated", "Water"]},   # est ~4.5h (was 2m34s on 100k)
-            "grass": {"feature_type": ["Vegetated"]},   # est ~4.5h (was 2m29s on 100k)
-            "hospitals": {"landuse": ["Hospitals"]},  # 8m30s (was 4s on 100k)
-            "museums": {"landuse": ["Museum"]},  # 1m30s (was 3s on 100k)
-            "park": {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]},  # 20m (was 6s on 100k)
-            "water": {"feature_type": ["Water"]},  # 8m (was 5s on 100k)
-        }
-
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+
+        # Define in inhereting classes
+        self.features = None
 
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
@@ -51,19 +42,6 @@ class StaticFeatures(DBWriter):
             if include_sources:
                 _query = _query.filter(InterestPoint.source.in_(include_sources))
         return _query
-
-    def query_ukmap_features(self, feature_type):
-        """Query UKMap, selecting all features matching the requirements in the feature_dict"""
-        with self.dbcnxn.open_session() as session:
-            columns = [UKMap.geom, func.Geography(UKMap.geom).label("geom_geog"), UKMap.feature_type]
-            if feature_type == "building_height":
-                columns.append(UKMap.calculated_height_of_building)
-            else:
-                columns.append(UKMap.landuse)
-            q_ukmap = session.query(*columns)
-            for column, values in self.ukmap_features[feature_type].items():
-                q_ukmap = q_ukmap.filter(or_(*[getattr(UKMap, column) == value for value in values]))
-        return q_ukmap
 
     def query_feature_geoms(self, feature_type, q_interest_points, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
@@ -134,35 +112,35 @@ class StaticFeatures(DBWriter):
         # Return the overall query
         return q_intersections
 
-    def calculate_ukmap_intersections(self):
+    def calculate_intersections(self):
         """
         For each sensor location, for each feature:
-        extract the UK map geometry for that feature in each of the buffer radii
+        extract the geometry for that feature in each of the buffer radii
         """
         # Get all sensors of interest
         q_sensors = self.query_sensor_locations(include_sources=self.sources, with_buffers=True)
 
-        # Iterate over each of the UK map features and calculate the overlap with the sensors
-        for feature_type in self.ukmap_features:
+        # Iterate over each of the features and calculate the overlap with the sensors
+        for feature_type in self.features:
             start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_type))
 
-            # Get UKMap geometries for this feature
-            q_ukmap = self.query_ukmap_features(feature_type)
+            # Get geometries for this feature
+            q_source = self.query_features(feature_type)
 
             # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
-            if feature_type == "building_height":
-                select_stmt = self.query_feature_values(feature_type, q_sensors, q_ukmap).subquery().select()
-                columns = [c.key for c in UKMapIntersectionValues.__table__.columns]
-                insert_stmt = insert(UKMapIntersectionValues).from_select(columns, select_stmt)
-                indexes = [UKMapIntersectionValues.point_id, UKMapIntersectionValues.feature_type]
-                table_name = UKMapIntersectionValues.__tablename__
+            if self.features[feature_type]['type'] == "value":
+                select_stmt = self.query_feature_values(feature_type, q_sensors, q_source).subquery().select()
+                columns = [c.key for c in IntersectionValues.__table__.columns]
+                insert_stmt = insert(IntersectionValues).from_select(columns, select_stmt)
+                indexes = [IntersectionValues.point_id, IntersectionValues.feature_type]
+                table_name = IntersectionValues.__tablename__
             else:
-                select_stmt = self.query_feature_geoms(feature_type, q_sensors, q_ukmap).subquery().select()
-                columns = [c.key for c in UKMapIntersectionGeoms.__table__.columns]
-                insert_stmt = insert(UKMapIntersectionGeoms).from_select(columns, select_stmt)
-                indexes = [UKMapIntersectionGeoms.point_id, UKMapIntersectionGeoms.feature_type]
-                table_name = UKMapIntersectionGeoms.__tablename__
+                select_stmt = self.query_feature_geoms(feature_type, q_sensors, q_source).subquery().select()
+                columns = [c.key for c in IntersectionGeoms.__table__.columns]
+                insert_stmt = insert(IntersectionGeoms).from_select(columns, select_stmt)
+                indexes = [IntersectionGeoms.point_id, IntersectionGeoms.feature_type]
+                table_name = IntersectionGeoms.__tablename__
 
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             with self.dbcnxn.open_session() as session:
@@ -176,4 +154,9 @@ class StaticFeatures(DBWriter):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.calculate_ukmap_intersections()
+        self.calculate_intersections()
+
+    def query_features(self, feature_name):
+        """Query data source, selecting all features matching the requirements in feature_dict.
+           Should be implemented by a subsclass"""
+        raise NotImplementedError("Subclasses should implement self.query_features")
