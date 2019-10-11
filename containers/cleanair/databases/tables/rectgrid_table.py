@@ -28,3 +28,11 @@ class RectGrid(Base):
             "point_id='{}'".format(self.point_id),
             "geom='{}'".format(self.geom),
             ])
+
+    @staticmethod
+    def build_entry(gridcell_dict):
+        """Create a RectGrid entry and return it"""
+        return RectGrid(column_id=gridcell_dict["column_id"],
+                        row_id=gridcell_dict["row_id"],
+                        point_id=str(gridcell_dict["point_id"]),
+                        geom=gridcell_dict["geom"])

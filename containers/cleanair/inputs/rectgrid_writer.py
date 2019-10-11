@@ -66,7 +66,7 @@ class RectGridWriter(DBWriter):
                 grid_cell["point_id"] = meta_point.id  # this will be None if the record was not inserted
 
             # Commit the grid cell records to the database
-            grid_records = [RectGrid(**grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
+            grid_records = [RectGrid.build_entry(grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
             self.logger.info("Adding %i new cells to %s table...", len(grid_records), green("rectgrid"))
             self.add_records(session, grid_records)
             session.commit()
