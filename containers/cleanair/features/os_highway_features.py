@@ -1,7 +1,7 @@
 """
 OS Highway feature extraction
 """
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from .static_features import StaticFeatures
 from ..databases.tables import OSHighway
 
@@ -25,8 +25,9 @@ class OSHighwayFeatures(StaticFeatures):
     def query_features(self, feature_name):
         """Query UKMap, selecting all features matching the requirements in feature_dict"""
         with self.dbcnxn.open_session() as session:
-            q_source = session.query(OSHighway.geom, OSHighway.route_hierarchy)
-            for column, values in self.features[feature_name]['feature_dict'].items():
+            columns = [OSHighway.geom, func.Geography(OSHighway.geom).label("geom_geog"), OSHighway.route_hierarchy]
+            q_source = session.query(*columns)
+            for column, values in self.features[feature_name]["feature_dict"].items():
                 if not values[0] == '*':
                     q_source = q_source.filter(or_(*[getattr(OSHighway, column) == value for value in values]))
         return q_source

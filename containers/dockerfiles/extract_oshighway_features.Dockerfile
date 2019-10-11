@@ -15,7 +15,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/extract_osh_features.py /app
+COPY entrypoints/extract_oshighway_features.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "extract_oshighway_features.py"]

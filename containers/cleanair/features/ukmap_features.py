@@ -1,7 +1,7 @@
 """
 UKMAP feature extraction
 """
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from .static_features import StaticFeatures
 from ..databases.tables import UKMap
 
@@ -26,12 +26,14 @@ class UKMapFeatures(StaticFeatures):
         }
 
     def query_features(self, feature_name):
-        """Query UKMap, selecting all features matching the requirements in feature_dict"""
+        """Query UKMap, selecting all features matching the requirements in the feature_dict"""
         with self.dbcnxn.open_session() as session:
+            columns = [UKMap.geom, func.Geography(UKMap.geom).label("geom_geog"), UKMap.feature_type]
             if feature_name == "building_height":
-                q_source = session.query(UKMap.geom, UKMap.calculated_height_of_building, UKMap.feature_type)
+                columns.append(UKMap.calculated_height_of_building)
             else:
-                q_source = session.query(UKMap.geom, UKMap.landuse, UKMap.feature_type)
-            for column, values in self.features[feature_name]['feature_dict'].items():
+                columns.append(UKMap.landuse)
+            q_source = session.query(*columns)
+            for column, values in self.ukmap_features[feature_type].items():
                 q_source = q_source.filter(or_(*[getattr(UKMap, column) == value for value in values]))
         return q_source

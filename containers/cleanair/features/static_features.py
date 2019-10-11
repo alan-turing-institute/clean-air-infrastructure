@@ -5,7 +5,7 @@ import time
 from sqlalchemy import func, between, cast, Integer, literal
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
-from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint, UKMap
+from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
 
 
