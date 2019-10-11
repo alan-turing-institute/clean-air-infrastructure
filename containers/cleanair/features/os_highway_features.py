@@ -1,18 +1,19 @@
 """
 OS Highway feature extraction
 """
-from sqlalchemy import func, or_, between, cast, Integer
+from sqlalchemy import or_
 from .static_features import StaticFeatures
 from ..databases.tables import OSHighway
 
-class OSHFeatures(StaticFeatures):
 
+class OSHFeatures(StaticFeatures):
+    """Extract features for OSHighways"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
         # Initialise parent classes
         super().__init__(**kwargs)
 
-         # List of features to extract
+        # List of features to extract
         self.features = {
             "total_road_length": {"type": "geom", 'feature_dict': {"route_hierarchy": ["*"]}},
             "total_a_road_prim_length":  {"type": "geom", 'feature_dict': {"route_hierarchy": ["A Road Primary"]}},
@@ -29,8 +30,3 @@ class OSHFeatures(StaticFeatures):
                 if not values[0] == '*':
                     q_source = q_source.filter(or_(*[getattr(OSHighway, column) == value for value in values]))
         return q_source
-
-        
-
-
-        

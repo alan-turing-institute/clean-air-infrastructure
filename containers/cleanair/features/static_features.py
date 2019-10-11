@@ -2,7 +2,7 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, or_, between, cast, Integer, literal
+from sqlalchemy import func, between, cast, Integer, literal
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import InterestPoint, LondonBoundary, IntersectionGeoms, IntersectionValues
@@ -20,6 +20,9 @@ class StaticFeatures(DBWriter):
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+
+        # Define in inhereting classes
+        self.features = None
 
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
@@ -39,7 +42,6 @@ class StaticFeatures(DBWriter):
             if include_sources:
                 _query = _query.filter(InterestPoint.source.in_(include_sources))
         return _query
-
 
     def query_feature_geoms(self, feature_type, q_interest_points, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
@@ -109,7 +111,6 @@ class StaticFeatures(DBWriter):
 
         # Return the overall query
         return q_intersections
-
 
     def calculate_intersections(self):
         """

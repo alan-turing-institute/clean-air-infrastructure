@@ -1,12 +1,13 @@
 """
 UKMAP feature extraction
 """
-from sqlalchemy import func, or_, between, cast, Integer
+from sqlalchemy import or_
 from .static_features import StaticFeatures
 from ..databases.tables import UKMap
 
-class UKMapFeatures(StaticFeatures):
 
+class UKMapFeatures(StaticFeatures):
+    """Extract features for UKMap"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
         # Initialise parent classes
@@ -19,7 +20,8 @@ class UKMapFeatures(StaticFeatures):
             "grass": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated"]}},
             "hospitals": {"type": "geom", 'feature_dict': {"landuse": ["Hospitals"]}},
             "museums": {"type": "geom", 'feature_dict': {"landuse": ["Museum"]}},
-            "park": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated"], "landuse": ["Recreational open space"]}},
+            "park": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated"],
+                                                      "landuse": ["Recreational open space"]}},
             "water": {"type": "geom", 'feature_dict': {"feature_type": ["Water"]}},
         }
 

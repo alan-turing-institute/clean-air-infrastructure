@@ -25,7 +25,7 @@ __all__ = [
     "ScootDetectors",
     "ScootReading",
     "UKMap",
-    "OSHighway"
+    "OSHighway",
     "IntersectionGeoms",
     "IntersectionValues",
 ]

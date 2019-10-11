@@ -75,12 +75,12 @@ class IntersectionValues(Base):
         Create a UKMapIntersectionValues entry and return it
         """
         return IntersectionValues(point_id=str(reading_tuple[0]),
-                                       feature_type=feature_type,
-                                       value_1000=reading_tuple[1],
-                                       value_500=reading_tuple[2],
-                                       value_200=reading_tuple[3],
-                                       value_100=reading_tuple[4],
-                                       value_10=reading_tuple[5])
+                                  feature_type=feature_type,
+                                  value_1000=reading_tuple[1],
+                                  value_500=reading_tuple[2],
+                                  value_200=reading_tuple[3],
+                                  value_100=reading_tuple[4],
+                                  value_10=reading_tuple[5])
 
 
 class ExtractedFeatures(Base):
