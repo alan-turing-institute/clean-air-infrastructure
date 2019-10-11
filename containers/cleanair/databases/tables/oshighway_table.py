@@ -1,15 +1,15 @@
 """
-Table for UKMap static data
+Table for OS highways static data
 """
 from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 
 
 class OSHighway(DeferredReflection, Base):
-    """Table of static UKMap data"""
-    __tablename__ = "oshighwayroadlink"  # ukmap_test
-    __table_args__ = {'schema': 'datasources'}
+    """Table of static OS highways data"""
+    __tablename__ = "oshighway_roadlink"
+    __table_args__ = {"schema": "static_data"}
 
     def __repr__(self):
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
-        return "<UKMap(" + ", ".join(vals)
+        return "<OSHighway(" + ", ".join(vals)

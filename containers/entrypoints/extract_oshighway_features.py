@@ -4,7 +4,7 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import OSHFeatures
+from cleanair.features import OSHighwayFeatures
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     Extract static features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get LAQN sensor data")
+    parser = argparse.ArgumentParser(description="Extract static OS highway features")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
@@ -28,7 +28,7 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = OSHFeatures(**kwargs)
+        static_feature_extractor = OSHighwayFeatures(**kwargs)
 
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()

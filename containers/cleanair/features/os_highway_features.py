@@ -6,7 +6,7 @@ from .static_features import StaticFeatures
 from ..databases.tables import OSHighway
 
 
-class OSHFeatures(StaticFeatures):
+class OSHighwayFeatures(StaticFeatures):
     """Extract features for OSHighways"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])

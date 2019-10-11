@@ -18,4 +18,4 @@ COPY cleanair /app/cleanair
 COPY entrypoints/extract_osh_features.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "extract_osh_features.py"]
+ENTRYPOINT ["python", "extract_oshighway_features.py"]
