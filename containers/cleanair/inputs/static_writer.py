@@ -298,8 +298,7 @@ class StaticWriter(DBWriter):
 
         self.logger.info("Running SQL commands:")
         for sql_command in sql_commands:
-            for line in sql_command.split("\n"):
-                self.logger.info(green(line.strip()))
+            self.logger.info(green(" ".join(sql_command.replace("\n", " ").split()).strip()))
             with self.dbcnxn.engine.connect() as cnxn:
                 try:
                     cnxn.execute(sql_command)
