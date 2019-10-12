@@ -128,41 +128,7 @@ class StaticWriter(DBWriter):
         self.logger.info("Configuring database table: %s", green(self.table_name))
         sql_commands = []
 
-        if self.table_name == "street_canyon":
-            sql_commands = [
-                """CREATE INDEX IF NOT EXISTS street_canyon_geom_geom_idx
-                       ON {} USING GIST(geom);""".format(self.table_schema),
-                """ALTER TABLE {}
-                       DROP COLUMN ave_relhma,
-                       DROP COLUMN identifier,
-                       DROP COLUMN identifi_2,
-                       DROP COLUMN length,
-                       DROP COLUMN min_length,
-                       DROP COLUMN max_length,
-                       DROP COLUMN objectid_1,
-                       DROP COLUMN objectid_2,
-                       DROP COLUMN objectid,
-                       DROP COLUMN ogc_fid,
-                       DROP COLUMN provenance,
-                       DROP COLUMN shape_le_1,
-                       DROP COLUMN sum_length,
-                       DROP COLUMN sum_shape_;""".format(self.table_schema),
-                """ALTER TABLE {}
-                       ALTER fictitious TYPE bool
-                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
-                """ALTER TABLE {}
-                       ALTER operationa TYPE bool
-                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
-            ]
-
-        elif self.table_name == "hexgrid":
+        if self.table_name == "hexgrid":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS hexgrid_geom_geom_idx
                        ON {} USING GIST(geom);""".format(self.table_schema),
@@ -198,7 +164,7 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {}
                        ALTER ons_inner TYPE bool
                        USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN nonId_area TO non_id_area;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN nonld_area TO non_ld_area;""".format(self.table_schema),
                 """ALTER TABLE {} ADD PRIMARY KEY (gss_code);""".format(self.table_schema),
             ]
 
@@ -284,6 +250,40 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} DROP COLUMN geom;""".format(self.table_schema),
             ]
 
+        elif self.table_name == "street_canyon":
+            sql_commands = [
+                """CREATE INDEX IF NOT EXISTS street_canyon_geom_geom_idx
+                       ON {} USING GIST(geom);""".format(self.table_schema),
+                """ALTER TABLE {}
+                       DROP COLUMN ave_relhma,
+                       DROP COLUMN identifier,
+                       DROP COLUMN identifi_2,
+                       DROP COLUMN length,
+                       DROP COLUMN min_length,
+                       DROP COLUMN max_length,
+                       DROP COLUMN objectid_1,
+                       DROP COLUMN objectid_2,
+                       DROP COLUMN objectid,
+                       DROP COLUMN ogc_fid,
+                       DROP COLUMN provenance,
+                       DROP COLUMN shape_le_1,
+                       DROP COLUMN sum_length,
+                       DROP COLUMN sum_shape_;""".format(self.table_schema),
+                """ALTER TABLE {}
+                       ALTER fictitious TYPE bool
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                """ALTER TABLE {}
+                       ALTER operationa TYPE bool
+                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
+                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
+                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
+            ]
+
         elif self.table_name == "ukmap":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
@@ -296,8 +296,8 @@ class StaticWriter(DBWriter):
                        ON {}(calculated_height_of_building);""".format(self.table_schema),
             ]
 
+        self.logger.info("Running SQL commands:")
         for sql_command in sql_commands:
-            self.logger.info("Running SQL command:")
             for line in sql_command.split("\n"):
                 self.logger.info(green(line.strip()))
             with self.dbcnxn.engine.connect() as cnxn:
