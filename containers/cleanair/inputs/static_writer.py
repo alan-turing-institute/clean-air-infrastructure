@@ -95,7 +95,7 @@ class StaticWriter(DBWriter):
                                "shape_length AS geom_length",
                                "shape_area AS geom_area",
                                "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
-            self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow")
+            self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow (~1hr)")
 
         # Force scoot detector geometries to POINT
         elif self.table_name == "scoot_detector":
@@ -287,18 +287,19 @@ class StaticWriter(DBWriter):
         elif self.table_name == "ukmap":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
-                """UPDATE {} SET geom = ST_Multi(ST_BuildArea(geom))
-                       WHERE ST_GeometryType(geom)!='ST_MultiPolygon';""".format(self.table_schema),
-                """UPDATE {} SET geom = ST_MakeValid(geom) WHERE NOT ST_IsValid(geom);""".format(self.table_schema),
+                """UPDATE {} SET geom = ST_Multi(ST_BuildArea(ST_MakeValid(geom)))
+                       WHERE ST_GeometryType(geom)!='ST_MultiPolygon'
+                       OR NOT ST_IsValid(geom);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_calculated_height_of_building_idx
                        ON {}(calculated_height_of_building);""".format(self.table_schema),
             ]
+            self.logger.info("Please note processing the uploaded data on the server will be slow (~30mins)")
 
-        self.logger.info("Running SQL commands:")
-        for sql_command in sql_commands:
-            self.logger.info(green(" ".join(sql_command.replace("\n", " ").split()).strip()))
+        self.logger.info("Running %i SQL commands:", len(sql_commands))
+        for idx, sql_command in enumerate(sql_commands):
+            self.logger.info(green("{}: ".format(idx) + " ".join(sql_command.split()).strip()))
             with self.dbcnxn.engine.connect() as cnxn:
                 try:
                     cnxn.execute(sql_command)
