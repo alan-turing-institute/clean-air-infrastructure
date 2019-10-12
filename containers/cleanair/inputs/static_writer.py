@@ -284,13 +284,16 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} DROP COLUMN geom;""".format(self.table_schema),
             ]
 
-        elif self.table_name == "ukmap.gdb":
+        elif self.table_name == "ukmap":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
+                """UPDATE {} SET geom = ST_MakeValid(geom) WHERE NOT ST_IsValid(geom);""".format(self.table_schema),
+                """UPDATE {} SET geom = ST_Multi(ST_BuildArea(geom))
+                       WHERE ST_GeometryType(geom)!='ST_MultiPolygon';""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
-                """UPDATE {}
-                       SET geom = ST_Multi(ST_BuildArea(ST_Force2D(ST_MakeValid(geom))));""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS ukmap_calculated_height_of_building_idx
+                       ON {}(calculated_height_of_building);""".format(self.table_schema),
             ]
 
         for sql_command in sql_commands:
