@@ -287,9 +287,9 @@ class StaticWriter(DBWriter):
         elif self.table_name == "ukmap":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
-                """UPDATE {} SET geom = ST_MakeValid(geom) WHERE NOT ST_IsValid(geom);""".format(self.table_schema),
                 """UPDATE {} SET geom = ST_Multi(ST_BuildArea(geom))
                        WHERE ST_GeometryType(geom)!='ST_MultiPolygon';""".format(self.table_schema),
+                """UPDATE {} SET geom = ST_MakeValid(geom) WHERE NOT ST_IsValid(geom);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
                 """CREATE INDEX IF NOT EXISTS ukmap_calculated_height_of_building_idx
