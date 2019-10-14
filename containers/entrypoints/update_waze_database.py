@@ -14,6 +14,7 @@ def main():
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get Waze data")  
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
+    parser.add_argument("-u", "--wazeurl", type=str, default="", help="Waze API endpoint")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
@@ -28,7 +29,6 @@ def main():
     # Perform update and notify any exceptions
     try:
         waze_writer = WazeWriter(**vars(args))
-
         # Update the LAQN tables on the database
         waze_writer.update_remote_tables()
     except Exception as error:

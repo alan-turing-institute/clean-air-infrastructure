@@ -23,12 +23,12 @@ from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 # import time
 # import datetime
 
-class WazeWriter(DBWriter):
+class WazeWriter(APIRequestMixin, DBWriter):
     """
     Class to get data from waze via the waze API
     """
 
-    def __init__(self, endpoint, **kwargs):
+    def __init__(self, wazeurl, **kwargs):
 
         # Inititalise parent class
         super().__init__(**kwargs)
@@ -37,15 +37,14 @@ class WazeWriter(DBWriter):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
             
-        self.endpoint = endpoint 
+        self.endpoint = wazeurl
 
     def request_data(self):
         """
         Request waze data
         """
-
         try:
-            raw_data = self.get_response(self.endpiint, timeout=5.0).json()
+            raw_data = self.get_response(self.endpoint, timeout=5.0).json()
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed: %s", endpoint, error)
             return None
@@ -66,7 +65,7 @@ class WazeWriter(DBWriter):
 
             # Get all readings for each site between its start and end dates and update the database
             waze_data = self.request_data()
-            waze_data_processed = self.process_data()
+            # waze_data_processed = self.process_data()
 
             # site_records = [].build_entry(site_reading) for site_reading in site_readings]
 
