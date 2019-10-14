@@ -44,10 +44,12 @@ class StaticWriter(DBWriter):
 
     @property
     def schema(self):
+        """Get schema that the current dataset will live under"""
         return self.schemas[self.table_name]
 
     @property
-    def table_schema(self):
+    def schema_table(self):
+        """Get schema and table where the current dataset will live"""
         return "{}.{}".format(self.schema, self.table_name)
 
     def upload_static_files(self):
@@ -83,9 +85,8 @@ class StaticWriter(DBWriter):
                            "-dim", "XY",
                            "-sql", "SELECT " + ", ".join([
                                "CAST(geographic_type_number AS integer) AS geographic_type_number",
-                               # NB. The next command is a single string split across mulitple lines for readability
-                               "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-',"
-                               "SUBSTR(date_of_feature_edit, -4, 2), '-',"
+                               "CAST(CONCAT('20', SUBSTR(CONCAT('00', date_of_feature_edit), -6, 2), '-'," +
+                               "SUBSTR(date_of_feature_edit, -4, 2), '-'," +
                                "SUBSTR(date_of_feature_edit, -2)) AS date) AS date_of_feature_edit",
                                "feature_type",
                                "landuse",
@@ -95,7 +96,7 @@ class StaticWriter(DBWriter):
                                "shape_length AS geom_length",
                                "shape_area AS geom_area",
                                "shape AS geom"]) + " FROM BASE_HB0_complete_merged"]
-            self.logger.info("Please note that this dataset requires a lot of SQL processing so upload will be slow (~1hr)")
+            self.logger.info("Please note that this dataset requires SQL pre-processing so upload will be slow (~1hr)")
 
         # Force scoot detector geometries to POINT
         elif self.table_name == "scoot_detector":
@@ -131,47 +132,48 @@ class StaticWriter(DBWriter):
         if self.table_name == "hexgrid":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS hexgrid_geom_geom_idx
-                       ON {} USING GIST(geom);""".format(self.table_schema),
+                       ON {} USING GIST(geom);""".format(self.schema_table),
                 """ALTER TABLE {}
                        DROP COLUMN centroid_x,
                        DROP COLUMN centroid_y,
-                       DROP COLUMN ogc_fid;""".format(self.table_schema),
-                """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.table_schema),
-                """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (hex_id);""".format(self.table_schema),
+                       DROP COLUMN ogc_fid;""".format(self.schema_table),
+                """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.schema_table),
+                """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.schema_table),
+                """ALTER TABLE {} ADD PRIMARY KEY (hex_id);""".format(self.schema_table),
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT 'hexgrid', centroid, uuid_generate_v4()
-                       FROM {};""".format(self.table_schema),
-                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
+                       FROM {};""".format(self.schema_table),
+                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_hexgrid_id FOREIGN KEY (point_id)
-                       REFERENCES interest_points.meta_point(id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
+                       REFERENCES interest_points.meta_point(id)
+                       ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
                 """UPDATE {0}
                        SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
-                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.table_schema),
-                """ALTER TABLE {} DROP COLUMN centroid;""".format(self.table_schema),
+                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.schema_table),
+                """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
             ]
 
         elif self.table_name == "london_boundary":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS london_boundary_geom_geom_idx
-                       ON {} USING GIST(geom);""".format(self.table_schema),
+                       ON {} USING GIST(geom);""".format(self.schema_table),
                 """ALTER TABLE {}
                        DROP COLUMN ogc_fid,
                        DROP COLUMN sub_2006,
-                       DROP COLUMN sub_2009;""".format(self.table_schema),
+                       DROP COLUMN sub_2009;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER ons_inner TYPE bool
-                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN nonld_area TO non_ld_area;""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (gss_code);""".format(self.table_schema),
+                       USING CASE WHEN ons_inner='F' THEN FALSE ELSE TRUE END;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN nonld_area TO non_ld_area;""".format(self.schema_table),
+                """ALTER TABLE {} ADD PRIMARY KEY (gss_code);""".format(self.schema_table),
             ]
 
         elif self.table_name == "oshighway_roadlink":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS oshighway_roadlink_geom_geom_idx
-                       ON {} USING GIST(geom);""".format(self.table_schema),
+                       ON {} USING GIST(geom);""".format(self.schema_table),
                 """ALTER TABLE {}
                        DROP COLUMN alternat_1,
                        DROP COLUMN alternat_2,
@@ -192,33 +194,33 @@ class StaticWriter(DBWriter):
                        DROP COLUMN roadname21,
                        DROP COLUMN roadstruct,
                        DROP COLUMN roadwidtha,
-                       DROP COLUMN roadwidthm;""".format(self.table_schema),
+                       DROP COLUMN roadwidthm;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER fictitious TYPE bool
-                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER trunkroad TYPE bool
-                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                       USING CASE WHEN trunkroad=0 THEN FALSE ELSE TRUE END;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER primaryrou TYPE bool
-                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN formofway TO form_of_way;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN primaryrou TO primary_route;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN reasonforc TO reason_for_change;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
+                       USING CASE WHEN primaryrou=0 THEN FALSE ELSE TRUE END;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN formofway TO form_of_way;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN primaryrou TO primary_route;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN reasonforc TO reason_for_change;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.schema_table),
+                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.schema_table),
             ]
 
         elif self.table_name == "scoot_detector":
             sql_commands = [
                 # Tidy up scoot_detector table
                 """DELETE FROM {0} WHERE ogc_fid NOT IN
-                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(self.table_schema),
+                       (SELECT DISTINCT ON (detector_n) ogc_fid FROM {0});""".format(self.schema_table),
                 """ALTER TABLE {}
                        DROP COLUMN cell,
                        DROP COLUMN dataset,
@@ -230,30 +232,31 @@ class StaticWriter(DBWriter):
                        DROP COLUMN northing,
                        DROP COLUMN objectid,
                        DROP COLUMN ogc_fid,
-                       DROP COLUMN unique_id;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN itn_date TO date_installed;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN date_updat TO date_updated;""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (detector_n);""".format(self.table_schema),
+                       DROP COLUMN unique_id;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN itn_date TO date_installed;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN date_updat TO date_updated;""".format(self.schema_table),
+                """ALTER TABLE {} ADD PRIMARY KEY (detector_n);""".format(self.schema_table),
                 # Move geometry data to interest_points table - note that some detectors share a location
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT DISTINCT on (geom) 'scoot', geom, uuid_generate_v4()
-                       FROM {};""".format(self.table_schema),
-                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.table_schema),
+                       FROM {};""".format(self.schema_table),
+                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_scoot_detector_id FOREIGN KEY (point_id)
-                       REFERENCES interest_points.meta_point(id) ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.table_schema),
-                """CREATE UNIQUE INDEX scoot_detector_detector_n_key ON {}(detector_n);""".format(self.table_schema),
+                       REFERENCES interest_points.meta_point(id)
+                       ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
+                """CREATE UNIQUE INDEX scoot_detector_detector_n_key ON {}(detector_n);""".format(self.schema_table),
                 """UPDATE {0}
                        SET point_id = interest_points.meta_point.id
                        FROM interest_points.meta_point
-                       WHERE {0}.geom = interest_points.meta_point.location;""".format(self.table_schema),
-                """ALTER TABLE {} DROP COLUMN geom;""".format(self.table_schema),
+                       WHERE {0}.geom = interest_points.meta_point.location;""".format(self.schema_table),
+                """ALTER TABLE {} DROP COLUMN geom;""".format(self.schema_table),
             ]
 
         elif self.table_name == "street_canyon":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS street_canyon_geom_geom_idx
-                       ON {} USING GIST(geom);""".format(self.table_schema),
+                       ON {} USING GIST(geom);""".format(self.schema_table),
                 """ALTER TABLE {}
                        DROP COLUMN ave_relhma,
                        DROP COLUMN identifier,
@@ -268,32 +271,32 @@ class StaticWriter(DBWriter):
                        DROP COLUMN provenance,
                        DROP COLUMN shape_le_1,
                        DROP COLUMN sum_length,
-                       DROP COLUMN sum_shape_;""".format(self.table_schema),
+                       DROP COLUMN sum_shape_;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER fictitious TYPE bool
-                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.table_schema),
+                       USING CASE WHEN fictitious=0 THEN FALSE ELSE TRUE END;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ALTER operationa TYPE bool
-                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.table_schema),
-                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.table_schema),
-                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.table_schema),
+                       USING CASE WHEN operationa='Open' THEN TRUE ELSE FALSE END;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN directiona TO directionality;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN matchstatu TO match_status;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN operationa TO operational;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN roadclassi TO road_classification;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN routehiera TO route_hierarchy;""".format(self.schema_table),
+                """ALTER TABLE {} RENAME COLUMN shape_leng TO geom_length;""".format(self.schema_table),
+                """ALTER TABLE {} ADD PRIMARY KEY (toid);""".format(self.schema_table),
             ]
 
         elif self.table_name == "ukmap":
             sql_commands = [
-                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.table_schema),
+                """CREATE INDEX IF NOT EXISTS ukmap_geom_geom_idx ON {} USING GIST(geom);""".format(self.schema_table),
                 """UPDATE {} SET geom = ST_Multi(ST_BuildArea(ST_MakeValid(geom)))
                        WHERE ST_GeometryType(geom)!='ST_MultiPolygon'
-                       OR NOT ST_IsValid(geom);""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.table_schema),
-                """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.table_schema),
+                       OR NOT ST_IsValid(geom);""".format(self.schema_table),
+                """CREATE INDEX IF NOT EXISTS ukmap_landuse_idx ON {}(landuse);""".format(self.schema_table),
+                """CREATE INDEX IF NOT EXISTS ukmap_feature_type_idx ON {}(feature_type);""".format(self.schema_table),
                 """CREATE INDEX IF NOT EXISTS ukmap_calculated_height_of_building_idx
-                       ON {}(calculated_height_of_building);""".format(self.table_schema),
+                       ON {}(calculated_height_of_building);""".format(self.schema_table),
             ]
             self.logger.info("Please note processing the uploaded data on the server will be slow (~30mins)")
 

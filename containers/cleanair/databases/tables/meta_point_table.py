@@ -5,7 +5,6 @@ import uuid
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from ..base import Base
 
 
@@ -16,7 +15,7 @@ class MetaPoint(Base):
 
     source = Column(String(10), primary_key=True)
     location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
-    id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)  # pylint: disable=invalid-name
 
     def __repr__(self):
         return "<MetaPoint(" + ", ".join([

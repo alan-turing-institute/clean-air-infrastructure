@@ -13,8 +13,8 @@ class ScootReading(Base):
     __tablename__ = "scoot_reading"
     __table_args__ = {"schema": "dynamic_data"}
 
-    # detector_id = Column(String(9), primary_key=True, nullable=False)  # DETSCN
-    detector_id = Column(String(9), ForeignKey("interest_points.scoot_detector.detector_n"), primary_key=True, nullable=False)  # DETSCN
+    detector_id = Column(String(9), ForeignKey("interest_points.scoot_detector.detector_n"),
+                         primary_key=True, nullable=False)  # DETSCN
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)  # TIMESTAMP
     n_vehicles_in_interval = Column(Integer)  # FLOW_ACTUAL / 60
