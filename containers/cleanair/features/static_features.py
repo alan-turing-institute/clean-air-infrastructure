@@ -84,7 +84,8 @@ class StaticFeatures(DBWriter):
                                                               IntersectionValue.feature_name == feature_name)))
         n_interest_points = q_filtered.count()
         batch_size = 10
-        self.logger.info("Preparing to analyse %s interest points...", green(n_interest_points))
+        self.logger.info("Preparing to analyse %s interest points in batches of %i...",
+                         green(n_interest_points), batch_size)
 
         # Iterate over interest points in batches, yielding the insert statement at each step
         for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
@@ -99,19 +100,29 @@ class StaticFeatures(DBWriter):
             yield (insert_stmt, indexes)
 
     def process_geom_features(self, feature_name, q_metapoints, q_source):
-        """Process geometric features in one run"""
+        """
+        Process geometric features in large batches as none of them are particularly slow at present
+        (and they need to be independentely calculated for each interest point anyway)
+        """
         # Filter out any that have already been calculated
         q_filtered = q_metapoints.filter(~exists().where(and_(IntersectionValue.point_id == MetaPoint.id,
                                                               IntersectionValue.feature_name == feature_name)))
         n_interest_points = q_filtered.count()
-        self.logger.info("Preparing to analyse %s interest points...", green(n_interest_points))
+        batch_size = 1000
+        self.logger.info("Preparing to analyse %s interest points in batches of %i...",
+                         green(n_interest_points), batch_size)
 
-        # Analyse remaining points
-        select_stmt = self.query_feature_geoms(feature_name, q_filtered, q_source).subquery().select()
-        columns = [c.key for c in IntersectionGeom.__table__.columns]
-        insert_stmt = insert(IntersectionGeom).from_select(columns, select_stmt)
-        indexes = [IntersectionGeom.point_id, IntersectionGeom.feature_name]
-        yield (insert_stmt, indexes)
+        # Iterate over interest points in batches, yielding the insert statement at each step
+        for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
+            batch_stop = min(batch_start + batch_size, n_interest_points)
+            self.logger.info("Calculating %s for next %i sensors [%i/%i]...",
+                             feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
+            q_batch = q_filtered.slice(batch_start, batch_stop)
+            select_stmt = self.query_feature_geoms(feature_name, q_batch, q_source).subquery().select()
+            columns = [c.key for c in IntersectionGeom.__table__.columns]
+            insert_stmt = insert(IntersectionGeom).from_select(columns, select_stmt)
+            indexes = [IntersectionGeom.point_id, IntersectionGeom.feature_name]
+            yield (insert_stmt, indexes)
 
     def insert_records(self, insert_stmt, indexes, table_name):
         """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
