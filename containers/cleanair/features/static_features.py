@@ -10,7 +10,7 @@ from ..loggers import duration, green
 
 
 class StaticFeatures(DBWriter):
-    """Extract features which are near to sensor MetaPoints and inside London"""
+    """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
 
@@ -90,7 +90,7 @@ class StaticFeatures(DBWriter):
         # Iterate over interest points in batches, yielding the insert statement at each step
         for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
             batch_stop = min(batch_start + batch_size, n_interest_points)
-            self.logger.info("Calculating %s for next %i sensors [%i/%i]...",
+            self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(batch_start, batch_stop)
             select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery().select()
@@ -115,7 +115,7 @@ class StaticFeatures(DBWriter):
         # Iterate over interest points in batches, yielding the insert statement at each step
         for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
             batch_stop = min(batch_start + batch_size, n_interest_points)
-            self.logger.info("Calculating %s for next %i sensors [%i/%i]...",
+            self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(batch_start, batch_stop)
             select_stmt = self.query_feature_geoms(feature_name, q_batch, q_source).subquery().select()
@@ -134,10 +134,10 @@ class StaticFeatures(DBWriter):
 
     def calculate_intersections(self):
         """
-        For each sensor location, for each feature:
+        For each interest point location, for each feature:
         extract the geometry for that feature in each of the buffer radii
         """
-        # Iterate over each of the features and calculate the overlap with the sensors
+        # Iterate over each of the features and calculate the overlap with the interest points
         for feature_name in self.features:
             feature_start = time.time()
             self.logger.info("Now working on the %s feature", green(feature_name))
@@ -145,24 +145,22 @@ class StaticFeatures(DBWriter):
             # Get geometries for this feature
             q_source = self.query_features(feature_name)
 
-            # Construct one tuple for each sensor, consisting of the point_id and a geometry collection for each radius
+            # Construct one tuple for each interest point: the id and a geometry collection for each radius
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
-            if self.features[feature_name]['type'] == "value":
+            if self.features[feature_name]["type"] == "value":
                 q_metapoints = self.query_meta_points(include_sources=self.sources)
-                for idx, (insert_stmt, indexes) in enumerate(self.process_value_features(feature_name,
-                                                                                         q_metapoints,
-                                                                                         q_source), start=1):
+                for insert_stmt, indexes in self.process_value_features(feature_name, q_metapoints, q_source):
                     start_ = time.time()
                     self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
-                    self.logger.info("Finished inserting batch %i after %s", idx, green(duration(start_, time.time())))
+                    self.logger.info("Finished merging feature batch into database after %s",
+                                     green(duration(start_, time.time())))
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
-                for idx, (insert_stmt, indexes) in enumerate(self.process_geom_features(feature_name,
-                                                                                        q_metapoints,
-                                                                                        q_source), start=1):
+                for insert_stmt, indexes in self.process_geom_features(feature_name, q_metapoints, q_source):
                     start_ = time.time()
                     self.insert_records(insert_stmt, indexes, IntersectionGeom.__tablename__)
-                    self.logger.info("Finished inserting batch %i after %s", idx, green(duration(start_, time.time())))
+                    self.logger.info("Finished merging feature batch into database after %s",
+                                     green(duration(start_, time.time())))
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))

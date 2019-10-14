@@ -14,14 +14,14 @@ class UKMapFeatures(StaticFeatures):
 
         # List of features to extract
         self.features = {
-            "building_height": {"type": "value", 'feature_dict': {"feature_type": ["Building"]}},
-            "flat": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated", "Water"]}},
-            "grass": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated"]}},
-            "hospitals": {"type": "geom", 'feature_dict': {"landuse": ["Hospitals"]}},
-            "museums": {"type": "geom", 'feature_dict': {"landuse": ["Museum"]}},
-            "park": {"type": "geom", 'feature_dict': {"feature_type": ["Vegetated"],
+            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},
+            "flat": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated", "Water"]}},
+            "grass": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"]}},
+            "hospitals": {"type": "geom", "feature_dict": {"landuse": ["Hospitals"]}},
+            "museums": {"type": "geom", "feature_dict": {"landuse": ["Museum"]}},
+            "park": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"],
                                                       "landuse": ["Recreational open space"]}},
-            "water": {"type": "geom", 'feature_dict': {"feature_type": ["Water"]}},
+            "water": {"type": "geom", "feature_dict": {"feature_type": ["Water"]}},
         }
 
     def query_features(self, feature_name):
