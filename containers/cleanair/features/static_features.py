@@ -126,11 +126,12 @@ class StaticFeatures(DBWriter):
 
     def insert_records(self, insert_stmt, indexes, table_name):
         """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
+        start = time.time()
+        self.logger.info("Constructing features to merge into database table %s...", green(table_name))
         with self.dbcnxn.open_session() as session:
-            self.logger.info("Constructing features to merge into database table %s...", green(table_name))
             session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
-            self.logger.info("Finished merging features into database")
             session.commit()
+        self.logger.info("Finished merging feature batch into database after %s", green(duration(start, time.time())))
 
     def calculate_intersections(self):
         """
@@ -150,17 +151,11 @@ class StaticFeatures(DBWriter):
             if self.features[feature_name]["type"] == "value":
                 q_metapoints = self.query_meta_points(include_sources=self.sources)
                 for insert_stmt, indexes in self.process_value_features(feature_name, q_metapoints, q_source):
-                    start_ = time.time()
                     self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
-                    self.logger.info("Finished merging feature batch into database after %s",
-                                     green(duration(start_, time.time())))
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for insert_stmt, indexes in self.process_geom_features(feature_name, q_metapoints, q_source):
-                    start_ = time.time()
                     self.insert_records(insert_stmt, indexes, IntersectionGeom.__tablename__)
-                    self.logger.info("Finished merging feature batch into database after %s",
-                                     green(duration(start_, time.time())))
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
