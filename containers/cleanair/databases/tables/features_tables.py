@@ -14,7 +14,7 @@ class IntersectionGeom(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_type = Column(String(20), primary_key=True, nullable=False)
+    feature_name = Column(String(20), primary_key=True, nullable=False)
     geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
@@ -27,7 +27,7 @@ class IntersectionGeom(Base):
     def __repr__(self):
         return "<IntersectionGeom(" + ", ".join([
             "point_id='{}'".format(self.point_id),
-            "feature_type='{}'".format(self.feature_type),
+            "feature_name='{}'".format(self.feature_name),
             "geom_1000='{}'".format(self.geom_1000),
             "geom_500='{}'".format(self.geom_500),
             "geom_200='{}'".format(self.geom_200),
@@ -36,12 +36,12 @@ class IntersectionGeom(Base):
             ])
 
     @staticmethod
-    def build_entry(feature_type, reading_tuple):
+    def build_entry(feature_name, reading_tuple):
         """
         Create a IntersectionGeom entry and return it
         """
         return IntersectionGeom(point_id=str(reading_tuple[0]),
-                                feature_type=feature_type,
+                                feature_name=feature_name,
                                 geom_1000=reading_tuple[1],
                                 geom_500=reading_tuple[2],
                                 geom_200=reading_tuple[3],
@@ -55,7 +55,7 @@ class IntersectionValue(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_type = Column(String(20), primary_key=True, nullable=False)
+    feature_name = Column(String(20), primary_key=True, nullable=False)
     value_1000 = Column(Float, nullable=False)
     value_500 = Column(Float, nullable=False)
     value_200 = Column(Float, nullable=False)
@@ -68,7 +68,7 @@ class IntersectionValue(Base):
     def __repr__(self):
         return "<IntersectionValue(" + ", ".join([
             "point_id='{}'".format(self.point_id),
-            "feature_type='{}'".format(self.feature_type),
+            "feature_name='{}'".format(self.feature_name),
             "value_1000='{}'".format(self.value_1000),
             "value_500='{}'".format(self.value_500),
             "value_200='{}'".format(self.value_200),
@@ -77,12 +77,12 @@ class IntersectionValue(Base):
             ])
 
     @staticmethod
-    def build_entry(feature_type, reading_tuple):
+    def build_entry(feature_name, reading_tuple):
         """
         Create a IntersectionValue entry and return it
         """
         return IntersectionValue(point_id=str(reading_tuple[0]),
-                                 feature_type=feature_type,
+                                 feature_name=feature_name,
                                  value_1000=reading_tuple[1],
                                  value_500=reading_tuple[2],
                                  value_200=reading_tuple[3],
