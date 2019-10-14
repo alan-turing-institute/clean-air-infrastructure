@@ -2,35 +2,36 @@
 Tables for AQE data source
 """
 from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from ..base import Base
 
 
 class AQESite(Base):
     """Table of AQE sites"""
-    __tablename__ = "aqe_sites"
-    __table_args__ = {'schema': 'datasources'}
+    __tablename__ = "aqe_site"
+    __table_args__ = {"schema": "interest_points"}
 
-    SiteCode = Column(String(5), primary_key=True, nullable=False)
-    SiteName = Column(String(), nullable=False)
-    SiteType = Column(String(20), nullable=False)
-    DateOpened = Column(TIMESTAMP)
-    DateClosed = Column(TIMESTAMP)
-    point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
+    site_code = Column(String(5), primary_key=True, nullable=False)
+    point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), nullable=False)
+    site_name = Column(String(), nullable=False)
+    site_type = Column(String(20), nullable=False)
+    date_opened = Column(TIMESTAMP)
+    date_closed = Column(TIMESTAMP)
 
-    aqe_readings = relationship("AQEReading", back_populates="aqe_site")
-    aqe_interest_points = relationship("InterestPoint", back_populates="ip_aqesite")
+    # Create AQESite.readings and AQEReading.site
+    readings = relationship("AQEReading", backref="site")
+    # Create AQESite.point with no reverse relationship
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<AQESite(" + ", ".join([
-            "SiteCode='{}'".format(self.SiteCode),
-            "SiteName='{}'".format(self.SiteName),
-            "SiteType='{}'".format(self.SiteType),
-            "DateOpened='{}'".format(self.DateOpened),
-            "DateClosed='{}'".format(self.DateClosed),
+            "site_code='{}'".format(self.site_code),
             "point_id='{}'".format(self.point_id),
+            "site_name='{}'".format(self.site_name),
+            "site_type='{}'".format(self.site_type),
+            "date_opened='{}'".format(self.date_opened),
+            "date_closed='{}'".format(self.date_closed),
             ])
 
     @staticmethod
@@ -40,34 +41,32 @@ class AQESite(Base):
         site_dict = {k: (v if v else None) for k, v in site_dict.items()}
 
         # Construct the record and return it
-        return AQESite(SiteCode=site_dict["SiteCode"],
-                       SiteName=site_dict["SiteName"],
-                       SiteType=site_dict["SiteType"],
-                       DateOpened=site_dict["DateOpened"],
-                       DateClosed=site_dict["DateClosed"],
-                       point_id=site_dict["point_id"])
+        return AQESite(site_code=site_dict["SiteCode"],
+                       point_id=site_dict["point_id"],
+                       site_name=site_dict["SiteName"],
+                       site_type=site_dict["SiteType"],
+                       date_opened=site_dict["DateOpened"],
+                       date_closed=site_dict["DateClosed"])
 
 
 class AQEReading(Base):
     """Table of AQE readings"""
-    __tablename__ = "aqe_readings"
-    __table_args__ = {'schema': 'datasources'}
+    __tablename__ = "aqe_reading"
+    __table_args__ = {"schema": "dynamic_data"}
 
-    SiteCode = Column(String(5), ForeignKey('datasources.aqe_sites.SiteCode'), primary_key=True, nullable=False)
-    SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
-    MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
-    Value = Column(DOUBLE_PRECISION, nullable=True)
-
-    aqe_site = relationship("AQESite", back_populates="aqe_readings")
+    site_code = Column(String(5), ForeignKey("interest_points.aqe_site.site_code"), primary_key=True, nullable=False)
+    species_code = Column(String(4), primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
         return "<AQEReading(" + ", ".join([
-            "SiteCode='{}'".format(self.SiteCode),
-            "SpeciesCode='{}'".format(self.SpeciesCode),
-            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
-            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-            "Value='{}'".format(self.Value),
+            "site_code='{}'".format(self.site_code),
+            "species_code='{}'".format(self.species_code),
+            "measurement_start_utc='{}'".format(self.measurement_start_utc),
+            "measurement_end_utc='{}'".format(self.measurement_end_utc),
+            "value='{}'".format(self.value),
             ])
 
     @staticmethod
@@ -79,8 +78,8 @@ class AQEReading(Base):
         reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
         # Construct the record and return it
-        return AQEReading(SiteCode=reading_dict["SiteCode"],
-                          SpeciesCode=reading_dict["SpeciesCode"],
-                          MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                          MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                          Value=reading_dict["Value"])
+        return AQEReading(site_code=reading_dict["SiteCode"],
+                          species_code=reading_dict["SpeciesCode"],
+                          measurement_start_utc=reading_dict["MeasurementStartUTC"],
+                          measurement_end_utc=reading_dict["MeasurementEndUTC"],
+                          value=reading_dict["Value"])

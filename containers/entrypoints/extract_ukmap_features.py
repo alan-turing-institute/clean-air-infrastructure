@@ -12,7 +12,7 @@ def main():
     Extract static features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get LAQN sensor data")
+    parser = argparse.ArgumentParser(description="Extract static UKMap features")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 

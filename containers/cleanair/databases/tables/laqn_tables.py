@@ -2,35 +2,36 @@
 Tables for LAQN data source
 """
 from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 from ..base import Base
 
 
 class LAQNSite(Base):
     """Table of LAQN sites"""
-    __tablename__ = "laqn_sites"
-    __table_args__ = {'schema': 'datasources'}
+    __tablename__ = "laqn_site"
+    __table_args__ = {"schema": "interest_points"}
 
-    SiteCode = Column(String(4), primary_key=True, nullable=False)
-    SiteType = Column(String(20), nullable=False)
-    DateOpened = Column(TIMESTAMP, nullable=False)
-    DateClosed = Column(TIMESTAMP)
-    point_id = Column(UUID, ForeignKey('buffers.interest_points.point_id'), nullable=False)
+    site_code = Column(String(4), primary_key=True, nullable=False)
+    point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), nullable=False)
+    site_type = Column(String(20), nullable=False)
+    date_opened = Column(TIMESTAMP, nullable=False)
+    date_closed = Column(TIMESTAMP)
 
-    laqn_readings = relationship("LAQNReading", back_populates="laqn_site")
-    laqn_interest_points = relationship("InterestPoint", back_populates="ip_laqnsite")
+    # Create LAQNSite.readings and LAQNReading.site
+    readings = relationship("LAQNReading", backref="site")
+    # Create LAQNSite.point with no reverse relationship
+    point = relationship("MetaPoint")
 
     def __repr__(self):
         return "<LAQNSite(" + ", ".join([
-            "SiteCode='{}'".format(self.SiteCode),
+            "site_code='{}'".format(self.site_code),
             "la_id='{}'".format(self.la_id),
-            "SiteType='{}'".format(self.SiteType),
+            "site_type='{}'".format(self.site_type),
             "Latitude='{}'".format(self.Latitude),
             "Longitude='{}'".format(self.Longitude),
-            "DateOpened='{}'".format(self.DateOpened),
-            "DateClosed='{}'".format(self.DateClosed),
+            "date_opened='{}'".format(self.date_opened),
+            "date_closed='{}'".format(self.date_closed),
             ])
 
     @staticmethod
@@ -42,33 +43,31 @@ class LAQNSite(Base):
         site_dict = {k: (v if v else None) for k, v in site_dict.items()}
 
         # Construct the record and return it
-        return LAQNSite(SiteCode=site_dict["@SiteCode"],
-                        SiteType=site_dict["@SiteType"],
-                        DateOpened=site_dict["@DateOpened"],
-                        DateClosed=site_dict["@DateClosed"],
-                        point_id=site_dict["point_id"])
+        return LAQNSite(site_code=site_dict["@SiteCode"],
+                        point_id=site_dict["point_id"],
+                        site_type=site_dict["@SiteType"],
+                        date_opened=site_dict["@DateOpened"],
+                        date_closed=site_dict["@DateClosed"])
 
 
 class LAQNReading(Base):
     """Table of LAQN readings"""
-    __tablename__ = "laqn_readings"
-    __table_args__ = {'schema': 'datasources'}
+    __tablename__ = "laqn_reading"
+    __table_args__ = {"schema": "dynamic_data"}
 
-    SiteCode = Column(String(4), ForeignKey('datasources.laqn_sites.SiteCode'), primary_key=True, nullable=False)
-    SpeciesCode = Column(String(4), primary_key=True, nullable=False)
-    MeasurementStartUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
-    MeasurementEndUTC = Column(TIMESTAMP, primary_key=True, nullable=False)
-    Value = Column(DOUBLE_PRECISION, nullable=True)
-
-    laqn_site = relationship("LAQNSite", back_populates="laqn_readings")
+    site_code = Column(String(4), ForeignKey("interest_points.laqn_site.site_code"), primary_key=True, nullable=False)
+    species_code = Column(String(4), primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
         return "<LAQNReading(" + ", ".join([
-            "SiteCode='{}'".format(self.SiteCode),
-            "SpeciesCode='{}'".format(self.SpeciesCode),
-            "MeasurementStartUTC='{}'".format(self.MeasurementStartUTC),
-            "MeasurementEndUTC='{}'".format(self.MeasurementEndUTC),
-            "Value='{}'".format(self.Value),
+            "site_code='{}'".format(self.site_code),
+            "species_code='{}'".format(self.species_code),
+            "measurement_start_utc='{}'".format(self.measurement_start_utc),
+            "measurement_end_utc='{}'".format(self.measurement_end_utc),
+            "value='{}'".format(self.value),
             ])
 
     @staticmethod
@@ -80,8 +79,8 @@ class LAQNReading(Base):
         reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
         # Construct the record and return it
-        return LAQNReading(SiteCode=reading_dict["SiteCode"],
-                           SpeciesCode=reading_dict["@SpeciesCode"],
-                           MeasurementStartUTC=reading_dict["MeasurementStartUTC"],
-                           MeasurementEndUTC=reading_dict["MeasurementEndUTC"],
-                           Value=reading_dict["@Value"])
+        return LAQNReading(site_code=reading_dict["SiteCode"],
+                           species_code=reading_dict["@SpeciesCode"],
+                           measurement_start_utc=reading_dict["MeasurementStartUTC"],
+                           measurement_end_utc=reading_dict["MeasurementEndUTC"],
+                           value=reading_dict["@Value"])

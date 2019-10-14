@@ -15,7 +15,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/update_laqn_database.py /app
+COPY entrypoints/add_aqe_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "update_laqn_database.py"]
+ENTRYPOINT ["python", "add_aqe_readings.py"]

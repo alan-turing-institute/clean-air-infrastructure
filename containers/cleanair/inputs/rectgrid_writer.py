@@ -4,7 +4,7 @@ Get data from the AQE network via the API
 import numpy as np
 from sqlalchemy.schema import CreateSchema
 from ..databases import DBWriter
-from ..databases.tables import InterestPoint, RectGrid
+from ..databases.tables import MetaPoint, RectGrid
 from ..loggers import get_logger, green
 
 
@@ -47,7 +47,7 @@ class RectGridWriter(DBWriter):
                 grid_cells.append({"row_id": idx_lat,
                                    "column_id": idx_long,
                                    "geom": self.build_cell(latitude, longitude),
-                                   "point_id": InterestPoint.build_ewkt(latitude, longitude),
+                                   "point_id": MetaPoint.build_ewkt(latitude, longitude),
                                    })
 
         # Ensure that interest_points table exists
@@ -58,15 +58,15 @@ class RectGridWriter(DBWriter):
         # Upload data to the database
         self.logger.info("Starting static %s upload...", green("rectgrid"))
         with self.dbcnxn.open_session() as session:
-            # Update the interest_points table and retrieve point IDs
-            self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green("interest points"))
-            interest_points = [InterestPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
-            self.add_records(session, interest_points, flush=True)
-            for grid_cell, interest_point in zip(grid_cells, interest_points):
-                grid_cell["point_id"] = interest_point.point_id  # this will be None if the record was not inserted
+            # Update the meta_points table and retrieve point IDs
+            self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green(MetaPoint.__tablename__))
+            meta_points = [MetaPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
+            self.add_records(session, meta_points, flush=True)
+            for grid_cell, meta_point in zip(grid_cells, meta_points):
+                grid_cell["point_id"] = meta_point.id  # this will be None if the record was not inserted
 
             # Commit the grid cell records to the database
-            grid_records = [RectGrid(**grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
+            grid_records = [RectGrid.build_entry(grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
             self.logger.info("Adding %i new cells to %s table...", len(grid_records), green("rectgrid"))
             self.add_records(session, grid_records)
             session.commit()
