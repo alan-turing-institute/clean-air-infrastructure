@@ -20,6 +20,7 @@ class LAQNSite(Base):
 
     # Create LAQNSite.readings and LAQNReading.site
     readings = relationship("LAQNReading", backref="site")
+
     # Create LAQNSite.point with no reverse relationship
     point = relationship("MetaPoint")
 
