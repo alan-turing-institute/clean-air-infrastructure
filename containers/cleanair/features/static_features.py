@@ -8,7 +8,6 @@ from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
 
-
 class StaticFeatures(DBWriter):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
@@ -160,9 +159,34 @@ class StaticFeatures(DBWriter):
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
 
+    def aggregate_geom_features(self):
+        """Apply aggregation functions to the intersected geometries and insert into the model output table"""
+        for feature_name in self.features:
+            feature_start = time.time()
+            if self.features[feature_name]["type"] == "geom":     
+                self.logger.info("Now working on the %s feature", green(feature_name))
+                query_args = [self.features[feature_name]['aggfunc'](getattr(IntersectionGeom, 'geom_' + str(radius))).label('value_' + str(radius)) 
+                                                                     for radius in self.buffer_radii_metres]
+                with self.dbcnxn.open_session() as session:
+
+                    select_stmt = session.query(IntersectionGeom.point_id,
+                                                literal(feature_name).label("feature_name"),
+                                        *query_args
+                                        ).filter(IntersectionGeom.feature_name == feature_name).group_by(IntersectionGeom.point_id)
+
+                    select_stmt = select_stmt.subquery().select()
+                    columns = [c.key for c in IntersectionValue.__table__.columns]
+                    insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
+                    indexes = [IntersectionValue.point_id, IntersectionValue.feature_name]
+                    self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
+
+            # Print a final timing message
+            self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
+
     def update_remote_tables(self):
         """Update all remote tables"""
         self.calculate_intersections()
+        self.aggregate_geom_features()
 
     def query_features(self, feature_name):
         """Query data source, selecting all features matching the requirements in feature_dict.
