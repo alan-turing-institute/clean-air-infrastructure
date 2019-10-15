@@ -26,10 +26,8 @@ class LAQNSite(Base):
     def __repr__(self):
         return "<LAQNSite(" + ", ".join([
             "site_code='{}'".format(self.site_code),
-            "la_id='{}'".format(self.la_id),
+            "point_id='{}'".format(self.point_id),
             "site_type='{}'".format(self.site_type),
-            "Latitude='{}'".format(self.Latitude),
-            "Longitude='{}'".format(self.Longitude),
             "date_opened='{}'".format(self.date_opened),
             "date_closed='{}'".format(self.date_closed),
             ])
