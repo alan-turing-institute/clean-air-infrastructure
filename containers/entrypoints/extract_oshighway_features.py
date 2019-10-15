@@ -31,7 +31,7 @@ def main():
         static_feature_extractor = OSHighwayFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
-        
+
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

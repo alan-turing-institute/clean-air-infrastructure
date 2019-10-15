@@ -15,11 +15,21 @@ class OSHighwayFeatures(StaticFeatures):
 
         # List of features to extract
         self.features = {
-            "total_road_length": {"type": "geom", 'feature_dict': {}, 'aggfunc': sum_length},
-            "total_a_road_prim_length":  {"type": "geom", 'feature_dict': {"route_hierarchy": ["A Road Primary"]}, 'aggfunc': sum_length},
-            "total_a_road_length": {"type": "geom", 'feature_dict': {"route_hierarchy": ["A Road"]}, 'aggfunc': sum_length},
-            "total_b_road_length": {"type": "geom", 'feature_dict': {"route_hierarchy": ["B Road", "B Road Primary"]}, 'aggfunc': sum_length},
-            "total_length": {"type": "geom", 'feature_dict':  {"route_hierarchy": ["*"]}, 'aggfunc': sum_length},
+            "total_road_length": {"type": "geom",
+                                  "feature_dict": {},
+                                  "aggfunc": sum_length},
+            "total_a_road_prim_length":  {"type": "geom",
+                                          "feature_dict": {"route_hierarchy": ["A Road Primary"]},
+                                          "aggfunc": sum_length},
+            "total_a_road_length": {"type": "geom",
+                                    "feature_dict": {"route_hierarchy": ["A Road"]},
+                                    "aggfunc": sum_length},
+            "total_b_road_length": {"type": "geom",
+                                    "feature_dict": {"route_hierarchy": ["B Road", "B Road Primary"]},
+                                    "aggfunc": sum_length},
+            "total_length": {"type": "geom",
+                             "feature_dict":  {"route_hierarchy": ["*"]},
+                             "aggfunc": sum_length},
         }
 
     def query_features(self, feature_name):
