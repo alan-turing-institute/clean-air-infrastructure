@@ -1,5 +1,6 @@
-from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint
+from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading
 from ..databases.db_interactor import DBInteractor
+from sqlalchemy import literal, func
 import pandas as pd 
 from datetime import datetime
 from dateutil import rrule
@@ -11,17 +12,39 @@ class ModelFitting(DBInteractor):
 
         # Initialise parent classes
         super().__init__(**kwargs)
-    
-    def get_static_features(self):
-        """Get static features and pivot to wide format"""
+
+    def select_static_features(self, sources=['laqn', 'aqe']):
+        """Select static features and join with metapoint data"""
+
         with self.dbcnxn.open_session() as session:
 
-            query = session.query(IntersectionValue)
+            feature_query = session.query(IntersectionValue)
+            interest_point_query = session.query(MetaPoint.id.label('point_id'),
+                                                 MetaPoint.source,
+                                                 MetaPoint.location,
+                                                 func.ST_X(MetaPoint.location).label('lon'),
+                                                 func.ST_Y(MetaPoint.location).label('lat')).filter(MetaPoint.source.in_(sources))
 
-            df = pd.read_sql(query.statement, query.session.bind)
-            df = df.pivot(index = 'point_id', columns = 'feature_name').reset_index()    
-            df.columns = ['point_id'] + ['_'.join(col).strip() for col in df.columns.values[1:]]      
-            return df
+            # Select into into dataframes
+            features_df = pd.read_sql(feature_query.statement, 
+                                         feature_query.session.bind)
+
+            interest_point_df = pd.read_sql(interest_point_query.statement, 
+                                 interest_point_query.session.bind).set_index('point_id')
+
+            # Reshape features df (make wide)
+            features_df = features_df.pivot(index = 'point_id', columns = 'feature_name').reset_index()
+            features_df.columns = ['point_id'] + ['_'.join(col).strip() for col in features_df.columns.values[1:]]
+            features_df = features_df.set_index('point_id')
+    
+            # Set index types to str
+            features_df.index = features_df.index.astype(str)
+            interest_point_df.index = interest_point_df.index.astype(str)
+
+            # Inner join the MetaPoint and IntersectionValue data
+            df_joined = pd.concat([interest_point_df, features_df], axis=1, sort=False, join  = 'inner')
+
+            return df_joined.reset_index()
 
     @staticmethod
     def expand_static_feature_df(start_date, end_date, feature_df):
@@ -36,52 +59,81 @@ class ModelFitting(DBInteractor):
         index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)], names=["point_id", "measurement_start_utc"])
         time_df = pd.DataFrame(index=index).reset_index()
         time_df_merged = time_df.merge(feature_df)
-
+        time_df_merged['epoch'] = time_df_merged['measurement_start_utc'].apply(lambda x: x.timestamp())
         return time_df_merged
 
-    def get_laqn_readings(self, start_date, end_date):
+    def __get_laqn_readings(self, start_date, end_date):
 
         with self.dbcnxn.open_session() as session:
-
-            query = session.query(LAQNReading.site_code,
-                                  LAQNReading.measurement_start_utc, 
+            query = session.query(LAQNReading.measurement_start_utc, 
                                   LAQNReading.species_code, 
                                   LAQNReading.value,
-                                  LAQNSite.point_id).join(LAQNSite)
+                                  LAQNSite.point_id,
+                                  literal('laqn').label('source')).join(LAQNSite)
+            query = query.filter(LAQNReading.measurement_start_utc.between(start_date, end_date))
+            return query
 
-            query = query.filter(LAQNReading.measurement_start_utc.between(start_date, end_date))     
+    def __get_aqe_readings(self, start_date, end_date):
+        
+        with self.dbcnxn.open_session() as session:
+            query = session.query(AQEReading.measurement_start_utc, 
+                                  AQEReading.species_code, 
+                                  AQEReading.value,
+                                  AQESite.point_id,
+                                  literal('aqe').label('source')).join(AQESite)
+            query = query.filter(AQEReading.measurement_start_utc.between(start_date, end_date))
+            return query
 
-            df = pd.read_sql(query.statement, query.session.bind)
 
-            # df['unix_time'] = df['measurement_start_utc'].apply(lambda x: x.timestamp())
+    def get_sensor_readings(self, start_date, end_date, sources = ['laqn', 'aqe']):
+        """Get sensor readings for the sources between the start_date and end_date"""
+        
+        sensor_dfs = []
+        if 'laqn' in sources:
+            print('laqn')
+            sensor_q = self.__get_laqn_readings(start_date, end_date)
+            sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
 
-            # print(df.shape)
+        if 'aqe' in sources:
+            print('aqe')
+            sensor_q = self.__get_aqe_readings(start_date, end_date)
+            sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
 
-            df = df.pivot_table(index = ['point_id', 'site_code', 'measurement_start_utc'], columns = ['species_code'], values = 'value')
+        df = pd.concat(sensor_dfs, axis = 0)
+        df['epoch'] = df['measurement_start_utc'].apply(lambda x: x.timestamp())
+        df = df.pivot_table(index = ['point_id', 'source', 'measurement_start_utc', 'epoch'], columns = ['species_code'], values = 'value')
 
-            return df
-         
-
-    
+        return df.reset_index()
 
     def main(self):
 
- 
         start_date, end_date = '2019-10-12', '2019-10-13'
 
-        static_features = self.get_static_features()
-        
+
+        static_features = self.select_static_features(sources=['laqn', 'aqe'])
+
+        print(static_features)
+        static_features.to_csv('/secrets/test.csv')
+
+        # static_features = self.get_static_features()
+         
         static_features = self.expand_static_feature_df(start_date, end_date, static_features)
+
+        static_features.iloc[:50].to_csv("/secrets/test_features.csv")
+
+        readings = self.get_sensor_readings(start_date, end_date, sources = ['laqn', 'aqe'])
+        print(readings['source'].unique())
+        print(readings.shape)
+        print(readings.columns)
+        readings.to_csv('/secrets/readings.csv')
+        # # counter = laqn_readings.groupby(laqn_readings[['site_code', "measurement_start_utc", "species_code"]].columns.tolist(),as_index=False).size()
+
+        # print(laqn_readings.columns)
         # print(static_features.columns)
-        # static_features.iloc[:50].to_csv("/secrets/test.csv")
+        # # print(counter[counter>1])
+        # print([i for i in laqn_readings['point_id'].unique() if i not in set(static_features['point_id'].unique())])
+     
+        # print([i for i in static_features['point_id'].unique()  if i not in set(laqn_readings['point_id'].unique())])
 
-        laqn_readings = self.get_laqn_readings(start_date, end_date)
-
-        # counter = laqn_readings.groupby(laqn_readings[['site_code', "measurement_start_utc", "species_code"]].columns.tolist(),as_index=False).size()
-
-        # print(counter[counter>1])
-        print(laqn_readings)
-        laqn_readings.to_csv("/secrets/test.csv")
-
-        # pd.merge(static_features, laqn_readings, on=['point_id', 'measurement_start_utc'], how = 'left').to_csv("/secrets/testmerge.csv")
-       
+        # laqn_readings.to_csv("/secrets/test.csv")
+        pd.merge(static_features, readings, on=['point_id', 'measurement_start_utc', 'epoch', 'source'], how = 'left').to_csv("/secrets/testmerge.csv")
