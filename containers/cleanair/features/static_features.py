@@ -2,7 +2,7 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import and_, exists, func, literal
+from sqlalchemy import func, literal, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
@@ -80,8 +80,10 @@ class StaticFeatures(DBWriter):
         (and they need to be independentely calculated for each interest point anyway)
         """
         # Filter out any that have already been calculated
-        q_filtered = q_metapoints.filter(~exists().where(and_(IntersectionValue.point_id == MetaPoint.id,
-                                                              IntersectionValue.feature_name == feature_name)))
+        with self.dbcnxn.open_session() as session:
+            sq_intersection_value = session.query(IntersectionValue.point_id, IntersectionValue.feature_name).subquery()
+        q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
+
         n_interest_points = q_filtered.count()
         batch_size = 10
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
@@ -105,8 +107,10 @@ class StaticFeatures(DBWriter):
         (and they need to be independentely calculated for each interest point anyway)
         """
         # Filter out any that have already been calculated
-        q_filtered = q_metapoints.filter(~exists().where(and_(IntersectionValue.point_id == MetaPoint.id,
-                                                              IntersectionValue.feature_name == feature_name)))
+        with self.dbcnxn.open_session() as session:
+            sq_intersection_geom = session.query(IntersectionGeom.point_id, IntersectionGeom.feature_name).subquery()
+        q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom))
+
         n_interest_points = q_filtered.count()
         batch_size = 1000
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
