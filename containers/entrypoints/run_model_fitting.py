@@ -25,7 +25,7 @@ def main():
 
     try:
        model_fit = ModelFitting(**kwargs)
-       model_fit.main()
+       model_fit.get_model_fit_input(start_date='2019-10-12', end_date='2019-10-13', sources=['laqn', 'aqe']).to_csv('/secrets/model_data.csv')
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

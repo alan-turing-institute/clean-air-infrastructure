@@ -90,12 +90,10 @@ class ModelFitting(DBInteractor):
         
         sensor_dfs = []
         if 'laqn' in sources:
-            print('laqn')
             sensor_q = self.__get_laqn_readings(start_date, end_date)
             sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
 
         if 'aqe' in sources:
-            print('aqe')
             sensor_q = self.__get_aqe_readings(start_date, end_date)
             sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
 
@@ -105,35 +103,13 @@ class ModelFitting(DBInteractor):
 
         return df.reset_index()
 
-    def main(self):
+    def get_model_fit_input(self, start_date, end_date, sources=['laqn', 'aqe']):
+        """Return the inputs for model fitting between two dates"""
 
-        start_date, end_date = '2019-10-12', '2019-10-13'
-
-
-        static_features = self.select_static_features(sources=['laqn', 'aqe'])
-
-        print(static_features)
-        static_features.to_csv('/secrets/test.csv')
-
-        # static_features = self.get_static_features()
-         
+        static_features = self.select_static_features(sources=sources)
         static_features = self.expand_static_feature_df(start_date, end_date, static_features)
-
-        static_features.iloc[:50].to_csv("/secrets/test_features.csv")
-
-        readings = self.get_sensor_readings(start_date, end_date, sources = ['laqn', 'aqe'])
-        print(readings['source'].unique())
-        print(readings.shape)
-        print(readings.columns)
-        readings.to_csv('/secrets/readings.csv')
-        # # counter = laqn_readings.groupby(laqn_readings[['site_code', "measurement_start_utc", "species_code"]].columns.tolist(),as_index=False).size()
-
-        # print(laqn_readings.columns)
-        # print(static_features.columns)
-        # # print(counter[counter>1])
-        # print([i for i in laqn_readings['point_id'].unique() if i not in set(static_features['point_id'].unique())])
-     
-        # print([i for i in static_features['point_id'].unique()  if i not in set(laqn_readings['point_id'].unique())])
-
-        # laqn_readings.to_csv("/secrets/test.csv")
-        pd.merge(static_features, readings, on=['point_id', 'measurement_start_utc', 'epoch', 'source'], how = 'left').to_csv("/secrets/testmerge.csv")
+        readings = self.get_sensor_readings(start_date, end_date, sources=sources)
+        return pd.merge(static_features, 
+                        readings, 
+                        on=['point_id', 'measurement_start_utc', 'epoch', 'source'], 
+                        how='left')
