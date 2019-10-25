@@ -1,10 +1,16 @@
 from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading
 from ..databases.db_interactor import DBInteractor
 from sqlalchemy import literal, func
-import pandas as pd 
+import pandas as pd
+import numpy as np
 from datetime import datetime
 from dateutil import rrule
-import matplotlib.pyplot as plt 
+
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import gpflow
+from scipy.cluster.vq import kmeans2
+# import tensorflow as tf
 
 class ModelFitting(DBInteractor):
 
@@ -113,3 +119,59 @@ class ModelFitting(DBInteractor):
                         readings, 
                         on=['point_id', 'measurement_start_utc', 'epoch', 'source'], 
                         how='left')
+
+
+    def prep(self, data_df):
+
+        x=["epoch", "lat", "lon", "value_1000_flat"]
+        y=["NO2"]
+
+        data_subset = data_df[x + y]
+        data_subset = data_subset.dropna()
+
+        return data_subset[x].values, data_subset[y].values
+
+    
+    def model_fit(self):
+
+        fit_data_raw = self.get_model_fit_input(start_date='2019-10-12', end_date='2019-10-13', sources=['laqn', 'aqe'])
+        fit_data_raw.to_csv('/secrets/model_data.csv')
+        
+
+        X, Y = self.prep(fit_data_raw)
+
+
+        X_norm = (X - X.mean()) / X.std()
+        Y_norm = (Y - Y.mean()) / Y.std()
+
+        num_z = 200
+
+        i = 0
+        z_r = kmeans2(X_norm, num_z, minit='points')[0] 
+
+        # X = X[0]
+
+        def init(X, Y, Z,  D):
+            kern = gpflow.kernels.RBF(D, lengthscales=0.1)
+            Z = X.copy()
+            m = gpflow.models.SVGP(X, Y, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=300)
+            return m
+
+        m = init(X_norm, Y_norm, z_r, X_norm.shape[1])
+
+        m.compile()
+        opt = gpflow.train.AdamOptimizer()
+        results = opt.minimize(m)
+
+        print('predict')
+        ys_total = []
+        # for i in range(len(X)):
+        ys, ys_var = m.predict_y(X_norm)
+        ys_total.append([ys, ys_var])
+        ys_total = np.array(ys_total)
+
+
+        np.save('/secrets/_ys', ys_total)
+        np.save('/secrets/true_ys', Y_norm)
+
+        

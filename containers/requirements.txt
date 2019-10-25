@@ -20,3 +20,5 @@ requests
 sqlalchemy
 termcolor
 uuid
+gpflow
+tensorflow==1.14
