@@ -3,9 +3,11 @@ language: python
 install:
   - pip install -r containers/requirements.txt
 
-services:
-  - docker
-
+addons:
+  apt:
+    packages:
+      - docker-ce
+      
 script:
   # # Run all pytest unit tests
   # - python -m pytest -v tests --cov containers --cov-report term-missing
