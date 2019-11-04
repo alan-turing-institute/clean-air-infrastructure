@@ -3,13 +3,13 @@ Upload static datasets
 """
 import argparse
 import logging
-from cleanair.inputs import StaticWriter
+from cleanair.inputs import RectGridWriter
 from cleanair.loggers import get_log_level
 
 
 def main():
     """
-    Upload static datasets
+    Upload square grid data
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Insert static datasets")
@@ -25,10 +25,10 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        static_writer = StaticWriter(**kwargs)
+        rectgrid_writer = RectGridWriter(**kwargs)
 
-        # Upload static tables to the database if they are not present
-        static_writer.update_remote_tables()
+        # Upload the rectangular grid table to the database if it is not present
+        rectgrid_writer.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

@@ -1,17 +1,19 @@
 """
-Updater
+Mixin for classes that need to keep track of date ranges
 """
 import datetime
-from .connector import Connector
 from ..loggers import get_logger, green
 
 
-class Updater():
-    """Manage interactions with the Azure databases"""
-    def __init__(self, end, ndays, *args, **kwargs):
-        self.dbcnxn = Connector(*args, **kwargs)
+class DateRangeMixin():
+    """Manage data ranges"""
+    def __init__(self, end, ndays, **kwargs):
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
         if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+            self.logger = get_logger(__name__)
 
         # Set the date range
         if end == "today":
@@ -29,7 +31,3 @@ class Updater():
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
-
-    def update_remote_tables(self):
-        """Update all relevant tables on the remote database"""
-        raise NotImplementedError("Must be implemented by child classes")

@@ -177,8 +177,8 @@ resource "azurerm_virtual_machine" "this" {
 }
 
 locals {
-  orchestrator_identity = "${lookup(azurerm_virtual_machine.this.identity[0], "principal_id")}"
-  input_data_scope      = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
+  orchestrator_identity    = "${lookup(azurerm_virtual_machine.this.identity[0], "principal_id")}"
+  rg_data_collection_scope = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
 }
 
 # Set permissions for managed identity
@@ -186,7 +186,7 @@ locals {
 # :: create a role with appropriate permissions to run container instances
 resource "azurerm_role_definition" "run_containers" {
   name        = "Run containers"
-  scope       = "${local.input_data_scope}"
+  scope       = "${local.rg_data_collection_scope}"
   description = "Create and run container instances"
 
   permissions {
@@ -198,12 +198,12 @@ resource "azurerm_role_definition" "run_containers" {
     not_actions = []
   }
   assignable_scopes = [
-    "${local.input_data_scope}"
+    "${local.rg_data_collection_scope}"
   ]
 }
 # :: grant the managed identity for this VM "Reader" access to create conainer
 resource "azurerm_role_assignment" "orchestrator_run_container_instance" {
-  scope              = "${local.input_data_scope}"
+  scope              = "${local.rg_data_collection_scope}"
   role_definition_id = "${azurerm_role_definition.run_containers.id}"
   principal_id       = "${local.orchestrator_identity}"
 }

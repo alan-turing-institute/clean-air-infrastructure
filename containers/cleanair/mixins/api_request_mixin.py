@@ -1,17 +1,20 @@
 """
-Base class for all datasources that obtain their data by calling a web API
+Mixin for all datasources that obtain their data by calling a web API
 """
 import datetime
 import requests
 from ..loggers import get_logger, green
 
 
-class APIReader():
+class APIRequestMixin():
     """Manage interactions with an external API"""
     def __init__(self, **kwargs):
-        # Set up logging
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
         if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__, kwargs.get("verbose", 0))
+            self.logger = get_logger(__name__)
 
     def get_readings_by_site(self, site_list_query, start_date, end_date):
         """
@@ -27,8 +30,8 @@ class APIReader():
         site_readings = []
         for site, available_start_date, available_end_date in available_sites:
             self.logger.info("Attempting to download data for %s between %s and %s",
-                             green(site.SiteCode), green(available_start_date), green(available_end_date))
-            response = self.request_site_readings(available_start_date, available_end_date, site_code=site.SiteCode)
+                             green(site.site_code), green(available_start_date), green(available_end_date))
+            response = self.request_site_readings(available_start_date, available_end_date, site_code=site.site_code)
             if response:
                 site_readings += response
         return site_readings
@@ -47,13 +50,13 @@ class APIReader():
         """
         # Load start dates
         start_dates = [start_date]
-        if site.DateOpened:
-            start_dates.append(site.DateOpened.date())
+        if site.date_opened:
+            start_dates.append(site.date_opened.date())
 
         # Load end dates
         end_dates = [end_date]
-        if site.DateClosed:
-            end_dates.append(site.DateClosed.date())
+        if site.date_closed:
+            end_dates.append(site.date_closed.date())
 
         # Start on requested/opening date (whichever is later)
         # End on requested/closing date (whichever is earlier)

@@ -3,26 +3,25 @@ LAQN
 """
 import datetime
 import requests
-from ..apis import APIReader
-from ..databases import Updater, laqn_tables
-from ..loggers import green
+from ..mixins import APIRequestMixin, DateRangeMixin
+from ..databases import DBWriter
+from ..databases.tables import MetaPoint, LAQNSite, LAQNReading
+from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class LAQNWriter(Updater, APIReader):
+class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
-    def __init__(self, *args, **kwargs):
-        # Initialise the base classes
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
 
-        # Ensure that tables exist
-        laqn_tables.initialise(self.dbcnxn.engine)
-
-        # Ensure that postgis has been enabled
-        self.dbcnxn.ensure_postgis()
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
     def request_site_entries(self):
         """
@@ -81,10 +80,34 @@ class LAQNWriter(Updater, APIReader):
         with self.dbcnxn.open_session() as session:
             # Reload site information and update the database accordingly
             self.logger.info("Requesting site info from %s", green("KCL API"))
-            site_entries = [laqn_tables.build_site_entry(site) for site in self.request_site_entries()]
+
+            # Retrieve site entries (discarding any that do not have a known position)
+            site_entries = [s for s in self.request_site_entries() if s["@Latitude"] and s["@Longitude"]]
+            for entry in site_entries:
+                entry["geometry"] = MetaPoint.build_ewkt(entry["@Latitude"], entry["@Longitude"])
+
+            # Only consider unique sites
+            unique_sites = {s["geometry"]: MetaPoint.build_entry("laqn", geometry=s["geometry"])
+                            for s in site_entries}
+
+            # Update the interest_points table and retrieve point IDs
+            point_id = {}
+            for geometry, interest_point in unique_sites.items():
+                merged_point = session.merge(interest_point)
+                session.flush()
+                point_id[geometry] = str(merged_point.id)
+
+            # Add point IDs to the site_entries
+            for entry in site_entries:
+                entry["point_id"] = point_id[entry["geometry"]]
+
+            # Build the site entries and commit
             self.logger.info("Updating site info database records")
-            session.add_all(site_entries)
-            self.logger.info("Committing changes to database table %s", green(laqn_tables.LAQNSite.__tablename__))
+            for site in site_entries:
+                session.merge(LAQNSite.build_entry(site))
+            self.logger.info("Committing changes to database tables %s and %s",
+                             green(MetaPoint.__tablename__),
+                             green(LAQNSite.__tablename__))
             session.commit()
 
     def update_reading_table(self):
@@ -94,21 +117,25 @@ class LAQNWriter(Updater, APIReader):
         # Open a DB session
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
-            site_info_query = session.query(laqn_tables.LAQNSite)
+            site_info_query = session.query(LAQNSite)
             self.logger.info("Requesting readings from %s for %s sites",
                              green("KCL API"), green(len(list(site_info_query))))
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            session.add_all([laqn_tables.build_reading_entry(site_reading) for site_reading in site_readings])
+            site_records = [LAQNReading.build_entry(site_reading) for site_reading in site_readings]
+
+            # Commit the records to the database
+            self.add_records(session, site_records)
+            session.commit()
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
-                             green(laqn_tables.LAQNReading.__tablename__))
+                             green(LAQNReading.__tablename__))
             session.commit()
 
-        self.logger.info("Finished %s readings update...", green("LAQN"))
+        self.logger.info("Finished %s readings update", green("LAQN"))
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

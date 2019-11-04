@@ -1,3 +1,13 @@
+# # Use an Ubuntu image with GDAL
+# FROM osgeo/gdal:ubuntu-full-latest
+
+# # Install psql, python and pip
+# ENV DEBIAN_FRONTEND=noninteractive
+# RUN apt-get update && apt-get install -y \
+#     postgresql \
+#     python3 \
+#     python3-pip
+
 # Use an official Python runtime as a parent image
 FROM python:3
 
@@ -9,13 +19,13 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
+RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/update_aqe_database.py /app
+COPY entrypoints/upload_rectgrid.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "update_aqe_database.py"]
+ENTRYPOINT ["python3", "upload_rectgrid.py"]

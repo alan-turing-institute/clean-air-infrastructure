@@ -19,3 +19,4 @@ pytz
 requests
 sqlalchemy
 termcolor
+uuid

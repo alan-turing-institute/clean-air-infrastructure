@@ -1,18 +1,18 @@
 """
-Upload static datasets
+UKMap Feature extraction
 """
 import argparse
 import logging
-from cleanair.inputs import StaticWriter
 from cleanair.loggers import get_log_level
+from cleanair.features import OSHighwayFeatures
 
 
 def main():
     """
-    Upload static datasets
+    Extract static features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Insert static datasets")
+    parser = argparse.ArgumentParser(description="Extract static OS highway features")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
@@ -23,13 +23,15 @@ def main():
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-    # Perform update and notify any exceptions
+    # List which sources to process
+    kwargs["sources"] = ["aqe", "laqn"]
+
+    # Extract features and notify any exceptions
     try:
-        static_writer = StaticWriter(**kwargs)
+        static_feature_extractor = OSHighwayFeatures(**kwargs)
 
-        # Upload static tables to the database if they are not present
-        static_writer.update_remote_tables()
-
+        # Extract static features into the appropriate tables on the database
+        static_feature_extractor.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise

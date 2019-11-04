@@ -1,14 +1,10 @@
 """
 Module for feature extraction
 """
-from .hexgrid_reader import HexGridReader
-from .laqn_reader import LAQNReader
-from .londonboundary_reader import LondonBoundaryReader
-from .ukmap_reader import UKMapReader
+from .os_highway_features import OSHighwayFeatures
+from .ukmap_features import UKMapFeatures
 
 __all__ = [
-    "HexGridReader",
-    "LAQNReader",
-    "LondonBoundaryReader",
-    "UKMapReader",
+    "OSHighwayFeatures",
+    "UKMapFeatures",
 ]

@@ -17,14 +17,12 @@ script:
   - pylint */
 
   # Build all docker images
-  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_aqe_database.Dockerfile containers
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_laqn_database.Dockerfile containers
-  - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/update_scoot_database.Dockerfile containers
-  - docker build -t $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers
+  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+  - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
 
   # Push all our docker images to the container registry
   - echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SERVER"
   - docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA
   - docker push $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA
   - docker push $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/static:$TRAVIS_PULL_REQUEST_SHA
