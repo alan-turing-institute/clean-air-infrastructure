@@ -268,7 +268,7 @@ brew install postgresql postgis
 brew services start postgres
 ```
 
-- Create a database called 'cleanair_db'. In a terminal run:
+- Create a database called 'cleanair_inputs_db'. In a terminal run:
 
 ```bash
 psql postgres
