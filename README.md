@@ -254,27 +254,6 @@ docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model
 
 ## Running with local database
 
-### Setup a venv
-```python
-pip install virtualenv
-```
-
-```python
-mkdir python-virtual-environments && cd python-virtual-environments
-```
-
-```python 
-python3 -m venv env
-```
-
-```bash
-source env/bin/activate & cd ..
-```
-
-```bash
-pip install -r containers/requirements.txt
-```
-
 ### Install postgres and upload static datasets
 
 It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
