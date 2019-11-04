@@ -1,7 +1,7 @@
 language: python
 
-# install:
-#   - pip install -r containers/requirements.txt
+install:
+  - pip install -r containers/requirements.txt
 
 services:
   - docker
