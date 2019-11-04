@@ -185,7 +185,6 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - Select `Let me select individual events` and tick `Pull requests` only
 
 
-
 # Miscellaneous
 
 ## Running without Azure
@@ -215,6 +214,34 @@ python setup/insert_static_datasets.py -l <full-path-to-secret-file>
 ```
 
 where the secret file is a JSON file of the form detailed above.
+
+### Build and run docker images locally
+
+**AQE**
+```
+docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
+```
+
+**LAQN**
+```
+docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
+```
+
+**UKMAP**
+```
+docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
+```
+
+**OSHighway**
+```
+docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/osh
+```
+
+**Model fitting**
+```
+docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
+```
+
 
 
 ## Removing Terraform infrastructure

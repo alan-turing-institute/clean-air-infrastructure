@@ -123,7 +123,7 @@ class ModelFitting(DBInteractor):
 
     def prep(self, data_df):
 
-        x=["epoch", "lat", "lon", "value_1000_flat"]
+        x=["epoch", "lat", "lon"]
         y=["NO2"]
 
         data_subset = data_df[x + y]
@@ -134,7 +134,7 @@ class ModelFitting(DBInteractor):
     
     def model_fit(self):
 
-        fit_data_raw = self.get_model_fit_input(start_date='2019-10-12', end_date='2019-10-13', sources=['laqn', 'aqe'])
+        fit_data_raw = self.get_model_fit_input(start_date='2019-10-26', end_date='2019-10-29', sources=['laqn', 'aqe'])
         fit_data_raw.to_csv('/secrets/model_data.csv')
         
 
@@ -144,25 +144,24 @@ class ModelFitting(DBInteractor):
         X_norm = (X - X.mean()) / X.std()
         Y_norm = (Y - Y.mean()) / Y.std()
 
-        num_z = 200
+        # X_norm = X.copy()
+        # Y_norm = Y.copy()
+
+        num_z = 300
 
         i = 0
-        z_r = kmeans2(X_norm, num_z, minit='points')[0] 
-
-        # X = X[0]
-
-        def init(X, Y, Z,  D):
-            kern = gpflow.kernels.RBF(D, lengthscales=0.1)
-            Z = X.copy()
-            m = gpflow.models.SVGP(X, Y, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=300)
-            return m
-
-        m = init(X_norm, Y_norm, z_r, X_norm.shape[1])
-
+        Z = kmeans2(X_norm, num_z, minit='points')[0] 
+        # print(Z)
+   
+  
+        kern = gpflow.kernels.RBF(X_norm.shape[1], lengthscales=0.1)
+        # Z = X_norm.copy()
+        m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(), Z, minibatch_size=len(X))
+    
         m.compile()
         opt = gpflow.train.AdamOptimizer()
-        results = opt.minimize(m)
-
+        print('fitting')
+        opt.minimize(m, maxiter=10000)
         print('predict')
         ys_total = []
         # for i in range(len(X)):

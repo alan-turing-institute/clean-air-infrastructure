@@ -126,7 +126,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             site_records = [LAQNReading.build_entry(site_reading) for site_reading in site_readings]
 
             # Commit the records to the database
-            self.add_records(session, site_records)
+            self.add_records(session, site_records, flush=True)
             session.commit()
 
             # Commit changes
