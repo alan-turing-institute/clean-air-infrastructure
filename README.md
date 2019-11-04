@@ -254,7 +254,7 @@ CREATE DATABASE cleanair_db;
 - Create a secret file with login information for the database with following commands:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/.db_input_secret.json  
+mkdir terraform/.secrets & touch terraform/.secrets/.db_secrets.json  
 ```
 
 ```
@@ -265,7 +265,7 @@ echo '{
     "port": 5432,
     "db_name": "cleanair_db",
     "ssl_mode": "prefer"
-}' >> terraform/.secrets/.db_input_secret.json
+}' >> terraform/.secrets/.db_secrets.json
 ```
 
 - Follow all instructions above as per cloud until add static datasets.
@@ -284,17 +284,35 @@ docker build -t cleanairdocker.azurecr.io/static:$SHA -f containers/dockerfiles/
 - Download static data and insert into the database:
 
 ```
-python setup/insert_static_datasets.py -l terraform/.secrets/.db_input_secret.json
+python setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
 
-### Running docker images
+### Build and run docker images locally
 
-You can then run docker images. Look at the python files in `containers/entrypoints` for available arguments.
-
+**AQE**
 ```
-docker run -v <secretfile>:/secrets cleanairdocker.azurecr.io/laqn:$SHA --secretfile .db_input_secret_local.json
+docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
 ```
 
+**LAQN**
+```
+docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
+```
+
+**UKMAP**
+```
+docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v <repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
+```
+
+**OSHighway**
+```
+docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/osh
+```
+
+**Model fitting**
+```
+docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /U<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
+```
 
 
 
