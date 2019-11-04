@@ -123,7 +123,7 @@ class ModelFitting(DBInteractor):
 
     def prep(self, data_df):
 
-        x=["epoch", "lat", "lon"]
+        x=["epoch", "lat", "lon", "value_1000_flat"]
         y=["NO2"]
 
         data_subset = data_df[x + y]
@@ -134,12 +134,10 @@ class ModelFitting(DBInteractor):
     
     def model_fit(self):
 
-        fit_data_raw = self.get_model_fit_input(start_date='2019-10-26', end_date='2019-10-29', sources=['laqn', 'aqe'])
+        fit_data_raw = self.get_model_fit_input(start_date='2019-11-01', end_date='2019-11-04', sources=['laqn', 'aqe'])
         fit_data_raw.to_csv('/secrets/model_data.csv')
         
-
         X, Y = self.prep(fit_data_raw)
-
 
         X_norm = (X - X.mean()) / X.std()
         Y_norm = (Y - Y.mean()) / Y.std()
