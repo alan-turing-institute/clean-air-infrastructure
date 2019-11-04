@@ -210,7 +210,7 @@ To run the clean air docker images locally you will need to create a local secre
 Run the following to create a file with the database secrets:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/.db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
 ```
 
 ```
@@ -221,7 +221,7 @@ echo '{
     "port": 5432,
     "db_name": "<dbname>",
     "ssl_mode": "require"
-}' >> terraform/.secrets/.db_secrets.json
+}' >> terraform/.secrets/db_secrets.json
 ```
 
 Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
@@ -303,7 +303,7 @@ CREATE DATABASE cleanair_inputs_db;
 - Create a secret file with login information for the database with following commands:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/.db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
 ```
 
 ```
@@ -314,17 +314,10 @@ echo '{
     "port": 5432,
     "db_name": "cleanair_inputs_db",
     "ssl_mode": "prefer"
-}' >> terraform/.secrets/.db_secrets.json
+}' >> terraform/.secrets/db_secrets.json
 ```
 
 - Follow all instructions above as per cloud until add static datasets.
-
-- Build the docker image for static image upload:
-
-```bash
-SHA=$(git rev-parse HEAD) 
-docker build -t cleanairdocker.azurecr.io/static:$SHA -f containers/dockerfiles/upload_static_dataset.Dockerfile containers
-```
 
 - Download static data and insert into the database:
 
