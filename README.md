@@ -117,7 +117,13 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 
 ## Building the Clean Air infrastructure with Terraform
-To build the `Terraform` infrastructure go to the `terraform` directory and run:
+To build the `Terraform` infrastructure go to the `terraform` directory 
+
+```
+cd terraform
+```
+
+and run:
 
 ```bash
 terraform init
@@ -139,7 +145,6 @@ terraform apply
 ```
 
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
-
 
 
 # Initialising the input databases
@@ -185,65 +190,6 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - Select `Let me select individual events` and tick `Pull requests` only
 
 
-# Miscellaneous
-
-## Running without Azure
-It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
-
-```bash
-brew install postgresql postgis
-```
-
-Create a database called `cleanair_db` and add the following login details (make sure they match the database credentials) to `/terraform/.secrets/.db_secrets.json`:
-
-```json
-{
-    "username": "<username>",
-    "password": "<password>",
-    "host": "host.docker.internal",
-    "port": 5432,
-    "db_name": "cleanair_db",
-    "ssl_mode": "prefer"
-}
-```
-
-To upload static data to the local database run:
-
-```
-python setup/insert_static_datasets.py -l <full-path-to-secret-file>
-```
-
-where the secret file is a JSON file of the form detailed above.
-
-### Build and run docker images locally
-
-**AQE**
-```
-docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
-```
-
-**LAQN**
-```
-docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
-```
-
-**UKMAP**
-```
-docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
-```
-
-**OSHighway**
-```
-docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/osh
-```
-
-**Model fitting**
-```
-docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
-```
-
-
-
 ## Removing Terraform infrastructure
 To destroy all the resources created by `Terraform` run:
 
@@ -255,18 +201,108 @@ You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
+# Miscellaneous
 
+## Create a local secrets file
 
+To run the clean air docker images locally you will need to create a local secrets file:
 
+Run the following to create a file with the database secrets:
 
+```
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+```
 
+```
+echo '{
+    "username": "<db_admin_username>@<db_server_name>",
+    "password": "<db_admin_password>",
+    "host": "<db_server_name>.postgres.database.azure.com",
+    "port": 5432,
+    "db_name": "<dbname>",
+    "ssl_mode": "require"
+}' >> terraform/.secrets/db_secrets.json
+```
 
+Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
 
+### Build and run docker images
+**AQE - Download AQE data**
+```
+docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
+```
 
+**LAQN - Download LAQN data**
+```
+docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
+```
 
+**UKMAP feature extraction**
+```
+docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v <repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
+```
 
+**OSHighway feature extraction**
+```
+docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/osh
+```
 
+**Model fitting**
+```
+docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /U<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
+```
 
+## Running with local database
+
+### Install postgres and upload static datasets
+
+It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
+
+- Install postgres and start
+
+```bash
+brew install postgresql postgis
+```
+
+```bash
+brew services start postgres
+```
+
+- Create a database called 'cleanair_inputs_db'. In a terminal run:
+
+```bash
+psql postgres
+```
+
+and then create the database:
+```bash
+CREATE DATABASE cleanair_inputs_db;
+```
+
+- Create a secret file with login information for the database with following commands:
+
+```
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+```
+
+```
+echo '{
+    "username": "postgres",
+    "password": "password",
+    "host": "host.docker.internal",
+    "port": 5432,
+    "db_name": "cleanair_inputs_db",
+    "ssl_mode": "prefer"
+}' >> terraform/.secrets/db_secrets.json
+```
+
+- Follow all instructions above as per cloud until add static datasets.
+
+- Download static data and insert into the database:
+
+```
+python setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
+```
 
 
 <!-- ## Configure Kubernetes Cluster:
