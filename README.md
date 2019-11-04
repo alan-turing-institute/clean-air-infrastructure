@@ -292,7 +292,7 @@ python setup/insert_static_datasets.py -l terraform/.secrets/.db_input_secret.js
 You can then run docker images. Look at the python files in `containers/entrypoints` for available arguments.
 
 ```
-docker run cleanairdocker.azurecr.io/laqn:$SHA --end '2019-01-01' --ndays 5
+docker run -v <secretfile>:/secrets cleanairdocker.azurecr.io/laqn:$SHA --secretfile .db_input_secret_local.json
 ```
 
 
