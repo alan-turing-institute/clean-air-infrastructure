@@ -6,14 +6,14 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil import rrule
-
+from dateutil.parser import isoparse
 import matplotlib.pyplot as plt
 # import tensorflow as tf
 # import gpflow
 # from scipy.cluster.vq import kmeans2
 import time
 
-
+pd.set_option('display.max_columns', 500)
 # class Logger(gpflow.actions.Action):
 #     def __init__(self, model):
 #         self.model = model
@@ -66,8 +66,14 @@ class ModelFitting(DBInteractor):
             return interest_point_query
 
     
-    def filter_open_interest_points(self, interest_point_q, start_date, end_date, source='laqn'):
+    def sensor_interest_points(self, interest_point_q, start_date, end_date, source='laqn'):
+        """Pass the output of self.get_interest_point() and a start and end date and append data about the number of hours the sensor was open during this time"""
 
+        start_date = isoparse(start_date)
+        end_date = isoparse(end_date)
+        full_dataset_time = int((end_date - start_date).total_seconds()) // 3600
+
+   
         interest_point_sq = interest_point_q.subquery()
 
         if source == 'laqn':
@@ -77,30 +83,33 @@ class ModelFitting(DBInteractor):
 
         with self.dbcnxn.open_session() as session:
 
-            interest_points_join_INFOSite_sq = session.query(interest_point_sq,
+            interest_points_join_INFOSite_q = session.query(interest_point_sq,
                                                      INFOSite.site_code,                                                     
                                                      INFOSite.date_opened,
-                                                     INFOSite.date_closed).join(INFOSite, isouter=True).subquery()
+                                                     INFOSite.date_closed).join(INFOSite, isouter=True)
 
-            interest_points_open_info_q = session.query(interest_points_join_INFOSite_sq.c.point_id,
-                                                     interest_points_join_INFOSite_sq.c.source,
-                                                     interest_points_join_INFOSite_sq.c.lon,
-                                                     interest_points_join_INFOSite_sq.c.lat,
-                                                     func.min(interest_points_join_INFOSite_sq.c.date_opened).label('date_opened'),
-                                                     func.max(interest_points_join_INFOSite_sq.c.date_closed).label('date_closed')
-                                                     ).group_by(interest_points_join_INFOSite_sq.c.point_id,
-                                                                interest_points_join_INFOSite_sq.c.source,
-                                                                interest_points_join_INFOSite_sq.c.lon,
-                                                                interest_points_join_INFOSite_sq.c.lat)            
+            interest_point_join_df = pd.read_sql(interest_points_join_INFOSite_q.statement, 
+                                            interest_points_join_INFOSite_q.session.bind)
 
+            interest_point_df = interest_point_join_df.groupby(['point_id', 
+                                                                'source',
+                                                                'lon',
+                                                                'lat']).agg({'date_opened': 'min',
+                                                                             'date_closed': 'max'}).reset_index()          
             # Check that we have one row per interest point
-            if interest_point_q.count() != interest_points_open_info_q.count():
-                raise ValueError("Duplicate rows found in filtered_interest_points")
-       
+            if interest_point_q.count() != len(interest_point_df):
+                raise ValueError("Duplicate rows found in interest_point_df")    
 
-            interest_point_df = pd.read_sql(interest_points_open_info_q.statement, 
-                                            interest_points_open_info_q.session.bind)
-            
+            # Calculate a time delta used to calculate how many date points we expect. If negative then we expect no data points   
+            interest_point_df['expected_time_delta'] = (interest_point_df['date_closed'].apply(lambda x: min(x, end_date) if not isinstance(x, type(pd.NaT)) else end_date) - 
+                                                  interest_point_df['date_opened'].apply(lambda x: max(x, start_date)))
+
+            # Convert the time delta to the number of expected hours
+            interest_point_df['expected_open_hours'] = (interest_point_df['expected_time_delta'] / np.timedelta64(1, 'h')).astype(int).apply(lambda x: max(x, 0))    
+
+            # The number of hours during start_date and end_date that a sensor wasn't open
+            interest_point_df['open_hours_missing_from_full'] =  interest_point_df['expected_hours'] - full_dataset_time      
+
             return interest_point_df
 
     def select_static_features(self, sources=['laqn', 'aqe']):
@@ -217,8 +226,10 @@ class ModelFitting(DBInteractor):
 
     
     def model_fit(self):
-        start_date = '2019-11-02'
-        end_date = '2019-11-03'
+        start_date = '2019-11-01 00:00:00'
+        end_date = '2019-11-29 00:00:00'
+
+   
 
         laqn_interest_points = self.get_interest_points(source='laqn')
         print(laqn_interest_points.count())
