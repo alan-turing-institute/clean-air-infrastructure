@@ -1,48 +1,49 @@
 from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading
 from ..databases.db_interactor import DBInteractor
-from sqlalchemy import literal, func
+from sqlalchemy import literal, func, String
+from sqlalchemy.dialects.postgresql import ARRAY
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil import rrule
 
 import matplotlib.pyplot as plt
-import tensorflow as tf
-import gpflow
-from scipy.cluster.vq import kmeans2
-import time
 # import tensorflow as tf
+# import gpflow
+# from scipy.cluster.vq import kmeans2
+import time
 
-class Logger(gpflow.actions.Action):
-    def __init__(self, model):
-        self.model = model
-        self.logf = []
+
+# class Logger(gpflow.actions.Action):
+#     def __init__(self, model):
+#         self.model = model
+#         self.logf = []
         
-    def run(self, ctx):
-        if (ctx.iteration % 10) == 0:
-            # Extract likelihood tensor from Tensorflow session
-            likelihood = - ctx.session.run(self.model.likelihood_tensor)
-            print(likelihood)
-            # Append likelihood value to list
-            self.logf.append(likelihood)
+#     def run(self, ctx):
+#         if (ctx.iteration % 10) == 0:
+#             # Extract likelihood tensor from Tensorflow session
+#             likelihood = - ctx.session.run(self.model.likelihood_tensor)
+#             print(likelihood)
+#             # Append likelihood value to list
+#             self.logf.append(likelihood)
 
-def run_adam(model, iterations):
-    """
-    Utility function running the Adam Optimiser interleaved with a `Logger` action.
+# def run_adam(model, iterations):
+#     """
+#     Utility function running the Adam Optimiser interleaved with a `Logger` action.
     
-    :param model: GPflow model
-    :param interations: number of iterations
-    """
-    # Create an Adam Optimiser action
-    adam = gpflow.train.AdamOptimizer().make_optimize_action(model)
-    # Create a Logger action
-    logger = Logger(model)
-    actions = [adam, logger]
-    # Create optimisation loop that interleaves Adam with Logger
-    loop = gpflow.actions.Loop(actions, stop=iterations)()
-    # Bind current TF session to model
-    model.anchor(model.enquire_session())
-    return logger
+#     :param model: GPflow model
+#     :param interations: number of iterations
+#     """
+#     # Create an Adam Optimiser action
+#     adam = gpflow.train.AdamOptimizer().make_optimize_action(model)
+#     # Create a Logger action
+#     logger = Logger(model)
+#     actions = [adam, logger]
+#     # Create optimisation loop that interleaves Adam with Logger
+#     loop = gpflow.actions.Loop(actions, stop=iterations)()
+#     # Bind current TF session to model
+#     model.anchor(model.enquire_session())
+#     return logger
 
 class ModelFitting(DBInteractor):
 
@@ -50,6 +51,57 @@ class ModelFitting(DBInteractor):
 
         # Initialise parent classes
         super().__init__(**kwargs)
+
+    def get_interest_points(self, source='laqn'):
+        """Get all interest points for a given source"""    
+
+        with self.dbcnxn.open_session() as session:
+
+            interest_point_query = session.query(MetaPoint.id.label('point_id'),
+                                                 MetaPoint.source,
+                                                 MetaPoint.location,
+                                                 func.ST_X(MetaPoint.location).label('lon'),
+                                                 func.ST_Y(MetaPoint.location).label('lat')).filter(MetaPoint.source == source)
+
+            return interest_point_query
+
+    
+    def filter_open_interest_points(self, interest_point_q, start_date, end_date, source='laqn'):
+
+        interest_point_sq = interest_point_q.subquery()
+
+        if source == 'laqn':
+            INFOSite = LAQNSite
+        elif source == 'aqe':
+            INFOSite = AQESite
+
+        with self.dbcnxn.open_session() as session:
+
+            interest_points_join_INFOSite_sq = session.query(interest_point_sq,
+                                                     INFOSite.site_code,                                                     
+                                                     INFOSite.date_opened,
+                                                     INFOSite.date_closed).join(INFOSite, isouter=True).subquery()
+
+            interest_points_open_info_q = session.query(interest_points_join_INFOSite_sq.c.point_id,
+                                                     interest_points_join_INFOSite_sq.c.source,
+                                                     interest_points_join_INFOSite_sq.c.lon,
+                                                     interest_points_join_INFOSite_sq.c.lat,
+                                                     func.min(interest_points_join_INFOSite_sq.c.date_opened).label('date_opened'),
+                                                     func.max(interest_points_join_INFOSite_sq.c.date_closed).label('date_closed')
+                                                     ).group_by(interest_points_join_INFOSite_sq.c.point_id,
+                                                                interest_points_join_INFOSite_sq.c.source,
+                                                                interest_points_join_INFOSite_sq.c.lon,
+                                                                interest_points_join_INFOSite_sq.c.lat)            
+
+            # Check that we have one row per interest point
+            if interest_point_q.count() != interest_points_open_info_q.count():
+                raise ValueError("Duplicate rows found in filtered_interest_points")
+       
+
+            interest_point_df = pd.read_sql(interest_points_open_info_q.statement, 
+                                            interest_points_open_info_q.session.bind)
+            
+            return interest_point_df
 
     def select_static_features(self, sources=['laqn', 'aqe']):
         """Select static features and join with metapoint data"""
@@ -165,44 +217,52 @@ class ModelFitting(DBInteractor):
 
     
     def model_fit(self):
+        start_date = '2019-11-02'
+        end_date = '2019-11-03'
 
-        fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
-        fit_data_raw.to_csv('/secrets/model_data.csv')
+        laqn_interest_points = self.get_interest_points(source='laqn')
+        print(laqn_interest_points.count())
+        o = self.filter_open_interest_points(laqn_interest_points, start_date, end_date, source='laqn')
+
+        o.to_csv('/secrets/out.csv')
+        print(o.shape)
+        # fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
+        # fit_data_raw.to_csv('/secrets/model_data.csv')
         
-        X, Y = self.prep(fit_data_raw)
+        # X, Y = self.prep(fit_data_raw)
 
-        X_norm = (X - X.mean()) / X.std()
-        Y_norm = Y.copy()
-
-        # X_norm = X.copy()
+        # X_norm = (X - X.mean()) / X.std()
         # Y_norm = Y.copy()
-        print(X_norm.shape, Y_norm.shape)
-        num_z = X_norm.shape[0]
 
-        i = 0
-        Z = kmeans2(X_norm, num_z, minit='points')[0] 
-        # print(Z)
-        kern = gpflow.kernels.RBF(X_norm.shape[1], lengthscales=0.1)
-        # Z = X_norm.copy()
-        m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=500)
+        # # X_norm = X.copy()
+        # # Y_norm = Y.copy()
+        # print(X_norm.shape, Y_norm.shape)
+        # num_z = X_norm.shape[0]
+
+        # i = 0
+        # Z = kmeans2(X_norm, num_z, minit='points')[0] 
+        # # print(Z)
+        # kern = gpflow.kernels.RBF(X_norm.shape[1], lengthscales=0.1)
+        # # Z = X_norm.copy()
+        # m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=500)
     
-        # m.compile()
+        # # m.compile()
 
-        logger = run_adam(m, 5000)
+        # logger = run_adam(m, 5000)
         
-        print(-np.array(logger.logf))
-        # opt = gpflow.train.AdamOptimizer()
-        # print('fitting')
-        # opt.minimize(m)
-        print('predict')
-        ys_total = []
-        # for i in range(len(X)):
-        ys, ys_var = m.predict_y(X_norm)
-        ys_total.append([ys, ys_var])
-        ys_total = np.array(ys_total)
+        # print(-np.array(logger.logf))
+        # # opt = gpflow.train.AdamOptimizer()
+        # # print('fitting')
+        # # opt.minimize(m)
+        # print('predict')
+        # ys_total = []
+        # # for i in range(len(X)):
+        # ys, ys_var = m.predict_y(X_norm)
+        # ys_total.append([ys, ys_var])
+        # ys_total = np.array(ys_total)
 
 
-        # np.save('/secrets/_ys', ys_total)
+        # # np.save('/secrets/_ys', ys_total)
         # np.save('/secrets/true_ys', Y_norm)
 
         
