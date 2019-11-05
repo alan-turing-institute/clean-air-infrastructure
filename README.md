@@ -249,7 +249,7 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 
 **Model fitting**
 ```
-docker build -t cleanairdocker.azurecr.io/md -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /U<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
+docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /U<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
 ```
 
 ## Running with local database
