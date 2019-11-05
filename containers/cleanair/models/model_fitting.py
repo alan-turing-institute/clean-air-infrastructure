@@ -10,7 +10,39 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import gpflow
 from scipy.cluster.vq import kmeans2
+import time
 # import tensorflow as tf
+
+class Logger(gpflow.actions.Action):
+    def __init__(self, model):
+        self.model = model
+        self.logf = []
+        
+    def run(self, ctx):
+        if (ctx.iteration % 10) == 0:
+            # Extract likelihood tensor from Tensorflow session
+            likelihood = - ctx.session.run(self.model.likelihood_tensor)
+            print(likelihood)
+            # Append likelihood value to list
+            self.logf.append(likelihood)
+
+def run_adam(model, iterations):
+    """
+    Utility function running the Adam Optimiser interleaved with a `Logger` action.
+    
+    :param model: GPflow model
+    :param interations: number of iterations
+    """
+    # Create an Adam Optimiser action
+    adam = gpflow.train.AdamOptimizer().make_optimize_action(model)
+    # Create a Logger action
+    logger = Logger(model)
+    actions = [adam, logger]
+    # Create optimisation loop that interleaves Adam with Logger
+    loop = gpflow.actions.Loop(actions, stop=iterations)()
+    # Bind current TF session to model
+    model.anchor(model.enquire_session())
+    return logger
 
 class ModelFitting(DBInteractor):
 
@@ -123,7 +155,7 @@ class ModelFitting(DBInteractor):
 
     def prep(self, data_df):
 
-        x=["epoch", "lat", "lon", "value_1000_flat"]
+        x=["epoch", "lat", "lon"]
         y=["NO2"]
 
         data_subset = data_df[x + y]
@@ -134,32 +166,34 @@ class ModelFitting(DBInteractor):
     
     def model_fit(self):
 
-        fit_data_raw = self.get_model_fit_input(start_date='2019-11-01', end_date='2019-11-04', sources=['laqn', 'aqe'])
+        fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
         fit_data_raw.to_csv('/secrets/model_data.csv')
         
         X, Y = self.prep(fit_data_raw)
 
         X_norm = (X - X.mean()) / X.std()
-        Y_norm = (Y - Y.mean()) / Y.std()
+        Y_norm = Y.copy()
 
         # X_norm = X.copy()
         # Y_norm = Y.copy()
-
-        num_z = 300
+        print(X_norm.shape, Y_norm.shape)
+        num_z = X_norm.shape[0]
 
         i = 0
         Z = kmeans2(X_norm, num_z, minit='points')[0] 
         # print(Z)
-   
-  
         kern = gpflow.kernels.RBF(X_norm.shape[1], lengthscales=0.1)
         # Z = X_norm.copy()
-        m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(), Z, minibatch_size=len(X))
+        m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=500)
     
-        m.compile()
-        opt = gpflow.train.AdamOptimizer()
-        print('fitting')
-        opt.minimize(m, maxiter=10000)
+        # m.compile()
+
+        logger = run_adam(m, 5000)
+        
+        print(-np.array(logger.logf))
+        # opt = gpflow.train.AdamOptimizer()
+        # print('fitting')
+        # opt.minimize(m)
         print('predict')
         ys_total = []
         # for i in range(len(X)):
@@ -168,7 +202,7 @@ class ModelFitting(DBInteractor):
         ys_total = np.array(ys_total)
 
 
-        np.save('/secrets/_ys', ys_total)
-        np.save('/secrets/true_ys', Y_norm)
+        # np.save('/secrets/_ys', ys_total)
+        # np.save('/secrets/true_ys', Y_norm)
 
         
