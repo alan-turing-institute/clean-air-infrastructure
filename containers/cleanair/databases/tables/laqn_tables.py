@@ -70,13 +70,23 @@ class LAQNReading(Base):
             ])
 
     @staticmethod
-    def build_entry(reading_dict):
+    def build_entry(reading_dict, return_dict=False):
         """
         Create an LAQNReading entry, replacing empty strings with None
+        If return_dict then return a dictionary rather than and entry
         """
+
         # Replace empty strings
         reading_dict = {k: (v if v else None) for k, v in reading_dict.items()}
 
+        if return_dict:
+            new_key = ['site_code', 'species_code', 'measurement_start_utc', 'measurement_end_utc', 'value']
+            old_key = ['SiteCode', '@SpeciesCode', 'MeasurementStartUTC', 'MeasurementEndUTC', '@Value']
+            
+            for i in range(len(old_key)):
+                reading_dict[new_key[i]] = reading_dict.pop(old_key[i])
+           
+            return reading_dict
         # Construct the record and return it
         return LAQNReading(site_code=reading_dict["SiteCode"],
                            species_code=reading_dict["@SpeciesCode"],

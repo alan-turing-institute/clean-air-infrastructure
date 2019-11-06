@@ -35,7 +35,8 @@ class DBWriter(DBInteractor):
             self.logger.debug("Duplicate records found - rolling back transaction.")
             session.rollback()
             self.logger.debug("Attempting to merge records one at a time.")
-            for record in records:
+            for i, record in enumerate(records):
+                self.logger.debug("Merging record %s of %s", i, len(records))
                 session.merge(record)
             if flush:
                 self.logger.debug("Flushing transaction...")
