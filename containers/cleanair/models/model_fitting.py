@@ -21,7 +21,7 @@ class Logger(gpflow.actions.Action):
         self.logf = []
         
     def run(self, ctx):
-        if (ctx.iteration % 10) == 0:
+        if (ctx.iteration % 50) == 0:
             # Extract likelihood tensor from Tensorflow session
             likelihood = - ctx.session.run(self.model.likelihood_tensor)
             print('Iter: {}, likelihood: {:,}'.format(ctx.iteration, likelihood))
@@ -303,7 +303,7 @@ class ModelFitting(DBInteractor):
     
         # m.compile()
 
-        logger = run_adam(m, 50000)
+        logger = run_adam(m, 30000)
         
         # print("loglik: {:20.4f}".format(-np.array(logger.logf))))
         # opt = gpflow.train.AdamOptimizer()
