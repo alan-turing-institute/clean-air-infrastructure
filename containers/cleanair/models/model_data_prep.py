@@ -33,7 +33,7 @@ class ModelData(DBInteractor):
 
     
     def sensor_interest_points(self, start_date, end_date, source='laqn', species='NO2'):
-        """Pass the output of self.get_interest_point() and a start and end date and append data about the number of hours the sensor was open during this time"""
+        """Launch a plotly webapp to see missing data"""
 
         start_date_ = isoparse(start_date)
         end_date_ = isoparse(end_date)        
@@ -76,8 +76,7 @@ class ModelData(DBInteractor):
                                      )           
 
             # Prep the gant chart
-            sensor_readings = self.get_sensor_readings(start_date, end_date, sources = [source])          
-            print(sensor_readings[sensor_readings['point_id'] == 'b83a0933-fe6d-4dcd-a0d8-80d6a388f2e5'])
+            sensor_readings = self.get_sensor_readings(start_date, end_date, sources = [source])                     
             time_df_merged = pd.merge(time_df_merged, sensor_readings, how = 'left', on=['point_id', 'measurement_start_utc','source'])
             time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
 
@@ -111,35 +110,6 @@ class ModelData(DBInteractor):
             fig = ff.create_gantt(gant_df, group_tasks=True, colors=colors, index_col='Resource', show_colorbar=True)
             fig['layout'].update(autosize=True, height = 6000, title = source)
             fig.show()
-
-        
-      
-            # for t in times:
-            #     print(interest_point_df.iloc[0]['date_opened'] <= t and (t < interest_point_df.iloc[0]['date_closed'] or pd.isnull(interest_point_df.iloc[0]['date_closed'])))
-
-            # return interest_point_join_df
-
-            # # Check that we have one row per interest point
-            # if interest_point_q.count() != len(interest_point_df):
-            #     raise ValueError("Duplicate rows found in interest_point_df")    
-
-            # # Calculate a time delta used to calculate how many date points we expect. If negative then we expect no data points   
-            # interest_point_df['expected_time_delta'] = (interest_point_df['date_closed'].apply(lambda x: min(x, end_date_) if not isinstance(x, type(pd.NaT)) else end_date_) - 
-            #                                       interest_point_df['date_opened'].apply(lambda x: max(x, start_date_)))
-
-            # # Convert the time delta to the number of expected hours
-            # interest_point_df['expected_open_hours'] = (interest_point_df['expected_time_delta'] / np.timedelta64(1, 'h')).astype(int).apply(lambda x: max(x, 0))    
-
-            # # The number of hours during start_date and end_date that a sensor wasn't open
-            # interest_point_df['open_hours_missing_from_full'] =  interest_point_df['expected_open_hours'] - full_dataset_time      
-
-            # # Get the sensor readings and return with a summary of the number of hours availabile
-            # readings = self.get_sensor_readings(start_date, end_date, sources=[source])
-            # n_readings = readings.groupby('point_id').count()[species]
-            # sensor_summary = pd.merge(interest_point_df, n_readings.reset_index(), on='point_id', how = 'left')
-
-            # return readings, sensor_summary
-    
 
     def select_static_features(self, sources=['laqn', 'aqe'], point_ids=None):
         """Select static features and join with metapoint data"""
@@ -219,7 +189,7 @@ class ModelData(DBInteractor):
             return query
 
 
-    def get_sensor_readings(self, start_date, end_date, sources = ['laqn', 'aqe'], species = ['NO2']):
+    def get_sensor_readings(self, start_date, end_date, sources = ['laqn'], species = ['NO2']):
         """Get sensor readings for the sources between the start_date and end_date"""
 
         start_date_ = isoparse(start_date)
@@ -254,45 +224,38 @@ class ModelData(DBInteractor):
     #                     how='left')
 
 
-    # def prep(self, data_df):
+    def prep(self, data_df):
 
-    #     x=["epoch", "lat", "lon"]
-    #     y=["NO2"]
+        x=["epoch", "lat", "lon"]
+        y=["NO2"]
 
-    #     data_subset = data_df[x + y]
-    #     data_subset = data_subset.dropna()
+        data_subset = data_df[x + y]
+        data_subset = data_subset.dropna()
 
-    #     return data_subset[x].values, data_subset[y].values
+        return data_subset[x].values, data_subset[y].values
 
     
-    def get_model_inputs(self, start_date, end_date, sources=['laqn', 'aqe'], norm_by='laqn', species=['NO2'], features=None):
+    def get_model_inputs(self, start_date, end_date, source='laqn', norm_by='laqn', species=['NO2'], features=None):
         """
         Query the database for model inputs
         """
 
-        source = sources[0]
-
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        readings = self.sensor_interest_points(start_date, end_date, source='laqn', species=species)
+        readings = sensor_readings = self.get_sensor_readings(start_date, end_date, sources=source, species=species)   
+        readings.to_csv('/secrets/readings_{}.csv'.format(source))
 
-        # readings.to_csv('/secrets/readings_{}.csv'.format(source))
-        # readings_summary.to_csv('/secrets/readings_summary_{}.csv'.format(source))
-
-
-
-
-        # static_features = self.select_static_features(sources=['laqn'], point_ids=readings_summary[readings_summary['expected_open_hours']>0]['point_id'].values)
-        # static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
+       
+        static_features = self.select_static_features(sources=['laqn'])
+        static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
         
-        # model_data = pd.merge(static_features_expand, 
-        #                 readings, 
-        #                 on=['point_id', 'measurement_start_utc', 'epoch', 'source'], 
-        #                 how='left')
+        model_data = pd.merge(static_features_expand, 
+                        readings, 
+                        on=['point_id', 'measurement_start_utc', 'epoch', 'source'], 
+                        how='left')
 
-        # model_data = model_data.dropna(subset=species)
-        # model_data.to_csv('/secrets/model_data.csv')
-        # print(readings_summary['NO2'].sum())
-        # print(model_data.dropna(subset=species).shape) 
+        model_data = model_data.dropna(subset=species)
+        model_data.to_csv('/secrets/model_data.csv')
+
 
 
     #     # fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
@@ -302,17 +265,17 @@ class ModelData(DBInteractor):
 
     #     X, Y = self.prep(model_data)
 
-    #     X = np.expand_dims(X, 0)
-    #     Y = np.expand_dims(Y, 0)
+    # #     X = np.expand_dims(X, 0)
+    # #     Y = np.expand_dims(Y, 0)
 
-    #     np.save('/secrets/X.npy', X)
-    #     np.save('/secrets/Y.npy', Y)
-    #     print(X)
-    #     print(Y)
-    #     print(Y.shape)
+    # #     np.save('/secrets/X.npy', X)
+    # #     np.save('/secrets/Y.npy', Y)
+    # #     print(X)
+    # #     print(Y)
+    # #     print(Y.shape)
 
-    #     X = X[0]
-    #     Y = Y[0]
+    # #     X = X[0]
+    # #     Y = Y[0]
 
       
     #     X_norm = ((X - X.mean(0)) / X.std(0)).copy()
