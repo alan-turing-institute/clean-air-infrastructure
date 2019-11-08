@@ -1,6 +1,8 @@
 """
 UKMap Feature extraction
 """
+import sys
+sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers/')
 import argparse
 import logging
 from cleanair.loggers import get_log_level
