@@ -73,7 +73,7 @@ class LAQNReading(Base):
     def build_entry(reading_dict, return_dict=False):
         """
         Create an LAQNReading entry, replacing empty strings with None
-        If return_dict then return a dictionary rather than and entry
+        If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
         """
 
         # Replace empty strings
