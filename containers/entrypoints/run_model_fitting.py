@@ -4,7 +4,7 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.models import ModelFitting
+from cleanair.models import ModelData
 
 
 def main():
@@ -24,8 +24,8 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     try:
-       model_fit = ModelFitting(**kwargs)
-       model_fit.model_fit()
+       model_fit = ModelData(**kwargs)
+       model_fit.get_model_inputs(start_date='2019-10-25 00:00:00', end_date='2019-11-05 00:00:00', norm_by='laqn', sources=['laqn', 'aqe'], species=['NO2'])
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
