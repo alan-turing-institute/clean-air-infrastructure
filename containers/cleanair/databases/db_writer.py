@@ -2,6 +2,8 @@
 Table writer
 """
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.inspection import inspect
+from sqlalchemy.dialects.postgresql import insert
 from .db_interactor import DBInteractor
 from ..loggers import get_logger
 
@@ -18,8 +20,20 @@ class DBWriter(DBInteractor):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def add_records(self, session, records, flush=False):
-        """Commit records to the database"""
+    def __add_records_core(self, records, table):
+        """Add records using sqlalchemy core"""
+        insert_stmt = insert(table).values(records)
+        try:
+            self.logger.debug("Attempting to add all records.")
+            self.dbcnxn.engine.execute(insert_stmt)
+
+        except IntegrityError as error:
+            self.logger.debug("Duplicate records found. Attempting to add non duplicate records")
+            on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(index_elements=inspect(table).primary_key)
+            self.dbcnxn.engine.execute(on_duplicate_key_stmt)      
+
+    def __add_records_orm(self, session, records, flush=False):          
+        """Add records using sqlalchemy ORM"""
         # Using add_all is faster but will fail if this data was already added
         try:
             self.logger.debug("Attempting to add all records.")
@@ -41,6 +55,18 @@ class DBWriter(DBInteractor):
             if flush:
                 self.logger.debug("Flushing transaction...")
                 session.flush()
+
+    def add_records(self, session, records, flush=False, table=None):
+        """
+        Commit records to the database
+        If table is provided it will insert using sqlalchemy's core rather than the ORM.
+        """
+
+        if table:
+            self.__add_records_core(records, table)
+        
+        else:
+            self.__add_records_core(session, records, flush)
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

@@ -126,7 +126,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
                              green(AQESite.__tablename__))
             session.commit()
 
-    def update_reading_table(self):
+    def update_reading_table(self, usecore=True):
         """Update the readings table with new sensor readings."""
         self.logger.info("Starting %s readings update...", green("AQE"))
 
@@ -139,10 +139,13 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
 
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            site_records = [AQEReading.build_entry(site_reading) for site_reading in site_readings]
+            site_records = [AQEReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
 
             # Commit the records to the database
-            self.add_records(session, site_records)
+            if usecore:
+                self.add_records(session, site_records, flush=True, table=AQEReading)
+            else:
+                self.add_records(session, site_records, flush=True)
             session.commit()
 
             # Commit changes

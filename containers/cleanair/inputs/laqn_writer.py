@@ -110,7 +110,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
                              green(LAQNSite.__tablename__))
             session.commit()
 
-    def update_reading_table(self, usecore=False):
+    def update_reading_table(self, usecore=True):
         """Update the readings table with new sensor readings."""
         self.logger.info("Starting %s readings update...", green("LAQN"))
 
@@ -124,12 +124,10 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             site_records = [LAQNReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
-            
+
+            # Commit the records to the database
             if usecore:
-                # Commit the records to the database
-                self.dbcnxn.engine.execute(
-                            LAQNReading.__table__.insert(),
-                            site_records)
+                self.add_records(session, site_records, flush=True, table=LAQNReading)
             else:
                 self.add_records(session, site_records, flush=True)
 
