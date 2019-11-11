@@ -18,10 +18,15 @@ Our aim is for phase 1 to be complete by January.
 1. **Multi-variate**: visualise predictions for 3 different types of pollutants (NO2, PM10, PM2.5).
     - We will show each pollutant seperately on the map - not together.
 1. **Variance**: show the variance of the predictions for a single pollutant at a time.
+1. **Key**: a colour/symbol key to simply explain what the a given colour and symbol mean.
+    - **Units**: the key should show both the value of the pollutant (e.g. 60 micro grams per cubin meter) and whether this is low, medium or high air pollution.
+1. **Pop ups**: small pop ups or boxes with information about how to interpret the predictions and visualisations should be added to aid the user's understanding and help them navigate the web app.
 
 ***
 
 ## Future extensions (Phase 2)
+
+After the January deadline, we would like to add more features for examining the model predictions in detail.
 
 1. **Time series**: Show the training and prediction time series of a given point.
     - **Grid square**: by clicking a grid square, the time series will plot mean and variance of recent predictions and the next 48 hours of predictions for that grid square.
@@ -36,6 +41,11 @@ Our aim is for phase 1 to be complete by January.
 ## Use cases
 
 ### General public
+
+#### What's the air quality like in my area?
+
+A concerned citizen wants to know what the air quality is like for the next 48 hours in their area.
+This type of query resembles a weather forecast.
 
 #### Walkers, runners & cyclists
 
@@ -57,13 +67,28 @@ Plug and play different models and seeing how they compare.
 
 #### Air quality researchers
 
+***
+
 ## Output of the API
 
 ### Datafile type
 
+We expect csv and json to be the two most popular file format requests.
+
 ### Data size & compression
 
-### Spatial & temporal bounds
+The size of the response will depend on the resolution of the grid (see below for boundaries).
+
+### Spatial bounds
+
+If a user wants to look at a specific spatial area of London, then the user will send the spatial bounds of this area to the API.
+The API should respond with the air quality predictions within these spatial bounds.
+
+If the user wants to scroll around the surrounding area, then the API may send back the predictions for the specified area plus the surrounding area to ensure the web app runs smoothly.
+
+### Temporal bounds
+
+Perhaps a user only wants to know the air quality between 6pm and 10pm tomorrow evening?
 
 ***
 
@@ -93,9 +118,21 @@ Equally this weakness could also be a strength: it clearly shows the variance wh
 
 ### Rotating lines
 
+The colour of the line indicates the mean value for NO2 at that point.
+Yellow is high air pollution, blue is low air pollution.
+The rotation of the line indicates the variance.
+Lines which are vertical show predictions with low variance (high certainty).
+Lines which are more horizontal show predicitons with higher variance (low certainty).
+
 ![Rotating lines](img/ATI_DarkViridis.png)
 
 ### Circles
+
+The colour of the line indicates the mean value for NO2 at that point.
+Dark red indicates air pollution is high.
+Light orange indicates air pollution is low.
+The bigger the circle the lower the variance (and the higher the certainty).
+This means the eye is naturally drawn to areas of high air pollution with high certainty.
 
 ![Circles](img/ATI_LightRed.png)
 
@@ -105,6 +142,14 @@ Equally this weakness could also be a strength: it clearly shows the variance wh
 ## Previous systems
 
 ### London air (King's college)
+
+[London air](https://www.londonair.org.uk/) is mostly focuses on reporting the air quality measurements from the London Air Quality Network (LAQN) run by King's College.
+They have some modelling to interpolate the sensor readings, but it is not clear how this is done.
+They use a simple square grid with a high resolution and no variance to show their predictions.
+They do not forecast air quality.
+
+London air uses the Air Quality Index (AQI) with an associated colour scheme.
+AQI makes it easier for the general public to understand predictions (as opposed to some arbitrary NO2 value).
 
 ### GLA hex system
 
@@ -116,9 +161,12 @@ Each hex has a variable (e.g. poverty, loneliness, etc.) associated with it.
 [Breathe London](https://www.breathelondon.org) displays a dot for each sensor.
 By clicking on a dot, you can see the time series for a single pollutant over the last 24 hours.
 You can click another buttom called `More data` which displays a time series of the last year of air quality data for a given pollutant at that sensor.
+This is a nice feature and something we should think carefully about.
 
-**The ability to request more detail** is a feature we should use.
+### Weather forecast
 
+Predicting air quality is similar to predicting the weather, except at a much higher spatial resolution.
+Perhaps applications such as the [MET office](https://www.metoffice.gov.uk) or [BBC weather](https://www.bbc.co.uk/weather) could offer some insight?
 
 ***
 
@@ -132,6 +180,7 @@ If we are highlighting predictions from the model that we are more certain of (i
 
 By displaying a grid, we are implying our model predicts over discrete space, even though we can predict over continuous space.
 
+***
 
 ## Extentions / future work
 
