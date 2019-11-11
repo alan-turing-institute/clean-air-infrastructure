@@ -5,15 +5,25 @@ The visualisation component of this project is a collaboration between the Londo
 
 ***
 
-
 ## Minimum requirements (Phase 1)
 
+Our aim is for phase 1 to be complete by January.
+
+1. Show a map of Greater London (all boroughs) with air quality predictions overlayed.
+    - **Style**: the style of the grid will depend on the visualisation we decide upon (see below).
+    - **Resolution**: the resolution of the grid will depend on the model.
+    - **Boundary** :Let the user specify spatial/temporal boundaries before loading the map. This will reduce the size of the data transferred. For spatial queries, 
+1. Display air quality predictions over 48 hours.
+    - This could be done using a slider?
+1. Visualise predictions for 3 different types of pollutants (NO2, PM10, PM2.5).
+    - We will show each pollutant seperately on the map - not together.
+1. Show the variance of the predictions for a single pollutant at a time.
 
 ***
 
-## Phase 2
+## Future extensions (Phase 2)
 
-### Inducing points
+1. Zooming in 
 
 
 ***
@@ -50,7 +60,7 @@ Plug and play different models and seeing how they compare.
 
 ***
 
-## Visualisation ideas for map of London
+## Style: visualisation ideas
 
 As it stands, there are three ideas for how to visualise a single pollutant over a map of London.
 Rather than trying to show multiple pollutants on the same map, it will be much simpler to have a toggle or tick box on the side of the application to show different pollutants.
