@@ -32,7 +32,7 @@ class ModelData(DBInteractor):
             return interest_point_query
 
     
-    def sensor_interest_points(self, start_date, end_date, source='laqn', species='NO2'):
+    def viz_sensor_data(self, start_date, end_date, source='laqn', species='NO2'):
         """Launch a plotly webapp to see missing data"""
 
         start_date_ = isoparse(start_date)
@@ -92,23 +92,23 @@ class ModelData(DBInteractor):
        
             time_df_merged['Resource'] = time_df_merged.apply(lambda x: categorise(x), axis=1)
 
-
             gant_df = time_df_merged[['point_id', 'measurement_start_utc', 'Resource']].rename(columns={'point_id': 'Task', 'measurement_start_utc': 'Start'})
             gant_df['Finish'] = gant_df['Start'] + pd.DateOffset(hours=1)
 
             gant_df['Start'] = gant_df['Start'].apply(lambda x: datetime.strftime(x,  '%Y-%m-%d %H:%M:%S'))
             gant_df['Finish'] = gant_df['Finish'].apply(lambda x: datetime.strftime(x,  '%Y-%m-%d %H:%M:%S'))
 
+
             # gant_df = gant_df.groupby(['Task', 'Resource']).agg({'Start': 'min', 'Finish': 'max'}).reset_index() #This does the wrong thing. But something similar required to do something similar
 
             # Create the gant chart
-            colors = dict(OK = 'rgb(0,255,0)',
-                          Missing = 'rgb(255,0,0)',
-                          Closed = 'rgb(0,0,0)',)
+            colors = dict(OK = '#72C14D',
+                          Missing = '#D80032',
+                          Closed = '#1E1014',)
 
             # print(gant_df.iloc[:5000])
-            fig = ff.create_gantt(gant_df, group_tasks=True, colors=colors, index_col='Resource', show_colorbar=True)
-            fig['layout'].update(autosize=True, height = 6000, title = source)
+            fig = ff.create_gantt(gant_df, group_tasks=True, colors=colors, index_col='Resource', show_colorbar=True, showgrid_x=True)
+            fig['layout'].update(autosize=True, height = 7000, title = "Dataset: {}".format(source))
             fig.show()
 
     def select_static_features(self, sources=['laqn', 'aqe'], point_ids=None):
@@ -256,6 +256,7 @@ class ModelData(DBInteractor):
         model_data = model_data.dropna(subset=species)
         model_data.to_csv('/secrets/model_data.csv')
 
+        self.viz_sensor_data(start_date, end_date, source='laqn', specied='NO2')
 
 
     #     # fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
