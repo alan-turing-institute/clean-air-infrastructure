@@ -1,7 +1,7 @@
 from ..loggers import get_logger, green
-# import tensorflow as tf
-# import gpflow
-# from scipy.cluster.vq import kmeans2
+import tensorflow as tf
+import gpflow
+from scipy.cluster.vq import kmeans2
 
 
 class TFLogger(gpflow.actions.Action):
@@ -9,7 +9,7 @@ class TFLogger(gpflow.actions.Action):
         self.model = model
         self.logf = []
         
-    def run(self, ctx, logger):
+    def run(self, ctx):
         if (ctx.iteration % 10) == 0:
             # Extract likelihood tensor from Tensorflow session
             likelihood = - ctx.session.run(self.model.likelihood_tensor)          
@@ -41,33 +41,33 @@ class ModelFitting():
 
     def __init__(self, X, Y):
 
-        # # Ensure logging is available
-        # if not hasattr(self, "logger"):
-        #     self.logger = get_logger(__name__)
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
         
-        # self.logger.info("READY TO ROCK")
+        self.logger.info("READY TO ROCK")
 
         self.X = X
         self.Y = Y
 
     def model_fit(self, n_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500):
         """Fit the model"""
-        print('HELLO')
-        # # self.logger.info("Preparing to fit model")
+
+        self.logger.info("Preparing to fit model")
         num_z = self.X.shape[0]
         Z = kmeans2(self.X, num_z, minit='points')[0] 
         kern = gpflow.kernels.RBF(self.X.shape[1], lengthscales=lengthscales)
 
-        m = gpflow.models.SVGP(self.X,
-                               self.Y,
+        m = gpflow.models.SVGP(self.X.copy(),
+                               self.Y.copy(),
                                kern,
                                gpflow.likelihoods.Gaussian(variance=variance),
                                Z,
                                minibatch_size=minibatch_size)    
 
         # # self.logger.info("Starting model fitting. X dims: %s, Y dims: %s", self.X.shape, self.Y.shape)
-        print("Start")
-        # logger = run_adam(m, 5000)
+        print("START")
+        logger = run_adam(m, 5000)
         # # self.logger.info("Finished model fitting") 
 
         # return m
