@@ -102,7 +102,7 @@ Rather than trying to show multiple pollutants on the same map, it will be much 
 There are multiple resolutions for the hex grid.
 One of the advantages of the hex grid is that it fits nicely with existing GLA standards.
 One dis-advantage is the hex grid is not so familiar with people external to the GLA (e.g. the general public, external developers), although whether this is an issue is up for debate.
-Further it is not immediately clear how to visualise uncertainty using the hex grid.
+Further it is not immediately clear how to visualise uncertainty using any grid.
 
 ![Hex grid](img/hex.png)
 
@@ -167,6 +167,10 @@ This is a nice feature and something we should think carefully about.
 
 Predicting air quality is similar to predicting the weather, except at a much higher spatial resolution.
 Perhaps applications such as the [MET office](https://www.metoffice.gov.uk) or [BBC weather](https://www.bbc.co.uk/weather) could offer some insight?
+
+### Other ideas
+
+[Muddy America](https://stemlounge.com/muddy-america-color-balancing-trumps-election-map-infographic/) is a way to visualise multiple spatial variables on the same map.
 
 ***
 
