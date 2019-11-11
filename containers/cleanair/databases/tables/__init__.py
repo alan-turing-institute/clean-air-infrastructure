@@ -11,6 +11,7 @@ from .oshighway_table import OSHighway
 from .rectgrid_table import RectGrid
 from .scoot_tables import ScootReading, ScootDetector
 from .ukmap_table import UKMap
+from .model_results_table import ModelResult
 
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "ScootDetector",
     "ScootReading",
     "UKMap",
+    "ModelResult",
 ]

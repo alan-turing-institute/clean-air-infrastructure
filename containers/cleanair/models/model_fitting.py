@@ -1,6 +1,9 @@
 from ..loggers import get_logger, green
+from ..databases.tables import ModelResult
+import datetime
 import tensorflow as tf
 import gpflow
+import numpy as np
 from scipy.cluster.vq import kmeans2
 
 
@@ -13,7 +16,6 @@ class TFLogger(gpflow.actions.Action):
         if (ctx.iteration % 10) == 0:
             # Extract likelihood tensor from Tensorflow session
             likelihood = - ctx.session.run(self.model.likelihood_tensor)          
-            # logger.info("Iteration: %s, Likelihood: %s", ctx.iteration, likelihood)
             print("Iteration: {}, Likelihood: {}".format(ctx.iteration, likelihood))
             # Append likelihood value to list
             self.logf.append(likelihood)
@@ -25,7 +27,6 @@ def run_adam(model, iterations):
         :param model: GPflow model
         :param interations: number of iterations
         """
-     
         # Create an Adam Optimiser action
         adam = gpflow.train.AdamOptimizer().make_optimize_action(model)
         # Create a Logger action
@@ -41,19 +42,16 @@ class ModelFitting():
 
     def __init__(self, X, Y):
 
-        # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-        
-        self.logger.info("READY TO ROCK")
-
         self.X = X
         self.Y = Y
+        self.model = None
+        self.fit_time = None
 
     def model_fit(self, n_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500):
         """Fit the model"""
+        
+        self.fit_time = datetime.now()
 
-        self.logger.info("Preparing to fit model")
         num_z = self.X.shape[0]
         Z = kmeans2(self.X, num_z, minit='points')[0] 
         kern = gpflow.kernels.RBF(self.X.shape[1], lengthscales=lengthscales)
@@ -65,12 +63,22 @@ class ModelFitting():
                                Z,
                                minibatch_size=minibatch_size)    
 
-        # # self.logger.info("Starting model fitting. X dims: %s, Y dims: %s", self.X.shape, self.Y.shape)
-        print("START")
-        logger = run_adam(m, 5000)
-        # # self.logger.info("Finished model fitting") 
+        logger = run_adam(m, n_iter)
 
-        # return m
+        print("Fitting ended")
+
+        self.model = m
+
+
+    def model_predict(self, X_pred, Y_pred):
+
+        mean_pred, var_pred = self.model.predict_y(X_pred).squeeze()
+        ys_total = np.array([mean_pred, var_pred]).T
+
+        # print(ys_total.shape)
+
+        # ModelResult.build_entry(self.fit_time, )
+
 
     #     # # opt = gpflow.train.AdamOptimizer()
     #     # # print('fitting')

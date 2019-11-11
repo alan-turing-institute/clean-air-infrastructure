@@ -32,11 +32,12 @@ def main():
 
     try:
        model_data = ModelData(**kwargs)
-       data_df, X, Y = model_data.get_model_inputs(start_date=start, end_date=end, norm_by='laqn', sources=['laqn', 'aqe'], species=['NO2'])
+       _, X, Y = model_data.get_model_inputs(start_date=start, end_date=end, norm_by='laqn', sources=['laqn', 'aqe'], species=['NO2'])
        
        model_fitter = ModelFitting(X=X, Y=Y)
-       model_fitter.model_fit()
-    #    model_data.viz_sensor_data(start_date=start, end_date=end, source='laqn', species='NO2')
+       model_fitter.model_fit(n_iter=10)
+       model_fitter.model_predict(X_pred=X, Y_pred=Y)
+
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
