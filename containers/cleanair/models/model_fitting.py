@@ -1,6 +1,6 @@
 from ..loggers import get_logger, green
 from ..databases.tables import ModelResult
-import datetime
+from datetime import datetime
 import tensorflow as tf
 import gpflow
 import numpy as np
@@ -57,7 +57,7 @@ class ModelFitting():
         x_names_norm = [x + '_norm' for x in x_names]
         return x_names, x_names_norm
 
-    def prepare_data(self, data, x_names, y_names, norm_by=None, norm_mean=None, norm_std=None):
+    def prepare_data(self, data, x_names, norm_by=None, norm_mean=None, norm_std=None):
         """Select the columns of interest of the dataframe
         
         Must provide either norm_by or norm_mean and norm_sts"""
@@ -80,6 +80,7 @@ class ModelFitting():
         select_names = x_norm_names
         if y_names:
             select_names = select_names + y_names
+            
         data_subset = data_df[select_names]
         data_subset = data_subset.dropna() #Must have complete dataset
 
@@ -100,35 +101,37 @@ class ModelFitting():
         self.y_names = y_names
         self.norm_by = norm_by
 
-        model_fit_df, self.norm_mean, self.norm_sd = self.prepare_data(data, x_names, y_names, norm_by)        
+        model_fit_df, self.norm_mean, self.norm_std = self.prepare_data(data, x_names, norm_by)        
         X, Y = self.get_model_data_arrays(model_fit_df, x_names, y_names)
 
-        print(X, Y)
+        self.fit_time = datetime.now()
 
-        print(X.shape, Y.shape)
+        num_z = X.shape[0]
+        Z = kmeans2(X, num_z, minit='points')[0] 
+        kern = gpflow.kernels.RBF(X.shape[1], lengthscales=lengthscales)
 
-        # self.fit_time = datetime.now()
+        m = gpflow.models.SVGP(X.copy(),
+                               Y.copy(),
+                               kern,
+                               gpflow.likelihoods.Gaussian(variance=variance),
+                               Z,
+                               minibatch_size=minibatch_size)
 
-        # num_z = X.shape[0]
-        # Z = kmeans2(X, num_z, minit='points')[0] 
-        # kern = gpflow.kernels.RBF(X.shape[1], lengthscales=lengthscales)
-
-        # m = gpflow.models.SVGP(X.copy(),
-        #                        Y.copy(),
-        #                        kern,
-        #                        gpflow.likelihoods.Gaussian(variance=variance),
-        #                        Z,
-        #                        minibatch_size=minibatch_size)
-
-        # logger = run_adam(m, n_iter)
-        # self.model = m
+        logger = run_adam(m, n_iter)
+        self.model = m
 
 
     def model_predict(self, data, x_names, y_names):
 
+        if not self.model:
+            raise AttributeError("No model available. Try running ModelFitting.run_model() first")
+
         y_names_pred = [i + '_pred_mean' for i in y_names] + [i + '_pred_var' for i in y_names]
 
-        X, Y = self.prep_data(data, x_names)
+        model_fit_df, _, _ = self.prepare_data(data, x_names, y_names, norm_mean=self.norm_mean, norm_std=self.norm_std)
+
+        X, Y = self.get_model_data_arrays(model_fit_df, x_names, y_names)
+
         mean_pred, var_pred = self.model.predict_y(X).squeeze()
         ys_total = np.array([mean_pred, var_pred]).T
 

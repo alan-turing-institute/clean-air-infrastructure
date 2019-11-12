@@ -43,8 +43,8 @@ def main():
     model_fitter.model_fit(data=model_data_df, x_names = [], y_names=['NO2'], n_iter=10)
 
     # #    Do prediction and write to database
-    #    predict_df = model_fitter.model_predict(model_data_df)
-    #    print(predict_df)
+    predict_df = model_fitter.model_predict(model_data_df)
+    print(predict_df)
     
 
 
