@@ -1,10 +1,12 @@
 """
-UKMap Feature extraction
+Model fitting
 """
+import sys
+sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers/')
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.models import ModelData
+from cleanair.models import ModelData, ModelFitting
 
 
 def main():
@@ -15,7 +17,9 @@ def main():
     parser = argparse.ArgumentParser(description="Run model fitting")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
-
+    parser.add_argument("-b", "--start", type=str, default='2019-10-25 00:00:00', help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for.")   
+    parser.add_argument("-e", "--end", type=str, default='2019-10-26 00:00:00', help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for.")   
+    
     # Parse and interpret arguments
     args = parser.parse_args()
 
@@ -23,12 +27,28 @@ def main():
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-    try:
-       model_fit = ModelData(**kwargs)
-       model_fit.get_model_inputs(start_date='2019-10-25 00:00:00', end_date='2019-11-05 00:00:00', norm_by='laqn', sources=['laqn', 'aqe'], species=['NO2'])
-    except Exception as error:
-        print("An uncaught exception occurred:", str(error))
-        raise
+    start = kwargs.pop('start')    
+    end = kwargs.pop('end')
+
+   
+    # Get the model data
+    model_data = ModelData(**kwargs)
+    model_data_df = model_data.get_model_inputs(start_date=start,
+                                                end_date=end, 
+                                                sources=['laqn', 'aqe'], 
+                                                species=['NO2'])
+    
+#    Fit the model
+    model_fitter = ModelFitting(training_data_df=model_data_df, 
+                                predict_data_df=model_data_df,
+                                y_names=['NO2'])
+
+    model_fitter.fit(n_iter=10)
+
+    # #    Do prediction and write to database
+    predict_df = model_fitter.predict()
+    print(predict_df)
+    
 
 
 if __name__ == "__main__":

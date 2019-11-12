@@ -22,3 +22,4 @@ termcolor
 uuid
 tensorflow==1.15
 gpflow
+plotly
