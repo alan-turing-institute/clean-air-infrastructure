@@ -40,69 +40,57 @@ def run_adam(model, iterations):
 
 class ModelFitting():
 
-    def __init__(self):
+    def __init__(self, training_data_df, predict_data_df, y_names, x_names=["epoch", "lat", "lon"], norm_by='laqn'):
 
-        # Attributes created by self.model_fit
-        self.model = None
-        self.fit_time = None
-        self.norm_mean = None
-        self.norm_std = None
-        self.x_names = None
-        self.y_names = None
-
-    
-    @staticmethod
-    def get_xnorm_names(x_names):
-        x_names = ["epoch", "lat", "lon"] + x_names
-        x_names_norm = [x + '_norm' for x in x_names]
-        return x_names, x_names_norm
-
-    def prepare_data(self, data, x_names, norm_by=None, norm_mean=None, norm_std=None):
-        """Select the columns of interest of the dataframe
-        
-        Must provide either norm_by or norm_mean and norm_sts"""
-
-        x_names, x_names_norm = self.get_xnorm_names(x_names)       
-
-        # Get norm mean and std if norm_by is given
-        if norm_by:
-            norm_mean = data[data['source'] == norm_by][x_names].mean(axis = 0)
-            norm_std = data[data['source'] == norm_by][x_names].std(axis = 0)      
-
-        # Normalise the data
-        data[x_names_norm] = (data[x_names] - norm_mean) / norm_std
-        
-        return data, norm_mean, norm_std
-    
-    def get_model_data_arrays(self, data_df, x_names, y_names = None):
-
-        _, x_norm_names = self.get_xnorm_names(x_names)
-        select_names = x_norm_names
-        if y_names:
-            select_names = select_names + y_names
-            
-        data_subset = data_df[select_names]
-        data_subset = data_subset.dropna() #Must have complete dataset
-
-        return data_subset[x_norm_names].values, data_subset[y_names].values
-
-    def model_fit(self,
-                  data,
-                  x_names,
-                  y_names, 
-                  norm_by = 'laqn',
-                  n_iter=5000,
-                  lengthscales=0.1,
-                  variance=0.1,
-                  minibatch_size=500):
-        """Fit the model"""
-        
+        self.training_data_df = training_data_df
+        self.predict_data_df = predict_data_df
         self.x_names = x_names
         self.y_names = y_names
         self.norm_by = norm_by
 
-        model_fit_df, self.norm_mean, self.norm_std = self.prepare_data(data, x_names, norm_by)        
-        X, Y = self.get_model_data_arrays(model_fit_df, x_names, y_names)
+        self.normalised_training_data = self.normalise_data(self.training_data_df)
+        self.normalised_predict_data = self.normalise_data(self.predict_data_df)
+       
+        # Attributes created by self.model_fit
+        self.model = None
+        self.fit_stats = None
+        self.fit_time = None
+
+    @property
+    def x_names_norm(self):
+        return [x + '_norm' for x in self.x_names]
+
+    @property 
+    def norm_stats(self):
+        norm_mean = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].mean(axis=0)
+        norm_std = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].std(axis=0)
+        return norm_mean, norm_std
+
+    def normalise_data(self, data):
+        norm_mean, norm_std = self.norm_stats
+        # Normalise the data
+        data[self.x_names_norm] = (data[self.x_names] - norm_mean) / norm_std
+        return data
+    
+    def get_model_data_arrays(self, data_df, return_Y=True, dropna=True):
+
+        if return_Y:
+            data_subset = data_df[self.x_names_norm + self.y_names]
+        else:
+            data_subset = data_df[self.x_names_norm]
+
+        data_subset = data_subset.dropna() #Must have complete dataset
+        data_dict = {'X': data_subset[self.x_names_norm].values}
+        if return_Y:
+            data_dict['Y'] = data_subset[self.y_names].values
+        return data_dict
+
+    def fit(self, n_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500):
+        """Fit the model"""
+      
+        data_dict = self.get_model_data_arrays(self.normalised_training_data, return_Y=True, dropna=True)
+        X = data_dict['X'].copy()
+        Y = data_dict['Y'].copy()
 
         self.fit_time = datetime.now()
 
@@ -117,25 +105,23 @@ class ModelFitting():
                                Z,
                                minibatch_size=minibatch_size)
 
-        logger = run_adam(m, n_iter)
+        self.fit_stats = run_adam(m, n_iter)
         self.model = m
 
-
-    def model_predict(self, data, x_names, y_names):
+    def predict(self):
 
         if not self.model:
-            raise AttributeError("No model available. Try running ModelFitting.run_model() first")
+            raise AttributeError("No model has been fit. Fit the model first")
 
-        y_names_pred = [i + '_pred_mean' for i in y_names] + [i + '_pred_var' for i in y_names]
+        data_dict = self.get_model_data_arrays(self.normalised_predict_data, return_Y=False, dropna=True)
+        X = data_dict['X'].copy()
 
-        model_fit_df, _, _ = self.prepare_data(data, x_names, y_names, norm_mean=self.norm_mean, norm_std=self.norm_std)
+        mean_pred, var_pred = self.model.predict_y(X)
+    
+        # Create new dataframe with predictions
+        predict_df = self.predict_data_df[self.x_names + self.x_names_norm].copy()
 
-        X, Y = self.get_model_data_arrays(model_fit_df, x_names, y_names)
+        predict_df[self.y_names[0] + '_mean'] = mean_pred.squeeze()
+        predict_df[self.y_names[0] + '_var'] = var_pred.squeeze()
 
-        mean_pred, var_pred = self.model.predict_y(X).squeeze()
-        ys_total = np.array([mean_pred, var_pred]).T
-
-        predict_df = data[x_names]
-        predict_df[y_names_pred] = ys_total
-
-        return predict_df       
+        return predict_df

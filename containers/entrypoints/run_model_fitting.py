@@ -39,11 +39,14 @@ def main():
                                                 species=['NO2'])
     
 #    Fit the model
-    model_fitter = ModelFitting()
-    model_fitter.model_fit(data=model_data_df, x_names = [], y_names=['NO2'], n_iter=10)
+    model_fitter = ModelFitting(training_data_df=model_data_df, 
+                                predict_data_df=model_data_df,
+                                y_names=['NO2'])
+
+    model_fitter.fit(n_iter=10)
 
     # #    Do prediction and write to database
-    predict_df = model_fitter.model_predict(model_data_df)
+    predict_df = model_fitter.predict()
     print(predict_df)
     
 
