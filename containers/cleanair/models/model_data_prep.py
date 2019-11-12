@@ -209,26 +209,13 @@ class ModelData(DBInteractor):
         df['epoch'] = df['measurement_start_utc'].apply(lambda x: x.timestamp())
         df = df.pivot_table(index = ['point_id', 'source', 'measurement_start_utc', 'epoch'], columns = ['species_code'], values = 'value')        
 
-        return df[species].reset_index()
-
-
-    def prep_data(self, data_df, x_names, y_names):
-
-        data_subset = data_df[x_names + y_names]
-        data_subset = data_subset.dropna() #Must have complete dataset
-
-        return data_subset[x_names].values, data_subset[y_names].values
-
+        return df[species].reset_index() 
     
-    def get_model_inputs(self, start_date, end_date, sources=['laqn'], norm_by='laqn', species=['NO2'], features=[], dropna=True):
+    def get_model_inputs(self, start_date, end_date, sources=['laqn'], species=['NO2']):
         """
-        Query the database for model inputs
+        Query the database for model inputs. Returns all features.
         """
-      
-        x_names = ["epoch", "lat", "lon"] + features
-        x_names_norm = [x + '_norm' for x in x_names]
-        y_names = species    
-        
+                     
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         readings = sensor_readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)            
         static_features = self.select_static_features(sources=sources)
@@ -238,24 +225,7 @@ class ModelData(DBInteractor):
                         on=['point_id', 'measurement_start_utc', 'epoch', 'source'], 
                         how='left')
 
-        # Normalise data
-        norm_mean = model_data[model_data['source'] == norm_by][x_names].mean(axis = 0)
-        norm_std = model_data[model_data['source'] == norm_by][x_names].std(axis = 0)        
-        if norm_by:
-            model_data[x_names_norm] = (model_data[x_names] - norm_mean) / norm_std
-
-        # drop any missing values
-        if dropna:
-            model_data = model_data.dropna(subset=species)
-
-        X_out, Y_out = self.prep_data(model_data, x_names_norm, y_names)
-
-        return model_data, X_out, Y_out
-
-
-        
-
-        # self.viz_sensor_data(start_date, end_date, source='laqn', specied='NO2')
+        return model_data
 
 
     #     # fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])

@@ -30,17 +30,22 @@ def main():
     start = kwargs.pop('start')    
     end = kwargs.pop('end')
 
-    try:
-       model_data = ModelData(**kwargs)
-       _, X, Y = model_data.get_model_inputs(start_date=start, end_date=end, norm_by='laqn', sources=['laqn', 'aqe'], species=['NO2'])
-       
-       model_fitter = ModelFitting(X=X, Y=Y)
-       model_fitter.model_fit(n_iter=10)
-       model_fitter.model_predict(X_pred=X, Y_pred=Y)
+   
+    # Get the model data
+    model_data = ModelData(**kwargs)
+    model_data_df = model_data.get_model_inputs(start_date=start,
+                                                end_date=end, 
+                                                sources=['laqn', 'aqe'], 
+                                                species=['NO2'])
+    
+#    Fit the model
+    model_fitter = ModelFitting()
+    model_fitter.model_fit(data=model_data_df, x_names = [], y_names=['NO2'], n_iter=10)
 
-    except Exception as error:
-        print("An uncaught exception occurred:", str(error))
-        raise
+    # #    Do prediction and write to database
+    #    predict_df = model_fitter.model_predict(model_data_df)
+    #    print(predict_df)
+    
 
 
 if __name__ == "__main__":
