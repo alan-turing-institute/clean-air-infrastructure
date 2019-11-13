@@ -178,8 +178,8 @@ class StaticFeatures(DBWriter):
                     select_stmt = session.query(IntersectionGeom.point_id,
                                                 literal(feature_name).label("feature_name"),
                                                 *query_args
-                                                ).filter(IntersectionGeom.feature_name == feature_name
-                                                        ).group_by(IntersectionGeom.point_id)
+                                                ).filter(IntersectionGeom.feature_name == feature_name).group_by(
+                                                    IntersectionGeom.point_id)
 
                     select_stmt = select_stmt.subquery().select()
                     columns = [c.key for c in IntersectionValue.__table__.columns]

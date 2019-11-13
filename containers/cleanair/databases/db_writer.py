@@ -12,6 +12,7 @@ class DBWriter(DBInteractor):
     """
     Base class for writing to the Azure database
     """
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -27,12 +28,12 @@ class DBWriter(DBInteractor):
             self.logger.debug("Attempting to add all records.")
             self.dbcnxn.engine.execute(insert_stmt)
 
-        except IntegrityError as error:
+        except IntegrityError:
             self.logger.debug("Duplicate records found. Attempting to add non duplicate records")
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(index_elements=inspect(table).primary_key)
-            self.dbcnxn.engine.execute(on_duplicate_key_stmt)      
+            self.dbcnxn.engine.execute(on_duplicate_key_stmt)
 
-    def __add_records_orm(self, session, records, flush=False):          
+    def __add_records_orm(self, session, records, flush=False):
         """Add records using sqlalchemy ORM"""
         # Using add_all is faster but will fail if this data was already added
         try:
@@ -64,7 +65,6 @@ class DBWriter(DBInteractor):
 
         if table:
             self.__add_records_core(records, table)
-        
         else:
             self.__add_records_core(session, records, flush)
 
