@@ -1,5 +1,5 @@
-from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading
-from ..databases.db_interactor import DBInteractor
+from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading, ModelResult
+from ..databases import DBReader, DBWriter
 from sqlalchemy import literal, func
 import pandas as pd
 from datetime import datetime
@@ -9,7 +9,7 @@ from dateutil.parser import isoparse
 import plotly.figure_factory as ff
 
 
-class ModelData(DBInteractor):
+class ModelData(DBReader, DBWriter):
     """Class to query sensor readings and features from the cleanair database and format for model fitting"""
 
     def __init__(self, **kwargs):
@@ -242,52 +242,20 @@ class ModelData(DBInteractor):
 
         return model_data
 
-    #     # fit_data_raw = self.get_model_fit_input(start_date='2019-11-02', end_date='2019-11-03', sources=['laqn'])
-    #     # fit_data_raw.to_csv('/secrets/model_data.csv')
-    #     ids = model_data['point_id'].unique()[:20]
-    #     # model_data = model_data[model_data['point_id'].apply(lambda x: x in ids)]
+    def update_model_results_table(self, data_df):
+        """Update the model results table with the model results"""
 
-    #     X, Y = self.prep(model_data)
+        record_cols = ['fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
+        df_cols = data_df.columns
+        for col in record_cols:
+            if col not in df_cols:
+                raise AttributeError("The data frame must contain the following columns: {}".format(record_cols))
 
-    # #     X = np.expand_dims(X, 0)
-    # #     Y = np.expand_dims(Y, 0)
+        upload_records = data_df[record_cols].to_dict('records')
 
-    # #     np.save('/secrets/X.npy', X)
-    # #     np.save('/secrets/Y.npy', Y)
-    # #     print(X)
-    # #     print(Y)
-    # #     print(Y.shape)
+        try:
+            with self.dbcnxn.open_session() as session:
+                self.add_records(session, upload_records, flush=True, table=ModelResult)
 
-    # #     X = X[0]
-    # #     Y = Y[0]
-
-    #     X_norm = ((X - X.mean(0)) / X.std(0)).copy()
-    #     Y_norm = Y.copy()
-
-    #     print(X_norm.shape, Y_norm.shape)
-    #     num_z = 1000
-
-    #     i = 0
-    #     Z = kmeans2(X_norm, num_z, minit='points')[0]
-    #     # print(Z)
-    #     kern = gpflow.kernels.RBF(X_norm.shape[1], lengthscales=0.1)
-    #     # Z = X_norm.copy()
-    #     m = gpflow.models.SVGP(X_norm, Y_norm, kern, gpflow.likelihoods.Gaussian(variance=0.1), Z, minibatch_size=500)
-
-    #     # m.compile()
-
-    #     logger = run_adam(m, 30000)
-
-    #     # print("loglik: {:20.4f}".format(-np.array(logger.logf))))
-    #     # opt = gpflow.train.AdamOptimizer()
-    #     # print('fitting')
-    #     # opt.minimize(m)
-    #     print('predict')
-    #     ys_total = []
-    #     # for i in range(len(X)):
-    #     ys, ys_var = m.predict_y(X_norm)
-    #     ys_total.append([ys, ys_var])
-    #     ys_total = np.array(ys_total)
-
-    #     np.save('/secrets/_ys', ys_total)
-    #     np.save('/secrets/true_ys', Y_norm)
+        except Excepteion as err:
+            print(err.type)

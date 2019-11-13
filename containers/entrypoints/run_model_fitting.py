@@ -5,8 +5,6 @@ from cleanair.models import ModelData, ModelFitting
 from cleanair.loggers import get_log_level
 import logging
 import argparse
-import sys
-sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers/')
 
 
 def main():
@@ -38,17 +36,15 @@ def main():
                                                 end_date=end,
                                                 sources=['laqn', 'aqe'],
                                                 species=['NO2'])
-
-#    Fit the model
+    # Fit the model
     model_fitter = ModelFitting(training_data_df=model_data_df,
                                 predict_data_df=model_data_df,
                                 y_names=['NO2'])
+    model_fitter.fit(n_iter=25000)
 
-    model_fitter.fit(n_iter=10)
-
-    # #    Do prediction and write to database
+    # Do prediction and write to database
     predict_df = model_fitter.predict()
-    print(predict_df)
+    model_data.update_model_results_table(predict_df)
 
 
 if __name__ == "__main__":

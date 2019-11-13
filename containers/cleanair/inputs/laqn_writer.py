@@ -124,7 +124,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Get all readings for each site between its start and end dates and update the database
             site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
             site_records = [LAQNReading.build_entry(site_reading, return_dict=usecore)
-                                                    for site_reading in site_readings]
+                            for site_reading in site_readings]
 
             # Commit the records to the database
             if usecore:

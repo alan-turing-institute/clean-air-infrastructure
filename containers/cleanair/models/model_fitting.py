@@ -1,4 +1,5 @@
 from datetime import datetime
+import pandas as pd
 import gpflow
 from scipy.cluster.vq import kmeans2
 
@@ -78,7 +79,8 @@ class ModelFitting():
             data_subset = data_df[self.x_names_norm]
 
         data_subset = data_subset.dropna()  # Must have complete dataset
-        data_dict = {'X': data_subset[self.x_names_norm].values}
+        data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
+
         if return_Y:
             data_dict['Y'] = data_subset[self.y_names].values
         return data_dict
@@ -90,7 +92,7 @@ class ModelFitting():
         X = data_dict['X'].copy()
         Y = data_dict['Y'].copy()
 
-        self.fit_time = datetime.now()
+        self.fit_start_time = datetime.now()
 
         num_z = X.shape[0]
         Z = kmeans2(X, num_z, minit='points')[0]
@@ -113,13 +115,12 @@ class ModelFitting():
 
         data_dict = self.get_model_data_arrays(self.normalised_predict_data, return_Y=False, dropna=True)
         X = data_dict['X'].copy()
-
         mean_pred, var_pred = self.model.predict_y(X)
 
         # Create new dataframe with predictions
-        predict_df = self.predict_data_df[self.x_names + self.x_names_norm].copy()
+        predict_df = self.normalised_predict_data.copy()
+        predict_df = pd.DataFrame({'predict_mean': mean_pred.squeeze(), 'predict_var': var_pred.squeeze()}, index = data_dict['index'])
+        predict_df['fit_start_time'] = self.fit_start_time
 
-        predict_df[self.y_names[0] + '_mean'] = mean_pred.squeeze()
-        predict_df[self.y_names[0] + '_var'] = var_pred.squeeze()
+        return pd.concat([self.normalised_predict_data, predict_df], axis=1, ignore_index=False)
 
-        return predict_df
