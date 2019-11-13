@@ -2,6 +2,7 @@ from datetime import datetime
 import gpflow
 from scipy.cluster.vq import kmeans2
 
+
 class TFLogger(gpflow.actions.Action):
     def __init__(self, model):
         self.model = model

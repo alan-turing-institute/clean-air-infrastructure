@@ -82,10 +82,9 @@ class LAQNReading(Base):
         if return_dict:
             new_key = ['site_code', 'species_code', 'measurement_start_utc', 'measurement_end_utc', 'value']
             old_key = ['SiteCode', '@SpeciesCode', 'MeasurementStartUTC', 'MeasurementEndUTC', '@Value']
-            
+
             for i in range(len(old_key)):
                 reading_dict[new_key[i]] = reading_dict.pop(old_key[i])
-           
             return reading_dict
         # Construct the record and return it
         return LAQNReading(site_code=reading_dict["SiteCode"],
