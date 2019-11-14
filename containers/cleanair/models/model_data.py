@@ -1,12 +1,15 @@
-from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading, ModelResult
-from ..databases import DBReader, DBWriter
-from sqlalchemy import literal, func
-import pandas as pd
+"""
+Model data
+"""
 from datetime import datetime
+import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
+from sqlalchemy import literal, func
 import plotly.figure_factory as ff
+from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading, ModelResult
+from ..databases import DBReader, DBWriter
 
 
 class ModelData(DBReader, DBWriter):
@@ -14,8 +17,10 @@ class ModelData(DBReader, DBWriter):
 
     def __init__(self, **kwargs):
         # Initialise parent classes
-
         super().__init__(**kwargs)
+
+        # Dataframe with model fit results
+        self.fit_df = None
 
     def __get_interest_points(self, source='laqn'):
         """Get all interest points for a given source"""
@@ -23,10 +28,12 @@ class ModelData(DBReader, DBWriter):
         with self.dbcnxn.open_session() as session:
 
             interest_point_query = session.query(
-                MetaPoint.id.label('point_id'), MetaPoint.source, MetaPoint.location, func.ST_X(
-                    MetaPoint.location).label('lon'), func.ST_Y(
-                    MetaPoint.location).label('lat')).filter(
-                MetaPoint.source == source)
+                MetaPoint.id.label('point_id'),
+                MetaPoint.source,
+                MetaPoint.location,
+                func.ST_X(MetaPoint.location).label('lon'),
+                func.ST_Y(MetaPoint.location).label('lat')
+                ).filter(MetaPoint.source == source)
 
             return interest_point_query
 
@@ -46,13 +53,13 @@ class ModelData(DBReader, DBWriter):
 
         with self.dbcnxn.open_session() as session:
 
-            interest_points_join_INFOSite_q = session.query(interest_point_sq,
-                                                            INFOSite.site_code,
-                                                            INFOSite.date_opened,
-                                                            INFOSite.date_closed).join(INFOSite, isouter=True)
+            join_info_site_q = session.query(interest_point_sq,
+                                             INFOSite.site_code,
+                                             INFOSite.date_opened,
+                                             INFOSite.date_closed).join(INFOSite, isouter=True)
 
-            interest_point_join_df = pd.read_sql(interest_points_join_INFOSite_q.statement,
-                                                 interest_points_join_INFOSite_q.session.bind)
+            interest_point_join_df = pd.read_sql(join_info_site_q.statement,
+                                                 join_info_site_q.session.bind)
 
             interest_point_join_df['point_id'] = interest_point_join_df['point_id'].astype(str)
             interest_point_df = interest_point_join_df.groupby(['point_id',
@@ -63,8 +70,8 @@ class ModelData(DBReader, DBWriter):
 
             ids = interest_point_df['point_id'].values
             times = rrule.rrule(rrule.HOURLY, dtstart=start_date_, until=end_date_ - relativedelta(hours=+1))
-            index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)], names=[
-                                               "point_id", "measurement_start_utc"])
+            index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)],
+                                               names=["point_id", "measurement_start_utc"])
             time_df = pd.DataFrame(index=index).reset_index()
             time_df_merged = time_df.merge(interest_point_df)
 
@@ -82,16 +89,17 @@ class ModelData(DBReader, DBWriter):
                     'point_id', 'measurement_start_utc', 'source'])
             time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
 
-            def categorise(x):
+            def categorise(res):
 
-                if not x['open']:
-                    return 'Closed'
-                elif x['open'] and not x['missing_reading']:
-                    return 'OK'
+                if not res['open']:
+                    status = 'Closed'
+                elif res['open'] and not res['missing_reading']:
+                    status = 'OK'
                 else:
-                    return 'Missing'
+                    status = 'Missing'
+                return status
 
-            time_df_merged['Resource'] = time_df_merged.apply(lambda x: categorise(x), axis=1)
+            time_df_merged['Resource'] = time_df_merged.apply(categorise, axis=1)
 
             gant_df = time_df_merged[['point_id', 'measurement_start_utc', 'Resource']].rename(
                 columns={'point_id': 'Task', 'measurement_start_utc': 'Start'})
@@ -119,17 +127,19 @@ class ModelData(DBReader, DBWriter):
             fig['layout'].update(autosize=True, height=7000, title="Dataset: {}".format(source))
             fig.show()
 
-    def select_static_features(self, sources=['laqn', 'aqe'], point_ids=None):
+    def select_static_features(self, sources=None, point_ids=None):
         """Select static features and join with metapoint data"""
 
         with self.dbcnxn.open_session() as session:
 
             feature_query = session.query(IntersectionValue)
             interest_point_query = session.query(
-                MetaPoint.id.label('point_id'), MetaPoint.source, MetaPoint.location, func.ST_X(
-                    MetaPoint.location).label('lon'), func.ST_Y(
-                    MetaPoint.location).label('lat')).filter(
-                MetaPoint.source.in_(sources))
+                MetaPoint.id.label('point_id'),
+                MetaPoint.source,
+                MetaPoint.location,
+                func.ST_X(MetaPoint.location).label('lon'),
+                func.ST_Y(MetaPoint.location).label('lat')
+                ).filter(MetaPoint.source.in_(sources))
 
             if point_ids is not None:
                 interest_point_query = interest_point_query.filter(MetaPoint.id.in_(point_ids))
@@ -165,9 +175,8 @@ class ModelData(DBReader, DBWriter):
 
         ids = feature_df['point_id'].values
         times = rrule.rrule(rrule.HOURLY, dtstart=start_date, until=end_date - relativedelta(hours=+1))
-        print(min(times), max(times))
-        index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)], names=[
-                                           "point_id", "measurement_start_utc"])
+        index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)],
+                                           names=["point_id", "measurement_start_utc"])
         time_df = pd.DataFrame(index=index).reset_index()
         time_df_merged = time_df.merge(feature_df)
         time_df_merged['epoch'] = time_df_merged['measurement_start_utc'].apply(lambda x: x.timestamp())
@@ -197,7 +206,7 @@ class ModelData(DBReader, DBWriter):
                                  AQEReading.measurement_start_utc < end_date)
             return query
 
-    def get_sensor_readings(self, start_date, end_date, sources=['laqn'], species=['NO2']):
+    def get_sensor_readings(self, start_date, end_date, sources=None, species=None):
         """Get sensor readings for the sources between the start_date and end_date"""
 
         start_date_ = isoparse(start_date)
@@ -212,10 +221,10 @@ class ModelData(DBReader, DBWriter):
             sensor_q = self.__get_aqe_readings(start_date_, end_date_)
             sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
 
-        df = pd.concat(sensor_dfs, axis=0)
-        df['point_id'] = df['point_id'].astype(str)
-        df['epoch'] = df['measurement_start_utc'].apply(lambda x: x.timestamp())
-        df = df.pivot_table(
+        sensor_df = pd.concat(sensor_dfs, axis=0)
+        sensor_df['point_id'] = sensor_df['point_id'].astype(str)
+        sensor_df['epoch'] = sensor_df['measurement_start_utc'].apply(lambda x: x.timestamp())
+        sensor_df = sensor_df.pivot_table(
             index=[
                 'point_id',
                 'source',
@@ -224,9 +233,9 @@ class ModelData(DBReader, DBWriter):
             columns=['species_code'],
             values='value')
 
-        return df[species].reset_index()
+        return sensor_df[species].reset_index()
 
-    def get_model_inputs(self, start_date, end_date, sources=['laqn'], species=['NO2']):
+    def get_model_inputs(self, start_date, end_date, sources=None, species=None):
         """
         Query the database for model inputs. Returns all features.
         """
@@ -239,19 +248,27 @@ class ModelData(DBReader, DBWriter):
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
                               how='left')
-
         return model_data
 
-    def update_remote_tables(self, data_df):
+    def update_model_results_table(self, data_df):
+        """Update the model results table"""
+        self.fit_df = data_df
+        self.update_remote_tables()
+
+    def update_remote_tables(self):
         """Update the model results table with the model results"""
 
+        if not self.fit_df:
+            raise AttributeError("""Model prediction are not available.
+                                 Run ModelFitting.predict() to generate prediction""")
+
         record_cols = ['fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
-        df_cols = data_df.columns
+        df_cols = self.fit_df.columns
         for col in record_cols:
             if col not in df_cols:
                 raise AttributeError("The data frame must contain the following columns: {}".format(record_cols))
 
-        upload_records = data_df[record_cols].to_dict('records')
+        upload_records = self.fit_df[record_cols].to_dict('records')
 
         with self.dbcnxn.open_session() as session:
             self.add_records(session, upload_records, flush=True, table=ModelResult)

@@ -1,3 +1,4 @@
+"""Model fitting classes"""
 from .model_data import ModelData
 from .model_fitting import ModelFitting
 

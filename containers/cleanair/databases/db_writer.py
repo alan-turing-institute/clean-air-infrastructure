@@ -66,7 +66,7 @@ class DBWriter(DBInteractor):
         if table:
             self.__add_records_core(records, table)
         else:
-            self.__add_records_core(session, records, flush)
+            self.__add_records_orm(session, records, flush)
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

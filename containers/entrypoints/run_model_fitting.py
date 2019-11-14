@@ -1,10 +1,10 @@
 """
 Model fitting
 """
-from cleanair.models import ModelData, ModelFitting
-from cleanair.loggers import get_log_level
 import logging
 import argparse
+from cleanair.models import ModelData, ModelFitting
+from cleanair.loggers import get_log_level
 
 
 def main():
@@ -39,12 +39,12 @@ def main():
     # Fit the model
     model_fitter = ModelFitting(training_data_df=model_data_df,
                                 predict_data_df=model_data_df,
-                                y_names=['NO2'])
+                                column_names={'y_names': ['NO2'], 'x_names': ["epoch", "lat", "lon"]})
     model_fitter.fit(n_iter=25000)
 
     # Do prediction and write to database
     predict_df = model_fitter.predict()
-    model_data.update_remote_tables(predict_df)
+    model_data.update_model_results_table(data_df=predict_df)
 
 
 if __name__ == "__main__":
