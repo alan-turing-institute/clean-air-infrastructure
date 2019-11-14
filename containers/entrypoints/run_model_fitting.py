@@ -9,7 +9,7 @@ from cleanair.loggers import get_log_level
 
 def main():
     """
-    Extract static features
+    Run model fitting
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Run model fitting")

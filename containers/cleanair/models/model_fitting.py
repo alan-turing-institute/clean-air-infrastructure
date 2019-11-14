@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.cluster.vq import kmeans2
 import gpflow
 
+
 class TFLogger(gpflow.actions.Action):
     """Model iteration logger"""
     def __init__(self, model):
