@@ -42,9 +42,9 @@ def main():
                                 column_names={'y_names': ['NO2'], 'x_names': ["epoch", "lat", "lon"]})
     model_fitter.fit(n_iter=25000)
 
-    # Do prediction and write to database
-    predict_df = model_fitter.predict()
-    model_data.update_model_results_table(data_df=predict_df)
+    # # Do prediction and write to database
+    # predict_df = model_fitter.predict()
+    # model_data.update_model_results_table(data_df=predict_df)
 
 
 if __name__ == "__main__":

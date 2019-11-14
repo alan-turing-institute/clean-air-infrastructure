@@ -3,41 +3,7 @@ from datetime import datetime
 import pandas as pd
 from scipy.cluster.vq import kmeans2
 import gpflow
-
-
-class TFLogger(gpflow.actions.Action):
-    """Model iteration logger"""
-    def __init__(self, model):
-        self.model = model
-        self.logf = []
-
-    def run(self, ctx):
-        """Log an iteration"""
-        if (ctx.iteration % 10) == 0:
-            # Extract likelihood tensor from Tensorflow session
-            likelihood = - ctx.session.run(self.model.likelihood_tensor)
-            print("Iteration: {}, Likelihood: {}".format(ctx.iteration, likelihood))
-            # Append likelihood value to list
-            self.logf.append(likelihood)
-
-
-def run_adam(model, iterations):
-    """
-    Utility function running the Adam Optimiser interleaved with a `Logger` action.
-
-    :param model: GPflow model
-    :param interations: number of iterations
-    """
-    # Create an Adam Optimiser action
-    adam = gpflow.train.AdamOptimizer().make_optimize_action(model)
-    # Create a Logger action
-    logger = TFLogger(model)
-    actions = [adam, logger]
-    # Create optimisation loop that interleaves Adam with Logger
-    gpflow.actions.Loop(actions, stop=iterations)()
-    # Bind current TF session to model
-    model.anchor(model.enquire_session())
-    return logger
+import tensorflow as tf
 
 
 class ModelFitting():
@@ -60,6 +26,12 @@ class ModelFitting():
         self.fit_df = None
         self.fit_stats = None
         self.fit_start_time = None
+
+        # Logging
+        self.logt = []
+        self.logx = []
+        self.logf = []
+        self.iter = 0
 
     @property
     def x_names_norm(self):
@@ -95,6 +67,16 @@ class ModelFitting():
             data_dict['Y'] = data_subset[self.y_names].values
         return data_dict
 
+    def log_iter(self, x):
+        """Model fitting callback"""
+        if (self.iter % 20) == 0:
+            self.logx.append(x)
+            self.logf.append(self.m._objective(x)[0])
+
+            print("Log: {}, Iter: {}".format(x, self.iter))
+
+        self.iter += 1
+
     def fit(self, n_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500):
         """Fit the model"""
 
@@ -105,18 +87,35 @@ class ModelFitting():
         self.fit_start_time = datetime.now()
 
         num_z = x_array.shape[0]
-        z_array = kmeans2(y_array, num_z, minit='points')[0]
-        kern = gpflow.kernels.RBF(x_array.shape[1], lengthscales=lengthscales)
+        z_array = kmeans2(x_array, num_z, minit='points')[0]
 
-        model = gpflow.models.SVGP(x_array.copy(),
-                                   y_array.copy(),
-                                   kern,
-                                   gpflow.likelihoods.Gaussian(variance=variance),
-                                   z_array,
-                                   minibatch_size=minibatch_size)
+        kernel = gpflow.kernels.RBF(x_array.shape[1], lengthscale=lengthscales)
 
-        self.fit_stats = run_adam(model, n_iter)
-        self.model = model
+        # print(kernel.variance)
+        # m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
+
+        print(x_array.shape, y_array.T.shape, z_array.shape)
+        self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=variance), z_array)
+
+        log_likelihood = tf.function(autograph=False)(self.model.elbo)
+        print(log_likelihood(x_array, y_array))
+
+        optimizer = tf.optimizers.Adam()
+
+        # with tf.GradientTape() as tape:
+        #     tape.watch(self.model.trainable_variables)
+        #     obj = - self.model.elbo(x_array, y_array)
+        #     grads = tape.gradient(obj, self.model.trainable_variables)
+
+        # optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+
+        # optimizer = gpflow.training.AdamOptimizer()
+        # optimizer_tensor = optimizer.make_optimize_tensor(model)
+        # session = gpflow.get_default_session()
+        # for _ in range(2):
+        #     session.run(optimizer_tensor)
+
+        # self.model.optimize(method=tf.train.AdamOptimizer(), maxiter=n_iter, callback=self.log_iter)
 
     def predict(self):
         """Predict values"""

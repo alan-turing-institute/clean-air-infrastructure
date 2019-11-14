@@ -20,6 +20,5 @@ requests
 sqlalchemy
 termcolor
 uuid
-tensorflow==1.15
-gpflow
+git+https://github.com/GPflow/GPflow.git#egg=gpflow
 plotly
