@@ -16,10 +16,3 @@ class ModelResult(Base):
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     predict_mean = Column(DOUBLE_PRECISION, nullable=False)
     predict_var = Column(DOUBLE_PRECISION, nullable=False)
-
-    @staticmethod
-    def build_entry(fit_time, point_id, measurement_start_utc, measurement_end_utc, predict_mean, predict_var):
-        """Create an ModelResult entry"""
-
-        # Construct the record and return it
-        return ModelResult(fit_time, point_id, measurement_start_utc, measurement_end_utc, predict_mean, predict_var)

@@ -82,8 +82,8 @@ class AQEReading(Base):
             new_key = ['site_code', 'species_code', 'measurement_start_utc', 'measurement_end_utc', 'value']
             old_key = ['SiteCode', 'SpeciesCode', 'MeasurementStartUTC', 'MeasurementEndUTC', 'Value']
 
-            for i in range(len(old_key)):
-                reading_dict[new_key[i]] = reading_dict.pop(old_key[i])
+            for i, key in enumerate(old_key):
+                reading_dict[new_key[i]] = reading_dict.pop(key)
             return reading_dict
 
         # Construct the record and return it

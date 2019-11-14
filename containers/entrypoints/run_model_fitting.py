@@ -44,7 +44,7 @@ def main():
 
     # Do prediction and write to database
     predict_df = model_fitter.predict()
-    model_data.update_model_results_table(predict_df)
+    model_data.update_remote_tables(predict_df)
 
 
 if __name__ == "__main__":

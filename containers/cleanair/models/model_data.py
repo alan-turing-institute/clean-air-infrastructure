@@ -242,7 +242,7 @@ class ModelData(DBReader, DBWriter):
 
         return model_data
 
-    def update_model_results_table(self, data_df):
+    def update_remote_tables(self, data_df):
         """Update the model results table with the model results"""
 
         record_cols = ['fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
@@ -253,9 +253,5 @@ class ModelData(DBReader, DBWriter):
 
         upload_records = data_df[record_cols].to_dict('records')
 
-        try:
-            with self.dbcnxn.open_session() as session:
-                self.add_records(session, upload_records, flush=True, table=ModelResult)
-
-        except Excepteion as err:
-            print(err.type)
+        with self.dbcnxn.open_session() as session:
+            self.add_records(session, upload_records, flush=True, table=ModelResult)

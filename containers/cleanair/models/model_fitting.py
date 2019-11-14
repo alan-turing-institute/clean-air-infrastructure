@@ -1,3 +1,4 @@
+"""Model Fitting"""
 from datetime import datetime
 import pandas as pd
 import gpflow
@@ -38,7 +39,7 @@ def run_adam(model, iterations):
 
 
 class ModelFitting():
-
+    """Model fitting class"""
     def __init__(self, training_data_df, predict_data_df, y_names, x_names=["epoch", "lat", "lon"], norm_by='laqn'):
 
         self.training_data_df = training_data_df
@@ -119,8 +120,8 @@ class ModelFitting():
 
         # Create new dataframe with predictions
         predict_df = self.normalised_predict_data.copy()
-        predict_df = pd.DataFrame({'predict_mean': mean_pred.squeeze(), 'predict_var': var_pred.squeeze()}, index = data_dict['index'])
+        predict_df = pd.DataFrame({'predict_mean': mean_pred.squeeze(), 'predict_var': var_pred.squeeze()},
+                                  index=data_dict['index'])
         predict_df['fit_start_time'] = self.fit_start_time
 
         return pd.concat([self.normalised_predict_data, predict_df], axis=1, ignore_index=False)
-
