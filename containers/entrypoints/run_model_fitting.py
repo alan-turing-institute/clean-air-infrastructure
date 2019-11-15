@@ -64,7 +64,7 @@ def main():
                                 predict_data_df=predict_data_df,
                                 column_names={'y_names': ['NO2'], 'x_names': ["epoch", "lat", "lon"]})
 
-    model_fitter.fit(max_iter=20000, lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=None)
+    model_fitter.fit(max_iter=20000, lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=5000)
     # # Do prediction and write to database
     predict_df = model_fitter.predict()
     model_data.update_model_results_table(data_df=predict_df)

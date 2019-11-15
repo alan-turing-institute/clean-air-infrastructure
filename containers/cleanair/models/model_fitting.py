@@ -102,6 +102,7 @@ class ModelFitting():
     def fit(self, max_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=None):
         """Fit the model"""
 
+        self.logger.info("Model fitting: Preparing to fit model")
         # Prepare data
         data_dict = self.get_model_data_arrays(self.normalised_training_data, return_y=True, dropna=True)
         x_array = data_dict['X'].copy()
