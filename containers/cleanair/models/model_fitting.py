@@ -125,7 +125,7 @@ class ModelFitting():
         gpflow.utilities.set_trainable(self.model.inducing_variable, False)
 
         # Fit the model
-        self.logf = self.run_adam(train_dataset, max_iter, minibatch_size, refresh=10)
+        self.logf = self.run_adam(train_dataset, max_iter, minibatch_size, refresh=1)
 
     def predict(self):
         """Predict values"""
