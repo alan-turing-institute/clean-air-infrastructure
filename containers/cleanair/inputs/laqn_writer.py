@@ -52,7 +52,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=15.0).json()["AirQualityData"]["Data"]
+            raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code

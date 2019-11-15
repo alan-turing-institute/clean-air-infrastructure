@@ -53,7 +53,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             endpoint = "http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site/{}/{}/{}".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=5.0).content
+            raw_data = self.get_response(endpoint, timeout=120.0).content
             # Process CSV data
             csvreader = csv.reader(io.StringIO(raw_data.decode()))
             # Extract species names from the column headers
@@ -142,7 +142,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         site_records = [AQEReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
 
         with self.dbcnxn.open_session() as session:
-            
+
             # Commit the records to the database
             if usecore:
                 self.add_records(session, site_records, flush=True, table=AQEReading)
