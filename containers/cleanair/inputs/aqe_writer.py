@@ -137,10 +137,12 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Requesting readings from %s for %s sites",
                              green("aeat.com API"), green(len(list(site_info_query))))
 
-            # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            site_records = [AQEReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
+        # Get all readings for each site between its start and end dates and update the database
+        site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
+        site_records = [AQEReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
 
+        with self.dbcnxn.open_session() as session:
+            
             # Commit the records to the database
             if usecore:
                 self.add_records(session, site_records, flush=True, table=AQEReading)
