@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.cluster.vq import kmeans2
 import gpflow
 import tensorflow as tf
+from ..loggers import get_logger
 
 
 class ModelFitting():
@@ -11,6 +12,10 @@ class ModelFitting():
     def __init__(self, training_data_df, predict_data_df,
                  column_names=None,
                  norm_by='laqn'):
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         self.training_data_df = training_data_df
         self.predict_data_df = predict_data_df
@@ -23,15 +28,11 @@ class ModelFitting():
 
         # Attributes created by self.model_fit
         self.model = None
-        self.fit_df = None
-        self.fit_stats = None
         self.fit_start_time = None
+        self.logf = None
 
-        # Logging
-        self.logt = []
-        self.logx = []
-        self.logf = []
-        self.iter = 0
+        # Attributes created by self.predict
+        self.predict_data_df = None
 
     @property
     def x_names_norm(self):
@@ -67,55 +68,63 @@ class ModelFitting():
             data_dict['Y'] = data_subset[self.y_names].values
         return data_dict
 
-    def log_iter(self, x):
-        """Model fitting callback"""
-        if (self.iter % 20) == 0:
-            self.logx.append(x)
-            self.logf.append(self.m._objective(x)[0])
+    @tf.function(autograph=False)
+    def optimization_step(self, optimizer, batch):
+        """Optimization step for gpflow"""
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            tape.watch(self.model.trainable_variables)
+            objective = - self.model.elbo(*batch)
+            grads = tape.gradient(objective, self.model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
+        return objective
 
-            print("Log: {}, Iter: {}".format(x, self.iter))
+    def run_adam(self, train_dataset, iterations, minibatch_size, refresh=10):
+        """
+        Utility function running the Adam optimiser
 
-        self.iter += 1
+        :param model: GPflow model
+        :param interations: number of iterations
+        """
+        self.fit_start_time = datetime.now()
+        self.logger.info("Model fitting: Starting")
+        # Create an Adam Optimiser action
+        logf = []
+        train_it = iter(train_dataset.batch(minibatch_size))
+        adam = tf.optimizers.Adam()
+        for step in range(iterations):
+            elbo = - self.optimization_step(adam, next(train_it))
+            if step % refresh == 0:
+                elbo_np = elbo.numpy()
+                logf.append(elbo_np)
+                self.logger.info("Model fitting. Iteration: %s, ELBO: %s", step, elbo_np)
+        return logf
 
-    def fit(self, n_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500):
+    def fit(self, max_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=None):
         """Fit the model"""
 
+        # Prepare data
         data_dict = self.get_model_data_arrays(self.normalised_training_data, return_y=True, dropna=True)
         x_array = data_dict['X'].copy()
         y_array = data_dict['Y'].copy()
+        n_data_points = x_array.shape[0]  # Number of datapoints
+        k_covariates = x_array.shape[1]  # Number of covariates
 
-        self.fit_start_time = datetime.now()
+        # Slice data for batches
+        train_dataset = tf.data.Dataset.from_tensor_slices((x_array, y_array)).repeat().shuffle(n_data_points)
 
-        num_z = x_array.shape[0]
-        z_array = kmeans2(x_array, num_z, minit='points')[0]
+        # Get inducing points
+        if not n_inducing_points:
+            n_inducing_points = n_data_points
+        z_array = kmeans2(x_array, n_inducing_points, minit='points')[0]
 
-        kernel = gpflow.kernels.RBF(x_array.shape[1], lengthscale=lengthscales)
-
-        # print(kernel.variance)
-        # m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
-
-        print(x_array.shape, y_array.T.shape, z_array.shape)
+        # Define model
+        kernel = gpflow.kernels.RBF(k_covariates, lengthscale=lengthscales)
         self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=variance), z_array)
+        # We turn of training for inducing point locations
+        gpflow.utilities.set_trainable(self.model.inducing_variable, False)
 
-        log_likelihood = tf.function(autograph=False)(self.model.elbo)
-        print(log_likelihood(x_array, y_array))
-
-        optimizer = tf.optimizers.Adam()
-
-        # with tf.GradientTape() as tape:
-        #     tape.watch(self.model.trainable_variables)
-        #     obj = - self.model.elbo(x_array, y_array)
-        #     grads = tape.gradient(obj, self.model.trainable_variables)
-
-        # optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-
-        # optimizer = gpflow.training.AdamOptimizer()
-        # optimizer_tensor = optimizer.make_optimize_tensor(model)
-        # session = gpflow.get_default_session()
-        # for _ in range(2):
-        #     session.run(optimizer_tensor)
-
-        # self.model.optimize(method=tf.train.AdamOptimizer(), maxiter=n_iter, callback=self.log_iter)
+        # Fit the model
+        self.logf = self.run_adam(train_dataset, max_iter, minibatch_size, refresh=10)
 
     def predict(self):
         """Predict values"""
@@ -123,8 +132,8 @@ class ModelFitting():
             raise AttributeError("No model has been fit. Fit the model first")
 
         data_dict = self.get_model_data_arrays(self.normalised_predict_data, return_y=False, dropna=True)
-        x_array = data_dict['X'].copy()
-        mean_pred, var_pred = self.model.predict_y(x_array)
+        x_pred_array = data_dict['X'].copy()
+        mean_pred, var_pred = self.model.predict_y(x_pred_array)
 
         # Create new dataframe with predictions
         predict_df = self.normalised_predict_data.copy()
@@ -132,4 +141,6 @@ class ModelFitting():
                                   index=data_dict['index'])
         predict_df['fit_start_time'] = self.fit_start_time
 
-        return pd.concat([self.normalised_predict_data, predict_df], axis=1, ignore_index=False)
+        self.predict_data_df = pd.concat([self.normalised_predict_data, predict_df], axis=1, ignore_index=False)
+
+        return self.predict_data_df
