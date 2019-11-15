@@ -168,7 +168,7 @@ class ModelData(DBReader, DBWriter):
     @staticmethod
     def expand_static_feature_df(start_date, end_date, feature_df):
         """
-        Returns a new dataframe with static features merged with hourly timestamps between start_date and end_date
+        Returns a new dataframe with static features merged with hourly timestamps between start_date (inclusive) and end_date
         """
         start_date = isoparse(start_date).date()
         end_date = isoparse(end_date).date()
@@ -207,7 +207,7 @@ class ModelData(DBReader, DBWriter):
             return query
 
     def get_sensor_readings(self, start_date, end_date, sources=None, species=None):
-        """Get sensor readings for the sources between the start_date and end_date"""
+        """Get sensor readings for the sources between the start_date (inclusive) and end_date"""
 
         start_date_ = isoparse(start_date)
         end_date_ = isoparse(end_date)
@@ -235,15 +235,22 @@ class ModelData(DBReader, DBWriter):
 
         return sensor_df[species].reset_index()
 
+    def get_model_features(self, start_date, end_date, sources=None):
+        """
+        Query the database for model features
+        """
+        static_features = self.select_static_features(sources=sources)
+        static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
+
+        return static_features_expand
+
     def get_model_inputs(self, start_date, end_date, sources=None, species=None):
         """
         Query the database for model inputs. Returns all features.
         """
-
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)
-        static_features = self.select_static_features(sources=sources)
-        static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
+        static_features_expand = self.get_model_features(start_date, end_date, sources)
         model_data = pd.merge(static_features_expand,
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
