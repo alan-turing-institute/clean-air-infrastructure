@@ -3,6 +3,7 @@ Model data
 """
 from datetime import datetime
 import pandas as pd
+import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -42,11 +43,17 @@ class ModelData(DBReader, DBWriter):
 
             return interest_point_query
 
-    def viz_sensor_data(self, start_date, end_date, source='laqn', species='NO2'):
-        """Launch a plotly webapp to see missing data"""
+    def list_available_features(self):
+        """Return a dataframe with the available features in the database"""
 
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
+
+            return pd.read_sql(feature_types_q.statement,
+                                      feature_types_q.session.bind)
+
+    def query_sensor_site_info(self, source):
 
         interest_point_q = self.__get_interest_points(source=source)
         interest_point_sq = interest_point_q.subquery()
@@ -73,64 +80,79 @@ class ModelData(DBReader, DBWriter):
                                                                 'lat']).agg({'date_opened': 'min',
                                                                              'date_closed': 'max'}).reset_index()
 
-            ids = interest_point_df['point_id'].values
-            times = rrule.rrule(rrule.HOURLY, dtstart=start_date_, until=end_date_ - relativedelta(hours=+1))
-            index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)],
-                                               names=["point_id", "measurement_start_utc"])
-            time_df = pd.DataFrame(index=index).reset_index()
-            time_df_merged = time_df.merge(interest_point_df)
+            return interest_point_df
 
-            # Check if an interest_point was open at all times
-            time_df_merged['open'] = (
-                (time_df_merged['date_opened'] <= time_df_merged['measurement_start_utc']) &
-                ((time_df_merged['measurement_start_utc'] < time_df_merged['date_closed']) | pd.isnull(
-                    time_df_merged['date_closed']))
-            )
+    def sensor_data_status(self, start_date, end_date, source='laqn', species='NO2'):
 
-            # Prep the gant chart
-            sensor_readings = self.get_sensor_readings(start_date, end_date, sources=[source])
-            time_df_merged = pd.merge(
-                time_df_merged, sensor_readings, how='left', on=[
-                    'point_id', 'measurement_start_utc', 'source'])
-            time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
+        def categorise(res):
+            if not res['open']:
+                status = 'Closed'
+            elif res['open'] and not res['missing_reading']:
+                status = 'OK'
+            else:
+                status = 'Missing'
+            return status
 
-            def categorise(res):
+        start_date_ = isoparse(start_date)
+        end_date_ = isoparse(end_date)
 
-                if not res['open']:
-                    status = 'Closed'
-                elif res['open'] and not res['missing_reading']:
-                    status = 'OK'
-                else:
-                    status = 'Missing'
-                return status
+        # Get interest points with site open and site closed dates and then expand with time
+        interest_point_df = self.query_sensor_site_info(source=source)
+        time_df_merged = self.expand_time(start_date, end_date, interest_point_df)
 
-            time_df_merged['Resource'] = time_df_merged.apply(categorise, axis=1)
+        # Check if an interest_point was open at all times
+        time_df_merged['open'] = (
+            (time_df_merged['date_opened'] <= time_df_merged['measurement_start_utc']) &
+            ((time_df_merged['measurement_start_utc'] < time_df_merged['date_closed']) | pd.isnull(
+                time_df_merged['date_closed']))
+        )
 
-            gant_df = time_df_merged[['point_id', 'measurement_start_utc', 'Resource']].rename(
-                columns={'point_id': 'Task', 'measurement_start_utc': 'Start'})
-            gant_df['Finish'] = gant_df['Start'] + pd.DateOffset(hours=1)
+        # Merge sensor readings onto interst points
+        sensor_readings = self.get_sensor_readings(start_date, end_date, sources=[source], species=[species])
+        time_df_merged = pd.merge(
+            time_df_merged, sensor_readings, how='left', on=[
+                'point_id', 'measurement_start_utc', 'epoch', 'source'])
+        time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
 
-            gant_df['Start'] = gant_df['Start'].apply(lambda x: datetime.strftime(x, '%Y-%m-%d %H:%M:%S'))
-            gant_df['Finish'] = gant_df['Finish'].apply(lambda x: datetime.strftime(x, '%Y-%m-%d %H:%M:%S'))
+        # Categorise as either OK (has a reading), closed (sensor closed) or missing (no data in database even though sensor is open)
+        time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)        
 
-            # gant_df = gant_df.groupby(['Task', 'Resource']).agg({'Start': 'min',
-            # 'Finish': 'max'}).reset_index() #This does the wrong thing. But
-            # something similar required to do something similar
+        def set_instance(group):
+            """categorise each row as an instance, where a instance increments if the difference from the preceeding timestamp is >1h"""
+            group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
+            group.at[group.index[0], 'offset_time'] = 1.
+            group['instance'] = (group['offset_time'].astype(int) - 1).apply(lambda x: min(1, x)).cumsum()
+            return group
 
-            # Create the gant chart
-            colors = dict(OK='#72C14D',
-                          Missing='#D80032',
-                          Closed='#1E1014',)
+        time_df_merged_instance = time_df_merged.groupby(['point_id', 'category']).apply(set_instance)
+        time_df_merged_instance['measurement_end_utc'] = time_df_merged_instance['measurement_start_utc'] + pd.DateOffset(hours=1)
 
-            fig = ff.create_gantt(
-                gant_df,
-                group_tasks=True,
-                colors=colors,
-                index_col='Resource',
-                show_colorbar=True,
-                showgrid_x=True)
-            fig['layout'].update(autosize=True, height=7000, title="Dataset: {}".format(source))
-            fig.show()
+        # Group consecutive readings of same category
+        time_df_merged_instance = time_df_merged_instance.groupby(['point_id', 'category', 'instance']).agg({'measurement_start_utc': 'min', 'measurement_end_utc': 'max'}).reset_index()
+          
+        return time_df_merged_instance
+
+    def show_vis(self, sensor_status_df, title='Sensor data'):
+        """Show a plotly gantt chart of a dataframe"""
+
+        gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
+            columns={'point_id': 'Task', 'measurement_start_utc': 'Start', 'measurement_end_utc': 'Finish', 'category': 'Resource'})
+
+        # Create the gant chart
+        colors = dict(OK='#76BA63',
+                      Missing='#BA6363',
+                      Closed='#828282',)
+
+        fig = ff.create_gantt(
+            gant_df,
+            group_tasks=True,
+            colors=colors,
+            index_col='Resource',
+            show_colorbar=True,
+            showgrid_x=True,
+            bar_width=0.38)
+        fig['layout'].update(autosize=True, height=10000, title=title)
+        fig.show()  
 
     def select_static_features(self, sources=None, point_ids=None):
         """Select static features and join with metapoint data"""
@@ -171,7 +193,7 @@ class ModelData(DBReader, DBWriter):
             return df_joined.reset_index()
 
     @staticmethod
-    def expand_static_feature_df(start_date, end_date, feature_df):
+    def expand_time(start_date, end_date, feature_df):
         """
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date (inclusive) and end_date
@@ -252,7 +274,7 @@ class ModelData(DBReader, DBWriter):
                          sources, start_date, end_date)
 
         static_features = self.select_static_features(sources=sources)
-        static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
+        static_features_expand = self.expand_time(start_date, end_date, static_features)
 
         return static_features_expand
 
