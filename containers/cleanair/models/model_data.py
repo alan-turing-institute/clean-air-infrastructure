@@ -10,6 +10,7 @@ from sqlalchemy import literal, func
 import plotly.figure_factory as ff
 from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading, ModelResult
 from ..databases import DBReader, DBWriter
+from ..loggers import get_logger
 
 
 class ModelData(DBReader, DBWriter):
@@ -18,6 +19,10 @@ class ModelData(DBReader, DBWriter):
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         # Dataframe with model fit results
         self.fit_df = None
@@ -168,7 +173,8 @@ class ModelData(DBReader, DBWriter):
     @staticmethod
     def expand_static_feature_df(start_date, end_date, feature_df):
         """
-        Returns a new dataframe with static features merged with hourly timestamps between start_date (inclusive) and end_date
+        Returns a new dataframe with static features merged with
+        hourly timestamps between start_date (inclusive) and end_date
         """
         start_date = isoparse(start_date).date()
         end_date = isoparse(end_date).date()
@@ -209,6 +215,9 @@ class ModelData(DBReader, DBWriter):
     def get_sensor_readings(self, start_date, end_date, sources=None, species=None):
         """Get sensor readings for the sources between the start_date (inclusive) and end_date"""
 
+        self.logger.info("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+                         sources, species, start_date, end_date)
+
         start_date_ = isoparse(start_date)
         end_date_ = isoparse(end_date)
 
@@ -239,6 +248,9 @@ class ModelData(DBReader, DBWriter):
         """
         Query the database for model features
         """
+        self.logger.info("Getting features for sources: %s, from %s (inclusive) to %s (exclusive)",
+                         sources, start_date, end_date)
+
         static_features = self.select_static_features(sources=sources)
         static_features_expand = self.expand_static_feature_df(start_date, end_date, static_features)
 
@@ -248,6 +260,7 @@ class ModelData(DBReader, DBWriter):
         """
         Query the database for model inputs. Returns all features.
         """
+
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)
         static_features_expand = self.get_model_features(start_date, end_date, sources)
@@ -264,10 +277,6 @@ class ModelData(DBReader, DBWriter):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-
-        if not self.fit_df:
-            raise AttributeError("""Model prediction are not available.
-                                 Run ModelFitting.predict() to generate prediction""")
 
         record_cols = ['fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
         df_cols = self.fit_df.columns

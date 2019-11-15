@@ -131,16 +131,19 @@ class ModelFitting():
         if not self.model:
             raise AttributeError("No model has been fit. Fit the model first")
 
+        self.logger.info("Model prediction: Starting")
         data_dict = self.get_model_data_arrays(self.normalised_predict_data, return_y=False, dropna=True)
         x_pred_array = data_dict['X'].copy()
         mean_pred, var_pred = self.model.predict_y(x_pred_array)
+        self.logger.info("Model prediction: Finished")
 
         # Create new dataframe with predictions
-        predict_df = self.normalised_predict_data.copy()
-        predict_df = pd.DataFrame({'predict_mean': mean_pred.squeeze(), 'predict_var': var_pred.squeeze()},
-                                  index=data_dict['index'])
+        predict_df = pd.DataFrame(index=data_dict['index'])
+        predict_df['predict_mean'] = mean_pred.numpy()
+        predict_df['predict_var'] = var_pred.numpy()
         predict_df['fit_start_time'] = self.fit_start_time
 
+        # Concat the predictions with the predict_df
         self.predict_data_df = pd.concat([self.normalised_predict_data, predict_df], axis=1, ignore_index=False)
 
         return self.predict_data_df
