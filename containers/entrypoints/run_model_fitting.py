@@ -26,11 +26,11 @@ def main():
 
     parser.add_argument("--trainend", type=str, default='2019-11-01T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=24,
+    parser.add_argument("--trainhours", type=int, default=168,
                         help="The number of hours to get training data for.")
     parser.add_argument("--predstart", type=str, default='2019-11-01T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
-    parser.add_argument("--predhours", type=int, default=24,
+    parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")
 
     # Parse and interpret arguments
@@ -57,8 +57,8 @@ def main():
 
     predict_data_df = model_data.get_model_features(start_date=pred_start,
                                                     end_date=pred_end,
-                                                    sources=['laqn', 'aqe'])
-
+                                                    sources=['laqn', 'aqe', 'rectgrid'])
+ 
     # Fit the model
     model_fitter = ModelFitting(training_data_df=training_data_df,
                                 predict_data_df=predict_data_df,
