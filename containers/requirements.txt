@@ -1,4 +1,4 @@
-azure
+azure==3.0.0
 azure-cli-core
 azure-keyvault
 boto3
