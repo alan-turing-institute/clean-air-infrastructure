@@ -1,13 +1,11 @@
 """
 Model fitting
 """
-import sys
-sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers')
 import logging
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, ModelFitting
+from cleanair.models import ModelData
 from cleanair.loggers import get_log_level
 
 
@@ -56,10 +54,6 @@ def main():
     reading_status = model_data.sensor_data_status(train_start, pred_end, source='laqn', species='NO2')
     print(reading_status)
     model_data.show_vis(reading_status)
-
-
-    # print(model_data.query_sensor_site_info(source='laqn'))
-    # print(model_data.list_available_features())
 
 
 if __name__ == "__main__":

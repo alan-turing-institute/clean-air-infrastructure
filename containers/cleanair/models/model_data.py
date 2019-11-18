@@ -1,9 +1,7 @@
 """
-Model data
+Vizualise available sensor data for a model fit
 """
-from datetime import datetime
 import pandas as pd
-import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -51,10 +49,10 @@ class ModelData(DBReader, DBWriter):
             feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
 
             return pd.read_sql(feature_types_q.statement,
-                                      feature_types_q.session.bind)
+                               feature_types_q.session.bind)
 
     def query_sensor_site_info(self, source):
-
+        """Get the site info for a datasource (e.g. 'laqn', 'aqe')"""
         interest_point_q = self.__get_interest_points(source=source)
         interest_point_sq = interest_point_q.subquery()
 
@@ -83,6 +81,9 @@ class ModelData(DBReader, DBWriter):
             return interest_point_df
 
     def sensor_data_status(self, start_date, end_date, source='laqn', species='NO2'):
+        """Return a dataframe which gives the status of sensor readings for a particular source and species between
+        the start_date (inclusive) and end_date.
+        """
 
         def categorise(res):
             if not res['open']:
@@ -92,9 +93,6 @@ class ModelData(DBReader, DBWriter):
             else:
                 status = 'Missing'
             return status
-
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
 
         # Get interest points with site open and site closed dates and then expand with time
         interest_point_df = self.query_sensor_site_info(source=source)
@@ -114,29 +112,39 @@ class ModelData(DBReader, DBWriter):
                 'point_id', 'measurement_start_utc', 'epoch', 'source'])
         time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
 
-        # Categorise as either OK (has a reading), closed (sensor closed) or missing (no data in database even though sensor is open)
-        time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)        
+        # Categorise as either OK (has a reading), closed (sensor closed)
+        # or missing (no data in database even though sensor is open)
+        time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)
 
         def set_instance(group):
-            """categorise each row as an instance, where a instance increments if the difference from the preceeding timestamp is >1h"""
+            """categorise each row as an instance, where a instance increments
+            if the difference from the preceeding timestamp is >1h"""
+
             group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
             group.at[group.index[0], 'offset_time'] = 1.
             group['instance'] = (group['offset_time'].astype(int) - 1).apply(lambda x: min(1, x)).cumsum()
             return group
 
         time_df_merged_instance = time_df_merged.groupby(['point_id', 'category']).apply(set_instance)
-        time_df_merged_instance['measurement_end_utc'] = time_df_merged_instance['measurement_start_utc'] + pd.DateOffset(hours=1)
+        time_df_merged_instance['measurement_end_utc'] = (time_df_merged_instance['measurement_start_utc'] +
+                                                          pd.DateOffset(hours=1))
 
         # Group consecutive readings of same category
-        time_df_merged_instance = time_df_merged_instance.groupby(['point_id', 'category', 'instance']).agg({'measurement_start_utc': 'min', 'measurement_end_utc': 'max'}).reset_index()
-          
+        time_df_merged_instance = time_df_merged_instance.groupby(['point_id', 'category', 'instance']) \
+            .agg({'measurement_start_utc': 'min', 'measurement_end_utc': 'max'}) \
+            .reset_index()
+
         return time_df_merged_instance
 
-    def show_vis(self, sensor_status_df, title='Sensor data'):
-        """Show a plotly gantt chart of a dataframe"""
+    @staticmethod
+    def show_vis(sensor_status_df, title='Sensor data'):
+        """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
 
         gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
-            columns={'point_id': 'Task', 'measurement_start_utc': 'Start', 'measurement_end_utc': 'Finish', 'category': 'Resource'})
+            columns={'point_id': 'Task',
+                     'measurement_start_utc': 'Start',
+                     'measurement_end_utc': 'Finish',
+                     'category': 'Resource'})
 
         # Create the gant chart
         colors = dict(OK='#76BA63',
@@ -152,7 +160,7 @@ class ModelData(DBReader, DBWriter):
             showgrid_x=True,
             bar_width=0.38)
         fig['layout'].update(autosize=True, height=10000, title=title)
-        fig.show()  
+        fig.show()
 
     def select_static_features(self, sources=None, point_ids=None):
         """Select static features and join with metapoint data"""
@@ -293,7 +301,7 @@ class ModelData(DBReader, DBWriter):
         return model_data
 
     def update_model_results_table(self, data_df):
-        """Update the model results table"""
+        """Update the model results table, passing a dataframe created by ModelFitting.predict()"""
         self.fit_df = data_df
         self.update_remote_tables()
 

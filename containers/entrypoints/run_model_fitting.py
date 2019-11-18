@@ -58,13 +58,16 @@ def main():
     predict_data_df = model_data.get_model_features(start_date=pred_start,
                                                     end_date=pred_end,
                                                     sources=['laqn', 'aqe', 'rectgrid'])
- 
+
     # Fit the model
     model_fitter = ModelFitting(training_data_df=training_data_df,
                                 predict_data_df=predict_data_df,
                                 column_names={'y_names': ['NO2'], 'x_names': ["epoch", "lat", "lon"]})
 
-    model_fitter.fit(max_iter=20000, lengthscales=0.1, variance=0.1, minibatch_size=100, n_inducing_points=3000)
+    model_fitter.fit(max_iter=20000, model_params=dict(lengthscales=0.1,
+                                                       variance=0.1,
+                                                       minibatch_size=100,
+                                                       n_inducing_points=3000))
     # # Do prediction and write to database
     predict_df = model_fitter.predict()
     model_data.update_model_results_table(data_df=predict_df)

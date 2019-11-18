@@ -99,10 +99,15 @@ class ModelFitting():
                 self.logger.info("Model fitting. Iteration: %s, ELBO: %s", step, elbo_np)
         return logf
 
-    def fit(self, max_iter=5000, lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=None):
+    def fit(self, max_iter=5000, model_params=None):
         """Fit the model"""
 
         self.logger.info("Model fitting: Preparing to fit model")
+
+        if not model_params:
+            model_params = dict(lengthscales=0.1, variance=0.1, minibatch_size=500, n_inducing_points=3000)
+            self.logger.info('Model fitting: No model_params provided. Using defaults')
+
         # Prepare data
         data_dict = self.get_model_data_arrays(self.normalised_training_data, return_y=True, dropna=True)
         x_array = data_dict['X'].copy()
@@ -113,19 +118,16 @@ class ModelFitting():
         # Slice data for batches
         train_dataset = tf.data.Dataset.from_tensor_slices((x_array, y_array)).repeat().shuffle(n_data_points)
 
-        # Get inducing points
-        if not n_inducing_points:
-            n_inducing_points = n_data_points
-        z_array = kmeans2(x_array, n_inducing_points, minit='points')[0]
+        z_array = kmeans2(x_array, model_params['n_inducing_points'], minit='points')[0]
 
         # Define model
-        kernel = gpflow.kernels.RBF(k_covariates, lengthscale=lengthscales)
-        self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=variance), z_array)
+        kernel = gpflow.kernels.RBF(k_covariates, lengthscale=model_params['lengthscales'])
+        self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=model_params['variance']), z_array)
         # We turn of training for inducing point locations
         gpflow.utilities.set_trainable(self.model.inducing_variable, False)
 
         # Fit the model
-        self.logf = self.run_adam(train_dataset, max_iter, minibatch_size, refresh=1)
+        self.logf = self.run_adam(train_dataset, max_iter, model_params['minibatch_size'], refresh=10)
 
     def predict(self):
         """Predict values"""
