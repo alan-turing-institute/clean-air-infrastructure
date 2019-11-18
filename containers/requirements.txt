@@ -1,6 +1,6 @@
-azure==3.0.0
+azure
 azure-cli-core
-azure-keyvault
+azure-keyvault==1.1.0
 boto3
 colorlog
 docker
