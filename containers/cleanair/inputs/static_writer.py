@@ -184,7 +184,6 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
-                       DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,
