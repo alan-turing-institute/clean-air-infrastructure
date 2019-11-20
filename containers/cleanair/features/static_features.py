@@ -131,8 +131,10 @@ class StaticFeatures(DBWriter):
     def insert_records(self, insert_stmt, indexes, table_name):
         """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
         start = time.time()
-        self.logger.info("Constructing features to merge into database table %s...", green(table_name))        
-        self.dbcnxn.engine.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))  
+        self.logger.info("Constructing features to merge into database table %s...", green(table_name))
+        with self.dbcnxn.open_session() as session:
+            session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
+            session.commit()
         self.logger.info("Finished merging feature batch into database after %s", green(duration(start, time.time())))
 
     def calculate_intersections(self):
