@@ -55,3 +55,14 @@ class ScootDetector(DeferredReflection, Base):
     def __repr__(self):
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
         return "<ScootDetector(" + ", ".join(vals)
+
+class ScootRoadMatch(Base):
+    """Table of Scoot sensors and their closest roads"""
+    __tablename__ = "scoot_road_match"
+    __table_args__ = {"schema": "dynamic_features"}
+
+    detector_n = Column(String(9), ForeignKey("interest_points.scoot_detector.detector_n"),
+                         primary_key=True, nullable=False)                         
+    road_id = Column(String(9), ForeignKey("static_data.oshighway_roadlink.toid"),
+                         primary_key=True, nullable=False)
+    scoot_road_distance = Column(DOUBLE_PRECISION)

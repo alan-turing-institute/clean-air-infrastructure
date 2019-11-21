@@ -6,7 +6,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 from sqlalchemy import between, cast, func, Integer, literal, or_, asc
 from ..databases import DBWriter
-from ..databases.tables import OSHighway, ScootDetector, MetaPoint, LondonBoundary
+from ..databases.tables import OSHighway, ScootDetector, MetaPoint, LondonBoundary, ScootRoadMatch
 
 pd.set_option('display.max_columns', 500)
 
@@ -22,11 +22,9 @@ class ScootFeatures(DBWriter):
 
         self.scoot_columns = [ScootDetector.toid,
                               ScootDetector.detector_n,
-                              ScootDetector.point_id,]
+                              ScootDetector.point_id]
 
-        self.os_highway_columns = [OSHighway.identifier,
-                                   OSHighway.road_classification,
-                                   OSHighway.route_hierarchy,]
+        self.os_highway_columns = [OSHighway.identifier]
 
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
@@ -34,14 +32,12 @@ class ScootFeatures(DBWriter):
             hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
         return hull
 
-    def join_scoot_with_road(self):
-
-        
+    def join_scoot_with_road(self):        
 
         with self.dbcnxn.open_session() as session:
 
             # Distances calculated in lat/lon
-            scoot_info_q = session.query(MetaPoint, 
+            scoot_info_q = session.query(MetaPoint.id, 
                                          *self.scoot_columns,
                                          *self.os_highway_columns, 
                                          func.ST_Distance(func.ST_Centroid(OSHighway.geom),
@@ -50,14 +46,6 @@ class ScootFeatures(DBWriter):
                                   .join(ScootDetector) \
                                   .filter(MetaPoint.source == 'scoot', 
                                           OSHighway.identifier == ScootDetector.toid)
-
-            # print(scoot_info_q.statement)
-            # df = pd.read_sql(scoot_info_q.statement,
-            #                           scoot_info_q.session.bind)
-            # df.to_csv('/secrets/scoot_data.csv')
-            # print(df['point_id'].unique().shape)
-
-            # print(df.shape)
 
             return scoot_info_q
            
@@ -105,7 +93,21 @@ class ScootFeatures(DBWriter):
             df2.plot(column='identifier', ax=ax, legend=True)
             plt.savefig('/secrets/plot.png')  
 
+    def insert_records(self, insert_stmt, indexes, table_name):
+        """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
+        start = time.time()
+        self.logger.info("Constructing features to merge into database table %s...", green(table_name))
+        with self.dbcnxn.open_session() as session:
+            session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
+            session.commit()
+        self.logger.info("Finished merging feature batch into database after %s", green(duration(start, time.time())))
+
+        select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery().select()
+        columns = [c.key for c in IntersectionValue.__table__.columns]
+        insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
+        indexes = [IntersectionValue.point_id, IntersectionValue.feature_name]
+
     def update_remote_tables(self):
         """Update all remote tables"""
-        # self.join_scoot_with_road()
-        self.join_unmatached_scoot_with_road()
+        self.join_scoot_with_road()
+        # self.join_unmatached_scoot_with_road()
