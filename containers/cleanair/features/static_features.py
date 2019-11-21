@@ -95,11 +95,8 @@ class StaticFeatures(DBWriter):
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(batch_start, batch_stop)
-            select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery().select()
-            columns = [c.key for c in IntersectionValue.__table__.columns]
-            insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
-            indexes = [IntersectionValue.point_id, IntersectionValue.feature_name]
-            yield (insert_stmt, indexes)
+            select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery()
+            yield select_stmt           
 
     def process_geom_features(self, feature_name, q_metapoints, q_source):
         """
@@ -122,20 +119,8 @@ class StaticFeatures(DBWriter):
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(batch_start, batch_stop)
-            select_stmt = self.query_feature_geoms(feature_name, q_batch, q_source).subquery().select()
-            columns = [c.key for c in IntersectionGeom.__table__.columns]
-            insert_stmt = insert(IntersectionGeom).from_select(columns, select_stmt)
-            indexes = [IntersectionGeom.point_id, IntersectionGeom.feature_name]
-            yield (insert_stmt, indexes)
-
-    def insert_records(self, insert_stmt, indexes, table_name):
-        """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
-        start = time.time()
-        self.logger.info("Constructing features to merge into database table %s...", green(table_name))
-        with self.dbcnxn.open_session() as session:
-            session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
-            session.commit()
-        self.logger.info("Finished merging feature batch into database after %s", green(duration(start, time.time())))
+            select_stmt = self.query_feature_geoms(feature_name, q_batch, q_source).subquery()
+            yield select_stmt
 
     def calculate_intersections(self):
         """
@@ -154,12 +139,14 @@ class StaticFeatures(DBWriter):
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             if self.features[feature_name]["type"] == "value":
                 q_metapoints = self.query_meta_points(include_sources=self.sources)
-                for insert_stmt, indexes in self.process_value_features(feature_name, q_metapoints, q_source):
-                    self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
+                for select_stmt in self.process_value_features(feature_name, q_metapoints, q_source):
+                    with self.dbcnxn.open_session() as session:
+                        self.add_records(session, select_stmt, table=IntersectionValue)
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
-                for insert_stmt, indexes in self.process_geom_features(feature_name, q_metapoints, q_source):
-                    self.insert_records(insert_stmt, indexes, IntersectionGeom.__tablename__)
+                for select_stmt in self.process_geom_features(feature_name, q_metapoints, q_source):
+                    with self.dbcnxn.open_session() as session:
+                        self.add_records(session, select_stmt, table=IntersectionGeom)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
@@ -181,12 +168,8 @@ class StaticFeatures(DBWriter):
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
                                                     IntersectionGeom.point_id)
 
-                    select_stmt = select_stmt.subquery().select()
-                    columns = [c.key for c in IntersectionValue.__table__.columns]
-                    insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
-                    indexes = [IntersectionValue.point_id, IntersectionValue.feature_name]
-                    self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
-
+                    self.add_records(session, select_stmt, table=IntersectionValue)
+                    
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
 

@@ -20,11 +20,12 @@ class ScootFeatures(DBWriter):
         self.features = {}
 
 
-        self.scoot_columns = [ScootDetector.toid,
-                              ScootDetector.detector_n,
-                              ScootDetector.point_id]
-
-        self.os_highway_columns = [OSHighway.identifier]
+        # Subset of columns of interest for table columns
+        self.scoot_columns = [ScootDetector.toid.label("scoot_toid"),
+                              ScootDetector.detector_n.label("scoot_detector_n"),
+                              ScootDetector.point_id.label("scoot_point_id")]
+        self.os_highway_columns = [OSHighway.identifier.label("road_dentifier"),
+                                   OSHighway.toid.label("road_toid")]
 
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
@@ -37,7 +38,7 @@ class ScootFeatures(DBWriter):
         with self.dbcnxn.open_session() as session:
 
             # Distances calculated in lat/lon
-            scoot_info_q = session.query(MetaPoint.id, 
+            scoot_info_sq = session.query(MetaPoint.id, 
                                          *self.scoot_columns,
                                          *self.os_highway_columns, 
                                          func.ST_Distance(func.ST_Centroid(OSHighway.geom),
@@ -45,11 +46,14 @@ class ScootFeatures(DBWriter):
                                          ) \
                                   .join(ScootDetector) \
                                   .filter(MetaPoint.source == 'scoot', 
-                                          OSHighway.identifier == ScootDetector.toid)
+                                          OSHighway.identifier == ScootDetector.toid) \
+                                  .subquery()
+
+            scoot_info_q = session.query(scoot_info_sq.c.road_toid,                                         
+                                         scoot_info_sq.c.scoot_detector_n,
+                                         scoot_info_sq.c.scoot_road_distance)
 
             return scoot_info_q
-           
-            
 
     def join_unmatached_scoot_with_road(self):
 
@@ -93,21 +97,16 @@ class ScootFeatures(DBWriter):
             df2.plot(column='identifier', ax=ax, legend=True)
             plt.savefig('/secrets/plot.png')  
 
-    def insert_records(self, insert_stmt, indexes, table_name):
-        """Query-and-insert in one statement to reduce local memory overhead and remove database round-trips"""
-        start = time.time()
-        self.logger.info("Constructing features to merge into database table %s...", green(table_name))
-        with self.dbcnxn.open_session() as session:
-            session.execute(insert_stmt.on_conflict_do_nothing(index_elements=indexes))
-            session.commit()
-        self.logger.info("Finished merging feature batch into database after %s", green(duration(start, time.time())))
+    def calculate_closest_roads(self):
+        """Calculate the clostest scoot sensor to each road section and insert into database"""
 
-        select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery().select()
-        columns = [c.key for c in IntersectionValue.__table__.columns]
-        insert_stmt = insert(IntersectionValue).from_select(columns, select_stmt)
-        indexes = [IntersectionValue.point_id, IntersectionValue.feature_name]
+        # Get sensors on road segements and insert into database
+        print(self.join_scoot_with_road().all())
+        select_stmt = self.join_scoot_with_road().subquery()
+        with self.dbcnxn.open_session() as session:
+            self.add_records(session, select_stmt, table=ScootRoadMatch)
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.join_scoot_with_road()
+        self.calculate_closest_roads()
         # self.join_unmatached_scoot_with_road()
