@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
-
+import pandas as pd
 
 class StaticFeatures(DBWriter):
     """Extract features which are near to a given set of MetaPoints and inside London"""
@@ -53,16 +53,21 @@ class StaticFeatures(DBWriter):
             # ... restrict to only those within max(radius) of one another
             # ... construct a column for each radius, containing the intersection with each geometry
             # => [M < Npoints * Ngeometries records]
+            intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(self.buffer_radii_metres[0])),
+                                                         sq_geometries.c.geom).label("intst_{}".format(self.buffer_radii_metres[0]))]
+
+            for radius in self.buffer_radii_metres[1:]:
+                next_intersection = func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
+                                                         intersection_columns[-1]).label("intst_{}".format(radius))
+                intersection_columns.append(next_intersection)
+
             sq_within = session.query(sq_metapoints,
                                       sq_geometries,
-                                      *[func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
-                                                             sq_geometries.c.geom).label("intst_{}".format(radius))
-                                        for radius in self.buffer_radii_metres]
-                                      ).filter(func.ST_DWithin(sq_metapoints.c.location_geog,
-                                                               sq_geometries.c.geom_geog,
-                                                               max(self.buffer_radii_metres))).subquery()
+                                      *intersection_columns,
+                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c, str(max(self.buffer_radii_metres))),
+                                                               sq_geometries.c.geom)).subquery()
 
-            # Group these by interest point, unioning geometries: [Npoints records]
+            # # Group these by interest point, unioning geometries: [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
                                             *[func.ST_ForceCollection(

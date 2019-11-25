@@ -14,10 +14,10 @@ class UKMapFeatures(StaticFeatures):
         super().__init__(**kwargs)
 
         # List of features to extract
-        self.features = {
+        self.features = {           
             "museums": {"type": "geom", "feature_dict": {"landuse": ["Museum"]}, 'aggfunc': sum_area},
-            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},
             "flat": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated", "Water"]}, 'aggfunc': sum_area},
+            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},
             "grass": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"]}, 'aggfunc': sum_area},
             "hospitals": {"type": "geom", "feature_dict": {"landuse": ["Hospitals"]}, 'aggfunc': sum_area},
             "park": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"],
@@ -29,7 +29,7 @@ class UKMapFeatures(StaticFeatures):
         """Query UKMap, selecting all features matching the requirements in the feature_dict"""
         with self.dbcnxn.open_session() as session:
             # Construct column selector
-            columns = [UKMap.geom, func.Geography(UKMap.geom).label("geom_geog"), UKMap.feature_type]
+            columns = [UKMap.geom, UKMap.feature_type]
             if feature_name == "building_height":
                 columns.append(UKMap.calculated_height_of_building)
             else:
