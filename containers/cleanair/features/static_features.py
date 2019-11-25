@@ -17,6 +17,10 @@ class StaticFeatures(DBWriter):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]

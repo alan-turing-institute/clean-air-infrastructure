@@ -16,6 +16,10 @@ class ScootFeatures(DBWriter):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
         # List of features to extract
         self.features = {}
 
@@ -24,7 +28,7 @@ class ScootFeatures(DBWriter):
         self.scoot_columns = [ScootDetector.toid.label("scoot_toid"),
                               ScootDetector.detector_n.label("scoot_detector_n"),
                               ScootDetector.point_id.label("scoot_point_id")]
-        self.os_highway_columns = [OSHighway.identifier.label("road_dentifier"),
+        self.os_highway_columns = [OSHighway.identifier.label("road_identifier"),
                                    OSHighway.toid.label("road_toid")]
 
     def query_london_boundary(self):
@@ -62,51 +66,47 @@ class ScootFeatures(DBWriter):
 
         with self.dbcnxn.open_session() as session:
 
-            identifiers = session.query(matached_roads_sq.c.identifier).distinct()
-            unmatached_roads_q = session.query(OSHighway
-                                              ) \
-                                        .filter(OSHighway.geom.ST_Within(boundary_geom),
-                                                OSHighway.identifier.notin_(identifiers)
+            identifiers = session.query(matached_roads_sq.c.road_toid).distinct()
+
+            unmatached_roads_sq = session.query(*self.os_highway_columns,
+                                                OSHighway.geom) \
+                                         .filter(OSHighway.geom.ST_Within(boundary_geom),
+                                                 OSHighway.identifier.notin_(identifiers)
                                                 ) \
-                                        .limit(10) \
                                         .subquery()
             
-            scoots = session.query(MetaPoint, *self.scoot_columns).join(ScootDetector).filter(MetaPoint.source == 'scoot').subquery()
+            scoot_sensors = session.query(MetaPoint, *self.scoot_columns).join(ScootDetector).filter(MetaPoint.source == 'scoot').subquery()
 
-            scoot_distance_sq = session.query(scoots,
-                                             unmatached_roads_q.c.geom.distance_centroid(scoots.c.location).label('scoot_road_distance_1'),
-                                             func.ST_Distance(func.ST_Centroid(unmatached_roads_q.c.geom),
-                                                          scoots.c.location).label('scoot_road_distance')) \
-                                       .order_by(asc(unmatached_roads_q.c.geom.distance_centroid(scoots.c.location))).limit(5) \
-                                      .subquery() \
-                                      .lateral()
+            scoot_distance_sq = session.query(scoot_sensors,
+                                              unmatached_roads_sq.c.geom.distance_centroid(scoot_sensors.c.location).label('scoot_road_distance_1'),
+                                              func.ST_Distance(func.ST_Centroid(unmatached_roads_sq.c.geom),
+                                                               scoot_sensors.c.location).label('scoot_road_distance')) \
+                                       .order_by(asc(unmatached_roads_sq.c.geom.distance_centroid(scoot_sensors.c.location))).limit(5) \
+                                       .subquery() \
+                                       .lateral()
 
-            cross_q = session.query(unmatached_roads_q, 
-                                    scoot_distance_sq)
+            cross_sq = session.query(unmatached_roads_sq, 
+                                    scoot_distance_sq).subquery()
 
-            # print(cross_q.statement)
-            # print(session.query(unmatached_roads_q).count())
-            # print(cross_q.count())
+            cross_q = session.query(cross_sq.c.road_toid, cross_sq.c.scoot_detector_n, cross_sq.c.scoot_road_distance)
 
-            df = gpd.GeoDataFrame.from_postgis(cross_q.statement, cross_q.session.bind, geom_col='location')
-            df2 = gpd.GeoDataFrame.from_postgis(cross_q.statement, cross_q.session.bind, geom_col='geom')       
-            
-            fig, ax = plt.subplots(figsize = (20,16)) 
+            return cross_q
 
-            df.plot(column='identifier', ax=ax, legend=True, alpha = 0.4)  
-            df2.plot(column='identifier', ax=ax, legend=True)
-            plt.savefig('/secrets/plot.png')  
-
-    def calculate_closest_roads(self):
+    def insert_closest_roads(self):
         """Calculate the clostest scoot sensor to each road section and insert into database"""
 
         # Get sensors on road segements and insert into database
-        print(self.join_scoot_with_road().all())
-        select_stmt = self.join_scoot_with_road().subquery()
+        scoot_road_matched = self.join_scoot_with_road().subquery()
         with self.dbcnxn.open_session() as session:
-            self.add_records(session, select_stmt, table=ScootRoadMatch)
+            self.logger.info("Matching all scoot sensors to road")
+            self.add_records(session, scoot_road_matched, table=ScootRoadMatch)
+
+        # Get unmatched road segments, find the 5 closest scoot sensors and insert into database
+        scoot_road_unmatched = self.join_unmatached_scoot_with_road().subquery()
+        with self.dbcnxn.open_session() as session:
+            self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
+            self.add_records(session, scoot_road_unmatched, table=ScootRoadMatch)
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.calculate_closest_roads()
-        # self.join_unmatached_scoot_with_road()
+        self.insert_closest_roads()
