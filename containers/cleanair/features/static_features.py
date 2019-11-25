@@ -92,7 +92,7 @@ class StaticFeatures(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10
+        batch_size = 1000
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
@@ -160,9 +160,10 @@ class StaticFeatures(DBWriter):
             # Construct one tuple for each interest point: the id and a geometry collection for each radius
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             if self.features[feature_name]["type"] == "value":
-                q_metapoints = self.query_meta_points(include_sources=self.sources)
+                q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for insert_stmt, indexes in self.process_value_features(feature_name, q_metapoints, q_source):
                     self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
+                    break
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for insert_stmt, indexes in self.process_geom_features(feature_name, q_metapoints, q_source):
