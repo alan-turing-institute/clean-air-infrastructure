@@ -56,11 +56,11 @@ class IntersectionValue(Base):
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(30), primary_key=True, nullable=False)
-    value_1000 = Column(Float, nullable=False)
-    value_500 = Column(Float, nullable=False)
-    value_200 = Column(Float, nullable=False)
-    value_100 = Column(Float, nullable=False)
-    value_10 = Column(Float, nullable=False)
+    value_1000 = Column(Float)
+    value_500 = Column(Float)
+    value_200 = Column(Float)
+    value_100 = Column(Float)
+    value_10 = Column(Float)
 
     # Create IntersectionValue.point with no reverse relationship
     point = relationship("MetaPoint")
