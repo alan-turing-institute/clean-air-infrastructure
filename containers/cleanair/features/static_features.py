@@ -48,7 +48,7 @@ class StaticFeatures(DBWriter):
 
         with self.dbcnxn.open_session() as session:
             # Cross join interest point and geometry queries...
-            sq_metapoints = q_metapoints.limit(10).subquery()
+            sq_metapoints = q_metapoints.subquery()
             sq_geometries = q_geometries.subquery()
 
             
