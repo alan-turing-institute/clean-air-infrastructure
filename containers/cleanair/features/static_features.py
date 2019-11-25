@@ -8,7 +8,7 @@ from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
 import pandas as pd
-
+pd.set_option('display.max_rows', 50000)
 class StaticFeatures(DBWriter):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
@@ -34,7 +34,7 @@ class StaticFeatures(DBWriter):
         """Query MetaPoints, selecting all matching include_sources"""
         boundary_geom = self.query_london_boundary()
         with self.dbcnxn.open_session() as session:
-            columns = [MetaPoint, func.Geography(MetaPoint.location).label("location_geog")]
+            columns = [MetaPoint.id]
             if with_buffers:
                 columns += [func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), rad)).label(str(rad))
                             for rad in self.buffer_radii_metres]
@@ -45,36 +45,42 @@ class StaticFeatures(DBWriter):
 
     def query_feature_geoms(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
+
         with self.dbcnxn.open_session() as session:
             # Cross join interest point and geometry queries...
-            sq_metapoints = q_metapoints.subquery()
+            sq_metapoints = q_metapoints.limit(10).subquery()
             sq_geometries = q_geometries.subquery()
 
+            
             # ... restrict to only those within max(radius) of one another
             # ... construct a column for each radius, containing the intersection with each geometry
             # => [M < Npoints * Ngeometries records]
-            intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(self.buffer_radii_metres[0])),
-                                                         sq_geometries.c.geom).label("intst_{}".format(self.buffer_radii_metres[0]))]
+            intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
+                                                         sq_geometries.c.geom).label("intst_{}".format(radius)) for radius in self.buffer_radii_metres]
 
-            for radius in self.buffer_radii_metres[1:]:
-                next_intersection = func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
-                                                         intersection_columns[-1]).label("intst_{}".format(radius))
-                intersection_columns.append(next_intersection)
+            intersection_filter_columns = [func.ST_Intersects(getattr(sq_metapoints.c, str(radius)),
+                                                         sq_geometries.c.geom).label("intersects_{}".format(radius)) for radius in self.buffer_radii_metres]
 
             sq_within = session.query(sq_metapoints,
                                       sq_geometries,
                                       *intersection_columns,
+                                      *intersection_filter_columns,
                                       ).filter(func.ST_Intersects(getattr(sq_metapoints.c, str(max(self.buffer_radii_metres))),
-                                                               sq_geometries.c.geom)).subquery()
-
+                                                               sq_geometries.c.geom)) #.subquery()
+            
+            # print(pd.read_sql(sq_within.statement,
+            #                    sq_within.session.bind).head()[['intst_500', 'intersects_500']])
+            # return
+            sq_within = sq_within.subquery()
             # # Group these by interest point, unioning geometries: [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
                                             *[func.ST_ForceCollection(
-                                                func.ST_Union(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius))).filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                                 ).label("geom_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
+
 
         # Return the overall query
         return q_intersections
