@@ -66,12 +66,8 @@ class StaticFeatures(DBWriter):
                                       *intersection_columns,
                                       *intersection_filter_columns,
                                       ).filter(func.ST_Intersects(getattr(sq_metapoints.c, str(max(self.buffer_radii_metres))),
-                                                               sq_geometries.c.geom)) #.subquery()
-            
-            # print(pd.read_sql(sq_within.statement,
-            #                    sq_within.session.bind).head()[['intst_500', 'intersects_500']])
-            # return
-            sq_within = sq_within.subquery()
+                                                               sq_geometries.c.geom)).subquery()
+
             # # Group these by interest point, unioning geometries: [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
