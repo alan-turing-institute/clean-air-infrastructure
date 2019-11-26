@@ -18,7 +18,7 @@ class OSHighwayFeatures(StaticFeatures):
             "total_road_length": {"type": "geom",
                                   "feature_dict": {},
                                   "aggfunc": sum_length},
-            "total_a_road_prim_length":  {"type": "geom",
+            "total_a_road_primary_length":  {"type": "geom",
                                           "feature_dict": {"route_hierarchy": ["A Road Primary"]},
                                           "aggfunc": sum_length},
             "total_a_road_length": {"type": "geom",

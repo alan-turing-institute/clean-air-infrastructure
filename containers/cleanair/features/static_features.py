@@ -75,8 +75,8 @@ class StaticFeatures(DBWriter):
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
                                             *[func.ST_ForceCollection(
-                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius))).
-                                                filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                                 ).label("geom_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
@@ -179,7 +179,7 @@ class StaticFeatures(DBWriter):
         for feature_name in self.features:
             feature_start = time.time()
             if self.features[feature_name]["type"] == "geom":
-                self.logger.info("Now working on the %s feature", green(feature_name))
+                self.logger.info("Now applying aggregation function on the %s feature", green(feature_name))
                 agg_func = self.features[feature_name]['aggfunc']
                 query_args = [agg_func(getattr(IntersectionGeom, 'geom_' + str(radius))).label('value_' + str(radius))
                               for radius in self.buffer_radii_metres]
