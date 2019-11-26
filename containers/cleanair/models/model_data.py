@@ -244,7 +244,6 @@ class ModelDataReader(DBReader, DBWriter):
 
             return df_joined.reset_index()
 
-
     def __expand_time(self, start_date, end_date, feature_df):
         """
         Returns a new dataframe with static features merged with
@@ -353,6 +352,7 @@ class ModelDataReader(DBReader, DBWriter):
     def update_remote_tables(self):
 
         pass
+
 
 class ModelData(ModelDataReader):
     """Class to prepare data for model fitting"""

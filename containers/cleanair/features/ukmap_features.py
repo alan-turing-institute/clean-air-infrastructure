@@ -1,7 +1,7 @@
 """
 UKMAP feature extraction
 """
-from sqlalchemy import between, cast, func, Integer, literal, or_
+from sqlalchemy import func, literal, or_
 from .static_features import StaticFeatures
 from .feature_funcs import sum_area
 from ..databases.tables import UKMap
@@ -14,8 +14,8 @@ class UKMapFeatures(StaticFeatures):
         super().__init__(**kwargs)
 
         # List of features to extract
-        self.features = {    
-            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},       
+        self.features = {
+            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},
             "museums": {"type": "geom", "feature_dict": {"landuse": ["Museum"]}, 'aggfunc': sum_area},
             "hospitals": {"type": "geom", "feature_dict": {"landuse": ["Hospitals"]}, 'aggfunc': sum_area},
             "park": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"],
@@ -55,17 +55,22 @@ class UKMapFeatures(StaticFeatures):
             # ... construct a column for each radius, containing building height if the building is inside that radius
             # => [M < Npoints * Ngeometries records]
             intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
-                                                         sq_geometries.c.geom).label("intst_{}".format(radius)) for radius in self.buffer_radii_metres]
+                                                         sq_geometries.c.geom).label("intst_{}".format(radius))
+                                    for radius in self.buffer_radii_metres]
 
             intersection_filter_columns = [func.ST_Intersects(getattr(sq_metapoints.c, str(radius)),
-                                                         sq_geometries.c.geom).label("intersects_{}".format(radius)) for radius in self.buffer_radii_metres]
+                                                              sq_geometries.c.geom)
+                                           .label("intersects_{}".format(radius))
+                                           for radius in self.buffer_radii_metres]
 
             sq_within = session.query(sq_metapoints,
                                       sq_geometries,
                                       *intersection_columns,
                                       *intersection_filter_columns
-                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c, str(max(self.buffer_radii_metres))),
-                                                               sq_geometries.c.geom)).subquery()
+                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c,
+                                                                          str(max(self.buffer_radii_metres))),
+                                                                  sq_geometries.c.geom)
+                                               ).subquery()
 
             # Now group these by interest point, aggregating the height columns using the maximum in each group
             # => [Npoints records]
@@ -73,7 +78,8 @@ class UKMapFeatures(StaticFeatures):
                                             literal(feature_name).label("feature_name"),
                                             *[func.max(
                                                 sq_within.c.calculated_height_of_building
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))).label(str(radius))
+                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                              .label(str(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
 

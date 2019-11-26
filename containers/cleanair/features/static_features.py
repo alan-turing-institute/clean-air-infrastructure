@@ -7,8 +7,8 @@ from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
-import pandas as pd
-pd.set_option('display.max_rows', 50000)
+
+
 class StaticFeatures(DBWriter):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
@@ -51,32 +51,35 @@ class StaticFeatures(DBWriter):
             sq_metapoints = q_metapoints.subquery()
             sq_geometries = q_geometries.subquery()
 
-            
             # ... restrict to only those within max(radius) of one another
             # ... construct a column for each radius, containing the intersection with each geometry
             # => [M < Npoints * Ngeometries records]
             intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
-                                                         sq_geometries.c.geom).label("intst_{}".format(radius)) for radius in self.buffer_radii_metres]
+                                                         sq_geometries.c.geom).label("intst_{}".format(radius))
+                                    for radius in self.buffer_radii_metres]
 
             intersection_filter_columns = [func.ST_Intersects(getattr(sq_metapoints.c, str(radius)),
-                                                         sq_geometries.c.geom).label("intersects_{}".format(radius)) for radius in self.buffer_radii_metres]
+                                                              sq_geometries.c.geom).
+                                           label("intersects_{}".format(radius))
+                                           for radius in self.buffer_radii_metres]
 
             sq_within = session.query(sq_metapoints,
                                       sq_geometries,
                                       *intersection_columns,
                                       *intersection_filter_columns,
-                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c, str(max(self.buffer_radii_metres))),
-                                                               sq_geometries.c.geom)).subquery()
+                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c,
+                                                                          str(max(self.buffer_radii_metres))),
+                                                                  sq_geometries.c.geom)).subquery()
 
             # # Group these by interest point, unioning geometries: [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
                                             *[func.ST_ForceCollection(
-                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius))).filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius))).
+                                                filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                                 ).label("geom_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
-
 
         # Return the overall query
         return q_intersections
@@ -163,7 +166,6 @@ class StaticFeatures(DBWriter):
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for insert_stmt, indexes in self.process_value_features(feature_name, q_metapoints, q_source):
                     self.insert_records(insert_stmt, indexes, IntersectionValue.__tablename__)
-                    break
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for insert_stmt, indexes in self.process_geom_features(feature_name, q_metapoints, q_source):

@@ -1,7 +1,7 @@
 """
 OS Highway feature extraction
 """
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 from .static_features import StaticFeatures
 from .feature_funcs import sum_length
 from ..databases.tables import OSHighway
