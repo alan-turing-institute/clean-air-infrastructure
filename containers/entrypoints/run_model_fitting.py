@@ -48,36 +48,41 @@ def main():
     train_start = strtime_offset(train_end, -train_n_hours)
     pred_end = strtime_offset(pred_start, pred_n_hours)
 
-    train_test_dates = {'train_start_date': train_start,
-                        'train_end_date': train_end,
-                        'pred_start_date': pred_start,
-                        'pred_end_date': pred_end}
+    # Model configuration
+    model_config = {'train_start_date': train_start,
+                    'train_end_date': train_end,
+                    'pred_start_date': pred_start,
+                    'pred_end_date': pred_end,
 
-    config = {'sources': ['laqn', 'aqe'],
-              'species': ['NO2'],
-              'features': 'all',
-              'norm_by': 'laqn'}
+                    'train_sources': ['laqn', 'aqe'],
+                    'pred_sources': ['laqn', 'aqe'],
+                    'species': ['NO2'],
+                    'features': 'all',
+                    'norm_by': 'laqn',
+                    'model_type': 'svgp',
+                    'tag': 'production'}
 
     # Get the model data
     model_data = ModelData(**kwargs)
-    model_data.initialise(train_test_dates=train_test_dates, config=config)
+    model_data.initialise(config=model_config)
 
-    training_data_dict = model_data.get_training_data_arrays()
-    predict_data_dict = model_data.get_test_data_arrays()
+    training_data_dict = model_data.get_training_data_arrays(dropna=False)
+    print(training_data_dict)
+    predict_data_dict = model_data.get_test_data_arrays(dropna=False)
+    print(predict_data_dict)
+    # # Fit the model
+    # model_fitter = ModelFitting()
 
-    # Fit the model
-    model_fitter = ModelFitting()
+    # model_fitter.fit(training_data_dict['X'],
+    #                  training_data_dict['Y'],
+    #                  max_iter=20000,
+    #                  model_params=dict(lengthscales=0.1,
+    #                                    variance=0.1,
+    #                                    minibatch_size=100,
+    #                                    n_inducing_points=3000))
 
-    model_fitter.fit(training_data_dict['X'],
-                     training_data_dict['Y'],
-                     max_iter=20000,
-                     model_params=dict(lengthscales=0.1,
-                                       variance=0.1,
-                                       minibatch_size=100,
-                                       n_inducing_points=3000))
-
-    # # # Do prediction and write to database
-    predict_df = model_fitter.predict(predict_data_dict['X'])
+    # # # # Do prediction and write to database
+    # predict_df = model_fitter.predict(predict_data_dict['X'])
     # model_data.update_model_results_table(data_df=predict_df)
 
 

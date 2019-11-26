@@ -12,32 +12,6 @@ from ..databases import DBReader, DBWriter
 from ..loggers import get_logger
 
 
-def show_vis(sensor_status_df, title='Sensor data'):
-    """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
-
-    gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
-        columns={'point_id': 'Task',
-                 'measurement_start_utc': 'Start',
-                 'measurement_end_utc': 'Finish',
-                 'category': 'Resource'})
-
-    # Create the gant chart
-    colors = dict(OK='#76BA63',
-                  Missing='#BA6363',
-                  Closed='#828282',)
-
-    fig = ff.create_gantt(
-        gant_df,
-        group_tasks=True,
-        colors=colors,
-        index_col='Resource',
-        show_colorbar=True,
-        showgrid_x=True,
-        bar_width=0.38)
-    fig['layout'].update(autosize=True, height=10000, title=title)
-    fig.show()
-
-
 class ModelDataReader(DBReader, DBWriter):
     """Read data from multiple database tables in order to get data for model fitting"""
 
@@ -161,7 +135,7 @@ class ModelDataReader(DBReader, DBWriter):
 
         # Get interest points with site open and site closed dates and then expand with time
         interest_point_df = self.query_sensor_site_info(source=source)
-        time_df_merged = self.expand_time(start_date, end_date, interest_point_df)
+        time_df_merged = self.__expand_time(start_date, end_date, interest_point_df)
 
         # Check if an interest_point was open at all times
         time_df_merged['open'] = (
@@ -201,6 +175,31 @@ class ModelDataReader(DBReader, DBWriter):
             .reset_index()
 
         return time_df_merged_instance
+    
+    def show_vis(self, sensor_status_df, title='Sensor data'):
+        """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
+
+        gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
+            columns={'point_id': 'Task',
+                    'measurement_start_utc': 'Start',
+                    'measurement_end_utc': 'Finish',
+                    'category': 'Resource'})
+
+        # Create the gant chart
+        colors = dict(OK='#76BA63',
+                    Missing='#BA6363',
+                    Closed='#828282',)
+
+        fig = ff.create_gantt(
+            gant_df,
+            group_tasks=True, 
+            colors=colors,
+            index_col='Resource',
+            show_colorbar=True,
+            showgrid_x=True,
+            bar_width=0.38)
+        fig['layout'].update(autosize=True, height=10000, title=title)
+        fig.show()
 
     def select_static_features(self, sources=None, point_ids=None):
         """Query the database for static features and join with metapoint data
@@ -286,9 +285,9 @@ class ModelDataReader(DBReader, DBWriter):
             return query
 
     def get_sensor_readings(self, start_date, end_date, sources=None, species=None):
-        """Get sensor readings for the sources between the start_date (inclusive) and end_date"""
+        """Get sensor readings for the sources between the start_date (inclusive) and end_date"""        
 
-        self.logger.info("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+        self.logger.debug("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
         start_date_ = isoparse(start_date)
@@ -321,9 +320,6 @@ class ModelDataReader(DBReader, DBWriter):
         """
         Query the database for model features
         """
-        self.logger.info("Getting features for sources: %s, from %s (inclusive) to %s (exclusive)",
-                         sources, start_date, end_date)
-
         static_features = self.select_static_features(sources=sources)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
 
@@ -340,9 +336,15 @@ class ModelDataReader(DBReader, DBWriter):
             species: A list of species to get data for (e.g. 'NO2')
         """
 
+        self.logger.debug("Getting model inputs for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+                         sources, species, start_date, end_date)
+
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)
+        readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)        
         static_features_expand = self.get_model_features(start_date, end_date, sources)
+
+        self.logger.debug("Merging sensor data and model features")
+
         model_data = pd.merge(static_features_expand,
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
@@ -373,43 +375,111 @@ class ModelData(ModelDataReader):
         self.normalised_training_data_df = None
         self.normalise_test_data_df = None
 
-    def initialise(self, train_test_dates, config):
+    def initialise(self, config):
         """
-        Initialise for class to get training and test data for inputs
+        Initialise the ModelData object with a config file
+        args:
+            config: A config dictionary
+
+            Example config:
+                {
+                "train_start_date": "2019-11-01T00:00:00",
+                "train_end_date": "2019-11-30T00:00:00",
+                "pred_start_date": "2019-11-01T00:00:00",
+                "pred_end_date": "2019-11-30T00:00:00",
+
+                "train_sources": ["laqn", "aqe"],
+                "pred_sources": ["laqn", "aqe"],
+                "species": ["NO2"],
+                "features": "all",
+                "norm_by": "laqn",
+
+                "model_type": "svgp",
+                "tag": "production"
+                }
         """
 
-        train_start_date = train_test_dates['train_start_date']
-        train_end_date = train_test_dates['train_end_date']
-        pred_start_date = train_test_dates['pred_start_date']
-        pred_end_date = train_test_dates['pred_end_date']
+        # Validate the configuration
+        self.__validate_config(config)
 
-        sources = config['sources']
-        species = config['species']
-        features = config['features']
-        self.norm_by = config['norm_by']
+        # Set attributes from validated config
+        self.train_start_date = config['train_start_date']
+        self.train_end_date = config['train_end_date']
+        self.pred_start_date = config['pred_start_date']
+        self.pred_end_date = config['pred_end_date']
+        self.train_sources = config['train_sources']
+        self.pred_sources = config['pred_sources']
+        self.species = config['species']
 
-        # Check features are available
-        if features == 'all':
+        if config['features'] == 'all':
+            feature_names = self.list_available_features()
+            buff_size = [1000, 500, 200, 100, 10]            
+            config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
+            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
+        
+        self.features = config['features']               
+        self.norm_by = config['norm_by']       
+        self.model_type = config['model_type']
+        self.tag = config['tag']
+
+        # Column names for X and Y
+        self.x_names = ["epoch", "lat", "lon"] + self.features
+        self.y_names = self.species      
+
+        # Get model data from database using parent class ModelDataReader
+        self.training_data_df = self.get_model_inputs(self.train_start_date, self.train_end_date, self.train_sources, self.species)
+        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+
+        self.test_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources)        
+        self.normalised_test_data_df = self.__normalise_data(self.test_data_df)
+
+    def __validate_config(self, config):
+
+        config_keys = ["train_start_date",
+                       "train_end_date",
+                       "pred_start_date",
+                       "pred_end_date",
+                       "train_sources",
+                       "pred_sources",
+                       "species",
+                       "features",
+                       "norm_by",
+                       "model_type",
+                       'tag',]
+
+        valid_models = ['svgp',]
+
+        self.logger.info("Validating config")
+
+        # Check keys present
+        for key in config.keys():
+            if key not in config_keys:
+                raise AttributeError("Config dictionary does not contain key: {}".format(key))
+        
+        # Check features are available        
+        if config['features'] == 'all':
             features = self.list_available_features()
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
         else:
-            self.__check_features_in_database(features)
-
-        # Column names for X and Y
-        self.x_names = ["epoch", "lat", "lon"] + features
-        self.y_names = species
+            self.logger.debug("Checking requested features are availble in database")
+            self._ModelDataReader__check_features_in_database(features)
 
         # Check sources are available
-        self.__check_sources_in_database(sources)
-        # Species are not checked
+        train_sources = config['train_sources'] 
+        self.logger.debug("Checking requested sources for training are availble in database")
+        self._ModelDataReader__check_sources_in_database(train_sources)
 
-        # Get model data from database using parent class ModelDataReader
-        self.training_data_df = self.get_model_inputs(train_start_date, train_end_date, sources, species)
-        self.test_data_df = self.get_model_features(pred_start_date, pred_end_date, sources)
+        # Check sources are available
+        pred_sources = config['pred_sources'] 
+        self.logger.debug("Checking requested sources for prediction are availble in database")
+        self._ModelDataReader__check_sources_in_database(pred_sources)
 
-        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
-        self.normalised_test_data_df = self.__normalise_data(self.test_data_df)
+        # Check model type is valid
+        if config['model_type'] not in valid_models:
+            raise AttributeError("{} is not a valid model type. Use one of the following: {}".format(config['model_type'], 
+                                                                                                     valid_models))
+        self.logger.info("Validate config complete")
 
     @property
     def x_names_norm(self):
