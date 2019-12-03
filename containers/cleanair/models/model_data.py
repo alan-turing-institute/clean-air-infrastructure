@@ -26,7 +26,8 @@ class ModelDataReader(DBReader, DBWriter):
         unavailable_features = []
 
         for feature in features:
-            if feature not in available_features:
+            feature_name_no_buff = "_".join(feature.split("_")[2:])
+            if feature_name_no_buff not in available_features:
                 unavailable_features.append(feature)
 
         if unavailable_features:
@@ -351,10 +352,31 @@ class ModelDataReader(DBReader, DBWriter):
                               how='left')
         return model_data
 
+    def update_model_results_table(self, predict_data_dict, Y_pred, model_fit_info):
+
+        # # Create new dataframe with predictions
+        predict_df = pd.DataFrame(index=predict_data_dict['index'])
+        predict_df['predict_mean'] = Y_pred[:,0]
+        predict_df['predict_var'] = Y_pred[:,1]
+        predict_df['fit_start_time'] = self.fit_start_time
+        predict_df['tag'] = self.tag
+
+        # # Concat the predictions with the predict_df
+        self.normalised_test_data_df = pd.concat([self.normalised_test_data_df, predict_df], axis=1, ignore_index=False)
+
     def update_remote_tables(self):
+        """Update the model results table with the model results"""
 
-        pass
+        record_cols = ['tag', 'fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
+        df_cols = elf.normalised_test_data_df
+        for col in record_cols:
+            if col not in df_cols:
+                raise AttributeError("The data frame must contain the following columns: {}".format(record_cols))
 
+        upload_records = self.normalised_test_data_df[record_cols].to_dict('records')
+
+        with self.dbcnxn.open_session() as session:
+            self.add_records(session, upload_records, flush=True, table=ModelResult)
 
 class ModelData(ModelDataReader):
     """Class to prepare data for model fitting"""
@@ -417,7 +439,7 @@ class ModelData(ModelDataReader):
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
         
-        self.features = config['features']               
+        self.features = config['features'] 
         self.norm_by = config['norm_by']       
         self.model_type = config['model_type']
         self.tag = config['tag']
@@ -463,7 +485,7 @@ class ModelData(ModelDataReader):
                 raise AttributeError("There are no features in the database. Run feature extraction first")
         else:
             self.logger.debug("Checking requested features are availble in database")
-            self._ModelDataReader__check_features_in_database(features)
+            self._ModelDataReader__check_features_in_database(config['features'])
 
         # Check sources are available
         train_sources = config['train_sources'] 
@@ -512,6 +534,8 @@ class ModelData(ModelDataReader):
 
         if dropna:
             data_subset = data_subset.dropna()  # Must have complete dataset
+            n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
+            self.logger.warning("Dropped %s rows out of %s from the dataframe", n_dropped_rows, data_df.shape[0])
 
         data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
 
