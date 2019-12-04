@@ -12,22 +12,68 @@ from ..databases import DBReader, DBWriter
 from ..loggers import get_logger
 
 
-class ModelData(DBReader, DBWriter):
-    """Class to query sensor readings and features from the cleanair database and format for model fitting"""
+class ModelDataReader(DBReader, DBWriter):
+    """Read data from multiple database tables in order to get data for model fitting"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
+    def __check_features_in_database(self, features):
+        """Check that all requested features exist in the database"""
 
-        # Dataframe with model fit results
-        self.fit_df = None
+        available_features = self.list_available_features()
+        unavailable_features = []
+
+        for feature in features:
+            feature_name_no_buff = "_".join(feature.split("_")[2:])
+            if feature_name_no_buff not in available_features:
+                unavailable_features.append(feature)
+
+        if unavailable_features:
+            raise AttributeError("The following features are not available the cleanair database: {}"
+                                 .format(unavailable_features))
+
+    def __check_sources_in_database(self, sources):
+        """Check that sources are available in the database
+
+        args:
+            sources: A list of sources
+        """
+
+        available_sources = self.list_available_sources()
+        unavailable_sources = []
+
+        for source in sources:
+            if source not in available_sources:
+                unavailable_sources.append(source)
+
+        if unavailable_sources:
+            raise AttributeError("The following sources are not available the cleanair database: {}"
+                                 .format(unavailable_sources))
+
+    def list_available_features(self):
+        """Return a list of the available features in the database"""
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
+
+            return pd.read_sql(feature_types_q.statement,
+                               feature_types_q.session.bind)['feature_name'].tolist()
+
+    def list_available_sources(self):
+        """Return a list of the available interest point sources in a database"""
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(MetaPoint.source).distinct(MetaPoint.source)
+
+            return pd.read_sql(feature_types_q.statement,
+                               feature_types_q.session.bind)['source'].tolist()
 
     def __get_interest_points(self, source='laqn'):
-        """Get all interest points for a given source"""
+        """Query the database to get all interest points for a given source and return a query object"""
 
         with self.dbcnxn.open_session() as session:
 
@@ -41,18 +87,12 @@ class ModelData(DBReader, DBWriter):
 
             return interest_point_query
 
-    def list_available_features(self):
-        """Return a dataframe with the available features in the database"""
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
-
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)
-
     def query_sensor_site_info(self, source):
-        """Get the site info for a datasource (e.g. 'laqn', 'aqe')"""
+        """Query the database to get the site info for a datasource (e.g. 'laqn', 'aqe') and return a dataframe
+
+        args:
+            source: The sensor source ('laqn' or 'aqe')
+        """
         interest_point_q = self.__get_interest_points(source=source)
         interest_point_sq = interest_point_q.subquery()
 
@@ -96,7 +136,7 @@ class ModelData(DBReader, DBWriter):
 
         # Get interest points with site open and site closed dates and then expand with time
         interest_point_df = self.query_sensor_site_info(source=source)
-        time_df_merged = self.expand_time(start_date, end_date, interest_point_df)
+        time_df_merged = self.__expand_time(start_date, end_date, interest_point_df)
 
         # Check if an interest_point was open at all times
         time_df_merged['open'] = (
@@ -117,8 +157,9 @@ class ModelData(DBReader, DBWriter):
         time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)
 
         def set_instance(group):
-            """categorise each row as an instance, where a instance increments
-            if the difference from the preceeding timestamp is >1h"""
+            """Categorise each row as an instance, where a instance increments
+            if the difference from the preceeding timestamp is >1h
+            """
 
             group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
             group.at[group.index[0], 'offset_time'] = 1.
@@ -135,25 +176,24 @@ class ModelData(DBReader, DBWriter):
             .reset_index()
 
         return time_df_merged_instance
-
-    @staticmethod
-    def show_vis(sensor_status_df, title='Sensor data'):
+    
+    def show_vis(self, sensor_status_df, title='Sensor data'):
         """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
 
         gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
             columns={'point_id': 'Task',
-                     'measurement_start_utc': 'Start',
-                     'measurement_end_utc': 'Finish',
-                     'category': 'Resource'})
+                    'measurement_start_utc': 'Start',
+                    'measurement_end_utc': 'Finish',
+                    'category': 'Resource'})
 
         # Create the gant chart
         colors = dict(OK='#76BA63',
-                      Missing='#BA6363',
-                      Closed='#828282',)
+                    Missing='#BA6363',
+                    Closed='#828282',)
 
         fig = ff.create_gantt(
             gant_df,
-            group_tasks=True,
+            group_tasks=True, 
             colors=colors,
             index_col='Resource',
             show_colorbar=True,
@@ -163,7 +203,11 @@ class ModelData(DBReader, DBWriter):
         fig.show()
 
     def select_static_features(self, sources=None, point_ids=None):
-        """Select static features and join with metapoint data"""
+        """Query the database for static features and join with metapoint data
+
+        args:
+            source: A list of sources (e.g. 'laqn', 'aqe') to include. Default will include all sources
+            point_ids: A list if interest point ids. Default to all ids"""
 
         with self.dbcnxn.open_session() as session:
 
@@ -200,8 +244,7 @@ class ModelData(DBReader, DBWriter):
 
             return df_joined.reset_index()
 
-    @staticmethod
-    def expand_time(start_date, end_date, feature_df):
+    def __expand_time(self, start_date, end_date, feature_df):
         """
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date (inclusive) and end_date
@@ -243,9 +286,9 @@ class ModelData(DBReader, DBWriter):
             return query
 
     def get_sensor_readings(self, start_date, end_date, sources=None, species=None):
-        """Get sensor readings for the sources between the start_date (inclusive) and end_date"""
+        """Get sensor readings for the sources between the start_date (inclusive) and end_date"""        
 
-        self.logger.info("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+        self.logger.debug("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
         start_date_ = isoparse(start_date)
@@ -278,43 +321,243 @@ class ModelData(DBReader, DBWriter):
         """
         Query the database for model features
         """
-        self.logger.info("Getting features for sources: %s, from %s (inclusive) to %s (exclusive)",
-                         sources, start_date, end_date)
-
         static_features = self.select_static_features(sources=sources)
-        static_features_expand = self.expand_time(start_date, end_date, static_features)
+        static_features_expand = self.__expand_time(start_date, end_date, static_features)
 
         return static_features_expand
 
     def get_model_inputs(self, start_date, end_date, sources=None, species=None):
         """
-        Query the database for model inputs. Returns all features.
+        Query the database to get inputs for model fitting. Returns all features.
+
+        ags:
+            start_date: An iso datetime (yyyy-mm-ddTHH:MM:SS) to get data from (inclusive)
+            end_date: An iso datetime (yyyy-mm-ddTHH:MM:SS) to get data from (exclusive)
+            sources: A list of sources (e.g 'laqn', 'aqe' to get data for)
+            species: A list of species to get data for (e.g. 'NO2')
         """
 
+        self.logger.debug("Getting model inputs for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+                         sources, species, start_date, end_date)
+
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)
+        readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)        
         static_features_expand = self.get_model_features(start_date, end_date, sources)
+
+        self.logger.debug("Merging sensor data and model features")
+
         model_data = pd.merge(static_features_expand,
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
                               how='left')
         return model_data
 
-    def update_model_results_table(self, data_df):
-        """Update the model results table, passing a dataframe created by ModelFitting.predict()"""
-        self.fit_df = data_df
-        self.update_remote_tables()
+    def update_model_results_table(self, predict_data_dict, Y_pred, model_fit_info):
+
+        # # Create new dataframe with predictions
+        predict_df = pd.DataFrame(index=predict_data_dict['index'])
+        predict_df['predict_mean'] = Y_pred[:,0]
+        predict_df['predict_var'] = Y_pred[:,1]
+        predict_df['fit_start_time'] = model_fit_info['fit_start_time']
+        predict_df['tag'] = self.tag
+
+        # # Concat the predictions with the predict_df
+        self.normalised_test_data_df = pd.concat([self.normalised_test_data_df, predict_df], axis=1, ignore_index=False)
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
 
-        record_cols = ['fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
-        df_cols = self.fit_df.columns
+        record_cols = ['tag', 'fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
+        df_cols = elf.normalised_test_data_df
         for col in record_cols:
             if col not in df_cols:
-                raise AttributeError("The data frame must contain the following columns: {}".format(record_cols))
+                raise AttributeError("""The data frame must contain the following columns: {}. 
+                                        Ensure model results have been passed to ModelData.update_model_results_table()""".format(record_cols))
 
-        upload_records = self.fit_df[record_cols].to_dict('records')
+        upload_records = self.normalised_test_data_df[record_cols].to_dict('records')
 
         with self.dbcnxn.open_session() as session:
             self.add_records(session, upload_records, flush=True, table=ModelResult)
+
+class ModelData(ModelDataReader):
+    """Class to prepare data for model fitting"""
+
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Attributes created by self.initialise
+        self.x_names = None
+        self.y_names = None
+        self.training_data_df = None
+        self.test_data_df = None
+        self.normalised_training_data_df = None
+        self.normalise_test_data_df = None
+
+    def initialise(self, config):
+        """
+        Initialise the ModelData object with a config file
+        args:
+            config: A config dictionary
+
+            Example config:
+                {
+                "train_start_date": "2019-11-01T00:00:00",
+                "train_end_date": "2019-11-30T00:00:00",
+                "pred_start_date": "2019-11-01T00:00:00",
+                "pred_end_date": "2019-11-30T00:00:00",
+
+                "train_sources": ["laqn", "aqe"],
+                "pred_sources": ["laqn", "aqe"],
+                "species": ["NO2"],
+                "features": "all",
+                "norm_by": "laqn",
+
+                "model_type": "svgp",
+                "tag": "production"
+                }
+        """
+
+        # Validate the configuration
+        self.__validate_config(config)
+
+        # Set attributes from validated config
+        self.train_start_date = config['train_start_date']
+        self.train_end_date = config['train_end_date']
+        self.pred_start_date = config['pred_start_date']
+        self.pred_end_date = config['pred_end_date']
+        self.train_sources = config['train_sources']
+        self.pred_sources = config['pred_sources']
+        self.species = config['species']
+
+        if config['features'] == 'all':
+            feature_names = self.list_available_features()
+            buff_size = [1000, 500, 200, 100, 10]            
+            config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
+            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
+        
+        self.features = config['features'] 
+        self.norm_by = config['norm_by']       
+        self.model_type = config['model_type']
+        self.tag = config['tag']
+
+        # Column names for X and Y
+        self.x_names = ["epoch", "lat", "lon"] + self.features
+        self.y_names = self.species      
+
+        # Get model data from database using parent class ModelDataReader
+        self.training_data_df = self.get_model_inputs(self.train_start_date, self.train_end_date, self.train_sources, self.species)
+        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+
+        self.test_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources)        
+        self.normalised_test_data_df = self.__normalise_data(self.test_data_df)
+
+    def __validate_config(self, config):
+
+        config_keys = ["train_start_date",
+                       "train_end_date",
+                       "pred_start_date",
+                       "pred_end_date",
+                       "train_sources",
+                       "pred_sources",
+                       "species",
+                       "features",
+                       "norm_by",
+                       "model_type",
+                       'tag',]
+
+        valid_models = ['svgp',]
+
+        self.logger.info("Validating config")
+
+        # Check keys present
+        for key in config.keys():
+            if key not in config_keys:
+                raise AttributeError("Config dictionary does not contain key: {}".format(key))
+        
+        # Check features are available        
+        if config['features'] == 'all':
+            features = self.list_available_features()
+            if not features:
+                raise AttributeError("There are no features in the database. Run feature extraction first")
+        else:
+            self.logger.debug("Checking requested features are availble in database")
+            self._ModelDataReader__check_features_in_database(config['features'])
+
+        # Check sources are available
+        train_sources = config['train_sources'] 
+        self.logger.debug("Checking requested sources for training are availble in database")
+        self._ModelDataReader__check_sources_in_database(train_sources)
+
+        # Check sources are available
+        pred_sources = config['pred_sources'] 
+        self.logger.debug("Checking requested sources for prediction are availble in database")
+        self._ModelDataReader__check_sources_in_database(pred_sources)
+
+        # Check model type is valid
+        if config['model_type'] not in valid_models:
+            raise AttributeError("{} is not a valid model type. Use one of the following: {}".format(config['model_type'], 
+                                                                                                     valid_models))
+        self.logger.info("Validate config complete")
+
+    @property
+    def x_names_norm(self):
+        """Get the normalised x names"""
+        return [x + '_norm' for x in self.x_names]
+
+    @property
+    def norm_stats(self):
+        """Get the mean and sd used for data normalisation"""
+        norm_mean = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].mean(axis=0)
+        norm_std = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].std(axis=0)
+        return norm_mean, norm_std
+
+    def __normalise_data(self, data_df):
+        """Normalise the x columns"""
+        norm_mean, norm_std = self.norm_stats
+        # Normalise the data
+        data_df[self.x_names_norm] = (data_df[self.x_names] - norm_mean) / norm_std
+        return data_df
+
+    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
+        """Return a dictionary of data arrays for model fitting.
+        The returned dictionary includes and index to allow model predictions
+        to be appended to dataframes (required when dropna is used)"""
+
+        if return_y:
+            data_subset = data_df[self.x_names_norm + self.y_names]
+        else:
+            data_subset = data_df[self.x_names_norm]
+
+        if dropna:
+            data_subset = data_subset.dropna()  # Must have complete dataset
+            n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
+            self.logger.warning("Dropped %s rows out of %s from the dataframe", n_dropped_rows, data_df.shape[0])
+
+        data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
+
+        if return_y:
+            data_dict['Y'] = data_subset[self.y_names].values
+
+        return data_dict
+
+    def get_training_data_arrays(self, dropna=True):
+        """The the training data arrays.
+
+        args:
+            dropna: Drop any rows which contain NaN
+        """
+        return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
+
+    def get_test_data_arrays(self, return_y=False, dropna=True):
+        """The the test data arrays.
+
+        args:
+            return_y: Return the sensor data if in the database for the prediction dates
+            dropna: Drop any rows which contain NaN
+        """
+        return self.__get_model_data_arrays(self.normalised_test_data_df, return_y=False, dropna=dropna)

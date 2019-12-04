@@ -14,7 +14,7 @@ class IntersectionGeom(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_name = Column(String(30), primary_key=True, nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
     geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
@@ -55,12 +55,12 @@ class IntersectionValue(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_name = Column(String(30), primary_key=True, nullable=False)
-    value_1000 = Column(Float, nullable=False)
-    value_500 = Column(Float, nullable=False)
-    value_200 = Column(Float, nullable=False)
-    value_100 = Column(Float, nullable=False)
-    value_10 = Column(Float, nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
+    value_1000 = Column(Float)
+    value_500 = Column(Float)
+    value_200 = Column(Float)
+    value_100 = Column(Float)
+    value_10 = Column(Float)
 
     # Create IntersectionValue.point with no reverse relationship
     point = relationship("MetaPoint")

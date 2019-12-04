@@ -1,6 +1,8 @@
 """
 Model fitting
 """
+import sys
+sys.path.append("/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers")
 import logging
 import argparse
 from dateutil.parser import isoparse

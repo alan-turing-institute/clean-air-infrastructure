@@ -36,6 +36,7 @@ def download_blobs(blob_service, dataset, target_directory):
     """Download blobs from a container to a target directory"""
     # Get the blob container name
     dataset_to_blob_container = {
+        "rectgrid_100": "100mgrid",
         "street_canyon": "canyonslondon",
         "hexgrid": "glahexgrid",
         "london_boundary": "londonboundary",
@@ -61,10 +62,11 @@ def download_blobs(blob_service, dataset, target_directory):
 
         
         # Unzip the data
-        with zipfile.ZipFile(target_file, "r") as zip_ref:
-            zip_ref.extractall(target_directory)
-            os.remove(target_file)
-        logging.info("Downloading complete")
+        if target_file[-4] == '.zip':
+            with zipfile.ZipFile(target_file, "r") as zip_ref:
+                zip_ref.extractall(target_directory)
+                os.remove(target_file)
+            logging.info("Downloading complete")
 
 
 def get_key_vault_uri_and_client():
@@ -136,6 +138,7 @@ def upload_static_data(image_name, verbosity, dataset, secrets_directory, data_d
 
     # List of dataset names inside each directory
     dataset_to_directory = {
+        "rectgrid_100": "100m_grid.gpkg",
         "street_canyon": "CanyonsLondon_Erase",
         "hexgrid": "Hex350_grid_GLA",
         "london_boundary": "ESRI",
@@ -193,7 +196,13 @@ def main():
     rectgrid_image = build_docker_image("rectgrid:upload", "upload_rectgrid.Dockerfile")
 
     # List of available datasets
-    datasets = ["hexgrid", "london_boundary", "oshighway_roadlink", "ukmap", "scoot_detector", "street_canyon"]
+    datasets = ["rectgrid_100",
+                "hexgrid",
+                "london_boundary",
+                "oshighway_roadlink",
+                "ukmap",
+                "scoot_detector",
+                "street_canyon"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)

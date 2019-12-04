@@ -38,7 +38,7 @@ class StaticFeatures(DBWriter):
         """Query MetaPoints, selecting all matching include_sources"""
         boundary_geom = self.query_london_boundary()
         with self.dbcnxn.open_session() as session:
-            columns = [MetaPoint, func.Geography(MetaPoint.location).label("location_geog")]
+            columns = [MetaPoint.id]
             if with_buffers:
                 columns += [func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), rad)).label(str(rad))
                             for rad in self.buffer_radii_metres]
@@ -49,6 +49,7 @@ class StaticFeatures(DBWriter):
 
     def query_feature_geoms(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
+
         with self.dbcnxn.open_session() as session:
             # Cross join interest point and geometry queries...
             sq_metapoints = q_metapoints.subquery()
@@ -57,20 +58,29 @@ class StaticFeatures(DBWriter):
             # ... restrict to only those within max(radius) of one another
             # ... construct a column for each radius, containing the intersection with each geometry
             # => [M < Npoints * Ngeometries records]
+            intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
+                                                         sq_geometries.c.geom).label("intst_{}".format(radius))
+                                    for radius in self.buffer_radii_metres]
+
+            intersection_filter_columns = [func.ST_Intersects(getattr(sq_metapoints.c, str(radius)),
+                                                              sq_geometries.c.geom).
+                                           label("intersects_{}".format(radius))
+                                           for radius in self.buffer_radii_metres]
+
             sq_within = session.query(sq_metapoints,
                                       sq_geometries,
-                                      *[func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
-                                                             sq_geometries.c.geom).label("intst_{}".format(radius))
-                                        for radius in self.buffer_radii_metres]
-                                      ).filter(func.ST_DWithin(sq_metapoints.c.location_geog,
-                                                               sq_geometries.c.geom_geog,
-                                                               max(self.buffer_radii_metres))).subquery()
+                                      *intersection_columns,
+                                      *intersection_filter_columns,
+                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c,
+                                                                          str(max(self.buffer_radii_metres))),
+                                                                  sq_geometries.c.geom)).subquery()
 
-            # Group these by interest point, unioning geometries: [Npoints records]
+            # # Group these by interest point, unioning geometries: [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
                                             *[func.ST_ForceCollection(
-                                                func.ST_Union(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                                 ).label("geom_{}".format(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
@@ -89,7 +99,7 @@ class StaticFeatures(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10
+        batch_size = 1000
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
@@ -142,7 +152,7 @@ class StaticFeatures(DBWriter):
             # Construct one tuple for each interest point: the id and a geometry collection for each radius
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             if self.features[feature_name]["type"] == "value":
-                q_metapoints = self.query_meta_points(include_sources=self.sources)
+                q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_value_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
                         self.add_records(session, select_stmt, table=IntersectionValue)
@@ -160,7 +170,7 @@ class StaticFeatures(DBWriter):
         for feature_name in self.features:
             feature_start = time.time()
             if self.features[feature_name]["type"] == "geom":
-                self.logger.info("Now working on the %s feature", green(feature_name))
+                self.logger.info("Now applying aggregation function on the %s feature", green(feature_name))
                 agg_func = self.features[feature_name]['aggfunc']
                 query_args = [agg_func(getattr(IntersectionGeom, 'geom_' + str(radius))).label('value_' + str(radius))
                               for radius in self.buffer_radii_metres]

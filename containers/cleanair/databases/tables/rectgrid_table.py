@@ -5,6 +5,7 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 
 
@@ -36,3 +37,13 @@ class RectGrid(Base):
                         row_id=gridcell_dict["row_id"],
                         point_id=str(gridcell_dict["point_id"]),
                         geom=gridcell_dict["geom"])
+
+
+class RectGrid100(DeferredReflection, Base):
+    """Table of 100m grid points"""
+    __tablename__ = "rectgrid_100"
+    __table_args__ = {"schema": "interest_points"}
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<RectGrid100(" + ", ".join(vals)
