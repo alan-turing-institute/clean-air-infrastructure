@@ -94,7 +94,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 # Append to list of readings
                 processed_readings.append(scoot_df)
             except (botocore.exceptions.ClientError, botocore.exceptions.EndpointConnectionError) as error:
-                self.logger.error("Failed to retrieve %s. Error: %e", filename, error)
+                self.logger.error("Failed to retrieve %s. Error: %s", filename, error)
                 continue
             finally:
                 if os.path.isfile(filename):
