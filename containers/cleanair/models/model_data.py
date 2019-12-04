@@ -358,7 +358,7 @@ class ModelDataReader(DBReader, DBWriter):
         predict_df = pd.DataFrame(index=predict_data_dict['index'])
         predict_df['predict_mean'] = Y_pred[:,0]
         predict_df['predict_var'] = Y_pred[:,1]
-        predict_df['fit_start_time'] = self.fit_start_time
+        predict_df['fit_start_time'] = model_fit_info['fit_start_time']
         predict_df['tag'] = self.tag
 
         # # Concat the predictions with the predict_df
@@ -371,7 +371,8 @@ class ModelDataReader(DBReader, DBWriter):
         df_cols = elf.normalised_test_data_df
         for col in record_cols:
             if col not in df_cols:
-                raise AttributeError("The data frame must contain the following columns: {}".format(record_cols))
+                raise AttributeError("""The data frame must contain the following columns: {}. 
+                                        Ensure model results have been passed to ModelData.update_model_results_table()""".format(record_cols))
 
         upload_records = self.normalised_test_data_df[record_cols].to_dict('records')
 

@@ -60,7 +60,7 @@ def main():
                     'features': ['value_1000_building_height'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
-                    'tag': 'production'}
+                    'tag': 'testing'}
 
     # Model fitting parameters
     model_params = {'lengthscale': 0.1,
@@ -90,9 +90,9 @@ def main():
     # Do prediction and write to database
     Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    
+    # Write the model results to the database
     model_data.update_model_results_table(predict_data_dict=predict_data_dict, Y_pred=Y_pred, model_fit_info=model_fit_info)
-
+    model_data.update_remote_tables()
 
 if __name__ == "__main__":
     main()
