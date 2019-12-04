@@ -3,7 +3,7 @@ UKMAP feature extraction
 """
 from sqlalchemy import func, literal, or_
 from .static_features import StaticFeatures
-from .feature_funcs import sum_area
+from .feature_funcs import sum_area, max_
 from ..databases.tables import UKMap
 
 
@@ -13,6 +13,7 @@ class UKMapFeatures(StaticFeatures):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        self.table = UKMap
         # List of features to extract
         self.features = {
             "flat": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated", "Water"]}, 'aggfunc': sum_area},
@@ -23,7 +24,7 @@ class UKMapFeatures(StaticFeatures):
             "park": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated"],
                                                       "landuse": ["Recreational open space"]}, 'aggfunc': sum_area},
             "water": {"type": "geom", "feature_dict": {"feature_type": ["Water"]}, 'aggfunc': sum_area},
-            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}},
+            "building_height": {"type": "value", "feature_dict": {"feature_type": ["Building"]}, 'aggfunc': max_},
         }
 
     def query_features(self, feature_name):
