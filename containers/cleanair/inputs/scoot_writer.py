@@ -75,6 +75,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
         processed_readings = []
         for filepath, filename in self.get_remote_filenames():
             try:
+                self.logger.info("Requesting scoot file %s", filename)
                 client.download_file("surface.data.tfl.gov.uk",
                                      "{path}/{file}".format(path=filepath, file=filename),
                                      filename)
@@ -92,8 +93,8 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 scoot_df = scoot_df[~scoot_df["detector_fault"]]
                 # Append to list of readings
                 processed_readings.append(scoot_df)
-            except botocore.exceptions.ClientError:
-                self.logger.error("Failed to retrieve %s. Possibly this file does not exist yet", filename)
+            except (botocore.exceptions.ClientError, botocore.exceptions.EndpointConnectionError) as error:
+                self.logger.error("Failed to retrieve %s. Error: %s", filename, error)
                 continue
             finally:
                 if os.path.isfile(filename):

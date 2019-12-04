@@ -8,7 +8,7 @@ from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
 from .oshighway_table import OSHighway
-from .rectgrid_table import RectGrid
+from .rectgrid_table import RectGrid, RectGrid100
 from .scoot_tables import ScootReading, ScootDetector
 from .ukmap_table import UKMap
 from .model_results_table import ModelResult
@@ -26,6 +26,7 @@ __all__ = [
     "MetaPoint",
     "OSHighway",
     "RectGrid",
+    "RectGrid100",
     "ScootDetector",
     "ScootReading",
     "UKMap",
