@@ -7,21 +7,19 @@ import matplotlib.pyplot as plt
 from dateutil.parser import isoparse
 from sqlalchemy import between, cast, func, Integer, literal, or_, asc
 from sqlalchemy.orm import aliased
+from .static_features import Features
 from ..databases import DBWriter
 from ..databases.tables import OSHighway, ScootDetector, ScootReading, MetaPoint, LondonBoundary, ScootRoadMatch, ScootRoadUnmatched
 
 pd.set_option('display.max_columns', 500)
 
-class ScootFeatures(DBWriter):
+class ScootFeatures(Features):
     """Extract features for Scoot"""
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-
+        
         # List of features to extract
         self.features = {}
 
@@ -31,12 +29,6 @@ class ScootFeatures(DBWriter):
                               ScootDetector.point_id.label("scoot_point_id")]
         self.os_highway_columns = [OSHighway.identifier.label("road_identifier"),
                                    OSHighway.toid.label("road_toid")]
-
-    def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London"""
-        with self.dbcnxn.open_session() as session:
-            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
-        return hull
 
     def join_scoot_with_road(self):        
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
@@ -204,7 +196,7 @@ class ScootFeatures(DBWriter):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.insert_closest_roads()
-        # self.update_average_traffic()
+        # self.insert_closest_roads()
+        self.update_average_traffic()
 
         

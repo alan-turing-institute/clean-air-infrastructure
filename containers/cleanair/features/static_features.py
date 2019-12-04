@@ -8,8 +8,40 @@ from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
 from ..loggers import duration, green
 
+class Features(DBWriter):
+    """Feature processing base class"""
+    def __init__(self, **kwargs):
+        self.sources = kwargs.pop("sources", [])
 
-class StaticFeatures(DBWriter):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Radius around each interest point used for feature extraction.
+        # Changing these would require redefining the database schema
+        self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+
+    def query_london_boundary(self):
+        """Query LondonBoundary to obtain the bounding geometry for London"""
+        with self.dbcnxn.open_session() as session:
+            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
+        return hull
+    
+    def query_meta_points(self, include_sources=None, with_buffers=False):
+        """Query MetaPoints, selecting all matching include_sources"""
+        boundary_geom = self.query_london_boundary()
+        with self.dbcnxn.open_session() as session:
+            columns = [MetaPoint.id]
+            if with_buffers:
+                columns += [func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), rad)).label(str(rad))
+                            for rad in self.buffer_radii_metres]
+            _query = session.query(*columns).filter(MetaPoint.location.ST_Within(boundary_geom))
+            if include_sources:
+                _query = _query.filter(MetaPoint.source.in_(include_sources))
+        return _query
+
+
+class StaticFeatures(Features):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
         self.sources = kwargs.pop("sources", [])
@@ -26,26 +58,7 @@ class StaticFeatures(DBWriter):
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]
 
         # Define in inhereting classes
-        self.features = None
-
-    def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London"""
-        with self.dbcnxn.open_session() as session:
-            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
-        return hull
-
-    def query_meta_points(self, include_sources=None, with_buffers=False):
-        """Query MetaPoints, selecting all matching include_sources"""
-        boundary_geom = self.query_london_boundary()
-        with self.dbcnxn.open_session() as session:
-            columns = [MetaPoint.id]
-            if with_buffers:
-                columns += [func.Geometry(func.ST_Buffer(func.Geography(MetaPoint.location), rad)).label(str(rad))
-                            for rad in self.buffer_radii_metres]
-            _query = session.query(*columns).filter(MetaPoint.location.ST_Within(boundary_geom))
-            if include_sources:
-                _query = _query.filter(MetaPoint.source.in_(include_sources))
-        return _query
+        self.features = None    
 
     def query_feature_geoms(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
