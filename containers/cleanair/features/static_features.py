@@ -2,7 +2,7 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, literal, tuple_
+from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
@@ -11,8 +11,7 @@ from ..loggers import duration, green, get_logger
 class Features(DBWriter):
     """Feature processing base class"""
     def __init__(self, **kwargs):
-        self.sources = kwargs.pop("sources", [])
-
+       
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -47,6 +46,7 @@ class Features(DBWriter):
 class StaticFeatures(Features):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
+
         self.sources = kwargs.pop("sources", [])
 
         # Initialise parent classes
@@ -196,7 +196,7 @@ class StaticFeatures(Features):
                                                 literal(feature_name).label("feature_name"),
                                                 *query_args
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
-                                                    IntersectionGeom.point_id)
+                                                    IntersectionGeom.point_id).subquery()
 
                     self.add_records(session, select_stmt, table=IntersectionValue)
                     
@@ -205,7 +205,7 @@ class StaticFeatures(Features):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.calculate_intersections()
+        # self.calculate_intersections()
         self.aggregate_geom_features()
 
     def query_features(self, feature_name):
@@ -262,9 +262,9 @@ class StaticFeatures(Features):
             # => [Npoints records]
             q_intersections = session.query(sq_within.c.id,
                                             literal(feature_name).label("feature_name"),
-                                            *[agg_func(
-                                                getattr(sq_within.c, value_column) 
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                            *[func.coalesce(agg_func(
+                                                getattr(sq_within.c, value_column)
+                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0) 
                                               .label(str(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)

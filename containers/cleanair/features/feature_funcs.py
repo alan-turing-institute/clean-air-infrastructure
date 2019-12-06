@@ -13,10 +13,10 @@ def sum_length(geom):
     return func.coalesce(func.sum(func.ST_Length(func.Geography(geom))), 0)
 
 def min_(x):
-    return func.coalesce(func.min(x), 0)
+    return func.min(x)
 
 def max_(x):
-    return func.coalesce(func.max(x), 0)
+    return func.max(x)
 
 def avg_(x):
-    return func.coalesce(func.avg(x), 0)
+    return func.avg(x)
