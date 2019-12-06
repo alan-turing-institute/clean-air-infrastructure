@@ -453,7 +453,7 @@ class ModelData(ModelDataReader):
         self.training_data_df = self.get_model_inputs(self.train_start_date, self.train_end_date, self.train_sources, self.species)
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-        self.test_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources)        
+        self.test_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources)
         self.normalised_test_data_df = self.__normalise_data(self.test_data_df)
 
     def __validate_config(self, config):
@@ -468,9 +468,9 @@ class ModelData(ModelDataReader):
                        "features",
                        "norm_by",
                        "model_type",
-                       'tag',]
+                       'tag', ]
 
-        valid_models = ['svgp',]
+        valid_models = ['svgp', ]
 
         self.logger.info("Validating config")
 
@@ -478,8 +478,8 @@ class ModelData(ModelDataReader):
         for key in config.keys():
             if key not in config_keys:
                 raise AttributeError("Config dictionary does not contain key: {}".format(key))
-        
-        # Check features are available        
+
+        # Check features are available
         if config['features'] == 'all':
             features = self.list_available_features()
             if not features:
@@ -489,19 +489,20 @@ class ModelData(ModelDataReader):
             self._ModelDataReader__check_features_in_database(config['features'])
 
         # Check sources are available
-        train_sources = config['train_sources'] 
+        train_sources = config['train_sources']
         self.logger.debug("Checking requested sources for training are availble in database")
         self._ModelDataReader__check_sources_in_database(train_sources)
 
         # Check sources are available
-        pred_sources = config['pred_sources'] 
+        pred_sources = config['pred_sources']
         self.logger.debug("Checking requested sources for prediction are availble in database")
         self._ModelDataReader__check_sources_in_database(pred_sources)
 
         # Check model type is valid
         if config['model_type'] not in valid_models:
-            raise AttributeError("{} is not a valid model type. Use one of the following: {}".format(config['model_type'], 
-                                                                                                     valid_models))
+            raise AttributeError("{} is not a valid model type. Use one of the following: {}"
+                                 .format(config['model_type'], valid_models))
+
         self.logger.info("Validate config complete")
 
     @property

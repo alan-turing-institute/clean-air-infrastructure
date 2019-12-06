@@ -2,16 +2,18 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, literal, tuple_
+from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
-from ..loggers import duration, green
+from ..loggers import duration, green, get_logger
 
 class Features(DBWriter):
     """Feature processing base class"""
     def __init__(self, **kwargs):
-        self.sources = kwargs.pop("sources", [])
+       
+        # Initialise parent classes
+        super().__init__(**kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -44,6 +46,7 @@ class Features(DBWriter):
 class StaticFeatures(Features):
     """Extract features which are near to a given set of MetaPoints and inside London"""
     def __init__(self, **kwargs):
+
         self.sources = kwargs.pop("sources", [])
 
         # Initialise parent classes
@@ -193,7 +196,7 @@ class StaticFeatures(Features):
                                                 literal(feature_name).label("feature_name"),
                                                 *query_args
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
-                                                    IntersectionGeom.point_id)
+                                                    IntersectionGeom.point_id).subquery()
 
                     self.add_records(session, select_stmt, table=IntersectionValue)
                     
@@ -202,14 +205,70 @@ class StaticFeatures(Features):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.calculate_intersections()
+        # self.calculate_intersections()
         self.aggregate_geom_features()
 
     def query_features(self, feature_name):
-        """Query data source, selecting all features matching the requirements in feature_dict.
-           Should be implemented by a subsclass"""
-        raise NotImplementedError("Subclasses should implement self.query_features")
+        """Query features selecting all features matching the requirements in self.feature_dict"""
+        with self.dbcnxn.open_session() as session:
+            # Construct column selector for feature
+            columns = [self.table.geom]    
+            columns = columns + [getattr(self.table, feature) for feature in self.features[feature_name]['feature_dict'].keys()]
+  
+            q_source = session.query(*columns)
+            # Construct filters
+            filter_list = []  
+            if feature_name == "building_height":  # filter out unreasonably tall buildings from UKMap
+                filter_list.append(UKMap.calculated_height_of_building < 999.9)  
+            for column, values in self.features[feature_name]["feature_dict"].items():
+                if (len(values) == 1) and (values[0] != '*'):
+                    filter_list.append(or_(*[getattr(self.table, column) == value for value in values]))
+            q_source = q_source.filter(*filter_list)
+        return q_source
 
     def query_feature_values(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
-        raise NotImplementedError("Subclasses should implement self.query_feature_values")
+        
+        agg_func = self.features[feature_name]['aggfunc']
+        value_column = list(self.features[feature_name]["feature_dict"].keys())[0] #If its a value, there should only be one key
+
+        with self.dbcnxn.open_session() as session:
+            # Cross join interest point and geometry queries...
+            sq_metapoints = q_metapoints.subquery()
+            sq_geometries = q_geometries.subquery()
+
+            # ... restrict to only those within max(radius) of one another
+            # ... construct a column for each radius, containing building height if the building is inside that radius
+            # => [M < Npoints * Ngeometries records]
+            intersection_columns = [func.ST_Intersection(getattr(sq_metapoints.c, str(radius)),
+                                                         sq_geometries.c.geom).label("intst_{}".format(radius))
+                                    for radius in self.buffer_radii_metres]
+
+            intersection_filter_columns = [func.ST_Intersects(getattr(sq_metapoints.c, str(radius)),
+                                                              sq_geometries.c.geom)
+                                           .label("intersects_{}".format(radius))
+                                           for radius in self.buffer_radii_metres]
+
+            sq_within = session.query(sq_metapoints,
+                                      sq_geometries,
+                                      *intersection_columns,
+                                      *intersection_filter_columns
+                                      ).filter(func.ST_Intersects(getattr(sq_metapoints.c,
+                                                                          str(max(self.buffer_radii_metres))),
+                                                                  sq_geometries.c.geom)
+                                               ).subquery()
+
+            # Now group these by interest point, aggregating the height columns using the maximum in each group
+            # => [Npoints records]
+            q_intersections = session.query(sq_within.c.id,
+                                            literal(feature_name).label("feature_name"),
+                                            *[func.coalesce(agg_func(
+                                                getattr(sq_within.c, value_column)
+                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0) 
+                                              .label(str(radius))
+                                              for radius in self.buffer_radii_metres]
+                                            ).group_by(sq_within.c.id)
+
+        # Return the overall query
+        return q_intersections
+

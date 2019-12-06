@@ -4,7 +4,7 @@ UKMap Feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import ScootFeatures
+from cleanair.features import StreetCanyonFeatures
 
 
 def main():
@@ -23,9 +23,12 @@ def main():
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
+    # List which sources to process
+    kwargs["sources"] = ["aqe", "laqn"]
+
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = ScootFeatures(**kwargs)
+        static_feature_extractor = StreetCanyonFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 
