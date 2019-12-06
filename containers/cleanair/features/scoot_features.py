@@ -194,7 +194,7 @@ class ScootFeatures(Features):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        # self.insert_closest_roads()
-        self.update_average_traffic()
+        self.insert_closest_roads()
+        # self.update_average_traffic()
 
         
