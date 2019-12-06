@@ -24,7 +24,6 @@ class DBWriter(DBInteractor):
 
     def __add_records_core(self, session, records, table, on_conflict_do_nothing=True):
         """Add records using sqlalchemy core
-        
         args:
             records: Either a list of dictionary or an slqalchemy subquery
             table: An sqlalchemy table object
@@ -33,9 +32,9 @@ class DBWriter(DBInteractor):
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
             columns = inspect(table).columns
-            insert_stmt = insert(table).from_select(columns, select_stmt)        
+            insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
-            insert_stmt = insert(table).values(records)        
+            insert_stmt = insert(table).values(records)
         else:
             raise TypeError('records arg must be a dict or sqlalchemy subquery')
 
@@ -45,10 +44,10 @@ class DBWriter(DBInteractor):
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(index_elements=inspect(table).primary_key)
             session.execute(on_duplicate_key_stmt)
             session.commit()
-        else:      
+        else:
             self.logger.debug("Attempting to add all records.")
             session.execute(insert_stmt)
-            session.commit()    
+            session.commit()
 
     def __add_records_orm(self, session, records, flush=False):
         """Add records using sqlalchemy ORM"""
@@ -85,7 +84,7 @@ class DBWriter(DBInteractor):
             flush: If using the orm (sqlalchemy records) set True to avoid merge conflicts
             table: Optional. sqlalchemy table. If table provide sqlalchemy core used for insert
             on_conflict_do_nothing: bool (default True). Core will ignore duplicate entires.
-            
+
         If table is provided it will insert using sqlalchemy's core rather than the ORM.
         """
 

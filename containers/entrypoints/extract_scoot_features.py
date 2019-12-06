@@ -23,7 +23,6 @@ def main():
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-   
     # Extract features and notify any exceptions
     try:
         static_feature_extractor = ScootFeatures(**kwargs)

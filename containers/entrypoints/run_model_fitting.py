@@ -75,7 +75,7 @@ def main():
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_test_data_arrays(dropna=False)
-  
+
     # Fit the model
     model_fitter = SVGP()
 
@@ -91,8 +91,11 @@ def main():
     Y_pred = model_fitter.predict(predict_data_dict['X'])
 
     # Write the model results to the database
-    model_data.update_model_results_table(predict_data_dict=predict_data_dict, Y_pred=Y_pred, model_fit_info=model_fit_info)
+    model_data.update_model_results_table(predict_data_dict=predict_data_dict,
+                                          Y_pred=Y_pred,
+                                          model_fit_info=model_fit_info)
     model_data.update_remote_tables()
+
 
 if __name__ == "__main__":
     main()

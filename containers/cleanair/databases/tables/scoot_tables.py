@@ -56,16 +56,18 @@ class ScootDetector(DeferredReflection, Base):
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
         return "<ScootDetector(" + ", ".join(vals)
 
+
 class ScootRoadMatch(Base):
     """Table of Scoot sensors and their closest roads"""
     __tablename__ = "scoot_road_match"
     __table_args__ = {"schema": "dynamic_features"}
 
     road_toid = Column(String(), ForeignKey("static_data.oshighway_roadlink.toid"),
-                         primary_key=True, nullable=False)
+                       primary_key=True, nullable=False)
     detector_n = Column(String(), ForeignKey("interest_points.scoot_detector.detector_n"),
-                         primary_key=True, nullable=False)
+                        primary_key=True, nullable=False)
     scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)
+
 
 class ScootRoadUnmatched(Base):
     """Table of Scoot sensors and their closest roads"""
@@ -73,7 +75,7 @@ class ScootRoadUnmatched(Base):
     __table_args__ = {"schema": "dynamic_features"}
 
     road_toid = Column(String(), ForeignKey("static_data.oshighway_roadlink.toid"),
-                         primary_key=True, nullable=False)
+                       primary_key=True, nullable=False)
     detector_n = Column(String(), ForeignKey("interest_points.scoot_detector.detector_n"),
-                         primary_key=True, nullable=False)
+                        primary_key=True, nullable=False)
     scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)

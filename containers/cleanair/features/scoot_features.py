@@ -2,16 +2,14 @@
 Scoot feature extraction
 """
 import pandas as pd
-import geopandas as gpd
-import matplotlib.pyplot as plt
 from dateutil.parser import isoparse
-from sqlalchemy import between, cast, func, Integer, literal, or_, asc
-from sqlalchemy.orm import aliased
+from sqlalchemy import asc, func
 from .static_features import Features
-from ..databases import DBWriter
-from ..databases.tables import OSHighway, ScootDetector, ScootReading, MetaPoint, LondonBoundary, ScootRoadMatch, ScootRoadUnmatched
+from ..databases.tables import (OSHighway, ScootDetector, ScootReading,
+                                MetaPoint, ScootRoadMatch, ScootRoadUnmatched)
 
 pd.set_option('display.max_columns', 500)
+
 
 class ScootFeatures(Features):
     """Extract features for Scoot"""
@@ -19,7 +17,6 @@ class ScootFeatures(Features):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        
         # List of features to extract
         self.features = {}
 
@@ -30,31 +27,32 @@ class ScootFeatures(Features):
         self.os_highway_columns = [OSHighway.identifier.label("road_identifier"),
                                    OSHighway.toid.label("road_toid")]
 
-    def join_scoot_with_road(self):        
+    def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
 
         with self.dbcnxn.open_session() as session:
 
             # Distances calculated in lat/lon
-            scoot_info_sq = session.query(MetaPoint.id, 
-                                         *self.scoot_columns,
-                                         *self.os_highway_columns, 
-                                         func.ST_Distance(func.ST_Centroid(OSHighway.geom),
-                                                          MetaPoint.location).label('scoot_road_distance')
-                                         ) \
+            scoot_info_sq = session.query(MetaPoint.id,
+                                          *self.scoot_columns,
+                                          *self.os_highway_columns,
+                                          func.ST_Distance(func.ST_Centroid(OSHighway.geom),
+                                                           MetaPoint.location).label('scoot_road_distance')
+                                          ) \
                                   .join(ScootDetector) \
-                                  .filter(MetaPoint.source == 'scoot', 
+                                  .filter(MetaPoint.source == 'scoot',
                                           OSHighway.identifier == ScootDetector.toid) \
                                   .subquery()
 
-            scoot_info_q = session.query(scoot_info_sq.c.road_toid,                                         
+            scoot_info_q = session.query(scoot_info_sq.c.road_toid,
                                          scoot_info_sq.c.scoot_detector_n,
                                          scoot_info_sq.c.scoot_road_distance)
 
             return scoot_info_q
 
     def join_unmatached_scoot_with_road(self):
-        """For all roads (OSHighway) not matched to a scoot sensor (ScootDetector), match with the closest 5 scoot sensors"""
+        """For all roads (OSHighway) not matched to a scoot sensor (ScootDetector), 
+           match with the closest 5 scoot sensors"""
 
         boundary_geom = self.query_london_boundary()
         matached_roads_sq = self.join_scoot_with_road().subquery()
