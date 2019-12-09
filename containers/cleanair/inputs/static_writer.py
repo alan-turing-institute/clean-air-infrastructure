@@ -143,18 +143,16 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.schema_table),
                 """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.schema_table),
                 """ALTER TABLE {} ADD PRIMARY KEY (hex_id);""".format(self.schema_table),
-                """INSERT INTO interest_points.meta_point(source, location, id)
-                       SELECT 'hexgrid', centroid, uuid_generate_v4()
-                       FROM {};""".format(self.schema_table),
                 """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.schema_table),
                 """ALTER TABLE {}
                        ADD CONSTRAINT fk_hexgrid_id FOREIGN KEY (point_id)
                        REFERENCES interest_points.meta_point(id)
                        ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
                 """UPDATE {0}
-                       SET point_id = interest_points.meta_point.id
-                       FROM interest_points.meta_point
-                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.schema_table),
+                        SET point_id = uuid_generate_v4();""".format(self.schema_table),
+                """INSERT INTO interest_points.meta_point(source, location, id)
+                       SELECT 'hexgrid', centroid, point_id
+                       FROM {};""".format(self.schema_table),
                 """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
             ]
 
