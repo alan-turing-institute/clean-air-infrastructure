@@ -219,7 +219,8 @@ class StaticFeatures(Features):
             # Construct filters
             filter_list = []  
             if feature_name == "building_height":  # filter out unreasonably tall buildings from UKMap
-                filter_list.append(UKMap.calculated_height_of_building < 999.9)  
+                filter_list.append(UKMap.calculated_height_of_building < 999.9)
+                filter_list.append(UKMap.feature_type == 'Building')   
             for column, values in self.features[feature_name]["feature_dict"].items():
                 if (len(values) == 1) and (values[0] != '*'):
                     filter_list.append(or_(*[getattr(self.table, column) == value for value in values]))
