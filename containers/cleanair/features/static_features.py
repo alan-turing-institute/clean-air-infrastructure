@@ -5,7 +5,7 @@ import time
 from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
-from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint
+from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint, UKMap
 from ..loggers import duration, green, get_logger
 
 class Features(DBWriter):
@@ -205,7 +205,7 @@ class StaticFeatures(Features):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        # self.calculate_intersections()
+        self.calculate_intersections()
         self.aggregate_geom_features()
 
     def query_features(self, feature_name):
@@ -264,7 +264,7 @@ class StaticFeatures(Features):
                                             literal(feature_name).label("feature_name"),
                                             *[func.coalesce(agg_func(
                                                 getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0) 
+                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
                                               .label(str(radius))
                                               for radius in self.buffer_radii_metres]
                                             ).group_by(sq_within.c.id)
