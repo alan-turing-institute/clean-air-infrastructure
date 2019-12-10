@@ -22,3 +22,6 @@ termcolor
 uuid
 # git+https://github.com/GPflow/GPflow.git#egg=gpflow
 plotly
+pyproj
+geos
+
