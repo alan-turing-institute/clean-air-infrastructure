@@ -195,7 +195,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
      
     def process_satellite_data(self):
 
-        grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'archive')
+        grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
 
         # Write the grib file to a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -211,6 +211,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             grib_data_df['no2'] = grib_data_df['val']*1000000000 #convert to the correct units
 
             print(grib_data_df.columns)
+            print(grib_data_df)
     
     def discretise_grid_data(self, grid_data_df):
         """Pass a dataframe of the type returned by self.process_satellite_data and discretise"""
