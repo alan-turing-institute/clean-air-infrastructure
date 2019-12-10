@@ -167,6 +167,8 @@ class StaticWriter(DBWriter):
                        DROP COLUMN orig_fid;""".format(self.schema_table),
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.schema_table),
                 """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.schema_table),
+                 """CREATE INDEX IF NOT EXISTS rectgrid_100_centroid_geom_idx
+                       ON {} USING GIST(centroid);""".format(self.schema_table),
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT 'grid_100', centroid, uuid_generate_v4()
                        FROM {};""".format(self.schema_table),
