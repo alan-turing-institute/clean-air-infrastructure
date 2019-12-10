@@ -368,7 +368,7 @@ class ModelDataReader(DBReader, DBWriter):
         """Update the model results table with the model results"""
 
         record_cols = ['tag', 'fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
-        df_cols = elf.normalised_test_data_df
+        df_cols = self.normalised_test_data_df
         for col in record_cols:
             if col not in df_cols:
                 raise AttributeError("""The data frame must contain the following columns: {}. 
