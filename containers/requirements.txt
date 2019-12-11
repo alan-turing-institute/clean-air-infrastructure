@@ -10,6 +10,8 @@ geoalchemy2
 geopandas
 matplotlib
 pandas
+numpy
+scipy
 psycopg2-binary
 pycodestyle
 pyflakes
@@ -20,5 +22,6 @@ requests
 sqlalchemy
 termcolor
 uuid
-# git+https://github.com/GPflow/GPflow.git#egg=gpflow
+tensorflow
+gpflow==2.0.0rc1
 plotly
