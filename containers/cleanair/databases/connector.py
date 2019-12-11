@@ -50,7 +50,7 @@ class Connector():
         try:
             with open(secret_file) as f_secret:
                 data = json.load(f_secret)
-                self.logger.info("Database connection information loaded from %s", green(secret_fname))
+                self.logger.info("Database connection information loaded from %s", green(f_secret))
                 return data
                 
         except FileNotFoundError:
