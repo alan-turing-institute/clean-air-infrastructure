@@ -13,7 +13,7 @@ class ModelResult(Base):
 
     tag = Column(String(32), nullable=False)
     fit_start_time = Column(TIMESTAMP, primary_key=True, nullable=False)
-    point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), nullable=False)
+    point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     predict_mean = Column(DOUBLE_PRECISION, nullable=False)
     predict_var = Column(DOUBLE_PRECISION, nullable=False)
