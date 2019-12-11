@@ -26,7 +26,7 @@ def main():
 
     parser.add_argument("--trainend", type=str, default='2019-11-01T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=168,
+    parser.add_argument("--trainhours", type=int, default=24,
                         help="The number of hours to get training data for.")
     parser.add_argument("--predstart", type=str, default='2019-11-01T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
@@ -66,7 +66,7 @@ def main():
     model_params = {'lengthscale': 0.1,
                     'variance': 0.1,
                     'minibatch_size': 100,
-                    'n_inducing_points': 3000}
+                    'n_inducing_points': 2000}
 
     # Get the model data
     model_data = ModelData(**kwargs)
@@ -87,14 +87,16 @@ def main():
     # Get info about the model fit
     model_fit_info = model_fitter.fit_info()
 
-    # Do prediction and write to database
+    # # Do prediction and write to database
     Y_pred = model_fitter.predict(predict_data_dict['X'])
 
     # Write the model results to the database
     model_data.update_model_results_table(predict_data_dict=predict_data_dict,
                                           Y_pred=Y_pred,
                                           model_fit_info=model_fit_info)
-    model_data.update_remote_tables()
+
+    # print(model_data.normalised_test_data_df)
+    # model_data.update_remote_tables()
 
 
 if __name__ == "__main__":

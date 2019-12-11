@@ -352,7 +352,7 @@ class ModelDataReader(DBReader, DBWriter):
                               how='left')
         return model_data
 
-    def update_model_results_table(self, predict_data_dict, Y_pred, model_fit_info):
+    def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
 
         # # Create new dataframe with predictions
         predict_df = pd.DataFrame(index=predict_data_dict['index'])
