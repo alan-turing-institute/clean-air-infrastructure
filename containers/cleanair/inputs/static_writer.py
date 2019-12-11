@@ -176,9 +176,9 @@ class StaticWriter(DBWriter):
                        REFERENCES interest_points.meta_point(id)
                        ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
                 """UPDATE {0}
-                       SET point_id = interest_points.meta_point.id
-                       FROM interest_points.meta_point
-                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.schema_table),
+                       SET point_id = meta_points.id
+                       FROM (SELECT * FROM interest_points.meta_point WHERE source = 'grid_100') as meta_points
+                       WHERE {0}.centroid = meta_points.location;""".format(self.schema_table),
                 """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
             ]
 
@@ -211,7 +211,6 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
-                       DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,

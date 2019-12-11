@@ -4,6 +4,7 @@ Table writer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
 from ..loggers import get_logger
 
@@ -21,17 +22,32 @@ class DBWriter(DBInteractor):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def __add_records_core(self, records, table):
-        """Add records using sqlalchemy core"""
-        insert_stmt = insert(table).values(records)
-        try:
-            self.logger.debug("Attempting to add all records.")
-            self.dbcnxn.engine.execute(insert_stmt)
+    def __add_records_core(self, session, records, table, on_conflict_do_nothing=True):
+        """Add records using sqlalchemy core
+        args:
+            records: Either a list of dictionary or an slqalchemy subquery
+            table: An sqlalchemy table object
+            on_conflict_do_nothing: Bool, when False will raise error if conflicts with existing database entires"""
 
-        except IntegrityError:
-            self.logger.debug("Duplicate records found. Attempting to add non duplicate records")
+        if isinstance(records, SUBQUERY_TYPE):
+            select_stmt = records.select()
+            columns = inspect(table).columns
+            insert_stmt = insert(table).from_select(columns, select_stmt)
+        elif isinstance(records, list):
+            insert_stmt = insert(table).values(records)
+        else:
+            raise TypeError('records arg must be a dict or sqlalchemy subquery')
+
+        # Insert records
+        if on_conflict_do_nothing:
+            self.logger.debug("Add records, ignoring duplicates")
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(index_elements=inspect(table).primary_key)
-            self.dbcnxn.engine.execute(on_duplicate_key_stmt)
+            session.execute(on_duplicate_key_stmt)
+            session.commit()
+        else:
+            self.logger.debug("Attempting to add all records.")
+            session.execute(insert_stmt)
+            session.commit()
 
     def __add_records_orm(self, session, records, flush=False):
         """Add records using sqlalchemy ORM"""
@@ -57,14 +73,23 @@ class DBWriter(DBInteractor):
                 self.logger.debug("Flushing transaction...")
                 session.flush()
 
-    def add_records(self, session, records, flush=False, table=None):
+    def add_records(self, session, records, flush=False, table=None, on_conflict_do_nothing=True):
         """
         Commit records to the database
+
+        args:
+            session: a session object
+            records: Either a list of sqlalchemy records, list of dictionaries (table arg must be provided)
+                        or an sqlalchemy subquery object (table arg must be provided)
+            flush: If using the orm (sqlalchemy records) set True to avoid merge conflicts
+            table: Optional. sqlalchemy table. If table provide sqlalchemy core used for insert
+            on_conflict_do_nothing: bool (default True). Core will ignore duplicate entires.
+
         If table is provided it will insert using sqlalchemy's core rather than the ORM.
         """
 
         if table:
-            self.__add_records_core(records, table)
+            self.__add_records_core(session, records, table, on_conflict_do_nothing)
         else:
             self.__add_records_orm(session, records, flush)
 

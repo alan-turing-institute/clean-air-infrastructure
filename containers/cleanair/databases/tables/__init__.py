@@ -9,8 +9,9 @@ from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
 from .oshighway_table import OSHighway
 from .rectgrid_table import RectGrid, RectGrid100
-from .scoot_tables import ScootReading, ScootDetector
-from .ukmap_table import UKMap
+from .scoot_tables import ScootReading, ScootDetector, ScootRoadMatch, ScootRoadUnmatched
+from .ukmap_tables import UKMap
+from .street_canyon_tables import StreetCanyon
 from .model_results_table import ModelResult
 
 
@@ -29,6 +30,9 @@ __all__ = [
     "RectGrid100",
     "ScootDetector",
     "ScootReading",
+    "ScootRoadMatch",
+    "ScootRoadUnmatched",
     "UKMap",
+    "StreetCanyon",
     "ModelResult",
 ]

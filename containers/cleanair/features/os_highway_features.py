@@ -13,6 +13,7 @@ class OSHighwayFeatures(StaticFeatures):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        self.table = OSHighway
         # List of features to extract
         self.features = {
             "total_road_length": {"type": "geom",
@@ -31,15 +32,3 @@ class OSHighwayFeatures(StaticFeatures):
                              "feature_dict":  {"route_hierarchy": ["*"]},
                              "aggfunc": sum_length},
         }
-
-    def query_features(self, feature_name):
-        """Query OS highways, selecting all features matching the requirements in feature_dict"""
-        with self.dbcnxn.open_session() as session:
-            columns = [OSHighway.geom, OSHighway.route_hierarchy]
-            q_source = session.query(*columns)
-            for column, values in self.features[feature_name]["feature_dict"].items():
-                q_source = q_source.filter(or_(*[getattr(OSHighway, column) == value for value in values]))
-        return q_source
-
-    def query_feature_values(self, feature_name, q_metapoints, q_geometries):
-        pass
