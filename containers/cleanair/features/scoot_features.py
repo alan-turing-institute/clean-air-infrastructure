@@ -89,14 +89,12 @@ class ScootFeatures(Features):
             return cross_q
 
     def get_all_road_matched(self):
-        """Return union between ScootRoadMatch and ScootRoadUnmatched"""
-
-        
+        """Return union between ScootRoadMatch and ScootRoadUnmatched"""        
 
         with self.dbcnxn.open_session() as session:
             road_matched = session.query(ScootRoadMatch)
             road_unmatched = session.query(ScootRoadUnmatched)
-            all_road_matched = road_matched.union(road_unmatched)
+            all_road_matched = road_matched.union_all(road_unmatched)
 
             print(road_matched.count())
             print(road_unmatched.count())
@@ -202,7 +200,7 @@ class ScootFeatures(Features):
 
     def update_remote_tables(self):
         """Update all remote tables"""
-        self.insert_closest_roads()
+        # self.insert_closest_roads()
         self.update_average_traffic()
 
         
