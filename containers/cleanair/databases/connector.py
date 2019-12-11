@@ -49,7 +49,7 @@ class Connector():
         # Attempt to open assuming secret_file is full path
         try:
             with open(secret_file) as f_secret:
-                    data = json.load(f_secret)
+                data = json.load(f_secret)
                 self.logger.info("Database connection information loaded from %s", green(secret_fname))
                 return data
                 
