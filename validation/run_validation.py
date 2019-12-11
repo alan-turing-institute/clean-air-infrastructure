@@ -52,8 +52,10 @@ if __name__ == "__main__":
                     'minibatch_size': 100,
                     'n_inducing_points': 3000}
 
+
     # Get the model data
-    model_data = ModelData()
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+    model_data = ModelData(secretfile=secret_fp)
     model_data.initialise(config=model_config)
 
     # training_data_dict = model_data.training_data_df
