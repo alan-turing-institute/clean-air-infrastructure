@@ -7,6 +7,17 @@ sys.path.append("../containers")
 
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
+from cleanair.databases import DBReader, LAQNSite
+
+def get_LAQN_sensor_info(secret_fp):
+
+    db_reader = DBReader(secretfile=secret_fp)
+
+    with db_reader.dbcnxn.open_session() as session:
+        
+        LAQN_table = session.query(LAQNSite)
+
+        return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
 def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
@@ -66,6 +77,9 @@ if __name__ == "__main__":
 
     # Get the model data
     secret_fp = "../terraform/.secrets/db_secrets.json"
+
+    sensor_info_df = get_LAQN_sensor_info(secret_fp)
+
     model_data = ModelData(secretfile=secret_fp)
     model_data.initialise(config=model_config)
 
@@ -85,26 +99,34 @@ if __name__ == "__main__":
     print("X train shape:", training_data_dict["X"].shape)
     print("y train shape:", training_data_dict["Y"].shape)
 
-    model_fitter.fit(training_data_dict['X'],
-                     training_data_dict['Y'],
-                     max_iter=5,
-                     model_params=model_params,
-                     refresh=1)
+    # model_fitter.fit(training_data_dict['X'],
+    #                  training_data_dict['Y'],
+    #                  max_iter=5,
+    #                  model_params=model_params,
+    #                  refresh=1)
 
-    # # Get info about the model fit
-    model_fit_info = model_fitter.fit_info()
+    # # # Get info about the model fit
+    # model_fit_info = model_fitter.fit_info()
 
-    # # Do prediction and write to database
-    print("X predict shape:", predict_data_dict["X"].shape)
-    Y_pred = model_fitter.predict(predict_data_dict['X'])
+    # # # Do prediction and write to database
+    # print("X predict shape:", predict_data_dict["X"].shape)
+    # Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    print("Y predict shape:", Y_pred.shape)
+    # print("Y predict shape:", Y_pred.shape)
 
-    # # Write the model results to the database
-    model_data.update_model_results_table(
-        predict_data_dict=predict_data_dict,
-        Y_pred=Y_pred,
-        model_fit_info=model_fit_info
-    )
+    # # # Write the model results to the database
+    # model_data.update_model_results_table(
+    #     predict_data_dict=predict_data_dict,
+    #     Y_pred=Y_pred,
+    #     model_fit_info=model_fit_info
+    # )
 
-    print(model_data.normalised_test_data_df["predict_mean"])
+    # print(model_data.normalised_test_data_df["predict_mean"])
+
+
+    # Get LAQN Table
+
+    
+
+
+
