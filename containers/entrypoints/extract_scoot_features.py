@@ -28,12 +28,15 @@ def main():
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
+    # List which sources to process
+    kwargs["sources"] = ["aqe", "laqn"]
+
     # Extract features and notify any exceptions
     try:
         static_feature_extractor = ScootFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
-        static_feature_extractor.update_scoot_road_reading_tables(find_closest_road=False)
-        static_feature_extractor.update_remote_tables()
+        # static_feature_extractor.update_scoot_road_reading_tables(find_closest_road=False)
+        static_feature_extractor.update_remote_tables() 
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
