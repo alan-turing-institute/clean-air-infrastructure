@@ -157,4 +157,4 @@ if __name__ == "__main__":
         model_fit_info=model_fit_info
     )
 
-    print(model_data.normalised_pred_data_df["predict_mean"])
+    print(model_data.normalised_pred_data_df[["predict_mean", "predict_var"]])
