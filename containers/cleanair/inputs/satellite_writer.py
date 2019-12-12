@@ -12,9 +12,10 @@ from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 class Satwriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """
-    Get Satellite data from 
+    Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
     """
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)

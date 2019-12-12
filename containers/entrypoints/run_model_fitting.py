@@ -94,8 +94,8 @@ def main():
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(predict_data_dict=predict_data_dict,
-                                          Y_pred=Y_pred,
-                                          model_fit_info=model_fit_info)
+                                       Y_pred=Y_pred,
+                                       model_fit_info=model_fit_info)
 
     # Write the model results to the database
     model_data.update_remote_tables()

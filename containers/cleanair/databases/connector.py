@@ -52,12 +52,13 @@ class Connector():
                 data = json.load(f_secret)
                 self.logger.info("Database connection information loaded from %s", green(f_secret))
                 return data
-                
+
         except FileNotFoundError:
 
             # Construct available secrets files
             secrets_directories = ["/secrets", "./terraform/.secrets/"]
-            secrets_files = [f for f in [os.path.join(s, secret_file) for s in secrets_directories] if os.path.isfile(f)]
+            secrets_files = [f for f in [os.path.join(s, secret_file)
+                             for s in secrets_directories] if os.path.isfile(f)]
 
             # Check that at least one can be seen
             if not secrets_files:

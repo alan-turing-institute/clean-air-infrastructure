@@ -3,15 +3,16 @@ Feature extraction Base  class
 """
 import time
 from sqlalchemy import func, literal, tuple_, or_
-from sqlalchemy.dialects.postgresql import insert
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint, UKMap
 from ..loggers import duration, green, get_logger
 
+
 class Features(DBWriter):
     """Feature processing base class"""
+
     def __init__(self, **kwargs):
-       
+
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -28,7 +29,7 @@ class Features(DBWriter):
         with self.dbcnxn.open_session() as session:
             hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
         return hull
-    
+
     def query_meta_points(self, include_sources=None, with_buffers=False):
         """Query MetaPoints, selecting all matching include_sources"""
         boundary_geom = self.query_london_boundary()
@@ -42,9 +43,14 @@ class Features(DBWriter):
                 _query = _query.filter(MetaPoint.source.in_(include_sources))
         return _query
 
+    def update_remote_tables(self):
+        """Update all relevant tables on the remote database"""
+        raise NotImplementedError("Must be implemented by child classes")
+
 
 class StaticFeatures(Features):
     """Extract features which are near to a given set of MetaPoints and inside London"""
+
     def __init__(self, **kwargs):
 
         self.sources = kwargs.pop("sources", [])
@@ -61,7 +67,7 @@ class StaticFeatures(Features):
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]
 
         # Define in inhereting classes
-        self.features = None    
+        self.features = None
 
     def query_feature_geoms(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
@@ -93,20 +99,22 @@ class StaticFeatures(Features):
 
             # Group these by interest point, unioning geometries: [Npoints records]
             sq_intersections = session.query(sq_within.c.id,
-                                            literal(feature_name).label("feature_name"),
-                                            *[func.ST_ForceCollection(
-                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
-                                                .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
-                                                ).label("geom_{}".format(radius))
-                                              for radius in self.buffer_radii_metres]
-                                            ).group_by(sq_within.c.id).subquery()
+                                             literal(feature_name).label("feature_name"),
+                                             *[func.ST_ForceCollection(
+                                                 func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                 .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                             ).label("geom_{}".format(radius))
+                                               for radius in self.buffer_radii_metres]
+                                             ).group_by(sq_within.c.id).subquery()
 
-            # Join with meta points to ensure every meta point gets an entry, even if there is no intersection in the buffer
+            # Join with meta points to ensure every meta point gets an entry,
+            # even if there is no intersection in the buffer
             q_intersections = session.query(sq_metapoints.c.id,
                                             literal(feature_name).label("feature_name"),
-                                            *[getattr(sq_intersections.c, "geom_{}".format(radius)) 
-                                                for radius in self.buffer_radii_metres]
-                                            ).join(sq_intersections, sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
+                                            *[getattr(sq_intersections.c, "geom_{}".format(radius))
+                                              for radius in self.buffer_radii_metres]
+                                            ).join(sq_intersections,
+                                                   sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
 
         # Return the overall query
         return q_intersections
@@ -133,7 +141,7 @@ class StaticFeatures(Features):
                              feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(batch_start, batch_stop)
             select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery()
-            yield select_stmt           
+            yield select_stmt
 
     def process_geom_features(self, feature_name, q_metapoints, q_source):
         """
@@ -206,7 +214,7 @@ class StaticFeatures(Features):
                                                     IntersectionGeom.point_id).subquery()
 
                     self.add_records(session, select_stmt, table=IntersectionValue)
-                    
+
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
 
@@ -219,15 +227,16 @@ class StaticFeatures(Features):
         """Query features selecting all features matching the requirements in self.feature_dict"""
         with self.dbcnxn.open_session() as session:
             # Construct column selector for feature
-            columns = [self.table.geom]    
-            columns = columns + [getattr(self.table, feature) for feature in self.features[feature_name]['feature_dict'].keys()]
-  
+            columns = [self.table.geom]
+            columns = columns + [getattr(self.table, feature)
+                                 for feature in self.features[feature_name]['feature_dict'].keys()]
+
             q_source = session.query(*columns)
             # Construct filters
-            filter_list = []  
+            filter_list = []
             if feature_name == "building_height":  # filter out unreasonably tall buildings from UKMap
                 filter_list.append(UKMap.calculated_height_of_building < 999.9)
-                filter_list.append(UKMap.feature_type == 'Building')   
+                filter_list.append(UKMap.feature_type == 'Building')
             for column, values in self.features[feature_name]["feature_dict"].items():
                 if (len(values) == 1) and (values[0] != '*'):
                     filter_list.append(or_(*[getattr(self.table, column) == value for value in values]))
@@ -236,9 +245,10 @@ class StaticFeatures(Features):
 
     def query_feature_values(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
-        
+
         agg_func = self.features[feature_name]['aggfunc']
-        value_column = list(self.features[feature_name]["feature_dict"].keys())[0] #If its a value, there should only be one key
+        value_column = list(self.features[feature_name]["feature_dict"].keys())[
+            0]  # If its a value, there should only be one key
 
         with self.dbcnxn.open_session() as session:
             # Cross join interest point and geometry queries...
@@ -269,22 +279,22 @@ class StaticFeatures(Features):
             # Now group these by interest point, aggregating the height columns using the maximum in each group
             # => [Npoints records]
             sq_intersections = session.query(sq_within.c.id,
-                                            literal(feature_name).label("feature_name"),
-                                            *[func.coalesce(agg_func(
-                                                getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                              .label("value_{}".format(radius))
-                                              for radius in self.buffer_radii_metres]
-                                            ).group_by(sq_within.c.id).subquery()
+                                             literal(feature_name).label("feature_name"),
+                                             *[func.coalesce(agg_func(
+                                                 getattr(sq_within.c, value_column)
+                                             ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
+                                               .label("value_{}".format(radius))
+                                               for radius in self.buffer_radii_metres]
+                                             ).group_by(sq_within.c.id).subquery()
 
-
-            # Join with meta points to ensure every meta point gets an entry, even if there is no intersection in the buffer
+            # Join with meta points to ensure every meta point gets an entry,
+            # even if there is no intersection in the buffer
             q_intersections = session.query(sq_metapoints.c.id,
                                             literal(feature_name).label("feature_name"),
-                                            *[getattr(sq_intersections.c, "value_{}".format(radius)) 
-                                                for radius in self.buffer_radii_metres]
-                                            ).join(sq_intersections, sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
+                                            *[getattr(sq_intersections.c, "value_{}".format(radius))
+                                              for radius in self.buffer_radii_metres]
+                                            ).join(sq_intersections,
+                                                   sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
 
         # Return the overall query
         return q_intersections
-
