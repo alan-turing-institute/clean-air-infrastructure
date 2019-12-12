@@ -68,6 +68,10 @@ class ScootRoadMatch(Base):
                         primary_key=True, nullable=False)
     scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)
 
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<ScootRoadMatch(" + ", ".join(vals)
+
 
 class ScootRoadUnmatched(Base):
     """Table of Scoot sensors and their closest roads"""
@@ -79,3 +83,27 @@ class ScootRoadUnmatched(Base):
     detector_n = Column(String(), ForeignKey("interest_points.scoot_detector.detector_n"),
                         primary_key=True, nullable=False)
     scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<ScootRoadUnmatch(" + ", ".join(vals)
+
+class ScootRoadReading(Base):
+    """Table of scoot readings mapped to road segments"""
+    __tablename__ = "scoot_road_readings"
+    __table_args__ = {"schema": "dynamic_features"}
+
+    road_toid = Column(String(), ForeignKey("static_data.oshighway_roadlink.toid"),
+                       primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    occupancy_percentage = Column(DOUBLE_PRECISION)
+    congestion_percentage = Column(DOUBLE_PRECISION)
+    saturation_percentage = Column(DOUBLE_PRECISION)
+    flow_raw_count = Column(DOUBLE_PRECISION)
+    occupancy_raw_count = Column(DOUBLE_PRECISION)
+    congestion_raw_count = Column(DOUBLE_PRECISION)
+    saturation_raw_count = Column(DOUBLE_PRECISION)
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<ScootRoadReading(" + ", ".join(vals)

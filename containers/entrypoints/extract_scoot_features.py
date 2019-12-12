@@ -1,5 +1,5 @@
 """
-UKMap Feature extraction
+Scoot Feature extraction
 """
 import argparse
 import logging
@@ -9,15 +9,20 @@ from cleanair.features import ScootFeatures
 
 def main():
     """
-    Extract static features
+    Extract scoot features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract static UKMap features")
+    parser = argparse.ArgumentParser(description="Extract scoot features")
+    parser.add_argument("-e", "--end", type=str, default="yesterday",
+                        help="The last date (YYYY-MM-DD) to get data for.")
+    parser.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for.")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
     args = parser.parse_args()
+    if args.ndays < 1:
+        raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
     kwargs = vars(args)
