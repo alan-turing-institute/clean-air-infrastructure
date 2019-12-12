@@ -40,7 +40,7 @@ def main():
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-    # Get training and test start and end datetimes
+    # Get training and pred start and end datetimes
     train_end = kwargs.pop('trainend')
     train_n_hours = kwargs.pop('trainhours')
     pred_start = kwargs.pop('predstart')
@@ -56,6 +56,8 @@ def main():
 
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
+                    'train_interest_points': 'all',
+                    'pred_interest_points': 'all',
                     'species': ['NO2'],
                     'features': ['value_1000_building_height'],
                     'norm_by': 'laqn',
@@ -74,7 +76,7 @@ def main():
 
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_test_data_arrays(dropna=False)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # Fit the model
     model_fitter = SVGP()
@@ -90,13 +92,13 @@ def main():
     # # Do prediction and write to database
     Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    # Write the model results to the database
-    model_data.update_model_results_table(predict_data_dict=predict_data_dict,
+    # Internally update the model results in the ModelData object
+    model_data.update_model_results_df(predict_data_dict=predict_data_dict,
                                           Y_pred=Y_pred,
                                           model_fit_info=model_fit_info)
 
-    # print(model_data.normalised_test_data_df)
-    # model_data.update_remote_tables()
+    # Write the model results to the database
+    model_data.update_remote_tables()
 
 
 if __name__ == "__main__":
