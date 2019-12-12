@@ -65,18 +65,20 @@ class SVGP():
                  'minibatch_size': 100,
                  'n_inducing_points': 3000}
         """
-
         self.logger.info("Model fitting: Preparing to fit model")
-
-        if not model_params:
-            model_params = dict(lengthscale=0.1, variance=0.1, minibatch_size=500, n_inducing_points=3000)
-            self.logger.info('Model fitting: No model_params provided. Using defaults')
 
         # Prepare data
         x_array = X.copy()
         y_array = Y.copy()
         n_data_points = x_array.shape[0]  # Number of datapoints
         k_covariates = x_array.shape[1]  # Number of covariates
+
+        # if not model_params:
+        #     model_params = dict(lengthscale=0.1, variance=0.1, minibatch_size=500, n_inducing_points=int(n_data_points * .2))
+        #     self.logger.info('Model fitting: No model_params provided. Using defaults')
+        
+        if model_params['n_inducing_points'] > n_data_points:
+            raise ValueError("model_params['n_inducing_points'] is larger than the number of data points {}".format(n_data_points))
 
         # Slice data for batches
         train_dataset = tf.data.Dataset.from_tensor_slices((x_array, y_array)).repeat().shuffle(n_data_points)

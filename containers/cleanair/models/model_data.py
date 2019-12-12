@@ -52,6 +52,32 @@ class ModelDataReader(DBReader, DBWriter):
             raise AttributeError("The following sources are not available the cleanair database: {}"
                                  .format(unavailable_sources))
 
+    def __check_interest_points_in_database(self, interest_points, sources):
+
+        print(interest_points, sources)
+        with self.dbcnxn.open_session() as session:
+
+            interest_point_query = session.query(
+                                                MetaPoint.id,
+                                                MetaPoint.source,
+                                                MetaPoint.location,
+                                                func.ST_X(MetaPoint.location).label('lon'),
+                                                func.ST_Y(MetaPoint.location).label('lat')
+                                                ).filter(MetaPoint.source.in_(sources))
+
+            available_interest_points = pd.read_sql(interest_point_query.statement,
+                                                    interest_point_query.session.bind)['id'].astype(str).values
+
+            unavailable_interest_points = []
+
+            for point in interest_points:
+                if point not in available_interest_points:
+                    unavailable_interest_points.append(point)
+
+            if unavailable_interest_points:
+                raise AttributeError("The following interest points are not available the cleanair database: {}"
+                                     .format(unavailable_interest_points))                                          
+
     def list_available_features(self):
         """Return a list of the available features in the database"""
 
@@ -220,7 +246,7 @@ class ModelDataReader(DBReader, DBWriter):
                 func.ST_Y(MetaPoint.location).label('lat')
                 ).filter(MetaPoint.source.in_(sources))
 
-            if point_ids is not None:
+            if point_ids:
                 interest_point_query = interest_point_query.filter(MetaPoint.id.in_(point_ids))
 
             # Select into into dataframes
@@ -317,16 +343,16 @@ class ModelDataReader(DBReader, DBWriter):
 
         return sensor_df[species].reset_index()
 
-    def get_model_features(self, start_date, end_date, sources=None):
+    def get_model_features(self, start_date, end_date, sources=None, point_ids=None):
         """
         Query the database for model features
         """
-        static_features = self.select_static_features(sources=sources)
+        static_features = self.select_static_features(sources=sources, point_ids=point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
 
         return static_features_expand
 
-    def get_model_inputs(self, start_date, end_date, sources=None, species=None):
+    def get_model_inputs(self, start_date, end_date, sources=None, species=None, point_ids=None):
         """
         Query the database to get inputs for model fitting. Returns all features.
 
@@ -342,7 +368,7 @@ class ModelDataReader(DBReader, DBWriter):
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)        
-        static_features_expand = self.get_model_features(start_date, end_date, sources)
+        static_features_expand = self.get_model_features(start_date, end_date, sources=sources, point_ids=point_ids)
 
         self.logger.debug("Merging sensor data and model features")
 
@@ -352,7 +378,7 @@ class ModelDataReader(DBReader, DBWriter):
                               how='left')
         return model_data
 
-    def update_model_results_table(self, predict_data_dict, Y_pred, model_fit_info):
+    def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
 
         # # Create new dataframe with predictions
         predict_df = pd.DataFrame(index=predict_data_dict['index'])
@@ -362,20 +388,21 @@ class ModelDataReader(DBReader, DBWriter):
         predict_df['tag'] = self.tag
 
         # # Concat the predictions with the predict_df
-        self.normalised_test_data_df = pd.concat([self.normalised_test_data_df, predict_df], axis=1, ignore_index=False)
+        self.normalised_pred_data_df = pd.concat([self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False)
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
 
         record_cols = ['tag', 'fit_start_time', 'point_id', 'measurement_start_utc', 'predict_mean', 'predict_var']
-        df_cols = self.normalised_test_data_df
+        df_cols = self.normalised_pred_data_df
         for col in record_cols:
             if col not in df_cols:
                 raise AttributeError("""The data frame must contain the following columns: {}. 
-                                        Ensure model results have been passed to ModelData.update_model_results_table()""".format(record_cols))
+                                        Ensure model results have been passed to ModelData.update_model_results_df()""".format(record_cols))
 
-        upload_records = self.normalised_test_data_df[record_cols].to_dict('records')
+        upload_records = self.normalised_pred_data_df[record_cols].to_dict('records')
 
+        self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
             self.add_records(session, upload_records, flush=True, table=ModelResult)
 
@@ -394,9 +421,9 @@ class ModelData(ModelDataReader):
         self.x_names = None
         self.y_names = None
         self.training_data_df = None
-        self.test_data_df = None
+        self.pred_data_df = None
         self.normalised_training_data_df = None
-        self.normalise_test_data_df = None
+        self.normalised_pred_data_df = None
 
     def initialise(self, config):
         """
@@ -413,6 +440,8 @@ class ModelData(ModelDataReader):
 
                 "train_sources": ["laqn", "aqe"],
                 "pred_sources": ["laqn", "aqe"],
+                "train_interest_points": ['point_id1', 'point_id2'],
+                "pred_interest_points": ['point_id1', 'point_id2'],
                 "species": ["NO2"],
                 "features": "all",
                 "norm_by": "laqn",
@@ -432,14 +461,23 @@ class ModelData(ModelDataReader):
         self.pred_end_date = config['pred_end_date']
         self.train_sources = config['train_sources']
         self.pred_sources = config['pred_sources']
-        self.species = config['species']
+        if config['train_interest_points'] == 'all':
+            self.train_interest_points = None
+        else:
+            self.train_interest_points = config['train_interest_points']
 
+        if config['pred_interest_points'] == 'all':
+            self.pred_interest_points = None
+        else:
+            self.pred_interest_points = config['pred_interest_points']
+
+        self.species = config['species']
         if config['features'] == 'all':
             feature_names = self.list_available_features()
             buff_size = [1000, 500, 200, 100, 10]            
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
-            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
-        
+            self.logger.info("Features 'all' replaced with available features: {}".format(config['features'])) 
+     
         self.features = config['features'] 
         self.norm_by = config['norm_by']       
         self.model_type = config['model_type']
@@ -450,11 +488,11 @@ class ModelData(ModelDataReader):
         self.y_names = self.species      
 
         # Get model data from database using parent class ModelDataReader
-        self.training_data_df = self.get_model_inputs(self.train_start_date, self.train_end_date, self.train_sources, self.species)
+        self.training_data_df = self.get_model_inputs(self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-        self.test_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources)
-        self.normalised_test_data_df = self.__normalise_data(self.test_data_df)
+        self.pred_data_df = self.get_model_features(self.pred_start_date, self.pred_end_date, self.pred_sources, self.pred_interest_points)        
+        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
     def __validate_config(self, config):
 
@@ -464,22 +502,24 @@ class ModelData(ModelDataReader):
                        "pred_end_date",
                        "train_sources",
                        "pred_sources",
+                       "train_interest_points",
+                       "pred_interest_points",
                        "species",
                        "features",
                        "norm_by",
                        "model_type",
-                       'tag', ]
+                       'tag',]
 
-        valid_models = ['svgp', ]
+        valid_models = ['svgp',]
 
         self.logger.info("Validating config")
 
-        # Check keys present
-        for key in config.keys():
-            if key not in config_keys:
-                raise AttributeError("Config dictionary does not contain key: {}".format(key))
+        # Check required config keys present
 
-        # Check features are available
+        if set(config.keys()) != set(config_keys):
+            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
+        
+        # Check requested features are available        
         if config['features'] == 'all':
             features = self.list_available_features()
             if not features:
@@ -488,20 +528,29 @@ class ModelData(ModelDataReader):
             self.logger.debug("Checking requested features are availble in database")
             self._ModelDataReader__check_features_in_database(config['features'])
 
-        # Check sources are available
-        train_sources = config['train_sources']
+        # Check training sources are available
+        train_sources = config['train_sources'] 
         self.logger.debug("Checking requested sources for training are availble in database")
         self._ModelDataReader__check_sources_in_database(train_sources)
 
-        # Check sources are available
-        pred_sources = config['pred_sources']
+        # Check prediction sources are available
+        pred_sources = config['pred_sources'] 
         self.logger.debug("Checking requested sources for prediction are availble in database")
         self._ModelDataReader__check_sources_in_database(pred_sources)
 
         # Check model type is valid
         if config['model_type'] not in valid_models:
-            raise AttributeError("{} is not a valid model type. Use one of the following: {}"
-                                 .format(config['model_type'], valid_models))
+            raise AttributeError("{} is not a valid model type. Use one of the following: {}".format(config['model_type'], 
+                                                                                                     valid_models))
+
+        # Check interest points are valid
+        train_interest_points = config['train_interest_points']
+        if isinstance(train_interest_points, list):
+            self._ModelDataReader__check_interest_points_in_database(train_interest_points, train_sources)
+
+        pred_interest_points = config['pred_interest_points']
+        if isinstance(pred_interest_points, list):
+            self._ModelDataReader__check_interest_points_in_database(pred_interest_points, pred_sources)
 
         self.logger.info("Validate config complete")
 
@@ -554,11 +603,11 @@ class ModelData(ModelDataReader):
         """
         return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
 
-    def get_test_data_arrays(self, return_y=False, dropna=True):
-        """The the test data arrays.
+    def get_pred_data_arrays(self, return_y=False, dropna=True):
+        """The the pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
-        return self.__get_model_data_arrays(self.normalised_test_data_df, return_y=False, dropna=dropna)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
