@@ -9,6 +9,7 @@ from ..loggers import get_logger
 
 class SVGP():
     """Model fitting class"""
+
     def __init__(self):
 
         # Ensure logging is available
@@ -49,9 +50,9 @@ class SVGP():
                 self.logger.info("Model fitting. Iteration: %s, ELBO: %s", step, elbo)
         return logf
 
-    def fit(self, X, Y, max_iter=5000, model_params=None, refresh = 10):
+    def fit(self, X, Y, max_iter=5000, model_params=None, refresh=10):
         """Fit the model
-        
+
         args:
             X: NxM numpy array of N observations of M covariates
             Y: NX1 numpy array of N sensor observations
@@ -74,11 +75,15 @@ class SVGP():
         k_covariates = x_array.shape[1]  # Number of covariates
 
         # if not model_params:
-        #     model_params = dict(lengthscale=0.1, variance=0.1, minibatch_size=500, n_inducing_points=int(n_data_points * .2))
+        #     model_params = dict(lengthscale=0.1,
+        #     variance=0.1,
+        #     minibatch_size=500,
+        #     n_inducing_points=int(n_data_points * .2))
         #     self.logger.info('Model fitting: No model_params provided. Using defaults')
-        
+
         if model_params['n_inducing_points'] > n_data_points:
-            raise ValueError("model_params['n_inducing_points'] is larger than the number of data points {}".format(n_data_points))
+            raise ValueError(
+                "model_params['n_inducing_points'] is larger than the number of data points {}".format(n_data_points))
 
         # Slice data for batches
         train_dataset = tf.data.Dataset.from_tensor_slices((x_array, y_array)).repeat().shuffle(n_data_points)
@@ -96,7 +101,7 @@ class SVGP():
 
     def predict(self, X):
         """Predict values Y from X
-        
+
         args:
             X:  X: NxM numpy array of N observations of M covariates
         """

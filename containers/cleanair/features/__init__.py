@@ -10,4 +10,5 @@ __all__ = [
     "OSHighwayFeatures",
     "UKMapFeatures",
     "StreetCanyonFeatures",
+    "ScootFeatures",
 ]
