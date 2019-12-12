@@ -3,15 +3,18 @@ Feature extraction Base  class
 """
 import time
 from sqlalchemy import func, literal, tuple_, or_
+from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import IntersectionGeom, IntersectionValue, LondonBoundary, MetaPoint, UKMap
 from ..loggers import duration, green, get_logger
 
 
 class Features(DBWriter):
-    """Feature processing base class"""
+    """Extract features which are near to a given set of MetaPoints and inside London"""
 
     def __init__(self, **kwargs):
+
+        self.sources = kwargs.pop("sources", [])
 
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -22,8 +25,17 @@ class Features(DBWriter):
 
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
-        self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+        self.buffer_radii_metres = [1000, 500, 200, 100, 10]        
 
+    @property
+    def features(self):
+        raise NotImplementedError("Must be implemented by child classes")
+
+    @property
+    def table(self):
+        """Either returns an sql table instance or a subquery"""
+        raise NotImplementedError("Must be implemented by child classes")
+    
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
         with self.dbcnxn.open_session() as session:
@@ -43,31 +55,30 @@ class Features(DBWriter):
                 _query = _query.filter(MetaPoint.source.in_(include_sources))
         return _query
 
-    def update_remote_tables(self):
-        """Update all relevant tables on the remote database"""
-        raise NotImplementedError("Must be implemented by child classes")
+    def query_features(self, feature_name):
+        """Query features selecting all features matching the requirements in self.feature_dict"""
 
+        if isinstance(self.table, SUBQUERY_TYPE):
+            table = self.table.c
+        else:
+            table = self.table
+        with self.dbcnxn.open_session() as session:
+            # Construct column selector for feature
+            columns = [table.geom]
+            columns = columns + [getattr(table, feature)
+                                 for feature in self.features[feature_name]['feature_dict'].keys()]
 
-class StaticFeatures(Features):
-    """Extract features which are near to a given set of MetaPoints and inside London"""
-
-    def __init__(self, **kwargs):
-
-        self.sources = kwargs.pop("sources", [])
-
-        # Initialise parent classes
-        super().__init__(**kwargs)
-
-        # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-
-        # Radius around each interest point used for feature extraction.
-        # Changing these would require redefining the database schema
-        self.buffer_radii_metres = [1000, 500, 200, 100, 10]
-
-        # Define in inhereting classes
-        self.features = None
+            q_source = session.query(*columns)
+            # Construct filters
+            filter_list = []
+            if feature_name == "building_height":  # filter out unreasonably tall buildings from UKMap
+                filter_list.append(UKMap.calculated_height_of_building < 999.9)
+                filter_list.append(UKMap.feature_type == 'Building')
+            for column, values in self.features[feature_name]["feature_dict"].items():
+                if (len(values) == 1) and (values[0] != '*'):
+                    filter_list.append(or_(*[getattr(table, column) == value for value in values]))
+            q_source = q_source.filter(*filter_list)
+        return q_source
 
     def query_feature_geoms(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one geometry column per buffer"""
@@ -218,37 +229,12 @@ class StaticFeatures(Features):
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
 
-    def update_remote_tables(self):
-        """Update all remote tables"""
-        self.calculate_intersections()
-        self.aggregate_geom_features()
-
-    def query_features(self, feature_name):
-        """Query features selecting all features matching the requirements in self.feature_dict"""
-        with self.dbcnxn.open_session() as session:
-            # Construct column selector for feature
-            columns = [self.table.geom]
-            columns = columns + [getattr(self.table, feature)
-                                 for feature in self.features[feature_name]['feature_dict'].keys()]
-
-            q_source = session.query(*columns)
-            # Construct filters
-            filter_list = []
-            if feature_name == "building_height":  # filter out unreasonably tall buildings from UKMap
-                filter_list.append(UKMap.calculated_height_of_building < 999.9)
-                filter_list.append(UKMap.feature_type == 'Building')
-            for column, values in self.features[feature_name]["feature_dict"].items():
-                if (len(values) == 1) and (values[0] != '*'):
-                    filter_list.append(or_(*[getattr(self.table, column) == value for value in values]))
-            q_source = q_source.filter(*filter_list)
-        return q_source
-
     def query_feature_values(self, feature_name, q_metapoints, q_geometries):
         """Construct one record for each interest point containing the point ID and one value column per buffer"""
 
         agg_func = self.features[feature_name]['aggfunc']
-        value_column = list(self.features[feature_name]["feature_dict"].keys())[
-            0]  # If its a value, there should only be one key
+        # If its a value, there should only be one key
+        value_column = list(self.features[feature_name]["feature_dict"].keys())[0]
 
         with self.dbcnxn.open_session() as session:
             # Cross join interest point and geometry queries...
@@ -298,3 +284,11 @@ class StaticFeatures(Features):
 
         # Return the overall query
         return q_intersections
+        
+    def update_remote_tables(self):
+        """Update all remote tables"""
+        self.calculate_intersections()
+        self.aggregate_geom_features()
+    
+
+    

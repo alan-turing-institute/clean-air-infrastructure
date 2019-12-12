@@ -1,21 +1,25 @@
 """
 Street Canyon feature extraction
 """
-from .static_features import StaticFeatures
+from .features import Features
 from .feature_funcs import min_, avg_, max_
 from ..databases.tables import StreetCanyon
 
 
-class StreetCanyonFeatures(StaticFeatures):
+class StreetCanyonFeatures(Features):
     """Extract features for StreetCanyon"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        self.table = StreetCanyon
-        # List of features to extract
-        self.features = {
+    @property
+    def table(self):
+        return StreetCanyon
+    
+    @property
+    def features(self):
+        return {
             "min_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': min_},
             "avg_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': avg_},
             "max_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': max_},

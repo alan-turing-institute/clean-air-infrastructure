@@ -4,11 +4,12 @@ Scoot feature extraction
 import pandas as pd
 from dateutil.parser import isoparse
 from sqlalchemy import asc, func
-from .static_features import Features
+from .features import Features
+from .feature_funcs import sum_, avg_, max_
 from ..mixins import DateRangeMixin
 from ..databases.tables import (OSHighway, ScootDetector, ScootReading,
                                 MetaPoint, ScootRoadMatch, ScootRoadUnmatched,
-                                ScootRoadReading)
+                                ScootRoadReading, OSHighway)
 
 
 class ScootFeatures(DateRangeMixin, Features):
@@ -18,15 +19,28 @@ class ScootFeatures(DateRangeMixin, Features):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # List of features to extract
-        self.features = {}
-
         # Subset of columns of interest for table columns
         self.scoot_columns = [ScootDetector.toid.label("scoot_toid"),
                               ScootDetector.detector_n.label("scoot_detector_n"),
                               ScootDetector.point_id.label("scoot_point_id")]
         self.os_highway_columns = [OSHighway.identifier.label("road_identifier"),
                                    OSHighway.toid.label("road_toid")]
+
+    @property
+    def table(self):
+        """Join the geometry column from OSHighway onto the ScootRoadReading table for feature extraction"""
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(ScootRoadReading,
+                                 OSHighway.geom).join(OSHighway).subquery()
+    
+    @property
+    def features(self):
+        return {"total_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': sum_},
+                "max_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': max_},
+                "avg_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': avg_},
+        }
+
 
     def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
@@ -193,7 +207,7 @@ class ScootFeatures(DateRangeMixin, Features):
         with self.dbcnxn.open_session() as session:
             self.add_records(session, traffic_q.subquery(), table=ScootRoadReading)
 
-    def update_remote_tables(self, find_closest_roads=False):
+    def update_scoot_road_reading_tables(self, find_closest_roads=False):
         """Update all remote tables"""
         if find_closest_roads:
             self.insert_closest_roads()

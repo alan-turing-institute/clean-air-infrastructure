@@ -1,21 +1,25 @@
 """
 UKMAP feature extraction
 """
-from .static_features import StaticFeatures
+from .features import Features
 from .feature_funcs import sum_area, max_
 from ..databases.tables import UKMap
 
 
-class UKMapFeatures(StaticFeatures):
+class UKMapFeatures(Features):
     """Extract features for UKMap"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        self.table = UKMap
-        # List of features to extract
-        self.features = {
+    @property
+    def table(self):
+        return UKMap
+
+    @property
+    def features(self):
+        return {
             "building_height": {"type": "value", "feature_dict": {"calculated_height_of_building": ["*"]},
                                 "aggfunc": max_},
             "flat": {"type": "geom", "feature_dict": {"feature_type": ["Vegetated", "Water"]}, 'aggfunc': sum_area},
