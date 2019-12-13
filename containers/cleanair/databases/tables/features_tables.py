@@ -92,7 +92,7 @@ class IntersectionValue(Base):
 class IntersectionValueDynamic(Base):
     """Intersection between interest points and UKMap as values"""
     __tablename__ = "intersection_value_dynamic"
-    __table_args__ = {"schema": "static_features"}
+    __table_args__ = {"schema": "dynamic_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(50), primary_key=True, nullable=False)

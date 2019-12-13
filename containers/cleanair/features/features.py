@@ -313,6 +313,3 @@ class Features(DBWriter):
         """Update all remote tables"""
         self.calculate_intersections()
         self.aggregate_geom_features()
-    
-
-    
