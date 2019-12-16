@@ -184,7 +184,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
                 # Add readings to database
                 start_session = time.time()
-                site_records = [ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
+                site_records = df_aggregated.T.to_dict()
                 self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
 
                 # The following database operations can be slow. However, with the switch to hourly data they are not
@@ -194,7 +194,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
-                        self.add_records(session, site_records)
+                        self.add_records(session, site_records, table=ScootReading)
                         session.commit()
                         n_records += len(site_records)
                     except IntegrityError as error:
