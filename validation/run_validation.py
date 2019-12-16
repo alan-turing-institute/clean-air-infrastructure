@@ -5,6 +5,7 @@ from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
+from sklearn import metrics
 sys.path.append("../containers")
 
 from cleanair.models import ModelData, SVGP
@@ -82,7 +83,7 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=5):
 
     """
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_test_data_arrays(dropna=False)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False, return_y=True)
     x_test, y_test = predict_data_dict['X'], predict_data_dict['Y']
 
     model_fitter.fit(training_data_dict['X'],

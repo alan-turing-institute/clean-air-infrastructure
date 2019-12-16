@@ -577,12 +577,16 @@ class ModelData(ModelDataReader):
         data_df[self.x_names_norm] = (data_df[self.x_names] - norm_mean) / norm_std
         return data_df
 
-    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
+    def __get_model_data_arrays(self, data_df, return_y, dropna=True, y_names=None):
         """Return a dictionary of data arrays for model fitting.
         The returned dictionary includes and index to allow model predictions
         to be appended to dataframes (required when dropna is used)"""
 
+        if y_names is None:
+            y_names = self.y_names.copy()
+
         if return_y:
+            print(list(data_df.columns))
             data_subset = data_df[self.x_names_norm + self.y_names]
         else:
             data_subset = data_df[self.x_names_norm]
@@ -607,11 +611,11 @@ class ModelData(ModelDataReader):
         """
         return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
 
-    def get_pred_data_arrays(self, return_y=False, dropna=True):
+    def get_pred_data_arrays(self, return_y=False, dropna=True, y_names=None):
         """The the pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=return_y, dropna=dropna, y_names=y_names)
