@@ -50,7 +50,6 @@ class ScootFeatures(DateRangeMixin, Features):
 
         }
 
-
     def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
 
