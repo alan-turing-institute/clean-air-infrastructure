@@ -25,9 +25,15 @@ class DateRangeMixin():
         self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
 
         # Set the time range
-        self.start_datetime = datetime.datetime.combine(self.start_date, datetime.datetime.min.time())
-        self.end_datetime = datetime.datetime.combine(self.end_date, datetime.datetime.max.time())
+        self.start_datetime, self.end_datetime = self.get_datetimes(self.start_date, self.end_date)
 
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
         self.logger.info("... %s and %s", green(self.start_datetime), green(self.end_datetime))
+
+    @staticmethod
+    def get_datetimes(start_date, end_date):
+
+        start_datetime = datetime.datetime.combine(start_date, datetime.datetime.min.time())
+        end_datetime = datetime.datetime.combine(end_date, datetime.datetime.max.time())
+        return start_datetime, end_datetime
