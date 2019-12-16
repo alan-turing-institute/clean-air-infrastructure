@@ -184,7 +184,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
                 # Add readings to database
                 start_session = time.time()
-                site_records = df_aggregated.T.to_dict()
+                site_records = df_aggregated.to_dict("records")
                 self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
 
                 # The following database operations can be slow. However, with the switch to hourly data they are not
