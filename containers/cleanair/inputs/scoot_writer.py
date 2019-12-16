@@ -134,7 +134,6 @@ class ScootWriter(DateRangeMixin, DBWriter):
         time_min = datetime_from_unix(df_processed["timestamp"].min())
         time_max = datetime_from_unix(df_processed["timestamp"].max())
 
-        n_records = 0
         # Slice processed data into hourly chunks and aggregate these by detector ID
         for start_time in rrule.rrule(rrule.HOURLY,
                                       dtstart=time_min.replace(minute=0, second=0, microsecond=0),
@@ -169,20 +168,20 @@ class ScootWriter(DateRangeMixin, DBWriter):
         self.logger.info("Requesting readings from %s for %s sites",
                          green("TfL AWS storage"), green(len(self.detector_ids)))
 
+        n_records = 0
         # Process a day at a time
-        for start_time in rrule.rrule(rrule.DAILY, 
+        for start_time in rrule.rrule(rrule.DAILY,
                                       dtstart=self.start_datetime,
                                       until=self.end_datetime):
             end_time = start_time + datetime.timedelta(hours=1)
 
-            start_datetime, end_datetime = self.get_datetimes(start_time, end_time)         
+            start_datetime, end_datetime = self.get_datetimes(start_time, end_time)
 
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
-            
 
             for df_aggregated in self.aggregate_scoot_data(df_processed):
-                
+
                 # Add readings to database
                 start_session = time.time()
                 site_records = [ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
