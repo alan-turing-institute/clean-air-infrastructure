@@ -3,7 +3,8 @@ import logging
 import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-import pandas as pd 
+import pandas as pd
+import numpy as np
 sys.path.append("../containers")
 
 from cleanair.models import ModelData, SVGP
@@ -54,23 +55,133 @@ def strtime_offset(strtime, offset_hours):
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
-def forecast(model_fitter, model_data):
+def forecast(model_fitter, model_data, model_params={}, max_iter=5):
     """
     Forecast air quality.
+
+    Parameters
+    ___
+
+    model_fitter : SVGP
+        Model fitter object.
+
+    model_data : ModelData
+        Initialised model data object.
+
+    model_params : dict
+        Model parameters and settings.
+
+    max_iter : int
+        ToDo
+
+    Returns
+    ___
+
+    df : DataFrame
+        Contains the validation scores for each hour of the forecast.
+
     """
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_test_data_arrays(dropna=False)
+    x_test, y_test = predict_data_dict['X'], predict_data_dict['Y']
 
     model_fitter.fit(training_data_dict['X'],
                     training_data_dict['Y'],
-                    max_iter=5,
+                    max_iter=max_iter,
                     model_params=model_params)
+
+    # Get info about the model fit
+    model_fit_info = model_fitter.fit_info()
+
+    # Do prediction and write to database
+    print("X test shape:", x_test.shape)
+    print("Y test shape:", y_test.shape)
+    y_pred = model_fitter.predict(x_test)
+
+    # Write the model results to dataframe
+    model_data.update_model_results_df(
+        predict_data_dict=predict_data_dict,
+        Y_pred=y_pred,
+        model_fit_info=model_fit_info
+    )
+
+    y_var = np.array(model_data.normalised_pred_data_df["predict_var"])
+    print("Y var shape:", y_var.shape)
+    print("Y predict shape:", y_pred.shape)
+
+    # measure metrics and evaluate performance
+    metrics = measure(y_test, y_pred)
+    print(metrics)
 
 def rolling_forecast():
     """
     Train and predict for multiple time periods in a row.
     """
     pass
+
+def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
+    """
+    Given a prediction and actual data, return the validation metrics.
+
+    By default the custom metrics provided are r2, mae and mse.
+
+    You can provide custom metrics using kwargs.
+    A kwarg is given for each metric.
+    The name of the metric is the key.
+    A function is passed a value of the kwarg.
+    See examples for more info.
+
+    actual : array-like, shape = (n_samples, [n_output_dims])
+        The actual target at the query points.
+
+    predict : array-like, shape = (n_samples, [n_output_dims])
+        The predicted targets at the query points.
+
+    r2 : bool, optional
+        Whether to use the r2 score.
+
+    mae : bool, optional
+        Whether to use the mae score.
+
+    mse : bool, optional
+        Whether to use mean squared error.
+
+    Returns
+    ___
+
+    dict
+        Dictionary containing the results of the validation methods.
+        Key is the name of the metric and value is the metric score.
+
+    Examples
+    ___
+
+    The line below will return a dataframe with a single column.
+
+    >> df = measure(actual, pred, r2=metrics.r2)
+    """
+    metric_methods = {}
+
+    # default metrics
+    if r2:
+        metric_methods["r2"] = metrics.r2_score
+    if mse:
+        metric_methods["mse"] = metrics.mean_squared_error
+    if mae:
+        metric_methods["mae"] = metrics.median_absolute_error
+
+    # custom metrics
+    for key, method in kwargs.items():
+        metric_methods[key] = method
+
+    # compute and return metrics
+    scores = {}
+    for key, method in metric_methods.items():
+        try:
+            scores[key] = method(actual, predict)
+        except ValueError:
+            scores[key] = np.nan
+    return scores
 
 if __name__ == "__main__":
 
@@ -125,36 +236,36 @@ if __name__ == "__main__":
 
     # print(model_data.sensor_data_status(train_start, train_end, source = 'laqn', species='NO2'))
 
-    # training_data_dict = model_data.training_data_df
-    training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_pred_data_arrays(dropna=False, return_y=True)
 
     # Fit the model
     model_fitter = SVGP()
 
-    print("X train shape:", training_data_dict["X"].shape)
-    print("y train shape:", training_data_dict["Y"].shape)
+    # Run validation
+    forecast(model_fitter, model_data, model_params=model_params)
 
-    model_fitter.fit(training_data_dict['X'],
-                     training_data_dict['Y'],
-                     max_iter=5,
-                     model_params=model_params,
-                     refresh=1)
+    # print("X train shape:", training_data_dict["X"].shape)
+    # print("y train shape:", training_data_dict["Y"].shape)
 
-    # Get info about the model fit
-    model_fit_info = model_fitter.fit_info()
+    # model_fitter.fit(training_data_dict['X'],
+    #                  training_data_dict['Y'],
+    #                  max_iter=5,
+    #                  model_params=model_params,
+    #                  refresh=1)
 
-    # Do prediction and write to database
-    print("X predict shape:", predict_data_dict["X"].shape)
-    Y_pred = model_fitter.predict(predict_data_dict['X'])
+    # # Get info about the model fit
+    # model_fit_info = model_fitter.fit_info()
 
-    print("Y predict shape:", Y_pred.shape)
+    # # Do prediction and write to database
+    # print("X predict shape:", predict_data_dict["X"].shape)
+    # Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    # Write the model results to the database
-    model_data.update_model_results_df(
-        predict_data_dict=predict_data_dict,
-        Y_pred=Y_pred,
-        model_fit_info=model_fit_info
-    )
+    # print("Y predict shape:", Y_pred.shape)
 
-    print(model_data.normalised_pred_data_df[["predict_mean", "predict_var"]])
+    # # Write the model results to the database
+    # model_data.update_model_results_df(
+    #     predict_data_dict=predict_data_dict,
+    #     Y_pred=Y_pred,
+    #     model_fit_info=model_fit_info
+    # )
+
+    # print(model_data.normalised_pred_data_df[["predict_mean", "predict_var"]])
