@@ -2,7 +2,7 @@
 Module for interacting with tables in the Azure Postgres database
 """
 from .aqe_tables import AQESite, AQEReading
-from .features_tables import IntersectionGeom, IntersectionValue
+from .features_tables import IntersectionGeom, IntersectionValue, IntersectionValueDynamic
 from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
@@ -21,6 +21,7 @@ __all__ = [
     "HexGrid",
     "IntersectionGeom",
     "IntersectionValue",
+    "IntersectionValueDynamic",
     "LAQNReading",
     "LAQNSite",
     "LondonBoundary",
