@@ -35,7 +35,7 @@ def main():
     try:
         static_feature_extractor = ScootFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
-        # static_feature_extractor.update_scoot_road_reading_tables(find_closest_road=False)
+        static_feature_extractor.update_scoot_road_reading_tables(find_closest_road=False)
         static_feature_extractor.update_remote_tables() 
 
     except Exception as error:
