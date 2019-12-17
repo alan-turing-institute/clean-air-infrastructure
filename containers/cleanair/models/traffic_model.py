@@ -49,14 +49,13 @@ class TrafficModelData(DBReader):
         end_date = isoparse(end_date)
 
         with self.dbcnxn.open_session() as session:
-
             scoot_road_q = session.query(ScootReading).filter(ScootReading.measurement_start_utc >= start_date,
                                                               ScootReading.measurement_start_utc < end_date,
-                                                              )
+                                                              ).order_by(ScootRoadReading.road_toid, ScootRoadReading.measurement_start_utc)
 
             if scoot_ids:
                 scoot_road_q = scoot_road_q.order_by(ScootReading.detector_id, ScootReading.measurement_start_utc)
-        return pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
+        return pd.read_sql(scoot_road_q.limit(1000).statement, scoot_road_q.session.bind)
 
 
 def fit_fbprophet_model(data_dict, n_pred_hours=48, y_name = 'occupancy_percentage'):
@@ -93,3 +92,24 @@ if __name__ == '__main__':
     logger.info("Completed scoot model fits after %s seconds", green(duration(start_time, time.time())))
 
     print(all_predictions)
+
+
+
+# traffic = TrafficModelData(secretfile='/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json')
+
+# traffic_data = traffic.get_road_profiles('2019-11-10', '2019-12-11')
+
+# sub_dat = traffic_data[traffic_data['road_toid'] == 'osgb4000000027865921']
+
+# y_name = ['measurement_start_utc', 'occupancy_percentage']
+
+# fit_data = sub_dat[y_name].copy()
+# fit_data = fit_data.rename(columns={'measurement_start_utc': 'ds', y_name[1]: 'y'})
+
+# m = Prophet(changepoint_prior_scale=0.01).fit(fit_data)
+
+# predict_df = m.make_future_dataframe(0, freq='H', include_history=True)
+# forecast = m.predict(predict_df)
+
+
+# fig = m.plot(forecast)
