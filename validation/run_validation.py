@@ -82,6 +82,7 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=5):
         Contains the validation scores for each hour of the forecast.
 
     """
+    # get training and testing data
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False, return_y=True)
     x_test, y_test = predict_data_dict['X'], predict_data_dict['Y']
@@ -111,14 +112,35 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=5):
     print("Y predict shape:", y_pred.shape)
 
     # measure metrics and evaluate performance
-    metrics = measure(y_test, y_pred)
-    print(metrics)
+    scores = measure(y_test, y_pred)
+    return scores
 
-def rolling_forecast():
+def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
+    """Create a list of dictionaries with train and pred dates rolled up."""
+    start_of_roll = train_start
+    rolls = []
+
+    for i in range(num_rolls):
+
+        train_end = strtime_offset(start_of_roll, train_n_hours)
+        pred_start = strtime_offset(train_start, train_n_hours + 1)
+        pred_end = strtime_offset(pred_start, pred_n_hours)
+        rolls.append({
+            'train_start_date': start_of_roll,
+            'train_end_date': train_end,
+            'pred_start_date': pred_start,
+            'pred_end_date': pred_end
+        })
+        start_of_roll = strtime_offset(start_of_roll, train_n_hours)
+    
+    return rolls
+
+def rolling_forecast(model_fitter, model_data_list):
     """
     Train and predict for multiple time periods in a row.
     """
-    pass
+    results_df = pd.DataFrame()
+    return results_df
 
 def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
     """
@@ -184,6 +206,60 @@ def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
             scores[key] = np.nan
     return scores
 
+def run_rolling():
+    # create dates for rolling over
+    train_start = "2019-11-01T00:00:00"
+    train_n_hours = 24
+    pred_n_hours = 24
+    n_rolls = 3
+    rolls = create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
+
+    # get sensor data and select subset of sensors
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+    sensor_info_df = get_LAQN_sensor_info(secret_fp)
+    sdf = filter_sensors(sensor_info_df, closure_date=train_start)
+    S = list(sdf["point_id"])
+
+    # Model fitting parameters
+    model_params = {'lengthscale': 0.1,
+                    'variance': 0.1,
+                    'minibatch_size': 100,
+                    'n_inducing_points': 500}
+
+    # store a list of ModelData objects to validate over
+    model_data_list = []
+
+    # create ModelData objects for each roll
+    for r in rolls:
+        # Model configuration
+        model_config = {
+            'train_start_date': r['train_start_date'],
+            'train_end_date': r['train_end_date'],
+            'pred_start_date': r['pred_start_date'],
+            'pred_end_date': r['pred_end_date'],
+            'train_sources': ['laqn', 'aqe'],
+            'pred_sources': ['laqn', 'aqe'],
+            'train_interest_points': S,
+            'pred_interest_points': S,
+            'species': ['NO2'],
+            'features': ['value_1000_building_height'],
+            'norm_by': 'laqn',
+            'model_type': 'svgp',
+            'tag': 'testing'
+        }
+
+        # Get the model data and append to list
+        model_data = ModelData(secretfile=secret_fp)
+        model_data.initialise(config=model_config)
+        model_data_list.append(model_data)
+
+    # Fit the model
+    model_fitter = SVGP()
+
+    # Run rolling forecast
+    results_df = rolling_forecast(model_fitter, model_data_list)
+    print(results_df)
+
 if __name__ == "__main__":
 
     logging.basicConfig()
@@ -200,9 +276,6 @@ if __name__ == "__main__":
     secret_fp = "../terraform/.secrets/db_secrets.json"
     sensor_info_df = get_LAQN_sensor_info(secret_fp)
     sdf = filter_sensors(sensor_info_df, closure_date=train_start)
-    print()
-    print("Sensor data frame after filtering:")
-    print(sdf)
     S = list(sdf["point_id"])
     
     # Model configuration
@@ -231,12 +304,9 @@ if __name__ == "__main__":
     model_data = ModelData(secretfile=secret_fp)
     model_data.initialise(config=model_config)
 
-
     # print(model_data.list_available_features())
     # print(model_data.list_available_sources())
-
     # print(model_data.sensor_data_status(train_start, train_end, source = 'laqn', species='NO2'))
-
 
     # Fit the model
     model_fitter = SVGP()
@@ -244,29 +314,3 @@ if __name__ == "__main__":
     # Run validation
     forecast(model_fitter, model_data, model_params=model_params)
 
-    # print("X train shape:", training_data_dict["X"].shape)
-    # print("y train shape:", training_data_dict["Y"].shape)
-
-    # model_fitter.fit(training_data_dict['X'],
-    #                  training_data_dict['Y'],
-    #                  max_iter=5,
-    #                  model_params=model_params,
-    #                  refresh=1)
-
-    # # Get info about the model fit
-    # model_fit_info = model_fitter.fit_info()
-
-    # # Do prediction and write to database
-    # print("X predict shape:", predict_data_dict["X"].shape)
-    # Y_pred = model_fitter.predict(predict_data_dict['X'])
-
-    # print("Y predict shape:", Y_pred.shape)
-
-    # # Write the model results to the database
-    # model_data.update_model_results_df(
-    #     predict_data_dict=predict_data_dict,
-    #     Y_pred=Y_pred,
-    #     model_fit_info=model_fit_info
-    # )
-
-    # print(model_data.normalised_pred_data_df[["predict_mean", "predict_var"]])
