@@ -14,12 +14,213 @@ from ..databases import DBReader, DBWriter
 from ..loggers import get_logger
 
 
-class ModelDataReader(DBReader, DBWriter):
+class ModelData(DBWriter):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, config, **kwargs):
+        """
+        Initialise the ModelData object with a config file
+        args:
+            config: A config dictionary
+
+            Example config:
+                {
+                "train_start_date": "2019-11-01T00:00:00",
+                "train_end_date": "2019-11-30T00:00:00",
+                "pred_start_date": "2019-11-01T00:00:00",
+                "pred_end_date": "2019-11-30T00:00:00",
+
+                "train_sources": ["laqn", "aqe"],
+                "pred_sources": ["laqn", "aqe"],
+                "train_interest_points": ['point_id1', 'point_id2'],
+                "pred_interest_points": ['point_id1', 'point_id2'],
+                "species": ["NO2"],
+                "features": "all",
+                "norm_by": "laqn",
+
+                "model_type": "svgp",
+                "tag": "production"
+                }
+        """
+
         # Initialise parent classes
         super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Attributes created by self.initialise
+        self.x_names = None
+        self.y_names = None
+        self.training_data_df = None
+        self.pred_data_df = None
+        self.normalised_training_data_df = None
+        self.normalised_pred_data_df = None
+
+        # Validate the configuration
+        self.__validate_config(config)
+
+        # Set attributes from validated config
+        self.train_start_date = config['train_start_date']
+        self.train_end_date = config['train_end_date']
+        self.pred_start_date = config['pred_start_date']
+        self.pred_end_date = config['pred_end_date']
+        self.train_sources = config['train_sources']
+        self.pred_sources = config['pred_sources']
+        if config['train_interest_points'] == 'all':
+            self.train_interest_points = None
+        else:
+            self.train_interest_points = config['train_interest_points']
+
+        if config['pred_interest_points'] == 'all':
+            self.pred_interest_points = None
+        else:
+            self.pred_interest_points = config['pred_interest_points']
+
+        self.species = config['species']
+        if config['features'] == 'all':
+            feature_names = self.list_available_features()
+            buff_size = [1000, 500, 200, 100, 10]
+            config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
+            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
+
+        self.features = config['features']
+        self.norm_by = config['norm_by']
+        self.model_type = config['model_type']
+        self.tag = config['tag']
+
+        # Column names for X and Y
+        self.x_names = ["epoch", "lat", "lon"] + self.features
+        self.y_names = self.species
+
+        # Get model data from database 
+        self.training_data_df = self.get_model_inputs(
+            self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
+
+        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+
+        self.pred_data_df = self.get_model_features(
+            self.pred_start_date, self.pred_end_date, self.pred_sources, self.pred_interest_points)
+        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+
+    def __validate_config(self, config):
+
+        config_keys = ["train_start_date",
+                       "train_end_date",
+                       "pred_start_date",
+                       "pred_end_date",
+                       "train_sources",
+                       "pred_sources",
+                       "train_interest_points",
+                       "pred_interest_points",
+                       "species",
+                       "features",
+                       "norm_by",
+                       "model_type",
+                       'tag', ]
+
+        valid_models = ['svgp', ]
+
+        self.logger.info("Validating config")
+
+        # Check required config keys present
+
+        if set(config.keys()) != set(config_keys):
+            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
+
+        # Check requested features are available
+        if config['features'] == 'all':
+            features = self.list_available_static_features() + self.list_available_dynamic_features()
+            if not features:
+                raise AttributeError("There are no features in the database. Run feature extraction first")
+        else:
+            self.logger.debug("Checking requested features are availble in database")
+            self.__check_features_in_database(config['features'])
+
+        # Check training sources are available
+        train_sources = config['train_sources']
+        self.logger.debug("Checking requested sources for training are availble in database")
+        self.__check_sources_in_database(train_sources)
+
+        # Check prediction sources are available
+        pred_sources = config['pred_sources']
+        self.logger.debug("Checking requested sources for prediction are availble in database")
+        self.__check_sources_in_database(pred_sources)
+
+        # Check model type is valid
+        if config['model_type'] not in valid_models:
+            raise AttributeError("{} is not a valid model type. Use one of the following: {}"
+                                 .format(config['model_type'], valid_models))
+
+        # Check interest points are valid
+        train_interest_points = config['train_interest_points']
+        if isinstance(train_interest_points, list):
+            self.__check_interest_points_in_database(train_interest_points, train_sources)
+
+        pred_interest_points = config['pred_interest_points']
+        if isinstance(pred_interest_points, list):
+            self.__check_interest_points_in_database(pred_interest_points, pred_sources)
+
+        self.logger.info("Validate config complete")
+
+    @property
+    def x_names_norm(self):
+        """Get the normalised x names"""
+        return [x + '_norm' for x in self.x_names]
+
+    @property
+    def norm_stats(self):
+        """Get the mean and sd used for data normalisation"""
+        norm_mean = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].mean(axis=0)
+        norm_std = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].std(axis=0)
+        return norm_mean, norm_std
+
+    def __normalise_data(self, data_df):
+        """Normalise the x columns"""
+        norm_mean, norm_std = self.norm_stats
+        # Normalise the data
+        data_df[self.x_names_norm] = (data_df[self.x_names] - norm_mean) / norm_std
+        return data_df
+
+    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
+        """Return a dictionary of data arrays for model fitting.
+        The returned dictionary includes and index to allow model predictions
+        to be appended to dataframes (required when dropna is used)"""
+
+        if return_y:
+            data_subset = data_df[self.x_names_norm + self.y_names]
+        else:
+            data_subset = data_df[self.x_names_norm]
+
+        if dropna:
+            data_subset = data_subset.dropna()  # Must have complete dataset
+            n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
+            self.logger.warning("Dropped %s rows out of %s from the dataframe", n_dropped_rows, data_df.shape[0])
+
+        data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
+
+        if return_y:
+            data_dict['Y'] = data_subset[self.y_names].values
+
+        return data_dict
+
+    def get_training_data_arrays(self, dropna=True):
+        """The the training data arrays.
+
+        args:
+            dropna: Drop any rows which contain NaN
+        """
+        return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
+
+    def get_pred_data_arrays(self, return_y=False, dropna=True):
+        """The the pred data arrays.
+
+        args:
+            return_y: Return the sensor data if in the database for the prediction dates
+            dropna: Drop any rows which contain NaN
+        """
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
 
     def __check_features_in_database(self, features):
         """Check that all requested features exist in the database"""
@@ -454,212 +655,3 @@ class ModelDataReader(DBReader, DBWriter):
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, upload_records, flush=True, table=ModelResult)
 
-
-class ModelData(ModelDataReader):
-    """Class to prepare data for model fitting"""
-
-    def __init__(self, **kwargs):
-        # Initialise parent classes
-        super().__init__(**kwargs)
-
-        # Ensure logging is available
-        if not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-
-        # Attributes created by self.initialise
-        self.x_names = None
-        self.y_names = None
-        self.training_data_df = None
-        self.pred_data_df = None
-        self.normalised_training_data_df = None
-        self.normalised_pred_data_df = None
-
-    def initialise(self, config):
-        """
-        Initialise the ModelData object with a config file
-        args:
-            config: A config dictionary
-
-            Example config:
-                {
-                "train_start_date": "2019-11-01T00:00:00",
-                "train_end_date": "2019-11-30T00:00:00",
-                "pred_start_date": "2019-11-01T00:00:00",
-                "pred_end_date": "2019-11-30T00:00:00",
-
-                "train_sources": ["laqn", "aqe"],
-                "pred_sources": ["laqn", "aqe"],
-                "train_interest_points": ['point_id1', 'point_id2'],
-                "pred_interest_points": ['point_id1', 'point_id2'],
-                "species": ["NO2"],
-                "features": "all",
-                "norm_by": "laqn",
-
-                "model_type": "svgp",
-                "tag": "production"
-                }
-        """
-
-        # Validate the configuration
-        self.__validate_config(config)
-
-        # Set attributes from validated config
-        self.train_start_date = config['train_start_date']
-        self.train_end_date = config['train_end_date']
-        self.pred_start_date = config['pred_start_date']
-        self.pred_end_date = config['pred_end_date']
-        self.train_sources = config['train_sources']
-        self.pred_sources = config['pred_sources']
-        if config['train_interest_points'] == 'all':
-            self.train_interest_points = None
-        else:
-            self.train_interest_points = config['train_interest_points']
-
-        if config['pred_interest_points'] == 'all':
-            self.pred_interest_points = None
-        else:
-            self.pred_interest_points = config['pred_interest_points']
-
-        self.species = config['species']
-        if config['features'] == 'all':
-            feature_names = self.list_available_features()
-            buff_size = [1000, 500, 200, 100, 10]
-            config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
-            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
-
-        self.features = config['features']
-        self.norm_by = config['norm_by']
-        self.model_type = config['model_type']
-        self.tag = config['tag']
-
-        # Column names for X and Y
-        self.x_names = ["epoch", "lat", "lon"] + self.features
-        self.y_names = self.species
-
-        # Get model data from database using parent class ModelDataReader
-        self.training_data_df = self.get_model_inputs(
-            self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
-
-        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
-
-        self.pred_data_df = self.get_model_features(
-            self.pred_start_date, self.pred_end_date, self.pred_sources, self.pred_interest_points)
-        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
-
-    def __validate_config(self, config):
-
-        config_keys = ["train_start_date",
-                       "train_end_date",
-                       "pred_start_date",
-                       "pred_end_date",
-                       "train_sources",
-                       "pred_sources",
-                       "train_interest_points",
-                       "pred_interest_points",
-                       "species",
-                       "features",
-                       "norm_by",
-                       "model_type",
-                       'tag', ]
-
-        valid_models = ['svgp', ]
-
-        self.logger.info("Validating config")
-
-        # Check required config keys present
-
-        if set(config.keys()) != set(config_keys):
-            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
-
-        # Check requested features are available
-        if config['features'] == 'all':
-            features = self.list_available_static_features() + self.list_available_dynamic_features()
-            if not features:
-                raise AttributeError("There are no features in the database. Run feature extraction first")
-        else:
-            self.logger.debug("Checking requested features are availble in database")
-            self._ModelDataReader__check_features_in_database(config['features'])
-
-        # Check training sources are available
-        train_sources = config['train_sources']
-        self.logger.debug("Checking requested sources for training are availble in database")
-        self._ModelDataReader__check_sources_in_database(train_sources)
-
-        # Check prediction sources are available
-        pred_sources = config['pred_sources']
-        self.logger.debug("Checking requested sources for prediction are availble in database")
-        self._ModelDataReader__check_sources_in_database(pred_sources)
-
-        # Check model type is valid
-        if config['model_type'] not in valid_models:
-            raise AttributeError("{} is not a valid model type. Use one of the following: {}"
-                                 .format(config['model_type'], valid_models))
-
-        # Check interest points are valid
-        train_interest_points = config['train_interest_points']
-        if isinstance(train_interest_points, list):
-            self._ModelDataReader__check_interest_points_in_database(train_interest_points, train_sources)
-
-        pred_interest_points = config['pred_interest_points']
-        if isinstance(pred_interest_points, list):
-            self._ModelDataReader__check_interest_points_in_database(pred_interest_points, pred_sources)
-
-        self.logger.info("Validate config complete")
-
-    @property
-    def x_names_norm(self):
-        """Get the normalised x names"""
-        return [x + '_norm' for x in self.x_names]
-
-    @property
-    def norm_stats(self):
-        """Get the mean and sd used for data normalisation"""
-        norm_mean = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].mean(axis=0)
-        norm_std = self.training_data_df[self.training_data_df['source'] == self.norm_by][self.x_names].std(axis=0)
-        return norm_mean, norm_std
-
-    def __normalise_data(self, data_df):
-        """Normalise the x columns"""
-        norm_mean, norm_std = self.norm_stats
-        # Normalise the data
-        data_df[self.x_names_norm] = (data_df[self.x_names] - norm_mean) / norm_std
-        return data_df
-
-    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
-        """Return a dictionary of data arrays for model fitting.
-        The returned dictionary includes and index to allow model predictions
-        to be appended to dataframes (required when dropna is used)"""
-
-        if return_y:
-            data_subset = data_df[self.x_names_norm + self.y_names]
-        else:
-            data_subset = data_df[self.x_names_norm]
-
-        if dropna:
-            data_subset = data_subset.dropna()  # Must have complete dataset
-            n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
-            self.logger.warning("Dropped %s rows out of %s from the dataframe", n_dropped_rows, data_df.shape[0])
-
-        data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
-
-        if return_y:
-            data_dict['Y'] = data_subset[self.y_names].values
-
-        return data_dict
-
-    def get_training_data_arrays(self, dropna=True):
-        """The the training data arrays.
-
-        args:
-            dropna: Drop any rows which contain NaN
-        """
-        return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
-
-    def get_pred_data_arrays(self, return_y=False, dropna=True):
-        """The the pred data arrays.
-
-        args:
-            return_y: Return the sensor data if in the database for the prediction dates
-            dropna: Drop any rows which contain NaN
-        """
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)

@@ -71,9 +71,7 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(**kwargs)
-
-    model_data.initialise(config=model_config)
+    model_data = ModelData(model_config, **kwargs)
 
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
