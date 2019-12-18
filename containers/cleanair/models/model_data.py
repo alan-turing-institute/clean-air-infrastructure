@@ -56,7 +56,6 @@ class ModelDataReader(DBReader, DBWriter):
 
     def __check_interest_points_in_database(self, interest_points, sources):
 
-        print(interest_points, sources)
         with self.dbcnxn.open_session() as session:
 
             interest_point_query = session.query(
@@ -268,18 +267,29 @@ class ModelDataReader(DBReader, DBWriter):
             interest_point_df = pd.read_sql(interest_point_query.statement,
                                             interest_point_query.session.bind).set_index('point_id')
 
+            def get_val(x):
+                    if len(x) == 1:
+                        return x
+                    else:
+                        raise ValueError("Pandas pivot table trying to return an array of values. Here it must only return a single value")
+
             # Reshape features df (make wide)
-            features_df = features_df.pivot(index='point_id', columns='feature_name').reset_index()
-            features_df.columns = ['point_id'] + ['_'.join(col).strip() for col in features_df.columns.values[1:]]
-            features_df = features_df.set_index('point_id')
+            if start_date:                
+                features_df = pd.pivot_table(features_df, index=['point_id', 'measurement_start_utc'], columns = 'feature_name', aggfunc=get_val).reset_index()               
+                features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for col in features_df.columns.values[2:]]
+                features_df = features_df.set_index('point_id')
+            
+            else:
+                features_df = features_df.pivot(index='point_id', columns='feature_name').reset_index()
+                features_df.columns = ['point_id'] + ['_'.join(col).strip() for col in features_df.columns.values[1:]]
+                features_df = features_df.set_index('point_id')
 
             # Set index types to str
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
-            df_joined = pd.concat([interest_point_df, features_df], axis=1, sort=False, join='inner')
-
+            # Inner join the MetaPoint and IntersectionValue(Dynamic) data 
+            df_joined = interest_point_df.join(features_df, how='left')
             return df_joined.reset_index()
 
     def select_dynamic_features(self, start_date, end_date, sources=None, point_ids=None):
@@ -376,10 +386,9 @@ class ModelDataReader(DBReader, DBWriter):
         """
         static_features = self.select_static_features(sources=sources, point_ids=point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
-
         dynamic_features = self.select_dynamic_features(start_date, end_date, sources=sources, point_ids=point_ids)
-        all_features = pd.concat([static_features_expand, dynamic_features], axis=0)
-
+        all_features = static_features_expand.merge(dynamic_features, how='left', on=['point_id', 'measurement_start_utc', 'source', 'lon', 'lat'])
+        
         return all_features
 
     def get_model_inputs(self, start_date, end_date, sources=None, species=None, point_ids=None):
@@ -522,6 +531,7 @@ class ModelData(ModelDataReader):
         # Get model data from database using parent class ModelDataReader
         self.training_data_df = self.get_model_inputs(
             self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
+
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
         self.pred_data_df = self.get_model_features(
