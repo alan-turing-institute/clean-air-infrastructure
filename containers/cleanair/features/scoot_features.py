@@ -19,6 +19,8 @@ class ScootFeatures(DateRangeMixin, Features):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        # Set baseclass property 'dynamic' True to take time into account
+        self.dynamic = True
         # Subset of columns of interest for table columns
         self.scoot_columns = [ScootDetector.toid.label("scoot_toid"),
                               ScootDetector.detector_n.label("scoot_detector_n"),
@@ -36,11 +38,17 @@ class ScootFeatures(DateRangeMixin, Features):
     
     @property
     def features(self):
-        return {"total_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': sum_},
-                "max_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': max_},
-                "avg_occupancy_actual": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': avg_},
-        }
+        return {"total_occupancy_percentage": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': sum_},
+                "max_occupancy_percentage": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': max_},
+                "avg_occupanc_percentage": {"type": "value", "feature_dict": {"occupancy_percentage": ["*"]}, 'aggfunc': avg_},             
+                "total_flow_count": {"type": "value", "feature_dict": {"flow_raw_count": ["*"]}, 'aggfunc': sum_},
+                "max_flow_count": {"type": "value", "feature_dict": {"flow_raw_count": ["*"]}, 'aggfunc': max_},
+                "avg_flow_count": {"type": "value", "feature_dict": {"flow_raw_count": ["*"]}, 'aggfunc': avg_},
+                "total_occupancy_count": {"type": "value", "feature_dict": {"occupancy_raw_count": ["*"]}, 'aggfunc': sum_},
+                "max_occupancy_count": {"type": "value", "feature_dict": {"occupancy_raw_count": ["*"]}, 'aggfunc': max_},
+                "avg_occupancy_count": {"type": "value", "feature_dict": {"occupancy_raw_count": ["*"]}, 'aggfunc': avg_},            
 
+        }
 
     def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""

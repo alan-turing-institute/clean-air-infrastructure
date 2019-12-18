@@ -7,7 +7,9 @@ from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 from sqlalchemy import literal, func
 import plotly.figure_factory as ff
-from ..databases.tables import IntersectionValue, LAQNSite, LAQNReading, MetaPoint, AQESite, AQEReading, ModelResult
+from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
+                                LAQNReading, MetaPoint, AQESite,
+                                AQEReading, ModelResult)
 from ..databases import DBReader, DBWriter
 from ..loggers import get_logger
 
@@ -22,7 +24,7 @@ class ModelDataReader(DBReader, DBWriter):
     def __check_features_in_database(self, features):
         """Check that all requested features exist in the database"""
 
-        available_features = self.list_available_features()
+        available_features = self.list_available_static_features() + self.list_available_dynamic_features()
         unavailable_features = []
 
         for feature in features:
@@ -78,12 +80,22 @@ class ModelDataReader(DBReader, DBWriter):
                 raise AttributeError("The following interest points are not available the cleanair database: {}"
                                      .format(unavailable_interest_points))
 
-    def list_available_features(self):
-        """Return a list of the available features in the database"""
+    def list_available_static_features(self):
+        """Return a list of the available static features in the database"""
 
         with self.dbcnxn.open_session() as session:
 
             feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
+
+            return pd.read_sql(feature_types_q.statement,
+                               feature_types_q.session.bind)['feature_name'].tolist()
+    
+    def list_available_dynamic_features(self):
+        """Return a list of the available dynamic features in the database"""
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(IntersectionValueDynamic.feature_name).distinct(IntersectionValueDynamic.feature_name)
 
             return pd.read_sql(feature_types_q.statement,
                                feature_types_q.session.bind)['feature_name'].tolist()
@@ -228,16 +240,16 @@ class ModelDataReader(DBReader, DBWriter):
         fig['layout'].update(autosize=True, height=10000, title=title)
         fig.show()
 
-    def select_static_features(self, sources=None, point_ids=None):
-        """Query the database for static features and join with metapoint data
-
-        args:
-            source: A list of sources (e.g. 'laqn', 'aqe') to include. Default will include all sources
-            point_ids: A list if interest point ids. Default to all ids"""
+    def __select_features(self, feature_table, sources, point_ids, start_date=None, end_date=None):
 
         with self.dbcnxn.open_session() as session:
 
-            feature_query = session.query(IntersectionValue)
+            feature_query = session.query(feature_table)
+
+            if start_date:
+                feature_query = feature_query.filter(feature_table.measurement_start_utc >= start_date,
+                                                     feature_table.measurement_start_utc < end_date)
+
             interest_point_query = session.query(
                 MetaPoint.id.label('point_id'),
                 MetaPoint.source,
@@ -265,10 +277,25 @@ class ModelDataReader(DBReader, DBWriter):
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue data
+            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
             df_joined = pd.concat([interest_point_df, features_df], axis=1, sort=False, join='inner')
 
             return df_joined.reset_index()
+
+    def select_dynamic_features(self, start_date, end_date, sources=None, point_ids=None):
+        """Read static features from the database.
+        """
+
+        return self.__select_features(IntersectionValueDynamic, sources, point_ids, start_date, end_date)
+
+    def select_static_features(self, sources=None, point_ids=None):
+        """Query the database for static features and join with metapoint data
+
+        args:
+            source: A list of sources (e.g. 'laqn', 'aqe') to include. Default will include all sources
+            point_ids: A list if interest point ids. Default to all ids"""
+
+        return self.__select_features(IntersectionValue, sources, point_ids)
 
     def __expand_time(self, start_date, end_date, feature_df):
         """
@@ -350,7 +377,10 @@ class ModelDataReader(DBReader, DBWriter):
         static_features = self.select_static_features(sources=sources, point_ids=point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
 
-        return static_features_expand
+        dynamic_features = self.select_dynamic_features(start_date, end_date, sources=sources, point_ids=point_ids)
+        all_features = pd.concat([static_features_expand, dynamic_features], axis=0)
+
+        return all_features
 
     def get_model_inputs(self, start_date, end_date, sources=None, species=None, point_ids=None):
         """
@@ -368,11 +398,11 @@ class ModelDataReader(DBReader, DBWriter):
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         readings = self.get_sensor_readings(start_date, end_date, sources=sources, species=species)
-        static_features_expand = self.get_model_features(start_date, end_date, sources=sources, point_ids=point_ids)
+        all_features = self.get_model_features(start_date, end_date, sources=sources, point_ids=point_ids)
 
         self.logger.debug("Merging sensor data and model features")
 
-        model_data = pd.merge(static_features_expand,
+        model_data = pd.merge(all_features,
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
                               how='left')
@@ -525,7 +555,7 @@ class ModelData(ModelDataReader):
 
         # Check requested features are available
         if config['features'] == 'all':
-            features = self.list_available_features()
+            features = self.list_available_static_features() + self.list_available_dynamic_features()
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
         else:
