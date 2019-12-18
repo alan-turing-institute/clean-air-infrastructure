@@ -24,11 +24,11 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("--trainend", type=str, default='2019-11-01T00:00:00',
+    parser.add_argument("--trainend", type=str, default='2019-11-05T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=24,
+    parser.add_argument("--trainhours", type=int, default=72,
                         help="The number of hours to get training data for.")
-    parser.add_argument("--predstart", type=str, default='2019-11-01T00:00:00',
+    parser.add_argument("--predstart", type=str, default='2019-11-05T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
     parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")
@@ -72,10 +72,9 @@ def main():
 
     # Get the model data
     model_data = ModelData(**kwargs)
-    model_data.initialise(config=model_config)
 
-    print(model_data.training_data_df)
-    quit()
+    model_data.initialise(config=model_config)
+    
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
@@ -85,7 +84,7 @@ def main():
 
     model_fitter.fit(training_data_dict['X'],
                      training_data_dict['Y'],
-                     max_iter=5,
+                     max_iter=20000,
                      model_params=model_params)
 
     # Get info about the model fit
