@@ -16,5 +16,9 @@ terraform/backend_config.tf
 .python-version
 python-virtual-environments/
 
-# Python
+# results data
+validation/results/
+
+# Python & notebooks
 *__pycache__
+.ipynb_checkpoints

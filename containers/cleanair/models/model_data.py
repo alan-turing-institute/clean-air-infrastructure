@@ -54,7 +54,7 @@ class ModelDataReader(DBReader, DBWriter):
 
     def __check_interest_points_in_database(self, interest_points, sources):
 
-        print(interest_points, sources)
+        # print(interest_points, sources)
         with self.dbcnxn.open_session() as session:
 
             interest_point_query = session.query(
@@ -586,7 +586,6 @@ class ModelData(ModelDataReader):
             y_names = self.y_names.copy()
 
         if return_y:
-            print(list(data_df.columns))
             data_subset = data_df[self.x_names_norm + self.y_names]
         else:
             data_subset = data_df[self.x_names_norm]

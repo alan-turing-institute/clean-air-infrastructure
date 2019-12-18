@@ -200,7 +200,7 @@ def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
     for i in range(num_rolls):
 
         train_end = strtime_offset(start_of_roll, train_n_hours)
-        pred_start = strtime_offset(train_start, train_n_hours + 1)
+        pred_start = strtime_offset(start_of_roll, train_n_hours)
         pred_end = strtime_offset(pred_start, pred_n_hours)
         rolls.append({
             'train_start_date': start_of_roll,
@@ -208,18 +208,28 @@ def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
             'pred_start_date': pred_start,
             'pred_end_date': pred_end
         })
-        start_of_roll = strtime_offset(start_of_roll, train_n_hours)
+        start_of_roll = strtime_offset(start_of_roll, pred_n_hours)
     
     return rolls
 
-def rolling_forecast(model_fitter, model_data_list, model_params={}, max_iter=5):
+def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=5):
     """
     Train and predict for multiple time periods in a row.
     """
-    results_df = pd.DataFrame()
+    models = {
+        "svgp":SVGP
+    }
+    roll = 0
     for model_data in model_data_list:
+        print()
+        print("iteration", roll)
+        model_fitter = models[model_name]()
         scores_df = forecast(model_fitter, model_data, model_params=model_params, max_iter=max_iter)
-        results_df.append(scores_df, ignore_index=False)
+        if roll == 0:
+            results_df = scores_df.copy()
+        else:
+            results_df = results_df.append(scores_df)
+        roll += 1
 
     return results_df
 
@@ -281,10 +291,11 @@ def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
 def run_rolling():
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
-    train_n_hours = 24
+    train_n_hours = 72
     pred_n_hours = 24
-    n_rolls = 3
+    n_rolls = 5
     rolls = create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
+    print(rolls)
 
     # get sensor data and select subset of sensors
     secret_fp = "../terraform/.secrets/db_secrets.json"
@@ -293,10 +304,7 @@ def run_rolling():
     S = list(sdf["point_id"])
 
     # Model fitting parameters
-    model_params = {'lengthscale': 0.1,
-                    'variance': 0.1,
-                    'minibatch_size': 100,
-                    'n_inducing_points': 500}
+    model_params = get_model_params_default()
 
     # store a list of ModelData objects to validate over
     model_data_list = []
@@ -304,38 +312,48 @@ def run_rolling():
     # create ModelData objects for each roll
     for r in rolls:
         # Model configuration
-        model_config = {
-            'train_start_date': r['train_start_date'],
-            'train_end_date': r['train_end_date'],
-            'pred_start_date': r['pred_start_date'],
-            'pred_end_date': r['pred_end_date'],
-            'train_sources': ['laqn', 'aqe'],
-            'pred_sources': ['laqn', 'aqe'],
-            'train_interest_points': S,
-            'pred_interest_points': S,
-            'species': ['NO2'],
-            'features': ['value_1000_building_height'],
-            'norm_by': 'laqn',
-            'model_type': 'svgp',
-            'tag': 'testing'
-        }
+        model_config = get_model_config_default(
+            r['train_start_date'], r['train_end_date'],
+            r['pred_start_date'], r['pred_end_date'],
+            train_points=S, pred_points=S
+        )
 
         # Get the model data and append to list
         model_data = ModelData(secretfile=secret_fp)
         model_data.initialise(config=model_config)
         model_data_list.append(model_data)
 
-    # Fit the model
-    model_fitter = SVGP()
-
     # Run rolling forecast
-    results_df = rolling_forecast(model_fitter, model_data_list)
+    results_df = rolling_forecast('svgp', model_data_list, model_params=model_params)
     print(results_df)
+    results_df.to_csv('results/rolling.csv')
 
-if __name__ == "__main__":
+def get_model_params_default():
+    return {
+        'lengthscale': 0.1,
+        'variance': 0.1,
+        'minibatch_size': 100,
+        'n_inducing_points': 500
+    }
 
-    logging.basicConfig()
+def get_model_config_default(train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
+    return {
+        'train_start_date': train_start,
+        'train_end_date': train_end,
+        'pred_start_date': pred_start,
+        'pred_end_date': pred_end,
+        'train_sources': ['laqn', 'aqe'],
+        'pred_sources': ['laqn', 'aqe'],
+        'train_interest_points': train_points,
+        'pred_interest_points': pred_points,
+        'species': ['NO2'],
+        'features': ['value_1000_building_height'],
+        'norm_by': 'laqn',
+        'model_type': 'svgp',
+        'tag': 'testing'
+    }
 
+def run_forecast():
     # Set dates for training and testing
     train_end = "2019-11-06T00:00:00"
     train_n_hours = 72 * 2
@@ -348,29 +366,16 @@ if __name__ == "__main__":
     secret_fp = "../terraform/.secrets/db_secrets.json"
     sensor_info_df = get_LAQN_sensor_info(secret_fp)
     sdf = filter_sensors(sensor_info_df, closure_date=train_start)
-    S = list(sdf["point_id"])
+    sensors = list(sdf["point_id"])
     
     # Model configuration
-    model_config = {'train_start_date': train_start,
-                    'train_end_date': train_end,
-                    'pred_start_date': pred_start,
-                    'pred_end_date': pred_end,
-                    'train_sources': ['laqn', 'aqe'],
-                    'pred_sources': ['laqn', 'aqe'],
-                    'train_interest_points': S,
-                    'pred_interest_points': S,
-                    'species': ['NO2'],
-                    'features': ['value_1000_building_height'],
-                    'norm_by': 'laqn',
-                    'model_type': 'svgp',
-                    'tag': 'testing'}
+    model_config = get_model_config_default(
+        train_start, train_end, pred_start, pred_end,
+        train_points=sensors, pred_points=sensors
+    )
 
     # Model fitting parameters
-    model_params = {'lengthscale': 0.1,
-                    'variance': 0.1,
-                    'minibatch_size': 100,
-                    'n_inducing_points': 500}
-
+    model_params = get_model_params_default()
 
     # Get the model data
     model_data = ModelData(secretfile=secret_fp)
@@ -387,3 +392,7 @@ if __name__ == "__main__":
     scores = forecast(model_fitter, model_data, model_params=model_params)
     print(scores)
 
+if __name__ == "__main__":
+
+    logging.basicConfig()
+    run_rolling()
