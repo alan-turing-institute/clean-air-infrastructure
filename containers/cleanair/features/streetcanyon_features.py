@@ -16,7 +16,7 @@ class StreetCanyonFeatures(Features):
     @property
     def table(self):
         return StreetCanyon
-    
+
     @property
     def features(self):
         return {

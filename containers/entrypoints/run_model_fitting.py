@@ -74,7 +74,7 @@ def main():
     model_data = ModelData(**kwargs)
 
     model_data.initialise(config=model_config)
-    
+
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)

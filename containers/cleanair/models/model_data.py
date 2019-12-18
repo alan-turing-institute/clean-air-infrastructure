@@ -88,13 +88,14 @@ class ModelDataReader(DBReader, DBWriter):
 
             return pd.read_sql(feature_types_q.statement,
                                feature_types_q.session.bind)['feature_name'].tolist()
-    
+
     def list_available_dynamic_features(self):
         """Return a list of the available dynamic features in the database"""
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(IntersectionValueDynamic.feature_name).distinct(IntersectionValueDynamic.feature_name)
+            feature_types_q = session.query(IntersectionValueDynamic.feature_name) \
+                                     .distinct(IntersectionValueDynamic.feature_name)
 
             return pd.read_sql(feature_types_q.statement,
                                feature_types_q.session.bind)['feature_name'].tolist()
@@ -268,17 +269,20 @@ class ModelDataReader(DBReader, DBWriter):
                                             interest_point_query.session.bind).set_index('point_id')
 
             def get_val(x):
-                    if len(x) == 1:
-                        return x
-                    else:
-                        raise ValueError("Pandas pivot table trying to return an array of values. Here it must only return a single value")
+                if len(x) == 1:
+                    return x
+                else:
+                    raise ValueError("""Pandas pivot table trying to return an array of values.
+                                        Here it must only return a single value""")
 
             # Reshape features df (make wide)
-            if start_date:                
-                features_df = pd.pivot_table(features_df, index=['point_id', 'measurement_start_utc'], columns = 'feature_name', aggfunc=get_val).reset_index()               
-                features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for col in features_df.columns.values[2:]]
+            if start_date:
+                features_df = pd.pivot_table(features_df,
+                                             index=['point_id', 'measurement_start_utc'],
+                                             columns='feature_name', aggfunc=get_val).reset_index()
+                features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for
+                                                                               col in features_df.columns.values[2:]]
                 features_df = features_df.set_index('point_id')
-            
             else:
                 features_df = features_df.pivot(index='point_id', columns='feature_name').reset_index()
                 features_df.columns = ['point_id'] + ['_'.join(col).strip() for col in features_df.columns.values[1:]]
@@ -288,7 +292,7 @@ class ModelDataReader(DBReader, DBWriter):
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue(Dynamic) data 
+            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
             df_joined = interest_point_df.join(features_df, how='left')
             return df_joined.reset_index()
 
@@ -387,8 +391,12 @@ class ModelDataReader(DBReader, DBWriter):
         static_features = self.select_static_features(sources=sources, point_ids=point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
         dynamic_features = self.select_dynamic_features(start_date, end_date, sources=sources, point_ids=point_ids)
-        all_features = static_features_expand.merge(dynamic_features, how='left', on=['point_id', 'measurement_start_utc', 'source', 'lon', 'lat'])
-        
+        all_features = static_features_expand.merge(dynamic_features, how='left', on=['point_id',
+                                                                                      'measurement_start_utc',
+                                                                                      'source',
+                                                                                      'lon',
+                                                                                      'lat'])
+
         return all_features
 
     def get_model_inputs(self, start_date, end_date, sources=None, species=None, point_ids=None):

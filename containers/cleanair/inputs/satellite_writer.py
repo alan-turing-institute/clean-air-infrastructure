@@ -50,7 +50,8 @@
 #         Remove duplicates and add the site_code
 #         """
 #         try:
-#             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
+#             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json" \
+#                         .format(
 #                 site_code, str(start_date), str(end_date)
 #             )
 #             raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]

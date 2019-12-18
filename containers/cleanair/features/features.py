@@ -5,7 +5,8 @@ import time
 from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
-from ..databases.tables import IntersectionGeom, IntersectionValue, IntersectionValueDynamic, LondonBoundary, MetaPoint, UKMap
+from ..databases.tables import (IntersectionGeom, IntersectionValue, IntersectionValueDynamic,
+                                LondonBoundary, MetaPoint, UKMap)
 from ..loggers import duration, green, get_logger
 
 
@@ -30,8 +31,8 @@ class Features(DBWriter):
 
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
-        self.buffer_radii_metres = [1000, 500, 200, 100, 10]      
-        self.dynamic = False 
+        self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+        self.dynamic = False
 
     @property
     def features(self):
@@ -41,7 +42,7 @@ class Features(DBWriter):
     def table(self):
         """Either returns an sql table instance or a subquery"""
         raise NotImplementedError("Must be implemented by child classes")
-    
+
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
         with self.dbcnxn.open_session() as session:
@@ -72,7 +73,7 @@ class Features(DBWriter):
             # Construct column selector for feature
             columns = [table.geom]
             columns = columns + [getattr(table, feature)
-                                 for feature in self.features[feature_name]['feature_dict'].keys()]            
+                                 for feature in self.features[feature_name]['feature_dict'].keys()]
             if self.dynamic:
                 columns = columns + [table.measurement_start_utc]
 
@@ -179,30 +180,31 @@ class Features(DBWriter):
                                                 sq_within.c.measurement_start_utc,
                                                 *[func.coalesce(agg_func(
                                                     getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                .label("value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
+                                                  ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
+                                                  .label("value_{}".format(radius))
+                                                  for radius in self.buffer_radii_metres]
                                                 ).group_by(sq_within.c.id, sq_within.c.measurement_start_utc) \
                                                  .order_by(sq_within.c.id, sq_within.c.measurement_start_utc)
 
             else:
                 sq_intersections = session.query(sq_within.c.id,
-                                                literal(feature_name).label("feature_name"),                                             
-                                                *[func.coalesce(agg_func(
+                                                 literal(feature_name).label("feature_name"),
+                                                 *[func.coalesce(agg_func(
                                                     getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                .label("value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
-                                                ).group_by(sq_within.c.id).subquery()
+                                                  ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
+                                                  .label("value_{}".format(radius))
+                                                  for radius in self.buffer_radii_metres]
+                                                 ).group_by(sq_within.c.id).subquery()
 
                 # Join with meta points to ensure every meta point gets an entry,
                 # even if there is no intersection in the buffer
                 q_intersections = session.query(sq_metapoints.c.id,
                                                 literal(feature_name).label("feature_name"),
                                                 *[getattr(sq_intersections.c, "value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
+                                                  for radius in self.buffer_radii_metres]
                                                 ).join(sq_intersections,
-                                                    sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
+                                                       sq_intersections.c.id == sq_metapoints.c.id,
+                                                       isouter=True)
 
         # Return the overall query
         return q_intersections

@@ -89,6 +89,7 @@ class IntersectionValue(Base):
                                  value_100=reading_tuple[4],
                                  value_10=reading_tuple[5])
 
+
 class IntersectionValueDynamic(Base):
     """Intersection between interest points and UKMap as values"""
     __tablename__ = "intersection_value_dynamic"

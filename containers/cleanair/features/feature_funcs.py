@@ -17,7 +17,7 @@ def sum_length(geom):
 def sum_(x):
     return func.sum(x)
 
-    
+
 def min_(x):
     return func.min(x)
 

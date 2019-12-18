@@ -36,7 +36,7 @@ def main():
         static_feature_extractor = ScootFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_scoot_road_reading_tables(find_closest_roads=False)
-        static_feature_extractor.update_remote_tables() 
+        static_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
