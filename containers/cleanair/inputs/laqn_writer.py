@@ -138,7 +138,6 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(LAQNReading.__tablename__))
-            session.commit()
 
         self.logger.info("Finished %s readings update", green("LAQN"))
 

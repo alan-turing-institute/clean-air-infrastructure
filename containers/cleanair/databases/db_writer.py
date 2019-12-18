@@ -58,6 +58,7 @@ class DBWriter(DBInteractor):
             if flush:
                 self.logger.debug("Flushing transaction...")
                 session.flush()
+            session.commit()
         # Using merge takes approximately twice as long, but avoids duplicate key issues
         except IntegrityError as error:
             if "psycopg2.errors.UniqueViolation" not in str(error):
@@ -72,6 +73,7 @@ class DBWriter(DBInteractor):
             if flush:
                 self.logger.debug("Flushing transaction...")
                 session.flush()
+            session.commit()
 
     def commit_records(self, session, records, flush=False, table=None, on_conflict_do_nothing=True):
         """

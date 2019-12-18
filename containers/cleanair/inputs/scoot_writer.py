@@ -181,7 +181,6 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 try:
                     # Commit the records to the database
                     self.commit_records(session, site_records)
-                    session.commit()
                     n_records += len(site_records)
                 except IntegrityError as error:
                     self.logger.error("Failed to add records to the database: %s", type(error))
