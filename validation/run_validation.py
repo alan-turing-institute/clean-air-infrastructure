@@ -1,5 +1,6 @@
 import sys
 import logging
+import argparse
 import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
@@ -56,7 +57,7 @@ def strtime_offset(strtime, offset_hours):
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
-def forecast(model_fitter, model_data, model_params={}, max_iter=5):
+def forecast(model_fitter, model_data, model_params={}, max_iter=5, return_results=False):
     """
     Forecast air quality.
 
@@ -110,11 +111,23 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=5):
     )
     
     # filter out nans
+    print()
+    print("### columns:")
+    print(list(model_data.normalised_pred_data_df.columns))
+    useful_df = model_data.normalised_pred_data_df[[
+        'measurement_start_utc', 'point_id', 'source', 'location',
+        'lat', 'lon', 'fit_start_time', 'predict_mean', 'predict_var'
+    ] + model_data.y_names]
+
     pred_data_df = model_data.normalised_pred_data_df.copy()[['measurement_start_utc', 'predict_mean'] + model_data.y_names].dropna()
     
     # calculate scores for each metric for each hour over all sensors
     metric_methods = get_metric_methods()
-    return measure_scores_by_hour(pred_data_df, metric_methods)
+    scores = measure_scores_by_hour(pred_data_df, metric_methods)
+
+    if return_results:
+        return scores, useful_df
+    return scores
 
 def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_col='predict_mean', test_col='NO2'):
     """
@@ -212,7 +225,7 @@ def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
     
     return rolls
 
-def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=5):
+def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=5, return_results=False):
     """
     Train and predict for multiple time periods in a row.
     """
@@ -224,13 +237,26 @@ def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=5):
         print()
         print("iteration", roll)
         model_fitter = models[model_name]()
-        scores_df = forecast(model_fitter, model_data, model_params=model_params, max_iter=max_iter)
+        if return_results:
+            scores_df, pred_df = forecast(model_fitter, model_data, model_params=model_params, max_iter=max_iter, return_results=True)
+        else:
+            scores_df = forecast(model_fitter, model_data, model_params=model_params, max_iter=max_iter)
+        
+        # update all_preds if return_results is true
+        if roll == 0 and return_results:
+            all_preds_df = pred_df.copy()
+        elif roll > 0 and return_results:
+            all_preds_df = all_preds_df.append(pred_df)
+
+        # update the metric results df
         if roll == 0:
             results_df = scores_df.copy()
         else:
             results_df = results_df.append(scores_df)
         roll += 1
 
+    if return_results:
+        return results_df, all_preds_df
     return results_df
 
 def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
@@ -288,14 +314,13 @@ def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
             scores[key] = np.nan
     return scores
 
-def run_rolling():
+def run_rolling(write_results=False):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
     train_n_hours = 72
     pred_n_hours = 24
     n_rolls = 5
     rolls = create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
-    print(rolls)
 
     # get sensor data and select subset of sensors
     secret_fp = "../terraform/.secrets/db_secrets.json"
@@ -324,9 +349,10 @@ def run_rolling():
         model_data_list.append(model_data)
 
     # Run rolling forecast
-    results_df = rolling_forecast('svgp', model_data_list, model_params=model_params)
-    print(results_df)
-    results_df.to_csv('results/rolling.csv')
+    scores_df, results_df = rolling_forecast('svgp', model_data_list, model_params=model_params, return_results=True)
+    print(scores_df)
+    scores_df.to_csv('results/rolling.csv')
+    results_df.to_csv('results/preds.csv')
 
 def get_model_params_default():
     return {
@@ -353,7 +379,7 @@ def get_model_config_default(train_start, train_end, pred_start, pred_end, train
         'tag': 'testing'
     }
 
-def run_forecast():
+def run_forecast(write_results=False):
     # Set dates for training and testing
     train_end = "2019-11-06T00:00:00"
     train_n_hours = 72 * 2
@@ -389,10 +415,20 @@ def run_forecast():
     model_fitter = SVGP()
 
     # Run validation
-    scores = forecast(model_fitter, model_data, model_params=model_params)
+    scores, results = forecast(model_fitter, model_data, model_params=model_params, return_results=write_results)
     print(scores)
+    results.to_csv('results/forecast.csv')
 
 if __name__ == "__main__":
-
+    parser = argparse.ArgumentParser(description="Run validation")
+    parser.add_argument('-r', '--rolling', action='store_true')
+    parser.add_argument('-w', '--write',  action='store_true')
+    args = parser.parse_args()
+    kwargs = vars(args)
+    roll = kwargs.pop('rolling')
+    write_results = kwargs.pop('write')
     logging.basicConfig()
-    run_rolling()
+    if roll:
+        run_rolling(write_results=write_results)
+    else:
+        run_forecast(write_results=write_results)
