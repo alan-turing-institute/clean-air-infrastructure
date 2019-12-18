@@ -494,8 +494,8 @@ class ModelData(ModelDataReader):
             self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-        self.pred_data_df = self.get_model_features(
-            self.pred_start_date, self.pred_end_date, self.pred_sources, self.pred_interest_points)
+        self.pred_data_df = self.get_model_inputs(
+            self.pred_start_date, self.pred_end_date, self.pred_sources, self.species, self.pred_interest_points)
         self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
     def __validate_config(self, config):
