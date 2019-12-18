@@ -10,7 +10,7 @@ import plotly.figure_factory as ff
 from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
                                 LAQNReading, MetaPoint, AQESite,
                                 AQEReading, ModelResult)
-from ..databases import DBReader, DBWriter
+from ..databases import DBWriter
 from ..loggers import get_logger
 
 
@@ -80,10 +80,10 @@ class ModelData(DBWriter):
 
         self.species = config['species']
         if config['features'] == 'all':
-            feature_names = self.list_available_features()
+            feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
-            self.logger.info("Features 'all' replaced with available features: {}".format(config['features']))
+            self.logger.info("Features 'all' replaced with available features: %", config['features'])
 
         self.features = config['features']
         self.norm_by = config['norm_by']
@@ -94,7 +94,7 @@ class ModelData(DBWriter):
         self.x_names = ["epoch", "lat", "lon"] + self.features
         self.y_names = self.species
 
-        # Get model data from database 
+        # Get model data from database
         self.training_data_df = self.get_model_inputs(
             self.train_start_date, self.train_end_date, self.train_sources, self.species, self.train_interest_points)
 
@@ -416,7 +416,8 @@ class ModelData(DBWriter):
 
         return time_df_merged_instance
 
-    def show_vis(self, sensor_status_df, title='Sensor data'):
+    @staticmethod
+    def show_vis(sensor_status_df, title='Sensor data'):
         """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
 
         gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
@@ -472,9 +473,8 @@ class ModelData(DBWriter):
             def get_val(x):
                 if len(x) == 1:
                     return x
-                else:
-                    raise ValueError("""Pandas pivot table trying to return an array of values.
-                                        Here it must only return a single value""")
+                raise ValueError("""Pandas pivot table trying to return an array of values.
+                                    Here it must only return a single value""")
 
             # Reshape features df (make wide)
             if start_date:
@@ -512,7 +512,8 @@ class ModelData(DBWriter):
 
         return self.__select_features(IntersectionValue, sources, point_ids)
 
-    def __expand_time(self, start_date, end_date, feature_df):
+    @staticmethod
+    def __expand_time(start_date, end_date, feature_df):
         """
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date (inclusive) and end_date
@@ -627,8 +628,8 @@ class ModelData(DBWriter):
         return model_data
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
-
-        # # Create new dataframe with predictions
+        """Update the model results data frame with model predictions"""
+        # Create new dataframe with predictions
         predict_df = pd.DataFrame(index=predict_data_dict['index'])
         predict_df['predict_mean'] = Y_pred[:, 0]
         predict_df['predict_var'] = Y_pred[:, 1]
@@ -654,4 +655,3 @@ class ModelData(DBWriter):
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, upload_records, flush=True, table=ModelResult)
-
