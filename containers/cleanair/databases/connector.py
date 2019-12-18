@@ -56,7 +56,7 @@ class Connector():
         except FileNotFoundError:
 
             # Construct available secrets files
-            secrets_directories = ["/secrets", "./terraform/.secrets/"]
+            secrets_directories = ["/secrets"]
             secrets_files = [f for f in [os.path.join(s, secret_file)
                              for s in secrets_directories] if os.path.isfile(f)]
 
