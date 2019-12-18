@@ -405,7 +405,7 @@ class ModelDataReader(DBReader, DBWriter):
 
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.add_records(session, upload_records, flush=True, table=ModelResult)
+            self.commit_records(session, upload_records, flush=True, table=ModelResult)
 
 
 class ModelData(ModelDataReader):

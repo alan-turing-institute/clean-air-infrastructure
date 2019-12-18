@@ -197,12 +197,12 @@ class Features(DBWriter):
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_value_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
-                        self.add_records(session, select_stmt, table=IntersectionValue)
+                        self.commit_records(session, select_stmt, table=IntersectionValue)
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_geom_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
-                        self.add_records(session, select_stmt, table=IntersectionGeom)
+                        self.commit_records(session, select_stmt, table=IntersectionGeom)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
@@ -224,7 +224,7 @@ class Features(DBWriter):
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
                                                     IntersectionGeom.point_id).subquery()
 
-                    self.add_records(session, select_stmt, table=IntersectionValue)
+                    self.commit_records(session, select_stmt, table=IntersectionValue)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))

@@ -22,7 +22,7 @@ class DBWriter(DBInteractor):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def __add_records_core(self, session, records, table, on_conflict_do_nothing=True):
+    def __commit_records_core(self, session, records, table, on_conflict_do_nothing=True):
         """Add records using sqlalchemy core
         args:
             records: Either a list of dictionary or an slqalchemy subquery
@@ -49,7 +49,7 @@ class DBWriter(DBInteractor):
             session.execute(insert_stmt)
             session.commit()
 
-    def __add_records_orm(self, session, records, flush=False):
+    def __commit_records_orm(self, session, records, flush=False):
         """Add records using sqlalchemy ORM"""
         # Using add_all is faster but will fail if this data was already added
         try:
@@ -73,7 +73,7 @@ class DBWriter(DBInteractor):
                 self.logger.debug("Flushing transaction...")
                 session.flush()
 
-    def add_records(self, session, records, flush=False, table=None, on_conflict_do_nothing=True):
+    def commit_records(self, session, records, flush=False, table=None, on_conflict_do_nothing=True):
         """
         Commit records to the database
 
@@ -89,9 +89,9 @@ class DBWriter(DBInteractor):
         """
 
         if table:
-            self.__add_records_core(session, records, table, on_conflict_do_nothing)
+            self.__commit_records_core(session, records, table, on_conflict_do_nothing)
         else:
-            self.__add_records_orm(session, records, flush)
+            self.__commit_records_orm(session, records, flush)
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

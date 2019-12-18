@@ -192,20 +192,20 @@ class ScootFeatures(DateRangeMixin, Features):
         scoot_road_matched = self.join_scoot_with_road().subquery()
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all scoot sensors to road")
-            self.add_records(session, scoot_road_matched, table=ScootRoadMatch)
+            self.commit_records(session, scoot_road_matched, table=ScootRoadMatch)
 
         # Get unmatched road segments, find the 5 closest scoot sensors and insert into database
         scoot_road_unmatched = self.join_unmatached_scoot_with_road().subquery()
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
-            self.add_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
+            self.commit_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
 
     def update_average_traffic(self):
 
         self.logger.info("Mapping scoot readings to road segments between %s and %s", self.start_datetime, self.end_datetime)
         traffic_q = self.weighted_average_traffic(self.start_datetime, self.end_datetime)
         with self.dbcnxn.open_session() as session:
-            self.add_records(session, traffic_q.subquery(), table=ScootRoadReading)
+            self.commit_records(session, traffic_q.subquery(), table=ScootRoadReading)
 
     def update_scoot_road_reading_tables(self, find_closest_roads=False):
         """Update all remote tables"""

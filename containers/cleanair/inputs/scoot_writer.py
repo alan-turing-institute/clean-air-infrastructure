@@ -180,7 +180,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
             with self.dbcnxn.open_session() as session:
                 try:
                     # Commit the records to the database
-                    self.add_records(session, site_records)
+                    self.commit_records(session, site_records)
                     session.commit()
                     n_records += len(site_records)
                 except IntegrityError as error:
