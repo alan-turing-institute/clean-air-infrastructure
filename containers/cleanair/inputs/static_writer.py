@@ -28,6 +28,7 @@ class StaticWriter(DBWriter):
         # Map of tables to schemas
         self.schemas = {
             "hexgrid": "interest_points",
+            "rectgrid_100": "interest_points",
             "london_boundary": "static_data",
             "oshighway_roadlink": "static_data",
             "ukmap": "static_data",
@@ -102,6 +103,8 @@ class StaticWriter(DBWriter):
         elif self.table_name == "scoot_detector":
             extra_args += ["-nlt", "POINT"]
 
+        elif self.table_name == 'rectgrid_100':
+            extra_args += ["-s_srs", "EPSG:27700"]
         # Run ogr2ogr
         self.logger.info("Uploading static data to table %s in %s",
                          green(self.table_name), green(self.dbcnxn.connection_info["db_name"]))
@@ -155,6 +158,30 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
             ]
 
+        elif self.table_name == "rectgrid_100":
+            sql_commands = [
+                """CREATE INDEX IF NOT EXISTS rectgrid_100_geom_geom_idx
+                       ON {} USING GIST(geom);""".format(self.schema_table),
+                """ALTER TABLE {}
+                       DROP COLUMN objectid,
+                       DROP COLUMN orig_fid;""".format(self.schema_table),
+                """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.schema_table),
+                """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.schema_table),
+                """INSERT INTO interest_points.meta_point(source, location, id)
+                       SELECT 'grid_100', centroid, uuid_generate_v4()
+                       FROM {};""".format(self.schema_table),
+                """ALTER TABLE {} ADD COLUMN point_id uuid;""".format(self.schema_table),
+                """ALTER TABLE {}
+                       ADD CONSTRAINT fk_rectgrid_100_id FOREIGN KEY (point_id)
+                       REFERENCES interest_points.meta_point(id)
+                       ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
+                """UPDATE {0}
+                       SET point_id = meta_points.id
+                       FROM (SELECT * FROM interest_points.meta_point WHERE source = 'grid_100') as meta_points
+                       WHERE {0}.centroid = meta_points.location;""".format(self.schema_table),
+                """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
+            ]
+
         elif self.table_name == "london_boundary":
             sql_commands = [
                 """CREATE INDEX IF NOT EXISTS london_boundary_geom_geom_idx
@@ -184,7 +211,6 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
-                       DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,

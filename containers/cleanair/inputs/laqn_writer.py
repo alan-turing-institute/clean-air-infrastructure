@@ -52,7 +52,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=5.0).json()["AirQualityData"]["Data"]
+            raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
@@ -110,7 +110,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
                              green(LAQNSite.__tablename__))
             session.commit()
 
-    def update_reading_table(self):
+    def update_reading_table(self, usecore=True):
         """Update the readings table with new sensor readings."""
         self.logger.info("Starting %s readings update...", green("LAQN"))
 
@@ -121,19 +121,23 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Requesting readings from %s for %s sites",
                              green("KCL API"), green(len(list(site_info_query))))
 
-            # Get all readings for each site between its start and end dates and update the database
-            site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-            site_records = [LAQNReading.build_entry(site_reading) for site_reading in site_readings]
+        # Get all readings for each site between its start and end dates and update the database
+        site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
+        site_records = [LAQNReading.build_entry(site_reading, return_dict=usecore)
+                        for site_reading in site_readings]
 
+        # Open a DB session
+        with self.dbcnxn.open_session() as session:
             # Commit the records to the database
-            self.add_records(session, site_records)
-            session.commit()
+            if usecore:
+                self.commit_records(session, site_records, table=LAQNReading)
+            else:
+                self.commit_records(session, site_records)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(LAQNReading.__tablename__))
-            session.commit()
 
         self.logger.info("Finished %s readings update", green("LAQN"))
 

@@ -2,7 +2,7 @@
 Tables for intersection between datasource and interest points
 """
 from sqlalchemy import Column, ForeignKey, String, Float
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from ..base import Base
@@ -14,7 +14,7 @@ class IntersectionGeom(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_name = Column(String(20), primary_key=True, nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
     geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
     geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
@@ -55,12 +55,12 @@ class IntersectionValue(Base):
     __table_args__ = {"schema": "static_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    feature_name = Column(String(20), primary_key=True, nullable=False)
-    value_1000 = Column(Float, nullable=False)
-    value_500 = Column(Float, nullable=False)
-    value_200 = Column(Float, nullable=False)
-    value_100 = Column(Float, nullable=False)
-    value_10 = Column(Float, nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
+    value_1000 = Column(Float)
+    value_500 = Column(Float)
+    value_200 = Column(Float)
+    value_100 = Column(Float)
+    value_10 = Column(Float)
 
     # Create IntersectionValue.point with no reverse relationship
     point = relationship("MetaPoint")
@@ -90,51 +90,36 @@ class IntersectionValue(Base):
                                  value_10=reading_tuple[5])
 
 
-class ModelInput(Base):
-    """Input features for the model"""
-    __tablename__ = "model_input"
+class IntersectionValueDynamic(Base):
+    """Intersection between interest points and UKMap as values"""
+    __tablename__ = "intersection_value_dynamic"
     __table_args__ = {"schema": "dynamic_features"}
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
-    # Building height
-    max_building_height_1000 = Column(Float(), nullable=False)
-    max_building_height_500 = Column(Float(), nullable=False)
-    max_building_height_200 = Column(Float(), nullable=False)
-    max_building_height_100 = Column(Float(), nullable=False)
-    max_building_height_10 = Column(Float(), nullable=False)
-    # Flat area
-    total_flat_area_1000 = Column(Float(), nullable=False)
-    total_flat_area_500 = Column(Float(), nullable=False)
-    total_flat_area_200 = Column(Float(), nullable=False)
-    total_flat_area_100 = Column(Float(), nullable=False)
-    total_flat_area_10 = Column(Float(), nullable=False)
-    # Grass area
-    total_grass_area_1000 = Column(Float(), nullable=False)
-    total_grass_area_500 = Column(Float(), nullable=False)
-    total_grass_area_200 = Column(Float(), nullable=False)
-    total_grass_area_100 = Column(Float(), nullable=False)
-    total_grass_area_10 = Column(Float(), nullable=False)
-    # Hospital area
-    total_hospital_area_1000 = Column(Float(), nullable=False)
-    total_hospital_area_500 = Column(Float(), nullable=False)
-    total_hospital_area_200 = Column(Float(), nullable=False)
-    total_hospital_area_100 = Column(Float(), nullable=False)
-    total_hospital_area_10 = Column(Float(), nullable=False)
-    # Museum area
-    total_museum_area_1000 = Column(Float(), nullable=False)
-    total_museum_area_500 = Column(Float(), nullable=False)
-    total_museum_area_200 = Column(Float(), nullable=False)
-    total_museum_area_100 = Column(Float(), nullable=False)
-    total_museum_area_10 = Column(Float(), nullable=False)
-    # Park area
-    total_park_area_1000 = Column(Float(), nullable=False)
-    total_park_area_500 = Column(Float(), nullable=False)
-    total_park_area_200 = Column(Float(), nullable=False)
-    total_park_area_100 = Column(Float(), nullable=False)
-    total_park_area_10 = Column(Float(), nullable=False)
-    # Water area
-    total_water_area_1000 = Column(Float(), nullable=False)
-    total_water_area_500 = Column(Float(), nullable=False)
-    total_water_area_200 = Column(Float(), nullable=False)
-    total_water_area_100 = Column(Float(), nullable=False)
-    total_water_area_10 = Column(Float(), nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    value_1000 = Column(Float)
+    value_500 = Column(Float)
+    value_200 = Column(Float)
+    value_100 = Column(Float)
+    value_10 = Column(Float)
+
+    # Create IntersectionValue.point with no reverse relationship
+    point = relationship("MetaPoint")
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<IntersectionValueDynamic(" + ", ".join(vals)
+
+    @staticmethod
+    def build_entry(feature_name, reading_tuple):
+        """
+        Create a IntersectionValue entry and return it
+        """
+        return IntersectionValue(point_id=str(reading_tuple[0]),
+                                 feature_name=feature_name,
+                                 value_1000=reading_tuple[1],
+                                 value_500=reading_tuple[2],
+                                 value_200=reading_tuple[3],
+                                 value_100=reading_tuple[4],
+                                 value_10=reading_tuple[5])

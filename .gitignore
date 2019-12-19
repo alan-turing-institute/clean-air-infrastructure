@@ -14,6 +14,7 @@ terraform/backend_config.tf
 
 # pyenv
 .python-version
+python-virtual-environments/
 
 # Python
 *__pycache__
