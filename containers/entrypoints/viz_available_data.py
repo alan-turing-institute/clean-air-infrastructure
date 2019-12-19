@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData
 from cleanair.loggers import get_log_level
 
+
 def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
 

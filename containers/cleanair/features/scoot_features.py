@@ -186,8 +186,7 @@ class ScootFeatures(DateRangeMixin, Features):
                             agg_func(sr_sq.c.flow_raw_count).label("flow_count_waverage"),
                             agg_func(sr_sq.c.occupancy_raw_count).label("occupancy_count_waverage"),
                             agg_func(sr_sq.c.congestion_raw_count).label("congestion_count_waverage"),
-                            agg_func(sr_sq.c.saturation_raw_count).label("saturation_count_waverage"),
-                           ]
+                            agg_func(sr_sq.c.saturation_raw_count).label("saturation_count_waverage")]
 
         with self.dbcnxn.open_session() as session:
 
