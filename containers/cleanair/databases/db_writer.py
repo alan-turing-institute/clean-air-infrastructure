@@ -49,15 +49,14 @@ class DBWriter(DBInteractor):
             session.execute(insert_stmt)
             session.commit()
 
-    def __commit_records_orm(self, session, records, flush=False):
+    def __commit_records_orm(self, session, records):
         """Add records using sqlalchemy ORM"""
         # Using add_all is faster but will fail if this data was already added
         try:
             self.logger.debug("Attempting to add all records.")
             session.add_all(records)
-            if flush:
-                self.logger.debug("Flushing transaction...")
-                session.flush()
+            self.logger.debug("Flushing transaction...")
+            session.flush()
             session.commit()
         # Using merge takes approximately twice as long, but avoids duplicate key issues
         except IntegrityError as error:
@@ -70,9 +69,8 @@ class DBWriter(DBInteractor):
             for i, record in enumerate(records):
                 self.logger.debug("Merging record %s of %s", i, len(records))
                 session.merge(record)
-            if flush:
-                self.logger.debug("Flushing transaction...")
-                session.flush()
+            self.logger.debug("Flushing transaction...")
+            session.flush()
             session.commit()
 
     def commit_records(self, session, records, table=None, on_conflict_do_nothing=True):
@@ -83,7 +81,6 @@ class DBWriter(DBInteractor):
             session: a session object
             records: Either a list of sqlalchemy records, list of dictionaries (table arg must be provided)
                         or an sqlalchemy subquery object (table arg must be provided)
-            flush: If using the orm (sqlalchemy records) set True to avoid merge conflicts
             table: Optional. sqlalchemy table. If table provide sqlalchemy core used for insert
             on_conflict_do_nothing: bool (default True). Core will ignore duplicate entires.
 
@@ -93,7 +90,7 @@ class DBWriter(DBInteractor):
         if table:
             self.__commit_records_core(session, records, table, on_conflict_do_nothing)
         else:
-            self.__commit_records_orm(session, records, flush=True)
+            self.__commit_records_orm(session, records)
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

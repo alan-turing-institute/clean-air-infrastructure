@@ -180,16 +180,15 @@ class Features(DBWriter):
 
             # Now group these by interest point, aggregating the height columns using the maximum in each group
             # => [Npoints records]
-
-            if self.dynamic:
-                aggregate_funcs = [
-                    func.coalesce(agg_func(getattr(sq_within.c,
-                                                   value_column)).filter(getattr(sq_within.c,
-                                                                                 "intersects_{}".format(radius))), 0.0)
-                    .label("value_{}".format(radius))
-                    for radius in self.buffer_radii_metres
+            aggregate_funcs = [
+                func.coalesce(agg_func(getattr(sq_within.c,
+                                               value_column)).filter(getattr(sq_within.c,
+                                                                             "intersects_{}".format(radius))), 0.0)
+                .label("value_{}".format(radius))
+                for radius in self.buffer_radii_metres
                 ]
 
+            if self.dynamic:
                 q_intersections = session.query(sq_within.c.id,
                                                 literal(feature_name).label("feature_name"),
                                                 sq_within.c.measurement_start_utc,
@@ -198,14 +197,6 @@ class Features(DBWriter):
                                                  .order_by(sq_within.c.id, sq_within.c.measurement_start_utc)
 
             else:
-                aggregate_funcs = [
-                    func.coalesce(agg_func(getattr(sq_within.c,
-                                                   value_column)).filter(getattr(sq_within.c,
-                                                                                 "intersects_{}".format(radius))), 0.0)
-                    .label("value_{}".format(radius))
-                    for radius in self.buffer_radii_metres
-                ]
-
                 sq_intersections = session.query(sq_within.c.id,
                                                  literal(feature_name).label("feature_name"),
                                                  *aggregate_funcs
