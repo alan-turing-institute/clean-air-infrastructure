@@ -88,6 +88,7 @@ class ScootRoadUnmatched(Base):
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
         return "<ScootRoadUnmatch(" + ", ".join(vals)
 
+
 class ScootRoadReading(Base):
     """Table of scoot readings mapped to road segments"""
     __tablename__ = "scoot_road_readings"

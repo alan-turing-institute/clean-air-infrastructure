@@ -5,7 +5,8 @@ import time
 from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
-from ..databases.tables import IntersectionGeom, IntersectionValue, IntersectionValueDynamic, LondonBoundary, MetaPoint, UKMap
+from ..databases.tables import (IntersectionGeom, IntersectionValue, IntersectionValueDynamic,
+                                LondonBoundary, MetaPoint, UKMap)
 from ..loggers import duration, green, get_logger
 
 
@@ -30,18 +31,24 @@ class Features(DBWriter):
 
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
-        self.buffer_radii_metres = [1000, 500, 200, 100, 10]      
-        self.dynamic = False 
+        self.buffer_radii_metres = [1000, 500, 200, 100, 10]
+        self.dynamic = False
 
     @property
     def features(self):
+        """A dictionary of features of the kind:
+
+        {"building_height": {"type": "value", "feature_dict": {"calculated_height_of_building": ["*"]},
+                                "aggfunc": max_}
+        }
+        """
         raise NotImplementedError("Must be implemented by child classes")
 
     @property
     def table(self):
         """Either returns an sql table instance or a subquery"""
         raise NotImplementedError("Must be implemented by child classes")
-    
+
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
         with self.dbcnxn.open_session() as session:
@@ -72,7 +79,7 @@ class Features(DBWriter):
             # Construct column selector for feature
             columns = [table.geom]
             columns = columns + [getattr(table, feature)
-                                 for feature in self.features[feature_name]['feature_dict'].keys()]            
+                                 for feature in self.features[feature_name]['feature_dict'].keys()]
             if self.dynamic:
                 columns = columns + [table.measurement_start_utc]
 
@@ -173,36 +180,37 @@ class Features(DBWriter):
 
             # Now group these by interest point, aggregating the height columns using the maximum in each group
             # => [Npoints records]
+            aggregate_funcs = [
+                func.coalesce(agg_func(getattr(sq_within.c,
+                                               value_column)).filter(getattr(sq_within.c,
+                                                                             "intersects_{}".format(radius))), 0.0)
+                .label("value_{}".format(radius))
+                for radius in self.buffer_radii_metres
+                ]
+
             if self.dynamic:
                 q_intersections = session.query(sq_within.c.id,
                                                 literal(feature_name).label("feature_name"),
                                                 sq_within.c.measurement_start_utc,
-                                                *[func.coalesce(agg_func(
-                                                    getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                .label("value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
+                                                *aggregate_funcs
                                                 ).group_by(sq_within.c.id, sq_within.c.measurement_start_utc) \
                                                  .order_by(sq_within.c.id, sq_within.c.measurement_start_utc)
 
             else:
                 sq_intersections = session.query(sq_within.c.id,
-                                                literal(feature_name).label("feature_name"),                                             
-                                                *[func.coalesce(agg_func(
-                                                    getattr(sq_within.c, value_column)
-                                                ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                .label("value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
-                                                ).group_by(sq_within.c.id).subquery()
+                                                 literal(feature_name).label("feature_name"),
+                                                 *aggregate_funcs
+                                                 ).group_by(sq_within.c.id).subquery()
 
                 # Join with meta points to ensure every meta point gets an entry,
                 # even if there is no intersection in the buffer
                 q_intersections = session.query(sq_metapoints.c.id,
                                                 literal(feature_name).label("feature_name"),
                                                 *[getattr(sq_intersections.c, "value_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
+                                                  for radius in self.buffer_radii_metres]
                                                 ).join(sq_intersections,
-                                                    sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
+                                                       sq_intersections.c.id == sq_metapoints.c.id,
+                                                       isouter=True)
 
         # Return the overall query
         return q_intersections
@@ -275,14 +283,14 @@ class Features(DBWriter):
                 for select_stmt in self.process_value_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
                         if self.dynamic:
-                            self.add_records(session, select_stmt, table=IntersectionValueDynamic)
+                            self.commit_records(session, select_stmt, table=IntersectionValueDynamic)
                         else:
-                            self.add_records(session, select_stmt, table=IntersectionValue)
+                            self.commit_records(session, select_stmt, table=IntersectionValue)
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_geom_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
-                        self.add_records(session, select_stmt, table=IntersectionGeom)
+                        self.commit_records(session, select_stmt, table=IntersectionGeom)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
@@ -304,7 +312,7 @@ class Features(DBWriter):
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
                                                     IntersectionGeom.point_id).subquery()
 
-                    self.add_records(session, select_stmt, table=IntersectionValue)
+                    self.commit_records(session, select_stmt, table=IntersectionValue)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))

@@ -50,7 +50,8 @@ class ScootWriter(DateRangeMixin, DBWriter):
             detectors = sorted([s[0] for s in session.query(scoot_detector.c.detector_n).distinct()])
         return detectors
 
-    def get_remote_filenames(self, start_datetime, end_datetime):
+    @staticmethod
+    def get_remote_filenames(start_datetime, end_datetime):
         """Get all possible remote file details for the period in question"""
         file_list = []
         for date in rrule.rrule(rrule.DAILY, dtstart=start_datetime, until=end_datetime):
@@ -129,7 +130,8 @@ class ScootWriter(DateRangeMixin, DBWriter):
             return pandas.DataFrame(columns=input_df.columns)
 
     def aggregate_scoot_data(self, df_processed):
-
+        """
+        Aggregate scoot data"""
         # Get the minimum and maximum time in the dataset
         time_min = datetime_from_unix(df_processed["timestamp"].min())
         time_max = datetime_from_unix(df_processed["timestamp"].max())
@@ -194,8 +196,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
-                        self.add_records(session, site_records, table=ScootReading)
-                        session.commit()
+                        self.commit_records(session, site_records, table=ScootReading)
                         n_records += len(site_records)
                     except IntegrityError as error:
                         self.logger.error("Failed to add records to the database: %s", type(error))
