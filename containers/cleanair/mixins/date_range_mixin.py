@@ -33,7 +33,7 @@ class DateRangeMixin():
 
     @staticmethod
     def get_datetimes(start_date, end_date):
-
+        """Get min and max datetimes between start_date and end_date"""
         start_datetime = datetime.datetime.combine(start_date, datetime.datetime.min.time())
         end_datetime = datetime.datetime.combine(end_date, datetime.datetime.max.time())
         return start_datetime, end_datetime

@@ -75,7 +75,7 @@ class DBWriter(DBInteractor):
                 session.flush()
             session.commit()
 
-    def commit_records(self, session, records, flush=False, table=None, on_conflict_do_nothing=True):
+    def commit_records(self, session, records, table=None, on_conflict_do_nothing=True):
         """
         Commit records to the database
 
@@ -93,7 +93,7 @@ class DBWriter(DBInteractor):
         if table:
             self.__commit_records_core(session, records, table, on_conflict_do_nothing)
         else:
-            self.__commit_records_orm(session, records, flush)
+            self.__commit_records_orm(session, records, flush=True)
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

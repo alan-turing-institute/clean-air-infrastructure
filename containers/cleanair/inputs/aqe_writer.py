@@ -145,9 +145,9 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
 
             # Commit the records to the database
             if usecore:
-                self.commit_records(session, site_records, flush=True, table=AQEReading)
+                self.commit_records(session, site_records, table=AQEReading)
             else:
-                self.commit_records(session, site_records, flush=True)
+                self.commit_records(session, site_records)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",

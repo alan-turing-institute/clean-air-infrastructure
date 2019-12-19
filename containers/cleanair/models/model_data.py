@@ -83,7 +83,7 @@ class ModelData(DBWriter):
             feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
-            self.logger.info("Features 'all' replaced with available features: %", config['features'])
+            self.logger.info("Features 'all' replaced with available features: %s", config['features'])
 
         self.features = config['features']
         self.norm_by = config['norm_by']
@@ -136,17 +136,17 @@ class ModelData(DBWriter):
                 raise AttributeError("There are no features in the database. Run feature extraction first")
         else:
             self.logger.debug("Checking requested features are availble in database")
-            self.__check_features_in_database(config['features'])
+            self.__check_features_available(config['features'])
 
         # Check training sources are available
         train_sources = config['train_sources']
         self.logger.debug("Checking requested sources for training are availble in database")
-        self.__check_sources_in_database(train_sources)
+        self.__check_sources_available(train_sources)
 
         # Check prediction sources are available
         pred_sources = config['pred_sources']
         self.logger.debug("Checking requested sources for prediction are availble in database")
-        self.__check_sources_in_database(pred_sources)
+        self.__check_sources_available(pred_sources)
 
         # Check model type is valid
         if config['model_type'] not in valid_models:
@@ -156,11 +156,11 @@ class ModelData(DBWriter):
         # Check interest points are valid
         train_interest_points = config['train_interest_points']
         if isinstance(train_interest_points, list):
-            self.__check_interest_points_in_database(train_interest_points, train_sources)
+            self.__check_intpoints_available(train_interest_points, train_sources)
 
         pred_interest_points = config['pred_interest_points']
         if isinstance(pred_interest_points, list):
-            self.__check_interest_points_in_database(pred_interest_points, pred_sources)
+            self.__check_intpoints_available(pred_interest_points, pred_sources)
 
         self.logger.info("Validate config complete")
 
@@ -220,9 +220,9 @@ class ModelData(DBWriter):
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=return_y, dropna=dropna)
 
-    def __check_features_in_database(self, features):
+    def __check_features_available(self, features):
         """Check that all requested features exist in the database"""
 
         available_features = self.list_available_static_features() + self.list_available_dynamic_features()
@@ -237,7 +237,7 @@ class ModelData(DBWriter):
             raise AttributeError("The following features are not available the cleanair database: {}"
                                  .format(unavailable_features))
 
-    def __check_sources_in_database(self, sources):
+    def __check_sources_available(self, sources):
         """Check that sources are available in the database
 
         args:
@@ -255,7 +255,7 @@ class ModelData(DBWriter):
             raise AttributeError("The following sources are not available the cleanair database: {}"
                                  .format(unavailable_sources))
 
-    def __check_interest_points_in_database(self, interest_points, sources):
+    def __check_intpoints_available(self, interest_points, sources):
 
         with self.dbcnxn.open_session() as session:
 
@@ -654,4 +654,4 @@ class ModelData(DBWriter):
 
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, flush=True, table=ModelResult)
+            self.commit_records(session, upload_records, table=ModelResult)

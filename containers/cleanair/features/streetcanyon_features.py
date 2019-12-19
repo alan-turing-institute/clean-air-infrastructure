@@ -9,10 +9,6 @@ from ..databases.tables import StreetCanyon
 class StreetCanyonFeatures(Features):
     """Extract features for StreetCanyon"""
 
-    def __init__(self, **kwargs):
-        # Initialise parent classes
-        super().__init__(**kwargs)
-
     @property
     def table(self):
         return StreetCanyon

@@ -61,7 +61,7 @@ class RectGridWriter(DBWriter):
             # Update the meta_points table and retrieve point IDs
             self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green(MetaPoint.__tablename__))
             meta_points = [MetaPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
-            self.commit_records(session, meta_points, flush=True)
+            self.commit_records(session, meta_points)
             for grid_cell, meta_point in zip(grid_cells, meta_points):
                 grid_cell["point_id"] = meta_point.id  # this will be None if the record was not inserted
 

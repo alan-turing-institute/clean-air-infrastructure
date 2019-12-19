@@ -9,10 +9,6 @@ from ..databases.tables import OSHighway
 class OSHighwayFeatures(Features):
     """Extract features for OSHighways"""
 
-    def __init__(self, **kwargs):
-        # Initialise parent classes
-        super().__init__(**kwargs)
-
     @property
     def table(self):
         return OSHighway

@@ -15,16 +15,20 @@ def sum_length(geom):
 
 
 def sum_(x):
+    """sum of x"""
     return func.sum(x)
 
 
 def min_(x):
+    """min of x"""
     return func.min(x)
 
 
 def max_(x):
+    """max of x"""
     return func.max(x)
 
 
 def avg_(x):
+    """avg of x"""
     return func.avg(x)

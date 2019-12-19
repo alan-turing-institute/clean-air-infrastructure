@@ -36,6 +36,12 @@ class Features(DBWriter):
 
     @property
     def features(self):
+        """A dictionary of features of the kind:
+
+        {"building_height": {"type": "value", "feature_dict": {"calculated_height_of_building": ["*"]},
+                                "aggfunc": max_}
+        }
+        """
         raise NotImplementedError("Must be implemented by child classes")
 
     @property
@@ -174,26 +180,30 @@ class Features(DBWriter):
 
             # Now group these by interest point, aggregating the height columns using the maximum in each group
             # => [Npoints records]
+
+            aggregate_funcs = [
+                func.coalesce(agg_func(getattr(sq_within.c,
+                                               value_column)).filter(getattr(sq_within.c,
+                                                                             "intersects_{}".format(radius))), 0.0) \
+                                     .label("value_{}".format(radius))
+                for radius in self.buffer_radii_metres
+            ]
+
             if self.dynamic:
                 q_intersections = session.query(sq_within.c.id,
                                                 literal(feature_name).label("feature_name"),
                                                 sq_within.c.measurement_start_utc,
-                                                *[func.coalesce(agg_func(
-                                                    getattr(sq_within.c, value_column)
-                                                  ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                  .label("value_{}".format(radius))
-                                                  for radius in self.buffer_radii_metres]
+                                                *aggregate_funcs
                                                 ).group_by(sq_within.c.id, sq_within.c.measurement_start_utc) \
                                                  .order_by(sq_within.c.id, sq_within.c.measurement_start_utc)
 
             else:
                 sq_intersections = session.query(sq_within.c.id,
                                                  literal(feature_name).label("feature_name"),
-                                                 *[func.coalesce(agg_func(
-                                                    getattr(sq_within.c, value_column)
-                                                  ).filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
-                                                  .label("value_{}".format(radius))
-                                                  for radius in self.buffer_radii_metres]
+                                                 *[func.coalesce(agg_func(getattr(sq_within.c, value_column)) \
+                                                   .filter(getattr(sq_within.c, "intersects_{}".format(radius))), 0.0)
+                                                   .label("value_{}".format(radius))
+                                                   for radius in self.buffer_radii_metres]
                                                  ).group_by(sq_within.c.id).subquery()
 
                 # Join with meta points to ensure every meta point gets an entry,

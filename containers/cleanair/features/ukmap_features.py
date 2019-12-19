@@ -9,10 +9,6 @@ from ..databases.tables import UKMap
 class UKMapFeatures(Features):
     """Extract features for UKMap"""
 
-    def __init__(self, **kwargs):
-        # Initialise parent classes
-        super().__init__(**kwargs)
-
     @property
     def table(self):
         return UKMap
