@@ -11,7 +11,9 @@ geopandas==0.6.2
 gpflow==2.0.0rc1
 haversine==2.1.2
 matplotlib==3.1.2
+networkx==2.4.0
 numpy==1.17.4
+osmnx==0.11.0
 pandas==0.25.3
 plotly==4.4.1
 psycopg2-binary==2.8.4
