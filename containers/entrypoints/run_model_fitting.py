@@ -24,11 +24,11 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("--trainend", type=str, default='2019-11-01T00:00:00',
+    parser.add_argument("--trainend", type=str, default='2019-11-05T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=24,
+    parser.add_argument("--trainhours", type=int, default=72,
                         help="The number of hours to get training data for.")
-    parser.add_argument("--predstart", type=str, default='2019-11-01T00:00:00',
+    parser.add_argument("--predstart", type=str, default='2019-11-05T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
     parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")
@@ -59,7 +59,7 @@ def main():
                     'train_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['value_1000_building_height'],
+                    'features': ['value_1000_building_height', 'value_1000_total_occupancy_percentage'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -71,8 +71,7 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(**kwargs)
-    model_data.initialise(config=model_config)
+    model_data = ModelData(model_config, **kwargs)
 
     # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
@@ -83,7 +82,7 @@ def main():
 
     model_fitter.fit(training_data_dict['X'],
                      training_data_dict['Y'],
-                     max_iter=5,
+                     max_iter=20000,
                      model_params=model_params)
 
     # Get info about the model fit

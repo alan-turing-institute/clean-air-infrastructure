@@ -17,3 +17,7 @@ class ModelResult(Base):
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     predict_mean = Column(DOUBLE_PRECISION, nullable=False)
     predict_var = Column(DOUBLE_PRECISION, nullable=False)
+
+    def __repr__(self):
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
+        return "<ModelResults(" + ", ".join(vals)

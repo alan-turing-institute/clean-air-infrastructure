@@ -1,30 +1,69 @@
 """
 Scoot feature extraction
 """
-import pandas as pd
-from dateutil.parser import isoparse
 from sqlalchemy import asc, func
-from .static_features import Features
+from .features import Features
+from .feature_funcs import sum_, avg_, max_
+from ..mixins import DateRangeMixin
 from ..databases.tables import (OSHighway, ScootDetector, ScootReading,
-                                MetaPoint, ScootRoadMatch, ScootRoadUnmatched)
+                                MetaPoint, ScootRoadMatch, ScootRoadUnmatched,
+                                ScootRoadReading)
 
 
-class ScootFeatures(Features):
+class ScootFeatures(DateRangeMixin, Features):
     """Extract features for Scoot"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # List of features to extract
-        self.features = {}
-
+        # Set baseclass property 'dynamic' True to take time into account
+        self.dynamic = True
         # Subset of columns of interest for table columns
         self.scoot_columns = [ScootDetector.toid.label("scoot_toid"),
                               ScootDetector.detector_n.label("scoot_detector_n"),
                               ScootDetector.point_id.label("scoot_point_id")]
         self.os_highway_columns = [OSHighway.identifier.label("road_identifier"),
                                    OSHighway.toid.label("road_toid")]
+
+    @property
+    def table(self):
+        """Join the geometry column from OSHighway onto the ScootRoadReading table for feature extraction"""
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(ScootRoadReading,
+                                 OSHighway.geom).join(OSHighway).subquery()
+
+    @property
+    def features(self):
+        return {"total_occupancy_percentage": {"type": "value",
+                                               "feature_dict": {"occupancy_percentage": ["*"]},
+                                               "aggfunc": sum_},
+                "max_occupancy_percentage": {"type": "value",
+                                             "feature_dict": {"occupancy_percentage": ["*"]},
+                                             "aggfunc": max_},
+                "avg_occupancy_percentage": {"type": "value",
+                                             "feature_dict": {"occupancy_percentage": ["*"]},
+                                             "aggfunc": avg_},
+                "total_flow_count": {"type": "value",
+                                     "feature_dict": {"flow_raw_count": ["*"]},
+                                     "aggfunc": sum_},
+                "max_flow_count": {"type": "value",
+                                   "feature_dict": {"flow_raw_count": ["*"]},
+                                   "aggfunc": max_},
+                "avg_flow_count": {"type": "value",
+                                   "feature_dict": {"flow_raw_count": ["*"]},
+                                   "aggfunc": avg_},
+                "total_occupancy_count": {"type": "value",
+                                          "feature_dict": {"occupancy_raw_count": ["*"]},
+                                          "aggfunc": sum_},
+                "max_occupancy_count": {"type": "value",
+                                        "feature_dict": {"occupancy_raw_count": ["*"]},
+                                        "aggfunc": max_},
+                "avg_occupancy_count": {"type": "value",
+                                        "feature_dict": {"occupancy_raw_count": ["*"]},
+                                        "aggfunc": avg_},
+                }
 
     def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
@@ -50,7 +89,7 @@ class ScootFeatures(Features):
             return scoot_info_q
 
     def join_unmatached_scoot_with_road(self):
-        """For all roads (OSHighway) not matched to a scoot sensor (ScootDetector), 
+        """For all roads (OSHighway) not matched to a scoot sensor (ScootDetector),
            match with the closest 5 scoot sensors"""
 
         boundary_geom = self.query_london_boundary()
@@ -92,11 +131,16 @@ class ScootFeatures(Features):
         """Return union between ScootRoadMatch and ScootRoadUnmatched"""
 
         with self.dbcnxn.open_session() as session:
-            road_matched = session.query(ScootRoadMatch)
-            road_unmatched = session.query(ScootRoadUnmatched)
-            all_road_matched = road_matched.union_all(road_unmatched)
+            road_matched_q = session.query(ScootRoadMatch)
+            road_unmatched_q = session.query(ScootRoadUnmatched)
+            all_road_matched_sq = road_matched_q.union_all(road_unmatched_q).subquery()
 
-            return all_road_matched
+            all_road_matched_q = session.query(
+                all_road_matched_sq.c.dynamic_features_scoot_road_match_road_toid.label('road_toid'),
+                all_road_matched_sq.c.dynamic_features_scoot_road_match_detector_n.label('detector_n'),
+                all_road_matched_sq.c.dynamic_features_scoot_road_match_scoot_road_distance.label('scoot_road_distance')
+            )
+            return all_road_matched_q
 
     def total_inverse_distance(self):
         """Calculate the total inverse distance from each road section to the matched scoot sensors
@@ -107,94 +151,85 @@ class ScootFeatures(Features):
 
         with self.dbcnxn.open_session() as session:
 
-            total_inverse_distance_q = session.query(all_road_matched_sq.c.road_toid.label('road_toid'),
-                                                     func.sum(
-                                                         1/all_road_matched_sq.c.scoot_road_distance).label("total_inverse_distance")
-                                                     ).group_by(all_road_matched_sq.c.road_toid)
+            total_inv_dist_q = session.query(all_road_matched_sq.c.road_toid,
+                                             func.sum(1/all_road_matched_sq.c.scoot_road_distance)
+                                             .label("total_inverse_distance")
+                                             ).group_by(all_road_matched_sq.c.road_toid)
 
-            return total_inverse_distance_q
+            return total_inv_dist_q
 
     def get_scoot_reading(self, start_date, end_date):
         """Get the available scoot readings between start_date (inclusive) and end_date"""
 
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
-
         with self.dbcnxn.open_session() as session:
 
             scoot_readings_q = session.query(ScootReading) \
-                .filter(ScootReading.measurement_start_utc.between(start_date_,
-                                                                   end_date_))
-
+                .filter(ScootReading.measurement_start_utc.between(start_date,
+                                                                   end_date))
             return scoot_readings_q
 
     def weighted_average_traffic(self, start_date, end_date):
         """
         Get a weighted average of traffic flow metrics for each road segment
         """
-        scoot_readings_sq = self.get_scoot_reading(start_date, end_date).subquery()
-        all_road_matched_sq = self.get_all_road_matched()  # .subquery()
-        # total_inverse_distance_sq = self.total_inverse_distance().subquery()
-        print(pd.read_sql(all_road_matched_sq.statement, all_road_matched_sq.session.bind).shape)
 
-        # aggregate_funcs = [func.sum(scoot_readings_sq.c.occupancy_percentage /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("occupancy_percentage_waverage"),
-        #                     func.sum(scoot_readings_sq.c.congestion_percentage /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("congestion_percentage_waverage"),
-        #                     func.sum(scoot_readings_sq.c.saturation_percentage /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("saturation_percentage_waverage"),
-        #                     func.sum(scoot_readings_sq.c.flow_raw_count /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("flow_count_waverage"),
-        #                     func.sum(scoot_readings_sq.c.occupancy_raw_count /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("occupancy_count_waverage"),
-        #                     func.sum(scoot_readings_sq.c.congestion_raw_count /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("congestion_count_waverage"),
-        #                     func.sum(scoot_readings_sq.c.saturation_raw_count /
-        #                            (all_road_matched_sq.c.scoot_road_distance * total_inverse_distance_sq.c.total_inverse_distance)).label("saturation_count_waverage"),
-        #                   ]
+        sr_sq = self.get_scoot_reading(start_date, end_date).subquery()
+        arm_sq = self.get_all_road_matched().subquery()
+        tid_sq = self.total_inverse_distance().subquery()
 
-        # with self.dbcnxn.open_session() as session:
+        def agg_func(input_var):
+            return func.sum(input_var / (arm_sq.c.scoot_road_distance * tid_sq.c.total_inverse_distance))
 
-        #     scoot_road_distance_q = session.query(OSHighway.toid,
-        #                                         #   all_road_matched_sq.c.detector_n,
-        #                                         #   all_road_matched_sq.c.scoot_road_distance,
-        #                                         #   total_inverse_distance_sq.c.total_inverse_distance,
-        #                                         #   scoot_readings_sq.c.detector_id,
-        #                                           scoot_readings_sq.c.measurement_start_utc,
-        #                                           *aggregate_funcs) \
-        #                                               .join(all_road_matched_sq) \
-        #                                               .join(total_inverse_distance_sq) \
-        #                                                .filter(scoot_readings_sq.c.detector_id == all_road_matched_sq.c.detector_n)
+        aggregated_funcs = [agg_func(sr_sq.c.occupancy_percentage).label("occupancy_percentage_waverage"),
+                            agg_func(sr_sq.c.congestion_percentage).label("congestion_percentage_waverage"),
+                            agg_func(sr_sq.c.saturation_percentage).label("saturation_percentage_waverage"),
+                            agg_func(sr_sq.c.flow_raw_count).label("flow_count_waverage"),
+                            agg_func(sr_sq.c.occupancy_raw_count).label("occupancy_count_waverage"),
+                            agg_func(sr_sq.c.congestion_raw_count).label("congestion_count_waverage"),
+                            agg_func(sr_sq.c.saturation_raw_count).label("saturation_count_waverage")]
 
-        #     scoot_road_distance_q = scoot_road_distance_q.group_by(OSHighway.toid, scoot_readings_sq.c.measurement_start_utc) \
-        #                                                  .order_by(OSHighway.toid, scoot_readings_sq.c.measurement_start_utc)
+        with self.dbcnxn.open_session() as session:
 
-        #     return scoot_road_distance_q
+            scoot_road_distance_q = session.query(OSHighway.toid,
+                                                  sr_sq.c.measurement_start_utc,
+                                                  *aggregated_funcs) \
+                                           .join(arm_sq) \
+                                           .join(tid_sq) \
+                                           .filter(sr_sq.c.detector_id == arm_sq.c.detector_n)
+
+            scoot_road_distance_q = scoot_road_distance_q.group_by(OSHighway.toid,
+                                                                   sr_sq.c.measurement_start_utc) \
+                                                         .order_by(OSHighway.toid,
+                                                                   sr_sq.c.measurement_start_utc)
+
+            return scoot_road_distance_q
 
     def insert_closest_roads(self):
-        """Calculate the clostest scoot sensor to each road section and insert into database"""
+        """Calculate the clostest scoot sensor to each road section and insert into database
+        Only needs to be recalculated if new scoot sensors have come online"""
 
         # Get sensors on road segements and insert into database
         scoot_road_matched = self.join_scoot_with_road().subquery()
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all scoot sensors to road")
-            self.add_records(session, scoot_road_matched, table=ScootRoadMatch)
+            self.commit_records(session, scoot_road_matched, table=ScootRoadMatch)
 
         # Get unmatched road segments, find the 5 closest scoot sensors and insert into database
         scoot_road_unmatched = self.join_unmatached_scoot_with_road().subquery()
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
-            self.add_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
+            self.commit_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
 
     def update_average_traffic(self):
+        """Map scoot data to road segments and commit to database"""
+        self.logger.info("Mapping scoot readings to road segments between %s and %s",
+                         self.start_datetime, self.end_datetime)
+        traffic_q = self.weighted_average_traffic(self.start_datetime, self.end_datetime)
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, traffic_q.subquery(), table=ScootRoadReading)
 
-        traffic_q = self.weighted_average_traffic('2019-11-01T00:00:00', '2019-11-02T00:00:00')
-        # print(traffic_q.statement)
-
-        # data = pd.read_sql(traffic_q.statement, traffic_q.session.bind)
-        # data.to_csv('/secrets/traffic.csv')
-
-    def update_remote_tables(self):
+    def update_scoot_road_reading(self, find_closest_roads=False):
         """Update all remote tables"""
-        self.insert_closest_roads()
-        # self.update_average_traffic()
+        if find_closest_roads:
+            self.insert_closest_roads()
+        self.update_average_traffic()

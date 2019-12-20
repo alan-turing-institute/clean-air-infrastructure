@@ -53,14 +53,9 @@ def download_blobs(blob_service, dataset, target_directory):
         logging.info("... from container: %s", emphasised(blob_container))
         logging.info("... to: %s", emphasised(target_directory))
 
-        if not '.zip' in blob.name:
-            logging.info("File %s is not a .zip file. Ensure all files are .zip. Skipping.")
-            continue
-
         target_file = os.path.join(target_directory, blob.name)
         blob_service.get_blob_to_path(blob_container, blob.name, target_file)
 
-        
         # Unzip the data
         if target_file[-4] == '.zip':
             with zipfile.ZipFile(target_file, "r") as zip_ref:

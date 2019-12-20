@@ -17,6 +17,8 @@ from cleanair.loggers import get_log_level
 from cleanair.databases import DBReader
 from cleanair.databases.tables import LAQNSite
 
+logging.basicConfig()
+
 def get_LAQN_sensor_info(secret_fp):
 
     db_reader = DBReader(secretfile=secret_fp)
@@ -57,8 +59,7 @@ def run_rolling(write_results=False):
         )
 
         # Get the model data and append to list
-        model_data = ModelData(secretfile=secret_fp)
-        model_data.initialise(config=model_config)
+        model_data = ModelData(config=model_config, secretfile=secret_fp)
         model_data_list.append(model_data)
 
     # Run rolling forecast
@@ -96,8 +97,8 @@ def get_model_config_default(train_start, train_end, pred_start, pred_end, train
 def run_forecast(write_results=False):
     # Set dates for training and testing
     train_end = "2019-11-06T00:00:00"
-    train_n_hours = 72 * 2
-    pred_n_hours = 48
+    train_n_hours = 24
+    pred_n_hours = 24
     pred_start = "2019-11-06T00:00:00"
     train_start = temporal.strtime_offset(train_end, -train_n_hours)
     pred_end = temporal.strtime_offset(pred_start, pred_n_hours)
@@ -118,8 +119,7 @@ def run_forecast(write_results=False):
     model_params = get_model_params_default()
 
     # Get the model data
-    model_data = ModelData(secretfile=secret_fp)
-    model_data.initialise(config=model_config)
+    model_data = ModelData(config=model_config, secretfile=secret_fp)
 
     # print(model_data.list_available_features())
     # print(model_data.list_available_sources())
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     kwargs = vars(args)
     roll = kwargs.pop('rolling')
     write_results = kwargs.pop('write')
-    logging.basicConfig()
+    
     if roll:
         run_rolling(write_results=write_results)
     else:

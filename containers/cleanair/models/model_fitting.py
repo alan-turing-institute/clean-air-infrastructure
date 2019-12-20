@@ -125,5 +125,4 @@ class SVGP():
 
         if self.fit_start_time:
             return {'logf': self.logf, 'fit_start_time': self.fit_start_time}
-        else:
-            raise AttributeError("There are no model fit results. Call SVGP.fit() to fit the model")
+        raise AttributeError("There are no model fit results. Call SVGP.fit() to fit the model")

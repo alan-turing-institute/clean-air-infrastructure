@@ -50,17 +50,18 @@ class ScootWriter(DateRangeMixin, DBWriter):
             detectors = sorted([s[0] for s in session.query(scoot_detector.c.detector_n).distinct()])
         return detectors
 
-    def get_remote_filenames(self):
+    @staticmethod
+    def get_remote_filenames(start_datetime, end_datetime):
         """Get all possible remote file details for the period in question"""
         file_list = []
-        for date in rrule.rrule(rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime):
+        for date in rrule.rrule(rrule.DAILY, dtstart=start_datetime, until=end_datetime):
             year, month, day = date.strftime(r"%Y-%m-%d").split("-")
             for timestring in [str(h).zfill(2) + str(m).zfill(2) for h in range(24) for m in range(60)]:
                 csv_name = "{y}{m}{d}-{timestring}.csv".format(y=year, m=month, d=day, timestring=timestring)
                 file_list.append(("Control/TIMSScoot/{y}/{m}/{d}".format(y=year, m=month, d=day), csv_name))
         return file_list
 
-    def validate_remote_data(self):
+    def validate_remote_data(self, start_datetime, end_datetime):
         """
         Request all readings between {start_date} and {end_date}.
         Remove readings with unknown detector ID or detector faults.
@@ -73,7 +74,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
         # Parse each CSV file into a dataframe and add these to a list
         processed_readings = []
-        for filepath, filename in self.get_remote_filenames():
+        for filepath, filename in self.get_remote_filenames(start_datetime, end_datetime):
             try:
                 self.logger.info("Requesting scoot file %s", filename)
                 client.download_file("surface.data.tfl.gov.uk",
@@ -128,26 +129,13 @@ class ScootWriter(DateRangeMixin, DBWriter):
             self.logger.warning("Data aggregation failed - returning an empty dataframe")
             return pandas.DataFrame(columns=input_df.columns)
 
-    def update_remote_tables(self):
-        """Update the database with new Scoot traffic data."""
-        self.logger.info("Starting %s readings update...", green("Scoot"))
-        start_update = time.time()
-
-        # Get the list of known detectors
-        self.detector_ids = self.request_site_entries()
-
-        # Load readings from AWS
-        self.logger.info("Requesting readings from %s for %s sites",
-                         green("TfL AWS storage"), green(len(self.detector_ids)))
-
-        # Load all valid remote data into a single dataframe
-        df_processed = self.validate_remote_data()
-
+    def aggregate_scoot_data(self, df_processed):
+        """
+        Aggregate scoot data"""
         # Get the minimum and maximum time in the dataset
         time_min = datetime_from_unix(df_processed["timestamp"].min())
         time_max = datetime_from_unix(df_processed["timestamp"].max())
 
-        n_records = 0
         # Slice processed data into hourly chunks and aggregate these by detector ID
         for start_time in rrule.rrule(rrule.HOURLY,
                                       dtstart=time_min.replace(minute=0, second=0, microsecond=0),
@@ -168,26 +156,53 @@ class ScootWriter(DateRangeMixin, DBWriter):
             df_aggregated["measurement_start_utc"] = utcstr_from_datetime(start_time)
             df_aggregated["measurement_end_utc"] = utcstr_from_datetime(end_time)
 
-            # Add readings to database
-            start_session = time.time()
-            site_records = [ScootReading(**s) for s in df_aggregated.T.to_dict().values()]
-            self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
+            yield df_aggregated
 
-            # The following database operations can be slow. However, with the switch to hourly data they are not
-            # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
-            # using bulk insertions does not provide a speed-up but does increase the risk of data loss. We are
-            # therefore sticking to the higher-level functions here.
-            with self.dbcnxn.open_session() as session:
-                try:
-                    # Commit the records to the database
-                    self.add_records(session, site_records)
-                    session.commit()
-                    n_records += len(site_records)
-                except IntegrityError as error:
-                    self.logger.error("Failed to add records to the database: %s", type(error))
-                    self.logger.error(str(error))
-                    session.rollback()
-            self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
+    def update_remote_tables(self):
+        """Update the database with new Scoot traffic data."""
+        self.logger.info("Starting %s readings update...", green("Scoot"))
+        start_update = time.time()
+
+        # Get the list of known detectors
+        self.detector_ids = self.request_site_entries()
+
+        # Load readings from AWS
+        self.logger.info("Requesting readings from %s for %s sites",
+                         green("TfL AWS storage"), green(len(self.detector_ids)))
+
+        n_records = 0
+        # Process a day at a time
+        for start_time in rrule.rrule(rrule.DAILY,
+                                      dtstart=self.start_datetime,
+                                      until=self.end_datetime):
+            end_time = start_time + datetime.timedelta(hours=1)
+
+            start_datetime, end_datetime = self.get_datetimes(start_time, end_time)
+
+            # Load all valid remote data into a single dataframe
+            df_processed = self.validate_remote_data(start_datetime, end_datetime)
+
+            for df_aggregated in self.aggregate_scoot_data(df_processed):
+
+                # Add readings to database
+                start_session = time.time()
+                site_records = df_aggregated.to_dict("records")
+                self.logger.info("Inserting %s per-site records into database", green(len(site_records)))
+
+                # The following database operations can be slow. However, with the switch to hourly data they are not
+                # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
+                # using bulk insertions does not provide a speed-up but does increase the risk of data loss. We are
+                # therefore sticking to the higher-level functions here.
+                with self.dbcnxn.open_session() as session:
+                    try:
+                        # Commit the records to the database
+                        self.commit_records(session, site_records, table=ScootReading)
+                        n_records += len(site_records)
+                    except IntegrityError as error:
+                        self.logger.error("Failed to add records to the database: %s", type(error))
+                        self.logger.error(str(error))
+                        session.rollback()
+                self.logger.info("Insertion took %s seconds", green("{:.2f}".format(time.time() - start_session)))
 
         # Summarise updates
         self.logger.info("Committed %s records to table %s in %s minutes",

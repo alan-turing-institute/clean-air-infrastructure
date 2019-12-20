@@ -145,16 +145,15 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
 
             # Commit the records to the database
             if usecore:
-                self.add_records(session, site_records, flush=True, table=AQEReading)
+                self.commit_records(session, site_records, table=AQEReading)
             else:
-                self.add_records(session, site_records, flush=True)
-            session.commit()
+                self.commit_records(session, site_records)
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
                              green(AQEReading.__tablename__))
-            session.commit()
+
         self.logger.info("Finished %s readings update", green("AQE"))
 
     def update_remote_tables(self):
