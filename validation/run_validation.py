@@ -57,7 +57,7 @@ def strtime_offset(strtime, offset_hours):
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
-def forecast(model_fitter, model_data, model_params={}, max_iter=5, return_results=False):
+def forecast(model_fitter, model_data, model_params={}, max_iter=1000, return_results=False):
     """
     Forecast air quality.
 
@@ -85,6 +85,7 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=5, return_resul
     """
 
     # get training and testing data
+    model_data.normalised_training_data_df.to_csv('results/normalised_df.csv')
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=True, return_y=True)
     x_test, y_test = predict_data_dict['X'], predict_data_dict['Y']
@@ -225,7 +226,7 @@ def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
     
     return rolls
 
-def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=5, return_results=False):
+def rolling_forecast(model_name, model_data_list, model_params={}, max_iter=1000, return_results=False):
     """
     Train and predict for multiple time periods in a row.
     """
@@ -317,7 +318,7 @@ def measure(actual, predict, r2=True, mae=True, mse=True, **kwargs):
 def run_rolling(write_results=False):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
-    train_n_hours = 72
+    train_n_hours = 48
     pred_n_hours = 24
     n_rolls = 5
     rolls = create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
@@ -352,7 +353,8 @@ def run_rolling(write_results=False):
     scores_df, results_df = rolling_forecast('svgp', model_data_list, model_params=model_params, return_results=True)
     print(scores_df)
     scores_df.to_csv('results/rolling.csv')
-    results_df.to_csv('results/preds.csv')
+    if write_results:
+        results_df.to_csv('results/rolling_preds.csv')
 
 def get_model_params_default():
     return {
@@ -373,7 +375,7 @@ def get_model_config_default(train_start, train_end, pred_start, pred_end, train
         'train_interest_points': train_points,
         'pred_interest_points': pred_points,
         'species': ['NO2'],
-        'features': ['value_1000_building_height'],
+        'features': 'all',
         'norm_by': 'laqn',
         'model_type': 'svgp',
         'tag': 'testing'
@@ -417,7 +419,9 @@ def run_forecast(write_results=False):
     # Run validation
     scores, results = forecast(model_fitter, model_data, model_params=model_params, return_results=write_results)
     print(scores)
-    results.to_csv('results/forecast.csv')
+    scores.to_csv('results/forecast.csv')
+    if write_results:
+        results.to_csv('results/forecast_preds.csv')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")

@@ -574,7 +574,8 @@ class ModelData(ModelDataReader):
         """Normalise the x columns"""
         norm_mean, norm_std = self.norm_stats
         # Normalise the data
-        data_df[self.x_names_norm] = (data_df[self.x_names] - norm_mean) / norm_std
+        data_df[self.x_names_norm] = ((data_df[self.x_names] - norm_mean) / norm_std).fillna(value=0.0)
+    
         return data_df
 
     def __get_model_data_arrays(self, data_df, return_y, dropna=True, y_names=None):
