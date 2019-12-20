@@ -10,50 +10,48 @@ import pandas as pd
 import tempfile
 from ..mixins import APIRequestMixin, DateRangeMixin
 from ..databases import DBWriter
-from ..databases.tables import MetaPoint, LAQNSite, LAQNReading
+from ..databases.tables import MetaPoint, SatelliteSite, SatelliteForecastReading
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 pd.set_option('display.max_rows', 1000)
 
-def get_grid_in_region(x1,x2,y1,y2, n):
+
+def get_grid_in_region(x1, x2, y1, y2, n):
     A = np.linspace(x1, x2, n)
     B = np.linspace(y1, y2, n)
     g = [[a, b] for b in B for a in A]
     return np.array(g)
 
+
 def get_datetime(d):
     return datetime.strptime(d, '%Y-%m-%d')
 
+
 def padd_with_quotes(s):
     return '\''+s+'\''
+
 
 def point_in_region(p_lat, p_lon, centers, w=0.05):
     for c in centers:
         c_lat = c[0]
         c_lon = c[1]
-        if ((c_lat-w) <= p_lat) and  (p_lat <= (c_lat+w)):
-            if ((c_lon-w) <= p_lon) and  (p_lon <= (c_lon+w)):
+        if ((c_lat-w) <= p_lat) and (p_lat <= (c_lat+w)):
+            if ((c_lon-w) <= p_lon) and (p_lon <= (c_lon+w)):
                 return True
     return False
 
-def get_unique_pairs(df, col_1, col_2, decimal=5):
-    tmp_df = df
-    tmp_df[col_1] = tmp_df[col_1].round(decimals=decimal)
-    tmp_df[col_2] = tmp_df[col_2].round(decimals=decimal)
-    a = [[lat, np.unique(tmp_df[tmp_df[col_1] == lat][col_2])] for lat in np.unique(tmp_df[col_1])]
-    a = [[x[0], y] for x in a for y in x[1]]
-    a = np.array(a)
-    return a
 
 def int_to_padded_str(col, zfill=1):
     return col.apply(lambda x: str(int(x)).zfill(zfill))
+
 
 class SatelliteWriter(APIRequestMixin, DBWriter):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
     """
+
     def __init__(self, copernicus_key, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -61,7 +59,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
         self.access_key = copernicus_key
-        self.sat_bounding_box = [51.411, 51.616, -0.203, 0.014]
+        self.sat_bounding_box = [51.2867601564841, 51.6918741102915, -0.51037511051915, 0.334015522513336]
         self.discretise_size = 100
 
     def request_satellite_data(self, start_date, pollutant, data_type):
@@ -75,7 +73,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         if data_type == 'archive':
             call_type = 'ANALYSIS'
             time_required = '-24H-1H'
-        elif data_type=='forecast':
+        elif data_type == 'forecast':
             call_type = 'FORECAST'
             time_required = '0H24H'
         level = 'SURFACE'
@@ -87,7 +85,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
                   'time': time_required,
                   'referencetime': referencetime,
                   'format': 'GRIB2'
-                 }
+                  }
         try:
             endpoint = "https://download.regional.atmosphere.copernicus.eu/services/CAMS50"
             raw_data = self.get_response(endpoint, params=params, timeout=30.)
@@ -99,6 +97,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             return None
 
     def read_grib_file(self, filecontent):
+        """Read a grib file into a pandas dataframe"""
         grb = pygrib.open(filecontent)
         if grb.messages is 0:
             return
@@ -115,8 +114,8 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             value, lat, lon = g.data(lat1=lat1, lat2=lat2, lon1=lon1, lon2=lon2)
             date = str(g.dataDate)
             time = str(g.dataTime)
-            f= lambda x : x.flatten()
-            r= lambda x : np.repeat(x, np.prod(value.shape))
+            def f(x): return x.flatten()
+            def r(x): return np.repeat(x, np.prod(value.shape))
             df = pd.DataFrame()
             df['date'] = r(date)
             df['time'] = r(time)
@@ -128,20 +127,19 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         return pd.concat(records, axis=0)
 
     def discretise_sat(self, sat_data_df):
-        decimal=4
+        decimal = 4
         total_x = None
-        total_y= None
+        total_y = None
         for i in range(len(sat_data_df)):
             r = sat_data_df.iloc[i]
-            lat= np.round(r['lat'],decimal)
-            lon= np.round(r['lon'],decimal)
-            print(lat, lon)
-            g = get_grid_in_region(lat -0.05,lat+0.05, lon-0.05,lon+0.05, self.discretise_size)
+            lat = np.round(r['lat'], decimal)
+            lon = np.round(r['lon'], decimal)
+            g = get_grid_in_region(lat - 0.05, lat+0.05, lon-0.05, lon+0.05, self.discretise_size)
             t = r['epoch']
             row = np.array([[[t, x[0], x[1]] for x in g]])
             y = np.array([[r['no2']]])
-            total_x = row if total_x is None else np.concatenate([total_x, row],axis=0)
-            total_y = y if total_y is None else np.concatenate([total_y, y],axis=0)
+            total_x = row if total_x is None else np.concatenate([total_x, row], axis=0)
+            total_y = y if total_y is None else np.concatenate([total_y, y], axis=0)
         return total_x, total_y
 
     def get_discrete_points_df(self, sat_x, sat_y):
@@ -154,9 +152,9 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         for i in range(sat_x.shape[0]):
             row = sat_x[i, :]
             row_y = np.tile(sat_y[i, :], [row.shape[0], 1])
-            #add group_id
+            # add group_id
             row = np.concatenate([row, np.tile(group_id, [row.shape[0], 1])], axis=1)
-            #add ids
+            # add ids
             row = np.concatenate([row, np.expand_dims(range(total_id, total_id+row.shape[0]), -1), row_y], axis=1)
             total_id += row.shape[0]
             discretise_points = row if discretise_points is None else np.concatenate([discretise_points, row], axis=0)
@@ -167,22 +165,65 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         discretise_points_df['group_id'] = discretise_points_df['group_id'].astype(np.int)
         return discretise_points_df
 
-    def process_satellite_data(self):
-        grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
+    def grib_to_df(self, satellite_bytes):
+        """Take satellite bytes and load into a pandas dataframe, converting NO2 units"""
         # Write the grib file to a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(tmpdir + 'tmpgrib_file.grib2', 'wb') as grib_file:
                 self.logger.info("Writing grib file to %s", tmpdir)
-                grib_file.write(grib_bytes)
-            self.logger.info("Processing grib file")
+                grib_file.write(satellite_bytes)
+            self.logger.info("Loading grib file")
             grib_data_df = self.read_grib_file(tmpdir + 'tmpgrib_file.grib2')
-            grib_data_df['date'] = pd.to_datetime(grib_data_df['date']+int_to_padded_str(grib_data_df['_id'], 2), format='%Y%m%d%H')
-            grib_data_df['epoch'] = np.array(grib_data_df['date'].astype(np.int64) // 10**9)
-            grib_data_df['no2'] = grib_data_df['val']*1000000000 #convert to the correct units
-            print(grib_data_df.columns)
-            print(grib_data_df)
+            grib_data_df['date'] = pd.to_datetime(
+                grib_data_df['date']+int_to_padded_str(grib_data_df['_id'], 2), format='%Y%m%d%H')
+            grib_data_df['no2'] = grib_data_df['val']*1000000000  # convert to the correct units
+            grib_data_df['lon'] = np.round(grib_data_df['lon'], 4)
+            grib_data_df['lat'] = np.round(grib_data_df['lat'], 4)
+        return grib_data_df
 
-            self.discretise_grid_data(grib_data_df)
+    def update_site_list_table(self, interest_points_df):
+        """Pass an NX2 numpy array of lon lat coordiates and insert into the metapoints table"""
+
+        entries = [MetaPoint.build_entry("satellite",  latitude=row['lat'], longitude=row['lon'], geometry=MetaPoint.build_ewkt(row['lat'], row['lon']))
+                   for _, row in interest_points_df.iterrows()]
+
+        # Update the interest_points table and retrieve point IDs
+        point_id = {}
+        for geometry, interest_point in entries.items():
+            merged_point = session.merge(interest_point)
+            session.flush()
+            point_id[geometry] = str(merged_point.id)
+
+        # Add point IDs to the site_entries
+        for entry in site_entries:
+            entry["point_id"] = point_id[entry["geometry"]]
+
+        # Build the site entries and commit
+        self.logger.info("Updating site info database records")
+        for site in site_entries:
+            session.merge(LAQNSite.build_entry(site))
+        self.logger.info("Committing changes to database tables %s and %s",
+                         green(MetaPoint.__tablename__),
+                         green(LAQNSite.__tablename__))
+        session.commit()
+
+    def process_satellite_data(self):
+
+        # Request satellite data for a day
+        grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
+
+        # Convert to dataframe
+        grib_data_df = self.grib_to_df(grib_bytes)
+
+        # Get interest points
+        sat_interest_points = grib_data_df[['lat', 'lon']].drop_duplicates().copy()
+        if sat_interest_points.shape[0] != 32:
+            raise IOError("Satellite download did not return data for 32 interest points exactly.")
+
+        self.update_site_list_table(sat_interest_points)
+
+        # print(self.discretise_grid_data(grib_data_df))
+
     def discretise_grid_data(self, grid_data_df):
         """Pass a dataframe of the type returned by self.process_satellite_data and discretise"""
         sat_x, sat_y = self.discretise_sat(grid_data_df)
