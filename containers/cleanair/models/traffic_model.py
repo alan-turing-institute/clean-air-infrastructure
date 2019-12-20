@@ -1,17 +1,18 @@
 """Traffic model fitting"""
 import sys
-from fbprophet import Prophet
-import pandas as pd
 import logging
-from cleanair.loggers import get_logger, duration, green
+import time
+from datetime import datetime
+from dateutil.parser import isoparse
+from fbprophet import Prophet
+from multiprocessing import Pool, cpu_count
+from scipy.cluster.vq import kmeans2
+import numpy as np
+import pandas as pd
 from cleanair.databases import DBReader
 from cleanair.databases.tables import (ScootRoadReading, ScootDetector, ScootReading)
-from dateutil.parser import isoparse
-import numpy as np
-from scipy.cluster.vq import kmeans2
-from datetime import datetime
-from multiprocessing import Pool, cpu_count
-import time
+from cleanair.loggers import get_logger, duration, green
+
 logging.basicConfig()
 
 class TrafficModelData(DBReader):
@@ -26,7 +27,6 @@ class TrafficModelData(DBReader):
 
     def list_scoot_detectors(self):
         """List all availabel scoot detectors"""
-
         with self.dbcnxn.open_session() as session:
             scoot_detector_q = session.query(ScootDetector.detector_n,
                                              ScootDetector.toid,
@@ -55,10 +55,7 @@ class TrafficModelData(DBReader):
                                                               )
 
             if scoot_ids:
-                scoot_road_q = scoot_road_q.filter(ScootReading.detector_id.in_(scoot_ids))
-
-            scoot_road_q = scoot_road_q.order_by(ScootReading.detector_id, ScootReading.measurement_start_utc)
-
+                scoot_road_q = scoot_road_q.order_by(ScootReading.detector_id, ScootReading.measurement_start_utc)
         return pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
 
 
@@ -72,17 +69,16 @@ def fit_fbprophet_model(data_dict, n_pred_hours=48, y_name = 'occupancy_percenta
     m = Prophet(changepoint_prior_scale=0.01).fit(fit_data)
     predict_df = m.make_future_dataframe(n_pred_hours, freq='H', include_history=True)
     predict_df['detector_id'] = detector_n
-
     return predict_df
 
 if __name__ == '__main__':
 
     logger = get_logger(__name__)
-
     traffic = TrafficModelData(
         secretfile='/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json')
 
-    scoot_detectors = traffic.list_scoot_detectors()['detector_n'].tolist()
+    # scoot_detectors = traffic.list_scoot_detectors()['detector_n'].tolist()
+    scoot_detectors = traffic.list_scoot_detectors()
     sub_data = traffic.get_training_data('2019-11-01', '2019-11-10', scoot_detectors)
 
     detector_data = [{'detector_n': detector, 'fit_data': sub_data[sub_data['detector_id'] == detector]} for detector in scoot_detectors if (sub_data[sub_data['detector_id'] == detector].shape[0] > 24)]
@@ -90,7 +86,6 @@ if __name__ == '__main__':
     logger.info("Fitting scoot models")
     start_time = time.time()
     with Pool(processes=cpu_count()) as pool:
-
         res = pool.map(fit_fbprophet_model, detector_data)
 
     all_predictions = pd.concat(res)
