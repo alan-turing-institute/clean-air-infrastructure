@@ -91,7 +91,8 @@ class SVGP():
         z_array = kmeans2(x_array, model_params['n_inducing_points'], minit='points')[0]
 
         # Define model
-        kernel = gpflow.kernels.RBF(k_covariates, lengthscale=model_params['lengthscale'])
+        # kernel = gpflow.kernels.RBF(k_covariates, lengthscale=model_params['lengthscale'])
+        kernel = gpflow.kernels.Sum([gpflow.kernels.RBF(1, lengthscale=1.0, active_dims=[i]) for i in range(x_array.shape[1])])
         self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=model_params['variance']), z_array)
         # We turn of training for inducing point locations
         gpflow.utilities.set_trainable(self.model.inducing_variable, False)
