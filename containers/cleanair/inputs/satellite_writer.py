@@ -56,7 +56,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             self.logger = get_logger(__name__)
         self.access_key = copernicus_key
         self.sat_bounding_box = [51.2867601564841, 51.6918741102915, -0.51037511051915, 0.334015522513336]
-        self.discretise_size = 3
+        self.discretise_size = 100
         self.half_gridsize = 0.05
 
     def request_satellite_data(self, start_date, pollutant, data_type):
@@ -221,10 +221,6 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         sat_discrete_entries = disrete_points_df.apply(lambda x: SatelliteDiscreteSite(
             point_id=x['point_id'], box_id=x['box_id']), axis=1).tolist()
 
-        # # Set the foreign keys
-        # for i, sat_entry in enumerate(sat_discrete_entries):
-        #     sat_entry.point = meta_entries[i]
-
         # Commit to database
         with self.dbcnxn.open_session() as session:
             self.logger.info("Insert satellite meta points")
@@ -237,8 +233,8 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
     def get_grid_in_region(self, lat, lon, box_id):
         """Get a grid of lat lon coordinates which descretise a satellite grid"""
 
-        A = np.linspace(lat-self.half_gridsize+0.0001, lat + self.half_gridsize - 0.0001, self.discretise_size)
-        B = np.linspace(lon-self.half_gridsize+0.0001, lon + self.half_gridsize - 0.0001, self.discretise_size)
+        A = np.linspace(lat-self.half_gridsize, lat + self.half_gridsize, self.discretise_size+1, endpoint=False)[1:]
+        B = np.linspace(lon-self.half_gridsize, lon + self.half_gridsize, self.discretise_size+1, endpoint=False)[1:]
 
         grid = np.array([[a, b] for b in B for a in A])
         grid_df = pd.DataFrame({'lat': grid[:, 0], 'lon': grid[:, 1]})
