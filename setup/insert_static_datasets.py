@@ -194,7 +194,7 @@ def main():
     # List of available datasets
     datasets = ["rectgrid_100",
                 "scoot_detector",
-                # "hexgrid",
+                "hexgrid",
                 "london_boundary",
                 "oshighway_roadlink",
                 "street_canyon",
