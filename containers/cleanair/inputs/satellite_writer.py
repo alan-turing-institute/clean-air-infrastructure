@@ -11,6 +11,7 @@ except:
 import numpy as np
 import pandas as pd
 import tempfile
+from sqlalchemy import func
 from ..mixins import APIRequestMixin, DateRangeMixin
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, SatelliteSite, SatelliteDiscreteSite, SatelliteForecastReading
@@ -42,7 +43,7 @@ def int_to_padded_str(col, zfill=1):
     return col.apply(lambda x: str(int(x)).zfill(zfill))
 
 
-class SatelliteWriter(APIRequestMixin, DBWriter):
+class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
@@ -56,7 +57,7 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             self.logger = get_logger(__name__)
         self.access_key = copernicus_key
         self.sat_bounding_box = [51.2867601564841, 51.6918741102915, -0.51037511051915, 0.334015522513336]
-        self.discretise_size = 100
+        self.discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
         self.half_gridsize = 0.05
 
     def request_satellite_data(self, start_date, pollutant, data_type):
@@ -178,9 +179,34 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             grib_data_df['lat'] = np.round(grib_data_df['lat'], 4)
         return grib_data_df
 
+    def update_reading_table(self):
+        """Update the satellite reading table"""
+
+        with self.dbcnxn.open_session() as session:
+            satellite_site_q = session.query(SatelliteSite.box_id,
+                                             func.ST_X(SatelliteSite.location).label('lon'),
+                                             func.ST_Y(SatelliteSite.location).label('lat'))
+
+        satellite_site_df = pd.read_sql(satellite_site_q.statement, satellite_site_q.session.bind)
+
+        # Get grib data
+        grib_bytes = self.request_satellite_data(str(self.start_date), "NO2", 'forecast')
+        grib_data_df = self.grib_to_df(grib_bytes)
+
+        # Join grid data
+        grib_data_joined = grib_data_df.merge(satellite_site_df, how='left', on=['lon', 'lat'])
+
+        reading_entries = grib_data_joined.apply(lambda x: SatelliteForecastReading(measurement_start_utc=x['date'],
+                                                                                    species_code='NO2',
+                                                                                    box_id=x['box_id'],
+                                                                                    value=x['no2']), axis=1).tolist()
+
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, reading_entries, table=SatelliteForecastReading)
+
     def update_interest_points(self):
         """Create interest points and insert into the database"""
-        # Request satellite data for a day
+        # Request satellite data for an arbitary day
         grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
 
         # Convert to dataframe
@@ -250,4 +276,5 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
-        self.update_interest_points()
+        # self.update_interest_points()
+        self.update_reading_table()

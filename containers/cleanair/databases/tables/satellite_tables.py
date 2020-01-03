@@ -51,9 +51,6 @@ class SatelliteDiscreteSite(Base):
     # point_id = Column(UUID(as_uuid=True), nullable=False, primary_key=True)
     box_id = Column(INTEGER, ForeignKey("interest_points.satellite_site.box_id"), nullable=False, primary_key=True)
 
-    # Create SatelliteSite.point with no reverse relationship
-    point = relationship("MetaPoint")
-
     def __repr__(self):
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in [c.name for c in self.__table__.columns]]
         return "<SatelliteDiscreteSite(" + ", ".join(vals)
@@ -65,8 +62,7 @@ class SatelliteForecastReading(Base):
     __table_args__ = {"schema": "dynamic_data"}
 
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-#     box_id = Column(INTEGER, ForeignKey("interest_points.satellite_discrete_site.box_id"),
-#                     primary_key=True, nullable=False)
+    box_id = Column(INTEGER, ForeignKey("interest_points.satellite_site.box_id"),
+                    primary_key=True, nullable=False)
     species_code = Column(String(4), primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
