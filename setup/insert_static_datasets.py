@@ -57,7 +57,8 @@ def download_blobs(blob_service, dataset, target_directory):
         blob_service.get_blob_to_path(blob_container, blob.name, target_file)
 
         # Unzip the data
-        if target_file[-4] == '.zip':
+        if target_file[-4:] == '.zip':
+            logging.info("Unzipping file")
             with zipfile.ZipFile(target_file, "r") as zip_ref:
                 zip_ref.extractall(target_directory)
                 os.remove(target_file)
@@ -192,12 +193,12 @@ def main():
 
     # List of available datasets
     datasets = ["rectgrid_100",
-                "hexgrid",
+                "scoot_detector",
+                # "hexgrid",
                 "london_boundary",
                 "oshighway_roadlink",
-                "ukmap",
-                "scoot_detector",
-                "street_canyon"]
+                "street_canyon",
+                "ukmap"]
 
     # Get a block blob service
     block_blob_service = get_blob_service(args.resource_group, args.storage_container_name)
