@@ -13,6 +13,7 @@ from ..loggers import get_logger, green
 
 class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(initialise_tables=False, **kwargs)
@@ -153,8 +154,8 @@ class StaticWriter(DBWriter):
                        ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
                 """UPDATE {0}
                        SET point_id = interest_points.meta_point.id
-                       FROM interest_points.meta_point
-                       WHERE {0}.centroid = interest_points.meta_point.location;""".format(self.schema_table),
+                       FROM (SELECT * FROM interest_points.meta_point WHERE source = 'hexgrid') as meta_points
+                       WHERE {0}.centroid = meta_points.location;""".format(self.schema_table),
                 """ALTER TABLE {} DROP COLUMN centroid;""".format(self.schema_table),
             ]
 
@@ -167,7 +168,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN orig_fid;""".format(self.schema_table),
                 """ALTER TABLE {} ADD COLUMN centroid geometry(POINT, 4326);""".format(self.schema_table),
                 """UPDATE {} SET centroid = ST_centroid(geom);""".format(self.schema_table),
-                 """CREATE INDEX IF NOT EXISTS rectgrid_100_centroid_geom_idx
+                """CREATE INDEX IF NOT EXISTS rectgrid_100_centroid_geom_idx
                        ON {} USING GIST(centroid);""".format(self.schema_table),
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT 'grid_100', centroid, uuid_generate_v4()
@@ -275,9 +276,9 @@ class StaticWriter(DBWriter):
                        ON DELETE CASCADE ON UPDATE CASCADE;""".format(self.schema_table),
                 """CREATE UNIQUE INDEX scoot_detector_detector_n_key ON {}(detector_n);""".format(self.schema_table),
                 """UPDATE {0}
-                       SET point_id = interest_points.meta_point.id
-                       FROM interest_points.meta_point
-                       WHERE {0}.geom = interest_points.meta_point.location;""".format(self.schema_table),
+                       SET point_id = meta_points.id
+                       FROM (SELECT * FROM interest_points.meta_point WHERE source = 'scoot') as meta_points
+                       WHERE {0}.geom = meta_points.location;""".format(self.schema_table),
                 """ALTER TABLE {} DROP COLUMN geom;""".format(self.schema_table),
             ]
 
