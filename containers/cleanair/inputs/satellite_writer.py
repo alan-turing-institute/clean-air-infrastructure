@@ -1,27 +1,23 @@
 """
 Satellite
 """
-
+import uuid
 import datetime
 import requests
-import pygrib
+try:
+    import pygrib
+except:
+    print("pygrib was not imported")
 import numpy as np
 import pandas as pd
 import tempfile
 from ..mixins import APIRequestMixin, DateRangeMixin
 from ..databases import DBWriter
-from ..databases.tables import MetaPoint, SatelliteSite, SatelliteForecastReading
+from ..databases.tables import MetaPoint, SatelliteSite, SatelliteDiscreteSite, SatelliteForecastReading
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 pd.set_option('display.max_rows', 1000)
-
-
-def get_grid_in_region(x1, x2, y1, y2, n):
-    A = np.linspace(x1, x2, n)
-    B = np.linspace(y1, y2, n)
-    g = [[a, b] for b in B for a in A]
-    return np.array(g)
 
 
 def get_datetime(d):
@@ -60,7 +56,8 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             self.logger = get_logger(__name__)
         self.access_key = copernicus_key
         self.sat_bounding_box = [51.2867601564841, 51.6918741102915, -0.51037511051915, 0.334015522513336]
-        self.discretise_size = 100
+        self.discretise_size = 3
+        self.half_gridsize = 0.05
 
     def request_satellite_data(self, start_date, pollutant, data_type):
         """
@@ -181,44 +178,8 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
             grib_data_df['lat'] = np.round(grib_data_df['lat'], 4)
         return grib_data_df
 
-    def update_site_list_table(self, interest_points_df):
-        """Pass an NX2 numpy array of lon lat coordiates and insert into the metapoints table"""
-
-        # Calculate geometry
-        interest_points_df['geometry'] = interest_points_df.apply(
-            lambda x: MetaPoint.build_ewkt(x['lat'], x['lon']), axis=1)
-        # Build entries
-        meta_entries = interest_points_df.apply(lambda x: MetaPoint.build_entry(
-            "satellite", latitude=x['lat'], longitude=x['lon'], geometry=x['geometry']), axis=1).tolist()
-
-        # Open a DB session
-        with self.dbcnxn.open_session() as session:
-            # Update the interest_points table and retrieve point IDs
-            point_id = {}
-            for interest_point in meta_entries:
-                merged_point = session.merge(interest_point)
-                session.flush()
-                point_id[interest_point.location] = str(merged_point.id)
-
-            # Add point IDs to the site_entries
-            interest_points_df["point_id"] = interest_points_df.apply(lambda x: point_id[x['geometry']], axis=1)
-
-            satellite_entries = interest_points_df.apply(
-                lambda x: SatelliteSite(interest_points_df['point_id'], interest_points_df['box_id']), axis=1).tolist()
-
-            # Build the site entries and commit
-            self.logger.info("Updating site info database records")
-
-            for interest_point in satellite_entries:
-                session.merge(interest_point)
-
-            self.logger.info("Committing changes to database tables %s and %s",
-                             green(MetaPoint.__tablename__),
-                             green(SatelliteSite.__tablename__))
-        # session.commit()
-
-    def process_satellite_data(self):
-
+    def update_interest_points(self):
+        """Create interest points and insert into the database"""
         # Request satellite data for a day
         grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
 
@@ -230,9 +191,60 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
         if sat_interest_points.shape[0] != 32:
             raise IOError("Satellite download did not return data for 32 interest points exactly.")
 
-        # self.update_site_list_table(sat_interest_points)
-        print(sat_interest_points)
-        print(self.discretise_grid_data(sat_interest_points))
+        # Create satellite_site entries (centers of the satellite readings)
+        sat_interest_points['location'] = sat_interest_points.apply(
+            lambda x: SatelliteSite.build_location_ewkt(x['lat'], x['lon']), axis=1)
+
+        sat_interest_points['geom'] = sat_interest_points.apply(
+            lambda x: SatelliteSite.build_box_ewkt(x['lat'], x['lon'], self.half_gridsize), axis=1)
+
+        sat_interest_points['box_id'] = list(range(sat_interest_points.shape[0]))
+
+        sat_interest_points_entries = sat_interest_points.apply(
+            lambda x: SatelliteSite(box_id=x['box_id'], location=x['location'], geom=x['geom']), axis=1).tolist()
+
+        # Calculate discrete points and insert into SatelliteDiscreteSite and MetaPoint
+        grid_maps = map(self.get_grid_in_region,
+                        sat_interest_points['lat'].values, sat_interest_points['lon'].values, sat_interest_points['box_id'].values)
+
+        disrete_points_df = pd.concat(list(grid_maps))
+        disrete_points_df['geometry'] = disrete_points_df.apply(
+            lambda x: MetaPoint.build_ewkt(x['lat'], x['lon']), axis=1)
+
+        disrete_points_df['point_id'] = [uuid.uuid4() for i in range(disrete_points_df.shape[0])]
+
+        disrete_points_df['metapoint'] = disrete_points_df.apply(lambda x: MetaPoint(
+            source="satellite", id=x['point_id'], location=x['geometry']), axis=1)
+
+        meta_entries = disrete_points_df['metapoint'].tolist()
+
+        sat_discrete_entries = disrete_points_df.apply(lambda x: SatelliteDiscreteSite(
+            point_id=x['point_id'], box_id=x['box_id']), axis=1).tolist()
+
+        # # Set the foreign keys
+        # for i, sat_entry in enumerate(sat_discrete_entries):
+        #     sat_entry.point = meta_entries[i]
+
+        # Commit to database
+        with self.dbcnxn.open_session() as session:
+            self.logger.info("Insert satellite meta points")
+            self.commit_records(session, meta_entries, table=MetaPoint)
+            self.logger.info("Insert satellite sites")
+            self.commit_records(session, sat_interest_points_entries)
+            self.logger.info("Insert satellite discrete entries")
+            self.commit_records(session, sat_discrete_entries, table=SatelliteDiscreteSite)
+
+    def get_grid_in_region(self, lat, lon, box_id):
+        """Get a grid of lat lon coordinates which descretise a satellite grid"""
+
+        A = np.linspace(lat-self.half_gridsize+0.0001, lat + self.half_gridsize - 0.0001, self.discretise_size)
+        B = np.linspace(lon-self.half_gridsize+0.0001, lon + self.half_gridsize - 0.0001, self.discretise_size)
+
+        grid = np.array([[a, b] for b in B for a in A])
+        grid_df = pd.DataFrame({'lat': grid[:, 0], 'lon': grid[:, 1]})
+        grid_df['box_id'] = box_id
+
+        return grid_df
 
     def discretise_grid_data(self, grid_data_df):
         """Pass a dataframe of the type returned by self.process_satellite_data and discretise"""
@@ -242,4 +254,4 @@ class SatelliteWriter(APIRequestMixin, DBWriter):
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
-        self.process_satellite_data()
+        self.update_interest_points()
