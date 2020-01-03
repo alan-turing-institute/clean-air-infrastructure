@@ -18,8 +18,9 @@ def main():
     parser.add_argument("-e", "--end", type=str, default="yesterday",
                         help="The last date (YYYY-MM-DD) to get data for.")
     parser.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for.")
-    parser.add_argument("-i", "--interestpoints",  dest='define_interest_points', action='store_true',
-                        help="The first time satellite data is inserted into the database, this flag must be set to insert the interest points")
+    parser.add_argument("-i", "--interestpoints", dest='define_interest_points', action='store_true',
+                        help="""The first time satellite data is inserted into the database,
+                        this flag must be set to insert the interest points""")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
@@ -35,7 +36,7 @@ def main():
     # Perform update and notify any exceptions
     try:
         # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
-        if not (args.copernicus_key):
+        if not args.copernicus_key:
             try:
                 with open(os.path.join("/secrets", "copernicus_secrets.json")) as f_secret:
                     data = json.load(f_secret)

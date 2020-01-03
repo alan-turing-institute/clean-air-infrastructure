@@ -2,31 +2,26 @@
 Satellite
 """
 import uuid
-import datetime
+import tempfile
 import requests
 from dateutil import rrule
 try:
     import pygrib
-except:
+except ImportError:
     print("pygrib was not imported")
 import numpy as np
 import pandas as pd
-import tempfile
 from sqlalchemy import func
-from ..mixins import APIRequestMixin, DateRangeMixin
+from ..mixins import DateRangeMixin
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, SatelliteSite, SatelliteDiscreteSite, SatelliteForecastReading
 from ..loggers import get_logger, green
-from ..timestamps import datetime_from_str, utcstr_from_datetime
+
 
 pd.set_option('display.max_rows', 1000)
 
 
-def int_to_padded_str(col, zfill=1):
-    return col.apply(lambda x: str(int(x)).zfill(zfill))
-
-
-class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
+class SatelliteWriter(DateRangeMixin, DBWriter):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
@@ -43,6 +38,13 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
         self.discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
         self.half_gridsize = 0.05
         self.define_interest_points = define_interest_points
+
+    @staticmethod
+    def get_response(api_endpoint, params=None, timeout=60.0):
+        """Return the response from an API"""
+        response = requests.get(api_endpoint, params=params, timeout=timeout)
+        response.raise_for_status()
+        return response
 
     def request_satellite_data(self, start_date, pollutant, data_type):
         """
@@ -80,42 +82,43 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
 
     def read_grib_file(self, filecontent):
         """Read a grib file into a pandas dataframe"""
+
+        def process_grib_layer(grib_layer, _id):
+            value, lat, lon = grib_layer.data(lat1=self.sat_bounding_box[0],
+                                              lat2=self.sat_bounding_box[1],
+                                              lon1=self.sat_bounding_box[2],
+                                              lon2=self.sat_bounding_box[3])
+            date = str(grib_layer.dataDate)
+            time = str(grib_layer.dataTime)
+            grib_df = pd.DataFrame()
+            grib_df['date'] = np.repeat(date, np.prod(value.shape))
+            grib_df['time'] = np.repeat(time, np.prod(value.shape))
+            grib_df['_id'] = np.repeat(_id, np.prod(value.shape))
+            grib_df['lon'] = lon.flatten()
+            grib_df['lat'] = lat.flatten()
+            grib_df['val'] = value.flatten()
+            return grib_df
+
         grb = pygrib.open(filecontent)
-        if grb.messages is 0:
-            return
-        lat, lon = grb[1].latlons()
-        total_d = []
-        records = []
-        for _id, g in enumerate(grb):
-            if _id is 24:
-                break
-            lat1 = self.sat_bounding_box[0]
-            lat2 = self.sat_bounding_box[1]
-            lon1 = self.sat_bounding_box[2]
-            lon2 = self.sat_bounding_box[3]
-            value, lat, lon = g.data(lat1=lat1, lat2=lat2, lon1=lon1, lon2=lon2)
-            date = str(g.dataDate)
-            time = str(g.dataTime)
-            def f(x): return x.flatten()
-            def r(x): return np.repeat(x, np.prod(value.shape))
-            df = pd.DataFrame()
-            df['date'] = r(date)
-            df['time'] = r(time)
-            df['_id'] = r(_id)
-            df['lon'] = f(lon)
-            df['lat'] = f(lat)
-            df['val'] = f(value)
-            records.append(df)
-        return pd.concat(records, axis=0)
+        if grb.messages == 0:
+            raise EOFError("No data in grib file")
+
+        # Extract 24h of data from each grib layer
+        grib_layers = map(process_grib_layer, grb[:24], range(24))
+
+        return pd.concat(grib_layers, axis=0)
 
     def grib_to_df(self, satellite_bytes):
         """Take satellite bytes and load into a pandas dataframe, converting NO2 units"""
+
+        def int_to_padded_str(col, zfill=1):
+            return col.apply(lambda x: str(int(x)).zfill(zfill))
+
         # Write the grib file to a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
             with open(tmpdir + 'tmpgrib_file.grib2', 'wb') as grib_file:
                 self.logger.debug("Writing grib file to %s", tmpdir)
                 grib_file.write(satellite_bytes)
-            self.logger.info("Loading grib file")
             grib_data_df = self.read_grib_file(tmpdir + 'tmpgrib_file.grib2')
             grib_data_df['date'] = pd.to_datetime(
                 grib_data_df['date']+int_to_padded_str(grib_data_df['_id'], 2), format='%Y%m%d%H')
@@ -138,7 +141,7 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
                                       dtstart=self.start_date,
                                       until=self.end_date):
 
-            self.logger.info("Requesting satellite forecast data for %s", start_date.date())
+            self.logger.info("Requesting satellite forecast data for %s", green(start_date.date()))
             # Get grib data
             grib_bytes = self.request_satellite_data(str(start_date.date()), "NO2", 'forecast')
             grib_data_df = self.grib_to_df(grib_bytes)
@@ -146,10 +149,11 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
             # Join grid data
             grib_data_joined = grib_data_df.merge(satellite_site_df, how='left', on=['lon', 'lat'])
 
-            reading_entries = grib_data_joined.apply(lambda x: SatelliteForecastReading(measurement_start_utc=x['date'],
-                                                                                        species_code='NO2',
-                                                                                        box_id=x['box_id'],
-                                                                                        value=x['no2']), axis=1).tolist()
+            reading_entries = grib_data_joined.apply(lambda x:
+                                                     SatelliteForecastReading(measurement_start_utc=x['date'],
+                                                                              species_code='NO2',
+                                                                              box_id=x['box_id'],
+                                                                              value=x['no2']), axis=1).tolist()
 
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, reading_entries, table=SatelliteForecastReading,
@@ -185,7 +189,9 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
 
         # Calculate discrete points and insert into SatelliteDiscreteSite and MetaPoint
         grid_maps = map(self.get_grid_in_region,
-                        sat_interest_points['lat'].values, sat_interest_points['lon'].values, sat_interest_points['box_id'].values)
+                        sat_interest_points['lat'].values,
+                        sat_interest_points['lon'].values,
+                        sat_interest_points['box_id'].values)
 
         disrete_points_df = pd.concat(list(grid_maps))
         disrete_points_df['geometry'] = disrete_points_df.apply(
@@ -213,10 +219,12 @@ class SatelliteWriter(APIRequestMixin, DateRangeMixin, DBWriter):
     def get_grid_in_region(self, lat, lon, box_id):
         """Get a grid of lat lon coordinates which descretise a satellite grid"""
 
-        A = np.linspace(lat-self.half_gridsize, lat + self.half_gridsize, self.discretise_size+1, endpoint=False)[1:]
-        B = np.linspace(lon-self.half_gridsize, lon + self.half_gridsize, self.discretise_size+1, endpoint=False)[1:]
+        lat_space = np.linspace(lat-self.half_gridsize, lat + self.half_gridsize,
+                                self.discretise_size+1, endpoint=False)[1:]
+        lon_space = np.linspace(lon-self.half_gridsize, lon + self.half_gridsize,
+                                self.discretise_size+1, endpoint=False)[1:]
 
-        grid = np.array([[a, b] for b in B for a in A])
+        grid = np.array([[a, b] for b in lon_space for a in lat_space])
         grid_df = pd.DataFrame({'lat': grid[:, 0], 'lon': grid[:, 1]})
         grid_df['box_id'] = box_id
 

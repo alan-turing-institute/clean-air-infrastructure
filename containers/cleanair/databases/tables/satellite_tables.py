@@ -3,7 +3,6 @@ Tables for Satellite data
 """
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID, INTEGER
-from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 from ..base import Base
 
