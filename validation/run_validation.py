@@ -3,6 +3,7 @@ import temporal
 import choose_sensors
 import sys
 import logging
+import pickle
 import argparse
 import datetime
 from dateutil.parser import isoparse
@@ -29,7 +30,7 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def run_rolling(write_results=False):
+def run_rolling(write_results=False, to_pickle=False, from_pickle=False):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
     train_n_hours = 48
@@ -61,6 +62,10 @@ def run_rolling(write_results=False):
         # Get the model data and append to list
         model_data = ModelData(config=model_config, secretfile=secret_fp)
         model_data_list.append(model_data)
+
+        # Write to pickle
+        if to_pickle:
+            pickle.dump(model_data, 'model_data/rolling_{train_start}.pickle'.format(train_start=r['train_start_date']))
 
     # Run rolling forecast
     scores_df, results_df = temporal.rolling_forecast('svgp', model_data_list, model_params=model_params, return_results=True)
@@ -94,7 +99,7 @@ def get_model_config_default(train_start, train_end, pred_start, pred_end, train
         'tag': 'testing'
     }
 
-def run_forecast(write_results=False):
+def run_forecast(write_results=False, to_pickle=False, from_pickle=False):
     # Set dates for training and testing
     train_end = "2019-11-06T00:00:00"
     train_n_hours = 24
@@ -119,7 +124,13 @@ def run_forecast(write_results=False):
     model_params = get_model_params_default()
 
     # Get the model data
-    model_data = ModelData(config=model_config, secretfile=secret_fp)
+    if from_pickle:
+        model_data = pickle.load('model_data/forecast.pickle')
+    else:
+        model_data = ModelData(config=model_config, secretfile=secret_fp)
+
+    if to_pickle:
+        pickle.dump(model_data, 'model_data/forecast.pickle')
 
     # print(model_data.list_available_features())
     # print(model_data.list_available_sources())
@@ -139,12 +150,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-r', '--rolling', action='store_true')
     parser.add_argument('-w', '--write',  action='store_true')
+    parser.add_argument('-p', '--topickle', action='store_true')
+    parser.add_argument('-f', '--frompickle', action='store_true')
     args = parser.parse_args()
     kwargs = vars(args)
     roll = kwargs.pop('rolling')
     write_results = kwargs.pop('write')
+    to_pickle = kwargs.pop('topickle')
+    from_pickle = kwargs.pop('frompickle')
     
     if roll:
-        run_rolling(write_results=write_results)
+        run_rolling(write_results=write_results, to_pickle=to_pickle, from_pickle=from_pickle)
     else:
-        run_forecast(write_results=write_results)
+        run_forecast(write_results=write_results, to_pickle=to_pickle, from_pickle=from_pickle)

@@ -16,8 +16,9 @@ terraform/backend_config.tf
 .python-version
 python-virtual-environments/
 
-# results data
+# saved data directories
 validation/results/
+validation/model_data
 
 # Python & notebooks
 *__pycache__
