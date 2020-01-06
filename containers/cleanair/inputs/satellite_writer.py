@@ -18,9 +18,6 @@ from ..databases.tables import MetaPoint, SatelliteSite, SatelliteDiscreteSite, 
 from ..loggers import get_logger, green
 
 
-pd.set_option('display.max_rows', 1000)
-
-
 class SatelliteWriter(DateRangeMixin, DBWriter):
     """
     Get Satellite data from
