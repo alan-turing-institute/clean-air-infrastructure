@@ -86,6 +86,7 @@ class ModelData(DBWriter):
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
 
         self.features = config['features']
+        self.feature_names = ["".join(feature.split("_", 2)[2:]) for feature in self.features]
         self.norm_by = config['norm_by']
         self.model_type = config['model_type']
         self.tag = config['tag']
@@ -446,7 +447,7 @@ class ModelData(DBWriter):
 
         with self.dbcnxn.open_session() as session:
 
-            feature_query = session.query(feature_table)
+            feature_query = session.query(feature_table).filter(feature_table.feature_name.in_(self.feature_names))
 
             if start_date:
                 feature_query = feature_query.filter(feature_table.measurement_start_utc >= start_date,
