@@ -1,0 +1,29 @@
+jobs:
+  # first cron
+  - name: laqn
+    image:
+      repository: cleanaircontainerregistry.azurecr.io/laqn
+      tag: latest
+      imagePullPolicy: Always
+    schedule: "* * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: laqncred
+      secret:
+        secretName: laqncred
+
+
+deployments:
+  # First deployment
+  - name: api-deployment
+    label: api
+    replicas: 2
+    image:
+      repository: cleanaircontainerregistry.azurecr.io/api
+      tag: latest
+      imagePullPolicy: Always
+    ports:
+      containerPort: 5000
