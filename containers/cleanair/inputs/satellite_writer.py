@@ -24,13 +24,14 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
     """
 
-    def __init__(self, copernicus_key, define_interest_points=False, **kwargs):
+    def __init__(self, copernicus_key, define_interest_points=False, use_archive_data=False, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
         self.access_key = copernicus_key
+        self.use_archive_data = use_archive_data
         self.sat_bounding_box = [51.2867601564841, 51.6918741102915, -0.51037511051915, 0.334015522513336]
         self.discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
         self.half_gridsize = 0.05
@@ -43,7 +44,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         response.raise_for_status()
         return response
 
-    def request_satellite_data(self, start_date, pollutant, data_type):
+    def request_satellite_data(self, start_date, pollutant):
         """
         Request satellite data
         args:
@@ -51,10 +52,11 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             pollutant: 'NO2', 'NO', 'PM10'
             type: Either 'archieve' or 'forecast
         """
-        if data_type == 'archive':
+
+        if self.use_archive_data:
             call_type = 'ANALYSIS'
             time_required = '-24H-1H'
-        elif data_type == 'forecast':
+        else:
             call_type = 'FORECAST'
             time_required = '0H24H'
         level = 'SURFACE'
@@ -140,7 +142,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
             self.logger.info("Requesting satellite forecast data for %s", green(start_date.date()))
             # Get grib data
-            grib_bytes = self.request_satellite_data(str(start_date.date()), "NO2", 'forecast')
+            grib_bytes = self.request_satellite_data(str(start_date.date()), "NO2")
             grib_data_df = self.grib_to_df(grib_bytes)
 
             # Join grid data
@@ -154,7 +156,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, reading_entries, table=SatelliteForecastReading,
-                                    on_conflict_do_nothing=True)
+                                    on_conflict_do_nothing=False)
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
@@ -162,7 +164,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         self.logger.info("Inserting interest points into database")
 
         # Request satellite data for an arbitary day
-        grib_bytes = self.request_satellite_data('2019-12-09', "NO2", 'forecast')
+        grib_bytes = self.request_satellite_data('2019-12-09', "NO2")
 
         # Convert to dataframe
         grib_data_df = self.grib_to_df(grib_bytes)

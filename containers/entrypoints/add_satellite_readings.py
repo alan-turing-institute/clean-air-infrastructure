@@ -21,6 +21,8 @@ def main():
     parser.add_argument("-i", "--interestpoints", dest='define_interest_points', action='store_true',
                         help="""The first time satellite data is inserted into the database,
                         this flag must be set to insert the interest points""")
+    parser.add_argument("-a", "--archive", dest='use_archive_data', action='store_true',
+                        help="""Use archive data rather than forecast data""")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 

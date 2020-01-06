@@ -9,7 +9,7 @@ from sqlalchemy import literal, func
 import plotly.figure_factory as ff
 from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
                                 LAQNReading, MetaPoint, AQESite,
-                                AQEReading, ModelResult)
+                                AQEReading, ModelResult, SatelliteForecastReading)
 from ..databases import DBWriter
 from ..loggers import get_logger
 
@@ -567,13 +567,22 @@ class ModelData(DBWriter):
         sensor_dfs = []
         if 'laqn' in sources:
             sensor_q = self.__get_laqn_readings(start_date_, end_date_)
-            sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
+            laqn_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            sensor_dfs.append(laqn_sensor_data)
+            if laqn_sensor_data.shape[0] == 0:
+                raise AttributeError(
+                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates")
 
         if 'aqe' in sources:
             sensor_q = self.__get_aqe_readings(start_date_, end_date_)
-            sensor_dfs.append(pd.read_sql(sensor_q.statement, sensor_q.session.bind))
+            aqe_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            sensor_dfs.append(aqe_sensor_data)
+            if aqe_sensor_data.shape[0] == 0:
+                raise AttributeError(
+                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates")
 
         sensor_df = pd.concat(sensor_dfs, axis=0)
+
         sensor_df['point_id'] = sensor_df['point_id'].astype(str)
         sensor_df['epoch'] = sensor_df['measurement_start_utc'].apply(lambda x: x.timestamp())
         sensor_df = sensor_df.pivot_table(
@@ -586,6 +595,15 @@ class ModelData(DBWriter):
             values='value')
 
         return sensor_df[species].reset_index()
+
+    def get_satellite_forecast(self, start_date, end_date):
+
+        with self.dbcnxn.open_session() as session:
+
+            sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
+                                                                   SatelliteForecastReading.measurement_start_utc < end_date)
+
+            return pd.read_sql(sat_q.statement, sat_q.session.bind)
 
     def get_model_features(self, start_date, end_date, sources=None, point_ids=None):
         """
