@@ -130,7 +130,7 @@ class Features(DBWriter):
                                                  func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
                                                  .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                              ).label("geom_{}".format(radius))
-                                               for radius in self.buffer_radii_metres]
+                                                 for radius in self.buffer_radii_metres]
                                              ).group_by(sq_within.c.id).subquery()
 
             # Join with meta points to ensure every meta point gets an entry,
@@ -186,7 +186,7 @@ class Features(DBWriter):
                                                                              "intersects_{}".format(radius))), 0.0)
                 .label("value_{}".format(radius))
                 for radius in self.buffer_radii_metres
-                ]
+            ]
 
             if self.dynamic:
                 q_intersections = session.query(sq_within.c.id,
@@ -226,7 +226,7 @@ class Features(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10000
+        batch_size = 100
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
@@ -250,7 +250,7 @@ class Features(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10000
+        batch_size = 100
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
