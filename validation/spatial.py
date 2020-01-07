@@ -5,8 +5,9 @@ Functions for spatial validation.
 import choose_sensors
 import math
 import pandas as pd
+from cleanair.models import ModelData, SVGP
 
-def k_fold_cross_validation(model_fitter, model_data, sdf, k):
+def k_fold_cross_validation(sdf, k, model_config={}, secret_fp=""):
     """
     Split the sensors into k sets.
     Take out one of these sets.
@@ -14,10 +15,6 @@ def k_fold_cross_validation(model_fitter, model_data, sdf, k):
 
     Parameters
     ___
-
-    model_fitter : SVGP
-
-    model_data : ModelData
 
     sdf : DataFrame
         Sensor dataframe.
@@ -30,18 +27,27 @@ def k_fold_cross_validation(model_fitter, model_data, sdf, k):
 
     # split data into k sets
     sensor_fold = {}
-    all_sensors = set(sdf.index)
-    num_sensors = len(all_sensors)
+    remaining_sensors = set(sdf.index)
+    num_sensors = len(remaining_sensors)
     size_of_fold = math.floor(num_sensors / k)
     remainder = num_sensors % k
     for i in range(k):
         add_one = 1 if remainder > 0 else 0
-        remaining_sdf = sdf[list(all_sensors)]
+        remaining_sdf = sdf[list(remaining_sensors)]
         fold = choose_sensors.sensor_choice(remaining_sdf, size_of_fold + add_one)
         sensor_fold[i] = fold.copy()
-        all_sensors = all_sensors - fold
+        remaining_sensors = remaining_sensors - fold
+        num_sensors = len(remaining_sensors)
+        remainder = num_sensors % k
 
     # for each subset S, train on remaining sensors
+    all_sensors = set(sdf.index)
+    for i, fold in sensor_fold.items():
+        model_config['train_points'] = list(all_sensors - fold)
+        model_config['pred_points'] = list(fold)
+        model_data = ModelData(config=model_config, secretfile=secret_fp)
+        model_fitter = SVGP()
+
 
     # predict on sensors in S
 

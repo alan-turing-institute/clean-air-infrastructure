@@ -30,6 +30,12 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
+def run_spatial(write_results=False):
+    # get data
+    model_config = get_model_config_default()
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+    spatial.k_fold_cross_validation(sdf, 10, model_config=model_config, secret_fp=secret_fp)
+
 def run_rolling(write_results=False, to_pickle=False, from_pickle=False):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
@@ -125,12 +131,12 @@ def run_forecast(write_results=False, to_pickle=False, from_pickle=False):
 
     # Get the model data
     if from_pickle:
-        model_data = pickle.load('model_data/forecast.pickle')
+        model_data = pickle.load(open('model_data/forecast.pickle', 'rb'))
     else:
         model_data = ModelData(config=model_config, secretfile=secret_fp)
 
     if to_pickle:
-        pickle.dump(model_data, 'model_data/forecast.pickle')
+        pickle.dump(model_data, open('model_data/forecast.pickle', 'wb'))
 
     # print(model_data.list_available_features())
     # print(model_data.list_available_sources())

@@ -68,8 +68,12 @@ def forecast(model_fitter, model_data, model_params={}, max_iter=1000, return_re
     print()
     print("### columns:")
     print(list(model_data.normalised_pred_data_df.columns))
+    # useful_df = model_data.normalised_pred_data_df[[
+    #     'measurement_start_utc', 'point_id', 'source', 'location',
+    #     'lat', 'lon', 'fit_start_time', 'predict_mean', 'predict_var'
+    # ] + model_data.y_names]
     useful_df = model_data.normalised_pred_data_df[[
-        'measurement_start_utc', 'point_id', 'source', 'location',
+        'measurement_start_utc', 'point_id', 'source',
         'lat', 'lon', 'fit_start_time', 'predict_mean', 'predict_var'
     ] + model_data.y_names]
 
