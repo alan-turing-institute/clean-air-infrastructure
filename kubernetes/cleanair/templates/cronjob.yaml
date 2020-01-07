@@ -30,6 +30,9 @@ spec:
             - name: secrets
               mountPath: "/secrets/"
               readOnly: true
+            - name: secrets2
+              mountPath: "/secrets2/"
+              readOnly: true
 
           imagePullSecrets:
           - name: regcred

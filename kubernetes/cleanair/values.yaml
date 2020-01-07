@@ -35,13 +35,12 @@ jobs:
       repository: cleanairdocker.azurecr.io/scoot
       tag: 86fe673b542e8dec877d64a842e21516339d1ad9
       imagePullPolicy: Always
-    args: n
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
     volumes:
-    - name: secrets
+    - name: secrets2
       secret:
         secretName: db-secrets

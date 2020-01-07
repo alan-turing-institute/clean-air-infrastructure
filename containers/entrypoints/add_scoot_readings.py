@@ -35,7 +35,7 @@ def main():
         # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
         if not (args.aws_key_id and args.aws_key):
             try:
-                with open(os.path.join("/secrets", "aws_secrets.json")) as f_secret:
+                with open(os.path.join("/secrets2", "aws_secrets.json")) as f_secret:
                     data = json.load(f_secret)
                     args.aws_key_id = data["aws_key_id"]
                     args.aws_key = data["aws_key"]
