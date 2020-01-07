@@ -2,28 +2,46 @@ jobs:
   # first cron
   - name: laqn
     image:
-      repository: cleanaircontainerregistry.azurecr.io/laqn
-      tag: latest
+      repository: cleanairdocker.azurecr.io/laqn
+      tag: 86fe673b542e8dec877d64a842e21516339d1ad9
       imagePullPolicy: Always
-    schedule: "* * * * *"
+    schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
     volumes:
-    - name: laqncred
+    - name: secrets
       secret:
-        secretName: laqncred
+        secretName: db-secrets
 
-
-deployments:
-  # First deployment
-  - name: api-deployment
-    label: api
-    replicas: 2
+  - name: aqe
     image:
-      repository: cleanaircontainerregistry.azurecr.io/api
-      tag: latest
+      repository: cleanairdocker.azurecr.io/aqe
+      tag: 86fe673b542e8dec877d64a842e21516339d1ad9
       imagePullPolicy: Always
-    ports:
-      containerPort: 5000
+    schedule: "0 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: db-secrets
+
+  - name: scoot
+    image:
+      repository: cleanairdocker.azurecr.io/scoot
+      tag: 86fe673b542e8dec877d64a842e21516339d1ad9
+      imagePullPolicy: Always
+    args: n
+    schedule: "0 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: db-secrets
