@@ -1,9 +1,10 @@
+imageTag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
+
 jobs:
   # first cron
   - name: laqn
     image:
       repository: cleanairdocker.azurecr.io/laqn
-      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
@@ -18,7 +19,6 @@ jobs:
   - name: aqe
     image:
       repository: cleanairdocker.azurecr.io/aqe
-      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
@@ -33,7 +33,6 @@ jobs:
   - name: scoot
     image:
       repository: cleanairdocker.azurecr.io/scoot
-      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
