@@ -3,7 +3,7 @@ jobs:
   - name: laqn
     image:
       repository: cleanairdocker.azurecr.io/laqn
-      tag: 37cd09d53e7feb410f14a6fd408dfb6cc1398042
+      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
@@ -13,12 +13,12 @@ jobs:
     volumes:
     - name: secrets
       secret:
-        secretName: db-secrets
+        secretName: secrets
 
   - name: aqe
     image:
       repository: cleanairdocker.azurecr.io/aqe
-      tag: 37cd09d53e7feb410f14a6fd408dfb6cc1398042
+      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
@@ -28,12 +28,12 @@ jobs:
     volumes:
     - name: secrets
       secret:
-        secretName: db-secrets
+        secretName: secrets
 
   - name: scoot
     image:
       repository: cleanairdocker.azurecr.io/scoot
-      tag: 37cd09d53e7feb410f14a6fd408dfb6cc1398042
+      tag: ffc33a33452d02e1969e8ff0f19803c6f2e60573
       imagePullPolicy: Always
     schedule: "0 * * * *"
     failedJobsHistoryLimit: 1
@@ -43,7 +43,4 @@ jobs:
     volumes:
     - name: secrets
       secret:
-        secretName: db-secrets
-    - name: secrets2
-      secret:
-        secretName: aws-secrets
+        secretName: secrets

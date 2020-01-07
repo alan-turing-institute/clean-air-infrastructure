@@ -117,7 +117,7 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 
 ## Building the Clean Air infrastructure with Terraform
-To build the `Terraform` infrastructure go to the `terraform` directory 
+To build the `Terraform` infrastructure go to the `terraform` directory
 
 ```
 cd terraform
@@ -210,7 +210,7 @@ To run the clean air docker images locally you will need to create a local secre
 Run the following to create a file with the database secrets:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
 ```
 
 ```
@@ -282,7 +282,7 @@ CREATE DATABASE cleanair_inputs_db;
 - Create a secret file with login information for the database with following commands:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
 ```
 
 ```
@@ -305,15 +305,15 @@ python setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
 
 
-<!-- ## Configure Kubernetes Cluster:
+## Configure Kubernetes Cluster:
 
 ### Local cluster
 You can set up a local cluster on your machine. To do this install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-
+ -->
 
 To start the cluster run:
 ```
-minikube start
+minikube start --vm-driver=virtualbox
 ```
 
 Start the cluster dashboard with:
@@ -335,7 +335,7 @@ kubectl create secret docker-registry regcred --docker-server=<servername> --doc
 
 Next create a secret for each database secret file:
 ```
-kubectl create secret generic <datasource>cred --from-file=<file>
+kubectl create secret generic secrets --from-file=<path_to_aws_secret>aws_secrets.json --from-file=<path_to_db_secret>/db_secrets.json
 ```
 
 
@@ -344,21 +344,8 @@ kubectl create secret generic <datasource>cred --from-file=<file>
 Go to the `/kubernetes` directory and run:
 
 ```
-helm package cleanair
+helm install kubernetes/cleanair
 ```
 
-
-To see the rendered manifest file which will be installed on the kuberenets cluster run:
-```
-helm install cleanair --dry-run --debug
-```
-
-To install run:
-
-```
-helm install cleanair
-```
 
 Now you to the minikube dashboard and you can see everything that was installed.
-
--->
