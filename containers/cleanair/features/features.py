@@ -249,6 +249,7 @@ class Features(DBWriter):
             sq_intersection_geom = session.query(IntersectionGeom.point_id, IntersectionGeom.feature_name).subquery()
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom))
 
+        self.logger.debug("Processing the following interest points: %s", [str(i.id) for i in q_filtered.all()])
         n_interest_points = q_filtered.count()
         batch_size = 100
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
@@ -292,7 +293,8 @@ class Features(DBWriter):
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_geom_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
-                        self.commit_records(session, select_stmt, table=IntersectionGeom, on_conflict_do_nothing=True)
+                        self.commit_records(session, select_stmt, table=IntersectionGeom,
+                                            on_conflict_do_nothing=True)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))

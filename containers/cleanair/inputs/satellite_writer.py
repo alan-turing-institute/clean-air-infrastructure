@@ -188,9 +188,9 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         # Calculate discrete points and insert into SatelliteDiscreteSite and MetaPoint
         grid_maps = map(self.get_grid_in_region,
-                        sat_interest_points['lat'].values,
-                        sat_interest_points['lon'].values,
-                        sat_interest_points['box_id'].values)
+                        sat_interest_points['lat'].to_numpy(),
+                        sat_interest_points['lon'].to_numpy(),
+                        sat_interest_points['box_id'].to_numpy())
 
         disrete_points_df = pd.concat(list(grid_maps))
         disrete_points_df['geometry'] = disrete_points_df.apply(

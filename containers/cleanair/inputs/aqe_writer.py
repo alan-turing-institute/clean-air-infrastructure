@@ -80,7 +80,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Combine any readings taken within the same hour
             df_readings = pandas.DataFrame(readings)
             df_combined = df_readings.groupby(self.reading_keys, as_index=False).agg({"Value": "mean"})
-            return list(df_combined.T.to_dict().values())
+            return list(df_combined.T.to_dict().to_numpy())
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
             self.logger.warning(error)

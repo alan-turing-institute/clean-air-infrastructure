@@ -38,7 +38,7 @@ class StaticWriter(DBWriter):
         }
 
         # Ensure that the necessary schemas exist
-        for schema in list(set(self.schemas.values())):
+        for schema in list(set(self.schemas.to_numpy()())):
             self.dbcnxn.ensure_schema(schema)
 
         # Ensure that interest_points table exists

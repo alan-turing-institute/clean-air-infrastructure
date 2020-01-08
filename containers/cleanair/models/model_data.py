@@ -63,18 +63,15 @@ class ModelData(DBWriter):
         self.pred_data_df = self.get_pred_data_inputs(satellite=False)
         self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
-        self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
+        # Process satellite data
+        if self.config['include_satellite']:
+            self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
 
-        grouped = self.training_satellite_data_x.groupby('box_id')
-        X_sat = np.swapaxes(np.array([group[self.config['x_names']].values for _, group in grouped]), 0, 1)
+            self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
+                ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
 
-        print(X_sat.shape)
-
-        # grouped = self.training_satellite_data_y.groupby('box_id')
-        # print([group[self.config['species']].values.shape for _, group in grouped])
-
-        print(self.training_satellite_data_x)
-        # print(self.training_satellite_data_y)
+            self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
+                ['box_id', 'measurement_start_utc'])
 
     def __validate_config(self, config):
 
@@ -192,7 +189,7 @@ class ModelData(DBWriter):
         to be appended to dataframes (required when dropna is used)"""
 
         if return_y:
-            data_subset = data_df[self.x_names_norm + self.y_names]
+            data_subset = data_df[self.x_names_norm + self.config['species']]
         else:
             data_subset = data_df[self.x_names_norm]
 
@@ -201,10 +198,24 @@ class ModelData(DBWriter):
             n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
             self.logger.warning("Dropped %s rows out of %s from the dataframe", n_dropped_rows, data_df.shape[0])
 
-        data_dict = {'X': data_subset[self.x_names_norm].values, 'index': data_subset[self.x_names_norm].index}
+        data_dict = {'X': data_subset[self.x_names_norm].to_numpy(), 'index': data_subset[self.x_names_norm].index}
 
         if return_y:
-            data_dict['Y'] = data_subset[self.y_names].values
+            data_dict['Y'] = data_subset[self.config['species']].to_numpy()
+
+        if self.config['include_satellite']:
+            # Check dimensions
+            N_sat_box = self.training_satellite_data_x['box_id'].unique().size
+            N_hours = self.training_satellite_data_x['epoch'].unique().size
+            N_interest_points = self.training_satellite_data_x['point_id'].unique().size
+            N_x_names = len(self.config['x_names'])
+
+            X_sat = self.training_satellite_data_x[self.config['x_names']
+                                                   ].to_numpy().reshape((N_sat_box * N_hours, 100, N_x_names))
+
+            Y_sat = self.training_satellite_data_y['value'].to_numpy()
+            data_dict['X_sat'] = X_sat
+            data_dict['Y_sat'] = Y_sat
 
         return data_dict
 
@@ -278,7 +289,7 @@ class ModelData(DBWriter):
         interest_point_query = self.__get_interest_points_q(sources)
 
         available_interest_points = pd.read_sql(interest_point_query.statement,
-                                                interest_point_query.session.bind)['point_id'].astype(str).values
+                                                interest_point_query.session.bind)['point_id'].astype(str).to_numpy()
 
         return available_interest_points
 
@@ -484,12 +495,12 @@ class ModelData(DBWriter):
                                              index=['point_id', 'measurement_start_utc'],
                                              columns='feature_name', aggfunc=get_val).reset_index()
                 features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for
-                                                                               col in features_df.columns.values[2:]]
+                                                                               col in features_df.columns.to_numpy()[2:]]
                 features_df = features_df.set_index('point_id')
             else:
                 features_df = features_df.pivot(index='point_id', columns='feature_name').reset_index()
                 features_df.columns = ['point_id'] + ['_'.join(col).strip()
-                                                      for col in features_df.columns.values[1:]]
+                                                      for col in features_df.columns.to_numpy()[1:]]
                 features_df = features_df.set_index('point_id')
 
             # Set index types to str
@@ -524,7 +535,7 @@ class ModelData(DBWriter):
         start_date = isoparse(start_date).date()
         end_date = isoparse(end_date).date()
 
-        ids = feature_df['point_id'].values
+        ids = feature_df['point_id'].to_numpy()
         times = rrule.rrule(rrule.HOURLY, dtstart=start_date, until=end_date - relativedelta(hours=+1))
         index = pd.MultiIndex.from_product([ids, pd.to_datetime(list(times), utc=False)],
                                            names=["point_id", "measurement_start_utc"])
@@ -670,7 +681,7 @@ class ModelData(DBWriter):
         point_ids = self.config['train_satellite_interest_points']
         features = self.config['feature_names']
 
-        self.logger.info("Getting Saatellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+        self.logger.info("Getting Satellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)

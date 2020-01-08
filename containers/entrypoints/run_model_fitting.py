@@ -78,8 +78,11 @@ def main():
     # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
-    # training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    # predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+    training_data_dict = model_data.get_training_data_arrays(dropna=True)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+
+    print(training_data_dict['X_sat'])
+    print(training_data_dict['Y_sat'])
 
     # # Fit the model
     # model_fitter = SVGP()
