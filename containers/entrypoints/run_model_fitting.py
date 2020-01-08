@@ -54,12 +54,12 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
-                    'train_sources': ['laqn', 'aqe'],
+                    'train_sources': ['laqn', 'aqe', 'satellite'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['total_a_road_length'],
+                    'features': ['value_1000_total_a_road_length'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -73,7 +73,7 @@ def main():
     # Get the model data
     model_data = ModelData(model_config, **kwargs)
 
-    print(model_data.get_satellite_forecast(train_start, train_end))
+    # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
     # training_data_dict = model_data.get_training_data_arrays(dropna=True)
