@@ -1,0 +1,4 @@
+flask-restful
+flask
+uwsgi
+supervisor
