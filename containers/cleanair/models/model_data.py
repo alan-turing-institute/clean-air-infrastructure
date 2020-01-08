@@ -2,6 +2,7 @@
 Vizualise available sensor data for a model fit
 """
 import pandas as pd
+import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -9,7 +10,7 @@ from sqlalchemy import literal, func
 import plotly.figure_factory as ff
 from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
                                 LAQNReading, MetaPoint, AQESite,
-                                AQEReading, ModelResult, SatelliteForecastReading)
+                                AQEReading, ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
 from ..databases import DBWriter
 from ..loggers import get_logger
 
@@ -33,6 +34,7 @@ class ModelData(DBWriter):
                 "train_sources": ["laqn", "aqe"],
                 "pred_sources": ["laqn", "aqe"],
                 "train_interest_points": ['point_id1', 'point_id2'],
+                'train_satellite_interest_points': ['point_id1', 'point_id2']
                 "pred_interest_points": ['point_id1', 'point_id2'],
                 "species": ["NO2"],
                 "features": "all",
@@ -52,32 +54,27 @@ class ModelData(DBWriter):
 
         # Validate the configuration
         self.__validate_config(config)
+        self.config = self.generate_full_config(config)
 
-        self.config = config
-
-        if self.config['train_interest_points'] == 'all':
-            self.config['train_interest_points'] = self.__get_interest_point_ids(self.config['train_sources'])
-        if self.config['pred_interest_points'] == 'all':
-            self.config['pred_interest_points'] = self.__get_interest_point_ids(self.config['pred_sources'])
-
-        if self.config['features'] == 'all':
-            feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
-            buff_size = [1000, 500, 200, 100, 10]
-            self.config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
-            self.logger.info("Features 'all' replaced with available features: %s", config['features'])
-
-        self.config['feature_names'] = ["".join(feature.split("_", 2)[2:]) for feature in self.config['features']]
-        self.config['x_names'] = ["epoch", "lat", "lon"] + self.config['features']
-
-        if 'satellite' in self.config['train_sources']:
-            self.satellite = True
-
-        # Get traing and prediciton data frames
+        # Get training and prediciton data frames
         self.training_data_df = self.get_training_data_inputs(satellite=False)
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
         self.pred_data_df = self.get_pred_data_inputs(satellite=False)
         self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+
+        self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
+
+        grouped = self.training_satellite_data_x.groupby('box_id')
+        X_sat = np.swapaxes(np.array([group[self.config['x_names']].values for _, group in grouped]), 0, 1)
+
+        print(X_sat.shape)
+
+        # grouped = self.training_satellite_data_y.groupby('box_id')
+        # print([group[self.config['species']].values.shape for _, group in grouped])
+
+        print(self.training_satellite_data_x)
+        # print(self.training_satellite_data_y)
 
     def __validate_config(self, config):
 
@@ -85,22 +82,24 @@ class ModelData(DBWriter):
                        "train_end_date",
                        "pred_start_date",
                        "pred_end_date",
+
+                       "include_satellite",
                        "train_sources",
                        "pred_sources",
                        "train_interest_points",
+                       "train_satellite_interest_points",
                        "pred_interest_points",
                        "species",
                        "features",
                        "norm_by",
                        "model_type",
-                       'tag', ]
+                       'tag'
+                       ]
 
         valid_models = ['svgp', ]
 
         self.logger.info("Validating config")
-
         # Check required config keys present
-
         if set(config.keys()) != set(config_keys):
             raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
 
@@ -131,13 +130,40 @@ class ModelData(DBWriter):
         # Check interest points are valid
         train_interest_points = config['train_interest_points']
         if isinstance(train_interest_points, list):
-            self.__check_intpoints_available(train_interest_points, train_sources)
+            self.__check_interest_points_available(train_interest_points, train_sources)
 
         pred_interest_points = config['pred_interest_points']
         if isinstance(pred_interest_points, list):
-            self.__check_intpoints_available(pred_interest_points, pred_sources)
+            self.__check_interest_points_available(pred_interest_points, pred_sources)
+
+        if config['include_satellite']:
+            satellite_interest_points = config['train_satellite_interest_points']
+            if isinstance(satellite_interest_points, list):
+                self.__check_interest_points_available(pred_interest_points, ['satellite'])
 
         self.logger.info("Validate config complete")
+
+    def generate_full_config(self, config):
+        """Generate a full config file by querying the cleanair database to check available interest point sources and features"""
+
+        if config['train_interest_points'] == 'all':
+            config['train_interest_points'] = self.__get_interest_point_ids(config['train_sources'])
+        if config['pred_interest_points'] == 'all':
+            config['pred_interest_points'] = self.__get_interest_point_ids(config['pred_sources'])
+
+        if config['include_satellite'] and (config['train_satellite_interest_points'] == 'all'):
+            config['train_satellite_interest_points'] = self.__get_interest_point_ids(['satellite'])
+
+        if config['features'] == 'all':
+            feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
+            buff_size = [1000, 500, 200, 100, 10]
+            config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
+            self.logger.info("Features 'all' replaced with available features: %s", config['features'])
+
+        config['feature_names'] = ["".join(feature.split("_", 2)[2:]) for feature in config['features']]
+        config['x_names'] = ["epoch", "lat", "lon"] + config['features']
+
+        return config
 
     @property
     def x_names_norm(self):
@@ -259,7 +285,6 @@ class ModelData(DBWriter):
     def __check_interest_points_available(self, interest_points, sources):
 
         available_interest_points = self.__get_interest_point_ids(sources)
-
         unavailable_interest_points = []
 
         for point in interest_points:
@@ -573,15 +598,6 @@ class ModelData(DBWriter):
 
         return sensor_df[species].reset_index()
 
-    def get_satellite_forecast(self, start_date, end_date):
-
-        with self.dbcnxn.open_session() as session:
-
-            sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
-                                                                   SatelliteForecastReading.measurement_start_utc < end_date)
-
-            return pd.read_sql(sat_q.statement, sat_q.session.bind)
-
     def get_model_features(self, start_date, end_date, features, sources, point_ids):
         """
         Query the database for model features, only getting features in self.features
@@ -608,7 +624,7 @@ class ModelData(DBWriter):
 
         start_date = self.config['train_start_date']
         end_date = self.config['train_end_date']
-        sources = [i for i in self.config['train_sources'] if i != 'satellite']  # Do not get satellite data here
+        sources = self.config['train_sources']
         species = self.config['species']
         point_ids = self.config['train_interest_points']
         features = self.config['feature_names']
@@ -633,8 +649,8 @@ class ModelData(DBWriter):
 
         start_date = self.config['pred_start_date']
         end_date = self.config['pred_end_date']
-        sources = [i for i in self.config['pred_sources'] if i != 'satellite']  # Do not get satellite data here
         species = self.config['species']
+        sources = self.config['pred_sources']
         point_ids = self.config['pred_interest_points']
         features = self.config['feature_names']
 
@@ -644,6 +660,40 @@ class ModelData(DBWriter):
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
 
         return all_features
+
+    def get_training_satellite_inputs(self):
+
+        start_date = self.config['train_start_date']
+        end_date = self.config['train_end_date']
+        sources = ['satellite']
+        species = self.config['species']
+        point_ids = self.config['train_satellite_interest_points']
+        features = self.config['feature_names']
+
+        self.logger.info("Getting Saatellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+                         sources, species, start_date, end_date)
+
+        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+
+        with self.dbcnxn.open_session() as session:
+
+            sat_site_map_q = session.query(SatelliteDiscreteSite)
+            sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
+                                                                   SatelliteForecastReading.measurement_start_utc < end_date)
+
+        sat_site_map_df = pd.read_sql(sat_site_map_q.statement, sat_site_map_q.session.bind)
+
+        # Convert uuid to strings to allow merge
+        all_features['point_id'] = all_features['point_id'].astype(str)
+        sat_site_map_df['point_id'] = sat_site_map_df['point_id'].astype(str)
+
+        # Get satellite box id for each feature interest point
+        all_features = all_features.merge(sat_site_map_df, how='left', on=['point_id'])
+
+        # Get satellite data
+        satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
+
+        return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
         """Update the model results data frame with model predictions"""

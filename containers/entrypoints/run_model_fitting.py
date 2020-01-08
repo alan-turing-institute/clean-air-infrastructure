@@ -54,9 +54,11 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
-                    'train_sources': ['laqn', 'aqe', 'satellite'],
+                    'include_satellite': True,
+                    'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
+                    'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
                     'features': ['value_1000_total_a_road_length'],
