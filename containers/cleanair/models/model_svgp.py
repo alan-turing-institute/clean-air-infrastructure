@@ -39,7 +39,8 @@ class SVGP_TF1(Model):
 
         """       
         custom_config = gpflow.settings.get_settings()
-        custom_config.jitter = 1e-1
+        #jitter is added for numerically stability in cholesky operations. 
+        custom_config.jitter = 1e-5 
         with gpflow.settings.temp_settings(custom_config), gpflow.session_manager.get_session().as_default():
             kern = gpflow.kernels.RBF(D, lengthscales=1.0)
             self.m = gpflow.models.SVGP(X, Y, kern, gpflow.likelihoods.Gaussian(variance=5.0), Z, minibatch_size=300)
@@ -108,13 +109,27 @@ class SVGP_TF1(Model):
         #setup SVGP model
         self.setup_model(X, Y, z_r, X.shape[1], model_params)
         self.m.compile()
+    
+        tf_session = self.m.enquire_session()
 
-        #optimize and setup elbo logging
-        opt = gpflow.train.AdamOptimizer()
-        opt.minimize(self.m, step_callback=self.elbo_logger, maxiter=max_iter)
+
+        if model_params['restore']:
+            saver = tf.train.Saver()
+            saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=model_params['prefix']))
+
+        if model_params['train']:
+            #optimize and setup elbo logging
+            opt = gpflow.train.AdamOptimizer()
+            opt.minimize(self.m, step_callback=self.elbo_logger, maxiter=max_iter)
+
+            #save model state
+            saver = tf.train.Saver()
+            save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['prefix']))
+
 
     def batch_predict(self, XS):
         """Split up prediction into indepedent batchs.
+        #TODO: move into parent class as this will be used by all models
 
         args:
             XS: N x D numpy array of locations to predict at
