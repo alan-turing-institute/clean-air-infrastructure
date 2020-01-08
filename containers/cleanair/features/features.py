@@ -283,14 +283,16 @@ class Features(DBWriter):
                 for select_stmt in self.process_value_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
                         if self.dynamic:
-                            self.commit_records(session, select_stmt, table=IntersectionValueDynamic)
+                            self.commit_records(session, select_stmt, table=IntersectionValueDynamic,
+                                                on_conflict_do_nothing=True)
                         else:
-                            self.commit_records(session, select_stmt, table=IntersectionValue)
+                            self.commit_records(session, select_stmt, table=IntersectionValue,
+                                                on_conflict_do_nothing=True)
             else:
                 q_metapoints = self.query_meta_points(include_sources=self.sources, with_buffers=True)
                 for select_stmt in self.process_geom_features(feature_name, q_metapoints, q_source):
                     with self.dbcnxn.open_session() as session:
-                        self.commit_records(session, select_stmt, table=IntersectionGeom)
+                        self.commit_records(session, select_stmt, table=IntersectionGeom, on_conflict_do_nothing=True)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
@@ -312,7 +314,7 @@ class Features(DBWriter):
                                                 ).filter(IntersectionGeom.feature_name == feature_name).group_by(
                                                     IntersectionGeom.point_id).subquery()
 
-                    self.commit_records(session, select_stmt, table=IntersectionValue)
+                    self.commit_records(session, select_stmt, table=IntersectionValue, on_conflict_do_nothing=True)
 
             # Print a final timing message
             self.logger.info("Finished adding records after %s", green(duration(feature_start, time.time())))
