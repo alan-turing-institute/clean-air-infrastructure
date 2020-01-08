@@ -80,3 +80,15 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
         ), name=key)
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
+
+def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_col='predict_mean', test_col='NO2'):
+    # group by sensor id
+    gb = pred_df.groupby(sensor_col)
+
+    return pd.concat([
+        pd.Series(gb.apply(
+            lambda x : method(x[test_col], x[pred_col])
+        ), name=key)
+        for key, method in metric_methods.items()
+    ], axis=1, names=metric_methods.keys())
+    
