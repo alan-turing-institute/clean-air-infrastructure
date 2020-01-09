@@ -226,16 +226,15 @@ class Features(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10000
+        batch_size = 1000
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
         # Iterate over interest points in batches, yielding the insert statement at each step
         for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
-            batch_stop = min(batch_start + batch_size, n_interest_points)
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
-                             feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
-            q_batch = q_filtered.slice(batch_start, batch_stop)
+                             feature_name, batch_size, idx, round(0.5 + n_interest_points / batch_size))
+            q_batch = q_filtered.slice(0, batch_size)
             select_stmt = self.query_feature_values(feature_name, q_batch, q_source).subquery()
             yield select_stmt
 
@@ -250,16 +249,15 @@ class Features(DBWriter):
         q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom))
 
         n_interest_points = q_filtered.count()
-        batch_size = 10000
+        batch_size = 1000
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
         # Iterate over interest points in batches, yielding the insert statement at each step
         for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
-            batch_stop = min(batch_start + batch_size, n_interest_points)
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
-                             feature_name, batch_stop - batch_start, idx, round(0.5 + n_interest_points / batch_size))
-            q_batch = q_filtered.slice(batch_start, batch_stop)
+                             feature_name, batch_size, idx, round(0.5 + n_interest_points / batch_size))
+            q_batch = q_filtered.slice(0, batch_size)
             select_stmt = self.query_feature_geoms(feature_name, q_batch, q_source).subquery()
             yield select_stmt
 
