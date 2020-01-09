@@ -2,3 +2,4 @@ flask-restful
 flask
 uwsgi
 supervisor
+numpy
