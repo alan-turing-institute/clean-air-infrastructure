@@ -8,7 +8,7 @@ api = Api(app)
 
 
 PRED_DATA = [{'lat': np.random.rand(), 'lon': np.random.rand(), 'datetime': datetime.datetime.now().strftime(
-    "%Y-%M-%dT%H:%M:%S"), 'value': np.random.rand(), 'var': np.random.rand(1)} for i in range(272451)]
+    "%Y-%M-%dT%H:%M:%S"), 'value': np.random.rand(), 'var': np.random.rand()} for i in range(272451)]
 
 
 @api.resource('/')
