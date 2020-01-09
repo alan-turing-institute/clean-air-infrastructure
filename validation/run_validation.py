@@ -224,6 +224,39 @@ def numpy_files_exist(data_row):
         and os.path.exists(data_row['y_test_fp'])
     )
 
+def save_results(experiment_id, y_pred):
+    """
+    Take y_pred from the cluster, load model_data from files, 
+    update model_data with the new prediction and return model_data.
+    """
+
+    experiment_df = pd.read_csv('meta/experiment.csv')
+    data_df = pd.read_csv('meta/experiment.csv')
+
+    # get info for experiment
+    row = experiment_df.loc[experiment_id]
+    data_id = row['data_id']
+    data_row = data_df.loc[data_id]
+    param_id = row['param_id']
+    y_pred_fp = row['y_pred_fp']
+
+    # save y_pred to numpy array
+    np.save(y_pred_fp, y_pred)
+
+    # get model config
+    model_data_config = get_model_config_default(data_row['train_start_date'], data_row['train_end_date'], data_row['pred_start_date'], data_row['pred_end_date'])
+
+    # load model_data object from local files and config
+    model_data = load_model_data_from_files(model_data_config)
+
+    pred_dict = model_data.get_pred_data_arrays(return_y=True)
+    model_data.update_model_results_df(pred_dict, y_pred)
+
+    return model_data
+
+def load_model_data_from_files(model_data_config):
+    return ModelData()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-f', '--forecast', action='store_true')
