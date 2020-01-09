@@ -7,7 +7,7 @@ app = Flask(__name__)
 api = Api(app)
 
 
-PRED_DATA = [{'lat': np.random.rand(1) , 'lon': np.random.rand(1), 'datetime': datetime.datetime.now(), 'value': np.random.rand(1), 'var': np.random.rand(1)} for i in range(272451)]
+PRED_DATA = [{'lat': np.random.rand() , 'lon': np.random.rand(), 'datetime': '2019-01-01T00:00:00', 'value': np.random.rand(), 'var': np.random.rand()} for i in range(272451)]
 
 @api.resource('/')
 class Welcome(Resource):
