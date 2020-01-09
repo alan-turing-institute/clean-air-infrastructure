@@ -1,11 +1,12 @@
 import pandas as pd
 import itertools
 
-def create_experiments_df():
+def create_experiments_df(model_name=['svgp'], param_id=[0], data_id=[0], cluster=['pearl']):
     experiment_configs = {
-        'model_name':['svgp'],
-        'param_id':[0,1,2,3],
-        'data_id':[0,1,2]
+        'model_name':model_name,
+        'param_id':param_id,
+        'data_id':data_id,
+        'cluster':cluster
     }
     list_of_configs = [values for key, values in experiment_configs.items()]
     params_configs = list(itertools.product(*list_of_configs))

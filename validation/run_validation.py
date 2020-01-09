@@ -1,7 +1,12 @@
-import spatial
-import temporal
-import choose_sensors
+# validation modules
+from . import spatial
+from . import temporal
+from . import choose_sensors
+from . import experiment
+from . import parameters
+
 import sys
+import os
 import logging
 import pickle
 import argparse
@@ -11,8 +16,9 @@ from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
 from sklearn import metrics
-sys.path.append("../containers")
 
+# requires cleanair
+sys.path.append("../containers")
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 from cleanair.databases import DBReader
@@ -151,6 +157,71 @@ def run_forecast(write_results=False, to_pickle=False, from_pickle=False):
     scores.to_csv('results/forecast.csv')
     if write_results:
         results.to_csv('results/forecast_preds.csv')
+
+def default_setup_validation():
+    """
+    Get default parameters.
+    Get default time range.
+    Get processed data for time range.
+    Save data to files.
+    """
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+    params_df = parameters.create_default_svgp_params_df()
+
+    # create dates for rolling over
+    train_start = "2019-11-01T00:00:00"
+    train_n_hours = 48
+    pred_n_hours = 24
+    n_rolls = 5
+    rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
+    data_df = experiment.create_data_df(rolls)
+
+    # get experiment dataframe
+    experiment_df = experiment.create_experiments_df(
+        data_id=list(data_df.index), param_id=list(params_df.index)
+    )
+
+    # store a list of ModelData objects to validate over
+    model_data_list = []
+
+    # create ModelData objects for each roll
+    for index, row in experiment_df.iterrows():
+        data_id = row['data_id']
+        data_row = data_df.loc[data_id]
+
+        # If the numpy files exist locally then pass
+        if numpy_files_exist(data_row):
+            pass
+
+        # Else load the numpy files from the database
+        else:
+            # ModelData configuration
+            model_config = get_model_config_default(
+                data_row['train_start_date'], data_row['train_end_date'],
+                data_row['pred_start_date'], data_row['pred_end_date']
+            )
+            # Get the model data and append to list
+            model_data = ModelData(config=model_config, secretfile=secret_fp)
+            model_data_list.append(model_data)
+
+            # save data to numpy arrays
+            np.save(data_row['x_train_fp'], model_data.get_training_data_arrays()['X'])
+            np.save(data_row['y_train_fp'], model_data.get_training_data_arrays()['Y'])
+            np.save(data_row['x_test_fp'], model_data.get_pred_data_arrays()['X'])
+            np.save(data_row['y_test_fp'], model_data.get_pred_data_arrays()['Y'])
+
+    data_df.to_csv('meta/data.csv')
+    experiment_df.to_csv('meta/experiment.csv')
+    params_df.to_csv('meta/params.csv')
+
+
+def numpy_files_exist(data_row):
+    return (
+        os.path.exists(data_row['x_train_fp'])
+        and os.path.exists(data_row['y_train_fp'])
+        and os.path.exists(data_row['x_test_fp'])
+        and os.path.exists(data_row['y_test_fp'])
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
