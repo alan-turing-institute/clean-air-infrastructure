@@ -5,6 +5,8 @@ Functions for spatial validation.
 import choose_sensors
 import math
 import pandas as pd
+import sys
+sys.path.append("../containers")
 from cleanair.models import ModelData, SVGP
 
 def k_fold_cross_validation(sdf, k, model_config={}, secret_fp=""):

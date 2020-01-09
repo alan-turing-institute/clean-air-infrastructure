@@ -12,8 +12,6 @@ def create_experiments_df(model_name=['svgp'], param_id=[0], data_id=[0], cluste
     params_configs = list(itertools.product(*list_of_configs))
     experiments_df = pd.DataFrame(params_configs, columns=experiment_configs.keys())
 
-    print(experiments_df)
-
     experiments_df['y_pred_fp'] = pd.Series([create_experiment_filepath(
             r.model_name, r.param_id, r.data_id
         ) for r in experiments_df.itertuples()])

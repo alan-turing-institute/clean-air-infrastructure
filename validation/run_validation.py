@@ -1,9 +1,9 @@
 # validation modules
-from . import spatial
-from . import temporal
-from . import choose_sensors
-from . import experiment
-from . import parameters
+import spatial
+import temporal
+import choose_sensors
+import experiment
+import parameters
 
 import sys
 import os
@@ -172,7 +172,7 @@ def default_setup_validation():
     train_start = "2019-11-01T00:00:00"
     train_n_hours = 48
     pred_n_hours = 24
-    n_rolls = 5
+    n_rolls = 1
     rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
     data_df = experiment.create_data_df(rolls)
 
@@ -208,8 +208,9 @@ def default_setup_validation():
             np.save(data_row['x_train_fp'], model_data.get_training_data_arrays()['X'])
             np.save(data_row['y_train_fp'], model_data.get_training_data_arrays()['Y'])
             np.save(data_row['x_test_fp'], model_data.get_pred_data_arrays()['X'])
-            np.save(data_row['y_test_fp'], model_data.get_pred_data_arrays()['Y'])
+            np.save(data_row['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
 
+    # save dataframes to csv
     data_df.to_csv('meta/data.csv')
     experiment_df.to_csv('meta/experiment.csv')
     params_df.to_csv('meta/params.csv')
@@ -225,18 +226,19 @@ def numpy_files_exist(data_row):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
+    parser.add_argument('-f', '--forecast', action='store_true')
     parser.add_argument('-r', '--rolling', action='store_true')
     parser.add_argument('-w', '--write',  action='store_true')
-    parser.add_argument('-p', '--topickle', action='store_true')
-    parser.add_argument('-f', '--frompickle', action='store_true')
+
     args = parser.parse_args()
     kwargs = vars(args)
     roll = kwargs.pop('rolling')
-    write_results = kwargs.pop('write')
-    to_pickle = kwargs.pop('topickle')
-    from_pickle = kwargs.pop('frompickle')
+    forecasting = kwargs.pop('forecast')
+    write_results = True
     
     if roll:
-        run_rolling(write_results=write_results, to_pickle=to_pickle, from_pickle=from_pickle)
+        run_rolling(write_results=write_results)
+    elif forecasting:
+        run_forecast(write_results=write_results)
     else:
-        run_forecast(write_results=write_results, to_pickle=to_pickle, from_pickle=from_pickle)
+        default_setup_validation()
