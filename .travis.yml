@@ -23,7 +23,7 @@ script:
   - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
   - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
 
-  - docker build -t $ACR_SERVER/cleanairAPI:$TRAVIS_PULL_REQUEST_SHA -f API/cleanairapi.Dockerfile API
+  - docker build -t $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA -f API/cleanairapi.Dockerfile API
 
   # Push all our docker images to the container registry
   - echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SERVER"
@@ -31,4 +31,4 @@ script:
   - docker push $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA
   - docker push $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA
 
-  - docker push $ACR_SERVER/cleanairAPI:$TRAVIS_PULL_REQUEST_SHA
+  - docker push $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA
