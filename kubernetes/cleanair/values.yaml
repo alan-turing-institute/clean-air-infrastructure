@@ -43,3 +43,14 @@ jobs:
     - name: secrets
       secret:
         secretName: secrets
+
+
+deployments:
+
+    - name: cleanairAPI
+      replicas: 2
+      image: 
+        repository: cleanairdocker.azurecr.io/cleanairAPI
+        imagePullPolicy: Always
+      ports:
+        containerPort: 80
