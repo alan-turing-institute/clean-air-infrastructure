@@ -686,6 +686,9 @@ class ModelData(DBWriter):
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
 
+        all_features.to_csv('/secrets/satdata.csv')
+        quit()
+
         with self.dbcnxn.open_session() as session:
 
             sat_site_map_q = session.query(SatelliteDiscreteSite)
