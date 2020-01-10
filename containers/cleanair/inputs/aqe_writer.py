@@ -144,10 +144,8 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
 
             # Commit the records to the database
-
             self.commit_records(session, site_records, table=AQEReading, on_conflict_do_nothing=True)
       
-
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),

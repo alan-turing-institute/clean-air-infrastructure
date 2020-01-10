@@ -206,7 +206,7 @@ class Features(DBWriter):
                 # even if there is no intersection in the buffer
                 q_intersections = session.query(sq_metapoints.c.id,
                                                 literal(feature_name).label("feature_name"),
-                                                *[func.coalesce(getattr(sq_intersections.c, "value_{}".format(radius))), 0.0)
+                                                *[func.coalesce(getattr(sq_intersections.c, "value_{}".format(radius)), 0.0)
                                                   for radius in self.buffer_radii_metres]
                                                 ).join(sq_intersections,
                                                        sq_intersections.c.id == sq_metapoints.c.id,
