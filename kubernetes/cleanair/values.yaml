@@ -1,56 +1,56 @@
-imageTag: e182a48fae1c1e8a15c551dcdd9ab4bf5509003b
+imageTag: 7e635c1697c5326fb17dd732e9e7c6b097836329
 
-jobs:
-  # first cron
-  - name: laqn
-    image:
-      repository: cleanairdocker.azurecr.io/laqn
-      imagePullPolicy: Always
-    schedule: "0 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+# jobs:
+#   # first cron
+#   - name: laqn
+#     image:
+#       repository: cleanairdocker.azurecr.io/laqn
+#       imagePullPolicy: Always
+#     schedule: "0 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: aqe
-    image:
-      repository: cleanairdocker.azurecr.io/aqe
-      imagePullPolicy: Always
-    schedule: "0 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: aqe
+#     image:
+#       repository: cleanairdocker.azurecr.io/aqe
+#       imagePullPolicy: Always
+#     schedule: "0 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: scoot
-    image:
-      repository: cleanairdocker.azurecr.io/scoot
-      imagePullPolicy: Always
-    schedule: "0 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: scoot
+#     image:
+#       repository: cleanairdocker.azurecr.io/scoot
+#       imagePullPolicy: Always
+#     schedule: "0 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 
 deployments:
 
-    - name: cleanairAPI
+    - name: cleanairapi
       replicas: 2
       image: 
-        repository: cleanairdocker.azurecr.io/cleanairAPI
+        repository: cleanairdocker.azurecr.io/cleanairapi
         imagePullPolicy: Always
       ports:
         containerPort: 80

@@ -2,6 +2,7 @@
 {{- $chart_name := .Chart.Name }}
 {{- $chart_version := .Chart.Version | replace "+" "_" }}
 {{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
 
 {{- range $deployment := .Values.deployments }}
 ---
@@ -24,7 +25,7 @@ spec:
         app: {{ $deployment.name }}
     spec:
       containers:
-      - image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+      - image: "{{ $deployment.image.repository }}:{{ $tag }}"
         imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
         name: {{ $deployment.name }}
         ports:
