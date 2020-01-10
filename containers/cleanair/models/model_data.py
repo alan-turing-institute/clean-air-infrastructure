@@ -3,6 +3,8 @@ Vizualise available sensor data for a model fit
 """
 import pandas as pd
 import numpy as np
+import json
+import os
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -18,11 +20,12 @@ from ..loggers import get_logger
 class ModelData(DBWriter):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, config=None, config_dir=None, **kwargs):
         """
         Initialise the ModelData object with a config file
         args:
             config: A config dictionary
+            config_dir: A directory containing config files (created by ModelData.save_config_state())
 
             Example config:
                 {
@@ -52,26 +55,66 @@ class ModelData(DBWriter):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        # Validate the configuration
-        self.__validate_config(config)
-        self.config = self.generate_full_config(config)
+        if not (config or config_dir):
+            raise ValueError("Either config or config_dir must be supplied as arguments")
 
-        # Get training and prediciton data frames
-        self.training_data_df = self.get_training_data_inputs(satellite=False)
-        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+        if config:
+            # Validate the configuration
+            self.__validate_config(config)
+            self.config = self.generate_full_config(config)
 
-        self.pred_data_df = self.get_pred_data_inputs(satellite=False)
-        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+            # Get training and prediciton data frames
+            self.training_data_df = self.get_training_data_inputs(satellite=False)
+            self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-        # Process satellite data
-        if self.config['include_satellite']:
-            self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
+            self.pred_data_df = self.get_pred_data_inputs(satellite=False)
+            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
-            self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-                ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
+            # Process satellite data
+            if self.config['include_satellite']:
+                self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
 
-            self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
-                ['box_id', 'measurement_start_utc'])
+                self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
+                    ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
+
+                self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
+                    ['box_id', 'measurement_start_utc'])
+
+        else:
+            self.restore_config_state(config_dir)
+
+    def save_config_state(self, dir_path):
+        """Save the full configuration and training/prediction data to disk:
+
+        args:
+            dir_path: Directory path in which to save the config files
+        """
+
+        # Create a new directory
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+
+        # Write the files to the directory
+        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+
+        with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
+            json.dump(self.config, config_f, sort_keys=True, indent=4)
+
+        self.logger.info("State files saved to {}".format(dir_path))
+
+    def restore_config_state(self, dir_path):
+        """Reload configuration state saved to disk by ModelData.save_config_state()
+        """
+        if not os.path.exists(dir_path):
+            raise IOError("{} does not exist".format(dir_path))
+
+        self.normalised_training_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')))
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
+
+        with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
+            self.config = json.load(config_f)
 
     def __validate_config(self, config):
 
@@ -149,6 +192,8 @@ class ModelData(DBWriter):
             config['pred_interest_points'] = self.__get_interest_point_ids(config['pred_sources'])
         if config['include_satellite'] and (config['train_satellite_interest_points'] == 'all'):
             config['train_satellite_interest_points'] = self.__get_interest_point_ids(['satellite'])
+        else:
+            config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
             feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
@@ -311,7 +356,7 @@ class ModelData(DBWriter):
         interest_point_query = self.__get_interest_points_q(sources)
 
         available_interest_points = pd.read_sql(interest_point_query.statement,
-                                                interest_point_query.session.bind)['point_id'].astype(str).to_numpy()
+                                                interest_point_query.session.bind)['point_id'].astype(str).to_numpy().tolist()
 
         return available_interest_points
 
@@ -738,7 +783,7 @@ class ModelData(DBWriter):
         predict_df['predict_mean'] = Y_pred[:, 0]
         predict_df['predict_var'] = Y_pred[:, 1]
         predict_df['fit_start_time'] = model_fit_info['fit_start_time']
-        predict_df['tag'] = self.tag
+        predict_df['tag'] = self.config['tag']
 
         # # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat([self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False)

@@ -73,8 +73,9 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(model_config, **kwargs)
+    model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
+    model_data.save_config_state('/secrets/test/')
     # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
