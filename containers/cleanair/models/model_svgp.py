@@ -1,4 +1,4 @@
-"""Model Fitting"""
+"""Sparse Variational Gaussian Process (LAQN ONLY)"""
 from datetime import datetime
 from scipy.cluster.vq import kmeans2
 
@@ -13,13 +13,15 @@ if True:
 
 import gpflow
 import numpy as np
-from ..loggers import get_logger
+#from ..loggers import get_logger
 from .model import Model
 
 class SVGP_TF1(Model):
     def __init__(self):
         # Ensure logging is available
-        if not hasattr(self, "logger"):
+        self.logging = False
+        if self.logging and not hasattr(self, "logger"):
+            from ..loggers import get_logger
             self.logger = get_logger(__name__)
 
         self.epoch = 0
@@ -69,7 +71,8 @@ class SVGP_TF1(Model):
         if (self.epoch % self.refresh) == 0:
             session =  self.m.enquire_session()
             objective = self.m.objective.eval(session=session)
-            self.logger.info("Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective)
+            if self.logging:
+                self.logger.info("Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective)
 
             print(self.epoch, ': ', objective)
 
@@ -95,7 +98,7 @@ class SVGP_TF1(Model):
         self.refresh = refresh
 
         #index of laqn data in X and Y
-        laqn_id = 1
+        laqn_id = model_params['laqn_id']
 
         #With a standard GP only use LAQN data and collapse discrisation dimension
         X = X[laqn_id][:, 0, :].copy()

@@ -1,7 +1,6 @@
 import sys
 sys.path.append('../../containers')
-sys.path.append('../containers') #for when running on a cluster
-import cleanair
+sys.path.append('..') #for when running on a cluster
 from cleanair.models import SVGP_TF1
 
 import numpy as np

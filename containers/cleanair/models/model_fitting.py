@@ -4,14 +4,13 @@ from scipy.cluster.vq import kmeans2
 import gpflow
 import tensorflow as tf
 import numpy as np
-from ..loggers import get_logger
+#from ..loggers import get_logger
 
 
 class SVGP():
     """Model fitting class"""
 
     def __init__(self):
-
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)

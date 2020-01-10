@@ -42,7 +42,7 @@ max_settings = {
 
 #TODO: define default configs for the clusters
 #Config to run
-if False:
+if True:
     cluster_config = {
         'cluster': 'orac',
         'cluster_tmp_folder': 'cluster',
@@ -55,7 +55,7 @@ if False:
         'memory': 4571,
         #array of files/folders to send to cluster
         'libraries': [
-            '../containers/cleanair/',
+            '../containers/cleanair',
         ] 
     }
 else:
