@@ -3,14 +3,17 @@ import numpy
 import sys
 sys.path.append('../containers/') #allow cleanair to be imported
 import importlib
+import subprocess
 
 #=========================================== SETTINGS ===========================================
 #Every cluster has its own maximum allocations. 
+HOME_ROOT = '/Users/ohamelijnck/'
+
 max_settings = {
     'tinis': {
         'time': '48:00:00',
         'memory': 4571,
-        'shh_key': '~/.ssh/ollie_rsa',
+        'ssh_key': HOME_ROOT+'.ssh/ollie_rsa',
         'user': 'csrcqm',
         'ip': 'tinis.csc.warwick.ac.uk',
         'slurm_template': 'cluster_templates/batch_script_tinis_template.sh'
@@ -18,14 +21,15 @@ max_settings = {
     'orac': {
         'time': '48:00:00',
         'memory': 4571,
-        'shh_key': '~/.ssh/ollie_rsa',
+        'ssh_key': HOME_ROOT+'.ssh/ollie_rsa',
         'user': 'csrcqm',
-        'ip': 'orac.csc.warwick.ac.uk'
+        'ip': 'orac.csc.warwick.ac.uk',
+        'slurm_template': 'cluster_templates/batch_script_template.sh'
     },
     'pearl': {
         'time': '48:00:00',
         'memory': 4571,
-        'shh_key': '~/.ssh/patrick-pearl',
+        'ssh_key': HOME_ROOT+'.ssh/patrick-pearl',
         'user': 'pearl023',
         'ip': 'ui.pearl.scd.stfc.ac.uk'
     },
@@ -33,15 +37,20 @@ max_settings = {
 
 #Config to run
 cluster_config = {
-    'cluster': 'tinis',
+    'cluster': 'orac',
+    'cluster_tmp_folder': 'cluster',
+    'slurm_file': 'run.sh',
     'base_name': 'test', #folder to store models/results on cluster
     'models_root': 'models',
     'nodes': 1,
     'cpus': 1,
     'time': '01:00:00', 
-    'memory': 4571
+    'memory': 4571,
+    #array of files/folders to send to cluster
+    'libraries': [
+        '../containers/cleanair/',
+    ] 
 }
-
 
 #=========================================== METHODS ===========================================
 
@@ -119,7 +128,6 @@ def get_template(parallel_args_names, parallel_args_ids, _configs, cluster_confi
     FILE_NAMES = list_to_str(parallel_args_names)
     FILE_INPUTS = list_to_str(parallel_args_ids)
 
-
     template = template.replace('<MODELS_DIR>', cluster_config['base_name']+'/'+cluster_config['models_root'])
     template = template.replace('<LOGS_DIR>', cluster_config['base_name']+'/cluster/logs')
     template = template.replace('<NODES>', str(cluster_config['nodes']))
@@ -131,11 +139,40 @@ def get_template(parallel_args_names, parallel_args_ids, _configs, cluster_confi
 
     return template
     
-
-
-
 #=========================================== MAIN ===========================================
+
+#ensure folder for storing cluster files exists
+subprocess.call(['mkdir', '-p', cluster_config['cluster_tmp_folder']])
+
 parallel_args_names, parallel_args_ids, _configs = get_configurations(cluster_config)
 template = get_template(parallel_args_names, parallel_args_ids, _configs, cluster_config)
+
+with open(cluster_config['cluster_tmp_folder']+'/'+cluster_config['slurm_file'], 'w') as f:
+    f.write(template)
+
 print(template)
+
+#=========================================== SEND FILES TO CLUSTER ===========================================
+
+#cmd = subprocess.call('cluster_templates/send_to_cluster.sh')
+
+cluster_settings = max_settings[cluster_config['cluster']]
+
+call_array = [
+    "sudo", 
+    "sh", "cluster_templates/send_to_cluster.sh",
+    "--user", cluster_settings['user'],
+    "--ip", cluster_settings['ip'],
+    "--ssh_key", cluster_settings['ssh_key'],
+    "--basename", cluster_config['base_name'],
+    "--cluster_folder",cluster_config['cluster_tmp_folder'],
+    "--slurm_file",cluster_config['slurm_file'],
+]
+for lib in cluster_config['libraries']:
+    call_array.append("--lib")
+    call_array.append(lib)
+
+subprocess.call(call_array)
+
+
 
