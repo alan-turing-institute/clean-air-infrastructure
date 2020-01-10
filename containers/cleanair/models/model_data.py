@@ -127,7 +127,7 @@ class ModelData(DBWriter):
 
         # Check required config keys present
 
-        if set(config.keys()) != set(config_keys):
+        if set(config.keys()).issubset(set(config_keys)):
             raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
 
         # Check requested features are available
