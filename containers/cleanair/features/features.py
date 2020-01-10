@@ -231,7 +231,7 @@ class Features(DBWriter):
                          green(n_interest_points), batch_size)
 
         # Iterate over interest points in batches, yielding the insert statement at each step
-        for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
+        for idx, _ in enumerate(range(0, n_interest_points, batch_size), start=1):
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_size, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(0, batch_size)
@@ -255,7 +255,7 @@ class Features(DBWriter):
                          green(n_interest_points), batch_size)
 
         # Iterate over interest points in batches, yielding the insert statement at each step
-        for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
+        for idx, _ in enumerate(range(0, n_interest_points, batch_size), start=1):
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_size, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(0, batch_size)
