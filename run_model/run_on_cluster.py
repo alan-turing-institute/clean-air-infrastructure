@@ -6,9 +6,12 @@ import importlib
 import subprocess
 
 #=========================================== SETTINGS ===========================================
-#Every cluster has its own maximum allocations. 
-HOME_ROOT = '/Users/ohamelijnck/'
+if len(sys.argv) == 2:
+    HOME_ROOT = str(sys.argv[1])
+else:
+    HOME_ROOT = '/Users/ohamelijnck/'
 
+#Every cluster has its own maximum allocations. 
 max_settings = {
     'tinis': {
         'time': '48:00:00',
@@ -28,29 +31,49 @@ max_settings = {
     },
     'pearl': {
         'time': '48:00:00',
-        'memory': 4571,
+        'memory': 32768,
+        'cpus': 28,
         'ssh_key': HOME_ROOT+'.ssh/patrick-pearl',
         'user': 'pearl023',
-        'ip': 'ui.pearl.scd.stfc.ac.uk'
+        'ip': 'ui.pearl.scd.stfc.ac.uk',
+        'slurm_template': 'cluster_templates/batch_script_pearl_template.sh'
     },
 }
 
+#TODO: define default configs for the clusters
 #Config to run
-cluster_config = {
-    'cluster': 'orac',
-    'cluster_tmp_folder': 'cluster',
-    'slurm_file': 'run.sh',
-    'base_name': 'test', #folder to store models/results on cluster
-    'models_root': 'models',
-    'nodes': 1,
-    'cpus': 1,
-    'time': '01:00:00', 
-    'memory': 4571,
-    #array of files/folders to send to cluster
-    'libraries': [
-        '../containers/cleanair/',
-    ] 
-}
+if False:
+    cluster_config = {
+        'cluster': 'orac',
+        'cluster_tmp_folder': 'cluster',
+        'slurm_file': 'run.sh',
+        'base_name': 'test', #folder to store models/results on cluster
+        'models_root': 'models',
+        'nodes': 1,
+        'cpus': 1,
+        'time': '01:00:00', 
+        'memory': 4571,
+        #array of files/folders to send to cluster
+        'libraries': [
+            '../containers/cleanair/',
+        ] 
+    }
+else:
+    cluster_config = {
+        'cluster': 'pearl',
+        'cluster_tmp_folder': 'cluster',
+        'slurm_file': 'run.sh',
+        'base_name': 'test', #folder to store models/results on cluster
+        'models_root': 'models',
+        'nodes': 1,
+        'cpus': 1,
+        'time': '01:00:00', 
+        'memory': 32768,
+        #array of files/folders to send to cluster
+        'libraries': [
+            '../containers/cleanair/',
+        ] 
+    }
 
 #=========================================== METHODS ===========================================
 
