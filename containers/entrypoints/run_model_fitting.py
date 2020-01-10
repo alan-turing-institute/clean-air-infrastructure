@@ -54,14 +54,14 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
-                    'include_satellite': True,
+                    'include_satellite': False,
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
                     'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['value_1000_total_a_road_length'],
+                    'features': ['value_1000_avg_ratio_avg'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -81,30 +81,30 @@ def main():
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
-    print(training_data_dict['X_sat'])
-    print(training_data_dict['Y_sat'])
+    # print(training_data_dict['X_sat'])
+    # print(training_data_dict['Y_sat'])
 
-    # # Fit the model
-    # model_fitter = SVGP()
+    # Fit the model
+    model_fitter = SVGP()
 
-    # model_fitter.fit(training_data_dict['X'],
-    #                  training_data_dict['Y'],
-    #                  max_iter=20000,
-    #                  model_params=model_params)
+    model_fitter.fit(training_data_dict['X'],
+                     training_data_dict['Y'],
+                     max_iter=20000,
+                     model_params=model_params)
 
-    # # Get info about the model fit
-    # model_fit_info = model_fitter.fit_info()
+    # Get info about the model fit
+    model_fit_info = model_fitter.fit_info()
 
-    # # # Do prediction and write to database
-    # Y_pred = model_fitter.predict(predict_data_dict['X'])
+    # # Do prediction and write to database
+    Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    # # Internally update the model results in the ModelData object
-    # model_data.update_model_results_df(predict_data_dict=predict_data_dict,
-    #                                    Y_pred=Y_pred,
-    #                                    model_fit_info=model_fit_info)
+    # Internally update the model results in the ModelData object
+    model_data.update_model_results_df(predict_data_dict=predict_data_dict,
+                                       Y_pred=Y_pred,
+                                       model_fit_info=model_fit_info)
 
-    # # Write the model results to the database
-    # model_data.update_remote_tables()
+    # Write the model results to the database
+    model_data.update_remote_tables()
 
 
 if __name__ == "__main__":
