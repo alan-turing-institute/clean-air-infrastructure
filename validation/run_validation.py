@@ -7,6 +7,7 @@ import parameters
 
 import sys
 import os
+import json
 import logging
 import pickle
 import argparse
@@ -36,12 +37,6 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def run_spatial(write_results=False):
-    # get data
-    model_config = get_model_config_default()
-    secret_fp = "../terraform/.secrets/db_secrets.json"
-    spatial.k_fold_cross_validation(sdf, 10, model_config=model_config, secret_fp=secret_fp)
-
 def run_rolling(write_results=False, to_pickle=False, from_pickle=False):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
@@ -65,7 +60,7 @@ def run_rolling(write_results=False, to_pickle=False, from_pickle=False):
     # create ModelData objects for each roll
     for r in rolls:
         # Model configuration
-        model_config = get_model_config_default(
+        model_config = experiment.get_model_data_config_default(
             r['train_start_date'], r['train_end_date'],
             r['pred_start_date'], r['pred_end_date'],
             train_points=S, pred_points=S
@@ -94,23 +89,6 @@ def get_model_params_default():
         'n_inducing_points': 500
     }
 
-def get_model_config_default(train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
-    return {
-        'train_start_date': train_start,
-        'train_end_date': train_end,
-        'pred_start_date': pred_start,
-        'pred_end_date': pred_end,
-        'train_sources': ['laqn', 'aqe'],
-        'pred_sources': ['laqn', 'aqe'],
-        'train_interest_points': train_points,
-        'pred_interest_points': pred_points,
-        'species': ['NO2'],
-        'features': 'all',
-        'norm_by': 'laqn',
-        'model_type': 'svgp',
-        'tag': 'testing'
-    }
-
 def run_forecast(write_results=False, to_pickle=False, from_pickle=False):
     # Set dates for training and testing
     train_end = "2019-11-06T00:00:00"
@@ -127,7 +105,7 @@ def run_forecast(write_results=False, to_pickle=False, from_pickle=False):
     sensors = list(sdf["point_id"])
     
     # Model configuration
-    model_config = get_model_config_default(
+    model_config = experiment.get_model_config_default(
         train_start, train_end, pred_start, pred_end,
         train_points=sensors, pred_points=sensors
     )
@@ -166,7 +144,7 @@ def default_setup_validation():
     Save data to files.
     """
     secret_fp = "../terraform/.secrets/db_secrets.json"
-    params_df = parameters.create_default_svgp_params_df()
+    params_dict = parameters.create_svgp_params_dict()
 
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
@@ -174,11 +152,11 @@ def default_setup_validation():
     pred_n_hours = 24
     n_rolls = 1
     rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
-    data_df = experiment.create_data_df(rolls)
+    data_dict = experiment.create_data_dict(rolls)
 
     # get experiment dataframe
     experiment_df = experiment.create_experiments_df(
-        data_id=list(data_df.index), param_id=list(params_df.index)
+        data_id=data_dict.keys(), param_id=params_dict.keys()
     )
 
     # store a list of ModelData objects to validate over
@@ -187,41 +165,36 @@ def default_setup_validation():
     # create ModelData objects for each roll
     for index, row in experiment_df.iterrows():
         data_id = row['data_id']
-        data_row = data_df.loc[data_id]
+        data_config = data_dict[data_id]
 
-        # If the numpy files exist locally then pass
-        if numpy_files_exist(data_row):
-            pass
-
-        # Else load the numpy files from the database
-        else:
-            # ModelData configuration
-            model_config = get_model_config_default(
-                data_row['train_start_date'], data_row['train_end_date'],
-                data_row['pred_start_date'], data_row['pred_end_date']
-            )
+        # If the numpy files do not exist locally
+        if not numpy_files_exist(data_config):
             # Get the model data and append to list
-            model_data = ModelData(config=model_config, secretfile=secret_fp)
+            model_data = ModelData(config=data_config, secretfile=secret_fp)
             model_data_list.append(model_data)
 
             # save data to numpy arrays
-            np.save(data_row['x_train_fp'], model_data.get_training_data_arrays()['X'])
-            np.save(data_row['y_train_fp'], model_data.get_training_data_arrays()['Y'])
-            np.save(data_row['x_test_fp'], model_data.get_pred_data_arrays()['X'])
-            np.save(data_row['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
+            np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
+            np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])
+            np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays()['X'])
+            np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
 
-    # save dataframes to csv
-    data_df.to_csv('meta/data.csv')
+    # save experiment dataframe to csv
     experiment_df.to_csv('meta/experiment.csv')
-    params_df.to_csv('meta/params.csv')
 
+    # save data and params configs to json
+    with open('meta/data.json', 'w') as fp:
+        json.dump(data_dict, fp)
 
-def numpy_files_exist(data_row):
+    with open('meta/svgp_params.json', 'w') as fp:
+        json.dump(params_dict, fp)
+
+def numpy_files_exist(data_config):
     return (
-        os.path.exists(data_row['x_train_fp'])
-        and os.path.exists(data_row['y_train_fp'])
-        and os.path.exists(data_row['x_test_fp'])
-        and os.path.exists(data_row['y_test_fp'])
+        os.path.exists(data_config['x_train_fp'])
+        and os.path.exists(data_config['y_train_fp'])
+        and os.path.exists(data_config['x_test_fp'])
+        and os.path.exists(data_config['y_test_fp'])
     )
 
 def save_results(experiment_id, y_pred):
@@ -229,25 +202,26 @@ def save_results(experiment_id, y_pred):
     Take y_pred from the cluster, load model_data from files, 
     update model_data with the new prediction and return model_data.
     """
-
+    # read csv of experiment
     experiment_df = pd.read_csv('meta/experiment.csv')
-    data_df = pd.read_csv('meta/experiment.csv')
+
+    # read json files for parameters and data
+    with open('meta/svgp_params.json', 'r') as json_file:
+        params_dict = json.load(json_file)
+    with open('meta/data.json', 'r') as json_file:
+        data_dict = json.load(json_file)
 
     # get info for experiment
     row = experiment_df.loc[experiment_id]
     data_id = row['data_id']
-    data_row = data_df.loc[data_id]
-    param_id = row['param_id']
+    data_config = data_dict[data_id]
     y_pred_fp = row['y_pred_fp']
 
     # save y_pred to numpy array
     np.save(y_pred_fp, y_pred)
 
-    # get model config
-    model_data_config = get_model_config_default(data_row['train_start_date'], data_row['train_end_date'], data_row['pred_start_date'], data_row['pred_end_date'])
-
     # load model_data object from local files and config
-    model_data = load_model_data_from_files(model_data_config)
+    model_data = load_model_data_from_files(data_config)
 
     pred_dict = model_data.get_pred_data_arrays(return_y=True)
     model_data.update_model_results_df(pred_dict, y_pred)
