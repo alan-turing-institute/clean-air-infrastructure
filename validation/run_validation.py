@@ -4,6 +4,7 @@ import temporal
 import choose_sensors
 import experiment
 import parameters
+import metrics
 
 import sys
 import os
@@ -16,7 +17,6 @@ from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy as np
-from sklearn import metrics
 
 # requires cleanair
 sys.path.append("../containers")
@@ -145,6 +145,8 @@ def default_setup_validation():
     """
     secret_fp = "../terraform/.secrets/db_secrets.json"
     params_dict = parameters.create_svgp_params_dict()
+    print(params_dict)
+    print()
 
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
@@ -153,11 +155,17 @@ def default_setup_validation():
     n_rolls = 1
     rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
     data_dict = experiment.create_data_dict(rolls)
+    print("Data dict:")
+    print(data_dict)
+    print()
 
     # get experiment dataframe
     experiment_df = experiment.create_experiments_df(
         data_id=data_dict.keys(), param_id=params_dict.keys()
     )
+    print("Experiment")
+    print(experiment_df)
+    print()
 
     # store a list of ModelData objects to validate over
     model_data_list = []
@@ -184,10 +192,10 @@ def default_setup_validation():
 
     # save data and params configs to json
     with open('meta/data.json', 'w') as fp:
-        json.dump(data_dict, fp)
+        json.dump(data_dict, fp, indent=4)
 
     with open('meta/svgp_params.json', 'w') as fp:
-        json.dump(params_dict, fp)
+        json.dump(params_dict, fp, indent=4)
 
 def numpy_files_exist(data_config):
     return (
@@ -229,23 +237,21 @@ def save_results(experiment_id, y_pred):
     return model_data
 
 def load_model_data_from_files(model_data_config):
-    return ModelData()
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+    print(model_data_config)
+    return ModelData(model_data_config, secretfile=secret_fp)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
-    parser.add_argument('-f', '--forecast', action='store_true')
-    parser.add_argument('-r', '--rolling', action='store_true')
-    parser.add_argument('-w', '--write',  action='store_true')
-
+    parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
+    parser.add_argument('-r', '--result', type=int, help='show results given an experiment id')
     args = parser.parse_args()
-    kwargs = vars(args)
-    roll = kwargs.pop('rolling')
-    forecasting = kwargs.pop('forecast')
-    write_results = True
     
-    if roll:
-        run_rolling(write_results=write_results)
-    elif forecasting:
-        run_forecast(write_results=write_results)
-    else:
+    if args.setup:
         default_setup_validation()
+    else:
+        experiment_id = args.result
+        y_pred = np.load('data/data0_y_test.npy')
+        model_data = save_results(experiment_id, y_pred)
+        scores = metrics.measure_scores_by_hour(model_data.get_pred_data_arrays(return_y=True)['Y'], metrics.get_metric_methods())
+        print(scores)
