@@ -140,39 +140,40 @@ def get_template(parallel_args_names, parallel_args_ids, _configs, cluster_confi
     return template
     
 #=========================================== MAIN ===========================================
+def main():
+    #ensure folder for storing cluster files exists
+    subprocess.call(['mkdir', '-p', cluster_config['cluster_tmp_folder']])
 
-#ensure folder for storing cluster files exists
-subprocess.call(['mkdir', '-p', cluster_config['cluster_tmp_folder']])
+    parallel_args_names, parallel_args_ids, _configs = get_configurations(cluster_config)
+    template = get_template(parallel_args_names, parallel_args_ids, _configs, cluster_config)
 
-parallel_args_names, parallel_args_ids, _configs = get_configurations(cluster_config)
-template = get_template(parallel_args_names, parallel_args_ids, _configs, cluster_config)
+    with open(cluster_config['cluster_tmp_folder']+'/'+cluster_config['slurm_file'], 'w') as f:
+        f.write(template)
 
-with open(cluster_config['cluster_tmp_folder']+'/'+cluster_config['slurm_file'], 'w') as f:
-    f.write(template)
+    print(template)
 
-print(template)
+    #=========================================== SEND FILES TO CLUSTER ===========================================
 
-#=========================================== SEND FILES TO CLUSTER ===========================================
+    #cmd = subprocess.call('cluster_templates/send_to_cluster.sh')
 
-#cmd = subprocess.call('cluster_templates/send_to_cluster.sh')
+    cluster_settings = max_settings[cluster_config['cluster']]
 
-cluster_settings = max_settings[cluster_config['cluster']]
+    call_array = [
+        "sudo", 
+        "sh", "cluster_templates/send_to_cluster.sh",
+        "--user", cluster_settings['user'],
+        "--ip", cluster_settings['ip'],
+        "--ssh_key", cluster_settings['ssh_key'],
+        "--basename", cluster_config['base_name'],
+        "--cluster_folder",cluster_config['cluster_tmp_folder'],
+        "--slurm_file",cluster_config['slurm_file'],
+    ]
+    for lib in cluster_config['libraries']:
+        call_array.append("--lib")
+        call_array.append(lib)
 
-call_array = [
-    "sudo", 
-    "sh", "cluster_templates/send_to_cluster.sh",
-    "--user", cluster_settings['user'],
-    "--ip", cluster_settings['ip'],
-    "--ssh_key", cluster_settings['ssh_key'],
-    "--basename", cluster_config['base_name'],
-    "--cluster_folder",cluster_config['cluster_tmp_folder'],
-    "--slurm_file",cluster_config['slurm_file'],
-]
-for lib in cluster_config['libraries']:
-    call_array.append("--lib")
-    call_array.append(lib)
+    subprocess.call(call_array)
 
-subprocess.call(call_array)
-
-
+if __name__ == '__main__':
+    main()
 
