@@ -6,7 +6,7 @@ import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
-from sqlalchemy import literal, func
+from sqlalchemy import literal, func, null
 import plotly.figure_factory as ff
 from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
                                 LAQNReading, MetaPoint, AQESite,
@@ -147,7 +147,6 @@ class ModelData(DBWriter):
             config['train_interest_points'] = self.__get_interest_point_ids(config['train_sources'])
         if config['pred_interest_points'] == 'all':
             config['pred_interest_points'] = self.__get_interest_point_ids(config['pred_sources'])
-
         if config['include_satellite'] and (config['train_satellite_interest_points'] == 'all'):
             config['train_satellite_interest_points'] = self.__get_interest_point_ids(['satellite'])
 
@@ -270,19 +269,42 @@ class ModelData(DBWriter):
                                  .format(unavailable_sources))
 
     def __get_interest_points_q(self, sources):
-        """Query the database to get all interest points for a given source and return a query object"""
+        """Query the database to get all interest points for a given source and return a query object.
+           Excludes LAQN and AQE sites that are closed
+        args:
+            sources: A list of sources to include
+        """
+
+        base_query_columns = [MetaPoint.id.label('point_id'),
+                              MetaPoint.source.label('source'),
+                              MetaPoint.location.label('location'),
+                              func.ST_X(MetaPoint.location).label('lon'),
+                              func.ST_Y(MetaPoint.location).label('lat')
+                              ]
 
         with self.dbcnxn.open_session() as session:
 
-            interest_point_query = session.query(
-                MetaPoint.id.label('point_id'),
-                MetaPoint.source,
-                MetaPoint.location,
-                func.ST_X(MetaPoint.location).label('lon'),
-                func.ST_Y(MetaPoint.location).label('lat')
-            ).filter(MetaPoint.source.in_(sources))
+            remaining_sources_q = session.query(*base_query_columns,
+                                                null().label("date_opened"),
+                                                null().label("date_closed"),
+                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]))
 
-            return interest_point_query
+            aqe_sources_q = session.query(*base_query_columns,
+                                          AQESite.date_opened,
+                                          AQESite.date_closed
+                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']))
+
+            laqn_sources_q = session.query(*base_query_columns,
+                                           LAQNSite.date_opened,
+                                           LAQNSite.date_closed
+                                           ).join(LAQNSite, isouter=True).filter(MetaPoint.source.in_(['laqn']))
+
+            all_sources_sq = remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
+
+            # Remove any sources where there is a closing date
+            all_sources_q = session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
+
+        return all_sources_q
 
     def __get_interest_point_ids(self, sources):
 
