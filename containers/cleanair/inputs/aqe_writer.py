@@ -80,7 +80,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Combine any readings taken within the same hour
             df_readings = pandas.DataFrame(readings)
             df_combined = df_readings.groupby(self.reading_keys, as_index=False).agg({"Value": "mean"})
-            return list(df_combined.T.to_dict().to_numpy())
+            return list(df_combined.T.to_dict().values())
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
             self.logger.warning(error)
@@ -144,10 +144,9 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
 
             # Commit the records to the database
-            if usecore:
-                self.commit_records(session, site_records, table=AQEReading)
-            else:
-                self.commit_records(session, site_records)
+
+            self.commit_records(session, site_records, table=AQEReading, on_conflict_do_nothing=True)
+      
 
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
