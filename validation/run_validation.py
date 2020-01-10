@@ -32,7 +32,7 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def default_setup_validation():
+def default_setup_validation(model_name, cluster_name):
     """
     Get default parameters.
     Get default time range.
@@ -58,7 +58,8 @@ def default_setup_validation():
 
     # get experiment dataframe
     experiment_df = experiment.create_experiments_df(
-        data_id=data_dict.keys(), param_id=params_dict.keys()
+        data_id=data_dict.keys(), param_id=params_dict.keys(),
+        model_name=[model_name], cluster=[cluster_name]
     )
 
     # store a list of ModelData objects to validate over
