@@ -206,11 +206,11 @@ class Features(DBWriter):
                 # even if there is no intersection in the buffer
                 q_intersections = session.query(sq_metapoints.c.id,
                                                 literal(feature_name).label("feature_name"),
-                                                *[getattr(sq_intersections.c, "value_{}".format(radius))
+                                                *[func.coalesce(getattr(sq_intersections.c, "value_{}".format(radius))), 0.0)
                                                   for radius in self.buffer_radii_metres]
                                                 ).join(sq_intersections,
                                                        sq_intersections.c.id == sq_metapoints.c.id,
-                                                       isouter=True)
+                                                       isouter = True)
 
         # Return the overall query
         return q_intersections
@@ -222,11 +222,11 @@ class Features(DBWriter):
         """
         # Filter out any that have already been calculated
         with self.dbcnxn.open_session() as session:
-            sq_intersection_value = session.query(IntersectionValue.point_id, IntersectionValue.feature_name).subquery()
-        q_filtered = q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
+            sq_intersection_value=session.query(IntersectionValue.point_id, IntersectionValue.feature_name).subquery()
+        q_filtered=q_metapoints.filter(~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value))
 
-        n_interest_points = q_filtered.count()
-        batch_size = 500
+        n_interest_points=q_filtered.count()
+        batch_size=500
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
