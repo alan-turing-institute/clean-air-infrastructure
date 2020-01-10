@@ -1,36 +1,71 @@
 import pandas as pd
 import itertools
 
-def create_experiments_df(model_name=['svgp'], param_id=[0], data_id=[0], cluster=['pearl']):
-    experiment_configs = {
-        'model_name':model_name,
-        'param_id':param_id,
-        'data_id':data_id,
-        'cluster':cluster
-    }
-    list_of_configs = [values for key, values in experiment_configs.items()]
-    params_configs = list(itertools.product(*list_of_configs))
-    experiments_df = pd.DataFrame(params_configs, columns=experiment_configs.keys())
+# validation modules
+import parameters
 
-    experiments_df['y_pred_fp'] = pd.Series([create_experiment_prefix(
-            r.model_name, r.param_id, r.data_id
-        ) + 'y_pred.npy' for r in experiments_df.itertuples()])
+class Experiment():
 
-    experiments_df['y_var_fp'] = pd.Series([create_experiment_prefix(
-            r.model_name, r.param_id, r.data_id
-        ) + 'y_var.npy' for r in experiments_df.itertuples()])
+    def __init__(self, experiment_name, model_name, cluster_name, **kwargs):
+        """
+        kwargs
+        ___
 
-    experiments_df['model_state_fp'] = pd.Series([create_experiment_prefix(
-            r.model_name, r.param_id, r.data_id
-        ) + '.model' for r in experiments_df.itertuples()])
+        model_params : list of dicts
+        data_config : list of dicts
+        """
+        self.name = experiment_name
+        self.model_name = model_name
+        self.cluster = cluster_name
+        self.model_params = kwargs['model_params'] if 'model_params' in kwargs else []
+        self.data_config = kwargs['data_config'] if 'data_config' in kwargs else []
 
-    return experiments_df
+    def create_experiments_df(self):
+        experiment_configs = {
+            'model_name':[self.model_name],
+            'param_id':[item['id'] for item in self.model_params],
+            'data_id':[item['id'] for item in self.data_config],
+            'cluster':[self.cluster]
+        }
+        list_of_configs = [values for key, values in experiment_configs.items()]
+        params_configs = list(itertools.product(*list_of_configs))
+        experiments_df = pd.DataFrame(params_configs, columns=experiment_configs.keys())
+
+        experiments_df['y_pred_fp'] = pd.Series([create_experiment_prefix(
+                r.model_name, r.param_id, r.data_id
+            ) + 'y_pred.npy' for r in experiments_df.itertuples()])
+
+        experiments_df['y_var_fp'] = pd.Series([create_experiment_prefix(
+                r.model_name, r.param_id, r.data_id
+            ) + 'y_var.npy' for r in experiments_df.itertuples()])
+
+        experiments_df['model_state_fp'] = pd.Series([create_experiment_prefix(
+                r.model_name, r.param_id, r.data_id
+            ) + '.model' for r in experiments_df.itertuples()])
+
+        return experiments_df
+
+class SVGPExperiment(Experiment):
+
+    def __init__(self, experiment_name, cluster_name, **kwargs):
+        super().__init__(experiment_name, 'svgp', cluster_name, **kwargs)
+
+    def get_default_model_params_list(self, lengthscale=[0.1], variance=[0.1], minibatch_size=[100], n_inducing_point=[3000]):
+        return parameters.create_params_dict(
+            lengthscale=lengthscale,
+            variance=variance,
+            minibatch_size=minibatch_size,
+            n_inducing_point=n_inducing_point
+        )
+
+
 
 def create_experiment_prefix(model_name, param_id, data_id, base_dir='results/'):
     return base_dir + model_name + '_param' + str(param_id) + '_data' + str(data_id) + '_'
 
-def get_model_data_config_default(train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
+def get_model_data_config_default(id, train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
     return {
+        'id': id,
         'train_start_date': train_start,
         'train_end_date': train_end,
         'pred_start_date': pred_start,
@@ -48,12 +83,12 @@ def get_model_data_config_default(train_start, train_end, pred_start, pred_end, 
 
 def create_data_dict(rolls):
 
-    data_config_dict = {
-        i : get_model_data_config_default(
-            rolls[i]['train_start_date'], rolls[i]['train_end_date'],
+    data_config_dict = [
+        get_model_data_config_default(
+            i, rolls[i]['train_start_date'], rolls[i]['train_end_date'],
             rolls[i]['pred_start_date'], rolls[i]['pred_end_date']
         ) for i in range(len(rolls))
-    }
+    ]
 
     for datatype in ['x_train', 'x_test', 'y_train', 'y_test']:
         for i in range(len(rolls)):

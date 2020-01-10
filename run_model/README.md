@@ -8,10 +8,36 @@ Running on a Cluster
 The experiment must have the following format:
 
 ```
-    data/
-    models/
-    models/restore/
-    results/
+run_model/
+    experiments/
+        experiment1/
+            data/
+                data0_x_test.npy
+                data0_y_test.npy
+                data0_x_train.npy
+                data0_y_train.npy
+                data1_x_test.npy
+                ...
+            meta/
+                experiment.csv
+                svgp_params.json
+                dgp_params.json
+                data.json
+                meta.json
+            models/
+                m_svgp.py
+                m_dgp.py
+                restore/
+            results/
+                svgp_param0_data0_y_pred.npy
+                dgp_param1_data0_y_pred.npy
+                ...
+
+        experiment2/
+            data/
+            meta/
+            models/
+            results/
 ```
 
 ## Data

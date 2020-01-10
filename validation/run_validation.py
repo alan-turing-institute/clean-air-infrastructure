@@ -3,6 +3,7 @@ import os
 import json
 import logging
 import argparse
+import pathlib
 import pandas as pd
 import numpy as np
 
@@ -32,35 +33,41 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def default_setup_validation(model_name, cluster_name):
-    """
-    Get default parameters.
-    Get default time range.
-    Get processed data for time range.
-    Save data to files.
-    """
-    # get parameters
-    params_dict = parameters.create_svgp_params_dict()
-
+def get_default_svgp_experiment(name, cluster):
     # create dates for rolling over
     train_start = "2019-11-01T00:00:00"
     train_n_hours = 48
     pred_n_hours = 24
     n_rolls = 1
     rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
-    data_dict = experiment.create_data_dict(rolls)
+    data_config = experiment.create_data_dict(rolls)
+
+    # get parameters
+    model_params = parameters.create_svgp_params_list()
+
+    # create svgp experiment
+    exp = experiment.SVGPExperiment(name, cluster, data_config=data_config, model_params=model_params)
+
+    return exp
+
+def setup_experiment(exp, base_dir='../run_model/experiments/'):
+    """
+    Given an experiment create directories, data and files.
+    """
+    # create directories if they don't exist
+    exp_dir = base_dir + exp.name + '/'
+    pathlib.Path(base_dir).mkdir(exist_ok=True)
+    pathlib.Path(exp_dir).mkdir(exist_ok=True)
+    pathlib.Path(exp_dir + 'results').mkdir(exist_ok=True)
+    pathlib.Path(exp_dir + 'data').mkdir(exist_ok=True)
+    pathlib.Path(exp_dir + 'meta').mkdir(exist_ok=True)
+    pathlib.Path(exp_dir + 'model').mkdir(exist_ok=True)
 
     # get sensor info
     secret_fp = "../terraform/.secrets/db_secrets.json"
-    sensor_info_df = get_LAQN_sensor_info(secret_fp)
-    sdf = choose_sensors.remove_closed_sensors(sensor_info_df, closure_date=train_start)
-    sensors = list(sdf["point_id"])
 
     # get experiment dataframe
-    experiment_df = experiment.create_experiments_df(
-        data_id=data_dict.keys(), param_id=params_dict.keys(),
-        model_name=[model_name], cluster=[cluster_name]
-    )
+    experiment_df = exp.create_experiments_df()
 
     # store a list of ModelData objects to validate over
     model_data_list = []
@@ -68,7 +75,7 @@ def default_setup_validation(model_name, cluster_name):
     # create ModelData objects for each roll
     for index, row in experiment_df.iterrows():
         data_id = row['data_id']
-        data_config = data_dict[data_id]
+        data_config = exp.data_config[data_id]
 
         # If the numpy files do not exist locally
         if not numpy_files_exist(data_config):
@@ -87,10 +94,10 @@ def default_setup_validation(model_name, cluster_name):
 
     # save data and params configs to json
     with open('meta/data.json', 'w') as fp:
-        json.dump(data_dict, fp, indent=4)
+        json.dump(exp.data_config, fp, indent=4)
 
-    with open('meta/svgp_params.json', 'w') as fp:
-        json.dump(params_dict, fp, indent=4)
+    with open('meta/{model}_params.json'.format(model=exp.model_name), 'w') as fp:
+        json.dump(exp.model_params, fp, indent=4)
 
 def numpy_files_exist(data_config):
     return (
@@ -141,11 +148,15 @@ def load_model_data_from_files(model_data_config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
+    parser.add_argument('-n', '--name', type=str, help='name of the experiment')
+    parser.add_argument('-c', '--cluster', type=str, help='name of the cluster')
     parser.add_argument('-r', '--result', type=int, help='show results given an experiment id')
+    parser.add_argument('-m', '--model', type=str, help='name of the model')
     args = parser.parse_args()
     
-    if args.setup:
-        default_setup_validation()
+    if args.setup and args.model == 'svgp':
+        exp = get_default_svgp_experiment(args.name, args.cluster)
+        setup_experiment(exp)
     else:
         experiment_id = args.result
         y_pred = np.load('data/data0_y_test.npy')
