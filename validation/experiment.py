@@ -9,12 +9,30 @@ class Experiment(ABC):
 
     def __init__(self, experiment_name, model_name, cluster_name, **kwargs):
         """
-        kwargs
+        An abstract experiment class.
+
+        Parameters
         ___
 
+        experiment_name : str
+            Name that identifies the experiment.
+
+        model_name : str
+            String identifying the model ran in the experiment.
+
+        cluster_name : str 
+            String to identify the cluster the experiment was ran on.
+
         model_params : list of dicts
+            A list of model parameter configurations.
+            Each model config is a dictionary.
+
         data_config : list of dicts
+            A list of data configurations.
+            Each config is a dictionary.
+
         experiment_df : DataFrame
+            A dataframe describing every run in the experiment.
         """
         super().__init__()
         self.name = experiment_name
@@ -26,14 +44,23 @@ class Experiment(ABC):
 
     @abstractmethod
     def get_default_model_params(self):
+        """
+        Get the default parameters of the model for this experiment.
+        """
         pass
 
     @abstractmethod
     def get_default_data_config(self):
+        """
+        Get the default data configurations for this experiment.
+        """
         pass
 
     @abstractmethod
     def get_default_experiment_df(self):
+        """
+        Get all the default experiment configurations.
+        """
         pass
 
 class SVGPExperiment(Experiment):
@@ -113,6 +140,25 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
     }
 
 def create_data_list(rolls, data_dir):
+    """
+    Get a list of data configurations.
+
+    Parameters
+    ___
+
+    rolls : list of dicts
+        Each dict has the training start time, training end time,
+        prediction start time, prediction end time of the data roll.
+
+    data_dir : str
+        The directory to which the data should be saved.
+
+    Returns
+    ___
+
+    list of dicts
+        List of data configurations.
+    """
 
     data_config_list = [
         get_model_data_config_default(
@@ -128,9 +174,49 @@ def create_data_list(rolls, data_dir):
     return data_config_list
     
 def create_data_filepath(index, basename, base_dir='data/', extension='.npy'):
+    """
+    Create a filepath for a data file, e.g. numpy array.
+
+    Parameters
+    ___
+
+    index : int
+        Id of the data configuration.
+
+    basename : str
+        e.g. 'y_pred', 'x_test'
+
+    base_dir : str, optional
+        The directory to store the data file in.
+
+    extension : str, optional
+        The data type of the file, e.g. csv, npy.
+
+    Returns
+    ___
+
+    str
+        Filepath of the data file.
+    """
     return base_dir + 'data' + str(index) + '_' + basename + extension
 
 def create_params_list(**kwargs):
+    """
+    Return a list of dicts with every possible parameter configuration.
+
+    Parameters
+    ___
+
+    kwargs : dict
+        For each key-value pair, the value should be a list.
+        The product of all ordered lists is computed.
+
+    Returns
+    ___
+
+    list of dicts
+        All possible parameter configs stored in a list.
+    """
     keys = list(kwargs.keys())
     list_of_params = [values for key, values in kwargs.items()]
     params_configs = list(itertools.product(*list_of_params))
