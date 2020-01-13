@@ -25,42 +25,42 @@ m = folium.Map(location=[51.5297753, -0.12665390000006],
 
 folium.Marker([51.5297753, -0.12665390000006], popup='<i>Alan Turing Institute</i>').add_to(m)
 
-# url = 'http://localhost:8080/geoserver/ows?/'
-# folium.raster_layers.WmsTileLayer(url,
-#                                   'london:oshighway_roadlink',
-#                                   styles='',
-#                                   fmt='image/png',
-#                                   transparent=True,
-#                                   version='1.1.1',
-#                                   attr='',
-#                                   name=None,
-#                                   overlay=True,
-#                                   control=True,
-#                                   show=True).add_to(m)
+url = 'http://localhost:8080/geoserver/ows?/'
+folium.raster_layers.WmsTileLayer(url,
+                                  'london:oshighway_roadlink',
+                                  styles='',
+                                  fmt='image/png',
+                                  transparent=True,
+                                  version='1.1.1',
+                                  attr='',
+                                  name=None,
+                                  overlay=True,
+                                  control=True,
+                                  show=True).add_to(m)
 
 m.save('index.html')
 
-w0 = WmsTileLayer(
-    'http://this.wms.server/ncWMS/wms',
-    name='Test WMS Data',
-    styles='',
-    fmt='image/png',
-    transparent=True,
-    layers='test_data',
-    COLORSCALERANGE='0,10',
-)
-w0.add_to(m)
-w1 = WmsTileLayer(
-    'http://this.wms.server/ncWMS/wms',
-    name='Test WMS Data',
-    styles='',
-    fmt='image/png',
-    transparent=True,
-    layers='test_data_2',
-    COLORSCALERANGE='0,5',
-)
-w1.add_to(m)
-# Add WmsTileLayers to time control.
-time = TimestampedWmsTileLayers([w0, w1])
-time.add_to(m)
+# w0 = WmsTileLayer(
+#     'http://this.wms.server/ncWMS/wms',
+#     name='Test WMS Data',
+#     styles='',
+#     fmt='image/png',
+#     transparent=True,
+#     layers='test_data',
+#     COLORSCALERANGE='0,10',
+# )
+# w0.add_to(m)
+# w1 = WmsTileLayer(
+#     'http://this.wms.server/ncWMS/wms',
+#     name='Test WMS Data',
+#     styles='',
+#     fmt='image/png',
+#     transparent=True,
+#     layers='test_data_2',
+#     COLORSCALERANGE='0,5',
+# )
+# w1.add_to(m)
+# # Add WmsTileLayers to time control.
+# time = TimestampedWmsTileLayers([w0, w1])
+# time.add_to(m)
 m.save('index.html')
