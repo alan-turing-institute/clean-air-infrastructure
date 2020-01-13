@@ -2,6 +2,8 @@
 import pickle
 import numpy as np
 import pandas as pd
+import geopandas as gpd
+from shapely import wkt
 
 import sys
 sys.path.append('visualisation')
@@ -65,7 +67,7 @@ def vis_results(y_pred, ys_pred, ys_grid_pred, processed_data_x, processed_data_
 
         grid_test_df['datetime'] = pd.to_datetime(grid_test_df['datetime'])
         grid_test_df['geom'] = grid_test_df['src_geom'].apply(wkt.loads)
-        grid_test_df = geopandas.GeoDataFrame(grid_test_df, geometry='geom')
+        grid_test_df = gpd.GeoDataFrame(grid_test_df, geometry='geom')
 
         visualise = SpaceTimeVisualise(train_df, grid_test_df, geopandas_flag=True)
     else:

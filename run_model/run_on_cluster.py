@@ -10,6 +10,7 @@ if len(sys.argv) == 2:
     HOME_ROOT = str(sys.argv[1])
 else:
     HOME_ROOT = '/Users/ohamelijnck/'
+    # HOME_ROOT = '/Users/pohara/'
 
 #Every cluster has its own maximum allocations. 
 max_settings = {
