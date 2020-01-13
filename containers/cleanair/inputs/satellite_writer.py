@@ -218,10 +218,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
     def get_grid_in_region(self, lat, lon, box_id):
         """Get a grid of lat lon coordinates which descretise a satellite grid"""
 
-        lat_space = np.linspace(lat-self.half_gridsize, lat + self.half_gridsize,
-                                self.discretise_size+1, endpoint=False)[1:]
-        lon_space = np.linspace(lon-self.half_gridsize, lon + self.half_gridsize,
-                                self.discretise_size+1, endpoint=False)[1:]
+        lat_space = np.linspace(lat-self.half_gridsize+0.0001, lat + self.half_gridsize - 0.0001, self.discretise_size)
+        lon_space = np.linspace(lon-self.half_gridsize+0.0001, lon + self.half_gridsize - 0.0001, self.discretise_size)
 
         grid = np.array([[a, b] for b in lon_space for a in lat_space])
         grid_df = pd.DataFrame({'lat': grid[:, 0], 'lon': grid[:, 1]})
