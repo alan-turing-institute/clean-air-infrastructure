@@ -24,3 +24,7 @@ run_model/data
 # Python & notebooks
 *__pycache__
 .ipynb_checkpoints
+
+# run_model
+run_model/cluster
+run_model/data
