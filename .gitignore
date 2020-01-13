@@ -19,6 +19,7 @@ python-virtual-environments/
 # validation data directories
 run_model/experiments
 run_model/cluster
+run_model/data
 
 # Python & notebooks
 *__pycache__
