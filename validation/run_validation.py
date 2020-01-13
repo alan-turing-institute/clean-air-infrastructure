@@ -93,34 +93,6 @@ def numpy_files_exist(data_config):
         and os.path.exists(data_config['y_test_fp'])
     )
 
-def save_results(experiment_id, y_pred):
-    """
-    Take y_pred from the cluster, load model_data from files, 
-    update model_data with the new prediction and return model_data.
-    """
-    # read csv of experiment
-    experiment_df = pd.read_csv('meta/experiment.csv')
-
-    # read json files for parameters and data
-    with open('meta/svgp_params.json', 'r') as json_file:
-        params_dict = json.load(json_file)
-    with open('meta/data.json', 'r') as json_file:
-        data_dict = json.load(json_file)
-
-    # get info for experiment
-    row = experiment_df.loc[experiment_id]
-    data_id = row['data_id']
-    data_config = data_dict[data_id]
-    y_pred_fp = row['y_pred_fp']
-
-    # save y_pred to numpy array
-    np.save(y_pred_fp, y_pred)
-
-    # load model_data object from local files and config
-    model_data = load_model_data_from_files(data_config)
-
-
-
 if __name__ == "__main__":
     # command line arguments
     parser = argparse.ArgumentParser(description="Run validation")
@@ -147,5 +119,7 @@ if __name__ == "__main__":
             scores = metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods())
             print(scores)
             print()
+    
+    # no available options
     else:
         print("Must pass either -s [--setup] or -r [--read] with -n, -c and -m flags set.")

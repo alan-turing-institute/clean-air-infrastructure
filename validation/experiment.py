@@ -149,7 +149,7 @@ def experiment_from_dir(name, model_name, cluster_name, experiment_dir='../run_m
         Read from files.
     """
     # load the experiments dataframe, params and data config
-    experiment_dir += model_name + '/'
+    experiment_dir += name + '/'
 
     with open(experiment_dir + 'meta/{model}_params.json'.format(model=model_name), 'r') as fp:
         model_params = json.load(fp)
@@ -157,7 +157,7 @@ def experiment_from_dir(name, model_name, cluster_name, experiment_dir='../run_m
     with open(experiment_dir + 'meta/data.json', 'r') as fp:
         data_config = json.load(fp)
 
-    experiment_df = pd.read_csv(experiment_dir + 'meta/experiment.csv')
+    experiment_df = pd.read_csv(experiment_dir + 'meta/experiment.csv', index_col=0)
 
     # load the experiment object
     return SVGPExperiment(name, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df)
@@ -184,7 +184,7 @@ def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experi
     """
 
     model_data_list = []
-    for row in exp.experiment_df.iterrows():
+    for index, row in exp.experiment_df.iterrows():
         # load model data from directory
         config_dir = experiment_dir + 'data/data{id}/'.format(id=row['data_id'])
         model_data = ModelData(config_dir=config_dir)
