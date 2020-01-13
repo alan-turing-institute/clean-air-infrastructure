@@ -1,4 +1,3 @@
-
 ROOT='/Users/ohamelijnck/Scripts/cluster'
 
 while [[ $# -gt 0 ]]
@@ -70,14 +69,18 @@ if [ "$LIB_FLAG" -eq "1" ]; then
       LIB="${LIBS[$i]}" ; 
       LIB_BASENAME=$(basename $LIB)
       echo "MOVING LIBRARY $LIB_BASENAME"
-      TO_TAR="$TO_TAR $LIB"
+      #To uncompress without leading directories cd to $LIB then add all contents
+      dir=`dirname "$LIB"`
+      lib=`basename "$LIB"`
+      TO_TAR="$TO_TAR -C $dir $lib"
    done
 fi
+
+echo $TO_TAR
 
 #create folder for this specific run
 TAR_NAME="cluster/$BASENAME.tar"
 tar -czf "$TAR_NAME"  $TO_TAR
-
 
 echo "$SSH_KEY" "$TAR_NAME" "$USER@$IP:" 
 scp  -i "$SSH_KEY" "$TAR_NAME" "$USER@$IP:"
@@ -91,8 +94,11 @@ ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
    mkdir $BASENAME/results
 HERE
 
+echo "sbatch $BASENAME/cluster/run.sh"
 
-results=$(ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
+#-l make bash act like login shell
+#-s read from standard input
+results=$(ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -ls' << HERE
    sbatch $BASENAME/cluster/run.sh
 HERE
 )

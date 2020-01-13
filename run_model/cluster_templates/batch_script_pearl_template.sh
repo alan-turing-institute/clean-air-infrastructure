@@ -13,4 +13,4 @@
 module purge
 module load Python/3.7.4-GCCcore-8.3.0
 
-python m_gprn_aggr.py 0
+cd <MODELS_DIR> && python <FILE_NAMES>.py <FILE_INPUTS>
