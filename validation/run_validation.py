@@ -12,7 +12,6 @@ import spatial
 import temporal
 import choose_sensors
 import experiment
-import parameters
 import metrics
 
 # requires cleanair
@@ -33,23 +32,6 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def get_default_svgp_experiment(name, cluster):
-    # create dates for rolling over
-    train_start = "2019-11-01T00:00:00"
-    train_n_hours = 48
-    pred_n_hours = 24
-    n_rolls = 1
-    rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
-    data_config = experiment.create_data_dict(rolls)
-
-    # get parameters
-    model_params = parameters.create_svgp_params_list()
-
-    # create svgp experiment
-    exp = experiment.SVGPExperiment(name, cluster, data_config=data_config, model_params=model_params)
-
-    return exp
-
 def setup_experiment(exp, base_dir='../run_model/experiments/'):
     """
     Given an experiment create directories, data and files.
@@ -66,14 +48,11 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
     # get sensor info
     secret_fp = "../terraform/.secrets/db_secrets.json"
 
-    # get experiment dataframe
-    experiment_df = exp.create_experiments_df()
-
     # store a list of ModelData objects to validate over
     model_data_list = []
 
     # create ModelData objects for each roll
-    for index, row in experiment_df.iterrows():
+    for index, row in exp.experiment_df.iterrows():
         data_id = row['data_id']
         data_config = exp.data_config[data_id]
 
@@ -90,13 +69,13 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
             np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
 
     # save experiment dataframe to csv
-    experiment_df.to_csv('meta/experiment.csv')
+    exp.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
 
     # save data and params configs to json
-    with open('meta/data.json', 'w') as fp:
+    with open(exp_dir + 'meta/data.json', 'w') as fp:
         json.dump(exp.data_config, fp, indent=4)
 
-    with open('meta/{model}_params.json'.format(model=exp.model_name), 'w') as fp:
+    with open(exp_dir + 'meta/{model}_params.json'.format(model=exp.model_name), 'w') as fp:
         json.dump(exp.model_params, fp, indent=4)
 
 def numpy_files_exist(data_config):
@@ -155,7 +134,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.setup and args.model == 'svgp':
-        exp = get_default_svgp_experiment(args.name, args.cluster)
+        exp = experiment.SVGPExperiment(args.name, args.cluster)
         setup_experiment(exp)
     else:
         experiment_id = args.result
