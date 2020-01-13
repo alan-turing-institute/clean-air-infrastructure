@@ -1,8 +1,9 @@
 """
-
+Class and methods for experiments.
 """
 
 from abc import ABC, abstractmethod
+import json
 import pandas as pd
 import itertools
 
@@ -121,6 +122,42 @@ class SVGPExperiment(Experiment):
             ) + '.model' for r in experiment_df.itertuples()])
 
         return experiment_df
+
+def experiment_from_dir(name, model_name, cluster_name, experiment_dir='../run_model/experiments/'):
+    """
+    Return an experiment with a name from a directory.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    experiment_dir : str
+        Filepath to the directory containing all experiments.
+
+    Returns
+    ___
+
+    Experiment
+        Read from files.
+    """
+    # load the experiments dataframe, params and data config
+    experiment_dir += model_name + '/'
+
+    with open(experiment_dir + 'meta/{model}_params.json'.format(model=model_name), 'r') as fp:
+        model_params = json.load(fp)
+
+    with open(experiment_dir + 'meta/data.json', 'r') as fp:
+        data_config = json.load(fp)
+
+    experiment_df = pd.read_csv(experiment_dir + 'meta/experiment.csv')
+
+    # load the experiment object
+    return SVGPExperiment(name, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df)
+
+def get_model_data_list_from_experiment(exp):
+    return []
 
 def create_experiment_prefix(model_name, param_id, data_id, base_dir='results/'):
     return base_dir + model_name + '_param' + str(param_id) + '_data' + str(data_id) + '_'

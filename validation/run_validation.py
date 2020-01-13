@@ -124,30 +124,30 @@ def save_results(experiment_id, y_pred):
         'fit_start_time':data_config['pred_start_date']
     })
 
-    return model_data
-
-def load_model_data_from_files(model_data_config):
-    secret_fp = "../terraform/.secrets/db_secrets.json"
-    print(model_data_config)
-    return ModelData(model_data_config, secretfile=secret_fp)
-
 if __name__ == "__main__":
+    # command line arguments
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
+    parser.add_argument('-r', '--read', action='store true', help='read an experiment from files')
     parser.add_argument('-n', '--name', type=str, help='name of the experiment')
     parser.add_argument('-c', '--cluster', type=str, help='name of the cluster')
-    parser.add_argument('-r', '--result', type=int, help='show results given an experiment id')
     parser.add_argument('-m', '--model', type=str, help='name of the model')
     args = parser.parse_args()
     
+    # setup experiment
     if args.setup and args.model == 'svgp':
         exp = experiment.SVGPExperiment(args.name, args.cluster)
         setup_experiment(exp)
+        
+    # read experiment from files
+    elif args.read:
+        exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
+        model_data_list = experiment.get_model_data_list_from_experiment(exp)
+
+        # get the scores for each result in the experiment
+        for model_data in model_data_list:
+            scores = metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods())
+            print(scores)
+            print()
     else:
-        experiment_id = args.result
-        y_pred = np.load('data/data0_y_test.npy')
-        y_var = np.random.normal(loc=2, scale=0.2, size=y_pred.shape)
-        y_pred = np.concatenate([y_pred, y_var], axis=1)
-        model_data = save_results(experiment_id, y_pred)
-        scores = metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods())
-        print(scores)
+        print("Must pass either -s [--setup] or -r [--read] with -n, -c and -m flags set.")
