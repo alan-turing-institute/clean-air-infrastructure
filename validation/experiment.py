@@ -202,7 +202,7 @@ def create_data_filepath(index, basename, base_dir='data/', extension='.npy'):
     str
         Filepath of the data file.
     """
-    return base_dir + 'data' + str(index) + '_' + basename + extension
+    return base_dir + 'data' + str(index) + '/' + basename + extension
 
 def create_params_list(**kwargs):
     """

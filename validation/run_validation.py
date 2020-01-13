@@ -58,11 +58,18 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
 
         # If the numpy files do not exist locally
         if not numpy_files_exist(data_config):
+            # make new directory for data
+            data_dir_path = exp_dir + 'data/data{id}'.format(id=data_id)
+            pathlib.Path(data_dir_path).mkdir(exist_ok=True)
+
             # Get the model data and append to list
             model_data = ModelData(config=data_config, secretfile=secret_fp)
             model_data_list.append(model_data)
 
-            # save data to numpy arrays
+            # save config status of the model data object to the data directory
+            # model_data.save_config_state(data_dir_path)
+
+            # save normalised data to numpy arrays
             np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
             np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])
             np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays()['X'])
