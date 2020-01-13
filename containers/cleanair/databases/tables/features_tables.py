@@ -15,11 +15,11 @@ class IntersectionGeom(Base):
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(50), primary_key=True, nullable=False)
-    geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=False)
-    geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=False)
-    geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=False)
-    geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=False)
-    geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=False)
+    geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
 
     # Create IntersectionGeom.point with no reverse relationship
     point = relationship("MetaPoint")
