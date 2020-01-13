@@ -3,12 +3,18 @@ Class and methods for experiments.
 """
 
 from abc import ABC, abstractmethod
+import sys
 import json
 import pandas as pd
+import numpy as np
 import itertools
 
 # validation modules
 import temporal
+
+# requires cleanair
+sys.path.append("../containers")
+from cleanair.models import ModelData
 
 class Experiment(ABC):
 
@@ -156,8 +162,46 @@ def experiment_from_dir(name, model_name, cluster_name, experiment_dir='../run_m
     # load the experiment object
     return SVGPExperiment(name, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df)
 
-def get_model_data_list_from_experiment(exp):
-    return []
+def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experiments/'):
+    """
+    Given an experiment that has already been executed,
+    return a list of updated model data objects.
+
+    Parameters
+    ___
+
+    exp : Experiment
+        Must have y_pred.npy for each result in experient_df.
+
+    experiment_dir : str, optional
+        Directory containing the experiment directory.
+
+    Returns
+    ___
+
+    list
+        List of ModelData objects with updated normalised_model_results_df.
+    """
+
+    model_data_list = []
+    for row in exp.experiment_df.iterrows():
+        # load model data from directory
+        config_dir = experiment_dir + 'data/data{id}/'.format(id=row['data_id'])
+        model_data = ModelData(config_dir=config_dir)
+
+        # get the predictions from the model
+        y_pred_fp = row['y_pred_fp']
+        y_pred = np.load(y_pred_fp)
+
+        # update model data with predictions
+        pred_dict = model_data.get_pred_data_arrays(return_y=True)
+        model_data.update_model_results_df(pred_dict, y_pred, {
+            'fit_start_time':exp.data_config[row['data_id']]['pred_start_date']
+        })
+
+        # append model_data to list
+        model_data_list.append(model_data)
+    return model_data_list
 
 def create_experiment_prefix(model_name, param_id, data_id, base_dir='results/'):
     return base_dir + model_name + '_param' + str(param_id) + '_data' + str(data_id) + '_'

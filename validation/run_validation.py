@@ -119,16 +119,13 @@ def save_results(experiment_id, y_pred):
     # load model_data object from local files and config
     model_data = load_model_data_from_files(data_config)
 
-    pred_dict = model_data.get_pred_data_arrays(return_y=True)
-    model_data.update_model_results_df(pred_dict, y_pred, {
-        'fit_start_time':data_config['pred_start_date']
-    })
+
 
 if __name__ == "__main__":
     # command line arguments
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
-    parser.add_argument('-r', '--read', action='store true', help='read an experiment from files')
+    parser.add_argument('-r', '--read', action='store_true', help='read an experiment from files')
     parser.add_argument('-n', '--name', type=str, help='name of the experiment')
     parser.add_argument('-c', '--cluster', type=str, help='name of the cluster')
     parser.add_argument('-m', '--model', type=str, help='name of the model')
@@ -142,6 +139,7 @@ if __name__ == "__main__":
     # read experiment from files
     elif args.read:
         exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
+        print(exp.experiment_df)
         model_data_list = experiment.get_model_data_list_from_experiment(exp)
 
         # get the scores for each result in the experiment
