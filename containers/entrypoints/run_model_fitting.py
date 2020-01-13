@@ -24,7 +24,7 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("--trainend", type=str, default='2019-11-05T00:00:00',
+    parser.add_argument("--trainend", type=str, default='2020-01-05T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
     parser.add_argument("--trainhours", type=int, default=72,
                         help="The number of hours to get training data for.")
@@ -54,12 +54,14 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
+                    'include_satellite': False,
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
+                    'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['value_1000_building_height', 'value_1000_total_occupancy_percentage'],
+                    'features': ['value_1000_avg_ratio_avg'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -71,11 +73,17 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(model_config, **kwargs)
+    model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
-    # training_data_dict = model_data.training_data_df
+    model_data.save_config_state('/secrets/test/')
+    # print(model_data.get_satellite_forecast(train_start, train_end))
+
+    # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+
+    # print(training_data_dict['X_sat'])
+    # print(training_data_dict['Y_sat'])
 
     # Fit the model
     model_fitter = SVGP()

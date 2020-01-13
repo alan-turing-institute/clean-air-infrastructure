@@ -129,11 +129,8 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         # Open a DB session
         with self.dbcnxn.open_session() as session:
             # Commit the records to the database
-            if usecore:
-                self.commit_records(session, site_records, table=LAQNReading)
-            else:
-                self.commit_records(session, site_records)
-
+            self.commit_records(session, site_records, table=LAQNReading, on_conflict_do_nothing=True)
+            
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),

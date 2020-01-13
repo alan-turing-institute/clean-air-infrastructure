@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
 from ..loggers import get_logger
+from .base import Base
 
 
 class DBWriter(DBInteractor):
@@ -29,14 +30,22 @@ class DBWriter(DBInteractor):
             table: An sqlalchemy table object
             on_conflict_do_nothing: Bool, when False will raise error if conflicts with existing database entires"""
 
+        def row2dict(row):
+            """Convert an sqlalchemy row object to a dictionary"""
+            return dict((col, getattr(row, col)) for col in row.__table__.columns.keys())
+
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
             columns = inspect(table).columns
             insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
-            insert_stmt = insert(table).values(records)
+            if isinstance(records[0], Base):
+                records_insert = [row2dict(rec) for rec in records]
+            else:
+                records_insert = records
+            insert_stmt = insert(table).values(records_insert)
         else:
-            raise TypeError('records arg must be a dict or sqlalchemy subquery')
+            raise TypeError('records arg must be a list of dictionaries or sqlalchemy subquery')
 
         # Insert records
         if on_conflict_do_nothing:
@@ -58,6 +67,7 @@ class DBWriter(DBInteractor):
             self.logger.debug("Flushing transaction...")
             session.flush()
             session.commit()
+
         # Using merge takes approximately twice as long, but avoids duplicate key issues
         except IntegrityError as error:
             if "psycopg2.errors.UniqueViolation" not in str(error):
@@ -73,7 +83,7 @@ class DBWriter(DBInteractor):
             session.flush()
             session.commit()
 
-    def commit_records(self, session, records, table=None, on_conflict_do_nothing=True):
+    def commit_records(self, session, records, table=None, on_conflict_do_nothing=False):
         """
         Commit records to the database
 
@@ -82,7 +92,7 @@ class DBWriter(DBInteractor):
             records: Either a list of sqlalchemy records, list of dictionaries (table arg must be provided)
                         or an sqlalchemy subquery object (table arg must be provided)
             table: Optional. sqlalchemy table. If table provide sqlalchemy core used for insert
-            on_conflict_do_nothing: bool (default True). Core will ignore duplicate entires.
+            on_conflict_do_nothing: bool (default False). Core will ignore duplicate entires.
 
         If table is provided it will insert using sqlalchemy's core rather than the ORM.
         """

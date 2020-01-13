@@ -15,11 +15,11 @@ class IntersectionGeom(Base):
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(50), primary_key=True, nullable=False)
-    geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
-    geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True))
+    geom_1000 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_500 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_200 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_100 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
+    geom_10 = Column(Geometry(geometry_type="GEOMETRYCOLLECTION", srid=4326, dimension=2, spatial_index=True), nullable=True)
 
     # Create IntersectionGeom.point with no reverse relationship
     point = relationship("MetaPoint")
@@ -56,11 +56,11 @@ class IntersectionValue(Base):
 
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(50), primary_key=True, nullable=False)
-    value_1000 = Column(Float)
-    value_500 = Column(Float)
-    value_200 = Column(Float)
-    value_100 = Column(Float)
-    value_10 = Column(Float)
+    value_1000 = Column(Float, nullable=False)
+    value_500 = Column(Float, nullable=False)
+    value_200 = Column(Float, nullable=False)
+    value_100 = Column(Float, nullable=False)
+    value_10 = Column(Float, nullable=False)
 
     # Create IntersectionValue.point with no reverse relationship
     point = relationship("MetaPoint")
@@ -98,11 +98,11 @@ class IntersectionValueDynamic(Base):
     point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), primary_key=True, nullable=False)
     feature_name = Column(String(50), primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    value_1000 = Column(Float)
-    value_500 = Column(Float)
-    value_200 = Column(Float)
-    value_100 = Column(Float)
-    value_10 = Column(Float)
+    value_1000 = Column(Float, nullable=False)
+    value_500 = Column(Float, nullable=False)
+    value_200 = Column(Float, nullable=False)
+    value_100 = Column(Float, nullable=False)
+    value_10 = Column(Float, nullable=False)
 
     # Create IntersectionValue.point with no reverse relationship
     point = relationship("MetaPoint")
