@@ -18,3 +18,9 @@ python-virtual-environments/
 
 # Python
 *__pycache__
+
+# run_model
+run_model/cluster
+run_model/data
+
+*.ipynb_checkpoints
