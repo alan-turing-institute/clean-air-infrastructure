@@ -164,7 +164,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         self.logger.info("Inserting interest points into database")
 
         # Request satellite data for an arbitary day
-        grib_bytes = self.request_satellite_data('2019-12-09', "NO2")
+        grib_bytes = self.request_satellite_data('2020-01-01', "NO2")
 
         # Convert to dataframe
         grib_data_df = self.grib_to_df(grib_bytes)
