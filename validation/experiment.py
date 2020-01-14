@@ -1,17 +1,24 @@
 """
-
+Class and methods for experiments.
 """
 
 from abc import ABC, abstractmethod
+import sys
+import json
 import pandas as pd
+import numpy as np
 import itertools
 
 # validation modules
 import temporal
 
+# requires cleanair
+sys.path.append("../containers")
+from cleanair.models import ModelData
+
 class Experiment(ABC):
 
-    def __init__(self, experiment_name, model_name, cluster_name, **kwargs):
+    def __init__(self, experiment_name, models, cluster_name, **kwargs):
         """
         An abstract experiment class.
 
@@ -21,8 +28,8 @@ class Experiment(ABC):
         experiment_name : str
             Name that identifies the experiment.
 
-        model_name : str
-            String identifying the model ran in the experiment.
+        models : list
+            List of string identifying the models to run in the experiment.
 
         cluster_name : str 
             String to identify the cluster the experiment was ran on.
@@ -40,7 +47,7 @@ class Experiment(ABC):
         """
         super().__init__()
         self.name = experiment_name
-        self.model_name = model_name
+        self.models = models
         self.cluster = cluster_name
         self.model_params = kwargs['model_params'] if 'model_params' in kwargs else []
         self.data_config = kwargs['data_config'] if 'data_config' in kwargs else []
@@ -70,7 +77,7 @@ class Experiment(ABC):
 class SVGPExperiment(Experiment):
 
     def __init__(self, experiment_name, cluster_name, **kwargs):
-        super().__init__(experiment_name, 'svgp', cluster_name, **kwargs)
+        super().__init__(experiment_name, ['svgp'], cluster_name, **kwargs)
         if 'model_params' not in kwargs:
             self.model_params = self.get_default_model_params()
         if 'data_config' not in kwargs:
@@ -79,12 +86,17 @@ class SVGPExperiment(Experiment):
             self.experiment_df = self.get_default_experiment_df()        
 
     def get_default_model_params(self):
-        return create_params_list(
+        return {'svgp' : create_params_list(
             lengthscale=[0.1],
             variance=[0.1],
             minibatch_size=[100],
-            n_inducing_point=[3000]
-        )
+            n_inducing_points=[3000],
+            max_iter=[100],
+            refresh=[10],
+            train=[True],
+            restore=[False],
+            laqn_id=[0]
+        )}
 
     def get_default_data_config(self):
         # create dates for rolling over
@@ -97,33 +109,126 @@ class SVGPExperiment(Experiment):
         data_config = create_data_list(rolls, data_dir)
         return data_config
 
-    def get_default_experiment_df(self):
-        experiment_configs = {
-            'model_name':[self.model_name],
-            'param_id':[item['id'] for item in self.model_params],
-            'data_id':[item['id'] for item in self.data_config],
-            'cluster':[self.cluster]
-        }
-        list_of_configs = [values for key, values in experiment_configs.items()]
-        params_configs = list(itertools.product(*list_of_configs))
-        experiment_df = pd.DataFrame(params_configs, columns=experiment_configs.keys())
+    def get_default_experiment_df(self, experiments_root='../run_model/experiments/'):
+        """
+        Create a dataframe where each line is one run/result of an experiment.
 
-        experiment_df['y_pred_fp'] = pd.Series([create_experiment_prefix(
-                r.model_name, r.param_id, r.data_id
-            ) + 'y_pred.npy' for r in experiment_df.itertuples()])
+        Parameters
+        ___
 
-        experiment_df['y_var_fp'] = pd.Series([create_experiment_prefix(
-                r.model_name, r.param_id, r.data_id
-            ) + 'y_var.npy' for r in experiment_df.itertuples()])
+        experiments_root : str, optional
+            The root directory containing all experiments.
+        """
+        cols = ['model_name', 'param_id', 'data_id', 'cluster']
+        experiment_df = pd.DataFrame(columns=cols)
 
-        experiment_df['model_state_fp'] = pd.Series([create_experiment_prefix(
+        for model_name in self.models:
+            # configs for this model
+            experiment_configs = {
+                'model_name':[model_name],
+                'param_id':[item['id'] for item in self.model_params[model_name]],
+                'data_id':[item['id'] for item in self.data_config],
+                'cluster':[self.cluster]
+            }
+            list_of_configs = [values for key, values in experiment_configs.items()]
+            params_configs = list(itertools.product(*list_of_configs))
+
+            # append to experiments dataframe
+            experiment_df = experiment_df.append(pd.DataFrame(params_configs, columns=cols), ignore_index=True)
+
+        experiment_df['y_pred_fp'] = pd.Series([
+            experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
-            ) + '.model' for r in experiment_df.itertuples()])
+            ) + '_y_pred.npy' for r in experiment_df.itertuples()])
+
+        # experiment_df['y_var_fp'] = pd.Series([
+        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+        #         r.models, r.param_id, r.data_id
+        #     ) + 'y_var.npy' for r in experiment_df.itertuples()])
+
+        # experiment_df['model_state_fp'] = pd.Series([
+        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+        #         r.models, r.param_id, r.data_id
+        #     ) + '.model' for r in experiment_df.itertuples()])
 
         return experiment_df
 
-def create_experiment_prefix(model_name, param_id, data_id, base_dir='results/'):
-    return base_dir + model_name + '_param' + str(param_id) + '_data' + str(data_id) + '_'
+def experiment_from_dir(name, models, cluster_name, experiment_dir='../run_model/experiments/'):
+    """
+    Return an experiment with a name from a directory.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    experiment_dir : str
+        Filepath to the directory containing all experiments.
+
+    Returns
+    ___
+
+    Experiment
+        Read from files.
+    """
+    # load the experiments dataframe, params and data config
+    experiment_dir += name + '/'
+
+    with open(experiment_dir + 'meta/model_params.json', 'r') as fp:
+        model_params = json.load(fp)
+
+    with open(experiment_dir + 'meta/data.json', 'r') as fp:
+        data_config = json.load(fp)
+
+    experiment_df = pd.read_csv(experiment_dir + 'meta/experiment.csv', index_col=0)
+
+    # load the experiment object
+    return SVGPExperiment(name, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df)
+
+def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experiments/'):
+    """
+    Given an experiment that has already been executed,
+    return a list of updated model data objects.
+
+    Parameters
+    ___
+
+    exp : Experiment
+        Must have y_pred.npy for each result in experient_df.
+
+    experiment_dir : str, optional
+        Directory containing the experiment directory.
+
+    Returns
+    ___
+
+    list
+        List of ModelData objects with updated normalised_model_results_df.
+    """
+
+    model_data_list = []
+    for index, row in exp.experiment_df.iterrows():
+        # load model data from directory
+        config_dir = experiment_dir + 'data/data{id}/'.format(id=row['data_id'])
+        model_data = ModelData(config_dir=config_dir)
+
+        # get the predictions from the model
+        y_pred_fp = row['y_pred_fp']
+        y_pred = np.load(y_pred_fp)
+
+        # update model data with predictions
+        pred_dict = model_data.get_pred_data_arrays(return_y=True)
+        model_data.update_model_results_df(pred_dict, y_pred, {
+            'fit_start_time':exp.data_config[row['data_id']]['pred_start_date']
+        })
+
+        # append model_data to list
+        model_data_list.append(model_data)
+    return model_data_list
+
+def create_experiment_prefix(model_name, param_id, data_id):
+    return model_name + '_param' + str(param_id) + '_data' + str(data_id)
 
 def get_model_data_config_default(id, train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
     return {
@@ -202,7 +307,7 @@ def create_data_filepath(index, basename, base_dir='data/', extension='.npy'):
     str
         Filepath of the data file.
     """
-    return base_dir + 'data' + str(index) + '_' + basename + extension
+    return base_dir + 'data' + str(index) + '/' + basename + extension
 
 def create_params_list(**kwargs):
     """
