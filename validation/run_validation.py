@@ -113,6 +113,19 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
             # save config status of the model data object to the data directory
             # model_data.save_config_state(data_dir_path)
 
+            print("x train shape:", model_data.get_training_data_arrays()['X'].shape)
+            print("y train shape:", model_data.get_training_data_arrays()['Y'].shape)
+            print("x test shape:", model_data.get_pred_data_arrays(return_y=True)['X'].shape)
+            print("y test shape:", model_data.get_pred_data_arrays(return_y=True)['Y'].shape)
+            print()
+            print("x test shape without return_y:", model_data.get_training_data_arrays(return_y=True)['X'].shape)
+            print()
+            if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
+                raise Exception("training X and Y not the same length")
+
+            if model_data.get_pred_data_arrays(return_y=True)['X'].shape[0] != model_data.get_pred_data_arrays(return_y=True)['Y'].shape[0]:
+                raise Exception("testing X and Y not the same length")
+
             # save normalised data to numpy arrays
             np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
             np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])

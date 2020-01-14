@@ -87,8 +87,8 @@ class SVGPExperiment(Experiment):
 
     def get_default_model_params(self):
         return {'svgp' : create_params_list(
-            lengthscale=[0.1],
-            variance=[0.1],
+            lengthscale=[0.1, 0.5],
+            variance=[0.1, 0.5],
             minibatch_size=[100],
             n_inducing_points=[3000],
             max_iter=[100],
