@@ -121,7 +121,10 @@ class Features(DBWriter):
                                       *intersection_filter_columns,
                                       ).filter(func.ST_Intersects(getattr(sq_metapoints.c,
                                                                           str(max(self.buffer_radii_metres))),
-                                                                  sq_geometries.c.geom)).subquery()
+                                                                  sq_geometries.c.geom)) #.subquery()
+
+            print(sq_within.statement.compile(compile_kwargs={"literal_binds": True}))
+            quit()
 
             # Group these by interest point, unioning geometries: [Npoints records]
             sq_intersections = session.query(sq_within.c.id,
