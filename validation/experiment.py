@@ -228,6 +228,27 @@ def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experi
     return model_data_list
 
 def create_experiment_prefix(model_name, param_id, data_id):
+    """
+    Create a unique prefix for a run/result of an experiment.
+
+    Parameters
+    ___
+
+    model_name : str
+        Name should refer to a model class.
+
+    param_id : int
+        Id of parameter setting for given model.
+
+    data_id : int
+        Id of a data config.
+
+    Returns
+    ___
+
+    str
+        Prefix for files.
+    """
     return model_name + '_param' + str(param_id) + '_data' + str(data_id)
 
 def get_model_data_config_default(id, train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
@@ -245,7 +266,8 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'features': 'all',
         'norm_by': 'laqn',
         'model_type': 'svgp',
-        'tag': 'testing'
+        'tag': 'testing',
+        'include_satellite':False
     }
 
 def create_data_list(rolls, data_dir):
