@@ -78,7 +78,7 @@ class SVGP_TF1(Model):
 
         self.epoch += 1
 
-    def fit(self, X, Y, max_iter, model_params, refresh, save_model_state=True):
+    def fit(self, X, Y, max_iter, model_params, refresh=10, save_model_state=True):
         """Fit the model
 
         args:

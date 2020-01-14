@@ -90,8 +90,8 @@ class SVGPExperiment(Experiment):
             lengthscale=[0.1],
             variance=[0.1],
             minibatch_size=[100],
-            n_inducing_point=[3000],
-            max_iter=[10000],
+            n_inducing_points=[3000],
+            max_iter=[100],
             refresh=[10],
             train=[True],
             restore=[False],
@@ -125,7 +125,7 @@ class SVGPExperiment(Experiment):
         for model_name in self.models:
             # configs for this model
             experiment_configs = {
-                'model_name':model_name,
+                'model_name':[model_name],
                 'param_id':[item['id'] for item in self.model_params[model_name]],
                 'data_id':[item['id'] for item in self.data_config],
                 'cluster':[self.cluster]

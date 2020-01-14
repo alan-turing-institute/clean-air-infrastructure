@@ -36,15 +36,17 @@ def run_svgp_experiment(exp):
     """
     Train and predict using an svgp.
     """
+    model_name = exp.models[0]
+
     for index, row in exp.experiment_df.iterrows():
         # get configs
-        model_config = exp.model_params[row['params_id']]
+        model_config = exp.model_params[model_name][row['param_id']]
 
         # get data from saved numpy array
-        x_train = np.load(row['x_train_fp'])
-        y_train = np.load(row['y_train_fp'])
-        x_test = np.load(row['x_test_fp'])
-        y_test = np.load(row['y_test_fp'])
+        x_train = np.load(exp.data_config[row['data_id']]['x_train_fp'])
+        y_train = np.load(exp.data_config[row['data_id']]['y_train_fp'])
+        x_test = np.load(exp.data_config[row['data_id']]['x_test_fp'])
+        y_test = np.load(exp.data_config[row['data_id']]['y_test_fp'])
 
         # get shapes
         print()
@@ -54,24 +56,14 @@ def run_svgp_experiment(exp):
         print("y test shape:", y_test.shape)
 
         # reshape into list of data
-        X = [x_test[:, None, :]]
-        Y = [y_test]
+        X = [x_train[:, None, :]]
+        Y = [y_train]
         Xs = [x_test[:, None, :]]
         Ys = [y_test]
 
         # fit model
         mdl = SVGP_TF1()
-        model_params = {
-            'name': 'svgp', #unique model name
-            'prefix': experiment.create_experiment_prefix(row['model_name'], ), #used to prefix results and restore files
-            'n_inducing_points': 200,
-            'max_iter': 10000,
-            'refresh': 10,
-            'train': True, #flag to turn training on or off. Useful if just want to predict.
-            'restore': False, #Restore model before training/predicting.
-            'laqn_id': 0
-        }
-        mdl.fit(x_train, y_train, max_iter=100, model_params=model_config, save_model_state=False)
+        mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
 
         # predict on testing set
         Xs = Xs[0][:, 0, :]
@@ -150,6 +142,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
     parser.add_argument('-r', '--read', action='store_true', help='read an experiment from files')
+    parser.add_argument('-l', '--local', action='store_true', help='train and predict a model on the local machine')
     parser.add_argument('-n', '--name', type=str, help='name of the experiment')
     parser.add_argument('-c', '--cluster', type=str, help='name of the cluster')
     parser.add_argument('-m', '--model', type=str, help='name of the model')
