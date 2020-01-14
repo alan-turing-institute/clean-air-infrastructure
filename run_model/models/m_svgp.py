@@ -36,8 +36,7 @@ def main(config):
     ys, ys_var = m.predict(X[config['laqn_id']][:, 0, :])
 
     pred_y = np.concatenate([ys, ys_var], axis=1)
-    # np.save('../results/{prefix}_y'.format(prefix=config['prefix']), pred_y)
-    np.save(y_pred_fp, pred_y)
+    np.save('../results/{prefix}_y'.format(prefix=config['prefix']), pred_y)
 
 
 if __name__ == '__main__':

@@ -78,7 +78,7 @@ class SVGP_TF1(Model):
 
         self.epoch += 1
 
-    def fit(self, X, Y, max_iter, model_params, refresh):
+    def fit(self, X, Y, max_iter, model_params, refresh, save_model_state=True):
         """Fit the model
 
         args:
@@ -126,8 +126,9 @@ class SVGP_TF1(Model):
             opt.minimize(self.m, step_callback=self.elbo_logger, maxiter=max_iter)
 
             #save model state
-            saver = tf.train.Saver()
-            save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['prefix']))
+            if save_model_state:
+                saver = tf.train.Saver()
+                save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['prefix']))
 
 
     def batch_predict(self, XS):

@@ -16,7 +16,7 @@ import metrics
 
 # requires cleanair
 sys.path.append("../containers")
-from cleanair.models import ModelData
+from cleanair.models import ModelData, SVGP_TF1
 from cleanair.databases import DBReader
 from cleanair.databases.tables import LAQNSite
 
@@ -31,6 +31,50 @@ def get_LAQN_sensor_info(secret_fp):
         LAQN_table = session.query(LAQNSite)
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
+
+def run_svgp_experiment(exp):
+    """
+    Train and predict using an svgp.
+    """
+    for index, row in exp.experiment_df.iterrows():
+        # get configs
+        model_config = exp.model_params[row['params_id']]
+
+        # get data from saved numpy array
+        x_train = np.load(row['x_train_fp'])
+        y_train = np.load(row['y_train_fp'])
+        x_test = np.load(row['x_test_fp'])
+        y_test = np.load(row['y_test_fp'])
+
+        # get shapes
+        print()
+        print("x train shape:", x_train.shape)
+        print("y train shape:", y_train.shape)
+        print("x test shape:", x_test.shape)
+        print("y test shape:", y_test.shape)
+
+        # reshape into list of data
+        X = [x_test[:, None, :]]
+        Y = [y_test]
+        Xs = [x_test[:, None, :]]
+        Ys = [y_test]
+
+        # fit model
+        mdl = SVGP_TF1()
+        model_params = {
+            'name': 'svgp', #unique model name
+            'prefix': experiment.create_experiment_prefix(row['model_name'], ), #used to prefix results and restore files
+            'n_inducing_points': 200,
+            'max_iter': 10000,
+            'refresh': 10,
+            'train': True, #flag to turn training on or off. Useful if just want to predict.
+            'restore': False, #Restore model before training/predicting.
+            'laqn_id': 0
+        }
+        mdl.fit(x_train, y_train, max_iter=100, model_params=model_config, save_model_state=False)
+
+        # predict on testing set
+        y_pred, y_var = mdl.predict(Xs[])
 
 def setup_experiment(exp, base_dir='../run_model/experiments/'):
     """
@@ -82,7 +126,7 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
     with open(exp_dir + 'meta/data.json', 'w') as fp:
         json.dump(exp.data_config, fp, indent=4)
 
-    with open(exp_dir + 'meta/{model}_params.json'.format(model=exp.model_name), 'w') as fp:
+    with open(exp_dir + 'meta/model_params.json', 'w') as fp:
         json.dump(exp.model_params, fp, indent=4)
 
 def numpy_files_exist(data_config):
@@ -119,6 +163,11 @@ if __name__ == "__main__":
             scores = metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods())
             print(scores)
             print()
+
+    # run a local model instead of on the cluster
+    elif args.local:
+        exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
+
     
     # no available options
     else:
