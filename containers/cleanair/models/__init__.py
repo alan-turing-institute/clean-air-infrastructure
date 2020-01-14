@@ -5,7 +5,7 @@ from .model import Model
 from .model_svgp import SVGP_TF1
 
 __all__ = [
-    #"ModelData",
+#    "ModelData",
     "SVGP",
     "SVGP_TF1"
 ]
