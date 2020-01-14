@@ -4,6 +4,7 @@ Satellite
 import uuid
 import tempfile
 import requests
+from datetime import date
 from dateutil import rrule
 try:
     import pygrib
@@ -136,27 +137,27 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         satellite_site_df = pd.read_sql(satellite_site_q.statement, satellite_site_q.session.bind)
 
-        for start_date in rrule.rrule(rrule.DAILY,
-                                      dtstart=self.start_date,
-                                      until=self.end_date):
+        with self.dbcnxn.open_session() as session:
+            for start_date in rrule.rrule(rrule.DAILY,
+                                          dtstart=self.start_date,
+                                          until=self.end_date):
 
-            self.logger.info("Requesting satellite forecast data for %s", green(start_date.date()))
-            # Get grib data
-            grib_bytes = self.request_satellite_data(str(start_date.date()), "NO2")
-            grib_data_df = self.grib_to_df(grib_bytes)
+                self.logger.info("Requesting satellite forecast data for %s", green(start_date.date()))
+                # Get grib data
+                grib_bytes = self.request_satellite_data(str(start_date.date()), "NO2")
+                grib_data_df = self.grib_to_df(grib_bytes)
 
-            # Join grid data
-            grib_data_joined = grib_data_df.merge(satellite_site_df, how='left', on=['lon', 'lat'])
+                # Join grid data
+                grib_data_joined = grib_data_df.merge(satellite_site_df, how='left', on=['lon', 'lat'])
 
-            reading_entries = grib_data_joined.apply(lambda x:
-                                                     SatelliteForecastReading(measurement_start_utc=x['date'],
-                                                                              species_code='NO2',
-                                                                              box_id=x['box_id'],
-                                                                              value=x['no2']), axis=1).tolist()
+                reading_entries = grib_data_joined.apply(lambda x:
+                                                         SatelliteForecastReading(measurement_start_utc=x['date'],
+                                                                                  species_code='NO2',
+                                                                                  box_id=x['box_id'],
+                                                                                  value=x['no2']), axis=1).tolist()
 
-            with self.dbcnxn.open_session() as session:
                 self.commit_records(session, reading_entries, table=SatelliteForecastReading,
-                                    on_conflict_do_nothing=False)
+                                    on_conflict_do_nothing=True)
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
@@ -164,7 +165,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         self.logger.info("Inserting interest points into database")
 
         # Request satellite data for an arbitary day
-        grib_bytes = self.request_satellite_data('2020-01-01', "NO2")
+        grib_bytes = self.request_satellite_data(date.today().strftime('%Y-%m-%d'), "NO2")
 
         # Convert to dataframe
         grib_data_df = self.grib_to_df(grib_bytes)

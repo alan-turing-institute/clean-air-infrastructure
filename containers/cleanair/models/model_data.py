@@ -751,16 +751,13 @@ class ModelData(DBWriter):
                          sources, species, start_date, end_date)
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
-
         # all_features.to_csv('/secrets/satdata.csv')
-
 
         with self.dbcnxn.open_session() as session:
 
             sat_site_map_q = session.query(SatelliteDiscreteSite)
             sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
                                                                    SatelliteForecastReading.measurement_start_utc < end_date)
-
         sat_site_map_df = pd.read_sql(sat_site_map_q.statement, sat_site_map_q.session.bind)
 
         # Convert uuid to strings to allow merge
@@ -772,7 +769,6 @@ class ModelData(DBWriter):
 
         # Get satellite data
         satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
-
         return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
