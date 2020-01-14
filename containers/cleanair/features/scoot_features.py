@@ -193,14 +193,14 @@ class ScootFeatures(DateRangeMixin, Features):
             scoot_road_distance_q = session.query(OSHighway.toid,
                                                   sr_sq.c.measurement_start_utc,
                                                   *aggregated_funcs) \
-                                           .join(arm_sq) \
-                                           .join(tid_sq) \
-                                           .filter(sr_sq.c.detector_id == arm_sq.c.detector_n)
+                .join(arm_sq) \
+                .join(tid_sq) \
+                .filter(sr_sq.c.detector_id == arm_sq.c.detector_n)
 
             scoot_road_distance_q = scoot_road_distance_q.group_by(OSHighway.toid,
                                                                    sr_sq.c.measurement_start_utc) \
-                                                         .order_by(OSHighway.toid,
-                                                                   sr_sq.c.measurement_start_utc)
+                .order_by(OSHighway.toid,
+                          sr_sq.c.measurement_start_utc)
 
             return scoot_road_distance_q
 

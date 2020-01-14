@@ -6,6 +6,5 @@ from .model_svgp import SVGP_TF1
 
 __all__ = [
     "ModelData",
-    "SVGP",
     "SVGP_TF1"
 ]

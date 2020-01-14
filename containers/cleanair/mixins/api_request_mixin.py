@@ -70,8 +70,8 @@ class APIRequestMixin():
         return list(map(lambda d: datetime.datetime.combine(d, datetime.datetime.min.time()), available_dates))
 
     @staticmethod
-    def get_response(api_endpoint, timeout=60.0):
+    def get_response(api_endpoint, params=None, timeout=60.0):
         """Return the response from an API"""
-        response = requests.get(api_endpoint, timeout=timeout)
+        response = requests.get(api_endpoint, params=params, timeout=timeout)
         response.raise_for_status()
         return response
