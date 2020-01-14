@@ -1,10 +1,9 @@
 """
 Vizualise available sensor data for a model fit
 """
-import pandas as pd
-import numpy as np
 import json
 import os
+import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse

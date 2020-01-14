@@ -28,7 +28,7 @@ def main():
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
     parser.add_argument("--trainhours", type=int, default=72,
                         help="The number of hours to get training data for.")
-    parser.add_argument("--predstart", type=str, default='2019-11-05T00:00:00',
+    parser.add_argument("--predstart", type=str, default='2020-01-05T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
     parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")
@@ -73,7 +73,7 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(config_dir='/secrets/test/', **kwargs)
+    model_data = ModelData(config=model_config, **kwargs)
 
     model_data.save_config_state('/secrets/test/')
     # print(model_data.get_satellite_forecast(train_start, train_end))

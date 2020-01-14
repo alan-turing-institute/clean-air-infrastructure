@@ -15,6 +15,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -130,7 +131,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
             # Commit the records to the database
             self.commit_records(session, site_records, table=LAQNReading, on_conflict_do_nothing=True)
-            
+
             # Commit changes
             self.logger.info("Committing %s records to database table %s",
                              green(len(site_readings)),
