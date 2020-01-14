@@ -1,8 +1,12 @@
 class Cluster(object):
     def __init__(self):
+        self.base_name = None
         self.slurm_template = ""
         self.cluster_config = None
         self.tmp_folder = 'cluster'
+        self.ip = None
+        self.user = None
+        self.ssh_key = None
 
     def get_default_params(self):
         pass
@@ -23,7 +27,7 @@ class Cluster(object):
             return s+'/'
         return s
 
-    def list_to_str(self, A):
+    def list_to_str(self, A, fill=' '):
         """
             @TODO: there is probably a built in python function for this.
             A: is an array of strings
@@ -36,7 +40,7 @@ class Cluster(object):
                 #No space at end
                 s += "{a}".format(a=a)
             else:
-                s += "{a} ".format(a=a)
+                s += "{a}{fill}".format(a=a, fill=fill)
         return s
 
     def ensure_config_defaults(self, config):
@@ -51,13 +55,13 @@ class Cluster(object):
     def get_template(self, home_dir, parallel_args_names, parallel_args_ids, _configs):
         pass
 
-    def create_batch_from_template(self, template, base_name, file_name, file_inputs):
+    def create_batch_from_template(self, template, file_name, file_inputs):
         """
             Creates the batch/slurm script that will run the experiments on the cluster
         """
 
-        template = template.replace('<MODELS_DIR>', base_name+'/models/')
-        template = template.replace('<LOGS_DIR>', base_name+'/cluster/logs')
+        template = template.replace('<MODELS_DIR>', self.base_name+'/models/')
+        template = template.replace('<LOGS_DIR>', self.base_name+'/cluster/logs')
         template = template.replace('<NODES>', str(self.cluster_config['nodes']))
         template = template.replace('<CPUS>', str(self.cluster_config['cpus']))
         template = template.replace('<MEMORY>', str(self.cluster_config['memory']))
@@ -74,26 +78,29 @@ class Cluster(object):
                 for p_id, p_config in enumerate(param_configs[model]):
                     #assume model is m_<model>.py
                     model_dir = ''
-                    base_name = ''
                     file_name = 'm_{model}'.format(model=model)
                     file_inputs = '{data_id} {param_id}'.format(data_id=d_id, param_id=p_id)
 
-                    t = self.create_batch_from_template(template, base_name, file_name, file_inputs)
+                    job_name = model+'_'+'{data_id}_{param_id}'.format(data_id=d_id, param_id=p_id)
+                    results_name = model+'_'+'{data_id}_{param_id}_results.txt'.format(data_id=d_id, param_id=p_id)
+
+                    t = self.create_batch_from_template(template, file_name, file_inputs, job_name, results_name)
                     batch_name = 'run_{model}_{d}_{p}.sh'.format(model=model, d=d_id, p=p_id)
+                    batch_name = self.tmp_folder+'/'+batch_name
                     batches.append([batch_name, t])
         return batches
 
     def save_batch(self, name, script):
-        with open(self.tmp_folder+'/'+name, 'w') as f:
+        with open(name, 'w') as f:
             f.write(script)
-
-
-
 
 class Orac(Cluster):
     def __init__(self):
-        super(Orac).__init__()
+        Cluster.__init__(self)
         self.slurm_template = 'cluster_templates/batch_script_template.sh'
+        self.ip = 'orac.csc.warwick.ac.uk'
+        self.user = 'csrcqm'
+        self.ssh_key = '.ssh/ollie_rsa'
 
     def get_default_params(self):
         pass
@@ -105,6 +112,11 @@ class Pearl(Cluster):
     def __init__(self):
         Cluster.__init__(self)
         self.slurm_template = 'cluster_templates/batch_script_pearl_template.sh'
+
+        self.ip = 'ui.pearl.scd.stfc.ac.uk'
+        self.user = 'pearl023'
+        self.ssh_key = '.ssh/patrick-pearl'
+
         self.defaults = {
             'cpus': 1,
             'gpus': 1,
@@ -122,7 +134,8 @@ class Pearl(Cluster):
             'memory': 4571
         }
 
-    def setup(self, home_dir, cluster_config):
+    def setup(self, base_name, home_dir, cluster_config):
+        self.base_name = base_name
         self.home_dir = self.ensure_last_backslash(home_dir)
         print(self.home_dir)
 
@@ -130,12 +143,34 @@ class Pearl(Cluster):
         self.cluster_config = self.ensure_config_defaults(cluster_config)
         self.check_config_max_settings()
 
+    def create_batch_from_template(self, template, file_name, file_inputs, job_name, log_name, ):
+        """
+            Creates the batch/slurm script that will run the experiments on the cluster
+        """
+
+        template = template.replace('<MODELS_DIR>', self.base_name+'/models/')
+        template = template.replace('<LOGS_DIR>', self.base_name+'/cluster/logs')
+        template = template.replace('<NODES>', str(self.cluster_config['nodes']))
+        template = template.replace('<CPUS>', str(self.cluster_config['cpus']))
+        template = template.replace('<MEMORY>', str(self.cluster_config['memory']))
+        template = template.replace('<TIME>', str(self.cluster_config['time']))
+        template = template.replace('<FILE_NAMES>', file_name)
+        template = template.replace('<FILE_INPUTS>', file_inputs)
+        template = template.replace('<JOB_NAME>', job_name)
+        template = template.replace('<LOG_NAME>', log_name)
+
+        return template
+
     def create_batch_scripts(self, param_configs, data_configs):
         #get batch scripts
         template = self.load_template_file()
         batches = self.get_batches(template, param_configs, data_configs)
 
+        names = []
         #save to files
         for f_name, script in batches:
             self.save_batch(f_name, script)
+            names.append(f_name)
+
+        return names
 

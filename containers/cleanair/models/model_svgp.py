@@ -13,13 +13,13 @@ if True:
 
 import gpflow
 import numpy as np
-#from ..loggers import get_logger
+from ..loggers import get_logger
 from .model import Model
 
 class SVGP_TF1(Model):
     def __init__(self):
         # Ensure logging is available
-        self.logging = False
+        self.logging = True
         if self.logging and not hasattr(self, "logger"):
             from ..loggers import get_logger
             self.logger = get_logger(__name__)
@@ -98,7 +98,7 @@ class SVGP_TF1(Model):
         self.refresh = refresh
 
         #index of laqn data in X and Y
-        laqn_id = model_params['laqn_id']
+        laqn_id = 0
 
         #With a standard GP only use LAQN data and collapse discrisation dimension
         X = X[laqn_id][:, 0, :].copy()
@@ -107,7 +107,7 @@ class SVGP_TF1(Model):
         _x, _y, X, Y = self.clean_data(X, Y)
 
         #setup inducing points
-        z_r = kmeans2(X, model_params['n_inducing_points'], minit='points')[0]
+        z_r = kmeans2(X, model_params['n_inducing_point'], minit='points')[0]
 
         #setup SVGP model
         self.setup_model(X, Y, z_r, X.shape[1], model_params)
@@ -118,7 +118,7 @@ class SVGP_TF1(Model):
 
         if model_params['restore']:
             saver = tf.train.Saver()
-            saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=model_params['prefix']))
+            saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=model_params['model_state_fp']))
 
         if model_params['train']:
             #optimize and setup elbo logging
@@ -127,7 +127,7 @@ class SVGP_TF1(Model):
 
             #save model state
             saver = tf.train.Saver()
-            save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['prefix']))
+            save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['model_state_fp']))
 
 
     def batch_predict(self, XS):

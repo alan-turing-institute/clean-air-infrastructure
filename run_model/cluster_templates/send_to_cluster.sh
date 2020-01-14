@@ -47,8 +47,13 @@ do
          CLUSTER_FOLDER=$2
          shift;
       ;;
+      --experiments_folder)
+         EXPERIMENTS_FOLDER=$2
+         shift;
+      ;;
       --slurm_file)
          SLURM_FILE=$2
+         SLURM_FILES+=("$SLURM_FILE")
          shift;
       ;;
       *)
@@ -61,7 +66,8 @@ done
 #ensure a results folder exists
 mkdir -p results
 
-TO_TAR="models data cluster/run.sh"
+TO_TAR="-C $EXPERIMENTS_FOLDER/$BASENAME/ models data meta  -C ../../ $SLURM_FILES"
+
 
 if [ "$LIB_FLAG" -eq "1" ]; then
    len=${#LIBS[@]}
@@ -94,14 +100,22 @@ ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
    mkdir $BASENAME/results
 HERE
 
-echo "sbatch $BASENAME/cluster/run.sh"
 
 #-l make bash act like login shell
 #-s read from standard input
+
+len=${#SLURM_FILES[@]}
+for (( i=0; i<$len; i++ )); do
+   SLURM_FILE="${SLURM_FILES[$i]}" ; 
+   echo "sbatch $BASENAME/$SLURM_FILE"
+
 results=$(ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -ls' << HERE
-   sbatch $BASENAME/cluster/run.sh
+   sbatch $BASENAME/$SLURM_FILE
 HERE
 )
+done
+
+
 
 JOB_ID=$(echo $results | awk '{print $NF}')
 
