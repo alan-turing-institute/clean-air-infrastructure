@@ -63,10 +63,10 @@ class ModelData(DBWriter):
             self.config = self.generate_full_config(config)
 
             # Get training and prediciton data frames
-            self.training_data_df = self.get_training_data_inputs(satellite=False)
+            self.training_data_df = self.get_training_data_inputs()
             self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-            self.pred_data_df = self.get_pred_data_inputs(satellite=False)
+            self.pred_data_df = self.get_pred_data_inputs()
             self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
             # Process satellite data
@@ -694,7 +694,7 @@ class ModelData(DBWriter):
                                                                               'lon',
                                                                               'lat'])
 
-    def get_training_data_inputs(self, satellite):
+    def get_training_data_inputs(self):
         """
         Query the database to get inputs for model fitting.
         """
@@ -721,7 +721,7 @@ class ModelData(DBWriter):
                               how='left')
         return model_data
 
-    def get_pred_data_inputs(self, satellite):
+    def get_pred_data_inputs(self):
         """Query the database for inputs for model prediction"""
 
         start_date = self.config['pred_start_date']
@@ -739,7 +739,7 @@ class ModelData(DBWriter):
         return all_features
 
     def get_training_satellite_inputs(self):
-
+        """Get satellite inputs"""
         start_date = self.config['train_start_date']
         end_date = self.config['train_end_date']
         sources = ['satellite']
@@ -752,8 +752,8 @@ class ModelData(DBWriter):
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
 
-        all_features.to_csv('/secrets/satdata.csv')
-        quit()
+        # all_features.to_csv('/secrets/satdata.csv')
+
 
         with self.dbcnxn.open_session() as session:
 

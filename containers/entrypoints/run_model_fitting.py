@@ -54,7 +54,7 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
-                    'include_satellite': False,
+                    'include_satellite': True,
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
