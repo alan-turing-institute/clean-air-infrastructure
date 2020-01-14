@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
     # run a local model instead of on the cluster
     elif args.local:
-        exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
+        exp = experiment.experiment_from_dir(args.name, args.cluster)
         run_svgp_experiment(exp)
 
     # no available options

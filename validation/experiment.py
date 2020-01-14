@@ -153,7 +153,7 @@ class SVGPExperiment(Experiment):
 
         return experiment_df
 
-def experiment_from_dir(name, models, cluster_name, experiment_dir='../run_model/experiments/'):
+def experiment_from_dir(name, cluster_name, experiment_dir='../run_model/experiments/'):
     """
     Return an experiment with a name from a directory.
 
