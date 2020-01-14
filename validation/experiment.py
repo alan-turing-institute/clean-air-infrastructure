@@ -91,7 +91,7 @@ class SVGPExperiment(Experiment):
             variance=[0.1],
             minibatch_size=[100],
             n_inducing_point=[3000],
-            max_iter=10000,
+            max_iter=[10000],
             refresh=[10],
             train=[True],
             restore=[False],
@@ -110,15 +110,31 @@ class SVGPExperiment(Experiment):
         return data_config
 
     def get_default_experiment_df(self, experiments_root='../run_model/experiments/'):
-        experiment_configs = {
-            'model_name':self.models,
-            'param_id':[item['id'] for item in self.model_params],
-            'data_id':[item['id'] for item in self.data_config],
-            'cluster':[self.cluster]
-        }
-        list_of_configs = [values for key, values in experiment_configs.items()]
-        params_configs = list(itertools.product(*list_of_configs))
-        experiment_df = pd.DataFrame(params_configs, columns=experiment_configs.keys())
+        """
+        Create a dataframe where each line is one run/result of an experiment.
+
+        Parameters
+        ___
+
+        experiments_root : str, optional
+            The root directory containing all experiments.
+        """
+        cols = ['model_name', 'param_id', 'data_id', 'cluster']
+        experiment_df = pd.DataFrame(columns=cols)
+
+        for model_name in self.models:
+            # configs for this model
+            experiment_configs = {
+                'model_name':model_name,
+                'param_id':[item['id'] for item in self.model_params[model_name]],
+                'data_id':[item['id'] for item in self.data_config],
+                'cluster':[self.cluster]
+            }
+            list_of_configs = [values for key, values in experiment_configs.items()]
+            params_configs = list(itertools.product(*list_of_configs))
+
+            # append to experiments dataframe
+            experiment_df = experiment_df.append(pd.DataFrame(params_configs, columns=cols), ignore_index=True)
 
         experiment_df['y_pred_fp'] = pd.Series([
             experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
