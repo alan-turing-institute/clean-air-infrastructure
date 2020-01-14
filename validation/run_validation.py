@@ -74,7 +74,15 @@ def run_svgp_experiment(exp):
         mdl.fit(x_train, y_train, max_iter=100, model_params=model_config, save_model_state=False)
 
         # predict on testing set
-        y_pred, y_var = mdl.predict(Xs[])
+        Xs = Xs[0][:, 0, :]
+        print("shape of x test input:", Xs.shape)
+        y_mean, y_var = mdl.predict(Xs)
+        print("shape of y mean and y var:", y_mean.shape, y_var.shape)
+
+        # concatenate and save to file
+        y_pred = np.concatenate([y_mean, y_var], axis=1)
+        print("shape of y_pred:", y_pred.shape)
+        np.save(row['y_pred_fp'], y_pred)
 
 def setup_experiment(exp, base_dir='../run_model/experiments/'):
     """
