@@ -76,5 +76,6 @@ scp  -i "$SSH_KEY" "$USER@$IP:$BASENAME/$BASENAME.tar" cluster/"$dt"_results/"$B
 tar -xzf cluster/"$dt"_results/"$BASENAME"_results.tar --directory cluster/"$dt"_results/
 rm -rf cluster/"$dt"_results/"$BASENAME"_results.tar
 
-
+mv cluster/"$dt"_results/results/* experiments/"$BASENAME"/results/
+mv cluster/"$dt"_results/models/restore/* experiments/"$BASENAME"/models/restore/
 
