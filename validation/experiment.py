@@ -217,7 +217,7 @@ def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experi
         y_pred = np.load(y_pred_fp)
 
         # update model data with predictions
-        pred_dict = model_data.get_pred_data_arrays(return_y=True)
+        pred_dict = model_data.get_pred_data_arrays()
         model_data.update_model_results_df(pred_dict, y_pred, {
             'fit_start_time':exp.data_config[row['data_id']]['pred_start_date']
         })
@@ -266,7 +266,8 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'norm_by': 'laqn',
         'model_type': 'svgp',
         'tag': 'testing',
-        'include_satellite':False
+        'include_satellite':False,
+        'include_prediction_y':True
     }
 
 def create_data_list(rolls, data_dir):
