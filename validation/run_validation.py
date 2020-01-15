@@ -13,6 +13,7 @@ import temporal
 import choose_sensors
 import experiment
 import metrics
+import laptop
 
 # requires cleanair
 sys.path.append("../containers")
@@ -41,12 +42,17 @@ def run_svgp_experiment(exp):
     for index, row in exp.experiment_df.iterrows():
         # get configs
         model_config = exp.model_params[model_name][row['param_id']]
+        data_config = exp.data_config[row['data_id']]
+
+        print("data config:", data_config)
+        print()
+        print("params config:", model_config)
 
         # get data from saved numpy array
-        x_train = np.load(exp.data_config[row['data_id']]['x_train_fp'])
-        y_train = np.load(exp.data_config[row['data_id']]['y_train_fp'])
-        x_test = np.load(exp.data_config[row['data_id']]['x_test_fp'])
-        y_test = np.load(exp.data_config[row['data_id']]['y_test_fp'])
+        x_train = np.load(data_config['x_train_fp'])
+        y_train = np.load(data_config['y_train_fp'])
+        x_test = np.load(data_config['x_test_fp'])
+        y_test = np.load(data_config['y_test_fp'])
 
         # get shapes
         print()
@@ -110,6 +116,7 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
             pathlib.Path(data_dir_path).mkdir(exist_ok=True)
 
             # Get the model data and append to list
+            print(data_config)
             model_data = ModelData(config=data_config, secretfile=secret_fp)
             model_data_list.append(model_data)
 
@@ -164,8 +171,13 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--model', type=str, help='name of the model')
     args = parser.parse_args()
     
+    # setup experiment to run on a laptop
+    if args.setup and args.cluster == 'laptop':
+        exp = laptop.LaptopExperiment(args.name)
+        setup_experiment(exp)
+
     # setup experiment
-    if args.setup and args.model == 'svgp':
+    elif args.setup and args.model == 'svgp':
         exp = experiment.SVGPExperiment(args.name, args.cluster)
         setup_experiment(exp)
         
