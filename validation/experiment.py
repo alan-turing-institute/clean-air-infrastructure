@@ -58,21 +58,18 @@ class Experiment(ABC):
         """
         Get the default parameters of the model for this experiment.
         """
-        pass
 
     @abstractmethod
     def get_default_data_config(self):
         """
         Get the default data configurations for this experiment.
         """
-        pass
 
     @abstractmethod
     def get_default_experiment_df(self):
         """
         Get all the default experiment configurations.
         """
-        pass
 
 class SVGPExperiment(Experiment):
 
