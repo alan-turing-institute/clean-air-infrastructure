@@ -123,6 +123,7 @@ class ModelData(DBWriter):
                        "pred_end_date",
 
                        "include_satellite",
+                       "include_prediction_y",
                        "train_sources",
                        "pred_sources",
                        "train_interest_points",
@@ -280,14 +281,17 @@ class ModelData(DBWriter):
         """
         return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
 
-    def get_pred_data_arrays(self, return_y=False, dropna=True):
+    def get_pred_data_arrays(self, dropna=True):
         """The the pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=return_y, dropna=dropna)
+        if self.config['include_prediction_y']:
+            return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=True, dropna=dropna)
+
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, dropna=dropna)
 
     def __check_features_available(self, features):
         """Check that all requested features exist in the database"""
@@ -402,10 +406,13 @@ class ModelData(DBWriter):
         with self.dbcnxn.open_session() as session:
 
             feature_types_q = session.query(IntersectionValueDynamic.feature_name) \
-                .distinct(IntersectionValueDynamic.feature_name)
+                                     .distinct(IntersectionValueDynamic.feature_name)
 
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)['feature_name'].tolist()
+            available_features = pd.read_sql(feature_types_q.statement,
+                                             feature_types_q.session.bind)['feature_name'].tolist()
+
+
+            return available_features
 
     def list_available_sources(self):
         """Return a list of the available interest point sources in a database"""
@@ -724,11 +731,10 @@ class ModelData(DBWriter):
                          sources, species, start_date, end_date)
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        readings = self.get_sensor_readings(start_date, end_date, sources, species)
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        readings = self.get_sensor_readings(start_date, end_date, sources, species)
 
         self.logger.debug("Merging sensor data and model features")
-
         model_data = pd.merge(all_features,
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
@@ -750,6 +756,15 @@ class ModelData(DBWriter):
                          sources, species, start_date, end_date)
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        if self.config['include_prediction_y']:
+            readings = self.get_sensor_readings(start_date, end_date, sources, species)
+            self.logger.debug("Merging sensor data and model features")
+            model_data = pd.merge(all_features,
+                                  readings,
+                                  on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
+                                  how='left')
+
+            return model_data
 
         return all_features
 
