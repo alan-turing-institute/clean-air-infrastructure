@@ -155,7 +155,7 @@ class SVGPExperiment(Experiment):
             lengthscale=[0.1, 0.5],
             variance=[0.1, 0.5],
             minibatch_size=[100],
-            n_inducing_points=[3000],
+            n_inducing_points=[30],
             max_iter=[100],
             refresh=[10],
             train=[True],
@@ -206,15 +206,12 @@ class SVGPExperiment(Experiment):
                 r.model_name, r.param_id, r.data_id
             ) + '_y_pred.npy' for r in experiment_df.itertuples()])
 
-        # experiment_df['y_var_fp'] = pd.Series([
-        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
-        #         r.models, r.param_id, r.data_id
-        #     ) + 'y_var.npy' for r in experiment_df.itertuples()])
 
-        # experiment_df['model_state_fp'] = pd.Series([
-        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
-        #         r.models, r.param_id, r.data_id
-        #     ) + '.model' for r in experiment_df.itertuples()])
+
+        experiment_df['model_state_fp'] = pd.Series([
+            experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+                r.model_name, r.param_id, r.data_id
+            ) + '.model' for r in experiment_df.itertuples()])
 
         return experiment_df
 

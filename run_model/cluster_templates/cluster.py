@@ -109,13 +109,13 @@ class Cluster(ABC):
                 for p_id, _ in enumerate(param_configs[model]):
                     #assume model is m_<model>.py
                     file_name = 'm_{model}'.format(model=model)
-                    file_inputs = '{data_id} {param_id}'.format(data_id=d_id, param_id=p_id)
+                    file_inputs = '{param_id} {data_id} '.format(data_id=d_id, param_id=p_id)
 
-                    job_name = model+'_'+'{data_id}_{param_id}'.format(data_id=d_id, param_id=p_id)
-                    results_name = model+'_'+'{data_id}_{param_id}_results.txt'.format(data_id=d_id, param_id=p_id)
+                    job_name = model+'_'+'{param_id}_{data_id}_'.format(data_id=d_id, param_id=p_id)
+                    results_name = model+'_'+'{param_id}_{data_id}_results.txt'.format(data_id=d_id, param_id=p_id)
 
                     t = self.create_batch_from_template(file_name, file_inputs, job_name, results_name)
-                    batch_name = 'run_{model}_{d}_{p}.sh'.format(model=model, d=d_id, p=p_id)
+                    batch_name = 'run_{model}_{p}_{d}.sh'.format(model=model, d=d_id, p=p_id)
                     batch_name = self.tmp_folder+'/'+batch_name
                     batches.append([batch_name, t])
         return batches

@@ -27,15 +27,19 @@ def get_config():
 
 def main(data_config, param_config, experiment_config):
     #TODO: fix files paths in experiments
+    dirname = os.path.dirname
+    basename = os.path.basename
+    data_dir = basename(dirname(data_config['x_train_fp']))
 
     x_train = os.path.basename(data_config['x_train_fp'])
     y_train = os.path.basename(data_config['y_train_fp'])
     xs_test = os.path.basename(data_config['x_test_fp'])
     y_pred_fp = '../results/'+os.path.basename(experiment_config['y_pred_fp'])
     
-    X = np.load('../data/{file}'.format(file=x_train), allow_pickle=True)
-    Y = np.load('../data/{file}'.format(file=y_train), allow_pickle=True)
-    XS = np.load('../data/{file}'.format(file=xs_test), allow_pickle=True)
+    X = np.load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=x_train), allow_pickle=True)
+    Y = np.load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=y_train), allow_pickle=True)
+    XS = np.load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=xs_test), allow_pickle=True)
+
 
     #make X the correct dimension, add discreitisation column
     X = [X[:, None, :]]
@@ -45,8 +49,6 @@ def main(data_config, param_config, experiment_config):
     X = [np.expand_dims(X[0][:, :, 0], -1)]
 
     #TODO: ask patrick where these configs should go
-    param_config['max_iter'] = 20000
-    param_config['refresh'] = 100
     param_config['train'] = True
     param_config['restore'] = False
     param_config['model_state_fp'] = os.path.basename(experiment_config['model_state_fp'])
@@ -64,26 +66,29 @@ def main(data_config, param_config, experiment_config):
 
 if __name__ == '__main__':
     #default config
+    model='svgp'
     data_idx = 0
     param_idx = 0
 
     experiment_config = pd.read_csv('../meta/experiment.csv')
 
     #use command line argument if passed
-    if len(sys.argv) == 2:
-        data_idx = int(sys.argv[1])
+    if len(sys.argv) >= 2:
         param_idx = int(sys.argv[1])
+        data_idx = int(sys.argv[2])
 
 
-    with open('../meta/svgp_params.json') as json_file:
+    with open('../meta/model_params.json') as json_file:
         param_config = json.load(json_file)
 
     with open('../meta/data.json') as json_file:
         data_config = json.load(json_file)
 
-    param_config = param_config[param_idx]
+    param_config = param_config[model][param_idx]
     data_config = data_config[data_idx]
-    experiment_config = experiment_config[(experiment_config['param_id'] == param_idx) & (experiment_config['data_id'] == data_idx)].iloc[0]
+    experiment_config = experiment_config[(experiment_config['param_id'] == param_idx) & (experiment_config['data_id'] == data_idx)]
+
+    experiment_config = experiment_config.iloc[0]
 
     main(data_config, param_config, experiment_config)
 
