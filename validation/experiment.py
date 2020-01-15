@@ -95,12 +95,11 @@ class SVGPExperiment(Experiment):
             laqn_id=[0]
         )}
 
-    def get_default_data_config(self):
+    def get_default_data_config(self, n_rolls=1):
         # create dates for rolling over
         train_start = "2019-11-01T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
-        n_rolls = 1
         rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
         data_dir = '../run_model/experiments/{name}/data/'.format(name=self.name)
         data_config = create_data_list(rolls, data_dir)
