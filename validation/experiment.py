@@ -88,6 +88,7 @@ class Experiment(ABC):
         pathlib.Path(exp_dir + 'data').mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'meta').mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'models').mkdir(exist_ok=True)
+        pathlib.Path(exp_dir + 'models/restore').mkdir(exist_ok=True)
 
         # store a list of ModelData objects to validate over
         model_data_list = []
