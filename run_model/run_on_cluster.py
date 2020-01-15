@@ -37,9 +37,6 @@ def main(home_dir="", exp=None):
     #each experiment is defined by a batch of model parameters and a set of validation folds
 
     param_configs = exp.model_params
-    #hack to get working with future experiment file
-    param_configs = {'svgp': param_configs}
-
     data_configs = exp.data_config
 
     #ensure folder for storing cluster files exists
@@ -62,7 +59,7 @@ def main(home_dir="", exp=None):
         "--experiments_folder", experiments_folder,
     ]
 
-    for f_name in f_names :
+    for f_name in f_names:
         call_array.append("--slurm_file")
         call_array.append(f_name)
 
