@@ -61,21 +61,18 @@ class Experiment(ABC):
         """
         Get the default parameters of the model for this experiment.
         """
-        pass
 
     @abstractmethod
     def get_default_data_config(self):
         """
         Get the default data configurations for this experiment.
         """
-        pass
 
     @abstractmethod
     def get_default_experiment_df(self):
         """
         Get all the default experiment configurations.
         """
-        pass
 
 class SVGPExperiment(Experiment):
 
@@ -90,8 +87,8 @@ class SVGPExperiment(Experiment):
 
     def get_default_model_params(self):
         return {'svgp' : create_params_list(
-            lengthscale=[0.1],
-            variance=[0.1],
+            lengthscale=[0.1, 0.5],
+            variance=[0.1, 0.5],
             minibatch_size=[100],
             n_inducing_points=[3000],
             max_iter=[100],
@@ -156,7 +153,7 @@ class SVGPExperiment(Experiment):
 
         return experiment_df
 
-def experiment_from_dir(name, models, cluster_name, experiment_dir='../run_model/experiments/'):
+def experiment_from_dir(name, cluster_name, experiment_dir='../run_model/experiments/'):
     """
     Return an experiment with a name from a directory.
 

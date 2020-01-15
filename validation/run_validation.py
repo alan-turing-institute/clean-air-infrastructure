@@ -61,13 +61,17 @@ def run_svgp_experiment(exp):
         Xs = [x_test[:, None, :]]
         Ys = [y_test]
 
+        print("Xs[0] shape:", Xs[0].shape)
+        print("Ys[0] shape:", Ys[0].shape)
+
         # fit model
         mdl = SVGP_TF1()
-        mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
+        # mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
+        mdl.fit(X, Y, max_iter=1, model_params=model_config, save_model_state=False)
 
         # predict on testing set
         Xs = Xs[0][:, 0, :]
-        print("shape of x test input:", Xs.shape)
+        print(Xs.shape)
         y_mean, y_var = mdl.predict(Xs)
         print("shape of y mean and y var:", y_mean.shape, y_var.shape)
 
@@ -113,10 +117,23 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
             # save config status of the model data object to the data directory
             # model_data.save_config_state(data_dir_path)
 
+            print("x train shape:", model_data.get_training_data_arrays()['X'].shape)
+            print("y train shape:", model_data.get_training_data_arrays()['Y'].shape)
+            print("x test shape:", model_data.get_pred_data_arrays(return_y=True)['X'].shape)
+            print("y test shape:", model_data.get_pred_data_arrays(return_y=True)['Y'].shape)
+            print()
+            print("x test shape without return_y:", model_data.get_pred_data_arrays(return_y=True)['X'].shape)
+            print()
+            if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
+                raise Exception("training X and Y not the same length")
+
+            if model_data.get_pred_data_arrays(return_y=True)['X'].shape[0] != model_data.get_pred_data_arrays(return_y=True)['Y'].shape[0]:
+                raise Exception("testing X and Y not the same length")
+
             # save normalised data to numpy arrays
             np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
             np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])
-            np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays()['X'])
+            np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays(return_y=True)['X'])
             np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
 
     # save experiment dataframe to csv
@@ -167,7 +184,7 @@ if __name__ == "__main__":
 
     # run a local model instead of on the cluster
     elif args.local:
-        exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
+        exp = experiment.experiment_from_dir(args.name, args.cluster)
         run_svgp_experiment(exp)
 
     # no available options
