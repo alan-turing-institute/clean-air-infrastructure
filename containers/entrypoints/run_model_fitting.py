@@ -24,11 +24,11 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("--trainend", type=str, default='2020-01-05T00:00:00',
+    parser.add_argument("--trainend", type=str, default='2019-11-10T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=72,
+    parser.add_argument("--trainhours", type=int, default=240,
                         help="The number of hours to get training data for.")
-    parser.add_argument("--predstart", type=str, default='2020-01-05T00:00:00',
+    parser.add_argument("--predstart", type=str, default='2019-11-10T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
     parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")

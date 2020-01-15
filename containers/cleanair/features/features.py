@@ -6,11 +6,12 @@ from sqlalchemy import func, literal, tuple_, or_
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (IntersectionGeom, IntersectionValue, IntersectionValueDynamic,
-                                LondonBoundary, MetaPoint, UKMap)
+                                MetaPoint, UKMap)
+from ..mixins import DBQueryMixin
 from ..loggers import duration, green, get_logger
 
 
-class Features(DBWriter):
+class Features(DBWriter, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
     def __init__(self, **kwargs):
@@ -48,12 +49,6 @@ class Features(DBWriter):
     def table(self):
         """Either returns an sql table instance or a subquery"""
         raise NotImplementedError("Must be implemented by child classes")
-
-    def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London"""
-        with self.dbcnxn.open_session() as session:
-            hull = session.scalar(func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom)))
-        return hull
 
     def query_meta_points(self, include_sources=None, with_buffers=False):
         """Query MetaPoints, selecting all matching include_sources"""

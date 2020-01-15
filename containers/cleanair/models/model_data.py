@@ -13,10 +13,11 @@ from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQ
                                 LAQNReading, MetaPoint, AQESite,
                                 AQEReading, ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
 from ..databases import DBWriter
+from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 
 
-class ModelData(DBWriter):
+class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
     def __init__(self, config=None, config_dir=None, **kwargs):
@@ -152,6 +153,7 @@ class ModelData(DBWriter):
             ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
+            self.logger.warning("You have selected 'all' features from the database. It is strongly advised that you choose features manually")
         else:
             self.logger.debug("Checking requested features are availble in database")
             self.__check_features_available(config['features'])
@@ -333,11 +335,13 @@ class ModelData(DBWriter):
 
     def __get_interest_points_q(self, sources):
         """Query the database to get all interest points for a given source and return a query object.
-           Excludes LAQN and AQE sites that are closed
+           Excludes LAQN and AQE sites that are closed.
+           Only returns interest points inside of London boundary
         args:
             sources: A list of sources to include
         """
 
+        bounded_geom = self.query_london_boundary()
         base_query_columns = [MetaPoint.id.label('point_id'),
                               MetaPoint.source.label('source'),
                               MetaPoint.location.label('location'),
@@ -350,38 +354,41 @@ class ModelData(DBWriter):
             remaining_sources_q = session.query(*base_query_columns,
                                                 null().label("date_opened"),
                                                 null().label("date_closed"),
-                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]))
+                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]),
+                                                         MetaPoint.location.ST_Within(bounded_geom))
 
             aqe_sources_q = session.query(*base_query_columns,
                                           AQESite.date_opened,
                                           AQESite.date_closed
-                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']))
+                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']),
+                                                                                 MetaPoint.location.ST_Within(bounded_geom))
 
-            laqn_sources_q = session.query(*base_query_columns,
+            laqn_sources_q=session.query(*base_query_columns,
                                            LAQNSite.date_opened,
                                            LAQNSite.date_closed
-                                           ).join(LAQNSite, isouter=True).filter(MetaPoint.source.in_(['laqn']))
+                                           ).join(LAQNSite, isouter = True).filter(MetaPoint.source.in_(['laqn']), 
+                                                                                   MetaPoint.location.ST_Within(bounded_geom))
 
-            all_sources_sq = remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
+            all_sources_sq=remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
 
             # Remove any sources where there is a closing date
-            all_sources_q = session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
+            all_sources_q=session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
 
         return all_sources_q
 
     def __get_interest_point_ids(self, sources):
 
-        interest_point_query = self.__get_interest_points_q(sources)
+        interest_point_query=self.__get_interest_points_q(sources)
 
-        available_interest_points = pd.read_sql(interest_point_query.statement,
+        available_interest_points=pd.read_sql(interest_point_query.statement,
                                                 interest_point_query.session.bind)['point_id'].astype(str).to_numpy().tolist()
 
         return available_interest_points
 
     def __check_interest_points_available(self, interest_points, sources):
 
-        available_interest_points = self.__get_interest_point_ids(sources)
-        unavailable_interest_points = []
+        available_interest_points=self.__get_interest_point_ids(sources)
+        unavailable_interest_points=[]
 
         for point in interest_points:
             if point not in available_interest_points:
