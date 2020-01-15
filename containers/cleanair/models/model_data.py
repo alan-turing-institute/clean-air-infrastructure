@@ -214,15 +214,24 @@ class ModelData(DBWriter):
     @property
     def norm_stats(self):
         """Get the mean and sd used for data normalisation"""
+
         norm_mean = self.training_data_df[self.training_data_df['source']
                                           == self.config['norm_by']][self.config['x_names']].mean(axis=0)
+
         norm_std = self.training_data_df[self.training_data_df['source']
                                          == self.config['norm_by']][self.config['x_names']].std(axis=0)
+
+        # Check for zero variance
+        if norm_std.eq(0).any().any():
+            self.logger.warning("No variance in feature: %s. Setting variance to 1.", norm_std[norm_std == 0].index)
+            norm_std[norm_std == 0] = 1
+
         return norm_mean, norm_std
 
     def __normalise_data(self, data_df):
         """Normalise the x columns"""
         norm_mean, norm_std = self.norm_stats
+
         # Normalise the data
         data_df[self.x_names_norm] = ((data_df[self.config['x_names']] - norm_mean) / norm_std).fillna(value=0.0)
         return data_df
@@ -378,7 +387,8 @@ class ModelData(DBWriter):
                                  .format(unavailable_interest_points))
 
     def list_available_static_features(self):
-        """Return a list of the available static features in the database"""
+        """Return a list of the available static features in the database.
+        """
 
         with self.dbcnxn.open_session() as session:
 
@@ -388,7 +398,10 @@ class ModelData(DBWriter):
                                feature_types_q.session.bind)['feature_name'].tolist()
 
     def list_available_dynamic_features(self):
-        """Return a list of the available dynamic features in the database"""
+        """Return a list of the available dynamic features in the database.
+            Only returns features that are available between
+            self.config['train_start_date'] and self.config['train_end_date'] and between self.config['pred_start_date'] and self.config['pred_end_date']
+        """
 
         with self.dbcnxn.open_session() as session:
 
@@ -409,10 +422,10 @@ class ModelData(DBWriter):
                                feature_types_q.session.bind)['source'].tolist()
 
     def query_sensor_site_info(self, source):
-        """Query the database to get the site info for a datasource (e.g. 'laqn', 'aqe') and return a dataframe
+        """Query the database to get the site info for a datasource(e.g. 'laqn', 'aqe') and return a dataframe
 
         args:
-            source: The sensor source ('laqn' or 'aqe')
+            source: The sensor source('laqn' or 'aqe')
         """
         interest_point_q = self.__get_interest_points(source=[source])
         interest_point_sq = interest_point_q.subquery()
@@ -443,7 +456,7 @@ class ModelData(DBWriter):
 
     def sensor_data_status(self, start_date, end_date, source, species):
         """Return a dataframe which gives the status of sensor readings for a particular source and species between
-        the start_date (inclusive) and end_date.
+        the start_date(inclusive) and end_date.
         """
 
         def categorise(res):
@@ -479,7 +492,7 @@ class ModelData(DBWriter):
 
         def set_instance(group):
             """Categorise each row as an instance, where a instance increments
-            if the difference from the preceeding timestamp is >1h
+            if the difference from the preceeding timestamp is > 1h
             """
 
             group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
@@ -552,7 +565,7 @@ class ModelData(DBWriter):
                     "No interest points were returned from the database. Check requested interest points are valid")
 
             if features_df.empty:
-                return None
+                return features_df
 
             def get_val(x):
                 if len(x) == 1:
@@ -688,7 +701,7 @@ class ModelData(DBWriter):
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
         dynamic_features = self.select_dynamic_features(start_date, end_date, features, sources, point_ids)
 
-        if not dynamic_features:
+        if dynamic_features.empty:
             self.logger.warning(
                 "No dynamic features were returned from the database. If dynamic features were not requested then ignore.")
             return static_features_expand
@@ -724,6 +737,7 @@ class ModelData(DBWriter):
                               readings,
                               on=['point_id', 'measurement_start_utc', 'epoch', 'source'],
                               how='left')
+
         return model_data
 
     def get_pred_data_inputs(self):
@@ -756,7 +770,6 @@ class ModelData(DBWriter):
                          sources, species, start_date, end_date)
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
-
         # all_features.to_csv('/secrets/satdata.csv')
 
         with self.dbcnxn.open_session() as session:
@@ -764,7 +777,6 @@ class ModelData(DBWriter):
             sat_site_map_q = session.query(SatelliteDiscreteSite)
             sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
                                                                    SatelliteForecastReading.measurement_start_utc < end_date)
-
         sat_site_map_df = pd.read_sql(sat_site_map_q.statement, sat_site_map_q.session.bind)
 
         # Convert uuid to strings to allow merge
@@ -776,7 +788,6 @@ class ModelData(DBWriter):
 
         # Get satellite data
         satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
-
         return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
