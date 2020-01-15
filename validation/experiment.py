@@ -14,7 +14,10 @@ import temporal
 
 # requires cleanair
 sys.path.append("../containers")
-from cleanair.models import ModelData
+try:
+    from cleanair.models import ModelData
+except:
+    pass
 
 class Experiment(ABC):
 
