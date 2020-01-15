@@ -66,8 +66,7 @@ def run_svgp_experiment(exp):
 
         # fit model
         mdl = SVGP_TF1()
-        # mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
-        mdl.fit(X, Y, max_iter=1, model_params=model_config, save_model_state=False)
+        mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
 
         # predict on testing set
         Xs = Xs[0][:, 0, :]
