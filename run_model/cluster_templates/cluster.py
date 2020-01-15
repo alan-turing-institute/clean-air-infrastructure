@@ -1,7 +1,9 @@
 """
     Run experiments on clusters
 """
-class Cluster():
+from abc import ABC, abstractmethod
+
+class Cluster(ABC):
     """
         Organise all available clusters
     """
@@ -15,25 +17,39 @@ class Cluster():
         self.ssh_key = None
         self.defaults = {}
         self.template = None
+        self.home_dir = ''
 
+    @abstractmethod
     def get_default_params(self):
-        pass
+        """
+            Get default cluster parameters
+        """
 
+
+    @abstractmethod
     def get_max_params(self):
-        pass
+        """
+            Each cluster has a maximum on the number of resources available. This returns them.
+        """
 
     def load_template_file(self):
+        """
+            Load the slurm batch template file.
+        """
         template = None
 
         with open(self.slurm_template, 'r') as file_name:
             template = file_name.read()
-        
+
         self.template = template
 
-    def ensure_last_backslash(self, s):
-        if s[-1] is not '/':
-            return s+'/'
-        return s
+    def ensure_last_backslash(self, dir_str):
+        """
+            Ensure directory ends in a backslash
+        """
+        if dir_str[-1] is not '/':
+            return dir_str+'/'
+        return dir_str
 
     def list_to_str(self, arr, fill=' '):
         """
@@ -51,18 +67,21 @@ class Cluster():
         return list_str
 
     def ensure_config_defaults(self, config):
+        """
+            Fill in missing parameters in config with the default parameters
+        """
         for k in self.defaults:
             if k not in config:
                 config[k] = self.defaults[k]
         return config
 
     def check_config_max_settings(self):
+        """
+            Make sure current configurations do not exceed the max
+        """
         pass
 
-    def get_template(self, home_dir, parallel_args_names, parallel_args_ids, _configs):
-        pass
-
-    def create_batch_from_template(self, file_name, file_inputs):
+    def create_batch_from_template(self, file_name, file_inputs, job_name, log_name):
         """
             Creates the batch/slurm script that will run the experiments on the cluster
         """
@@ -81,6 +100,9 @@ class Cluster():
         return template
 
     def get_batches(self, param_configs, data_configs):
+        """
+            Each experiment run will have its own batch script, one for each combination in param_configs and data_configs.
+        """
         batches = []
         for d_id, _ in enumerate(data_configs):
             for model in param_configs:
@@ -102,7 +124,26 @@ class Cluster():
         with open(name, 'w') as f:
             f.write(script)
 
+    def create_batch_scripts(self, param_configs, data_configs):
+        """
+            Generate, save and return the batch scripts to run the experiment
+        """
+        #get batch scripts
+        self.load_template_file()
+        batches = self.get_batches(param_configs, data_configs)
+
+        names = []
+        #save to files
+        for f_name, script in batches:
+            self.save_batch(f_name, script)
+            names.append(f_name)
+
+        return names
+
 class Orac(Cluster):
+    """
+        Orac cluster run by Warwick
+    """
     def __init__(self):
         Cluster.__init__(self)
         self.slurm_template = 'cluster_templates/batch_script_template.sh'
@@ -111,12 +152,15 @@ class Orac(Cluster):
         self.ssh_key = '.ssh/ollie_rsa'
 
     def get_default_params(self):
-        pass
+        return {}
 
     def get_max_params(self):
-        pass
+        return {}
 
 class Pearl(Cluster):
+    """
+        Pearl Cluster
+    """
     def __init__(self):
         Cluster.__init__(self)
         self.slurm_template = 'cluster_templates/batch_script_pearl_template.sh'
@@ -129,7 +173,7 @@ class Pearl(Cluster):
             'cpus': 1,
             'gpus': 1,
             'nodes': 1,
-            'time': '00:10:00',
+            'time': '00:30:00',
             'memory': 4571
         }
 
@@ -141,6 +185,12 @@ class Pearl(Cluster):
             'time': '00:10:00',
             'memory': 4571
         }
+
+    def get_default_params(self):
+        return self.defaults
+
+    def get_max_params(self):
+        return self.max_configs
 
     def setup(self, base_name, home_dir, cluster_config):
         self.base_name = base_name
@@ -170,16 +220,5 @@ class Pearl(Cluster):
 
         return template
 
-    def create_batch_scripts(self, param_configs, data_configs):
-        #get batch scripts
-        self.load_template_file()
-        batches = self.get_batches(param_configs, data_configs)
 
-        names = []
-        #save to files
-        for f_name, script in batches:
-            self.save_batch(f_name, script)
-            names.append(f_name)
-
-        return names
 
