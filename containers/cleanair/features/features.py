@@ -124,23 +124,23 @@ class Features(DBWriter):
                                                                   sq_geometries.c.geom)).subquery()
 
             # Group these by interest point, unioning geometries: [Npoints records]
-            q_intersections = session.query(sq_within.c.id,
-                                            literal(feature_name).label("feature_name"),
-                                            *[func.ST_ForceCollection(
-                                                func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
-                                                .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
-                                            ).label("geom_{}".format(radius))
-                                                for radius in self.buffer_radii_metres]
-                                            ).group_by(sq_within.c.id)  # .subquery()
+            sq_intersections = session.query(sq_within.c.id,
+                                             literal(feature_name).label("feature_name"),
+                                             *[func.ST_ForceCollection(
+                                                 func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
+                                                 .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
+                                             ).label("geom_{}".format(radius))
+                                                 for radius in self.buffer_radii_metres]
+                                             ).group_by(sq_within.c.id).subquery()
 
-        #     # Join with meta points to ensure every meta point gets an entry,
-        #     # even if there is no intersection in the buffer
-        #     q_intersections = session.query(sq_metapoints.c.id,
-        #                                     literal(feature_name).label("feature_name"),
-        #                                     *[getattr(sq_intersections.c, "geom_{}".format(radius))
-        #                                       for radius in self.buffer_radii_metres]
-        #                                     ).join(sq_intersections,
-        #                                            sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
+            # Join with meta points to ensure every meta point gets an entry,
+            # even if there is no intersection in the buffer
+            q_intersections = session.query(sq_metapoints.c.id,
+                                            literal(feature_name).label("feature_name"),
+                                            *[getattr(sq_intersections.c, "geom_{}".format(radius))
+                                              for radius in self.buffer_radii_metres]
+                                            ).join(sq_intersections,
+                                                   sq_intersections.c.id == sq_metapoints.c.id, isouter=True)
 
         # print(sq_intersections.statement.compile(compile_kwargs={"literal_binds": True}))
         # quit()
