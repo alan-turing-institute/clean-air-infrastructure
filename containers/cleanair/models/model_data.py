@@ -156,7 +156,7 @@ class ModelData(DBWriter, DBQueryMixin):
             self.logger.warning("You have selected 'all' features from the database. It is strongly advised that you choose features manually")
         else:
             self.logger.debug("Checking requested features are availble in database")
-            self.__check_features_available(config['features'])
+            self.__check_features_available(config['features'], config['train_start_date'], config['pred_end_date'])
 
         # Check training sources are available
         train_sources = config['train_sources']
@@ -207,8 +207,9 @@ class ModelData(DBWriter, DBQueryMixin):
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
-
-        config['feature_names'] = ["".join(feature.split("_", 2)[2:]) for feature in config['features']]
+            config['feature_names'] = feature_names
+        else: 
+            config['feature_names'] = list(set(["".join(feature.split("_", 2)[2:]) for feature in config['features']]))
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
         return config
@@ -299,11 +300,11 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
 
-    def __check_features_available(self, features):
+    def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
         available_features = self.list_available_static_features(
-        ) + self.list_available_dynamic_features(self.config['train_start_date'], self.config['pred_end_date'])
+        ) + self.list_available_dynamic_features(start_date, end_date)
         unavailable_features = []
 
         for feature in features:
