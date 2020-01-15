@@ -8,6 +8,8 @@ import json
 import pandas as pd
 import numpy as np
 import itertools
+import pathlib
+import os
 
 # validation modules
 import temporal
@@ -74,6 +76,69 @@ class Experiment(ABC):
         Get all the default experiment configurations.
         """
 
+    def setup(self, base_dir='../run_model/experiments/', secret_fp="../terraform/.secrets/db_secrets.json"):
+        """
+        Given an experiment create directories, data and files.
+        """
+        # create directories if they don't exist
+        exp_dir = base_dir + self.name + '/'
+        pathlib.Path(base_dir).mkdir(exist_ok=True)
+        pathlib.Path(exp_dir).mkdir(exist_ok=True)
+        pathlib.Path(exp_dir + 'results').mkdir(exist_ok=True)
+        pathlib.Path(exp_dir + 'data').mkdir(exist_ok=True)
+        pathlib.Path(exp_dir + 'meta').mkdir(exist_ok=True)
+        pathlib.Path(exp_dir + 'models').mkdir(exist_ok=True)
+
+        # store a list of ModelData objects to validate over
+        model_data_list = []
+
+        # create ModelData objects for each roll
+        for index, row in self.experiment_df.iterrows():
+            data_id = row['data_id']
+            data_config = self.data_config[data_id]
+
+            # If the numpy files do not exist locally
+            if not numpy_files_exist(data_config):
+                # make new directory for data
+                data_dir_path = exp_dir + 'data/data{id}'.format(id=data_id)
+                pathlib.Path(data_dir_path).mkdir(exist_ok=True)
+
+                # Get the model data and append to list
+                model_data = ModelData(config=data_config, secretfile=secret_fp)
+                model_data_list.append(model_data)
+
+                # save config status of the model data object to the data directory
+                # model_data.save_config_state(data_dir_path)
+
+                print("x train shape:", model_data.get_training_data_arrays()['X'].shape)
+                print("y train shape:", model_data.get_training_data_arrays()['Y'].shape)
+                print("x test shape:", model_data.get_pred_data_arrays(return_y=True)['X'].shape)
+                print("y test shape:", model_data.get_pred_data_arrays(return_y=True)['Y'].shape)
+                print()
+                print("x test shape without return_y:", model_data.get_pred_data_arrays(return_y=True)['X'].shape)
+                print()
+                if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
+                    raise Exception("training X and Y not the same length")
+
+                if model_data.get_pred_data_arrays(return_y=True)['X'].shape[0] != model_data.get_pred_data_arrays(return_y=True)['Y'].shape[0]:
+                    raise Exception("testing X and Y not the same length")
+
+                # save normalised data to numpy arrays
+                np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
+                np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])
+                np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays(return_y=True)['X'])
+                np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(return_y=True)['Y'])
+
+        # save experiment dataframe to csv
+        self.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
+
+        # save data and params configs to json
+        with open(exp_dir + 'meta/data.json', 'w') as fp:
+            json.dump(self.data_config, fp, indent=4)
+
+        with open(exp_dir + 'meta/model_params.json', 'w') as fp:
+            json.dump(self.model_params, fp, indent=4)
+
 class SVGPExperiment(Experiment):
 
     def __init__(self, experiment_name, cluster_name, **kwargs):
@@ -90,7 +155,7 @@ class SVGPExperiment(Experiment):
             lengthscale=[0.1, 0.5],
             variance=[0.1, 0.5],
             minibatch_size=[100],
-            n_inducing_points=[3000],
+            n_inducing_points=[30],
             max_iter=[100],
             refresh=[10],
             train=[True],
@@ -141,15 +206,12 @@ class SVGPExperiment(Experiment):
                 r.model_name, r.param_id, r.data_id
             ) + '_y_pred.npy' for r in experiment_df.itertuples()])
 
-        # experiment_df['y_var_fp'] = pd.Series([
-        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
-        #         r.models, r.param_id, r.data_id
-        #     ) + 'y_var.npy' for r in experiment_df.itertuples()])
 
-        # experiment_df['model_state_fp'] = pd.Series([
-        #     experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
-        #         r.models, r.param_id, r.data_id
-        #     ) + '.model' for r in experiment_df.itertuples()])
+
+        experiment_df['model_state_fp'] = pd.Series([
+            experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+                r.model_name, r.param_id, r.data_id
+            ) + '.model' for r in experiment_df.itertuples()])
 
         return experiment_df
 
@@ -337,3 +399,11 @@ def create_params_list(**kwargs):
     for i in range(len(params_list)):
         params_list[i]['id'] = i
     return params_list
+
+def numpy_files_exist(data_config):
+    return (
+        os.path.exists(data_config['x_train_fp'])
+        and os.path.exists(data_config['y_train_fp'])
+        and os.path.exists(data_config['x_test_fp'])
+        and os.path.exists(data_config['y_test_fp'])
+    )

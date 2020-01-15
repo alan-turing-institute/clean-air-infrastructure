@@ -75,4 +75,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     exp = experiment.SVGPExperiment('svgp_test', 'pearl')
+    exp.setup(base_dir='experiments/')
     main(home_dir=args.dir_home, exp=exp)
