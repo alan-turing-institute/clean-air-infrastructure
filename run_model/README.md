@@ -77,7 +77,9 @@ if __name__ == '__main__':
 
 # Run on cluster
 
-To run models on the cluster run `sudo python run_on_cluster.py`. 
+To run models on the cluster run `sudo python run_on_cluster.py -d ~`. 
+
+The flag `-d ~` defines the home directory inside run_on_cluster.py. Needed because it gets reset by sudo.
 
 @TODO: sudo is required on my machine, check why.
 
@@ -88,9 +90,9 @@ Within `run_on_cluster.py` there are two configuration dicts. In here the desire
 
 # Check status
 
-Run `sudo python check_cluster.py`. This will use the same configs as defined in `run_on_cluster.py`. 
+Run `sudo python check_cluster.py -d ~`. This will use the same configs as defined in `run_on_cluster.py`. 
 
 
 # Get results
 
-Run `sudo python get_cluster_results.py.py`. This will use the same configs as defined in `run_on_cluster.py` and will store the results in `cluster/` with the current datetime prefixed.
+Run `sudo python get_cluster_results.py.py -d ~`. This will use the same configs as defined in `run_on_cluster.py` and will store the results in `cluster/` with the current datetime prefixed.
