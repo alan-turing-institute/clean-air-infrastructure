@@ -145,7 +145,8 @@ class ModelData(DBWriter):
 
         # Check requested features are available
         if config['features'] == 'all':
-            features = self.list_available_static_features() + self.list_available_dynamic_features()
+            features = self.list_available_static_features(
+            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
         else:
@@ -196,7 +197,8 @@ class ModelData(DBWriter):
             config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
-            feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
+            feature_names = self.list_available_static_features(
+            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
@@ -295,7 +297,8 @@ class ModelData(DBWriter):
     def __check_features_available(self, features):
         """Check that all requested features exist in the database"""
 
-        available_features = self.list_available_static_features() + self.list_available_dynamic_features()
+        available_features = self.list_available_static_features(
+        ) + self.list_available_dynamic_features(self.config['train_start_date'], self.config['pred_end_date'])
         unavailable_features = []
 
         for feature in features:
@@ -396,22 +399,34 @@ class ModelData(DBWriter):
             return pd.read_sql(feature_types_q.statement,
                                feature_types_q.session.bind)['feature_name'].tolist()
 
-    def list_available_dynamic_features(self):
+    def list_available_dynamic_features(self, start_date, end_date):
         """Return a list of the available dynamic features in the database.
-            Only returns features that are available between
-            self.config['train_start_date'] and self.config['train_end_date'] and between self.config['pred_start_date'] and self.config['pred_end_date']
+            Only returns features that are available between start_date and end_date 
         """
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(IntersectionValueDynamic.feature_name) \
-                                     .distinct(IntersectionValueDynamic.feature_name)
+            feature_types_q = session.query(IntersectionValueDynamic.feature_name,
+                                            func.min(IntersectionValueDynamic.measurement_start_utc),
+                                            func.max(IntersectionValueDynamic.measurement_start_utc)).group_by(IntersectionValueDynamic.feature_name)
 
             available_features = pd.read_sql(feature_types_q.statement,
-                                             feature_types_q.session.bind)['feature_name'].tolist()
+                                             feature_types_q.session.bind)  # ['feature_name'].tolist()
 
+            # Check if dynamic features are available between the requested dates. If not they are not returned.
 
-            return available_features
+            available_features['is_available'] = (available_features['min_1'] <= start_date) & (
+                available_features['max_1'] >= end_date)
+
+            if not available_features['is_available'].all():
+
+                not_available = available_features[available_features['is_available'] == False]['feature_name'].tolist()
+                self.logger.warning(
+                    "The following dynamic features were not available during the time you requested: %s", not_available)
+
+            available = available_features[available_features['is_available'] == True]['feature_name'].tolist()
+
+            return available
 
     def list_available_sources(self):
         """Return a list of the available interest point sources in a database"""

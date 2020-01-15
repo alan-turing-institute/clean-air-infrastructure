@@ -54,14 +54,15 @@ def main():
                     'pred_start_date': pred_start,
                     'pred_end_date': pred_end,
 
-                    'include_satellite': True,
+                    'include_satellite': False,
+                    'include_prediction_y': False,
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
                     'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['value_1000_avg_ratio_avg'],
+                    'features': 'all',
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -76,14 +77,16 @@ def main():
     model_data = ModelData(config=model_config, **kwargs)
 
     model_data.save_config_state('/secrets/test/')
+
     # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
-    print(training_data_dict['X_sat'])
-    print(training_data_dict['Y_sat'])
+    # print(training_data_dict['X_train'])
+    # print(training_data_dict['Y_train'])
+    # print(training_data_dict['Y_sat'])
 
     # Fit the model
     model_fitter = SVGP()
