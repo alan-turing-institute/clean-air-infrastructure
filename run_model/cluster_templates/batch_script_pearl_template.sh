@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-#SBATCH --job-name=o_pearl
-#SBATCH --output=result.txt
+#SBATCH --job-name=<JOB_NAME>
+#SBATCH --output=<LOG_NAME>
 #
 #SBATCH --nodes=<NODES>
 #SBATCH --ntasks=<CPUS>
