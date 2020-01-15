@@ -1,10 +1,9 @@
 """
 Vizualise available sensor data for a model fit
 """
-import pandas as pd
-import numpy as np
 import json
 import os
+import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -64,10 +63,10 @@ class ModelData(DBWriter):
             self.config = self.generate_full_config(config)
 
             # Get training and prediciton data frames
-            self.training_data_df = self.get_training_data_inputs(satellite=False)
+            self.training_data_df = self.get_training_data_inputs()
             self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
-            self.pred_data_df = self.get_pred_data_inputs(satellite=False)
+            self.pred_data_df = self.get_pred_data_inputs()
             self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
             # Process satellite data
@@ -696,7 +695,7 @@ class ModelData(DBWriter):
                                                                               'lon',
                                                                               'lat'])
 
-    def get_training_data_inputs(self, satellite):
+    def get_training_data_inputs(self):
         """
         Query the database to get inputs for model fitting.
         """
@@ -723,7 +722,7 @@ class ModelData(DBWriter):
                               how='left')
         return model_data
 
-    def get_pred_data_inputs(self, satellite):
+    def get_pred_data_inputs(self):
         """Query the database for inputs for model prediction"""
 
         start_date = self.config['pred_start_date']
@@ -741,7 +740,7 @@ class ModelData(DBWriter):
         return all_features
 
     def get_training_satellite_inputs(self):
-
+        """Get satellite inputs"""
         start_date = self.config['train_start_date']
         end_date = self.config['train_end_date']
         sources = ['satellite']
@@ -753,16 +752,13 @@ class ModelData(DBWriter):
                          sources, species, start_date, end_date)
 
         all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
-
-        all_features.to_csv('/secrets/satdata.csv')
-        quit()
+        # all_features.to_csv('/secrets/satdata.csv')
 
         with self.dbcnxn.open_session() as session:
 
             sat_site_map_q = session.query(SatelliteDiscreteSite)
             sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
                                                                    SatelliteForecastReading.measurement_start_utc < end_date)
-
         sat_site_map_df = pd.read_sql(sat_site_map_q.statement, sat_site_map_q.session.bind)
 
         # Convert uuid to strings to allow merge
@@ -774,7 +770,6 @@ class ModelData(DBWriter):
 
         # Get satellite data
         satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
-
         return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
