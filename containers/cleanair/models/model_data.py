@@ -233,16 +233,14 @@ class ModelData(DBWriter):
         norm_mean, norm_std = self.norm_stats
 
         # Normalise the data
-        data_df[self.x_names_norm] = ((data_df[self.config['x_names']] - norm_mean) / norm_std).fillna(value=0.0)
+        data_df[self.x_names_norm] = ((data_df[self.config['x_names']] - norm_mean) / norm_std)
+        
         return data_df
 
-    def __get_model_data_arrays(self, data_df, return_y, dropna=True, y_names=None):
+    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
         """Return a dictionary of data arrays for model fitting.
         The returned dictionary includes and index to allow model predictions
         to be appended to dataframes (required when dropna is used)"""
-
-        if y_names is None:
-            y_names = self.y_names.copy()
 
         if return_y:
             data_subset = data_df[self.x_names_norm + self.config['species']]
@@ -283,15 +281,14 @@ class ModelData(DBWriter):
         """
         return self.__get_model_data_arrays(self.normalised_training_data_df, return_y=True, dropna=dropna)
 
-    def get_pred_data_arrays(self, return_y=False, dropna=True, y_names=None):
+    def get_pred_data_arrays(self, return_y=False, dropna=True):
         """The the pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
-            y_names: List of species to filter. A subset of self.y_names.
         """
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=return_y, dropna=dropna, y_names=y_names)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=return_y, dropna=dropna)
 
     def __check_features_available(self, features):
         """Check that all requested features exist in the database"""
