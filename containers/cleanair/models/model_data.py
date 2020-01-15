@@ -139,10 +139,12 @@ class ModelData(DBWriter):
         valid_models = ['svgp', ]
 
         self.logger.info("Validating config")
-        # Check required config keys present
 
-        if set(config.keys()).issubset(set(config_keys)):
-            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
+        # Check required config keys present
+        if not set(config.keys()).issubset(set(config_keys)):
+            missing_keys = [key for key in config_keys if key not in config.keys()]
+            raise AttributeError(
+                "Config dictionary does not contain correct keys. Must contain {}".format(missing_keys))
 
         # Check requested features are available
         if config['features'] == 'all':
@@ -293,7 +295,7 @@ class ModelData(DBWriter):
         if self.config['include_prediction_y']:
             return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=True, dropna=dropna)
 
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, dropna=dropna)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
 
     def __check_features_available(self, features):
         """Check that all requested features exist in the database"""
