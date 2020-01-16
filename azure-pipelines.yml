@@ -12,8 +12,8 @@ stages:
 - stage: Build
   displayName: Build Docker images
   jobs:
-  - job: Build
-    displayName: Build job
+  - job: Run scripts
+    displayName: Run scripts
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -23,7 +23,17 @@ stages:
         echo Add other tasks to build, test, and deploy your project.
         echo See https://aka.ms/yaml
       displayName: 'Run a multi-line script'
-
+    - job: Build
+    displayName: Build job
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
 
 
 # trigger:
