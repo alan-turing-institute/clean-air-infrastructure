@@ -2,8 +2,6 @@ language: python
 
 install:
   - pip install -r containers/requirements.txt
-  - curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
-  - helm init --client-only
 
 services:
   - docker
