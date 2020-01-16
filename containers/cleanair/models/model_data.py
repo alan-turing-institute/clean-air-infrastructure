@@ -149,11 +149,12 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Check requested features are available
         if config['features'] == 'all':
-            features = self.list_available_static_features(
-            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+            features = self.get_available_static_features(output_type='list'
+                                                          ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
-            self.logger.warning("You have selected 'all' features from the database. It is strongly advised that you choose features manually")
+            self.logger.warning(
+                "You have selected 'all' features from the database. It is strongly advised that you choose features manually")
         else:
             self.logger.debug("Checking requested features are availble in database")
             self.__check_features_available(config['features'], config['train_start_date'], config['pred_end_date'])
@@ -202,13 +203,13 @@ class ModelData(DBWriter, DBQueryMixin):
             config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
-            feature_names = self.list_available_static_features(
-            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+            feature_names = self.get_available_static_features(output_type='list'
+                                                               ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
             config['feature_names'] = feature_names
-        else: 
+        else:
             config['feature_names'] = list(set(["".join(feature.split("_", 2)[2:]) for feature in config['features']]))
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
@@ -303,8 +304,8 @@ class ModelData(DBWriter, DBQueryMixin):
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.list_available_static_features(
-        ) + self.list_available_dynamic_features(start_date, end_date)
+        available_features = self.get_available_static_features(output_type='list'
+                                                                ) + self.list_available_dynamic_features(start_date, end_date)
         unavailable_features = []
 
         for feature in features:
@@ -323,7 +324,7 @@ class ModelData(DBWriter, DBQueryMixin):
             sources: A list of sources
         """
 
-        available_sources = self.list_available_sources()
+        available_sources = self.get_available_sources(output_type='list')
         unavailable_sources = []
 
         for source in sources:
@@ -334,62 +335,14 @@ class ModelData(DBWriter, DBQueryMixin):
             raise AttributeError("The following sources are not available the cleanair database: {}"
                                  .format(unavailable_sources))
 
-    def __get_interest_points_q(self, sources):
-        """Query the database to get all interest points for a given source and return a query object.
-           Excludes LAQN and AQE sites that are closed.
-           Only returns interest points inside of London boundary
-        args:
-            sources: A list of sources to include
-        """
-
-        bounded_geom = self.query_london_boundary()
-        base_query_columns = [MetaPoint.id.label('point_id'),
-                              MetaPoint.source.label('source'),
-                              MetaPoint.location.label('location'),
-                              func.ST_X(MetaPoint.location).label('lon'),
-                              func.ST_Y(MetaPoint.location).label('lat')
-                              ]
-
-        with self.dbcnxn.open_session() as session:
-
-            remaining_sources_q = session.query(*base_query_columns,
-                                                null().label("date_opened"),
-                                                null().label("date_closed"),
-                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]),
-                                                         MetaPoint.location.ST_Within(bounded_geom))
-
-            aqe_sources_q = session.query(*base_query_columns,
-                                          AQESite.date_opened,
-                                          AQESite.date_closed
-                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']),
-                                                                                 MetaPoint.location.ST_Within(bounded_geom))
-
-            laqn_sources_q=session.query(*base_query_columns,
-                                           LAQNSite.date_opened,
-                                           LAQNSite.date_closed
-                                           ).join(LAQNSite, isouter = True).filter(MetaPoint.source.in_(['laqn']), 
-                                                                                   MetaPoint.location.ST_Within(bounded_geom))
-
-            all_sources_sq=remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
-
-            # Remove any sources where there is a closing date
-            all_sources_q=session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
-
-        return all_sources_q
-
     def __get_interest_point_ids(self, sources):
 
-        interest_point_query=self.__get_interest_points_q(sources)
-
-        available_interest_points=pd.read_sql(interest_point_query.statement,
-                                                interest_point_query.session.bind)['point_id'].astype(str).to_numpy().tolist()
-
-        return available_interest_points
+        return self.get_available_interest_points(sources, output_type='df')['point_id'].astype(str).to_numpy().tolist()
 
     def __check_interest_points_available(self, interest_points, sources):
 
-        available_interest_points=self.__get_interest_point_ids(sources)
-        unavailable_interest_points=[]
+        available_interest_points = self.__get_interest_point_ids(sources)
+        unavailable_interest_points = []
 
         for point in interest_points:
             if point not in available_interest_points:
@@ -398,17 +351,6 @@ class ModelData(DBWriter, DBQueryMixin):
         if unavailable_interest_points:
             raise AttributeError("The following interest points are not available the cleanair database: {}"
                                  .format(unavailable_interest_points))
-
-    def list_available_static_features(self):
-        """Return a list of the available static features in the database.
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
-
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)['feature_name'].tolist()
 
     def list_available_dynamic_features(self, start_date, end_date):
         """Return a list of the available dynamic features in the database.
@@ -439,132 +381,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
             return available
 
-    def list_available_sources(self):
-        """Return a list of the available interest point sources in a database"""
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(MetaPoint.source).distinct(MetaPoint.source)
-
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)['source'].tolist()
-
-    def query_sensor_site_info(self, source):
-        """Query the database to get the site info for a datasource(e.g. 'laqn', 'aqe') and return a dataframe
-
-        args:
-            source: The sensor source('laqn' or 'aqe')
-        """
-        interest_point_q = self.__get_interest_points(source=[source])
-        interest_point_sq = interest_point_q.subquery()
-
-        if source == 'laqn':
-            INFOSite = LAQNSite
-        elif source == 'aqe':
-            INFOSite = AQESite
-
-        with self.dbcnxn.open_session() as session:
-
-            join_info_site_q = session.query(interest_point_sq,
-                                             INFOSite.site_code,
-                                             INFOSite.date_opened,
-                                             INFOSite.date_closed).join(INFOSite, isouter=True)
-
-            interest_point_join_df = pd.read_sql(join_info_site_q.statement,
-                                                 join_info_site_q.session.bind)
-
-            interest_point_join_df['point_id'] = interest_point_join_df['point_id'].astype(str)
-            interest_point_df = interest_point_join_df.groupby(['point_id',
-                                                                'source',
-                                                                'lon',
-                                                                'lat']).agg({'date_opened': 'min',
-                                                                             'date_closed': 'max'}).reset_index()
-
-            return interest_point_df
-
-    def sensor_data_status(self, start_date, end_date, source, species):
-        """Return a dataframe which gives the status of sensor readings for a particular source and species between
-        the start_date(inclusive) and end_date.
-        """
-
-        def categorise(res):
-            if not res['open']:
-                status = 'Closed'
-            elif res['open'] and not res['missing_reading']:
-                status = 'OK'
-            else:
-                status = 'Missing'
-            return status
-
-        # Get interest points with site open and site closed dates and then expand with time
-        interest_point_df = self.query_sensor_site_info(source=source)
-        time_df_merged = self.__expand_time(start_date, end_date, interest_point_df)
-
-        # Check if an interest_point was open at all times
-        time_df_merged['open'] = (
-            (time_df_merged['date_opened'] <= time_df_merged['measurement_start_utc']) &
-            ((time_df_merged['measurement_start_utc'] < time_df_merged['date_closed']) | pd.isnull(
-                time_df_merged['date_closed']))
-        )
-
-        # Merge sensor readings onto interst points
-        sensor_readings = self.__get_sensor_readings(start_date, end_date, sources=[source], species=[species])
-        time_df_merged = pd.merge(
-            time_df_merged, sensor_readings, how='left', on=[
-                'point_id', 'measurement_start_utc', 'epoch', 'source'])
-        time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
-
-        # Categorise as either OK (has a reading), closed (sensor closed)
-        # or missing (no data in database even though sensor is open)
-        time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)
-
-        def set_instance(group):
-            """Categorise each row as an instance, where a instance increments
-            if the difference from the preceeding timestamp is > 1h
-            """
-
-            group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
-            group.at[group.index[0], 'offset_time'] = 1.
-            group['instance'] = (group['offset_time'].astype(int) - 1).apply(lambda x: min(1, x)).cumsum()
-            return group
-
-        time_df_merged_instance = time_df_merged.groupby(['point_id', 'category']).apply(set_instance)
-        time_df_merged_instance['measurement_end_utc'] = (time_df_merged_instance['measurement_start_utc'] +
-                                                          pd.DateOffset(hours=1))
-
-        # Group consecutive readings of same category
-        time_df_merged_instance = time_df_merged_instance.groupby(['point_id', 'category', 'instance']) \
-            .agg({'measurement_start_utc': 'min', 'measurement_end_utc': 'max'}) \
-            .reset_index()
-
-        return time_df_merged_instance
-
-    @staticmethod
-    def show_vis(sensor_status_df, title='Sensor data'):
-        """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
-
-        gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
-            columns={'point_id': 'Task',
-                     'measurement_start_utc': 'Start',
-                     'measurement_end_utc': 'Finish',
-                     'category': 'Resource'})
-
-        # Create the gant chart
-        colors = dict(OK='#76BA63',
-                      Missing='#BA6363',
-                      Closed='#828282',)
-
-        fig = ff.create_gantt(
-            gant_df,
-            group_tasks=True,
-            colors=colors,
-            index_col='Resource',
-            show_colorbar=True,
-            showgrid_x=True,
-            bar_width=0.38)
-        fig['layout'].update(autosize=True, height=10000, title=title)
-        fig.show()
-
     def __select_features(self, feature_table, features, sources, point_ids, start_date=None, end_date=None):
         """Query features from the database. Returns a pandas dataframe if values returned, else returns None"""
 
@@ -576,9 +392,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 feature_query = feature_query.filter(feature_table.measurement_start_utc >= start_date,
                                                      feature_table.measurement_start_utc < end_date)
 
-            interest_point_query = self.__get_interest_points_q(sources)
-
-            # interest_point_query = interest_point_query.filter(MetaPoint.id.in_(point_ids))
+            interest_point_query = self.get_available_interest_points(sources)
 
             # Select into into dataframes
             features_df = pd.read_sql(feature_query.statement,
@@ -656,30 +470,6 @@ class ModelData(DBWriter, DBQueryMixin):
         time_df_merged['epoch'] = time_df_merged['measurement_start_utc'].apply(lambda x: x.timestamp())
         return time_df_merged
 
-    def __get_laqn_readings(self, start_date, end_date):
-
-        with self.dbcnxn.open_session() as session:
-            query = session.query(LAQNReading.measurement_start_utc,
-                                  LAQNReading.species_code,
-                                  LAQNReading.value,
-                                  LAQNSite.point_id,
-                                  literal('laqn').label('source')).join(LAQNSite)
-            query = query.filter(LAQNReading.measurement_start_utc >= start_date,
-                                 LAQNReading.measurement_start_utc < end_date)
-            return query
-
-    def __get_aqe_readings(self, start_date, end_date):
-
-        with self.dbcnxn.open_session() as session:
-            query = session.query(AQEReading.measurement_start_utc,
-                                  AQEReading.species_code,
-                                  AQEReading.value,
-                                  AQESite.point_id,
-                                  literal('aqe').label('source')).join(AQESite)
-            query = query.filter(AQEReading.measurement_start_utc >= start_date,
-                                 AQEReading.measurement_start_utc < end_date)
-            return query
-
     def __get_sensor_readings(self, start_date, end_date, sources, species):
         """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
 
@@ -691,16 +481,14 @@ class ModelData(DBWriter, DBQueryMixin):
 
         sensor_dfs = []
         if 'laqn' in sources:
-            sensor_q = self.__get_laqn_readings(start_date_, end_date_)
-            laqn_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            laqn_sensor_data = self.get_laqn_readings(start_date_, end_date_, output_type='df')
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
                 raise AttributeError(
                     "No laqn sensor data was retrieved from the database. Check data exists for the requested dates")
 
         if 'aqe' in sources:
-            sensor_q = self.__get_aqe_readings(start_date_, end_date_)
-            aqe_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            aqe_sensor_data = self.get_aqe_readings(start_date_, end_date_, output_type='df')
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
                 raise AttributeError(
