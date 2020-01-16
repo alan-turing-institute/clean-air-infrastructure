@@ -130,7 +130,7 @@ class Features(DBWriter):
                                                  func.ST_Collect(getattr(sq_within.c, "intst_{}".format(radius)))
                                                  .filter(getattr(sq_within.c, "intersects_{}".format(radius)))
                                              ).label("geom_{}".format(radius))
-                                                 for radius in self.buffer_radii_metres]
+                                               for radius in self.buffer_radii_metres]
                                              ).group_by(sq_within.c.id).subquery()
 
             # Join with meta points to ensure every meta point gets an entry,
@@ -230,8 +230,8 @@ class Features(DBWriter):
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
-        # Iterate over interest points in batches, yielding the insert statement at each step
-        for idx, batch_start in enumerate(range(0, n_interest_points, batch_size), start=1):
+        # Iterate over interest points :in batches, yielding the insert statement at each step
+        for idx, _ in enumerate(range(0, n_interest_points, batch_size), start=1):
             self.logger.info("Calculating %s for next %i interest points [batch %i/%i]...",
                              feature_name, batch_size, idx, round(0.5 + n_interest_points / batch_size))
             q_batch = q_filtered.slice(0, batch_size)
