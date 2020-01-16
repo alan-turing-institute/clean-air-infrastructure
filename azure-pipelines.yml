@@ -22,9 +22,12 @@ stages:
       displayName: 'Test one line script'
     - script: |
         echo "Building Docker images"
-        # - docker build -t $(ACR_SERVER)/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+        # docker build -t $(ACR_SERVER)/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
         echo "Commit hash $(Build.SourceVersion)"
         echo "$(ACR_SERVER)"
+        ls -alh .
+        pwd
+        ls containers/dockerfiles
         # echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
         # docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA
       displayName: 'Run a multi-line script'
