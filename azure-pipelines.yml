@@ -9,11 +9,11 @@ trigger:
 #pr: none
 
 stages:
-- stage: Build
+- stage: Docker
   displayName: Build Docker images
   jobs:
-  - job: Run scripts
-    displayName: Run scripts
+  - job: BuildDocker
+    displayName: Run docker build
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -24,6 +24,8 @@ stages:
         echo See https://aka.ms/yaml
         # - docker build -t $(ACR_SERVER)/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
         echo "$(ACR_SERVER)"
+        # echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
+        # docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA
       displayName: 'Run a multi-line script'
 
 
