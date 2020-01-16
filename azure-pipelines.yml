@@ -11,10 +11,10 @@ trigger:
 
 stages:
 - stage: Docker
-  displayName: Build Docker images
+  displayName: Register new Docker images in ACR
   jobs:
-  - job: BuildDocker
-    displayName: Build Docker images
+  - job: BuildAndPushDocker
+    displayName: Build Docker images and push them to the ACR
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -27,14 +27,17 @@ stages:
     - script: |
         docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
       displayName: 'Build SCOOT'
-  - job: PushDocker
-    displayName: Push Docker images to ACR
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
     - script: |
         docker images
       displayName: 'List images'
+    - script: |
+        echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
+      displayName: 'Login to ACR'
+    - script: |
+        docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)
+        docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)
+        docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)
+      displayName: 'Push Docker images to ACR'
 
 
 
