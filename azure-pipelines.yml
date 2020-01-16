@@ -14,7 +14,7 @@ stages:
   displayName: Build Docker images
   jobs:
   - job: BuildDocker
-    displayName: Run docker build
+    displayName: Build Docker images
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -24,6 +24,18 @@ stages:
     - script: |
         docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
       displayName: 'Build LAQN'
+    - script: |
+        docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT'
+  - job: PushDocker
+    displayName: Push Docker images to ACR
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        docker images
+      displayName: 'List images'
+
 
 
         # echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
