@@ -13,10 +13,11 @@ from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQ
                                 LAQNReading, MetaPoint, AQESite,
                                 AQEReading, ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
 from ..databases import DBWriter
+from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 
 
-class ModelData(DBWriter):
+class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
     def __init__(self, config=None, config_dir=None, **kwargs):
@@ -139,19 +140,23 @@ class ModelData(DBWriter):
         valid_models = ['svgp', ]
 
         self.logger.info("Validating config")
-        # Check required config keys present
 
-        if set(config.keys()).issubset(set(config_keys)):
-            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
+        # Check required config keys present
+        if not set(config.keys()).issubset(set(config_keys)):
+            missing_keys = [key for key in config_keys if key not in config.keys()]
+            raise AttributeError(
+                "Config dictionary does not contain correct keys. Must contain {}".format(missing_keys))
 
         # Check requested features are available
         if config['features'] == 'all':
-            features = self.list_available_static_features() + self.list_available_dynamic_features()
+            features = self.list_available_static_features(
+            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
+            self.logger.warning("You have selected 'all' features from the database. It is strongly advised that you choose features manually")
         else:
             self.logger.debug("Checking requested features are availble in database")
-            self.__check_features_available(config['features'])
+            self.__check_features_available(config['features'], config['train_start_date'], config['pred_end_date'])
 
         # Check training sources are available
         train_sources = config['train_sources']
@@ -197,12 +202,14 @@ class ModelData(DBWriter):
             config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
-            feature_names = self.list_available_static_features() + self.list_available_dynamic_features()
+            feature_names = self.list_available_static_features(
+            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
-
-        config['feature_names'] = ["".join(feature.split("_", 2)[2:]) for feature in config['features']]
+            config['feature_names'] = feature_names
+        else: 
+            config['feature_names'] = list(set(["".join(feature.split("_", 2)[2:]) for feature in config['features']]))
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
         return config
@@ -292,12 +299,13 @@ class ModelData(DBWriter):
         if self.config['include_prediction_y']:
             return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=True, dropna=dropna)
 
-        return self.__get_model_data_arrays(self.normalised_pred_data_df, dropna=dropna)
+        return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=False, dropna=dropna)
 
-    def __check_features_available(self, features):
+    def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.list_available_static_features() + self.list_available_dynamic_features()
+        available_features = self.list_available_static_features(
+        ) + self.list_available_dynamic_features(start_date, end_date)
         unavailable_features = []
 
         for feature in features:
@@ -329,11 +337,13 @@ class ModelData(DBWriter):
 
     def __get_interest_points_q(self, sources):
         """Query the database to get all interest points for a given source and return a query object.
-           Excludes LAQN and AQE sites that are closed
+           Excludes LAQN and AQE sites that are closed.
+           Only returns interest points inside of London boundary
         args:
             sources: A list of sources to include
         """
 
+        bounded_geom = self.query_london_boundary()
         base_query_columns = [MetaPoint.id.label('point_id'),
                               MetaPoint.source.label('source'),
                               MetaPoint.location.label('location'),
@@ -346,38 +356,41 @@ class ModelData(DBWriter):
             remaining_sources_q = session.query(*base_query_columns,
                                                 null().label("date_opened"),
                                                 null().label("date_closed"),
-                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]))
+                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]),
+                                                         MetaPoint.location.ST_Within(bounded_geom))
 
             aqe_sources_q = session.query(*base_query_columns,
                                           AQESite.date_opened,
                                           AQESite.date_closed
-                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']))
+                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']),
+                                                                                 MetaPoint.location.ST_Within(bounded_geom))
 
-            laqn_sources_q = session.query(*base_query_columns,
+            laqn_sources_q=session.query(*base_query_columns,
                                            LAQNSite.date_opened,
                                            LAQNSite.date_closed
-                                           ).join(LAQNSite, isouter=True).filter(MetaPoint.source.in_(['laqn']))
+                                           ).join(LAQNSite, isouter = True).filter(MetaPoint.source.in_(['laqn']), 
+                                                                                   MetaPoint.location.ST_Within(bounded_geom))
 
-            all_sources_sq = remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
+            all_sources_sq=remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
 
             # Remove any sources where there is a closing date
-            all_sources_q = session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
+            all_sources_q=session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
 
         return all_sources_q
 
     def __get_interest_point_ids(self, sources):
 
-        interest_point_query = self.__get_interest_points_q(sources)
+        interest_point_query=self.__get_interest_points_q(sources)
 
-        available_interest_points = pd.read_sql(interest_point_query.statement,
+        available_interest_points=pd.read_sql(interest_point_query.statement,
                                                 interest_point_query.session.bind)['point_id'].astype(str).to_numpy().tolist()
 
         return available_interest_points
 
     def __check_interest_points_available(self, interest_points, sources):
 
-        available_interest_points = self.__get_interest_point_ids(sources)
-        unavailable_interest_points = []
+        available_interest_points=self.__get_interest_point_ids(sources)
+        unavailable_interest_points=[]
 
         for point in interest_points:
             if point not in available_interest_points:
@@ -398,22 +411,34 @@ class ModelData(DBWriter):
             return pd.read_sql(feature_types_q.statement,
                                feature_types_q.session.bind)['feature_name'].tolist()
 
-    def list_available_dynamic_features(self):
+    def list_available_dynamic_features(self, start_date, end_date):
         """Return a list of the available dynamic features in the database.
-            Only returns features that are available between
-            self.config['train_start_date'] and self.config['train_end_date'] and between self.config['pred_start_date'] and self.config['pred_end_date']
+            Only returns features that are available between start_date and end_date 
         """
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(IntersectionValueDynamic.feature_name) \
-                                     .distinct(IntersectionValueDynamic.feature_name)
+            feature_types_q = session.query(IntersectionValueDynamic.feature_name,
+                                            func.min(IntersectionValueDynamic.measurement_start_utc),
+                                            func.max(IntersectionValueDynamic.measurement_start_utc)).group_by(IntersectionValueDynamic.feature_name)
 
             available_features = pd.read_sql(feature_types_q.statement,
-                                             feature_types_q.session.bind)['feature_name'].tolist()
+                                             feature_types_q.session.bind)  # ['feature_name'].tolist()
 
+            # Check if dynamic features are available between the requested dates. If not they are not returned.
 
-            return available_features
+            available_features['is_available'] = (available_features['min_1'] <= start_date) & (
+                available_features['max_1'] >= end_date)
+
+            if not available_features['is_available'].all():
+
+                not_available = available_features[available_features['is_available'] == False]['feature_name'].tolist()
+                self.logger.warning(
+                    "The following dynamic features were not available during the time you requested: %s", not_available)
+
+            available = available_features[available_features['is_available'] == True]['feature_name'].tolist()
+
+            return available
 
     def list_available_sources(self):
         """Return a list of the available interest point sources in a database"""
