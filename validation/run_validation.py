@@ -168,8 +168,7 @@ if __name__ == "__main__":
     # command line arguments
     parser = argparse.ArgumentParser(description="Run validation")
     parser.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
-    parser.add_argument('-r', '--read', action='store_true', help='read an experiment from files')
-    parser.add_argument('-l', '--local', action='store_true', help='train and predict a model on the local machine')
+    parser.add_argument('-r', '--run', action='store_true', help='train and predict a model')
     parser.add_argument('-n', '--name', type=str, help='name of the experiment')
     parser.add_argument('-c', '--cluster', type=str, help='name of the cluster')
     parser.add_argument('-m', '--model', type=str, help='name of the model')
@@ -177,30 +176,18 @@ if __name__ == "__main__":
     
     # setup experiment to run on a laptop
     if args.setup and args.cluster == 'laptop':
-        exp = laptop.LaptopExperiment(args.name)
-        setup_experiment(exp)
+        laptop_experiment = laptop.LaptopExperiment(args.name)
+        laptop_experiment.setup()
 
     # setup experiment
     elif args.setup and args.model == 'svgp':
-        exp = experiment.SVGPExperiment(args.name, args.cluster)
-        setup_experiment(exp)
-        
-    # read experiment from files
-    elif args.read:
-        exp = experiment.experiment_from_dir(args.name, args.model, args.cluster)
-        print(exp.experiment_df)
-        model_data_list = experiment.get_model_data_list_from_experiment(exp)
+        svgp_experiment = experiment.SVGPExperiment(args.name, args.cluster)
+        svgp_experiment.setup()
 
-        # get the scores for each result in the experiment
-        for model_data in model_data_list:
-            scores = metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods())
-            print(scores)
-            print()
-
-    # run a local model instead of on the cluster
-    elif args.local:
-        exp = experiment.experiment_from_dir(args.name, args.cluster)
-        run_svgp_experiment(exp)
+    # run a model with local data
+    elif args.run:
+        svgp_experiment = experiment.experiment_from_dir(args.name, args.cluster)
+        run_svgp_experiment(svgp_experiment)
 
     # no available options
     else:
