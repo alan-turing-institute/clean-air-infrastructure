@@ -111,7 +111,7 @@ class SVGP_TF1(Model):
         _x, _y, X, Y = self.clean_data(X, Y)
 
         #setup inducing points
-        z_r = kmeans2(X, model_params['n_inducing_point'], minit='points')[0]
+        z_r = kmeans2(X, model_params['n_inducing_points'], minit='points')[0]
 
         # setup SVGP model
         self.setup_model(X, Y, z_r, X.shape[1], model_params)

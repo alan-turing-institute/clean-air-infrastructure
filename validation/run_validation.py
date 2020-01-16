@@ -52,10 +52,6 @@ def run_svgp_experiment(exp, experiment_dir='../run_model/experiments/'):
         model_data = ModelData(config_dir=data_dir, secretfile=secret_fp)
         print("Model data x_train size:", model_data.get_training_data_arrays()['X'].shape)
 
-        print("data config:", data_config)
-        print()
-        print("params config:", model_config)
-
         # get data from saved numpy array
         x_train = np.load(data_config['x_train_fp'])
         y_train = np.load(data_config['y_train_fp'])
