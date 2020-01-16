@@ -13,17 +13,29 @@ class LaptopExperiment(experiment.SVGPExperiment):
         # model_params = self.get_default_model_params()
         # data_config = self.get_default_data_config()
         # super().__init__(name, 'laptop', model_params=model_params, data_config=data_config)
-        super().__init__(name, 'laptop')
+        super().__init__(name, 'laptop', **kwargs)
 
     def get_default_model_params(self):
-        model_params = super().get_default_model_params()
-        model_params['lengthscale'] = [0.1]
-        model_params['variance'] = [0.1]
-        model_params['max_iter'] = [10000]
-        model_params['n_inducing_points'] = [100, 200]
-        return model_params
+        """
+        Try two different configs with different number of inducing points.
+        """
+        return {'svgp' : experiment.create_params_list(
+            lengthscale=[0.1],
+            variance=[0.5],
+            minibatch_size=[100],
+            n_inducing_points=[30, 300],
+            max_iter=[10000],
+            refresh=[10],
+            train=[True],
+            restore=[False],
+            laqn_id=[0]
+        )}
 
     def get_default_data_config(self, n_rolls=2):
+        """
+        Roll for 2 days with four features:
+        epoch, lat, lon, and value_1000_flat.
+        """
         data_config = super().get_default_data_config(n_rolls=n_rolls)
         for index in range(len(data_config)):
             data_config[index]["features"] = ['value_1000_flat']

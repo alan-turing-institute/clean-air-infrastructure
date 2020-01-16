@@ -267,7 +267,8 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'model_type': 'svgp',
         'tag': 'testing',
         'include_satellite':False,
-        'include_prediction_y':True
+        'include_prediction_y':True,
+        'train_satellite_interest_points':'all'
     }
 
 def create_data_list(rolls, data_dir):

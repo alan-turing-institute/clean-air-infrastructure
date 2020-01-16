@@ -33,16 +33,24 @@ def get_LAQN_sensor_info(secret_fp):
 
         return pd.read_sql(LAQN_table.statement, LAQN_table.session.bind)
 
-def run_svgp_experiment(exp):
+def run_svgp_experiment(exp, experiment_dir='../run_model/experiments/'):
     """
     Train and predict using an svgp.
     """
     model_name = exp.models[0]
 
+    # secret file for database info
+    secret_fp = "../terraform/.secrets/db_secrets.json"
+
     for index, row in exp.experiment_df.iterrows():
         # get configs
         model_config = exp.model_params[model_name][row['param_id']]
         data_config = exp.data_config[row['data_id']]
+
+        # get model data object from directory
+        data_dir = experiment_dir + exp.name + '/data/data' + str(row['data_id'])
+        model_data = ModelData(config_dir=data_dir, secretfile=secret_fp)
+        print("Model data x_train size:", model_data.get_training_data_arrays()['X'].shape)
 
         print("data config:", data_config)
         print()
@@ -98,7 +106,7 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
     pathlib.Path(exp_dir + 'meta').mkdir(exist_ok=True)
     pathlib.Path(exp_dir + 'model').mkdir(exist_ok=True)
 
-    # get sensor info
+    # secret file for database info
     secret_fp = "../terraform/.secrets/db_secrets.json"
 
     # store a list of ModelData objects to validate over
@@ -121,15 +129,15 @@ def setup_experiment(exp, base_dir='../run_model/experiments/'):
             model_data_list.append(model_data)
 
             # save config status of the model data object to the data directory
-            # model_data.save_config_state(data_dir_path)
+            model_data.save_config_state(data_dir_path)
 
+            # print shapes
             print("x train shape:", model_data.get_training_data_arrays()['X'].shape)
             print("y train shape:", model_data.get_training_data_arrays()['Y'].shape)
             print("x test shape:", model_data.get_pred_data_arrays()['X'].shape)
             print("y test shape:", model_data.get_pred_data_arrays()['Y'].shape)
             print()
-            print("x test shape without return_y:", model_data.get_pred_data_arrays()['X'].shape)
-            print()
+
             if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
                 raise Exception("training X and Y not the same length")
 
