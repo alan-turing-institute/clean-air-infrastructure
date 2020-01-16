@@ -61,7 +61,7 @@ class ModelData(DBWriter, DBQueryMixin):
         if config:
             # Validate the configuration
             self.__validate_config(config)
-            self.config = self.generate_full_config(config)
+            self.config = self.__generate_full_config(config)
 
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
@@ -189,7 +189,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         self.logger.info("Validate config complete")
 
-    def generate_full_config(self, config):
+    def __generate_full_config(self, config):
         """Generate a full config file by querying the cleanair database to check available interest point sources and features"""
 
         if config['train_interest_points'] == 'all':
@@ -508,7 +508,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
         # Merge sensor readings onto interst points
-        sensor_readings = self.get_sensor_readings(start_date, end_date, sources=[source], species=[species])
+        sensor_readings = self.__get_sensor_readings(start_date, end_date, sources=[source], species=[species])
         time_df_merged = pd.merge(
             time_df_merged, sensor_readings, how='left', on=[
                 'point_id', 'measurement_start_utc', 'epoch', 'source'])
@@ -623,13 +623,13 @@ class ModelData(DBWriter, DBQueryMixin):
             df_joined = interest_point_df.join(features_df, how='left')
             return df_joined.reset_index()
 
-    def select_dynamic_features(self, start_date, end_date, features, sources, point_ids):
+    def __select_dynamic_features(self, start_date, end_date, features, sources, point_ids):
         """Read static features from the database.
         """
 
         return self.__select_features(IntersectionValueDynamic, features, sources, point_ids, start_date, end_date)
 
-    def select_static_features(self, features, sources, point_ids):
+    def __select_static_features(self, features, sources, point_ids):
         """Query the database for static features and join with metapoint data
 
         args:
@@ -680,7 +680,7 @@ class ModelData(DBWriter, DBQueryMixin):
                                  AQEReading.measurement_start_utc < end_date)
             return query
 
-    def get_sensor_readings(self, start_date, end_date, sources, species):
+    def __get_sensor_readings(self, start_date, end_date, sources, species):
         """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
 
         self.logger.debug("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
@@ -721,13 +721,13 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return sensor_df[species].reset_index()
 
-    def get_model_features(self, start_date, end_date, features, sources, point_ids):
+    def __get_model_features(self, start_date, end_date, features, sources, point_ids):
         """
         Query the database for model features, only getting features in self.features
         """
-        static_features = self.select_static_features(features, sources, point_ids)
+        static_features = self.__select_static_features(features, sources, point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
-        dynamic_features = self.select_dynamic_features(start_date, end_date, features, sources, point_ids)
+        dynamic_features = self.__select_dynamic_features(start_date, end_date, features, sources, point_ids)
 
         if dynamic_features.empty:
             self.logger.warning(
@@ -756,8 +756,8 @@ class ModelData(DBWriter, DBQueryMixin):
                          sources, species, start_date, end_date)
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
-        readings = self.get_sensor_readings(start_date, end_date, sources, species)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
+        readings = self.__get_sensor_readings(start_date, end_date, sources, species)
 
         self.logger.debug("Merging sensor data and model features")
         model_data = pd.merge(all_features,
@@ -780,9 +780,9 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Getting prediction data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
         if self.config['include_prediction_y']:
-            readings = self.get_sensor_readings(start_date, end_date, sources, species)
+            readings = self.__get_sensor_readings(start_date, end_date, sources, species)
             self.logger.debug("Merging sensor data and model features")
             model_data = pd.merge(all_features,
                                   readings,
@@ -805,7 +805,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Getting Satellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
         # all_features.to_csv('/secrets/satdata.csv')
 
         with self.dbcnxn.open_session() as session:
