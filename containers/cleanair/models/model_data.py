@@ -83,39 +83,6 @@ class ModelData(DBWriter, DBQueryMixin):
         else:
             self.restore_config_state(config_dir)
 
-    def save_config_state(self, dir_path):
-        """Save the full configuration and training/prediction data to disk:
-
-        args:
-            dir_path: Directory path in which to save the config files
-        """
-
-        # Create a new directory
-        if not os.path.exists(dir_path):
-            os.mkdir(dir_path)
-
-        # Write the files to the directory
-        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
-        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
-
-        with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
-            json.dump(self.config, config_f, sort_keys=True, indent=4)
-
-        self.logger.info("State files saved to {}".format(dir_path))
-
-    def restore_config_state(self, dir_path):
-        """Reload configuration state saved to disk by ModelData.save_config_state()
-        """
-        if not os.path.exists(dir_path):
-            raise IOError("{} does not exist".format(dir_path))
-
-        self.normalised_training_data_df = pd.read_csv(os.path.join(
-            os.path.join(dir_path, 'normalised_training_data.csv')))
-        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
-
-        with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
-            self.config = json.load(config_f)
-
     def __validate_config(self, config):
 
         config_keys = ["train_start_date",
@@ -150,7 +117,7 @@ class ModelData(DBWriter, DBQueryMixin):
         # Check requested features are available
         if config['features'] == 'all':
             features = self.get_available_static_features(output_type='list'
-                                                          ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+                                                          ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
             self.logger.warning(
@@ -204,7 +171,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if config['features'] == 'all':
             feature_names = self.get_available_static_features(output_type='list'
-                                                               ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+                                                               ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
@@ -214,6 +181,38 @@ class ModelData(DBWriter, DBQueryMixin):
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
         return config
+
+    def save_config_state(self, dir_path):
+        """Save the full configuration and training/prediction data to disk:
+
+        args:
+            dir_path: Directory path in which to save the config files
+        """
+
+        # Create a new directory
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+
+        # Write the files to the directory
+        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+
+        with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
+            json.dump(self.config, config_f, sort_keys=True, indent=4)
+
+        self.logger.info("State files saved to {}".format(dir_path))
+
+    def restore_config_state(self, dir_path):
+        "Reload configuration state saved to disk by ModelData.save_config_state()"
+        if not os.path.exists(dir_path):
+            raise IOError("{} does not exist".format(dir_path))
+
+        self.normalised_training_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')))
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
+
+        with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
+            self.config = json.load(config_f)
 
     @property
     def x_names_norm(self):
@@ -230,7 +229,7 @@ class ModelData(DBWriter, DBQueryMixin):
         norm_std = self.training_data_df[self.training_data_df['source']
                                          == self.config['norm_by']][self.config['x_names']].std(axis=0)
 
-        # Check for zero variance
+        # Check for zero variance and set to 1 if found
         if norm_std.eq(0).any().any():
             self.logger.warning("No variance in feature: %s. Setting variance to 1.", norm_std[norm_std == 0].index)
             norm_std[norm_std == 0] = 1
@@ -305,7 +304,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """Check that all requested features exist in the database"""
 
         available_features = self.get_available_static_features(output_type='list'
-                                                                ) + self.list_available_dynamic_features(start_date, end_date)
+                                                                ) + self.get_available_dynamic_features(start_date, end_date, output_type='list')
         unavailable_features = []
 
         for feature in features:
@@ -314,7 +313,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 unavailable_features.append(feature)
 
         if unavailable_features:
-            raise AttributeError("The following features are not available the cleanair database: {}"
+            raise AttributeError("The following features are not available the cleanair database: {}. If requesting dynamic features they may not be available for the selected dates"
                                  .format(unavailable_features))
 
     def __check_sources_available(self, sources):
@@ -351,35 +350,6 @@ class ModelData(DBWriter, DBQueryMixin):
         if unavailable_interest_points:
             raise AttributeError("The following interest points are not available the cleanair database: {}"
                                  .format(unavailable_interest_points))
-
-    def list_available_dynamic_features(self, start_date, end_date):
-        """Return a list of the available dynamic features in the database.
-            Only returns features that are available between start_date and end_date 
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(IntersectionValueDynamic.feature_name,
-                                            func.min(IntersectionValueDynamic.measurement_start_utc),
-                                            func.max(IntersectionValueDynamic.measurement_start_utc)).group_by(IntersectionValueDynamic.feature_name)
-
-            available_features = pd.read_sql(feature_types_q.statement,
-                                             feature_types_q.session.bind)  # ['feature_name'].tolist()
-
-            # Check if dynamic features are available between the requested dates. If not they are not returned.
-
-            available_features['is_available'] = (available_features['min_1'] <= start_date) & (
-                available_features['max_1'] >= end_date)
-
-            if not available_features['is_available'].all():
-
-                not_available = available_features[available_features['is_available'] == False]['feature_name'].tolist()
-                self.logger.warning(
-                    "The following dynamic features were not available during the time you requested: %s", not_available)
-
-            available = available_features[available_features['is_available'] == True]['feature_name'].tolist()
-
-            return available
 
     def __select_features(self, feature_table, features, sources, point_ids, start_date=None, end_date=None):
         """Query features from the database. Returns a pandas dataframe if values returned, else returns None"""
