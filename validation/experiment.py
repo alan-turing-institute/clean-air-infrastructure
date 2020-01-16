@@ -164,12 +164,11 @@ class SVGPExperiment(Experiment):
             laqn_id=[0]
         )}
 
-    def get_default_data_config(self):
+    def get_default_data_config(self, n_rolls=1):
         # create dates for rolling over
         train_start = "2019-11-01T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
-        n_rolls = 1
         rolls = temporal.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
         data_dir = '../run_model/experiments/{name}/data/'.format(name=self.name)
         data_config = create_data_list(rolls, data_dir)
@@ -281,7 +280,7 @@ def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experi
         y_pred = np.load(y_pred_fp)
 
         # update model data with predictions
-        pred_dict = model_data.get_pred_data_arrays(return_y=True)
+        pred_dict = model_data.get_pred_data_arrays()
         model_data.update_model_results_df(pred_dict, y_pred, {
             'fit_start_time':exp.data_config[row['data_id']]['pred_start_date']
         })
@@ -291,6 +290,27 @@ def get_model_data_list_from_experiment(exp, experiment_dir='../run_model/experi
     return model_data_list
 
 def create_experiment_prefix(model_name, param_id, data_id):
+    """
+    Create a unique prefix for a run/result of an experiment.
+
+    Parameters
+    ___
+
+    model_name : str
+        Name should refer to a model class.
+
+    param_id : int
+        Id of parameter setting for given model.
+
+    data_id : int
+        Id of a data config.
+
+    Returns
+    ___
+
+    str
+        Prefix for files.
+    """
     return model_name + '_param' + str(param_id) + '_data' + str(data_id)
 
 def get_model_data_config_default(id, train_start, train_end, pred_start, pred_end, train_points='all', pred_points='all'):
@@ -308,7 +328,10 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'features': 'all',
         'norm_by': 'laqn',
         'model_type': 'svgp',
-        'tag': 'testing'
+        'tag': 'testing',
+        'include_satellite':False,
+        'include_prediction_y':True,
+        'train_satellite_interest_points':'all'
     }
 
 def create_data_list(rolls, data_dir):

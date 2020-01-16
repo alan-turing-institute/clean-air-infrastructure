@@ -22,6 +22,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
+
     def __init__(self, aws_key_id, aws_key, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -196,7 +197,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
-                        self.commit_records(session, site_records, table=ScootReading)
+                        self.commit_records(session, site_records, table=ScootReading, on_conflict_do_nothing=True)
                         n_records += len(site_records)
                     except IntegrityError as error:
                         self.logger.error("Failed to add records to the database: %s", type(error))

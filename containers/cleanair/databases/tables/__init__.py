@@ -13,6 +13,7 @@ from .scoot_tables import ScootReading, ScootDetector, ScootRoadMatch, ScootRoad
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon
 from .model_results_table import ModelResult
+from .satellite_tables import SatelliteSite, SatelliteDiscreteSite, SatelliteForecastReading
 
 
 __all__ = [
@@ -29,6 +30,9 @@ __all__ = [
     "OSHighway",
     "RectGrid",
     "RectGrid100",
+    "SatelliteSite",
+    "SatelliteDiscreteSite",
+    "SatelliteForecastReading",
     "ScootDetector",
     "ScootReading",
     "ScootRoadMatch",
