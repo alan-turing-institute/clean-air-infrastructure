@@ -1,33 +1,33 @@
-
-import sys
-sys.path.append('/Users/ogiles/Documents/project_repos/clean-air-infrastructure/containers')
-import folium
-from folium import WmsTileLayer
 from folium.plugins import TimestampedWmsTileLayers
-import pandas as pd
-from dateutil import rrule
-from dateutil.relativedelta import relativedelta
-from dateutil.parser import isoparse
-from sqlalchemy import literal, func
-import logging
-import geopandas as gpd
-from cleanair.loggers import get_logger
-from cleanair.databases import DBReader, DBWriter
-from cleanair.databases.tables import ScootRoadReading, OSHighway
+from folium import WmsTileLayer
+import folium
 
 
-
-logging.basicConfig()
+# m = folium.Map(location=[51.5297753, -0.12665390000006],
+#                tiles='Stamen Toner',
+#                zoom_start=11)
 
 m = folium.Map(location=[51.5297753, -0.12665390000006],
-               tiles='Stamen Toner',
-               zoom_start=13)
+               zoom_start=11)
 
 folium.Marker([51.5297753, -0.12665390000006], popup='<i>Alan Turing Institute</i>').add_to(m)
 
 url = 'http://localhost:8080/geoserver/ows?/'
+
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:parks',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
 folium.raster_layers.WmsTileLayer(url,
-                                  'london:oshighway_roadlink',
+                                  'london:laqn_park_features',
                                   styles='',
                                   fmt='image/png',
                                   transparent=True,
@@ -37,6 +37,7 @@ folium.raster_layers.WmsTileLayer(url,
                                   overlay=True,
                                   control=True,
                                   show=True).add_to(m)
+
 
 m.save('index.html')
 
