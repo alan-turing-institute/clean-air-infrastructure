@@ -1,5 +1,8 @@
 # clean-air-infrastructure
+[![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
+
 Azure Infrastructure for the Clean Air project
+
 
 # Prerequisites
 To run this project you will need:
@@ -95,7 +98,7 @@ az account set --subscription "CleanAir"
 
 ## Login to Travis CLI
 
-Login to travis with your github credentials, making sure you are in the Clean Air repository (travis automatically detects your repository):
+Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
 
 ```bash
 travis login --pro
@@ -149,12 +152,26 @@ to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should 
 
 # Initialising the input databases
 Terraform will now have created a number of databases. We need to add the datasets to the database.
-
 This is done using Docker images from the Azure container registry.
+You will need the username, password and server name for the Azure container registry.
+All of these will be stored as secrets in the `RG_CLEANAIR_INFRASTRUCTURE > cleanair-secrets` Azure KeyVault.
+
+## Using Travis (old)
 These Docker images are built by Travis whenever commits are made to the GitHub repository.
+Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Travis secrets.
 
 To run the next steps we need to ensure that Travis runs a build in order to add the Docker images to the Azure container registry created by Terraform.
 Either push to the GitHub repository, or rerun the last build by going to https://travis-ci.com/alan-turing-institute/clean-air-infrastructure/ and clicking on the `Restart build` button.
+This will build all of the Docker images and add them to the registry.
+
+## Using Azure pipelines (new)
+These Docker images are built by an Azure pipeline whenever commits are made to the master branch of the GitHub repository.
+Ensure that you have configured Azure pipelines to [use this GitHub repository](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/pipelines-get-started).
+Currently a pipeline is set up [here](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build).
+Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Azure pipeline Variables, using the [web interface to the pipeline](https://dev.azure.com)
+
+To run the next steps we need to ensure that this pipeline runs a build in order to add the Docker images to the Azure container registry created by Terraform.
+Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.
 This will build all of the Docker images and add them to the registry.
 
 
