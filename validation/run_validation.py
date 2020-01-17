@@ -42,7 +42,7 @@ def run_svgp_experiment(exp, experiment_dir='../run_model/experiments/'):
     models = {}
     for model_name in exp.models:
         # path_to_model = experiment_dir + exp.name + '/models/m_{name}.py'.format(name=model_name)
-        _path = '../run_model/experiments/{name}/model/'.format(name=exp.name)
+        _path = '../run_model/experiments/{name}/models/'.format(name=exp.name)
         sys.path.append(_path)
         print(_path)
         path_to_model = 'm_{model_name}'.format(model_name=model_name)

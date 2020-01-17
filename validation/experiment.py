@@ -117,6 +117,9 @@ class Experiment(ABC):
                 print("x test shape:", model_data.get_pred_data_arrays()['X'].shape)
                 print("y test shape:", model_data.get_pred_data_arrays()['Y'].shape)
                 print()
+                print("Normalised pred df shape:", model_data.normalised_pred_data_df.shape)
+                print("Normalised pred df, drop na:", model_data.normalised_pred_data_df[model_data.x_names_norm + model_data.config['species']].dropna().shape)
+                print()
 
                 if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
                     raise Exception("training X and Y not the same length")
