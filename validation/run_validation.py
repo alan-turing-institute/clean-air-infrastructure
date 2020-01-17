@@ -44,13 +44,8 @@ def run_svgp_experiment(exp, experiment_dir='../run_model/experiments/'):
         # path_to_model = experiment_dir + exp.name + '/models/m_{name}.py'.format(name=model_name)
         _path = '../run_model/experiments/{name}/models/'.format(name=exp.name)
         sys.path.append(_path)
-        print(_path)
         path_to_model = 'm_{model_name}'.format(model_name=model_name)
         models[model_name] = importlib.import_module(path_to_model)
-        #import m_svgp
-
-    # secret file for database info
-    secret_fp = "../terraform/.secrets/db_secrets.json"
 
     for index, row in exp.experiment_df.iterrows():
         # get configs
@@ -60,58 +55,6 @@ def run_svgp_experiment(exp, experiment_dir='../run_model/experiments/'):
 
         # run the model given param and data configs
         models[model_name].main(data_config, model_config, row, experiment_root=experiment_dir + exp.name + '/')
-
-"""
-        # get model data object from directory
-        data_dir = experiment_dir + exp.name + '/data/data' + str(row['data_id'])
-        model_data = ModelData(config_dir=data_dir, secretfile=secret_fp)
-        print("Model data x_train size:", model_data.get_training_data_arrays()['X'].shape)
-
-        # get data from saved numpy array
-        x_train = np.load(data_config['x_train_fp'])
-        y_train = np.load(data_config['y_train_fp'])
-        x_test = np.load(data_config['x_test_fp'])
-        y_test = np.load(data_config['y_test_fp'])
-
-        # get shapes
-        print()
-        print("x train shape:", x_train.shape)
-        print("y train shape:", y_train.shape)
-        print("x test shape:", x_test.shape)
-        print("y test shape:", y_test.shape)
-
-        # reshape into list of data
-        X = [x_train[:, None, :]]
-        Y = [y_train]
-        Xs = [x_test[:, None, :]]
-        Ys = [y_test]
-
-        print("Xs[0] shape:", Xs[0].shape)
-        print("Ys[0] shape:", Ys[0].shape)
-
-        # fit model
-        mdl = SVGP_TF1()
-        mdl.fit(X, Y, max_iter=model_config['max_iter'], model_params=model_config, save_model_state=False)
-
-        # predict on testing set
-        Xs = Xs[0][:, 0, :]
-        print(Xs.shape)
-        y_mean, y_var = mdl.predict(Xs)
-        print("shape of y mean and y var:", y_mean.shape, y_var.shape)
-
-        # concatenate and save to file
-        y_pred = np.concatenate([y_mean, y_var], axis=1)
-        print("shape of y_pred:", y_pred.shape)
-        np.save(row['y_pred_fp'], y_pred)
-"""
-
-def numpy_files_exist(data_config):
-    return (
-        os.path.exists(data_config['x_train_fp'])
-        and os.path.exists(data_config['y_train_fp'])
-        and os.path.exists(data_config['x_test_fp'])
-        and os.path.exists(data_config['y_test_fp'])
-    )
 
 if __name__ == "__main__":
     # command line arguments
