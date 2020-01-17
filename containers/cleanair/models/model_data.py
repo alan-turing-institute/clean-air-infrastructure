@@ -111,7 +111,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         self.normalised_training_data_df = pd.read_csv(os.path.join(
             os.path.join(dir_path, 'normalised_training_data.csv')))
-        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_pred_data.csv')))
 
         with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
             self.config = json.load(config_f)
