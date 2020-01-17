@@ -13,17 +13,14 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - script: |
-        docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+        docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
       displayName: 'Build AQE'
     - script: |
-        docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+        docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
       displayName: 'Build LAQN'
     - script: |
-        docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+        docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
       displayName: 'Build SCOOT'
-    - script: |
-        docker build -t $(ACR_SERVER)/TESTIMAGE:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-      displayName: 'Build TESTIMAGE (for deletion after merging)'
     - script: |
         docker images
       displayName: 'List images'
@@ -31,8 +28,7 @@ stages:
         echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
       displayName: 'Login to ACR'
     - script: |
-        docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)
-        docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)
-        docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)
-        docker push $(ACR_SERVER)/TESTIMAGE:$(Build.SourceVersion)
+        docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
+        docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
+        docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
       displayName: 'Push Docker images to ACR'
