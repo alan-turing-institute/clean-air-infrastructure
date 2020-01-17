@@ -206,10 +206,8 @@ class SVGPExperiment(Experiment):
                 r.model_name, r.param_id, r.data_id
             ) + '_y_pred.npy' for r in experiment_df.itertuples()])
 
-
-
         experiment_df['model_state_fp'] = pd.Series([
-            experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+            experiments_root + '{name}/models/restore/m_{model_name}'.format(name=self.name, model_name=r.model_name) + create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) + '.model' for r in experiment_df.itertuples()])
 

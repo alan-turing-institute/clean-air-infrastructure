@@ -131,7 +131,8 @@ class SVGP_TF1(Model):
             # save model state
             if save_model_state:
                 saver = tf.train.Saver()
-                save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['model_state_fp']))
+                # save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['model_state_fp']))
+                save_path = saver.save(tf_session, "{name}.ckpt".format(name=model_params['model_state_fp']))
 
     def batch_predict(self, XS):
         """Split up prediction into indepedent batchs.
