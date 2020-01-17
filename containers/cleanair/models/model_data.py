@@ -76,7 +76,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
                 self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
                     ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
-
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ['box_id', 'measurement_start_utc'])
 
@@ -197,6 +196,11 @@ class ModelData(DBWriter, DBQueryMixin):
         self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
         self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
 
+        if self.config['include_satellite']:
+
+            self.training_satellite_data_x.to_csv(os.path.join(dir_path, 'normalised_satellite_data_x.csv'))
+            self.training_satellite_data_y.to_csv(os.path.join(dir_path, 'normalised_satellite_data_y.csv'))
+
         with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
             json.dump(self.config, config_f, sort_keys=True, indent=4)
 
@@ -207,12 +211,19 @@ class ModelData(DBWriter, DBQueryMixin):
         if not os.path.exists(dir_path):
             raise IOError("{} does not exist".format(dir_path))
 
-        self.normalised_training_data_df = pd.read_csv(os.path.join(
-            os.path.join(dir_path, 'normalised_training_data.csv')))
-        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
-
         with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
             self.config = json.load(config_f)
+
+        self.normalised_training_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
+
+        if self.config['include_satellite']:
+            self.training_satellite_data_x = pd.read_csv(os.path.join(
+                os.path.join(dir_path, 'normalised_satellite_data_x.csv')), index_col=0)
+            self.training_satellite_data_y = pd.read_csv(os.path.join(
+                os.path.join(dir_path, 'normalised_satellite_data_y.csv')), index_col=0)
 
     @property
     def x_names_norm(self):
@@ -268,12 +279,14 @@ class ModelData(DBWriter, DBQueryMixin):
             # Check dimensions
             N_sat_box = self.training_satellite_data_x['box_id'].unique().size
             N_hours = self.training_satellite_data_x['epoch'].unique().size
-            N_interest_points = self.training_satellite_data_x['point_id'].unique().size
+            # N_interest_points = self.training_satellite_data_x['point_id'].unique().size
             N_x_names = len(self.config['x_names'])
 
+            print(self.training_satellite_data_x[self.config['x_names']].shape)
+            print(N_sat_box, N_hours, N_x_names)
             X_sat = self.training_satellite_data_x[self.config['x_names']
                                                    ].to_numpy().reshape((N_sat_box * N_hours, 100, N_x_names))
-
+            quit()
             Y_sat = self.training_satellite_data_y['value'].to_numpy()
             data_dict['X_sat'] = X_sat
             data_dict['Y_sat'] = Y_sat
@@ -554,7 +567,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def get_training_satellite_inputs(self):
         """Get satellite inputs"""
         start_date = self.config['train_start_date']
-        end_date = self.config['train_end_date']
+        end_date = self.config['pred_end_date']
         sources = ['satellite']
         species = self.config['species']
         point_ids = self.config['train_satellite_interest_points']
@@ -593,7 +606,7 @@ class ModelData(DBWriter, DBQueryMixin):
         predict_df['fit_start_time'] = model_fit_info['fit_start_time']
         predict_df['tag'] = self.config['tag']
 
-        # # Concat the predictions with the predict_df
+        # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat([self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False)
 
     def update_remote_tables(self):
