@@ -24,7 +24,7 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn", "grid_100"]
+    kwargs["sources"] = ["aqe", "laqn", "satellite", 'grid_100']
 
     # Extract features and notify any exceptions
     try:

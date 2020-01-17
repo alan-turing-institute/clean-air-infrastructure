@@ -24,11 +24,11 @@ def main():
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
-    parser.add_argument("--trainend", type=str, default='2020-01-05T00:00:00',
+    parser.add_argument("--trainend", type=str, default='2020-01-10T00:00:00',
                         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.")
-    parser.add_argument("--trainhours", type=int, default=72,
+    parser.add_argument("--trainhours", type=int, default=48,
                         help="The number of hours to get training data for.")
-    parser.add_argument("--predstart", type=str, default='2019-11-05T00:00:00',
+    parser.add_argument("--predstart", type=str, default='2020-01-10T00:00:00',
                         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.")
     parser.add_argument("--predhours", type=int, default=48,
                         help="The number of hours to predict for")
@@ -55,13 +55,14 @@ def main():
                     'pred_end_date': pred_end,
 
                     'include_satellite': True,
+                    'include_prediction_y': False,
                     'train_sources': ['laqn', 'aqe'],
                     'pred_sources': ['laqn', 'aqe'],
                     'train_interest_points': 'all',
                     'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    'features': ['value_1000_total_a_road_length'],
+                    "features": 'all',
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -73,35 +74,42 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    model_data = ModelData(model_config, **kwargs)
+    # model_data = ModelData(config=model_config, **kwargs)
+    model_data = ModelData(config_dir='/secrets/test/', **kwargs)
+
+    # model_data.save_config_state('/secrets/test/')
 
     # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
-    # training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    # predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+    training_data_dict = model_data.get_training_data_arrays(dropna=True)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
-    # # Fit the model
-    # model_fitter = SVGP()
+    # print(training_data_dict['X_train'])
+    # print(training_data_dict['Y_train'])
+    # print(training_data_dict['Y_sat'])
 
-    # model_fitter.fit(training_data_dict['X'],
-    #                  training_data_dict['Y'],
-    #                  max_iter=20000,
-    #                  model_params=model_params)
+    # Fit the model
+    model_fitter = SVGP()
 
-    # # Get info about the model fit
-    # model_fit_info = model_fitter.fit_info()
+    model_fitter.fit(training_data_dict['X'],
+                     training_data_dict['Y'],
+                     max_iter=20000,
+                     model_params=model_params)
 
-    # # # Do prediction and write to database
-    # Y_pred = model_fitter.predict(predict_data_dict['X'])
+    # Get info about the model fit
+    model_fit_info = model_fitter.fit_info()
 
-    # # Internally update the model results in the ModelData object
-    # model_data.update_model_results_df(predict_data_dict=predict_data_dict,
-    #                                    Y_pred=Y_pred,
-    #                                    model_fit_info=model_fit_info)
+    # # Do prediction and write to database
+    Y_pred = model_fitter.predict(predict_data_dict['X'])
 
-    # # Write the model results to the database
-    # model_data.update_remote_tables()
+    # Internally update the model results in the ModelData object
+    model_data.update_model_results_df(predict_data_dict=predict_data_dict,
+                                       Y_pred=Y_pred,
+                                       model_fit_info=model_fit_info)
+
+    # Write the model results to the database
+    model_data.update_remote_tables()
 
 
 if __name__ == "__main__":
