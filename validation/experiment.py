@@ -10,12 +10,17 @@ import numpy as np
 import itertools
 import pathlib
 import os
+import importlib
+
+#requires cleanair
+sys.path.append("../containers/")
+sys.path.append("../../containers/")
 
 # validation modules
 import temporal
 
-# requires cleanair
-sys.path.append("../containers")
+
+
 try:
     from cleanair.models import ModelData
 except:
@@ -112,10 +117,10 @@ class Experiment(ABC):
                 model_data.save_config_state(data_dir_path)
 
                 # print shapes
-                print("x train shape:", model_data.get_training_data_arrays()['X'].shape)
-                print("y train shape:", model_data.get_training_data_arrays()['Y'].shape)
-                print("x test shape:", model_data.get_pred_data_arrays()['X'].shape)
-                print("y test shape:", model_data.get_pred_data_arrays()['Y'].shape)
+                print("x train shape:", model_data.get_training_data_arrays(dropna=False)['X'].shape)
+                print("y train shape:", model_data.get_training_data_arrays(dropna=False)['Y'].shape)
+                print("x test shape:", model_data.get_pred_data_arrays(dropna=False)['X'].shape)
+                print("y test shape:", model_data.get_pred_data_arrays(dropna=False)['Y'].shape)
                 print()
 
                 if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
@@ -125,10 +130,10 @@ class Experiment(ABC):
                     raise Exception("testing X and Y not the same length")
 
                 # save normalised data to numpy arrays
-                np.save(data_config['x_train_fp'], model_data.get_training_data_arrays()['X'])
-                np.save(data_config['y_train_fp'], model_data.get_training_data_arrays()['Y'])
-                np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays()['X'])
-                np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays()['Y'])
+                np.save(data_config['x_train_fp'], model_data.get_training_data_arrays(dropna=False)['X'])
+                np.save(data_config['y_train_fp'], model_data.get_training_data_arrays(dropna=False)['Y'])
+                np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays(dropna=False)['X'])
+                np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(dropna=False)['Y'])
 
         # save experiment dataframe to csv
         self.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
@@ -431,3 +436,13 @@ def numpy_files_exist(data_config):
         and os.path.exists(data_config['x_test_fp'])
         and os.path.exists(data_config['y_test_fp'])
     )
+
+def load_experiment(file_name, root=''):
+    try:
+        sys.path.append(root+'experiments/')
+        mod = importlib.import_module(file_name)
+        return mod
+    except:
+        print(file_name, ' does not exist')
+
+    return 

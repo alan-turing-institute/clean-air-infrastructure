@@ -1,12 +1,12 @@
 import subprocess
-import sys
+import os
 import argparse
+import sys
 
 sys.path.append('../validation')
 import experiment
 
 from cluster_templates import Cluster, Pearl, Orac
-
 from run_on_cluster import AVAILABLE_CLUSTERS
 
 def main(home_dir=None, exp=None):
@@ -15,17 +15,18 @@ def main(home_dir=None, exp=None):
     cluster = AVAILABLE_CLUSTERS[exp.cluster]()
     cluster.setup(exp.name, home_dir, {})
 
-    call_array = [
-        "sudo",
-        "sh", "cluster_templates/get_results.sh",
-        "--user", cluster.user,
-        "--ip", cluster.ip,
-        "--ssh_key", cluster.home_dir + cluster.ssh_key,
-        "--basename", experiment_to_run,
-        "--cluster_folder", cluster.tmp_folder,
-    ]
+    script_str = """
+    ssh  -i "{SSH_KEY}" "{USER}@{IP}" -o StrictHostKeyChecking=no 'bash -s' << HERE
+rm -rf {name}
+HERE
+    """.format(
+        SSH_KEY=cluster.home_dir + cluster.ssh_key,
+        USER=cluster.user,
+        IP=cluster.ip,
+        name=exp.name
+    )
 
-    subprocess.call(call_array)
+    cmd = os.system(script_str)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run Model on Cluster")

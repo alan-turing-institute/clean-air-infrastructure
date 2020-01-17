@@ -173,7 +173,7 @@ class Pearl(Cluster):
             'cpus': 1,
             'gpus': 1,
             'nodes': 1,
-            'time': '00:30:00',
+            'time': '05:00:00',
             'memory': 4571
         }
 

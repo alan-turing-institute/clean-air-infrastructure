@@ -296,6 +296,8 @@ class ModelData(DBWriter, DBQueryMixin):
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
+
+        print(self.normalised_pred_data_df)
         if self.config['include_prediction_y']:
             return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=True, dropna=dropna)
 

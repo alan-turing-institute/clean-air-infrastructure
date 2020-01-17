@@ -28,10 +28,11 @@ HERE
     cmd = os.system(script_str)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Check Cluster")
+    parser = argparse.ArgumentParser(description="Run Model on Cluster")
     parser.add_argument('-d', '--dir_home', type=str, help='Home Directory')
+    parser.add_argument('-e', '--experiment', type=str, help='Experiment file name')
     args = parser.parse_args()
 
-    exp = experiment.SVGPExperiment('svgp_test', 'pearl')
-    main(home_dir=args.dir_home, exp=exp)
+    exp = experiment.load_experiment(args.experiment, root='../validation/').get_experiment()
 
+    main(home_dir=args.dir_home, exp=exp)

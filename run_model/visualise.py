@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely import wkt
+from shapely.geometry.polygon import Polygon
+from shapely.geometry.multipolygon import MultiPolygon
 
 import sys
 sys.path.append('visualisation')
@@ -18,79 +20,72 @@ plot_predictions_at_sensors = True
 plot_predictions_on_grid = False
 
 
-def vis_results(y_pred, ys_pred, ys_grid_pred, processed_data_x, processed_data_xs, processed_data_grid):
-    """
-    Animate the results from a spacetime prediction.
+def get_correct_column_names(df):
+    df['id'] = df['point_id']
+    df['pred'] = df['val']
+    df['var'] = 2*np.sqrt(df['var'])
+    df['observed'] = df['NO2']
+    df['datetime'] = df['measurement_start_utc']
+    return df
 
-    Parameters
-    ___
+def vis_results(laqn_training, laqn_prediction, grid_prediction):
+    column_names = ['id', 'epoch', 'lon', 'lat', 'datetime', 'val']
 
-    y_pred : dataframe
-        Model predictions at sensor training locations.
+    processed_data_x = get_correct_column_names(laqn_training)
+    processed_data_xs = get_correct_column_names(laqn_prediction)
 
-    ys_pred : dataframe
-        Model predictions at sensor testing locations.
-
-    ys_grid_pred : dataframe
-        Mode predictions at grid locations.
-
-    processed_data_x : dataframe
-        Processed training data from feature extraction.
-
-    processed_data_xs : dataframe
-        Processed testing data from feature extraction.
-
-    processed_data_grid : dataframe
-        Processed grid data from feature extraction
-    """
-    val_col = 'val'
-    column_names = ['id', 'epoch', 'lon', 'lat', 'datetime', val_col]
-
-    processed_data_x['pred'] = y_pred['val']
-    processed_data_x['var'] = 2*np.sqrt(y_pred['var'])
-    processed_data_x['observed'] = processed_data_x['no2']
-
-    processed_data_xs['pred'] = ys_pred['val']
-    processed_data_xs['var'] = 2*np.sqrt(ys_pred['var'])
-    processed_data_xs['observed'] = processed_data_xs['no2']
-
-    #train_df = pd.concat([processed_data_x, processed_data_xs])
+    train_df = pd.concat([processed_data_x, processed_data_xs])
     #just use testing data for now
     #TODO: may need to change for visualising validation folds
-    train_df = processed_data_xs 
+    #train_df = processed_data_xs 
 
-    if ys_grid_pred is not None:
-        processed_data_grid['pred'] = ys_grid_pred['val']
-        processed_data_grid['var'] = 2*np.sqrt(ys_grid_pred['var'])
+    if True:
+        processed_data_grid = grid_prediction
+        processed_data_grid['id'] = processed_data_grid['point_id']
+        processed_data_grid['pred'] = processed_data_grid['val']
+        processed_data_grid['var'] = 2*np.sqrt(processed_data_grid['var'])
         processed_data_grid['observed'] = None #testing locations - no observed values
         grid_test_df = processed_data_grid
 
-        grid_test_df['datetime'] = pd.to_datetime(grid_test_df['datetime'])
-        grid_test_df['geom'] = grid_test_df['src_geom'].apply(wkt.loads)
-        grid_test_df = gpd.GeoDataFrame(grid_test_df, geometry='geom')
+        processed_data_grid['datetime'] = pd.to_datetime(processed_data_grid['measurement_start_utc'])
+        processed_data_grid['geom'] = processed_data_grid['src_geom'].apply(wkt.loads)
 
-        visualise = SpaceTimeVisualise(train_df, grid_test_df, geopandas_flag=True)
+        processed_data_grid = gpd.GeoDataFrame(processed_data_grid, geometry='geom')
+
+        visualise = SpaceTimeVisualise(train_df, processed_data_grid, geopandas_flag=True)
     else:
         visualise = SpaceTimeVisualise(train_df, None, geopandas_flag=True)
 
     visualise.show()
 
+#@TODO get available models
+experiment_name = 'grid_exp'
+model = 'svgp'
+data_idx = 0
+param_idx = 0
+
 #load raw data
-processed_training_data = pickle.load(open('data/raw_training.pickle', 'rb'))
-processed_testing_data = pickle.load(open('data/raw_testing.pickle', 'rb'))
+processed_training_data = pd.read_csv('experiments/{name}/data/data{data_idx}/normalised_training_data.csv'.format(name=experiment_name, data_idx=data_idx, index_col=0, low_memory=False))
+processed_predicting_data = pd.read_csv('experiments/{name}/data/data{data_idx}/normalised_pred_data.csv'.format(name=experiment_name, data_idx=data_idx, low_memory=False))
 
+prediction = np.load('experiments/{name}/results/{model}_param{param_idx}_data{data_idx}_y_pred.npy'.format(model=model, name=experiment_name, param_idx=param_idx, data_idx=data_idx), allow_pickle=True)
 
+training_period = prediction[0]
+testing_period = prediction[1]
 
-#get laqn observations and predictions
-raw_laqn_training_data = processed_training_data[0]
-raw_laqn_testing_data = processed_testing_data[0]
+processed_training_data['val'] = training_period[:, 0]
+processed_training_data['var'] = training_period[:, 1]
 
-raw_laqn_training_data['val'] = raw_laqn_training_data['no2']
-raw_laqn_testing_data['val'] = raw_laqn_testing_data['no2']
+processed_predicting_data['val'] = testing_period[:, 0]
+processed_predicting_data['var'] = testing_period[:, 1]
 
-laqn_pred = np.load('results/{model}_y.npy'.format(model=model_prefix), allow_pickle=True)
-laqn_pred = pd.DataFrame(laqn_pred, columns=['val', 'var'])
+laqn_training_predictions = processed_training_data
+laqn_predictions = processed_predicting_data[processed_predicting_data['source']=='laqn']
+grid_predictions = processed_predicting_data[processed_predicting_data['source']=='hexgrid']
 
+hexgrid_file = pd.read_csv('visualisation/hexgrid_polygon.csv')
+grid_predictions = pd.merge(left=grid_predictions, right=hexgrid_file, how='left', left_on='point_id', right_on='point_id')
+grid_predictions['src_geom'] = grid_predictions['geom']
 
-vis_results(laqn_pred, laqn_pred, None, raw_laqn_training_data, raw_laqn_training_data, None)
+vis_results(laqn_training_predictions, laqn_predictions, grid_predictions)
 

@@ -72,6 +72,8 @@ HERE
 
 mkdir -p cluster/"$dt"_results
 
+echo "scp  -i $SSH_KEY $USER@$IP:$BASENAME/$BASENAME.tar cluster/'$dt'_results/$BASENAME'_results.tar"
+
 scp  -i "$SSH_KEY" "$USER@$IP:$BASENAME/$BASENAME.tar" cluster/"$dt"_results/"$BASENAME"_results.tar
 tar -xzf cluster/"$dt"_results/"$BASENAME"_results.tar --directory cluster/"$dt"_results/
 rm -rf cluster/"$dt"_results/"$BASENAME"_results.tar

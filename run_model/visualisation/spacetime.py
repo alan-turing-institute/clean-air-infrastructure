@@ -90,6 +90,12 @@ class ST_GridPlot(object):
 
     def update(self, epoch):
         if self.geopandas_flag:
+
+            #If grid_plot is init with zero patches then we need to create them
+            if self.grid_plot is None:
+                self.plot(epoch)
+                return 
+
             df = self.test_df[self.test_df[self.columns['epoch']] == epoch]
             df = df.sort_values(self.columns['id'])
             self.grid_plot.set_array(df[self.columns[self.col]])
@@ -112,6 +118,12 @@ class ST_GridPlot(object):
     def plot(self, epoch):
         if self.geopandas_flag:
             df = self.test_df[self.test_df[self.columns['epoch']] == epoch]
+
+            #If grid_plot is init with zero patches we cannot plot later
+            if df.shape[0] == 0:
+                self.grid_plot = None
+                return
+
             df = df.sort_values(self.columns['id'])
             geo_series = geopandas.GeoSeries(df['geom'])
             self.grid_plot = plot_polygon_collection(self.ax, geo_series, self.norm)
@@ -273,7 +285,6 @@ class ST_ScatterPlot(object):
 
     def plot_active(self, _id):
         self.cur_id = _id
-        print(_id)
         x, y, z = self.get_spatial_slice(self.cur_epoch, self.train_df, _id)
         self.active_scatter = self.ax.scatter(x, y, c=z, norm=self.norm, cmap=self.cmap, edgecolors='y')
 
