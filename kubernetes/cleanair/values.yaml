@@ -1,9 +1,37 @@
-imageTag: 967c6d83b94ee740c7387de4fa22e43da6750baf
+imageTag: cca41d293139456832e59c1f234ebcd5142e1b07
 
 jobs:  
   - name: ukmap
     image:
       repository: cleanairdocker.azurecr.io/ukmap
+      imagePullPolicy: Always
+    schedule: "0,30 0 * * *"
+    failedJobsHistoryLimit: 10
+    successfulJobsHistoryLimit: 1
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
+#   - name: streetcanyon
+#     image:
+#       repository: cleanairdocker.azurecr.io/streetcanyon
+#       imagePullPolicy: Always
+#     schedule: "0,30 0 * * *"
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+  - name: oshighway
+    image:
+      repository: cleanairdocker.azurecr.io/oshighway
       imagePullPolicy: Always
     schedule: "0,30 0 * * *"
     failedJobsHistoryLimit: 10
@@ -43,19 +71,19 @@ jobs:
       secret:
         secretName: secrets
 
-  - name: scoot
-    image:
-      repository: cleanairdocker.azurecr.io/scoot
-      imagePullPolicy: Always
-    schedule: "0 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: scoot
+#     image:
+#       repository: cleanairdocker.azurecr.io/scoot
+#       imagePullPolicy: Always
+#     schedule: "0 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 
 # deployments:
