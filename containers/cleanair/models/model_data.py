@@ -83,11 +83,13 @@ class ModelData(DBWriter, DBQueryMixin):
         else:
             self.restore_config_state(config_dir)
 
-    def save_config_state(self, dir_path):
+    def save_config_state(self, dir_path, dropna_training=False, dropna_pred=False):
         """Save the full configuration and training/prediction data to disk:
 
         args:
             dir_path: Directory path in which to save the config files
+            dropna_training : Drop rows AND columns with NaNs from normalised_training_data_df before saving to csv.
+            dropna_pred : Drop rows AND columns with NaNs from normalised_pred_data_df before saving to csv.
         """
 
         # Create a new directory
@@ -95,8 +97,17 @@ class ModelData(DBWriter, DBQueryMixin):
             os.mkdir(dir_path)
 
         # Write the files to the directory
-        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
-        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+        if dropna_training:
+            # drop na columns first, then drop na rows
+            self.normalised_training_data_df.dropna(axis=1).dropna().to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+        else:
+            self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+
+        if dropna_pred:
+            # drop na columns first, then drop na rows
+            self.normalised_pred_data_df.dropna(axis=1).dropna().to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+        else:
+            self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
 
         with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
             json.dump(self.config, config_f, sort_keys=True, indent=4)
