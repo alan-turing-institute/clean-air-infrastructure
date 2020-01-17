@@ -1,6 +1,20 @@
-imageTag: 7e635c1697c5326fb17dd732e9e7c6b097836329
+imageTag: 967c6d83b94ee740c7387de4fa22e43da6750baf
 
-jobs:
+jobs:  
+  - name: ukmap
+    image:
+      repository: cleanairdocker.azurecr.io/ukmap
+      imagePullPolicy: Always
+    schedule: "0,30 0 * * *"
+    failedJobsHistoryLimit: 10
+    successfulJobsHistoryLimit: 1
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
   - name: laqn
     image:
       repository: cleanairdocker.azurecr.io/laqn
