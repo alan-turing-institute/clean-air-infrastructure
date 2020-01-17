@@ -77,5 +77,5 @@ if __name__ == '__main__':
 
     exp = experiment.load_experiment(args.experiment, root='../validation/').get_experiment()
 
-    exp.setup(base_dir='experiments/')
+    #exp.setup(base_dir='experiments/')
     main(home_dir=args.dir_home, exp=exp)

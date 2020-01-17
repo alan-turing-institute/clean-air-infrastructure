@@ -19,11 +19,12 @@ sys.path.append("../../containers/")
 # validation modules
 import temporal
 
-
+import pickle
 
 try:
     from cleanair.models import ModelData
 except:
+    print('Could not import ModelData')
     pass
 
 class Experiment(ABC):
@@ -81,7 +82,7 @@ class Experiment(ABC):
         Get all the default experiment configurations.
         """
 
-    def setup(self, base_dir='../run_model/experiments/', secret_fp="../terraform/.secrets/db_secrets.json"):
+    def setup(self, base_dir='../run_model/experiments/', secret_fp="../terraform/.secrets/db_secrets.json", force_redownload=False):
         """
         Given an experiment create directories, data and files.
         """
@@ -104,7 +105,7 @@ class Experiment(ABC):
             data_config = self.data_config[data_id]
 
             # If the numpy files do not exist locally
-            if not numpy_files_exist(data_config):
+            if force_redownload or not numpy_files_exist(data_config):
                 # make new directory for data
                 data_dir_path = exp_dir + 'data/data{id}'.format(id=data_id)
                 pathlib.Path(data_dir_path).mkdir(exist_ok=True)
@@ -129,11 +130,36 @@ class Experiment(ABC):
                 if model_data.get_pred_data_arrays()['X'].shape[0] != model_data.get_pred_data_arrays()['Y'].shape[0]:
                     raise Exception("testing X and Y not the same length")
 
+
+                training_data_dicts = model_data.get_training_dicts()
+                testing_data_dicts = model_data.get_testings_dicts()
+
+
+                training_data_dicts_x = {}
+                training_data_dicts_y = {}
+                testing_data_dicts_x = {}
+                testing_data_dicts_y = {}
+
+                for data_set in data_config['train_sources']:
+                    training_data_dicts_x[data_set] = training_data_dicts[data_set]['X']
+                    training_data_dicts_y[data_set] = training_data_dicts[data_set]['Y']
+
+                for data_set in data_config['pred_sources']:
+                    testing_data_dicts_x[data_set] = testing_data_dicts[data_set]['X']
+                    testing_data_dicts_y[data_set] = testing_data_dicts[data_set]['Y']
+
                 # save normalised data to numpy arrays
-                np.save(data_config['x_train_fp'], model_data.get_training_data_arrays(dropna=False)['X'])
-                np.save(data_config['y_train_fp'], model_data.get_training_data_arrays(dropna=False)['Y'])
-                np.save(data_config['x_test_fp'], model_data.get_pred_data_arrays(dropna=False)['X'])
-                np.save(data_config['y_test_fp'], model_data.get_pred_data_arrays(dropna=False)['Y'])
+                with open(data_config['x_train_fp'], 'wb') as handle:
+                    pickle.dump(training_data_dicts_x, handle)
+
+                with open(data_config['y_train_fp'], 'wb') as handle:
+                    pickle.dump(training_data_dicts_y, handle)
+
+                with open(data_config['x_test_fp'], 'wb') as handle:
+                    pickle.dump(testing_data_dicts_x, handle)
+
+                with open(data_config['y_test_fp'], 'wb') as handle:
+                    pickle.dump(testing_data_dicts_y, handle)
 
         # save experiment dataframe to csv
         self.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
@@ -210,8 +236,6 @@ class SVGPExperiment(Experiment):
             experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) + '_y_pred.npy' for r in experiment_df.itertuples()])
-
-
 
         experiment_df['model_state_fp'] = pd.Series([
             experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
@@ -339,7 +363,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'train_satellite_interest_points':'all'
     }
 
-def create_data_list(rolls, data_dir):
+def create_data_list(rolls, data_dir, extension='.npy'):
     """
     Get a list of data configurations.
 
@@ -369,7 +393,7 @@ def create_data_list(rolls, data_dir):
 
     for datatype in ['x_train', 'x_test', 'y_train', 'y_test']:
         for i in range(len(rolls)):
-            data_config_list[i][datatype + '_fp'] = create_data_filepath(i, datatype, base_dir=data_dir)
+            data_config_list[i][datatype + '_fp'] = create_data_filepath(i, datatype, base_dir=data_dir, extension=extension)
 
     return data_config_list
     

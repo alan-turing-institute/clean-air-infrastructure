@@ -70,18 +70,31 @@ processed_predicting_data = pd.read_csv('experiments/{name}/data/data{data_idx}/
 
 prediction = np.load('experiments/{name}/results/{model}_param{param_idx}_data{data_idx}_y_pred.npy'.format(model=model, name=experiment_name, param_idx=param_idx, data_idx=data_idx), allow_pickle=True)
 
-training_period = prediction[0]
-testing_period = prediction[1]
+training_period = prediction['train']
+testing_period = prediction['test']
 
-processed_training_data['val'] = training_period[:, 0]
-processed_training_data['var'] = training_period[:, 1]
+laqn_training_predictions = processed_training_data[processed_training_data['source']=='laqn']
+grid_training_predictions = processed_training_data[processed_training_data['source']=='hexgrid']
 
-processed_predicting_data['val'] = testing_period[:, 0]
-processed_predicting_data['var'] = testing_period[:, 1]
 
-laqn_training_predictions = processed_training_data
 laqn_predictions = processed_predicting_data[processed_predicting_data['source']=='laqn']
 grid_predictions = processed_predicting_data[processed_predicting_data['source']=='hexgrid']
+
+
+laqn_training_predictions['val'] = training_period['laqn']['pred']
+laqn_training_predictions['var'] = training_period['laqn']['var']
+
+laqn_predictions['val'] = testing_period['laqn']['pred']
+laqn_predictions['var'] = testing_period['laqn']['var']
+
+grid_training_predictions['val'] = training_period['hexgrid']['pred']
+grid_training_predictions['var'] = training_period['hexgrid']['var']
+grid_predictions['val'] = testing_period['hexgrid']['pred']
+grid_predictions['var'] = testing_period['hexgrid']['var']
+
+print(grid_training_predictions['val'])
+
+grid_predictions = pd.concat([grid_training_predictions, grid_predictions], axis=0)
 
 hexgrid_file = pd.read_csv('visualisation/hexgrid_polygon.csv')
 grid_predictions = pd.merge(left=grid_predictions, right=hexgrid_file, how='left', left_on='point_id', right_on='point_id')

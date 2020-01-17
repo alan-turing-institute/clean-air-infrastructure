@@ -245,6 +245,23 @@ class ModelData(DBWriter, DBQueryMixin):
         
         return data_df
 
+
+    def __get_model_dicts(self, data_df, sources):
+        data_dict = {}
+
+        for src in sources:
+            data_src =data_df[data_df['source']==src]
+            data_src = self.__get_model_data_arrays(data_src, return_y=True, dropna=False)
+            data_dict[src] = data_src
+
+        return data_dict
+
+    def get_training_dicts(self):
+        return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'])
+
+    def get_testings_dicts(self):
+        return self.__get_model_dicts(self.normalised_pred_data_df, self.config['pred_sources'])
+
     def __get_model_data_arrays(self, data_df, return_y, dropna=True):
         """Return a dictionary of data arrays for model fitting.
         The returned dictionary includes and index to allow model predictions
@@ -297,7 +314,6 @@ class ModelData(DBWriter, DBQueryMixin):
             dropna: Drop any rows which contain NaN
         """
 
-        print(self.normalised_pred_data_df)
         if self.config['include_prediction_y']:
             return self.__get_model_data_arrays(self.normalised_pred_data_df, return_y=True, dropna=dropna)
 
