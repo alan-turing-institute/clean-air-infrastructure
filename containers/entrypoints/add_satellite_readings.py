@@ -15,12 +15,14 @@ def main():
     parser = argparse.ArgumentParser(description="Get Satellite data")
     parser.add_argument("-k", "--copernicus-key", type=str, default="",
                         help="copernicus key for accessing satellite data.")
-    parser.add_argument("-e", "--end", type=str, default="yesterday",
+    parser.add_argument("-e", "--end", type=str, default="today",
                         help="The last date (YYYY-MM-DD) to get data for.")
     parser.add_argument("-n", "--ndays", type=int, default=2, help="The number of days to request data for.")
     parser.add_argument("-i", "--interestpoints", dest='define_interest_points', action='store_true',
                         help="""The first time satellite data is inserted into the database,
                         this flag must be set to insert the interest points""")
+    parser.add_argument("-a", "--archive", dest='use_archive_data', action='store_true',
+                        help="""Use archive data rather than forecast data""")
     parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
     parser.add_argument("-v", "--verbose", action="count", default=0)
 

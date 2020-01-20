@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
 from ..loggers import get_logger
+from .base import Base
 
 
 class DBWriter(DBInteractor):
@@ -38,7 +39,7 @@ class DBWriter(DBInteractor):
             columns = inspect(table).columns
             insert_stmt = insert(table).from_select(columns, select_stmt)
         elif isinstance(records, list):
-            if isinstance(records[0], object):
+            if isinstance(records[0], Base):
                 records_insert = [row2dict(rec) for rec in records]
             else:
                 records_insert = records
