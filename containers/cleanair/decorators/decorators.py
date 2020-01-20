@@ -27,4 +27,7 @@ def db_query(query_f):
         if output_type == 'subquery':
             return output_q.subquery()
 
+        if output_type == 'sql':
+            return query_df.statement.compile(compile_kwargs={"literal_binds": True})
+
     return db_query_output

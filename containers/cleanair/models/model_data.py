@@ -8,7 +8,6 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 from sqlalchemy import literal, func, null
-import plotly.figure_factory as ff
 from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
                                 LAQNReading, MetaPoint, AQESite,
                                 AQEReading, ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
