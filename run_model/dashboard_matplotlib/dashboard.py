@@ -3,7 +3,7 @@
 import tkinter as tk
 import pandas as pd
 import numpy as np
-import geopandas
+import geopandas as gpd
 import matplotlib
 import os
 
@@ -12,6 +12,12 @@ from matplotlib.widgets import Slider, Button, RadioButtons
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.widgets import TextBox
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+
+from datetime import datetime
+from shapely import wkt
+from matplotlib.collections import PatchCollection
+from matplotlib.patches import Polygon
+
 
 class DashBoard():
     """
@@ -42,6 +48,7 @@ class DashBoard():
         self.page = pages[name](self)
         self.create_layout()
         self.draw_page()
+
 
         plt.tight_layout()
 
@@ -188,11 +195,7 @@ class Page():
         src_training_predictions['measurement_start_utc'] = pd.to_datetime(src_training_predictions['measurement_start_utc'])
         src_testing_predictions['measurement_start_utc'] = pd.to_datetime(src_testing_predictions['measurement_start_utc'])
 
-        return src_training_predictions, src_testing_predictions
-
-def submit(text):
-    pass
-
+        return pd.concat([src_training_predictions, src_testing_predictions]), src_training_predictions, src_testing_predictions
 
 class ComparePlots(Page):
     """
@@ -208,14 +211,20 @@ class ComparePlots(Page):
         self.layout = layout
         self.fig = fig
 
-        self.map_lhs = self.fig.add_subplot(self.layout[1][0])
-        self.map_rhs = self.fig.add_subplot(self.layout[1][1])
+        self.title_lhs = self.fig.add_subplot(self.layout[1][0], frameon=False)
+        self.title_lhs.axis('off')
+        # place a text box in upper left in axes coords
 
-        self.timeseries_lhs = self.fig.add_subplot(self.layout[2][0])
-        self.timeseries_rhs = self.fig.add_subplot(self.layout[2][1])
 
-        self.slider_lhs = self.fig.add_subplot(self.layout[3][0])
-        self.slider_rhs = self.fig.add_subplot(self.layout[3][1])
+        self.map_lhs = self.fig.add_subplot(self.layout[2][0])
+        #self.map_rhs = self.fig.add_subplot(self.layout[1][1])
+
+        self.timeseries_lhs = self.fig.add_subplot(self.layout[4][0])
+        #self.timeseries_rhs = self.fig.add_subplot(self.layout[2][1])
+
+        self.slider_lhs = self.fig.add_subplot(self.layout[6][0])
+        #self.slider_lhs.subplots_adjust(wspace=0.1)
+        #self.slider_rhs = self.fig.add_subplot(self.layout[3][1])
 
     def create_dropdown(self, master, choices, default=None):
         tkvar1 = tk.StringVar(master)
@@ -230,12 +239,17 @@ class ComparePlots(Page):
         popupMenu1.pack(in_= master, side=tk.LEFT)
         return tkvar1, popupMenu1
 
-        
-
     def update_timeseries(self, _id, scatter_plot, timeseries_plot):
         scatter_plot.update_active(_id)
         timeseries_plot.update(_id)
         self.fig.canvas.draw_idle()
+
+    def update_slider(self, datetime, epoch, title_text, grid_plot, scatter_plot, timerseries_plot):
+        timerseries_plot.update_cur_epoch(datetime)
+        grid_plot.update(datetime)
+        scatter_plot.update(datetime)
+
+        title_text.set_text(datetime)
 
     def update_experiment_data(self, experiment_name, model, data_id, param_id):
         processed_training_data, processed_predicting_data, predictions = self.load_experiment_data(experiment_name, model, data_id, param_id)
@@ -245,7 +259,15 @@ class ComparePlots(Page):
         self.predictions_training = predictions['train']
         self.predictions_testing = predictions['test']
 
-        laqn_training_predictions, laqn_testing_predictions = self.process_source(self.sensor_layer)
+        laqn_predictions, laqn_training_predictions, laqn_testing_predictions = self.process_source(self.sensor_layer)
+        grid_predictions, grid_training_predictions, grid_testing_predictions = self.process_source(self.map_layer)
+
+        #TODO: quick fix until can get geom easily
+        hexgrid_file = pd.read_csv('../visualisation/hexgrid_polygon.csv')
+        grid_predictions = pd.merge(left=grid_predictions, right=hexgrid_file, how='left', left_on='point_id', right_on='point_id')
+        grid_predictions['src_geom'] = grid_predictions['geom']
+        grid_predictions['geom'] = grid_predictions['src_geom'].apply(wkt.loads)
+        grid_predictions = gpd.GeoDataFrame(grid_predictions, geometry='geom')
 
         columns = {
             'id': 'point_id',
@@ -258,14 +280,27 @@ class ComparePlots(Page):
             'epoch': 'measurement_start_utc',
         }
 
-        splot = ST_ScatterPlot(columns ,self.fig, self.map_lhs, None, laqn_training_predictions)
-        tplot = ST_TimeSeriesPlot(columns, self.fig, self.timeseries_lhs, laqn_training_predictions, laqn_testing_predictions)
+        self.val_grid_plot = ST_GridPlot(columns, 'pred', self.fig, self.map_lhs, grid_predictions, cax_on_right=False, norm_on_training=True, label='NO2', geopandas_flag=True)
+        self.val_grid_plot.setup()
+        self.val_grid_plot.plot(self.min_datetime)
 
-        splot.setup(callback=lambda x: self.update_timeseries(x, splot, tplot))
-        splot.plot(self.min_datetime)
+        self.splot = ST_ScatterPlot(columns ,self.fig, self.map_lhs, None, laqn_predictions)
+        self.tplot = ST_TimeSeriesPlot(columns, self.fig, self.timeseries_lhs, laqn_training_predictions, laqn_testing_predictions)
 
-        tplot.setup()
-        tplot.plot(splot.cur_id)
+        self.splot.setup(callback=lambda x: self.update_timeseries(x, self.splot, self.tplot))
+        self.splot.plot(self.min_datetime)
+
+        self.tplot.setup()
+        self.tplot.plot(self.splot.cur_id)
+
+        unique_epochs = pd.unique(laqn_predictions['epoch'])
+
+        self.text_lhs = self.title_lhs.text(0.5, 0.95, self.min_datetime, transform=self.title_lhs.transAxes, fontsize=14, horizontalalignment='center', verticalalignment='top')
+
+        self.slider_plot = ST_SliderPlot(self.fig, self.slider_lhs, unique_epochs, lambda x, y: self.update_slider(x, y, self.text_lhs, self.val_grid_plot, self.splot, self.tplot))
+        self.slider_plot.setup(unique_epochs[0])
+
+        self.tplot.plot_cur_epoch(unique_epochs[0])
         
 
     def update_dropdowns(self, master, experiment_name, tkvars, dropdowns):
@@ -319,7 +354,6 @@ class ComparePlots(Page):
 
         self.update_experiment_data(experiment_names[0], experiment_models[0], experiment_data_ids[0], experiment_param_ids[0])
 
-
         #TODO: compress duplicate code?
 
         tkvar_exp_lhs, topbar_exp_lhs = self.create_dropdown(master = self.topbar_frame_lhs, choices = experiment_names, default=default)
@@ -331,7 +365,6 @@ class ComparePlots(Page):
         tkvar_model_rhs, topbar_model_rhs = self.create_dropdown(master = self.topbar_frame_rhs, choices = experiment_models)
         tkvar_params_rhs, topbar_params_rhs = self.create_dropdown(master = self.topbar_frame_rhs, choices = experiment_param_ids)
         tkvar_data_rhs, topbar_data_rhs = self.create_dropdown(master = self.topbar_frame_rhs, choices=experiment_data_ids)
-
 
         tkvar_exp_lhs.trace('w', lambda *args: self.update_dropdowns(
             self.topbar_frame_lhs, 
@@ -353,10 +386,10 @@ class ComparePlots(Page):
             Return 2 columns and two rows
         """
         return {
-            'n_rows': 4,
+            'n_rows': 7,
             'n_cols': 2,
             'width_ratios': [0.5, 0.5],
-            'height_ratios': [0.05, 0.6, 0.3-0.05, 0.1]
+            'height_ratios': [0.05, 0.05, 0.50, 0.05, 0.3-0.05, 0.06, 0.04]
         }
     
 class ST_ScatterPlot(object):
@@ -436,15 +469,18 @@ class ST_TimeSeriesPlot(object):
         self.train_df = train_df
         self.test_df = test_df
 
-        self.min_test_epoch = np.min(self.train_df[columns['epoch']])
-        self.max_test_epoch = np.max(self.train_df[columns['epoch']])
-        self.test_start_epoch = self.min_test_epoch
+        self.df = pd.concat([self.train_df, self.test_df])
+
+        self.min_test_epoch = np.min(self.test_df[columns['epoch']])
+        self.max_test_epoch = np.max(self.test_df[columns['epoch']])
+        self.min_train_epoch = np.min(self.train_df[columns['epoch']])
+        self.max_train_epoch = np.max(self.train_df[columns['epoch']])
 
     def setup(self):
         pass
 
     def get_time_series(self, _id, data):
-        d =  self.train_df[self.train_df[self.columns['id']] == _id]
+        d =  self.df[self.df[self.columns['id']] == _id]
 
         d = d.sort_values(by=self.columns['epoch'])
 
@@ -457,16 +493,15 @@ class ST_TimeSeriesPlot(object):
         return epochs, var, pred, observed
 
     def plot(self, _id):
-        epochs, var, pred, observed = self.get_time_series(_id, self.train_df)
+        epochs, var, pred, observed = self.get_time_series(_id, self.df)
 
         self.var_plot = self.ax.fill_between(epochs, pred-var, pred+var)
         self.observed_scatter = self.ax.scatter(epochs, observed)
         self.pred_plot = self.ax.plot(epochs, pred)
-        self.ax.set_xlim([self.min_test_epoch,self.max_test_epoch ])
+        self.ax.set_xlim([self.min_train_epoch,self.max_test_epoch ])
 
         self.min_line = self.ax.axvline(self.min_test_epoch)
         self.max_line = self.ax.axvline(self.max_test_epoch)
-        self.test_start_line = self.ax.axvline(self.test_start_epoch)
 
     def plot_cur_epoch(self, epoch):
         self.cur_epoch_line = self.ax.axvline(epoch, ymin=0.25, ymax=1.0)
@@ -483,3 +518,167 @@ class ST_TimeSeriesPlot(object):
         self.min_line.remove()
         self.max_line.remove()
         self.plot(_id)
+
+class ST_SliderPlot(object):
+    def __init__(self, fig, ax, unique_vals, callback):
+        print('slider init')
+        self.fig = fig
+        self.ax = ax
+        self.unique_vals = unique_vals
+        self.callback = callback
+
+    def get_text_format(self, i):
+        #datetime.fromtimestamp(1472860800).strftime("%Y-%m-%d %H")
+        return datetime.fromtimestamp(i).strftime("%Y-%m-%d %H")
+        #self.slider.valtext.set_text()
+        #self.slider.valtext.set_text("")
+
+    def set_text_format(self):
+        self.slider.valtext.set_text("")
+
+
+    def setup(self, start_val):
+        self.slider = Slider(self.ax, 'Date', np.min(self.unique_vals), np.max(self.unique_vals), valinit=start_val)
+        self.set_text_format()
+        self.slider.on_changed(self.update)
+
+    def update(self, i):
+        cur_epoch_i = np.abs(self.unique_vals-i).argmin()
+        cur_epoch = self.unique_vals[cur_epoch_i]
+        self.set_text_format()
+
+        datetime = self.get_text_format(cur_epoch)
+        self.callback(datetime, cur_epoch)
+
+def plot_polygon_collection(ax, geoms, norm, values=None, colormap='Set1',  facecolor=None, edgecolor=None, alpha=1.0, linewidth=1.0, **kwargs):
+    """ Plot a collection of Polygon geometries """
+    patches = []
+
+    for poly in geoms:
+
+        a = np.asarray(poly.exterior)
+        if poly.has_z:
+            poly = shapely.geometry.Polygon(zip(*poly.exterior.xy))
+
+        patches.append(Polygon(a))
+
+    patches = PatchCollection(patches, facecolor=facecolor, linewidth=linewidth, edgecolor=edgecolor, alpha=alpha, norm=norm, **kwargs)
+
+    if values is not None:
+        patches.set_array(values)
+        patches.set_cmap(colormap)
+
+
+    ax.add_collection(patches, autolim=True)
+    ax.autoscale_view()
+    return patches
+
+class ST_GridPlot(object):
+    def __init__(self, columns, col, fig, ax, df, cax_on_right, norm_on_training=True, label='', geopandas_flag=False):
+        self.columns=columns
+        self.col = col
+        self.geopandas_flag = geopandas_flag
+
+        self.fig = fig
+        self.ax = ax
+
+        self.df = df
+
+        self.norm_on_training = norm_on_training
+        self.right_flag = cax_on_right
+        self.label = label
+        self.cmap=None
+
+    def get_spatial_slice(self, epoch):
+        s = self.df[self.df[self.columns['epoch']] == epoch]
+
+        if len(s) == 0:
+            return None, None, None
+
+        return s[self.columns['x']].astype(np.float32), s[self.columns['y']].astype(np.float32), s[self.columns[self.col]].astype(np.float32)
+
+    def get_data(self, epoch):
+        x_train, y_train, z_train = self.get_spatial_slice(epoch)
+        if x_train is None: return None, None
+
+        print(z_train.shape)
+        z_train = np.array(z_train)
+
+        s = np.c_[x_train, y_train]
+
+        n = int(np.sqrt(z_train.shape[0]))
+        grid_index = np.lexsort((s[:, 0], s[:, 1]))
+        s = s[grid_index, :]
+        z_train = z_train[grid_index]
+        z_train = (z_train).reshape(n, n)
+        return s, z_train
+
+    def setup(self):
+        df = self.df
+        if self.norm_on_training:
+            df = self.df
+
+        self.norm = matplotlib.colors.Normalize(vmin=np.min(df[self.columns[self.col]]),vmax=np.max(df[self.columns[self.col]]))
+
+        #setup color bar
+        self.divider = make_axes_locatable(self.ax)
+        dir_str = 'left'
+        if self.right_flag: dir_str='right'
+
+        self.color_bar_ax = self.divider.append_axes(dir_str, size='5%', pad=0.05)
+
+    def update(self, epoch):
+        if self.geopandas_flag:
+
+            #If grid_plot is init with zero patches then we need to create them
+            if self.grid_plot is None:
+                self.plot(epoch)
+                return 
+
+            df = self.df[self.df[self.columns['epoch']] == epoch]
+            df = df.sort_values(self.columns['id'])
+            self.grid_plot.set_array(df[self.columns[self.col]])
+        else:
+            s, z_train = self.get_data(epoch)
+
+            if z_train is None: 
+                if hasattr(self, 'grid_plot'):
+                    self.grid_plot.set_data([[]])
+            else:
+                if hasattr(self, 'grid_plot'):
+                    self.grid_plot.set_data(z_train)
+                else:
+                    self.plot(epoch)
+        if hasattr(self, 'grid_plot'):
+            return self.grid_plot
+        else:
+            return None
+
+    def plot(self, epoch):
+        if self.geopandas_flag:
+            df = self.df[self.df[self.columns['epoch']] == epoch]
+
+            #If grid_plot is init with zero patches we cannot plot later
+            if df.shape[0] == 0:
+                self.grid_plot = None
+                return
+
+            df = df.sort_values(self.columns['id'])
+            geo_series = gpd.GeoSeries(df['geom'])
+            self.grid_plot = plot_polygon_collection(self.ax, geo_series, self.norm)
+            self.grid_plot.set_array(df[self.columns[self.col]])
+        else:
+            s, z_train = self.get_data(epoch)
+            if z_train is None: return
+
+            #get extents
+            min_x = s[0,0]
+            min_y = s[0,1]
+            max_x = s[s.shape[0]-1,0]
+            max_y = s[s.shape[0]-1,1]
+
+            self.grid_plot = self.ax.imshow(z_train, origin='lower', cmap=self.cmap, norm=self.norm, aspect='auto', extent=[min_x, max_x, min_y, max_y])
+            self.fig.colorbar(self.grid_plot, cax=self.color_bar_ax, orientation='vertical')
+
+        return self.grid_plot
+

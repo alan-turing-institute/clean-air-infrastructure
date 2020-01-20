@@ -1,83 +1,35 @@
-import tkinter
-
+import random
+import matplotlib
+import tkinter as Tk
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
-# Implement the default Matplotlib key bindings.
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.figure import Figure
+from matplotlib.widgets import Slider
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-import numpy as np
+matplotlib.use('TkAgg')
 
+root = Tk.Tk()
+root.wm_title("Embedding in TK")
+fig = plt.Figure()
+canvas = FigureCanvasTkAgg(fig, root)
+canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
-root = tkinter.Tk()
-root.wm_title("Embedding in Tk")
+ax=fig.add_subplot(111)
+fig.subplots_adjust(bottom=0.25)
 
-top = tkinter.Frame(root)
-top.place(relx=0.3)
+y_values = [random.randrange(20, 40, 1) for _ in range(40)]
+x_values = [i for i in range(40)]
 
-left = tkinter.Frame(root)
-left.place(relx=0.0)
+ax.axis([0, 9, 20, 40])
+ax.plot(x_values, y_values)
 
-page = tkinter.Frame(root)
-page.pack(fill=tkinter.BOTH, expand=1)
-
-fig = Figure(figsize=(20, 10),facecolor='#7f8c8d')
-t = np.arange(0, 3, .01)
-fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
-plt.tight_layout()
-
-canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-canvas.draw()
-canvas.get_tk_widget().pack(in_=page)
-
-#toolbar = NavigationToolbar2Tk(canvas, root)
-#toolbar.update()
-#canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+ax_time = fig.add_axes([0.12, 0.1, 0.78, 0.03])
+s_time = Slider(ax_time, 'Time', 0, 30, valinit=0)
 
 
-def on_key_press(event):
-    print("you pressed {}".format(event.key))
-    key_press_handler(event, canvas, toolbar)
+def update(val):
+    pos = s_time.val
+    ax.axis([pos, pos+10, 20, 40])
+    fig.canvas.draw_idle()
+#s_time.on_changed(update)
 
-
-canvas.mpl_connect("key_press_event", on_key_press)
-
-
-def _quit():
-    root.quit()     # stops mainloop
-    root.destroy()  # this is necessary on Windows to prevent
-                    # Fatal Python Error: PyEval_RestoreThread: NULL tstate
-
-
-
-button = tkinter.Button(master=root, text="Quit", command=_quit)
-button.pack(in_=left, side=tkinter.TOP)
-
-button1 = tkinter.Button(master=root, text="Quit2", command=_quit)
-button1.pack(in_=left, side=tkinter.TOP)
-
-tkvar = tkinter.StringVar(root)
-choices = { 'Pizza','Lasagne','Fries','Fish','Potatoe'}
-tkvar.set('Pizza') # set the default option
-
-popupMenu = tkinter.OptionMenu(root, tkvar, *choices)
-popupMenu.config(width=10, height=2)
-
-tkvar1 = tkinter.StringVar(root)
-choices1 = { '1','2','3','3','4'}
-tkvar1.set('1') # set the default option
-
-popupMenu1 = tkinter.OptionMenu(root, tkvar1, *choices1)
-popupMenu1.config(width=10, height=2)
-
-popupMenu.pack(in_=top, side=tkinter.LEFT)
-popupMenu1.pack(in_=top, side=tkinter.LEFT)
-
-# on change dropdown value
-def change_dropdown(*args):
-    print( tkvar.get() )
-
-# link function to change dropdown
-tkvar.trace('w', change_dropdown)
-
-tkinter.mainloop()
+Tk.mainloop()

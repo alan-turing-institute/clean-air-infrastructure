@@ -8,16 +8,19 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 
 import sys
-sys.path.append('visualisation')
 from spacetime import SpaceTimeVisualise
 
+
+
 #visualisation settings
-model_name = 'svgp'
-model_prefix = 'svgp'
+model_name = 'gp'
+model_prefix = 'gp'
 use_results_from_cluster = False
 
 plot_predictions_at_sensors = True
 plot_predictions_on_grid = False
+
+geopandas_flag = False
 
 
 def get_correct_column_names(df):
@@ -48,13 +51,14 @@ def vis_results(laqn_training, laqn_prediction, grid_prediction):
         grid_test_df = processed_data_grid
 
         processed_data_grid['datetime'] = pd.to_datetime(processed_data_grid['measurement_start_utc'])
-        processed_data_grid['geom'] = processed_data_grid['src_geom'].apply(wkt.loads)
 
-        processed_data_grid = gpd.GeoDataFrame(processed_data_grid, geometry='geom')
+        if geopandas_flag:
+            processed_data_grid['geom'] = processed_data_grid['src_geom'].apply(wkt.loads)
+            processed_data_grid = gpd.GeoDataFrame(processed_data_grid, geometry='geom')
 
-        visualise = SpaceTimeVisualise(train_df, processed_data_grid, geopandas_flag=True)
+        visualise = SpaceTimeVisualise(train_df, processed_data_grid, geopandas_flag=geopandas_flag)
     else:
-        visualise = SpaceTimeVisualise(train_df, None, geopandas_flag=True)
+        visualise = SpaceTimeVisualise(train_df, None, geopandas_flag=geopandas_flag)
 
     visualise.show()
 
@@ -101,4 +105,6 @@ grid_predictions = pd.merge(left=grid_predictions, right=hexgrid_file, how='left
 grid_predictions['src_geom'] = grid_predictions['geom']
 
 vis_results(laqn_training_predictions, laqn_predictions, grid_predictions)
+
+
 
