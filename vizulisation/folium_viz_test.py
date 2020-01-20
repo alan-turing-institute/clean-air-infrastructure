@@ -5,14 +5,16 @@ import folium
 
 # m = folium.Map(location=[51.5297753, -0.12665390000006],
 #                tiles='Stamen Toner',
-#                zoom_start=11)
+#                zoom_start=12)
 
 m = folium.Map(location=[51.5297753, -0.12665390000006],
                zoom_start=11)
 
 folium.Marker([51.5297753, -0.12665390000006], popup='<i>Alan Turing Institute</i>').add_to(m)
 
-url = 'http://localhost:8080/geoserver/ows?/'
+# url = 'http://localhost:8080/geoserver/ows?/'
+url = 'http://localhost:8080/geoserver/gwc/service/wms/'
+
 
 # folium.raster_layers.WmsTileLayer(url,
 #                                   'london:parks',
@@ -27,7 +29,7 @@ url = 'http://localhost:8080/geoserver/ows?/'
 #                                   show=True).add_to(m)
 
 folium.raster_layers.WmsTileLayer(url,
-                                  'london:laqn_park_features',
+                                  'london:water',
                                   styles='',
                                   fmt='image/png',
                                   transparent=True,
