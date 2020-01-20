@@ -3,9 +3,9 @@ Mixin for useful database queries
 """
 
 from sqlalchemy import func
-from sqlalchemy import null, literal
+from sqlalchemy import null, literal, and_
 from ..decorators import db_query
-from ..databases.tables import (LondonBoundary, IntersectionValue, MetaPoint,
+from ..databases.tables import (LondonBoundary, IntersectionValue, IntersectionValueDynamic, MetaPoint,
                                 AQESite, LAQNSite, LAQNReading, AQEReading)
 from ..loggers import get_logger
 
@@ -37,6 +37,25 @@ class DBQueryMixin():
             feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
 
             return feature_types_q
+
+    @db_query
+    def get_available_dynamic_features(self, start_date, end_date):
+        """Return a list of the available dynamic features in the database.
+            Only returns features that are available between start_date and end_date
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            available_dynamic_sq = session.query(IntersectionValueDynamic.feature_name,
+                                                 func.min(IntersectionValueDynamic.measurement_start_utc).label(
+                                                     'min_date'),
+                                                 func.max(IntersectionValueDynamic.measurement_start_utc).label('max_date')) \
+                .group_by(IntersectionValueDynamic.feature_name).subquery()
+
+            available_dynamic_q = session.query(available_dynamic_sq).filter(and_(available_dynamic_sq.c['min_date'] <= start_date,
+                                                                                  available_dynamic_sq.c['max_date'] >= end_date))
+
+            return available_dynamic_q
 
     @db_query
     def get_available_sources(self):
