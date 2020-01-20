@@ -61,7 +61,7 @@ class ModelData(DBWriter, DBQueryMixin):
         if config:
             # Validate the configuration
             self.__validate_config(config)
-            self.config = self.generate_full_config(config)
+            self.config = self.__generate_full_config(config)
 
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
@@ -76,7 +76,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
                 self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
                     ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
-
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ['box_id', 'measurement_start_utc'])
 
@@ -94,7 +93,6 @@ class ModelData(DBWriter, DBQueryMixin):
         if not os.path.exists(dir_path):
             os.mkdir(dir_path)
 
-        # Write the files to the directory
         self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
         self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
 
@@ -111,7 +109,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         self.normalised_training_data_df = pd.read_csv(os.path.join(
             os.path.join(dir_path, 'normalised_training_data.csv')))
-        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_training_data.csv')))
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_pred_data.csv')))
 
         with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
             self.config = json.load(config_f)
@@ -149,11 +147,12 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Check requested features are available
         if config['features'] == 'all':
-            features = self.list_available_static_features(
-            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+            features = self.get_available_static_features(output_type='list'
+                                                          ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
-            self.logger.warning("You have selected 'all' features from the database. It is strongly advised that you choose features manually")
+            self.logger.warning(
+                "You have selected 'all' features from the database. It is strongly advised that you choose features manually")
         else:
             self.logger.debug("Checking requested features are availble in database")
             self.__check_features_available(config['features'], config['train_start_date'], config['pred_end_date'])
@@ -189,7 +188,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         self.logger.info("Validate config complete")
 
-    def generate_full_config(self, config):
+    def __generate_full_config(self, config):
         """Generate a full config file by querying the cleanair database to check available interest point sources and features"""
 
         if config['train_interest_points'] == 'all':
@@ -202,17 +201,61 @@ class ModelData(DBWriter, DBQueryMixin):
             config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
-            feature_names = self.list_available_static_features(
-            ) + self.list_available_dynamic_features(config['train_start_date'], config['pred_end_date'])
+            feature_names = self.get_available_static_features(output_type='list'
+                                                               ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
             config['feature_names'] = feature_names
-        else: 
+        else:
             config['feature_names'] = list(set(["".join(feature.split("_", 2)[2:]) for feature in config['features']]))
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
         return config
+
+    def save_config_state(self, dir_path):
+        """Save the full configuration and training/prediction data to disk:
+
+        args:
+            dir_path: Directory path in which to save the config files
+        """
+
+        # Create a new directory
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
+
+        # Write the files to the directory
+        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+
+        if self.config['include_satellite']:
+
+            self.training_satellite_data_x.to_csv(os.path.join(dir_path, 'normalised_satellite_data_x.csv'))
+            self.training_satellite_data_y.to_csv(os.path.join(dir_path, 'normalised_satellite_data_y.csv'))
+
+        with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
+            json.dump(self.config, config_f, sort_keys=True, indent=4)
+
+        self.logger.info("State files saved to {}".format(dir_path))
+
+    def restore_config_state(self, dir_path):
+        "Reload configuration state saved to disk by ModelData.save_config_state()"
+        if not os.path.exists(dir_path):
+            raise IOError("{} does not exist".format(dir_path))
+
+        with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
+            self.config = json.load(config_f)
+
+        self.normalised_training_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
+        self.normalised_pred_data_df = pd.read_csv(os.path.join(
+            os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
+
+        if self.config['include_satellite']:
+            self.training_satellite_data_x = pd.read_csv(os.path.join(
+                os.path.join(dir_path, 'normalised_satellite_data_x.csv')), index_col=0)
+            self.training_satellite_data_y = pd.read_csv(os.path.join(
+                os.path.join(dir_path, 'normalised_satellite_data_y.csv')), index_col=0)
 
     @property
     def x_names_norm(self):
@@ -229,7 +272,7 @@ class ModelData(DBWriter, DBQueryMixin):
         norm_std = self.training_data_df[self.training_data_df['source']
                                          == self.config['norm_by']][self.config['x_names']].std(axis=0)
 
-        # Check for zero variance
+        # Check for zero variance and set to 1 if found
         if norm_std.eq(0).any().any():
             self.logger.warning("No variance in feature: %s. Setting variance to 1.", norm_std[norm_std == 0].index)
             norm_std[norm_std == 0] = 1
@@ -286,12 +329,14 @@ class ModelData(DBWriter, DBQueryMixin):
             # Check dimensions
             N_sat_box = self.training_satellite_data_x['box_id'].unique().size
             N_hours = self.training_satellite_data_x['epoch'].unique().size
-            N_interest_points = self.training_satellite_data_x['point_id'].unique().size
+            # N_interest_points = self.training_satellite_data_x['point_id'].unique().size
             N_x_names = len(self.config['x_names'])
 
+            print(self.training_satellite_data_x[self.config['x_names']].shape)
+            print(N_sat_box, N_hours, N_x_names)
             X_sat = self.training_satellite_data_x[self.config['x_names']
                                                    ].to_numpy().reshape((N_sat_box * N_hours, 100, N_x_names))
-
+            quit()
             Y_sat = self.training_satellite_data_y['value'].to_numpy()
             data_dict['X_sat'] = X_sat
             data_dict['Y_sat'] = Y_sat
@@ -322,8 +367,8 @@ class ModelData(DBWriter, DBQueryMixin):
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.list_available_static_features(
-        ) + self.list_available_dynamic_features(start_date, end_date)
+        available_features = self.get_available_static_features(output_type='list'
+                                                                ) + self.get_available_dynamic_features(start_date, end_date, output_type='list')
         unavailable_features = []
 
         for feature in features:
@@ -332,7 +377,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 unavailable_features.append(feature)
 
         if unavailable_features:
-            raise AttributeError("The following features are not available the cleanair database: {}"
+            raise AttributeError("The following features are not available the cleanair database: {}. If requesting dynamic features they may not be available for the selected dates"
                                  .format(unavailable_features))
 
     def __check_sources_available(self, sources):
@@ -342,7 +387,7 @@ class ModelData(DBWriter, DBQueryMixin):
             sources: A list of sources
         """
 
-        available_sources = self.list_available_sources()
+        available_sources = self.get_available_sources(output_type='list')
         unavailable_sources = []
 
         for source in sources:
@@ -353,62 +398,14 @@ class ModelData(DBWriter, DBQueryMixin):
             raise AttributeError("The following sources are not available the cleanair database: {}"
                                  .format(unavailable_sources))
 
-    def __get_interest_points_q(self, sources):
-        """Query the database to get all interest points for a given source and return a query object.
-           Excludes LAQN and AQE sites that are closed.
-           Only returns interest points inside of London boundary
-        args:
-            sources: A list of sources to include
-        """
-
-        bounded_geom = self.query_london_boundary()
-        base_query_columns = [MetaPoint.id.label('point_id'),
-                              MetaPoint.source.label('source'),
-                              MetaPoint.location.label('location'),
-                              func.ST_X(MetaPoint.location).label('lon'),
-                              func.ST_Y(MetaPoint.location).label('lat')
-                              ]
-
-        with self.dbcnxn.open_session() as session:
-
-            remaining_sources_q = session.query(*base_query_columns,
-                                                null().label("date_opened"),
-                                                null().label("date_closed"),
-                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]),
-                                                         MetaPoint.location.ST_Within(bounded_geom))
-
-            aqe_sources_q = session.query(*base_query_columns,
-                                          AQESite.date_opened,
-                                          AQESite.date_closed
-                                          ).join(AQESite, isouter=True).filter(MetaPoint.source.in_(['aqe']),
-                                                                                 MetaPoint.location.ST_Within(bounded_geom))
-
-            laqn_sources_q=session.query(*base_query_columns,
-                                           LAQNSite.date_opened,
-                                           LAQNSite.date_closed
-                                           ).join(LAQNSite, isouter = True).filter(MetaPoint.source.in_(['laqn']), 
-                                                                                   MetaPoint.location.ST_Within(bounded_geom))
-
-            all_sources_sq=remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
-
-            # Remove any sources where there is a closing date
-            all_sources_q=session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)
-
-        return all_sources_q
-
     def __get_interest_point_ids(self, sources):
 
-        interest_point_query=self.__get_interest_points_q(sources)
-
-        available_interest_points=pd.read_sql(interest_point_query.statement,
-                                                interest_point_query.session.bind)['point_id'].astype(str).to_numpy().tolist()
-
-        return available_interest_points
+        return self.get_available_interest_points(sources, output_type='df')['point_id'].astype(str).to_numpy().tolist()
 
     def __check_interest_points_available(self, interest_points, sources):
 
-        available_interest_points=self.__get_interest_point_ids(sources)
-        unavailable_interest_points=[]
+        available_interest_points = self.__get_interest_point_ids(sources)
+        unavailable_interest_points = []
 
         for point in interest_points:
             if point not in available_interest_points:
@@ -417,172 +414,6 @@ class ModelData(DBWriter, DBQueryMixin):
         if unavailable_interest_points:
             raise AttributeError("The following interest points are not available the cleanair database: {}"
                                  .format(unavailable_interest_points))
-
-    def list_available_static_features(self):
-        """Return a list of the available static features in the database.
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(IntersectionValue.feature_name).distinct(IntersectionValue.feature_name)
-
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)['feature_name'].tolist()
-
-    def list_available_dynamic_features(self, start_date, end_date):
-        """Return a list of the available dynamic features in the database.
-            Only returns features that are available between start_date and end_date 
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(IntersectionValueDynamic.feature_name,
-                                            func.min(IntersectionValueDynamic.measurement_start_utc),
-                                            func.max(IntersectionValueDynamic.measurement_start_utc)).group_by(IntersectionValueDynamic.feature_name)
-
-            available_features = pd.read_sql(feature_types_q.statement,
-                                             feature_types_q.session.bind)  # ['feature_name'].tolist()
-
-            # Check if dynamic features are available between the requested dates. If not they are not returned.
-
-            available_features['is_available'] = (available_features['min_1'] <= start_date) & (
-                available_features['max_1'] >= end_date)
-
-            if not available_features['is_available'].all():
-
-                not_available = available_features[available_features['is_available'] == False]['feature_name'].tolist()
-                self.logger.warning(
-                    "The following dynamic features were not available during the time you requested: %s", not_available)
-
-            available = available_features[available_features['is_available'] == True]['feature_name'].tolist()
-
-            return available
-
-    def list_available_sources(self):
-        """Return a list of the available interest point sources in a database"""
-
-        with self.dbcnxn.open_session() as session:
-
-            feature_types_q = session.query(MetaPoint.source).distinct(MetaPoint.source)
-
-            return pd.read_sql(feature_types_q.statement,
-                               feature_types_q.session.bind)['source'].tolist()
-
-    def query_sensor_site_info(self, source):
-        """Query the database to get the site info for a datasource(e.g. 'laqn', 'aqe') and return a dataframe
-
-        args:
-            source: The sensor source('laqn' or 'aqe')
-        """
-        interest_point_q = self.__get_interest_points(source=[source])
-        interest_point_sq = interest_point_q.subquery()
-
-        if source == 'laqn':
-            INFOSite = LAQNSite
-        elif source == 'aqe':
-            INFOSite = AQESite
-
-        with self.dbcnxn.open_session() as session:
-
-            join_info_site_q = session.query(interest_point_sq,
-                                             INFOSite.site_code,
-                                             INFOSite.date_opened,
-                                             INFOSite.date_closed).join(INFOSite, isouter=True)
-
-            interest_point_join_df = pd.read_sql(join_info_site_q.statement,
-                                                 join_info_site_q.session.bind)
-
-            interest_point_join_df['point_id'] = interest_point_join_df['point_id'].astype(str)
-            interest_point_df = interest_point_join_df.groupby(['point_id',
-                                                                'source',
-                                                                'lon',
-                                                                'lat']).agg({'date_opened': 'min',
-                                                                             'date_closed': 'max'}).reset_index()
-
-            return interest_point_df
-
-    def sensor_data_status(self, start_date, end_date, source, species):
-        """Return a dataframe which gives the status of sensor readings for a particular source and species between
-        the start_date(inclusive) and end_date.
-        """
-
-        def categorise(res):
-            if not res['open']:
-                status = 'Closed'
-            elif res['open'] and not res['missing_reading']:
-                status = 'OK'
-            else:
-                status = 'Missing'
-            return status
-
-        # Get interest points with site open and site closed dates and then expand with time
-        interest_point_df = self.query_sensor_site_info(source=source)
-        time_df_merged = self.__expand_time(start_date, end_date, interest_point_df)
-
-        # Check if an interest_point was open at all times
-        time_df_merged['open'] = (
-            (time_df_merged['date_opened'] <= time_df_merged['measurement_start_utc']) &
-            ((time_df_merged['measurement_start_utc'] < time_df_merged['date_closed']) | pd.isnull(
-                time_df_merged['date_closed']))
-        )
-
-        # Merge sensor readings onto interst points
-        sensor_readings = self.get_sensor_readings(start_date, end_date, sources=[source], species=[species])
-        time_df_merged = pd.merge(
-            time_df_merged, sensor_readings, how='left', on=[
-                'point_id', 'measurement_start_utc', 'epoch', 'source'])
-        time_df_merged['missing_reading'] = pd.isnull(time_df_merged[species])
-
-        # Categorise as either OK (has a reading), closed (sensor closed)
-        # or missing (no data in database even though sensor is open)
-        time_df_merged['category'] = time_df_merged.apply(categorise, axis=1)
-
-        def set_instance(group):
-            """Categorise each row as an instance, where a instance increments
-            if the difference from the preceeding timestamp is > 1h
-            """
-
-            group['offset_time'] = group['measurement_start_utc'].diff() / pd.Timedelta(hours=1)
-            group.at[group.index[0], 'offset_time'] = 1.
-            group['instance'] = (group['offset_time'].astype(int) - 1).apply(lambda x: min(1, x)).cumsum()
-            return group
-
-        time_df_merged_instance = time_df_merged.groupby(['point_id', 'category']).apply(set_instance)
-        time_df_merged_instance['measurement_end_utc'] = (time_df_merged_instance['measurement_start_utc'] +
-                                                          pd.DateOffset(hours=1))
-
-        # Group consecutive readings of same category
-        time_df_merged_instance = time_df_merged_instance.groupby(['point_id', 'category', 'instance']) \
-            .agg({'measurement_start_utc': 'min', 'measurement_end_utc': 'max'}) \
-            .reset_index()
-
-        return time_df_merged_instance
-
-    @staticmethod
-    def show_vis(sensor_status_df, title='Sensor data'):
-        """Show a plotly gantt chart of a dataframe returned by self.sensor_data_status"""
-
-        gant_df = sensor_status_df[['point_id', 'measurement_start_utc', 'measurement_end_utc', 'category']].rename(
-            columns={'point_id': 'Task',
-                     'measurement_start_utc': 'Start',
-                     'measurement_end_utc': 'Finish',
-                     'category': 'Resource'})
-
-        # Create the gant chart
-        colors = dict(OK='#76BA63',
-                      Missing='#BA6363',
-                      Closed='#828282',)
-
-        fig = ff.create_gantt(
-            gant_df,
-            group_tasks=True,
-            colors=colors,
-            index_col='Resource',
-            show_colorbar=True,
-            showgrid_x=True,
-            bar_width=0.38)
-        fig['layout'].update(autosize=True, height=10000, title=title)
-        fig.show()
 
     def __select_features(self, feature_table, features, sources, point_ids, start_date=None, end_date=None):
         """Query features from the database. Returns a pandas dataframe if values returned, else returns None"""
@@ -595,9 +426,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 feature_query = feature_query.filter(feature_table.measurement_start_utc >= start_date,
                                                      feature_table.measurement_start_utc < end_date)
 
-            interest_point_query = self.__get_interest_points_q(sources)
-
-            # interest_point_query = interest_point_query.filter(MetaPoint.id.in_(point_ids))
+            interest_point_query = self.get_available_interest_points(sources)
 
             # Select into into dataframes
             features_df = pd.read_sql(feature_query.statement,
@@ -642,13 +471,13 @@ class ModelData(DBWriter, DBQueryMixin):
             df_joined = interest_point_df.join(features_df, how='left')
             return df_joined.reset_index()
 
-    def select_dynamic_features(self, start_date, end_date, features, sources, point_ids):
+    def __select_dynamic_features(self, start_date, end_date, features, sources, point_ids):
         """Read static features from the database.
         """
 
         return self.__select_features(IntersectionValueDynamic, features, sources, point_ids, start_date, end_date)
 
-    def select_static_features(self, features, sources, point_ids):
+    def __select_static_features(self, features, sources, point_ids):
         """Query the database for static features and join with metapoint data
 
         args:
@@ -675,31 +504,7 @@ class ModelData(DBWriter, DBQueryMixin):
         time_df_merged['epoch'] = time_df_merged['measurement_start_utc'].apply(lambda x: x.timestamp())
         return time_df_merged
 
-    def __get_laqn_readings(self, start_date, end_date):
-
-        with self.dbcnxn.open_session() as session:
-            query = session.query(LAQNReading.measurement_start_utc,
-                                  LAQNReading.species_code,
-                                  LAQNReading.value,
-                                  LAQNSite.point_id,
-                                  literal('laqn').label('source')).join(LAQNSite)
-            query = query.filter(LAQNReading.measurement_start_utc >= start_date,
-                                 LAQNReading.measurement_start_utc < end_date)
-            return query
-
-    def __get_aqe_readings(self, start_date, end_date):
-
-        with self.dbcnxn.open_session() as session:
-            query = session.query(AQEReading.measurement_start_utc,
-                                  AQEReading.species_code,
-                                  AQEReading.value,
-                                  AQESite.point_id,
-                                  literal('aqe').label('source')).join(AQESite)
-            query = query.filter(AQEReading.measurement_start_utc >= start_date,
-                                 AQEReading.measurement_start_utc < end_date)
-            return query
-
-    def get_sensor_readings(self, start_date, end_date, sources, species):
+    def __get_sensor_readings(self, start_date, end_date, sources, species):
         """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
 
         self.logger.debug("Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
@@ -710,16 +515,14 @@ class ModelData(DBWriter, DBQueryMixin):
 
         sensor_dfs = []
         if 'laqn' in sources:
-            sensor_q = self.__get_laqn_readings(start_date_, end_date_)
-            laqn_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            laqn_sensor_data = self.get_laqn_readings(start_date_, end_date_, output_type='df')
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
                 raise AttributeError(
                     "No laqn sensor data was retrieved from the database. Check data exists for the requested dates")
 
         if 'aqe' in sources:
-            sensor_q = self.__get_aqe_readings(start_date_, end_date_)
-            aqe_sensor_data = pd.read_sql(sensor_q.statement, sensor_q.session.bind)
+            aqe_sensor_data = self.get_aqe_readings(start_date_, end_date_, output_type='df')
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -740,13 +543,13 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return sensor_df[species].reset_index()
 
-    def get_model_features(self, start_date, end_date, features, sources, point_ids):
+    def __get_model_features(self, start_date, end_date, features, sources, point_ids):
         """
         Query the database for model features, only getting features in self.features
         """
-        static_features = self.select_static_features(features, sources, point_ids)
+        static_features = self.__select_static_features(features, sources, point_ids)
         static_features_expand = self.__expand_time(start_date, end_date, static_features)
-        dynamic_features = self.select_dynamic_features(start_date, end_date, features, sources, point_ids)
+        dynamic_features = self.__select_dynamic_features(start_date, end_date, features, sources, point_ids)
 
         if dynamic_features.empty:
             self.logger.warning(
@@ -775,8 +578,8 @@ class ModelData(DBWriter, DBQueryMixin):
                          sources, species, start_date, end_date)
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
-        readings = self.get_sensor_readings(start_date, end_date, sources, species)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
+        readings = self.__get_sensor_readings(start_date, end_date, sources, species)
 
         self.logger.debug("Merging sensor data and model features")
         model_data = pd.merge(all_features,
@@ -799,9 +602,9 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Getting prediction data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
         if self.config['include_prediction_y']:
-            readings = self.get_sensor_readings(start_date, end_date, sources, species)
+            readings = self.__get_sensor_readings(start_date, end_date, sources, species)
             self.logger.debug("Merging sensor data and model features")
             model_data = pd.merge(all_features,
                                   readings,
@@ -815,7 +618,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def get_training_satellite_inputs(self):
         """Get satellite inputs"""
         start_date = self.config['train_start_date']
-        end_date = self.config['train_end_date']
+        end_date = self.config['pred_end_date']
         sources = ['satellite']
         species = self.config['species']
         point_ids = self.config['train_satellite_interest_points']
@@ -824,7 +627,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Getting Satellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
                          sources, species, start_date, end_date)
 
-        all_features = self.get_model_features(start_date, end_date, features, sources, point_ids)
+        all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
         # all_features.to_csv('/secrets/satdata.csv')
 
         with self.dbcnxn.open_session() as session:
@@ -854,7 +657,7 @@ class ModelData(DBWriter, DBQueryMixin):
         predict_df['fit_start_time'] = model_fit_info['fit_start_time']
         predict_df['tag'] = self.config['tag']
 
-        # # Concat the predictions with the predict_df
+        # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat([self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False)
 
     def update_remote_tables(self):

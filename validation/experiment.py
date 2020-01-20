@@ -123,6 +123,9 @@ class Experiment(ABC):
                 print("x test shape:", model_data.get_pred_data_arrays(dropna=False)['X'].shape)
                 print("y test shape:", model_data.get_pred_data_arrays(dropna=False)['Y'].shape)
                 print()
+                print("Normalised pred df shape:", model_data.normalised_pred_data_df.shape)
+                print("Normalised pred df, drop na:", model_data.normalised_pred_data_df[model_data.x_names_norm + model_data.config['species']].dropna().shape)
+                print()
 
                 if model_data.get_training_data_arrays()['X'].shape[0] != model_data.get_training_data_arrays()['Y'].shape[0]:
                     raise Exception("training X and Y not the same length")
@@ -238,7 +241,7 @@ class SVGPExperiment(Experiment):
             ) + '_y_pred.npy' for r in experiment_df.itertuples()])
 
         experiment_df['model_state_fp'] = pd.Series([
-            experiments_root + '{name}/results/'.format(name=self.name) + create_experiment_prefix(
+            experiments_root + '{name}/models/restore/m_{model_name}'.format(name=self.name, model_name=r.model_name) + create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) + '.model' for r in experiment_df.itertuples()])
 

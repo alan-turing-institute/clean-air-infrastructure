@@ -36,10 +36,13 @@ class LaptopExperiment(experiment.SVGPExperiment):
         """
         Roll for 2 days with four features:
         epoch, lat, lon, and value_1000_flat.
+
+        Predict for 2 day training period and 1 day testing period.
         """
         data_config = super().get_default_data_config(n_rolls=n_rolls)
         for index in range(len(data_config)):
             data_config[index]["features"] = ['value_1000_flat']
+            data_config[index]["pred_start_date"] = data_config[index]["train_start_date"]
         return data_config
 
 def get_experiment():

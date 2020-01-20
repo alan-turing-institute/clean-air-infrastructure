@@ -35,7 +35,9 @@ def main(data_config, param_config, experiment_config, experiment_root='../'):
     #TODO: ask patrick where these configs should go
     param_config['train'] = True
     param_config['restore'] = False
-    param_config['model_state_fp'] = experiment_root + 'models/restore/' + os.path.basename(experiment_config['model_state_fp'])
+    # param_config['model_state_fp'] = experiment_root + 'models/restore/' + os.path.basename(experiment_config['model_state_fp'])
+    # param_config['model_state_fp'] = experiment_root + 'model/restore/' + 'm_svgp'
+    param_config['model_state_fp'] = experiment_config['model_state_fp']
 
     m = SVGP_TF1()
 

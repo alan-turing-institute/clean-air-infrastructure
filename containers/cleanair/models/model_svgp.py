@@ -48,7 +48,7 @@ class SVGP_TF1(Model):
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = 1e-5
         with gpflow.settings.temp_settings(custom_config), gpflow.session_manager.get_session().as_default():
-            kern = gpflow.kernels.RBF(D, lengthscales=1.0)
+            kern = gpflow.kernels.RBF(D, lengthscales=1.0, ARD=True)
             self.m = gpflow.models.SVGP(X, Y, kern, gpflow.likelihoods.Gaussian(variance=5.0), Z, minibatch_size=300)
 
     def clean_data(self, X, Y):
@@ -97,7 +97,8 @@ class SVGP_TF1(Model):
                 {'lengthscale': 0.1,
                  'variance': 0.1,
                  'minibatch_size': 100,
-                 'n_inducing_points': 3000}
+                 'n_inducing_points': 3000
+                 'model_state_fp': 'experiments/NAME/models/restore/m_MODEL_NAME'}
         """
         self.refresh = refresh
 
@@ -121,7 +122,7 @@ class SVGP_TF1(Model):
 
         if model_params['restore']:
             saver = tf.train.Saver()
-            saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=model_params['model_state_fp']))
+            saver.restore(tf_session, '{filepath}.ckpt'.format(filepath=model_params['model_state_fp']))
 
         if model_params['train']:
             # optimize and setup elbo logging
@@ -131,7 +132,8 @@ class SVGP_TF1(Model):
             # save model state
             if save_model_state:
                 saver = tf.train.Saver()
-                save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['model_state_fp']))
+                # save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=model_params['model_state_fp']))
+                save_path = saver.save(tf_session, "{filepath}.ckpt".format(filepath=model_params['model_state_fp']))
 
     def batch_predict(self, XS):
         """Split up prediction into indepedent batchs.
