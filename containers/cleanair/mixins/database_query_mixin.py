@@ -161,7 +161,7 @@ class DBQueryMixin:
                     """Satellite can only be requested on a source on its own.
                     Ensure 'sources' contains no other options"""
                 )
-            elif sources[0] == "satellite":
+            if sources[0] == "satellite":
                 all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
             else:
                 all_sources_sq = remaining_sources_q.union(
@@ -177,7 +177,7 @@ class DBQueryMixin:
 
     @db_query
     def get_laqn_readings(self, start_date, end_date):
-
+        """Get laqn readings from the database"""
         with self.dbcnxn.open_session() as session:
             laqn_reading_q = session.query(
                 LAQNReading.measurement_start_utc,
@@ -194,7 +194,7 @@ class DBQueryMixin:
 
     @db_query
     def get_aqe_readings(self, start_date, end_date):
-
+        """Get AQE readings from the database"""
         with self.dbcnxn.open_session() as session:
             aqe_reading_q = session.query(
                 AQEReading.measurement_start_utc,

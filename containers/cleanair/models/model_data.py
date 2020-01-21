@@ -13,6 +13,7 @@ from ..databases.tables import (
     ModelResult,
     SatelliteForecastReading,
     SatelliteDiscreteSite,
+    MetaPoint,
 )
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
@@ -175,18 +176,16 @@ class ModelData(DBWriter, DBQueryMixin):
         # Check interest points are valid
         train_interest_points = config["train_interest_points"]
         if isinstance(train_interest_points, list):
-            self.__check_interest_points_available(train_interest_points, train_sources)
+            self.__check_ipoints_available(train_interest_points, train_sources)
 
         pred_interest_points = config["pred_interest_points"]
         if isinstance(pred_interest_points, list):
-            self.__check_interest_points_available(pred_interest_points, pred_sources)
+            self.__check_ipoints_available(pred_interest_points, pred_sources)
 
         if config["include_satellite"]:
             satellite_interest_points = config["train_satellite_interest_points"]
             if isinstance(satellite_interest_points, list):
-                self.__check_interest_points_available(
-                    pred_interest_points, ["satellite"]
-                )
+                self.__check_ipoints_available(pred_interest_points, ["satellite"])
 
         self.logger.info("Validate config complete")
 
@@ -273,7 +272,7 @@ class ModelData(DBWriter, DBQueryMixin):
         with open(os.path.join(dir_path, "config.json"), "w") as config_f:
             json.dump(self.config, config_f, sort_keys=True, indent=4)
 
-        self.logger.info("State files saved to {}".format(dir_path))
+        self.logger.info("State files saved to %s", dir_path)
 
     def restore_config_state(self, dir_path):
         "Reload configuration state saved to disk by ModelData.save_config_state()"
@@ -368,21 +367,21 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if self.config["include_satellite"]:
             # Check dimensions
-            N_sat_box = self.training_satellite_data_x["box_id"].unique().size
-            N_hours = self.training_satellite_data_x["epoch"].unique().size
+            n_sat_box = self.training_satellite_data_x["box_id"].unique().size
+            n_hours = self.training_satellite_data_x["epoch"].unique().size
             # N_interest_points = self.training_satellite_data_x['point_id'].unique().size
-            N_x_names = len(self.config["x_names"])
+            n_x_names = len(self.config["x_names"])
 
             X_sat = (
                 self.training_satellite_data_x[self.config["x_names"]]
                 .to_numpy()
-                .reshape((N_sat_box * N_hours, 100, N_x_names))
+                .reshape((n_sat_box * n_hours, 100, n_x_names))
             )
 
             X_sat_mask = (
                 self.training_satellite_data_x["in_london"]
                 .to_numpy()
-                .reshape(N_sat_box * N_hours, 100)
+                .reshape(n_sat_box * n_hours, 100)
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
 
@@ -471,7 +470,7 @@ class ModelData(DBWriter, DBQueryMixin):
             .tolist()
         )
 
-    def __check_interest_points_available(self, interest_points, sources):
+    def __check_ipoints_available(self, interest_points, sources):
 
         available_interest_points = self.__get_interest_point_ids(sources)
         unavailable_interest_points = []
@@ -510,7 +509,10 @@ class ModelData(DBWriter, DBQueryMixin):
                     feature_table.measurement_start_utc < end_date,
                 )
 
-            interest_point_query = self.get_available_interest_points(sources)
+            # Filter interest points
+            interest_point_query = self.get_available_interest_points(sources).filter(
+                MetaPoint.id.in_(point_ids)
+            )
 
             # Select into into dataframes
             features_df = pd.read_sql(

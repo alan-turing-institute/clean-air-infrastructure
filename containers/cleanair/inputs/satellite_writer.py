@@ -110,10 +110,10 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                 lon1=self.sat_bounding_box[2],
                 lon2=self.sat_bounding_box[3],
             )
-            date = str(grib_layer.dataDate)
+            date_ = str(grib_layer.dataDate)
             time = str(grib_layer.dataTime)
             grib_df = pd.DataFrame()
-            grib_df["date"] = np.repeat(date, np.prod(value.shape))
+            grib_df["date"] = np.repeat(date_, np.prod(value.shape))
             grib_df["time"] = np.repeat(time, np.prod(value.shape))
             grib_df["_id"] = np.repeat(_id, np.prod(value.shape))
             grib_df["lon"] = lon.flatten()

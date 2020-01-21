@@ -1,3 +1,4 @@
+"""Decorators for cleanair module"""
 import functools
 import pandas as pd
 

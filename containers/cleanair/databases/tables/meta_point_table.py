@@ -19,9 +19,7 @@ class MetaPoint(Base):
         Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True),
         primary_key=True,
     )
-    id = Column(
-        UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4
-    )  # pylint: disable=invalid-name
+    id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
 
     def __repr__(self):
         return "<MetaPoint(" + ", ".join(
