@@ -4,12 +4,13 @@ The base class for experiments.
 
 import sys
 import json
+import pickle
 from abc import ABC, abstractmethod
 import pandas as pd
 import pathlib
 import itertools
 
-from . import util
+from .. import util
 
 #requires cleanair
 sys.path.append("../containers/")
@@ -132,6 +133,16 @@ class Experiment(ABC):
                 # save config status of the model data object to the data directory
                 model_data.save_config_state(data_dir_path)
 
+                # get the training and testing dicts indexed by source
+                training_dict = model_data.get_training_dicts()
+                testing_dict = model_data.get_testing_dicts()
+
+                # write to a pickle
+                with open(data_config['train_fp'], 'wb') as handle:
+                    pickle.dump(training_dict, handle)
+                with open(data_config['test_fp'], 'wb') as handle:
+                    pickle.dump(testing_dict, handle)
+
         # load and write model data objects to files
         self.save_meta_files()
 
@@ -168,7 +179,6 @@ class Experiment(ABC):
         """
         Create directories to store results in if they don't already exist.
         """
-        results_dir = self.directory + self.name + '/results/'
         for row in self.experiment_df.itertuples():
             pathlib.Path(row.results_dir).mkdir(exist_ok=True)
 

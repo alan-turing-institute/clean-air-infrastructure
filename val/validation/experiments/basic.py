@@ -3,7 +3,7 @@ A simple experiment.
 """
 
 from .experiment import Experiment
-from . import util
+from .. import util
 
 class BasicExperiment(Experiment):
     """

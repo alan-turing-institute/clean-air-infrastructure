@@ -302,7 +302,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def get_training_dicts(self):
         return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'])
 
-    def get_testings_dicts(self):
+    def get_testing_dicts(self):
         return self.__get_model_dicts(self.normalised_pred_data_df, self.config['pred_sources'])
 
     def __get_model_data_arrays(self, data_df, return_y, dropna=True):
