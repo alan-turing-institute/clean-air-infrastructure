@@ -1,17 +1,6 @@
 import argparse
 import importlib
-import sys
 import inspect
-
-from validation import experiments, cluster
-
-def load_experiment(file_name, root=''):
-    try:
-        sys.path.append(root+'experiments/')
-        mod = importlib.import_module(file_name)
-        return mod
-    except:
-        print(file_name, ' does not exist')
 
 class ValidationParser(argparse.ArgumentParser):
 
