@@ -26,6 +26,21 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-e', '--experiments_directory', type=str, help='path to experiments directory')
 
 def get_experiment_class(name):
+    """
+    Get the class of experiment given the name.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    Returns
+    ___
+
+    class
+        A class object that is ready to be initialised.
+    """
     mod = importlib.import_module('validation.experiments.{name}'.format(name=args.name), 'validation')
     members = inspect.getmembers(mod, inspect.isclass)
 
