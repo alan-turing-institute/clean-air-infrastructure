@@ -248,7 +248,7 @@ class Features(DBWriter, DBQueryMixin):
 
         self.logger.debug("Processing the following interest points: %s", [str(i.id) for i in q_filtered.all()])
         n_interest_points = q_filtered.count()
-        batch_size = 50
+        batch_size = 1
         self.logger.info("Preparing to analyse %s interest points in batches of %i...",
                          green(n_interest_points), batch_size)
 
