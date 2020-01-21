@@ -1,6 +1,16 @@
 import argparse
+import importlib
+import sys
 
 from validation import experiments, cluster
+
+def load_experiment(file_name, root=''):
+    try:
+        sys.path.append(root+'experiments/')
+        mod = importlib.import_module(file_name)
+        return mod
+    except:
+        print(file_name, ' does not exist')
 
 class ValidationParser(argparse.ArgumentParser):
 
@@ -18,4 +28,16 @@ class ValidationParser(argparse.ArgumentParser):
 if __name__=="__main__":
     parser = ValidationParser()
     args = parser.parse_args()
+
+    if args.setup:
+        pass
+
+    elif args.run:
+        pass
+
+    elif args.check:
+        pass
+    
+    mod = load_experiment(args.name, root='validation/experiments/')
+
     

@@ -39,6 +39,7 @@ class Experiment():
         self.data_config = kwargs['data_config'] if 'data_config' in kwargs else []
         self.experiment_df = kwargs['experiment_df'] if 'experiment_df' in kwargs else pd.DataFrame()
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
+        self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
 
     @abstractmethod
     def get_default_model_params(self):
