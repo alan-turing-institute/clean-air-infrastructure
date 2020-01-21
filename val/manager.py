@@ -4,13 +4,12 @@ import sys
 
 from validation import experiments, cluster
 
-AVAILABLE_EXPERIMENTS = {
-    'basic':experiments.basic.BasicExperiment
-}
 
 def load_experiment(file_name, root=''):
     try:
-        sys.path.append(root+'experiments/')
+        sys.path.append(root)
+        print(root)
+        print(file_name)
         mod = importlib.import_module(file_name)
         return mod
     except:
