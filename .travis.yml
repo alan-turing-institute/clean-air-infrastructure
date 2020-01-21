@@ -13,8 +13,8 @@ script:
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8
 
-  # Run pylint for stricter error checking
-  - pylint */
+  # Run black for stricter error checking
+  - black --check */
 
   # Build all docker images
   - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers

@@ -16,8 +16,14 @@ from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     """Manage interactions with the AQE table on Azure"""
+
     # Set list of primary-key columns
-    reading_keys = ["SiteCode", "SpeciesCode", "MeasurementStartUTC", "MeasurementEndUTC"]
+    reading_keys = [
+        "SiteCode",
+        "SpeciesCode",
+        "MeasurementStartUTC",
+        "MeasurementEndUTC",
+    ]
 
     def __init__(self, **kwargs):
         # Initialise parent classes
@@ -33,11 +39,15 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         Remove any that do not have an opening date
         """
         try:
-            endpoint = "http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site"
+            endpoint = (
+                "http://acer.aeat.com/gla-cleaner-air/api/v1/gla-cleaner-air/v1/site"
+            )
             raw_data = self.get_response(endpoint, timeout=5.0).content
             dom = minidom.parse(io.BytesIO(raw_data))
             # Convert DOM object to a list of dictionaries. Each dictionary is an site containing site information
-            return [dict(s.attributes.items()) for s in dom.getElementsByTagName("Site")]
+            return [
+                dict(s.attributes.items()) for s in dom.getElementsByTagName("Site")
+            ]
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed: %s", endpoint, error)
             return None
@@ -62,24 +72,36 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             # Process the readings which are in the format: Date, Species1, Species2, ...
             readings = []
             for reading in csvreader:
-                timestamp_end = datetime_from_str(reading[0], timezone="GMT", rounded=True)
+                timestamp_end = datetime_from_str(
+                    reading[0], timezone="GMT", rounded=True
+                )
                 timestamp_start = timestamp_end - datetime.timedelta(hours=1)
                 for species_code, value in zip(species, reading[1:]):
                     # Ignore empty values
                     try:
                         value = float(value)
                     except ValueError:
-                        self.logger.debug("Could not interpret '%s' as a measurement", value)
+                        self.logger.debug(
+                            "Could not interpret '%s' as a measurement", value
+                        )
                         continue
                     # Construct a new reading
-                    readings.append({"SiteCode": site_code,
-                                     "SpeciesCode": species_code,
-                                     "MeasurementStartUTC": utcstr_from_datetime(timestamp_start),
-                                     "MeasurementEndUTC": utcstr_from_datetime(timestamp_end),
-                                     "Value": float(value)})
+                    readings.append(
+                        {
+                            "SiteCode": site_code,
+                            "SpeciesCode": species_code,
+                            "MeasurementStartUTC": utcstr_from_datetime(
+                                timestamp_start
+                            ),
+                            "MeasurementEndUTC": utcstr_from_datetime(timestamp_end),
+                            "Value": float(value),
+                        }
+                    )
             # Combine any readings taken within the same hour
             df_readings = pandas.DataFrame(readings)
-            df_combined = df_readings.groupby(self.reading_keys, as_index=False).agg({"Value": "mean"})
+            df_combined = df_readings.groupby(self.reading_keys, as_index=False).agg(
+                {"Value": "mean"}
+            )
             return list(df_combined.T.to_dict().values())
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed:", endpoint)
@@ -98,13 +120,21 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Requesting site info from %s", green("aeat.com API"))
 
             # Retrieve site entries (discarding any that do not have a known position)
-            site_entries = [s for s in self.request_site_entries() if s["Latitude"] and s["Longitude"]]
+            site_entries = [
+                s
+                for s in self.request_site_entries()
+                if s["Latitude"] and s["Longitude"]
+            ]
             for entry in site_entries:
-                entry["geometry"] = MetaPoint.build_ewkt(entry["Latitude"], entry["Longitude"])
+                entry["geometry"] = MetaPoint.build_ewkt(
+                    entry["Latitude"], entry["Longitude"]
+                )
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: MetaPoint.build_entry("aqe", geometry=s["geometry"])
-                            for s in site_entries}
+            unique_sites = {
+                s["geometry"]: MetaPoint.build_entry("aqe", geometry=s["geometry"])
+                for s in site_entries
+            }
 
             # Update the interest_points table and retrieve point IDs
             point_id = {}
@@ -121,9 +151,11 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Updating site info database records")
             for site in site_entries:
                 session.merge(AQESite.build_entry(site))
-            self.logger.info("Committing changes to database tables %s and %s",
-                             green(MetaPoint.__tablename__),
-                             green(AQESite.__tablename__))
+            self.logger.info(
+                "Committing changes to database tables %s and %s",
+                green(MetaPoint.__tablename__),
+                green(AQESite.__tablename__),
+            )
             session.commit()
 
     def update_reading_table(self, usecore=True):
@@ -134,22 +166,34 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
             site_info_query = session.query(AQESite)
-            self.logger.info("Requesting readings from %s for %s sites",
-                             green("aeat.com API"), green(len(list(site_info_query))))
+            self.logger.info(
+                "Requesting readings from %s for %s sites",
+                green("aeat.com API"),
+                green(len(list(site_info_query))),
+            )
 
         # Get all readings for each site between its start and end dates and update the database
-        site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-        site_records = [AQEReading.build_entry(site_reading, return_dict=usecore) for site_reading in site_readings]
+        site_readings = self.get_readings_by_site(
+            site_info_query, self.start_date, self.end_date
+        )
+        site_records = [
+            AQEReading.build_entry(site_reading, return_dict=usecore)
+            for site_reading in site_readings
+        ]
 
         with self.dbcnxn.open_session() as session:
 
             # Commit the records to the database
-            self.commit_records(session, site_records, table=AQEReading, on_conflict_do_nothing=True)
+            self.commit_records(
+                session, site_records, table=AQEReading, on_conflict_do_nothing=True
+            )
 
             # Commit changes
-            self.logger.info("Committing %s records to database table %s",
-                             green(len(site_readings)),
-                             green(AQEReading.__tablename__))
+            self.logger.info(
+                "Committing %s records to database table %s",
+                green(len(site_readings)),
+                green(AQEReading.__tablename__),
+            )
 
         self.logger.info("Finished %s readings update", green("AQE"))
 

@@ -9,6 +9,7 @@ class DBReader(DBInteractor):
     """
     Base class for reading from the Azure database
     """
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
