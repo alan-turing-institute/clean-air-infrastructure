@@ -24,6 +24,11 @@ run_model/experiments/*/meta
 run_model/cluster
 run_model/data
 
+val/experiment_data/*/data
+val/experiment_data/*/results
+val/experiment_data/*/models/restore
+val/experiment_data/*/meta
+
 # Python & notebooks
 *__pycache__
 .ipynb_checkpoints

@@ -38,6 +38,6 @@ class BasicExperiment(Experiment):
         train_n_hours = 48
         pred_n_hours = 24
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
-        data_dir = '../run_model/experiments/{name}/data/'.format(name=self.name)
+        data_dir = '{dir}{name}/data/'.format(dir=self.directory, name=self.name)
         data_config = util.create_data_list(rolls, data_dir)
         return data_config

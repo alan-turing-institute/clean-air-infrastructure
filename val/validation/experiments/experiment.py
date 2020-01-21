@@ -3,6 +3,7 @@ The base class for experiments.
 """
 
 import sys
+import json
 from abc import ABC, abstractmethod
 import pandas as pd
 import pathlib
@@ -109,7 +110,23 @@ class Experiment(ABC):
         self.__create_experiment_data_directories()
 
         # load and write model data objects to files
-        pass
+        self.save_meta_files()
+
+    def save_meta_files(self):
+        """
+        Save the experiment_df, model_params and data_config to csv and json.
+        """
+        exp_dir = self.directory + self.name + '/'
+
+        # save experiment dataframe to csv
+        self.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
+
+        # save data and params configs to json
+        with open(exp_dir + 'meta/data.json', 'w') as fp:
+            json.dump(self.data_config, fp, indent=4)
+
+        with open(exp_dir + 'meta/model_params.json', 'w') as fp:
+            json.dump(self.model_params, fp, indent=4)
 
     def __create_experiment_data_directories(self):
         """

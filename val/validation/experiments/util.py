@@ -51,7 +51,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'train_satellite_interest_points':'all'
     }
 
-def create_data_list(rolls, data_dir, extension='.npy'):
+def create_data_list(rolls, data_dir, extension='.pickle'):
     """
     Get a list of data configurations.
 
@@ -79,7 +79,7 @@ def create_data_list(rolls, data_dir, extension='.npy'):
         ) for i in range(len(rolls))
     ]
 
-    for datatype in ['x_train', 'x_test', 'y_train', 'y_test']:
+    for datatype in ['train', 'test']:
         for i in range(len(rolls)):
             data_config_list[i][datatype + '_fp'] = create_data_filepath(i, datatype, base_dir=data_dir, extension=extension)
 
