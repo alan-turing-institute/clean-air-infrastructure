@@ -3,12 +3,12 @@ from folium import WmsTileLayer
 import folium
 
 
-# m = folium.Map(location=[51.5297753, -0.12665390000006],
-#                tiles='Stamen Toner',
-#                zoom_start=12)
-
 m = folium.Map(location=[51.5297753, -0.12665390000006],
-               zoom_start=11)
+               tiles='Stamen Toner',
+               zoom_start=12)
+
+# m = folium.Map(location=[51.5297753, -0.12665390000006],
+#                zoom_start=12)
 
 folium.Marker([51.5297753, -0.12665390000006], popup='<i>Alan Turing Institute</i>').add_to(m)
 
@@ -28,8 +28,68 @@ url = 'http://localhost:8080/geoserver/gwc/service/wms/'
 #                                   control=True,
 #                                   show=True).add_to(m)
 
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:sensor_locs',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:oshighway_roadlink',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:water',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#   show = True).add_to(m)
+
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:building_height',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:water_features',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
 folium.raster_layers.WmsTileLayer(url,
-                                  'london:water',
+                                  'london:laqn_park_features',
                                   styles='',
                                   fmt='image/png',
                                   transparent=True,
@@ -40,8 +100,7 @@ folium.raster_layers.WmsTileLayer(url,
                                   control=True,
                                   show=True).add_to(m)
 
-
-m.save('index.html')
+m.save('images/park_features.html')
 
 # w0 = WmsTileLayer(
 #     'http://this.wms.server/ncWMS/wms',
@@ -66,4 +125,4 @@ m.save('index.html')
 # # Add WmsTileLayers to time control.
 # time = TimestampedWmsTileLayers([w0, w1])
 # time.add_to(m)
-m.save('index.html')
+# m.save('index.html')
