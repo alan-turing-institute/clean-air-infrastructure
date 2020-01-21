@@ -4,6 +4,10 @@ import sys
 
 from validation import experiments, cluster
 
+AVAILABLE_EXPERIMENTS = {
+    'basic':experiments.basic.BasicExperiment
+}
+
 def load_experiment(file_name, root=''):
     try:
         sys.path.append(root+'experiments/')
@@ -42,7 +46,6 @@ if __name__=="__main__":
 
     elif args.check:
         pass
-    
 
 
     
