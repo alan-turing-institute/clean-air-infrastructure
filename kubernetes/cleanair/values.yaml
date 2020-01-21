@@ -1,4 +1,4 @@
-imageTag: 0e90fe18179d85ef2b137112f40544e3bb827509
+imageTag: f8a4c5adbd033d4c63224989387db56a53b18be6
 
 jobs:  
   - name: ukmap
@@ -85,7 +85,6 @@ jobs:
       secret:
         secretName: secrets
 
-
 # deployments:
 
 #     - name: cleanairapi
@@ -95,3 +94,7 @@ jobs:
 #         imagePullPolicy: Always
 #       ports:
 #         containerPort: 80
+
+# services:
+#     - name: cleanair-api
+#       type: LoadBalancer
