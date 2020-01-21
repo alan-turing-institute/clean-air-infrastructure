@@ -29,15 +29,20 @@ if __name__=="__main__":
     parser = ValidationParser()
     args = parser.parse_args()
 
+    mod = load_experiment(args.name, root='validation/experiments/')
+
+    if mod is None:
+        raise ValueError('Experiment {name} does not exist'.format(name=args.name))
+
     if args.setup:
         pass
 
     elif args.run:
-        pass
+        mod.run()
 
     elif args.check:
         pass
     
-    mod = load_experiment(args.name, root='validation/experiments/')
+
 
     

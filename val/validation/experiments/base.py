@@ -41,6 +41,11 @@ class Experiment():
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
 
+        self.available_clusters = {
+            'laptop': Laptop,
+            'pearl': Pearl
+        }
+
     @abstractmethod
     def get_default_model_params(self):
         """
@@ -76,11 +81,21 @@ class Experiment():
         # load and write model data objects to files
         pass
 
+    def __get_cluster_obj(self):
+        """
+        Load cluster object from cluster object and check it exists.
+        """
+        if self.cluster in self.available_clusters:
+            self.cluster_obj = self.available_clusters[self.cluster]()
+        else:
+            raise ValueError("Cluster does not exist: ",self.cluster)
+
     def run(self):
         """
         Run the experiment.
         """
-        pass
+        self.__get_cluster_obj()
+
 
     def check_status(self):
         """
