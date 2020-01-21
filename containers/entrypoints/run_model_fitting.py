@@ -8,8 +8,6 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
-import numpy as np
-
 
 def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
@@ -76,12 +74,10 @@ def main():
                     'n_inducing_points': 2000}
 
     # Get the model data
-    # model_data = ModelData(config=model_config, **kwargs)
-    model_data = ModelData(config_dir='/secrets/test/', **kwargs)
+    model_data = ModelData(config=model_config, **kwargs)
+    # model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
     # model_data.save_config_state('/secrets/test/')
-
-    # print(model_data.get_satellite_forecast(train_start, train_end))
 
     # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)

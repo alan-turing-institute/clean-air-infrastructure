@@ -7,14 +7,11 @@ import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
-from sqlalchemy import literal, func, null
-from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQNSite,
-                                LAQNReading, MetaPoint, AQESite,
-                                AQEReading, ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
+from ..databases.tables import (IntersectionValue, IntersectionValueDynamic,
+                                ModelResult, SatelliteForecastReading, SatelliteDiscreteSite)
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
-import numpy as np
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -116,11 +113,15 @@ class ModelData(DBWriter, DBQueryMixin):
         # Check requested features are available
         if config['features'] == 'all':
             features = self.get_available_static_features(output_type='list'
-                                                          ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
+                                                          ) \
+                + self.get_available_dynamic_features(config['train_start_date'],
+                                                      config['pred_end_date'],
+                                                      output_type='list')
             if not features:
                 raise AttributeError("There are no features in the database. Run feature extraction first")
             self.logger.warning(
-                "You have selected 'all' features from the database. It is strongly advised that you choose features manually")
+                """You have selected 'all' features from the database.
+                It is strongly advised that you choose features manually""")
         else:
             self.logger.debug("Checking requested features are availble in database")
             self.__check_features_available(config['features'], config['train_start_date'], config['pred_end_date'])
@@ -157,7 +158,8 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Validate config complete")
 
     def __generate_full_config(self, config):
-        """Generate a full config file by querying the cleanair database to check available interest point sources and features"""
+        """Generate a full config file by querying the cleanair
+           database to check available interest point sources and features"""
 
         if config['train_interest_points'] == 'all':
             config['train_interest_points'] = self.__get_interest_point_ids(config['train_sources'])
@@ -169,8 +171,10 @@ class ModelData(DBWriter, DBQueryMixin):
             config['train_satellite_interest_points'] = []
 
         if config['features'] == 'all':
-            feature_names = self.get_available_static_features(output_type='list'
-                                                               ) + self.get_available_dynamic_features(config['train_start_date'], config['pred_end_date'], output_type='list')
+            feature_names = self.get_available_static_features(output_type='list')  \
+                + self.get_available_dynamic_features(config['train_start_date'],
+                                                      config['pred_end_date'],
+                                                      output_type='list')
             buff_size = [1000, 500, 200, 100, 10]
             config['features'] = ["value_{}_{}".format(buff, name) for buff in buff_size for name in feature_names]
             self.logger.info("Features 'all' replaced with available features: %s", config['features'])
@@ -319,8 +323,8 @@ class ModelData(DBWriter, DBQueryMixin):
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.get_available_static_features(output_type='list'
-                                                                ) + self.get_available_dynamic_features(start_date, end_date, output_type='list')
+        available_features = self.get_available_static_features(output_type='list') \
+            + self.get_available_dynamic_features(start_date, end_date, output_type='list')
         unavailable_features = []
 
         for feature in features:
@@ -329,7 +333,8 @@ class ModelData(DBWriter, DBQueryMixin):
                 unavailable_features.append(feature)
 
         if unavailable_features:
-            raise AttributeError("The following features are not available the cleanair database: {}. If requesting dynamic features they may not be available for the selected dates"
+            raise AttributeError("""The following features are not available the cleanair database: {}.
+                                    If requesting dynamic features they may not be available for the selected dates"""
                                  .format(unavailable_features))
 
     def __check_sources_available(self, sources):
@@ -406,8 +411,8 @@ class ModelData(DBWriter, DBQueryMixin):
                 features_df = pd.pivot_table(features_df,
                                              index=['point_id', 'measurement_start_utc'],
                                              columns='feature_name', aggfunc=get_val).reset_index()
-                features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for
-                                                                               col in features_df.columns.to_numpy()[2:]]
+                features_df.columns = ['point_id', 'measurement_start_utc'] + ['_'.join(col).strip() for col
+                                                                               in features_df.columns.to_numpy()[2:]]
                 features_df = features_df.set_index('point_id')
             else:
                 features_df = features_df.pivot(index='point_id', columns='feature_name').reset_index()
@@ -505,7 +510,8 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if dynamic_features.empty:
             self.logger.warning(
-                "No dynamic features were returned from the database. If dynamic features were not requested then ignore.")
+                """No dynamic features were returned from the database.
+                If dynamic features were not requested then ignore.""")
             return static_features_expand
 
         return static_features_expand.merge(dynamic_features, how='left', on=['point_id',
@@ -576,7 +582,8 @@ class ModelData(DBWriter, DBQueryMixin):
         point_ids = self.config['train_satellite_interest_points']
         features = self.config['feature_names']
 
-        self.logger.info("Getting Satellite training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
+        self.logger.info("""Getting Satellite training data for sources:
+                            %s, species: %s, from %s (inclusive) to %s (exclusive)""",
                          sources, species, start_date, end_date)
 
         all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
@@ -584,8 +591,9 @@ class ModelData(DBWriter, DBQueryMixin):
         with self.dbcnxn.open_session() as session:
 
             sat_site_map_q = session.query(SatelliteDiscreteSite)
-            sat_q = session.query(SatelliteForecastReading).filter(SatelliteForecastReading.measurement_start_utc >= start_date,
-                                                                   SatelliteForecastReading.measurement_start_utc < end_date)
+            sat_q = session.query(SatelliteForecastReading) \
+                .filter(SatelliteForecastReading.measurement_start_utc >= start_date,
+                        SatelliteForecastReading.measurement_start_utc < end_date)
         sat_site_map_df = pd.read_sql(sat_site_map_q.statement, sat_site_map_q.session.bind)
 
         # Convert uuid to strings to allow merge
