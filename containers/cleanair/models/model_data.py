@@ -14,6 +14,7 @@ from ..databases.tables import (IntersectionValue, IntersectionValueDynamic, LAQ
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
+import numpy as np
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -74,7 +75,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 self.training_satellite_data_x, self.training_satellite_data_y = self.get_training_satellite_inputs()
 
                 self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-                    ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
+                    ['box_id', 'measurement_start_utc', 'point_id'])
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ['box_id', 'measurement_start_utc'])
 
@@ -176,6 +177,7 @@ class ModelData(DBWriter, DBQueryMixin):
             config['feature_names'] = feature_names
         else:
             config['feature_names'] = list(set(["".join(feature.split("_", 2)[2:]) for feature in config['features']]))
+
         config['x_names'] = ["epoch", "lat", "lon"] + config['features']
 
         return config
@@ -281,15 +283,17 @@ class ModelData(DBWriter, DBQueryMixin):
             # N_interest_points = self.training_satellite_data_x['point_id'].unique().size
             N_x_names = len(self.config['x_names'])
 
-            print(self.training_satellite_data_x[self.config['x_names']].shape)
-            print(N_sat_box, N_hours, N_x_names)
             X_sat = self.training_satellite_data_x[self.config['x_names']
                                                    ].to_numpy().reshape((N_sat_box * N_hours, 100, N_x_names))
-            quit()
+
+            X_sat_mask = self.training_satellite_data_x['in_london'].to_numpy().reshape(
+                N_sat_box * N_hours, 100)
             Y_sat = self.training_satellite_data_y['value'].to_numpy()
+
             data_dict['X_sat'] = X_sat
             data_dict['Y_sat'] = Y_sat
 
+            data_dict['X_sat_mask'] = X_sat_mask
         return data_dict
 
     def get_training_data_arrays(self, dropna=True):
@@ -576,7 +580,6 @@ class ModelData(DBWriter, DBQueryMixin):
                          sources, species, start_date, end_date)
 
         all_features = self.__get_model_features(start_date, end_date, features, sources, point_ids)
-        # all_features.to_csv('/secrets/satdata.csv')
 
         with self.dbcnxn.open_session() as session:
 

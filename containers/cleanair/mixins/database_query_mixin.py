@@ -70,6 +70,7 @@ class DBQueryMixin():
     @db_query
     def get_available_interest_points(self, sources):
         """Return the available interest points for a list of sources, excluding any LAQN or AQE sites that are closed. Only returns points withing the London boundary
+        Satellite returns features outside of london boundary, while laqn and aqe do not.
         args:
             sources: A list of sources to include
         """
@@ -78,6 +79,7 @@ class DBQueryMixin():
         base_query_columns = [MetaPoint.id.label('point_id'),
                               MetaPoint.source.label('source'),
                               MetaPoint.location.label('location'),
+                              MetaPoint.location.ST_Within(bounded_geom).label("in_london"),
                               func.ST_X(MetaPoint.location).label('lon'),
                               func.ST_Y(MetaPoint.location).label('lat')
                               ]
@@ -87,8 +89,14 @@ class DBQueryMixin():
             remaining_sources_q = session.query(*base_query_columns,
                                                 null().label("date_opened"),
                                                 null().label("date_closed"),
-                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe']]),
+                                                ).filter(MetaPoint.source.in_([source for source in sources if source not in ['laqn', 'aqe', 'satellite']]),
                                                          MetaPoint.location.ST_Within(bounded_geom))
+
+            # Satellite is not filtered by london boundary
+            sat_sources_q = session.query(*base_query_columns,
+                                          null().label("date_opened"),
+                                          null().label("date_closed"),
+                                          ).filter(MetaPoint.source.in_(['satellite']))
 
             aqe_sources_q = session.query(*base_query_columns,
                                           AQESite.date_opened,
@@ -102,7 +110,13 @@ class DBQueryMixin():
                                            ).join(LAQNSite, isouter=True).filter(MetaPoint.source.in_(['laqn']),
                                                                                  MetaPoint.location.ST_Within(bounded_geom))
 
-            all_sources_sq = remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
+            if ('satellite' in sources) and (len(sources) != 1):
+                raise ValueError(
+                    "Satellite can only be requested on a source on its own. Ensure 'sources' contains no other options")
+            elif (sources[0] == 'satellite'):
+                all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
+            else:
+                all_sources_sq = remaining_sources_q.union(aqe_sources_q, laqn_sources_q).subquery()
 
             # Remove any sources where there is a closing date
             all_sources_q = session.query(all_sources_sq).filter(all_sources_sq.c.date_closed == None)

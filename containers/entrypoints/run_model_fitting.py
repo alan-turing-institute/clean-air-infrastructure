@@ -8,6 +8,8 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
+import numpy as np
+
 
 def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
@@ -62,7 +64,7 @@ def main():
                     'train_satellite_interest_points': 'all',
                     'pred_interest_points': 'all',
                     'species': ['NO2'],
-                    "features": 'all',
+                    "features": ['value_1000_total_road_length'],
                     'norm_by': 'laqn',
                     'model_type': 'svgp',
                     'tag': 'testing'}
@@ -84,10 +86,6 @@ def main():
     # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
-
-    # print(training_data_dict['X_train'])
-    # print(training_data_dict['Y_train'])
-    # print(training_data_dict['Y_sat'])
 
     # Fit the model
     model_fitter = SVGP()
