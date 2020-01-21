@@ -1,6 +1,10 @@
+"""
+Entry point for validation.
+"""
+
 import argparse
-import importlib
-import inspect
+
+from validation.experiments import util
 
 class ValidationParser(argparse.ArgumentParser):
 
@@ -14,40 +18,10 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
         self.add_argument('-e', '--experiments_directory', type=str, help='path to experiments directory')
 
-def get_experiment_class(name):
-    """
-    Get the class of experiment given the name.
-
-    Parameters
-    ___
-
-    name : str
-        Name of the experiment.
-
-    Returns
-    ___
-
-    class
-        A class object that is ready to be initialised.
-    """
-    mod = importlib.import_module('validation.experiments.{name}'.format(name=args.name), 'validation')
-    members = inspect.getmembers(mod, inspect.isclass)
-
-    class_index = -1
-    for i in range(len(members)):
-        if members[i][0].lower() == '{name}experiment'.format(name=name):
-            class_index = i
-
-    if class_index < 0:
-        raise FileNotFoundError("Class for {name} does not exist.".format(name=name))
-
-    return members[class_index][1]
-
-
 if __name__=="__main__":
     parser = ValidationParser()
     args = parser.parse_args()
-    experiment_class = get_experiment_class(args.name)
+    experiment_class = util.get_experiment_class(args.name)
 
     if args.setup:
         models = ['svgp']

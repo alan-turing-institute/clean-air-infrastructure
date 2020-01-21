@@ -3,8 +3,39 @@ Useful functions for experiments.
 """
 
 import itertools
+import importlib
+import inspect
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+
+def get_experiment_class(name):
+    """
+    Get the class of experiment given the name.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    Returns
+    ___
+
+    class
+        A class object that is ready to be initialised.
+    """
+    mod = importlib.import_module('validation.experiments.{name}'.format(name=name), 'validation')
+    members = inspect.getmembers(mod, inspect.isclass)
+
+    class_index = -1
+    for i in range(len(members)):
+        if members[i][0].lower() == '{name}experiment'.format(name=name):
+            class_index = i
+
+    if class_index < 0:
+        raise FileNotFoundError("Class for {name} does not exist.".format(name=name))
+
+    return members[class_index][1]
 
 def create_experiment_prefix(model_name, param_id, data_id):
     """
