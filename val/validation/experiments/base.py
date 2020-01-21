@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 import pathlib
+from ..cluster import *
 
 class Experiment():
     def __init__(self, experiment_name, models, cluster_name, **kwargs):
