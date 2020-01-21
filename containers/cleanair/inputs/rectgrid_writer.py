@@ -10,6 +10,7 @@ from ..loggers import get_logger, green
 
 class RectGridWriter(DBWriter):
     """Manage interactions with the RectGrid table on Azure"""
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -31,24 +32,36 @@ class RectGridWriter(DBWriter):
     def build_cell(self, latitude, longitude):
         """Build a rectangular cell around a given latitude and longitude"""
         return "SRID=4326;POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))".format(
-            longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
-            longitude - 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
-            longitude + 0.5 * self.longitude_step, latitude + 0.5 * self.latitude_step,
-            longitude + 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
-            longitude - 0.5 * self.longitude_step, latitude - 0.5 * self.latitude_step,
+            longitude - 0.5 * self.longitude_step,
+            latitude - 0.5 * self.latitude_step,
+            longitude - 0.5 * self.longitude_step,
+            latitude + 0.5 * self.latitude_step,
+            longitude + 0.5 * self.longitude_step,
+            latitude + 0.5 * self.latitude_step,
+            longitude + 0.5 * self.longitude_step,
+            latitude - 0.5 * self.latitude_step,
+            longitude - 0.5 * self.longitude_step,
+            latitude - 0.5 * self.latitude_step,
         )
 
     def update_remote_tables(self):
         """Upload grid data"""
         self.logger.info("Calculating static %s positions...", green("rectgrid"))
         grid_cells = []
-        for idx_lat, latitude in enumerate(np.arange(*self.latitude_range, self.latitude_step)):
-            for idx_long, longitude in enumerate(np.arange(*self.longitude_range, self.longitude_step)):
-                grid_cells.append({"row_id": idx_lat,
-                                   "column_id": idx_long,
-                                   "geom": self.build_cell(latitude, longitude),
-                                   "point_id": MetaPoint.build_ewkt(latitude, longitude),
-                                   })
+        for idx_lat, latitude in enumerate(
+            np.arange(*self.latitude_range, self.latitude_step)
+        ):
+            for idx_long, longitude in enumerate(
+                np.arange(*self.longitude_range, self.longitude_step)
+            ):
+                grid_cells.append(
+                    {
+                        "row_id": idx_lat,
+                        "column_id": idx_long,
+                        "geom": self.build_cell(latitude, longitude),
+                        "point_id": MetaPoint.build_ewkt(latitude, longitude),
+                    }
+                )
 
         # Ensure that interest_points table exists
         if not self.dbcnxn.engine.dialect.has_schema(self.dbcnxn.engine, "datasources"):
@@ -59,13 +72,30 @@ class RectGridWriter(DBWriter):
         self.logger.info("Starting static %s upload...", green("rectgrid"))
         with self.dbcnxn.open_session() as session:
             # Update the meta_points table and retrieve point IDs
-            self.logger.info("Merging %i grid points into %s table...", len(grid_cells), green(MetaPoint.__tablename__))
-            meta_points = [MetaPoint.build_entry("rectgrid", geometry=g["point_id"]) for g in grid_cells]
+            self.logger.info(
+                "Merging %i grid points into %s table...",
+                len(grid_cells),
+                green(MetaPoint.__tablename__),
+            )
+            meta_points = [
+                MetaPoint.build_entry("rectgrid", geometry=g["point_id"])
+                for g in grid_cells
+            ]
             self.commit_records(session, meta_points)
             for grid_cell, meta_point in zip(grid_cells, meta_points):
-                grid_cell["point_id"] = meta_point.id  # this will be None if the record was not inserted
+                grid_cell[
+                    "point_id"
+                ] = meta_point.id  # this will be None if the record was not inserted
 
             # Commit the grid cell records to the database
-            grid_records = [RectGrid.build_entry(grid_cell) for grid_cell in grid_cells if grid_cell["point_id"]]
-            self.logger.info("Adding %i new cells to %s table...", len(grid_records), green("rectgrid"))
+            grid_records = [
+                RectGrid.build_entry(grid_cell)
+                for grid_cell in grid_cells
+                if grid_cell["point_id"]
+            ]
+            self.logger.info(
+                "Adding %i new cells to %s table...",
+                len(grid_records),
+                green("rectgrid"),
+            )
             self.commit_records(session, grid_records)

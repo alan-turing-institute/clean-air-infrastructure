@@ -16,10 +16,34 @@ class StreetCanyonFeatures(Features):
     @property
     def features(self):
         return {
-            "min_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': min_},
-            "avg_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': avg_},
-            "max_ratio_avg": {"type": "value", "feature_dict": {"ratio_avg": ["*"]}, 'aggfunc': max_},
-            "min_min_width": {"type": "value", "feature_dict": {"min_width": ["*"]}, 'aggfunc': min_},
-            "avg_min_width": {"type": "value", "feature_dict": {"min_width": ["*"]}, 'aggfunc': avg_},
-            "max_min_width": {"type": "value", "feature_dict": {"min_width": ["*"]}, 'aggfunc': max_},
+            "min_ratio_avg": {
+                "type": "value",
+                "feature_dict": {"ratio_avg": ["*"]},
+                "aggfunc": min_,
+            },
+            "avg_ratio_avg": {
+                "type": "value",
+                "feature_dict": {"ratio_avg": ["*"]},
+                "aggfunc": avg_,
+            },
+            "max_ratio_avg": {
+                "type": "value",
+                "feature_dict": {"ratio_avg": ["*"]},
+                "aggfunc": max_,
+            },
+            "min_min_width": {
+                "type": "value",
+                "feature_dict": {"min_width": ["*"]},
+                "aggfunc": min_,
+            },
+            "avg_min_width": {
+                "type": "value",
+                "feature_dict": {"min_width": ["*"]},
+                "aggfunc": avg_,
+            },
+            "max_min_width": {
+                "type": "value",
+                "feature_dict": {"min_width": ["*"]},
+                "aggfunc": max_,
+            },
         }
