@@ -1,9 +1,9 @@
 import argparse
 import importlib
 import sys
+import inspect
 
 from validation import experiments, cluster
-
 
 def load_experiment(file_name, root=''):
     try:
@@ -27,24 +27,37 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
         self.add_argument('-e', '--experiments_directory', type=str, help='path to experiments directory')
 
+def get_experiment_class(name):
+    mod = importlib.import_module('validation.experiments.{name}'.format(name=args.name), 'validation')
+    members = inspect.getmembers(mod, inspect.isclass)
+
+    class_index = -1
+    for i in range(len(members)):
+        if members[i][0].lower() == '{name}experiment'.format(name=name):
+            class_index = i
+
+    if class_index < 0:
+        raise FileNotFoundError("Class for {name} does not exist.".format(name=name))
+
+    return members[class_index][1]
+
 
 if __name__=="__main__":
     parser = ValidationParser()
     args = parser.parse_args()
+    experiment_class = get_experiment_class(args.name)
 
     mod = load_experiment(args.name, root='validation/experiments/')
 
-    if mod is None:
-        raise ValueError('Experiment {name} does not exist'.format(name=args.name))
-
     if args.setup:
-        pass
+        models = ['svgp']
+        exp = experiment_class(args.name, models, args.cluster)
+        exp.setup()
+        print(exp.name)
 
     elif args.run:
         mod.run()
 
     elif args.check:
         pass
-
-
     

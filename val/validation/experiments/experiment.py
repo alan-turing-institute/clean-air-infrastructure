@@ -64,13 +64,13 @@ class Experiment():
         Get all the default experiment configurations.
         """
 
-    def setup(self, experiment_data_dir='experiment_data/', secret_fp="../terraform/.secrets/db_secrets.json", force_redownload=False):
+    def setup(self, secret_fp="../terraform/.secrets/db_secrets.json", force_redownload=False):
         """
         Given an experiment create directories, data and files.
         """
         # create directories if they don't exist
-        exp_dir = experiment_data_dir + self.name + '/'
-        pathlib.Path(experiment_data_dir).mkdir(exist_ok=True)
+        exp_dir = self.directory + self.name + '/'
+        pathlib.Path(self.directory).mkdir(exist_ok=True)
         pathlib.Path(exp_dir).mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'results').mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'data').mkdir(exist_ok=True)

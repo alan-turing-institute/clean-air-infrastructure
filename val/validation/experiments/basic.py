@@ -20,7 +20,7 @@ class BasicExperiment(Experiment):
             self.experiment_df = self.get_default_experiment_df()        
 
     def get_default_model_params(self):
-        return {'svgp' : create_params_list(
+        return {'svgp' : util.create_params_list(
             lengthscale=[0.1, 0.5],
             variance=[0.1, 0.5],
             minibatch_size=[100],
