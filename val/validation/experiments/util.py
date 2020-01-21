@@ -2,12 +2,16 @@
 Useful functions for experiments.
 """
 
+import os
 import itertools
 import importlib
 import inspect
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
+def pickle_files_exist(data_config):
+    return os.path.exists(data_config['train_fp']) and os.path.exists(data_config['test_fp'])
+    
 def get_experiment_class(name):
     """
     Get the class of experiment given the name.

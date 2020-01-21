@@ -7,7 +7,7 @@ from . import util
 
 class BasicExperiment(Experiment):
     """
-    A basic experiment on just air quality sensors.
+    A basic experiment on just air quality sensors with an SVGP.
     """
 
     def __init__(self, name, models, cluster_name, **kwargs):
@@ -40,4 +40,6 @@ class BasicExperiment(Experiment):
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
         data_dir = '{dir}{name}/data/'.format(dir=self.directory, name=self.name)
         data_config = util.create_data_list(rolls, data_dir)
+        for index in range(len(data_config)):
+            data_config[index]["features"] = ['value_1000_flat']
         return data_config

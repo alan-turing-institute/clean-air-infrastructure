@@ -17,7 +17,7 @@ sys.path.append("../../containers/")
 
 try:
     from cleanair.models import ModelData
-except:
+except ImportError:
     print('WARNING: Could not import ModelData')
 
 class Experiment(ABC):
@@ -91,13 +91,13 @@ class Experiment(ABC):
             # append to experiments dataframe
             experiment_df = experiment_df.append(pd.DataFrame(params_configs, columns=cols), ignore_index=True)
 
-        experiment_df['y_pred_fp'] = pd.Series([
+        experiment_df['results_dir'] = pd.Series([
             self.directory + '{name}/results/'.format(name=self.name) + util.create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
-            ) + '_y_pred.npy' for r in experiment_df.itertuples()])
+            ) for r in experiment_df.itertuples()])
 
         experiment_df['model_state_fp'] = pd.Series([
-            self.directory + '{name}/models/restore/m_{model_name}'.format(name=self.name, model_name=r.model_name) + util.create_experiment_prefix(
+            self.directory + '{name}/models/restore/m_{model_name}_'.format(name=self.name, model_name=r.model_name) + util.create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) + '.model' for r in experiment_df.itertuples()])
 
@@ -107,7 +107,30 @@ class Experiment(ABC):
         """
         Given an experiment create directories, data and files.
         """
+        # create directories for experiment data
+        experiment_dir = self.directory + self.name + '/'
         self.__create_experiment_data_directories()
+
+        # store a list of ModelData objects to validate over
+        model_data_list = []
+
+        # create ModelData objects for each roll
+        for index, row in self.experiment_df.iterrows():
+            data_id = row['data_id']
+            data_config = self.data_config[data_id]
+
+            # If the numpy files do not exist locally
+            if force_redownload or not util.pickle_files_exist(data_config):
+                # make new directory for data
+                data_dir_path = experiment_dir + 'data/data{id}'.format(id=data_id)
+                pathlib.Path(data_dir_path).mkdir(exist_ok=True)
+
+                # Get the model data and append to list
+                model_data = ModelData(config=data_config, secretfile=secret_fp)
+                model_data_list.append(model_data)
+
+                # save config status of the model data object to the data directory
+                model_data.save_config_state(data_dir_path)
 
         # load and write model data objects to files
         self.save_meta_files()
@@ -141,10 +164,20 @@ class Experiment(ABC):
         pathlib.Path(exp_dir + 'models').mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'models/restore').mkdir(exist_ok=True)
 
+    def __create_experiment_results_directories(self):
+        """
+        Create directories to store results in if they don't already exist.
+        """
+        results_dir = self.directory + self.name + '/results/'
+        for row in self.experiment_df.itertuples():
+            pathlib.Path(row.results_dir).mkdir(exist_ok=True)
+
     def run(self):
         """
         Run the experiment.
         """
+        # before running any models, create the results directories
+        self.__create_experiment_results_directories()
         pass
 
     def check_status(self):
