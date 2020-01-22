@@ -246,3 +246,11 @@ def dict_without_key(dict_obj, key):
     new_dict_obj = dict_obj.copy()
     new_dict_obj.pop(key)
     return new_dict_obj
+
+def ensure_last_backslash(dir_str):
+    """
+        Ensure directory ends in a backslash
+    """
+    if dir_str[-1] is not '/':
+        return dir_str+'/'
+    return dir_str

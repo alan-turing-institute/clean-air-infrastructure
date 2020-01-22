@@ -62,6 +62,9 @@ class Experiment(ABC):
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
         self.home_directory = kwargs['home_directory'] if 'home_directory' in kwargs else '~'
         self.secretfile = kwargs['secretfile'] if 'secretfile' in kwargs else '../terraform/.secrets/db_secrets.json'
+
+        self.directory = util.ensure_last_backslash(self.directory)
+        self.home_directory = util.ensure_last_backslash(self.home_directory)
         print(self.home_directory)
 
         self.available_clusters = {
