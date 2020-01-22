@@ -2,9 +2,44 @@
 Useful functions for experiments.
 """
 
+import os
 import itertools
+import importlib
+import inspect
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+
+def pickle_files_exist(data_config):
+    return os.path.exists(data_config['train_fp']) and os.path.exists(data_config['test_fp'])
+    
+def get_experiment_class(name):
+    """
+    Get the class of experiment given the name.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    Returns
+    ___
+
+    class
+        A class object that is ready to be initialised.
+    """
+    mod = importlib.import_module('validation.experiments.{name}'.format(name=name), 'validation')
+    members = inspect.getmembers(mod, inspect.isclass)
+
+    class_index = -1
+    for i in range(len(members)):
+        if members[i][0].lower() == '{name}experiment'.format(name=name):
+            class_index = i
+
+    if class_index < 0:
+        raise FileNotFoundError("Class for {name} does not exist.".format(name=name))
+
+    return members[class_index][1]
 
 def create_experiment_prefix(model_name, param_id, data_id):
     """
@@ -51,7 +86,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'train_satellite_interest_points':'all'
     }
 
-def create_data_list(rolls, data_dir, extension='.npy'):
+def create_data_list(rolls, data_dir, extension='.pickle'):
     """
     Get a list of data configurations.
 
@@ -79,7 +114,7 @@ def create_data_list(rolls, data_dir, extension='.npy'):
         ) for i in range(len(rolls))
     ]
 
-    for datatype in ['x_train', 'x_test', 'y_train', 'y_test']:
+    for datatype in ['train', 'test']:
         for i in range(len(rolls)):
             data_config_list[i][datatype + '_fp'] = create_data_filepath(i, datatype, base_dir=data_dir, extension=extension)
 
