@@ -61,6 +61,7 @@ class Experiment(ABC):
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
         self.home_directory = kwargs['home_directory'] if 'home_directory' in kwargs else '~'
+        self.secretfile = kwargs['secretfile'] if 'secretfile' in kwargs else '../terraform/.secrets/db_secrets.json'
         print(self.home_directory)
 
         self.available_clusters = {
@@ -113,7 +114,7 @@ class Experiment(ABC):
 
         return experiment_df
 
-    def setup(self, secret_fp="../terraform/.secrets/db_secrets.json", force_redownload=False):
+    def setup(self, force_redownload=False):
         """
         Given an experiment create directories, data and files.
         """
@@ -122,7 +123,7 @@ class Experiment(ABC):
         self.__create_experiment_data_directories()
 
         # store a list of ModelData objects to validate over
-        model_data_list = []
+        self.model_data_list = []
 
         # create ModelData objects for each roll
         for index, row in self.experiment_df.iterrows():
@@ -136,8 +137,8 @@ class Experiment(ABC):
                 pathlib.Path(data_dir_path).mkdir(exist_ok=True)
 
                 # Get the model data and append to list
-                model_data = ModelData(config=data_config, secretfile=secret_fp)
-                model_data_list.append(model_data)
+                model_data = ModelData(config=data_config, secretfile=self.secretfile)
+                self.model_data_list.append(model_data)
 
                 # save config status of the model data object to the data directory
                 model_data.save_config_state(data_dir_path)
@@ -241,8 +242,46 @@ class Experiment(ABC):
         """
         pass
 
-    def update_model_data_list(self):
+    def update_model_data_list(self, update_test=True, update_train=False):
         """
-        Update the model data list.
+        Update the model data list from local files.
+
+        Parameters
+        ___
+
+        update_test : bool, optional
+            The normalised_pred_data_df for each model data object is updated with new predictions.
+
+        update_train : bool, optional
+            The normalised_training_data_df for each model data object is updated with new predictions.
+            There must exist a `train_pred.pickle` file in the results directory for each result.
         """
-        pass
+        model_data_list = []
+        for index, row in self.experiment_df.iterrows():
+            # load model data from directory
+            config_dir = self.directory + '{name}/data/data{id}/'.format(name=self.name, id=row['data_id'])
+            model_data = ModelData(config_dir=config_dir, secretfile=self.secretfile)
+
+            # get the predictions from the model for testing data
+            results_dir = row['results_dir']
+            if update_test:
+                test_pred_fp = self.directory + results_dir + 'test_pred.pickle'
+                with open(test_pred_fp, 'wb') as handle:
+                    test_pred_dict = pickle.load(handle)
+
+                # update model data with predictions
+                model_data.update_testing_df_with_preds(test_pred_dict)
+
+            if update_train:
+                # try to update the predictions for the training set
+                try:
+                    train_pred_fp = self.directory + results_dir + 'train_pred.pickle'
+                    with open(train_pred_fp, 'wb') as handle:
+                        train_pred_dict = pickle.load(handle)
+                    model_data.update_training_df_with_preds(train_pred_dict)
+                except FileNotFoundError:
+                    print("WARNING: no predictions on training set.")
+
+            # append model_data to list
+            model_data_list.append(model_data)
+        self.model_data_list = model_data_list

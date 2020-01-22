@@ -3,14 +3,50 @@ Useful functions for experiments.
 """
 
 import os
+import json
 import itertools
 import importlib
 import inspect
+import pandas as pd
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
 def pickle_files_exist(data_config):
     return os.path.exists(data_config['train_fp']) and os.path.exists(data_config['test_fp'])
+
+def load_experiment_from_directory(name, experiment_data='experiment_data/'):
+    """
+    Return an experiment with a name from a directory.
+
+    Parameters
+    ___
+
+    name : str
+        Name of the experiment.
+
+    experiment_data : str
+        Filepath to the directory containing all experiments.
+
+    Returns
+    ___
+
+    Experiment
+        Initialised from directory.
+    """
+    directory = experiment_data + name + '/'
+
+    with open(directory + 'meta/model_params.json', 'r') as fp:
+        model_params = json.load(fp)
+
+    with open(directory + 'meta/data.json', 'r') as fp:
+        data_config = json.load(fp)
+
+    experiment_df = pd.read_csv(directory + 'meta/experiment.csv', index_col=0)
+
+    models = list(experiment_df['model_name'].unique())
+    cluster_name = list(experiment_df['cluster'].unique())[0]
+
+    return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiment_data)
     
 def get_experiment_class(name):
     """
@@ -80,7 +116,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'features': 'all',
         'norm_by': 'laqn',
         'model_type': 'svgp',
-        'tag': 'testing',
+        'tag': 'validation',
         'include_satellite':False,
         'include_prediction_y':True,
         'train_satellite_interest_points':'all'
@@ -120,7 +156,7 @@ def create_data_list(rolls, data_dir, extension='.pickle'):
 
     return data_config_list
     
-def create_data_filepath(index, basename, base_dir='data/', extension='.npy'):
+def create_data_filepath(index, basename, base_dir='data/', extension='.pickle'):
     """
     Create a filepath for a data file, e.g. numpy array.
 

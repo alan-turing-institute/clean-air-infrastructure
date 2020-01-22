@@ -49,3 +49,39 @@ name/
             elbo.pickle
         ...
 ```
+
+## File structure of pickles
+
+Both `data/ID/train.pickle` and `data/ID/test.pickle` are formatted as follows.
+Here 'src' is a string representing the source, e.g. 'laqn', 'aqe', 'sat':
+
+```
+{
+    'src' : {
+        'index': np.array,
+        'X': np.array,
+        'Y': {
+            'NO2':np.array,
+            'PM10':np.array,
+            'PM25':np.array
+        }
+}
+```
+
+`results/ID/train_pred.pickle` and `results/ID/test_pred.pickle`:
+```
+{
+    'laqn' : {
+        'NO2' : {
+            'mean' : np.array,
+            'var' : np.array
+        },
+        'PM10' : {
+            'mean' : np.array,
+            'var' : np.array
+        }
+    }
+}
+```
+
+To retrieve info about a prediction of NO2 for laqn in `results/ID/test_pred.pickle`, you would need to look that info up by finding the index in `results/ID/test.pickle`.
