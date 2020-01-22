@@ -34,6 +34,10 @@ def main():
         models = ['svgp']
         exp = util.load_experiment_from_directory(args.name)
         exp.update_model_data_list(update_train=False, update_test=False)
+        for model_data in exp.model_data_list:
+            print(model_data.get_training_dicts()['laqn']['Y']['NO2'])
+            print(model_data.get_testing_dicts()['laqn']['Y']['NO2'])
+            print()
 
     elif args.check:
         pass

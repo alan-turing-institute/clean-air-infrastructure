@@ -116,7 +116,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'features': 'all',
         'norm_by': 'laqn',
         'model_type': 'svgp',
-        'tag': 'testing',
+        'tag': 'validation',
         'include_satellite':False,
         'include_prediction_y':True,
         'train_satellite_interest_points':'all'
@@ -156,7 +156,7 @@ def create_data_list(rolls, data_dir, extension='.pickle'):
 
     return data_config_list
     
-def create_data_filepath(index, basename, base_dir='data/', extension='.npy'):
+def create_data_filepath(index, basename, base_dir='data/', extension='.pickle'):
     """
     Create a filepath for a data file, e.g. numpy array.
 
