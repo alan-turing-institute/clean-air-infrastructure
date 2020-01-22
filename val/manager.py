@@ -33,6 +33,7 @@ def main():
     elif args.run:
         models = ['svgp']
         exp = util.load_experiment_from_directory(args.name)
+        exp.update_model_data_list(update_train=False, update_test=False)
 
     elif args.check:
         pass

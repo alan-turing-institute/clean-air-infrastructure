@@ -44,7 +44,7 @@ def load_experiment_from_directory(name, experiment_data='experiment_data/'):
     experiment_df = pd.read_csv(directory + 'meta/experiment.csv', index_col=0)
 
     models = list(experiment_df['model_name'].unique())
-    cluster_name = list(experiment_df.unique())[0]
+    cluster_name = list(experiment_df['cluster'].unique())[0]
 
     return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiment_data)
     

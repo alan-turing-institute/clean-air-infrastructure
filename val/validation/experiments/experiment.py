@@ -58,6 +58,7 @@ class Experiment(ABC):
         self.experiment_df = kwargs['experiment_df'] if 'experiment_df' in kwargs else pd.DataFrame()
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
+        self.secretfile = kwargs['secretfile'] if 'secretfile' in kwargs else '../terraform/.secrets/db_secrets.json'
 
     @abstractmethod
     def get_default_model_params(self):
@@ -104,7 +105,7 @@ class Experiment(ABC):
 
         return experiment_df
 
-    def setup(self, secret_fp="../terraform/.secrets/db_secrets.json", force_redownload=False):
+    def setup(self, force_redownload=False):
         """
         Given an experiment create directories, data and files.
         """
@@ -127,7 +128,7 @@ class Experiment(ABC):
                 pathlib.Path(data_dir_path).mkdir(exist_ok=True)
 
                 # Get the model data and append to list
-                model_data = ModelData(config=data_config, secretfile=secret_fp)
+                model_data = ModelData(config=data_config, secretfile=self.secretfile)
                 model_data_list.append(model_data)
 
                 # save config status of the model data object to the data directory
@@ -214,7 +215,7 @@ class Experiment(ABC):
         for index, row in self.experiment_df.iterrows():
             # load model data from directory
             config_dir = self.directory + '{name}/data/data{id}/'.format(name=self.name, id=row['data_id'])
-            model_data = ModelData(config_dir=config_dir)
+            model_data = ModelData(config_dir=config_dir, secretfile=self.secretfile)
 
             # get the predictions from the model for testing data
             results_dir = row['results_dir']
