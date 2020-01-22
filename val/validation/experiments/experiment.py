@@ -114,7 +114,7 @@ class Experiment(ABC):
         self.__create_experiment_data_directories()
 
         # store a list of ModelData objects to validate over
-        model_data_list = []
+        self.model_data_list = []
 
         # create ModelData objects for each roll
         for index, row in self.experiment_df.iterrows():
@@ -129,7 +129,7 @@ class Experiment(ABC):
 
                 # Get the model data and append to list
                 model_data = ModelData(config=data_config, secretfile=self.secretfile)
-                model_data_list.append(model_data)
+                self.model_data_list.append(model_data)
 
                 # save config status of the model data object to the data directory
                 model_data.save_config_state(data_dir_path)
@@ -199,7 +199,7 @@ class Experiment(ABC):
 
     def update_model_data_list(self, update_test=True, update_train=False):
         """
-        Update the model data list.
+        Update the model data list from local files.
 
         Parameters
         ___

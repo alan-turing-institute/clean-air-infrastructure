@@ -17,7 +17,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
         self.add_argument('-c', '--cluster', type=str, help='name of the cluster')
         self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
-        self.add_argument('-e', '--experiments_directory', type=str, help='path to experiments directory')
+        self.add_argument('-e', '--experiments_directory', type=str, default='experiment_data', help='path to experiments directory')
 
 def main():
     parser = ValidationParser()
@@ -26,7 +26,7 @@ def main():
 
     if args.setup:
         models = ['svgp']
-        exp = experiment_class(args.name, models, args.cluster)
+        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory)
         exp.setup(force_redownload=args.force)
         print(exp.name)
 
