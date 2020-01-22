@@ -3,7 +3,9 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
+import pickle
 import pandas as pd
+import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -78,6 +80,10 @@ class ModelData(DBWriter, DBQueryMixin):
                     ['box_id', 'measurement_start_utc', 'point_id'])[['point_id', 'box_id'] + config['x_names']]
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ['box_id', 'measurement_start_utc'])
+
+            if self.config['tag'] == 'validation':
+                self.training_dict = self.get_training_dicts()
+                self.testing_dict = self.get_testing_dicts()
 
         else:
             self.restore_config_state(config_dir)
@@ -257,6 +263,13 @@ class ModelData(DBWriter, DBQueryMixin):
             self.training_satellite_data_y = pd.read_csv(os.path.join(
                 os.path.join(dir_path, 'normalised_satellite_data_y.csv')), index_col=0)
 
+        if self.config['tag'] == 'validation':
+            # load train and test dicts from pickle
+            with open(os.path.join(dir_path, 'train.pickle'), 'rb') as handle:
+                self.training_dict = pickle.load(handle)
+            with open(os.path.join(dir_path, 'test.pickle'), 'rb') as handle:
+                self.test_dict = pickle.load(handle)
+
     @property
     def x_names_norm(self):
         """Get the normalised x names"""
@@ -315,20 +328,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def get_training_dicts(self):
         """
-        Get a training dictionary of data indexed as follows:
-
-        {
-            src : {
-                'index': np.array,
-                'X': np.array,
-                'Y': {
-                    'NO2':np.array,
-                    'PM10':np.array,
-                    'PM25':np.array
-                }
-        }
-
-        where 'src' is a string representing the source, e.g. 'laqn', 'aqe'.
+        Get a training dictionary.
         """
         return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'])
 
@@ -692,6 +692,49 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat([self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False)
+
+    def __update_df_with_pred_dict(self, data_df, data_dict, pred_dict, sources):
+        """
+        Return a new dataframe with columns updated from pred_dict.
+        """
+        # create new dataframe and track indices for different sources
+        indices = []
+        for source in sources:
+            indices.append(data_dict[source]['index'])
+        predict_df = pd.DataFrame(index=indices)
+
+        # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
+        for property in ['mean', 'var']:
+            for species in self.config['species']:
+                # add a column containing pred results for all sources
+                column = np.array([])
+                for source in sources:
+                    column.append(pred_dict[source][species][property])
+                predict_df[species + '_' + property] = column
+
+        # add predict_df as new columns to data_df - they should share an index
+        return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+
+    def update_testing_df_with_preds(self, test_pred_dict):
+        """
+        Update the normalised_pred_data_df with predictions for all pred sources.
+        
+        Parameters
+        ___
+
+        test_pred_dict : dict
+            Dictionary with first level keys for pred_sources (e.g. 'laqn', 'aqe').
+            Second level keys are species (e.g. 'NO2', 'PM10').
+            Third level keys are either 'mean' or 'var'.
+            Values are numpy arrays of predictions for a source and specie.
+        """
+        self.normalised_pred_data_df = self.__update_df_with_pred_dict(self.normalised_pred_data_df, self.testing_dict, test_pred_dict, self.config['pred_sources'])
+
+    def update_training_df_with_preds(self, training_pred_dict):
+        """
+        Updated the normalised_training_data_df with predictions on the training set.
+        """
+        self.normalised_training_data_df = self.__update_df_with_pred_dict(self.normalised_training_data_df, self.training_dict, training_pred_dict, self.config['train_sources'])
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
