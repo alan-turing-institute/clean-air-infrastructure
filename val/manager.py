@@ -24,16 +24,15 @@ if __name__=="__main__":
     args = parser.parse_args()
     experiment_class = util.get_experiment_class(args.name)
 
-    mod = load_experiment(args.name, root='validation/experiments/')
+    models = ['svgp']
+    exp = experiment_class(args.name, models, args.cluster)
 
     if args.setup:
-        models = ['svgp']
-        exp = experiment_class(args.name, models, args.cluster)
         exp.setup(force_redownload=args.force)
         print(exp.name)
 
     elif args.run:
-        mod.run()
+        exp.run()
 
     elif args.check:
         pass

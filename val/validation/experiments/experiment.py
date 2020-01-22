@@ -12,6 +12,8 @@ import itertools
 
 from .. import util
 
+from ..cluster import *
+
 #requires cleanair
 sys.path.append("../containers/")
 sys.path.append("../../containers/")
@@ -58,6 +60,8 @@ class Experiment(ABC):
         self.experiment_df = kwargs['experiment_df'] if 'experiment_df' in kwargs else pd.DataFrame()
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
+        self.home_directory = kwargs['home_directory'] if 'home_directory' in kwargs else '~'
+        print(self.home_directory)
 
         self.available_clusters = {
             'laptop': Laptop,
@@ -202,7 +206,34 @@ class Experiment(ABC):
         """
         # before running any models, create the results directories
         self.__create_experiment_results_directories()
-        pass
+        experiment_df = self.get_default_experiment_df()
+
+        cluster_run_params = []
+
+        for model in self.models:
+            model_experiment_df = experiment_df[experiment_df['model_name'] == model]
+            for index, row in self.experiment_df.iterrows():
+                exp_dict = {
+                    'filename': model,
+                    'data_id': row['data_id'],
+                    'param_id': row['param_id']
+                }
+                cluster_run_params.append(exp_dict)
+
+        input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
+
+        cluster = Pearl(
+            experiment_name=self.name,
+            cluster_config={},
+            experiment_configs=cluster_run_params,
+            input_format_fn=input_format_fn,
+            cluster_tmp_fp=self.directory+'cluster',
+            experiment_fp=self.directory,
+        )
+        cluster.setup()
+
+        cluster.run()
+
 
     def check_status(self):
         """

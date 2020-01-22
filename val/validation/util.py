@@ -202,3 +202,11 @@ def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
+
+def dict_without_key(dict_obj, key):
+    """
+        Return a dictionary with the key removed.
+    """
+    new_dict_obj = dict_obj.copy()
+    new_dict_obj.pop(key)
+    return new_dict_obj
