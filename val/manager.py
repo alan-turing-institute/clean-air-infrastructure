@@ -19,7 +19,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
         self.add_argument('-e', '--experiments_directory', type=str, help='path to experiments directory')
 
-if __name__=="__main__":
+def main():
     parser = ValidationParser()
     args = parser.parse_args()
     experiment_class = util.get_experiment_class(args.name)
@@ -31,8 +31,12 @@ if __name__=="__main__":
         print(exp.name)
 
     elif args.run:
-        pass
+        models = ['svgp']
+        exp = util.load_experiment_from_directory(args.name)
 
     elif args.check:
         pass
+
+if __name__ == "__main__":
+    main()
     
