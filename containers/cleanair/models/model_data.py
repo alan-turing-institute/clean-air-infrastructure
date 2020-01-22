@@ -82,37 +82,37 @@ class ModelData(DBWriter, DBQueryMixin):
         else:
             self.restore_config_state(config_dir)
 
-    def save_config_state(self, dir_path):
-        """Save the full configuration and training/prediction data to disk:
+    # def save_config_state(self, dir_path):
+    #     """Save the full configuration and training/prediction data to disk:
 
-        args:
-            dir_path: Directory path in which to save the config files
-        """
+    #     args:
+    #         dir_path: Directory path in which to save the config files
+    #     """
 
-        # Create a new directory
-        if not os.path.exists(dir_path):
-            os.mkdir(dir_path)
+    #     # Create a new directory
+    #     if not os.path.exists(dir_path):
+    #         os.mkdir(dir_path)
 
-        self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
-        self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
+    #     self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
+    #     self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
 
-        with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
-            json.dump(self.config, config_f, sort_keys=True, indent=4)
+    #     with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
+    #         json.dump(self.config, config_f, sort_keys=True, indent=4)
 
-        self.logger.info("State files saved to {}".format(dir_path))
+    #     self.logger.info("State files saved to {}".format(dir_path))
 
-    def restore_config_state(self, dir_path):
-        """Reload configuration state saved to disk by ModelData.save_config_state()
-        """
-        if not os.path.exists(dir_path):
-            raise IOError("{} does not exist".format(dir_path))
+    # def restore_config_state(self, dir_path):
+    #     """Reload configuration state saved to disk by ModelData.save_config_state()
+    #     """
+    #     if not os.path.exists(dir_path):
+    #         raise IOError("{} does not exist".format(dir_path))
 
-        self.normalised_training_data_df = pd.read_csv(os.path.join(
-            os.path.join(dir_path, 'normalised_training_data.csv')))
-        self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_pred_data.csv')))
+    #     self.normalised_training_data_df = pd.read_csv(os.path.join(
+    #         os.path.join(dir_path, 'normalised_training_data.csv')))
+    #     self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_pred_data.csv')))
 
-        with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
-            self.config = json.load(config_f)
+    #     with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
+    #         self.config = json.load(config_f)
 
     def __validate_config(self, config):
 
@@ -249,7 +249,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.normalised_training_data_df = pd.read_csv(os.path.join(
             os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
         self.normalised_pred_data_df = pd.read_csv(os.path.join(
-            os.path.join(dir_path, 'normalised_training_data.csv')), index_col=0)
+            os.path.join(dir_path, 'normalised_pred_data.csv')), index_col=0)
 
         if self.config['include_satellite']:
             self.training_satellite_data_x = pd.read_csv(os.path.join(
@@ -293,16 +293,49 @@ class ModelData(DBWriter, DBQueryMixin):
         data_dict = {}
 
         for src in sources:
-            data_src =data_df[data_df['source']==src]
+            # filter the dataframe by source
+            data_src = data_df[data_df['source']==src]
+
+            # get the a data dict for the filtered data
             data_src = self.__get_model_data_arrays(data_src, return_y=True, dropna=False)
-            data_dict[src] = data_src
+
+            # change Y to be a dict of species
+            X = data_src['X'].copy()
+            index = data_src['index'].copy()
+            Y = {}
+            i = 0
+            for specie in self.config['species']:
+                Y[specie] = data_src['Y'][:, i]
+                i += 1
+
+            # setup data_dict for this source
+            data_dict[src] = {'index':index, 'X':X, 'Y':Y}
 
         return data_dict
 
     def get_training_dicts(self):
+        """
+        Get a training dictionary of data indexed as follows:
+
+        {
+            src : {
+                'index': np.array,
+                'X': np.array,
+                'Y': {
+                    'NO2':np.array,
+                    'PM10':np.array,
+                    'PM25':np.array
+                }
+        }
+
+        where 'src' is a string representing the source, e.g. 'laqn', 'aqe'.
+        """
         return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'])
 
     def get_testing_dicts(self):
+        """
+        Get a training dictionary of data indexed in the same way as get_training_dict.
+        """
         return self.__get_model_dicts(self.normalised_pred_data_df, self.config['pred_sources'])
 
     def __get_model_data_arrays(self, data_df, return_y, dropna=True):
