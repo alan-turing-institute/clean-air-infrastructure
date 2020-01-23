@@ -80,7 +80,9 @@ if [ "$VERBOSE" -eq "1" ]; then
    echo "CLUSTER_FOLDER: $CLUSTER_FOLDER"
 fi
 
-TO_TAR="-C $EXPERIMENTS_FOLDER$BASENAME/ models data meta  -C ../../$CLUSTER_FOLDER ${SLURM_FILES[@]}"
+TO_TAR="-C $EXPERIMENTS_FOLDER$BASENAME/ models data meta  -C ../../$CLUSTER_FOLDER  results ${SLURM_FILES[@]}"
+
+
 
 if [ "$LIB_FLAG" -eq "1" ]; then
    len=${#LIBS[@]}
@@ -91,10 +93,9 @@ if [ "$LIB_FLAG" -eq "1" ]; then
       #To uncompress without leading directories cd to $LIB then add all contents
       dir=`dirname "$LIB"`
       lib=`basename "$LIB"`
-      TO_TAR="$TO_TAR -C $dir $lib"
+      TO_TAR="$TO_TAR -C ../../$dir $lib"
    done
 fi
-
 
 #create folder for this specific run
 TAR_NAME="$CLUSTER_FOLDER/$BASENAME.tar"
@@ -113,7 +114,6 @@ ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
    tar -xzf $BASENAME.tar --directory $BASENAME --warning=none
    rm -rf $BASENAME.tar
    mkdir $BASENAME/logs
-   mkdir $BASENAME/results
 HERE
 
 #-l make bash act like login shell

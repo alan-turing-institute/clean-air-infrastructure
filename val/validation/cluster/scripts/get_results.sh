@@ -43,12 +43,13 @@ do
          BASENAME=$2
          shift;
       ;;
+
       --cluster_folder)
          CLUSTER_FOLDER=$2
          shift;
       ;;
-      --slurm_file)
-         SLURM_FILE=$2
+      --experiments_folder)
+         EXPERIMENTS_FOLDER=$2
          shift;
       ;;
       *)
@@ -58,11 +59,18 @@ do
 shift # past argument or value
 done
 
+VERBOSE=1
+
+if [ "$VERBOSE" -eq "1" ]; then
+   echo "SSH_KEY: $SSH_KEY"
+   echo "IP: $IP"
+   echo "USER: $USER"
+   echo "CLUSTER_FOLDER: $CLUSTER_FOLDER"
+   echo "EXPERIMENTS_FOLDER: $EXPERIMENTS_FOLDER"
+fi
 
 #APPEND DATETIME TO RESULTS FOLDER
 dt=$(date '+%d_%m_%Y_%H_%M_%S');
-
-
 #ENSURE RESULTS FOLDER EXISTS
 
 ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
@@ -70,14 +78,15 @@ ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
    tar -czf $BASENAME.tar results cluster/logs models/restore
 HERE
 
-mkdir -p cluster/"$dt"_results
+mkdir -p $CLUSTER_FOLDER/"$dt"_results
 
-echo "scp  -i $SSH_KEY $USER@$IP:$BASENAME/$BASENAME.tar cluster/'$dt'_results/$BASENAME'_results.tar"
+echo "scp  -i $SSH_KEY $USER@$IP:$BASENAME/$BASENAME.tar $CLUSTER_FOLDER/'$dt'_results/$BASENAME'_results.tar"
 
-scp  -i "$SSH_KEY" "$USER@$IP:$BASENAME/$BASENAME.tar" cluster/"$dt"_results/"$BASENAME"_results.tar
-tar -xzf cluster/"$dt"_results/"$BASENAME"_results.tar --directory cluster/"$dt"_results/
-rm -rf cluster/"$dt"_results/"$BASENAME"_results.tar
+scp  -i "$SSH_KEY" "$USER@$IP:$BASENAME/$BASENAME.tar" $CLUSTER_FOLDER/"$dt"_results/"$BASENAME"_results.tar
+tar -xzf $CLUSTER_FOLDER/"$dt"_results/"$BASENAME"_results.tar --directory $CLUSTER_FOLDER/"$dt"_results/
+rm -rf $CLUSTER_FOLDER/"$dt"_results/"$BASENAME"_results.tar
 
-mv cluster/"$dt"_results/results/* experiments/"$BASENAME"/results/
-mv cluster/"$dt"_results/models/restore/* experiments/"$BASENAME"/models/restore/
+rsync -a $CLUSTER_FOLDER/"$dt"_results/results/* $EXPERIMENTS_FOLDER"$BASENAME"/results/
+rsync -a $CLUSTER_FOLDER/"$dt"_results/models/restore/* $EXPERIMENTS_FOLDER"$BASENAME"/models/restore/
+
 
