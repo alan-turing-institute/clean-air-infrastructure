@@ -3,7 +3,6 @@ A module for satellite experiments.
 """
 
 from abc import abstractmethod
-import pandas as pd
 from . import experiment
 from .. import util
 
@@ -19,18 +18,33 @@ class SatelliteExperiment(experiment.Experiment):
         if 'experiment_df' not in kwargs:
             self.experiment_df = self.get_default_experiment_df()
 
-    @abstractmethod
+    # @abstractmethod
     def get_default_model_params(self):
         """
         Get model parameters for an experiment on satellite data.
         """
+        # ToDo: this method should be abstract
+        # ToDo: this assumes an SVGP but this will not work in practise
+        return {'svgp' : util.create_params_list(
+            lengthscale=[0.1],
+            variance=[0.1],
+            minibatch_size=[100],
+            n_inducing_points=[30],
+            max_iter=[100],
+            refresh=[10],
+            train=[True],
+            restore=[False],
+            laqn_id=[0]
+        )}
 
     def get_default_experiment_df(self):
-        return pd.DataFrame()
+        # ToDo: does this method need to be overwritten for satellite data?
+        return super().get_default_experiment_df()
 
     def get_default_data_config(self):
         # create dates for rolling over
-        train_start = "2019-11-01T00:00:00"
+        n_rolls = 1
+        train_start = "2019-01-10T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
