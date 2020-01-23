@@ -1,7 +1,8 @@
 """
 Run a validation experiment locally on your laptop.
 """
-
+import sys
+sys.path.append('../')
 import experiment
 
 class LaptopExperiment(experiment.SVGPExperiment):
@@ -43,3 +44,12 @@ class LaptopExperiment(experiment.SVGPExperiment):
             data_config[index]["features"] = ['value_1000_flat']
             data_config[index]["pred_start_date"] = data_config[index]["train_start_date"]
         return data_config
+
+def get_experiment():
+    exp = LaptopExperiment('laptop')
+    return exp
+
+
+if __name__ == "__main__":
+    exp = get_experiment()
+    exp.setup()

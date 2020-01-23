@@ -6,8 +6,9 @@ import requests
 from ..loggers import get_logger, green
 
 
-class APIRequestMixin():
+class APIRequestMixin:
     """Manage interactions with an external API"""
+
     def __init__(self, **kwargs):
         # Pass unused arguments onwards
         super().__init__(**kwargs)
@@ -21,17 +22,34 @@ class APIRequestMixin():
         Request a list of readings for a list of sites between start_date and end_date
         """
         # Restrict to sites which were open during the requested time period
-        site_dates = [self.get_available_datetimes(site, start_date, end_date) for site in site_list_query]
-        available_sites = [(s, *[d.date() for d in dates]) for s, dates in zip(site_list_query, site_dates) if dates]
-        self.logger.info("%s sites have data between %s and %s",
-                         green(len(available_sites)), green(start_date), green(end_date))
+        site_dates = [
+            self.get_available_datetimes(site, start_date, end_date)
+            for site in site_list_query
+        ]
+        available_sites = [
+            (s, *[d.date() for d in dates])
+            for s, dates in zip(site_list_query, site_dates)
+            if dates
+        ]
+        self.logger.info(
+            "%s sites have data between %s and %s",
+            green(len(available_sites)),
+            green(start_date),
+            green(end_date),
+        )
 
         # Get all readings for each site between its start and end dates
         site_readings = []
         for site, available_start_date, available_end_date in available_sites:
-            self.logger.info("Attempting to download data for %s between %s and %s",
-                             green(site.site_code), green(available_start_date), green(available_end_date))
-            response = self.request_site_readings(available_start_date, available_end_date, site_code=site.site_code)
+            self.logger.info(
+                "Attempting to download data for %s between %s and %s",
+                green(site.site_code),
+                green(available_start_date),
+                green(available_end_date),
+            )
+            response = self.request_site_readings(
+                available_start_date, available_end_date, site_code=site.site_code
+            )
             if response:
                 site_readings += response
         return site_readings
@@ -67,7 +85,12 @@ class APIRequestMixin():
             return None
 
         # Convert these to datetimes by setting the timestamp to midnight at the start of the day
-        return list(map(lambda d: datetime.datetime.combine(d, datetime.datetime.min.time()), available_dates))
+        return list(
+            map(
+                lambda d: datetime.datetime.combine(d, datetime.datetime.min.time()),
+                available_dates,
+            )
+        )
 
     @staticmethod
     def get_response(api_endpoint, params=None, timeout=60.0):

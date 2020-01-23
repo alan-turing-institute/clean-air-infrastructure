@@ -158,6 +158,7 @@ class SVGP_TF1(Model):
         i = 0
 
         for b in range(num_batches):
+            print('Batch: ', b, num_batches)
             if b == num_batches-1:
                 # in last batch just use remaining of test points
                 batch = XS[i:, :]

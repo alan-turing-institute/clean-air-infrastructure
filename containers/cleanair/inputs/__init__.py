@@ -15,5 +15,4 @@ __all__ = [
     "ScootWriter",
     "StaticWriter",
     "SatelliteWriter",
-
 ]
