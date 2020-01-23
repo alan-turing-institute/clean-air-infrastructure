@@ -265,9 +265,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if self.config['tag'] == 'validation':
             # load train and test dicts from pickle
-            print()
-            print("PATH TO TRAIN PICKLE:", os.path.join(dir_path, 'train.pickle'))
-            print("PATH TO TEST PICKLE:", os.path.join(dir_path, 'test.pickle'))
             with open(os.path.join(dir_path, 'train.pickle'), 'rb') as handle:
                 self.training_dict = pickle.load(handle)
             with open(os.path.join(dir_path, 'test.pickle'), 'rb') as handle:
@@ -703,8 +700,9 @@ class ModelData(DBWriter, DBQueryMixin):
         # create new dataframe and track indices for different sources
         indices = []
         for source in sources:
-            indices.append(data_dict[source]['index'])
+            indices.extend(data_dict[source]['index'])
         predict_df = pd.DataFrame(index=indices)
+        print('predict df shape:', predict_df.shape)
 
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
         for property in ['mean', 'var']:
@@ -712,7 +710,8 @@ class ModelData(DBWriter, DBQueryMixin):
                 # add a column containing pred results for all sources
                 column = np.array([])
                 for source in sources:
-                    column.append(pred_dict[source][species][property])
+                    column = np.append(column, pred_dict[source][species][property])
+                print(species, property, 'shape:', column.shape)
                 predict_df[species + '_' + property] = column
 
         # add predict_df as new columns to data_df - they should share an index

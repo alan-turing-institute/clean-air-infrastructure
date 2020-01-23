@@ -46,7 +46,7 @@ def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
 
     return metric_methods
 
-def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_col='predict_mean', test_col='NO2'):
+def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_col='NO2_mean', test_col='NO2'):
     """
     Measure metric scores for each hour of prediction.
 
@@ -69,6 +69,9 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
         Indexed by datetime.
         Each column is a metric in metric_methods.
     """
+    # remove nans from rows
+    pred_df = __remove_rows_with_nans(pred_df, pred_col=pred_col, test_col=test_col)
+
     # group by datetime
     gb = pred_df.groupby(datetime_col)
 
@@ -81,7 +84,13 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
 
-def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_col='predict_mean', test_col='NO2'):
+def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_col='NO2_mean', test_col='NO2'):
+    """
+    Group the pred_df by sensor then measure scores on each sensor.
+    """
+    # remove nans from rows
+    pred_df = __remove_rows_with_nans(pred_df, pred_col=pred_col, test_col=test_col)
+
     # group by sensor id
     gb = pred_df.groupby(sensor_col)
 
@@ -91,4 +100,7 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
         ), name=key)
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
+
+def __remove_rows_with_nans(pred_df, pred_col='NO2_mean', test_col='NO2'):
+    return pred_df.loc[pred_df[[pred_col, test_col]].dropna().index]
     

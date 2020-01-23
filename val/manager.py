@@ -4,7 +4,7 @@ Entry point for validation.
 
 import argparse
 
-from validation import util
+from validation import util, metrics
 
 class ValidationParser(argparse.ArgumentParser):
 
@@ -43,8 +43,8 @@ def main():
         exp = util.load_experiment_from_directory(args.name, experiment_data=args.experiments_directory)
         exp.update_model_data_list(update_train=False, update_test=True)
         for model_data in exp.model_data_list:
-            print(model_data.get_training_dicts()['laqn']['Y']['NO2'])
-            print(model_data.get_test_dict()['laqn']['Y']['NO2'])
+
+            print(metrics.measure_scores_by_hour(model_data.normalised_pred_data_df, metrics.get_metric_methods()))
             print()
 
 if __name__ == "__main__":
