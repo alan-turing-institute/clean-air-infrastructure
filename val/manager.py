@@ -40,7 +40,7 @@ def main():
         pass
 
     if args.validate:
-        exp = util.load_experiment_from_directory(args.name, experiment_data=args.experiments_directory)
+        exp = util.load_experiment_from_directory(args.name, directory=args.experiments_directory)
         exp.update_model_data_list(update_train=False, update_test=True)
         for model_data in exp.model_data_list:
             print(metrics.measure_scores_by_sensor(model_data.normalised_pred_data_df, metrics.get_metric_methods()))

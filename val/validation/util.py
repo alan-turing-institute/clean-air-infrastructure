@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 def pickle_files_exist(data_config):
     return os.path.exists(data_config['train_fp']) and os.path.exists(data_config['test_fp'])
 
-def load_experiment_from_directory(name, experiment_data='experiment_data/'):
+def load_experiment_from_directory(name, directory='experiment_data/', **kwargs):
     """
     Return an experiment with a name from a directory.
 
@@ -33,20 +33,19 @@ def load_experiment_from_directory(name, experiment_data='experiment_data/'):
     Experiment
         Initialised from directory.
     """
-    directory = experiment_data + name + '/'
 
-    with open(directory + 'meta/model_params.json', 'r') as fp:
+    with open(os.path.join(directory, name, 'meta', 'model_params.json'), 'r') as fp:
         model_params = json.load(fp)
 
-    with open(directory + 'meta/data.json', 'r') as fp:
+    with open(os.path.join(directory, name, 'meta', 'data.json'), 'r') as fp:
         data_config = json.load(fp)
 
-    experiment_df = pd.read_csv(directory + 'meta/experiment.csv', index_col=0)
+    experiment_df = pd.read_csv(os.path.join(directory, name, 'meta', 'experiment.csv'), index_col=0)
 
     models = list(experiment_df['model_name'].unique())
     cluster_name = list(experiment_df['cluster'].unique())[0]
 
-    return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiment_data)
+    return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=directory, **kwargs)
     
 def get_experiment_class(name):
     """
