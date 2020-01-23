@@ -19,16 +19,19 @@ def save(fp, obj):
     with open(fp, 'wb') as handle:
         pickle.dump(obj, handle)
 
-def predict(x_dict, predict_fn):
+def predict(x_dict, predict_fn, species):
+    # ToDo: get this to work for multiple pollutants
     dict_results = {}
     for src in x_dict:
-        src_x = x_dict[src]
+        species_dict = {}
+        src_x = x_dict[src]['X']
         src_ys, src_var = predict_fn(src_x)
         src_dict = {
-            'pred': src_ys,
+            'mean': src_ys,
             'var': src_var,
         }
-        dict_results[src] = src_dict
+        species_dict[species] = src_dict
+        dict_results[src] = species_dict
     return dict_results
 
 
@@ -36,20 +39,18 @@ def main(data_config, param_config, experiment_config):
     #TODO: fix files paths in experiments
     dirname = os.path.dirname
     basename = os.path.basename
-    data_dir = basename(dirname(data_config['x_train_fp']))
+    data_dir = basename(dirname(data_config['train_fp']))
 
-    x_train = os.path.basename(data_config['x_train_fp'])
-    y_train = os.path.basename(data_config['y_train_fp'])
-    xs_test = os.path.basename(data_config['x_test_fp'])
-    y_pred_fp = '../results/'+os.path.basename(experiment_config['y_pred_fp'])
+    train_fp = os.path.basename(data_config['train_fp'])
+    test_fp = os.path.basename(data_config['test_fp'])
+    train_pred_fp = '../results/{id}/train_pred.pickle'.format(id=experiment_config['results_dir'])
+    test_pred_fp = '../results/{id}/test_pred.pickle'.format(id=experiment_config['results_dir'])
 
-    x_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=x_train))
-    y_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=y_train))
-    xs_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=xs_test))
+    train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
+    test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
-    #@TODO remove :3
-    X = [x_dict['laqn'][:, None, :3]]
-    Y = [y_dict['laqn']]
+    X = [train_dict['laqn']['X'][:, None, :]]
+    Y = [train_dict['laqn']['Y']['NO2']]
 
     print(X[0].shape)
 
@@ -58,19 +59,15 @@ def main(data_config, param_config, experiment_config):
     param_config['restore'] = False
     param_config['model_state_fp'] = os.path.basename(experiment_config['model_state_fp'])
 
-    
     m = SVGP_TF1()
 
     m.fit(X, Y, max_iter=param_config['max_iter'], model_params=param_config, refresh=param_config['refresh'])
 
-    #@TODO remove :3
-    pred_x = predict(x_dict, lambda x: m.predict(x[:, :3]))
-    pred_xs = predict(xs_dict, lambda x: m.predict(x[:, :3]))
+    train_pred = predict(train_dict, lambda x: m.predict(x), 'NO2')
+    test_pred = predict(test_dict, lambda x: m.predict(x), 'NO2')
 
-    save(y_pred_fp, {
-        'train': pred_x,
-        'test': pred_xs,
-    })
+    save(train_pred_fp, train_pred)
+    save(test_pred_fp, test_pred)
 
 if __name__ == '__main__':
     #default config
