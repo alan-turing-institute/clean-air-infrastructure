@@ -7,6 +7,7 @@ import subprocess
 import pathlib
 
 from .. import util
+import os
 
 class Cluster(ABC):
     """
@@ -14,7 +15,7 @@ class Cluster(ABC):
     """
     def __init__(self, experiment_name='', cluster_config=None, experiment_configs=None,
                  experiment_fp='', cluster_tmp_fp='cluster', home_directory_fp='~/',
-                 input_format_fn=lambda x: x):
+                 input_format_fn=lambda x: x, libs=[]):
         """
             experiment_fp: location of the experiment to run
             cluster_tmp_fp: location of tmp folder to store temporal files created in this class
@@ -30,6 +31,7 @@ class Cluster(ABC):
         self.cluster_tmp_fp = cluster_tmp_fp
         self.home_directory_fp = home_directory_fp
         self.input_format_fn = input_format_fn
+        self.libs = libs
 
         self.max_config = {}
 
@@ -116,13 +118,14 @@ class Cluster(ABC):
         template = self.template
 
         template = template.replace('<MODELS_DIR>', self.experiment_name+'/models/')
-        template = template.replace('<LOGS_DIR>', self.experiment_name+'/cluster/logs')
+        template = template.replace('<LOGS_DIR>', self.experiment_name+'/logs')
         template = template.replace('<NODES>', str(self.config['nodes']))
         template = template.replace('<CPUS>', str(self.config['cpus']))
         template = template.replace('<MEMORY>', str(self.config['memory']))
         template = template.replace('<TIME>', str(self.config['time']))
         template = template.replace('<FILE_NAMES>', file_name)
         template = template.replace('<FILE_INPUTS>', file_inputs)
+        template = template.replace('<LOG_NAME>', log_name)
 
         return template
 
@@ -216,11 +219,9 @@ class Cluster(ABC):
             call_array.append("--slurm_file")
             call_array.append('scripts/'+f_name)
 
-        for lib in self.config['libs']:
+        for lib in self.libs:
             call_array.append("--lib")
             call_array.append(lib)
-
-        print(call_array)
 
         subprocess.call(call_array)
 
@@ -231,3 +232,54 @@ class Cluster(ABC):
 
         batch_file_names = self.create_batch_scripts()
         self.send_files_to_cluster(batch_file_names)
+
+    def get(self):
+        """
+            Get files from the cluster and store experiment folder.
+        """
+
+        call_array = [
+            "sudo",
+            "sh", self.root+"scripts/get_results.sh",
+            "--user", self.config['user'],
+            "--ip", self.config['ip'],
+            "--ssh_key", self.home_directory_fp +  self.config['ssh_key'],
+            "--basename", self.experiment_name,
+            "--cluster_folder", self.cluster_tmp_fp,
+            "--experiments_folder", self.experiment_fp,
+        ]
+
+        subprocess.call(call_array)
+
+
+    def check(self):
+        """
+            Print cluster state.
+        """
+        #TODO: move into script
+        script_str = """
+ssh  -i "{SSH_KEY}" "{USER}@{IP}" -o StrictHostKeyChecking=no 'bash -s' << HERE
+squeue -u {USER}
+HERE
+        """.format(
+            SSH_KEY=self.home_directory_fp +  self.config['ssh_key'],
+            USER=self.config['user'],
+            IP=self.config['ip'],
+        )
+
+        cmd = os.system(script_str)
+
+    def clean(self):
+        script_str = """
+ssh  -i "{SSH_KEY}" "{USER}@{IP}" -o StrictHostKeyChecking=no 'bash -s' << HERE
+rm -rf {name}
+HERE
+    """.format(
+            SSH_KEY=self.home_directory_fp +  self.config['ssh_key'],
+            USER=self.config['user'],
+            IP=self.config['ip'],
+            name=self.experiment_name
+        )
+
+        cmd = os.system(script_str)
+

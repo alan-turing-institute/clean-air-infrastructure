@@ -11,6 +11,7 @@ import pathlib
 import itertools
 
 from .. import util
+import os
 
 from ..cluster import *
 
@@ -68,7 +69,8 @@ class Experiment(ABC):
 
         self.available_clusters = {
             'laptop': Laptop,
-            'pearl': Pearl
+            'pearl': Pearl,
+            'orac': Orac
         }
 
     @abstractmethod
@@ -203,12 +205,7 @@ class Experiment(ABC):
         else:
             raise ValueError("Cluster does not exist: ",self.cluster)
 
-    def run(self):
-        """
-        Run the experiment.
-        """
-        # before running any models, create the results directories
-        self.__create_experiment_results_directories()
+    def __get_cluster(self):
         experiment_df = self.get_default_experiment_df()
 
         cluster_run_params = []
@@ -233,17 +230,58 @@ class Experiment(ABC):
             cluster_tmp_fp=self.directory+'cluster',
             experiment_fp=self.directory,
             home_directory_fp=self.home_directory,
+            libs=['../containers/cleanair/']
         )
         cluster.setup()
+        return cluster
+
+
+    def run(self):
+        """
+        Run the experiment.
+        """
+        # before running any models, create the results directories
+        self.__create_experiment_results_directories()
+
+        cluster = self.__get_cluster()
+
+        #Ensure cluster folders exist
+        dir_name = self.directory+'cluster'
+        pathlib.Path(dir_name).mkdir(exist_ok=True)
+
+        dir_name = self.directory+'cluster'+'/results/'
+        pathlib.Path(dir_name).mkdir(exist_ok=True)
+
+        for row in self.experiment_df.itertuples():
+
+            dir_name = self.directory+'cluster'+'/results/'+os.path.basename(row.results_dir)
+            pathlib.Path(dir_name).mkdir(exist_ok=True)
+
 
         cluster.run()
+
+    def get(self):
+        """
+        Get the experiments results.
+        """
+        cluster = self.__get_cluster()
+
+        cluster.get()
 
 
     def check_status(self):
         """
         Check the status of an experiment on a cluster.
         """
-        pass
+        cluster = self.__get_cluster()
+        cluster.check()
+
+    def clean(self):
+        """
+        Clean up after experiment. Remove tempory files locally and on cluster.
+        """
+        cluster = self.__get_cluster()
+        cluster.clean()
 
     def update_model_data_list(self, update_test=True, update_train=False):
         """
