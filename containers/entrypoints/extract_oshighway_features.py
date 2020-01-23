@@ -13,7 +13,12 @@ def main():
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Extract static OS highway features")
-    parser.add_argument("-s", "--secretfile", default="db_secrets.json", help="File with connection secrets.")
+    parser.add_argument(
+        "-s",
+        "--secretfile",
+        default="db_secrets.json",
+        help="File with connection secrets.",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments

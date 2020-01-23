@@ -10,19 +10,27 @@ from ..base import Base
 
 class MetaPoint(Base):
     """Table of interest points"""
+
     __tablename__ = "meta_point"
     __table_args__ = {"schema": "interest_points"}
 
     source = Column(String(10), primary_key=True)
-    location = Column(Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True)
-    id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)  # pylint: disable=invalid-name
+    location = Column(
+        Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True),
+        primary_key=True,
+    )
+    id = Column(
+        UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4
+    )  # pylint: disable=invalid-name
 
     def __repr__(self):
-        return "<MetaPoint(" + ", ".join([
-            "id='{}'".format(self.id),
-            "source='{}'".format(self.source),
-            "location='{}'".format(self.location),
-            ])
+        return "<MetaPoint(" + ", ".join(
+            [
+                "id='{}'".format(self.id),
+                "source='{}'".format(self.source),
+                "location='{}'".format(self.location),
+            ]
+        )
 
     @staticmethod
     def build_ewkt(latitude, longitude):

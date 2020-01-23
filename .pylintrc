@@ -64,9 +64,11 @@ disable=duplicate-code,
         too-few-public-methods,
         too-many-instance-attributes,
         too-many-locals,
-        too-many-branches
-
+        too-many-branches,
+        bad-continuation,
 [REPORTS]
+
+signature-mutators=db_query
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html. You can also give a reporter class, eg
@@ -99,7 +101,7 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 bad-functions=map,filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_,x,X,y,Y,Y_pred,X_pred
+good-names=i,j,k,ex,Run,_,x,X,y,Y,Y_pred,X_pred,id, X_sat, X_sat_mask, Y_sat
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata

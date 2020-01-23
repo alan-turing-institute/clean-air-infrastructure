@@ -23,7 +23,9 @@ class DBWriter(DBInteractor):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def __commit_records_core(self, session, records, table, on_conflict_do_nothing=True):
+    def __commit_records_core(
+        self, session, records, table, on_conflict_do_nothing=True
+    ):
         """Add records using sqlalchemy core
         args:
             records: Either a list of dictionary or an slqalchemy subquery
@@ -32,7 +34,9 @@ class DBWriter(DBInteractor):
 
         def row2dict(row):
             """Convert an sqlalchemy row object to a dictionary"""
-            return dict((col, getattr(row, col)) for col in row.__table__.columns.keys())
+            return dict(
+                (col, getattr(row, col)) for col in row.__table__.columns.keys()
+            )
 
         if isinstance(records, SUBQUERY_TYPE):
             select_stmt = records.select()
@@ -45,12 +49,16 @@ class DBWriter(DBInteractor):
                 records_insert = records
             insert_stmt = insert(table).values(records_insert)
         else:
-            raise TypeError('records arg must be a list of dictionaries or sqlalchemy subquery')
+            raise TypeError(
+                "records arg must be a list of dictionaries or sqlalchemy subquery"
+            )
 
         # Insert records
         if on_conflict_do_nothing:
             self.logger.debug("Add records, ignoring duplicates")
-            on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(index_elements=inspect(table).primary_key)
+            on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(
+                index_elements=inspect(table).primary_key
+            )
             session.execute(on_duplicate_key_stmt)
             session.commit()
         else:
@@ -83,7 +91,9 @@ class DBWriter(DBInteractor):
             session.flush()
             session.commit()
 
-    def commit_records(self, session, records, table=None, on_conflict_do_nothing=False):
+    def commit_records(
+        self, session, records, table=None, on_conflict_do_nothing=False
+    ):
         """
         Commit records to the database
 
