@@ -4,7 +4,7 @@ A module for satellite experiments.
 
 from abc import abstractmethod
 import pandas as pd
-import experiment
+from . import experiment
 
 class SatelliteExperiment(experiment.Experiment):
     """
@@ -29,17 +29,3 @@ class SatelliteExperiment(experiment.Experiment):
 
     def get_default_data_config(self):
         return []
-    
-
-class DeepGPExperiment(SatelliteExperiment):
-    """
-    An experiment with satellite data for the deep GP.
-    """
-
-    def __init__(self, experiment_name, models, cluster_name, **kwargs):
-        super().__init__(experiment_name, models, cluster_name, **kwargs)
-        if 'model_params' not in kwargs:
-            self.model_params = self.get_default_model_params()
-
-    def get_default_model_params(self):
-        return {}
