@@ -43,21 +43,24 @@ def main(data_config, param_config, experiment_config):
 
     train_fp = os.path.basename(data_config['train_fp'])
     test_fp = os.path.basename(data_config['test_fp'])
-    train_pred_fp = '../results/{id}/train_pred.pickle'.format(id=experiment_config['results_dir'])
-    test_pred_fp = '../results/{id}/test_pred.pickle'.format(id=experiment_config['results_dir'])
+
+    experiment_id = os.path.basename(experiment_config['results_dir'])
+    train_pred_fp = '../results/{id}/train_pred.pickle'.format(id=experiment_id)
+    test_pred_fp = '../results/{id}/test_pred.pickle'.format(id=experiment_id)
 
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
     X = [train_dict['laqn']['X'][:, None, :]]
-    Y = [train_dict['laqn']['Y']['NO2']]
+    Y = [train_dict['laqn']['Y']['NO2'][:, None]]
 
     print(X[0].shape)
+    print(Y[0].shape)
 
     #TODO: ask patrick where these configs should go
     param_config['train'] = True
     param_config['restore'] = False
-    param_config['model_state_fp'] = os.path.basename(experiment_config['model_state_fp'])
+    param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
 
     m = SVGP_TF1()
 
