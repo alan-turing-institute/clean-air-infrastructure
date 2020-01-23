@@ -17,7 +17,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-f', '--force', action='store_true', help='force download data, even it exists')
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
         self.add_argument('-c', '--cluster', type=str, help='name of the cluster')
-        self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
+        self.add_argument('-d', '--home_directory', type=str, help='path to home directory', default='~')
         self.add_argument('-e', '--experiments_directory', type=str, default='experiment_data/', help='path to experiments directory')
 
 def main():

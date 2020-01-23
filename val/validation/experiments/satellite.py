@@ -15,6 +15,8 @@ class SatelliteExperiment(experiment.Experiment):
         super().__init__(experiment_name, models, cluster_name, **kwargs)
         if 'data_config' not in kwargs:
             self.data_config = self.get_default_data_config()
+        if 'model_params' not in kwargs:    # ToDo: remove these two lines
+            self.model_params = self.get_default_model_params()
         if 'experiment_df' not in kwargs:
             self.experiment_df = self.get_default_experiment_df()
 
@@ -44,7 +46,7 @@ class SatelliteExperiment(experiment.Experiment):
     def get_default_data_config(self):
         # create dates for rolling over
         n_rolls = 1
-        train_start = "2019-01-10T00:00:00"
+        train_start = "2019-11-06T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
@@ -52,6 +54,6 @@ class SatelliteExperiment(experiment.Experiment):
         data_config = util.create_data_list(rolls, data_dir)
         for index in range(len(data_config)):
             data_config[index]["features"] = ['value_1000_flat']
-            data_config[index]['use_satellite'] = True
+            data_config[index]['include_satellite'] = True
             data_config[index]['train_satellite_interest_points'] = 'all'
         return data_config
