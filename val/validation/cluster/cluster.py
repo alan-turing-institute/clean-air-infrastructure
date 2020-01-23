@@ -97,6 +97,7 @@ class Cluster(ABC):
                 - make sure cluster tmp folder exists
         """
         pathlib.Path(self.cluster_tmp_fp).mkdir(exist_ok=True)
+        pathlib.Path(self.cluster_tmp_fp+'/scripts/').mkdir(exist_ok=True)
 
     def get_key_order(self, config_dict):
         """
@@ -162,7 +163,7 @@ class Cluster(ABC):
                 logs_name
             )
 
-            batch_name = self.cluster_tmp_fp+'/'+batch_name
+            batch_name = batch_name
             batches.append([batch_name, batch_script])
 
         return batches
@@ -171,8 +172,8 @@ class Cluster(ABC):
         """
             Save batch script to the tmp cluster folder
         """
-        print(file_name)
-        with open(file_name, 'w') as f:
+        print(self.cluster_tmp_fp+'/scripts/'+file_name)
+        with open(self.cluster_tmp_fp+'/scripts/'+file_name, 'w') as f:
             f.write(batch_script)
 
     def create_batch_scripts(self):
@@ -213,7 +214,7 @@ class Cluster(ABC):
 
         for f_name in batch_file_names:
             call_array.append("--slurm_file")
-            call_array.append(f_name)
+            call_array.append('scripts/'+f_name)
 
         for lib in self.config['libs']:
             call_array.append("--lib")

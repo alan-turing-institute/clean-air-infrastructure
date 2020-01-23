@@ -65,7 +65,6 @@ class Experiment(ABC):
 
         self.directory = util.ensure_last_backslash(self.directory)
         self.home_directory = util.ensure_last_backslash(self.home_directory)
-        print(self.home_directory)
 
         self.available_clusters = {
             'laptop': Laptop,
@@ -200,7 +199,7 @@ class Experiment(ABC):
         Load cluster object from cluster object and check it exists.
         """
         if self.cluster in self.available_clusters:
-            self.cluster_obj = self.available_clusters[self.cluster]()
+            return self.available_clusters[self.cluster]
         else:
             raise ValueError("Cluster does not exist: ",self.cluster)
 
@@ -226,13 +225,14 @@ class Experiment(ABC):
 
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
-        cluster = Pearl(
+        cluster = self.__get_cluster_obj()(
             experiment_name=self.name,
             cluster_config={},
             experiment_configs=cluster_run_params,
             input_format_fn=input_format_fn,
             cluster_tmp_fp=self.directory+'cluster',
             experiment_fp=self.directory,
+            home_directory_fp=self.home_directory,
         )
         cluster.setup()
 

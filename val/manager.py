@@ -35,13 +35,14 @@ def main():
 
     elif args.run:
         models = ['svgp']
-        exp.update_model_data_list(update_train=False, update_test=False)
-        for model_data in exp.model_data_list:
-            print(model_data.get_training_dicts()['laqn']['Y']['NO2'])
-            print(model_data.get_testing_dicts()['laqn']['Y']['NO2'])
-            print()
-
-        exp.run()
+        if False:
+            exp.update_model_data_list(update_train=False, update_test=False)
+            for model_data in exp.model_data_list:
+                print(model_data.get_training_dicts()['laqn']['Y']['NO2'])
+                print(model_data.get_testing_dicts()['laqn']['Y']['NO2'])
+                print()
+        else:
+            exp.run()
 
     elif args.check:
         pass

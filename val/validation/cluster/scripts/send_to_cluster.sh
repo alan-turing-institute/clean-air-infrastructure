@@ -68,14 +68,19 @@ done
 
 VERBOSE=1
 
+#script files doler
+
+mkdir -p $CLUSTER_FOLDER/scripts
+
 
 if [ "$VERBOSE" -eq "1" ]; then
    echo "SSH_KEY: $SSH_KEY"
    echo "IP: $IP"
    echo "USER: $USER"
+   echo "CLUSTER_FOLDER: $CLUSTER_FOLDER"
 fi
 
-TO_TAR="-C $EXPERIMENTS_FOLDER/$BASENAME/ models data meta  -C ../../ ${SLURM_FILES[@]}"
+TO_TAR="-C $EXPERIMENTS_FOLDER$BASENAME/ models data meta  -C ../../$CLUSTER_FOLDER ${SLURM_FILES[@]}"
 
 if [ "$LIB_FLAG" -eq "1" ]; then
    len=${#LIBS[@]}
@@ -90,21 +95,24 @@ if [ "$LIB_FLAG" -eq "1" ]; then
    done
 fi
 
-echo $TO_TAR
 
 #create folder for this specific run
-TAR_NAME="cluster/$BASENAME.tar"
+TAR_NAME="$CLUSTER_FOLDER/$BASENAME.tar"
+
+echo "$TAR_NAME"  $TO_TAR
+
 tar -czf "$TAR_NAME"  $TO_TAR
 
 echo "$SSH_KEY" "$TAR_NAME" "$USER@$IP:" 
 scp  -i "$SSH_KEY" "$TAR_NAME" "$USER@$IP:"
 
 
+
 ssh  -i "$SSH_KEY" "$USER@$IP" -o StrictHostKeyChecking=no 'bash -s' << HERE
    mkdir $BASENAME
    tar -xzf $BASENAME.tar --directory $BASENAME --warning=none
    rm -rf $BASENAME.tar
-   mkdir $BASENAME/cluster/logs
+   mkdir $BASENAME/logs
    mkdir $BASENAME/results
 HERE
 
@@ -124,5 +132,5 @@ done
 
 JOB_ID=$(echo $results | awk '{print $NF}')
 
-echo $JOB_ID > 'cluster/job_id'
+echo $JOB_ID > "$CLUSTER_FOLDER/job_id"
 
