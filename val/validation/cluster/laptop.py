@@ -2,6 +2,7 @@
     Run experiments locally on Laptop
 """
 
+import os
 from . import Cluster
 
 import subprocess
@@ -34,6 +35,7 @@ class Laptop(Cluster):
             Run all experiments serially and locally
         """
 
+        current_directory = os.getcwd()
         for config in self.experiment_configs:
             model = config['filename']
             file_name = 'm_{model}'.format(model=model)
@@ -43,12 +45,12 @@ class Laptop(Cluster):
 
             #construct bash script to send files
             call_array = [
-                "cd ",  file_fp, '&&',
+                "cd ",  current_directory + '/' + file_fp, '&&',
                 "python", file_name, file_inputs
             ]
             script = ' '.join(call_array)
 
-            subprocess.run(script)
+            os.system(script)
 
 
 
