@@ -147,8 +147,8 @@ class Experiment(ABC):
                 model_data.save_config_state(data_dir_path)
 
                 # get the training and testing dicts indexed by source
-                training_dict = model_data.get_training_dicts()
-                test_dict = model_data.get_test_dicts()
+                training_dict = model_data.get_training_dict()
+                test_dict = model_data.get_test_dict()
 
                 # write to a pickle
                 with open(data_config['train_fp'], 'wb') as handle:

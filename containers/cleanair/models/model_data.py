@@ -94,7 +94,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
             if self.config['tag'] == 'validation':
-                self.training_dict = self.get_training_dicts()
+                self.training_dict = self.get_training_dict()
                 self.test_dict = self.get_test_dict()
 
         else:
@@ -378,7 +378,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return data_dict
 
-    def get_training_dicts(self):
+    def get_training_dict(self):
         """
         Get a training dictionary.
         """

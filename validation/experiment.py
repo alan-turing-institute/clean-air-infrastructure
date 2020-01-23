@@ -134,7 +134,7 @@ class Experiment(ABC):
                     raise Exception("testing X and Y not the same length")
 
 
-                training_data_dicts = model_data.get_training_dicts()
+                training_data_dicts = model_data.get_training_dict()
                 testing_data_dicts = model_data.get_testings_dicts()
 
 
