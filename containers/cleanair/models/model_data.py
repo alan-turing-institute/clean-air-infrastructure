@@ -83,7 +83,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
             if self.config['tag'] == 'validation':
                 self.training_dict = self.get_training_dicts()
-                self.testing_dict = self.get_testing_dicts()
+                self.test_dict = self.get_test_dict()
 
         else:
             self.restore_config_state(config_dir)
@@ -265,6 +265,9 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if self.config['tag'] == 'validation':
             # load train and test dicts from pickle
+            print()
+            print("PATH TO TRAIN PICKLE:", os.path.join(dir_path, 'train.pickle'))
+            print("PATH TO TEST PICKLE:", os.path.join(dir_path, 'test.pickle'))
             with open(os.path.join(dir_path, 'train.pickle'), 'rb') as handle:
                 self.training_dict = pickle.load(handle)
             with open(os.path.join(dir_path, 'test.pickle'), 'rb') as handle:
@@ -332,7 +335,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """
         return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'])
 
-    def get_testing_dicts(self):
+    def get_test_dict(self):
         """
         Get a training dictionary of data indexed in the same way as get_training_dict.
         """
@@ -728,7 +731,7 @@ class ModelData(DBWriter, DBQueryMixin):
             Third level keys are either 'mean' or 'var'.
             Values are numpy arrays of predictions for a source and specie.
         """
-        self.normalised_pred_data_df = self.__update_df_with_pred_dict(self.normalised_pred_data_df, self.testing_dict, test_pred_dict, self.config['pred_sources'])
+        self.normalised_pred_data_df = self.__update_df_with_pred_dict(self.normalised_pred_data_df, self.test_dict, test_pred_dict, self.config['pred_sources'])
 
     def update_training_df_with_preds(self, training_pred_dict):
         """

@@ -44,9 +44,8 @@ def main():
         exp.update_model_data_list(update_train=False, update_test=True)
         for model_data in exp.model_data_list:
             print(model_data.get_training_dicts()['laqn']['Y']['NO2'])
-            print(model_data.get_testing_dicts()['laqn']['Y']['NO2'])
+            print(model_data.get_test_dict()['laqn']['Y']['NO2'])
             print()
 
 if __name__ == "__main__":
     main()
-    

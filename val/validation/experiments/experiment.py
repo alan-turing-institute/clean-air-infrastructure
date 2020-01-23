@@ -2,6 +2,7 @@
 The base class for experiments.
 """
 
+import os
 import sys
 import json
 import pickle
@@ -105,7 +106,7 @@ class Experiment(ABC):
             experiment_df = experiment_df.append(pd.DataFrame(params_configs, columns=cols), ignore_index=True)
 
         experiment_df['results_dir'] = pd.Series([
-            self.directory + '{name}/results/'.format(name=self.name) + util.create_experiment_prefix(
+            util.create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) for r in experiment_df.itertuples()])
 
@@ -147,13 +148,13 @@ class Experiment(ABC):
 
                 # get the training and testing dicts indexed by source
                 training_dict = model_data.get_training_dicts()
-                testing_dict = model_data.get_testing_dicts()
+                test_dict = model_data.get_test_dicts()
 
                 # write to a pickle
                 with open(data_config['train_fp'], 'wb') as handle:
                     pickle.dump(training_dict, handle)
                 with open(data_config['test_fp'], 'wb') as handle:
-                    pickle.dump(testing_dict, handle)
+                    pickle.dump(test_dict, handle)
 
         # load and write model data objects to files
         self.save_meta_files()
@@ -192,7 +193,7 @@ class Experiment(ABC):
         Create directories to store results in if they don't already exist.
         """
         for row in self.experiment_df.itertuples():
-            pathlib.Path(row.results_dir).mkdir(exist_ok=True)
+            pathlib.Path(os.path.join(self.directory, self.name, 'results', row.results_dir)).mkdir(exist_ok=True)
 
     def __get_cluster_obj(self):
         """
@@ -268,8 +269,11 @@ class Experiment(ABC):
             # get the predictions from the model for testing data
             results_dir = row['results_dir']
             if update_test:
-                test_pred_fp = self.directory + results_dir + 'test_pred.pickle'
-                with open(test_pred_fp, 'wb') as handle:
+                test_pred_fp = '{dir}{name}/results/{id}/test_pred.pickle'.format(dir=self.directory, name=self.name, id=results_dir)
+                with open(test_pred_fp, 'rb') as handle:
+                    print()
+                    print(test_pred_fp)
+                    print()
                     test_pred_dict = pickle.load(handle)
 
                 # update model data with predictions
@@ -278,8 +282,8 @@ class Experiment(ABC):
             if update_train:
                 # try to update the predictions for the training set
                 try:
-                    train_pred_fp = self.directory + results_dir + 'train_pred.pickle'
-                    with open(train_pred_fp, 'wb') as handle:
+                    train_pred_fp = '{dir}{name}/results/{id}/train_pred.pickle'.format(dir=self.directory, name=self.name, id=results_dir)
+                    with open(train_pred_fp, 'rb') as handle:
                         train_pred_dict = pickle.load(handle)
                     model_data.update_training_df_with_preds(train_pred_dict)
                 except FileNotFoundError:

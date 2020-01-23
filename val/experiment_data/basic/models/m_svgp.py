@@ -69,6 +69,9 @@ def main(data_config, param_config, experiment_config):
     train_pred = predict(train_dict, lambda x: m.predict(x), 'NO2')
     test_pred = predict(test_dict, lambda x: m.predict(x), 'NO2')
 
+    print()
+    print(train_pred)
+    print()
     save(train_pred_fp, train_pred)
     save(test_pred_fp, test_pred)
 
