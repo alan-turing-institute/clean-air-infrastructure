@@ -100,38 +100,6 @@ class ModelData(DBWriter, DBQueryMixin):
         else:
             self.restore_config_state(config_dir)
 
-    # def save_config_state(self, dir_path):
-    #     """Save the full configuration and training/prediction data to disk:
-
-    #     args:
-    #         dir_path: Directory path in which to save the config files
-    #     """
-
-    #     # Create a new directory
-    #     if not os.path.exists(dir_path):
-    #         os.mkdir(dir_path)
-
-    #     self.normalised_training_data_df.to_csv(os.path.join(dir_path, 'normalised_training_data.csv'))
-    #     self.normalised_pred_data_df.to_csv(os.path.join(dir_path, 'normalised_pred_data.csv'))
-
-    #     with open(os.path.join(dir_path, 'config.json'), 'w') as config_f:
-    #         json.dump(self.config, config_f, sort_keys=True, indent=4)
-
-    #     self.logger.info("State files saved to {}".format(dir_path))
-
-    # def restore_config_state(self, dir_path):
-    #     """Reload configuration state saved to disk by ModelData.save_config_state()
-    #     """
-    #     if not os.path.exists(dir_path):
-    #         raise IOError("{} does not exist".format(dir_path))
-
-    #     self.normalised_training_data_df = pd.read_csv(os.path.join(
-    #         os.path.join(dir_path, 'normalised_training_data.csv')))
-    #     self.normalised_pred_data_df = pd.read_csv(os.path.join(os.path.join(dir_path, 'normalised_pred_data.csv')))
-
-    #     with open(os.path.join(dir_path, 'config.json'), 'r') as config_f:
-    #         self.config = json.load(config_f)
-
     def __validate_config(self, config):
 
         config_keys = [
