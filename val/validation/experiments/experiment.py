@@ -177,7 +177,7 @@ class Experiment(ABC):
 
     def __create_experiment_data_directories(self):
         """
-        Create directories if they don't exist.
+        Create data directories if they don't exist.
         """
         exp_dir = self.directory + self.name + '/'
         pathlib.Path(self.directory).mkdir(exist_ok=True)
