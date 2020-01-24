@@ -225,7 +225,7 @@ class Experiment(ABC):
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
         cluster = self.__get_cluster_obj()(
-            root=self.cluster_root,
+            root=self.cluster_root+'/',
             experiment_name=self.name,
             cluster_config={},
             experiment_configs=cluster_run_params,
