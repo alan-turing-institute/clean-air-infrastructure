@@ -6,16 +6,15 @@ from abc import ABC, abstractmethod
 import subprocess
 import pathlib
 
-from .. import util
 import os
 
 class Cluster(ABC):
     """
         Cluster base class
     """
-    def __init__(self, experiment_name='', cluster_config=None, experiment_configs=None,
+    def __init__(self, root='cluster',experiment_name='', cluster_config=None, experiment_configs=None,
                  experiment_fp='', cluster_tmp_fp='cluster', home_directory_fp='~/',
-                 input_format_fn=lambda x: x, libs=[]):
+                 input_format_fn=lambda x: x, libs=[],relative_fp_flag=False):
         """
             experiment_fp: location of the experiment to run
             cluster_tmp_fp: location of tmp folder to store temporal files created in this class
@@ -23,7 +22,7 @@ class Cluster(ABC):
             experiment_configs: an array of dictionaries
         """
 
-        self.root = 'validation/cluster/'
+        self.root = root
         self.experiment_name = experiment_name
         self.config = cluster_config or {}
         self.experiment_configs = experiment_configs or {}
@@ -32,6 +31,7 @@ class Cluster(ABC):
         self.home_directory_fp = home_directory_fp
         self.input_format_fn = input_format_fn
         self.libs = libs
+        self.relative_fp_flag = str(int(relative_fp_flag))
 
         self.max_config = {}
 
@@ -144,7 +144,7 @@ class Cluster(ABC):
             file_name = 'm_{model}'.format(model=model)
 
             #get the ordered keys and values
-            ordered_config_keys = self.get_key_order(util.dict_without_key(config, 'filename'))
+            ordered_config_keys = self.get_key_order(dict_without_key(config, 'filename'))
             inputs = [config[key] for key in ordered_config_keys]
 
             #convert values to file input format
@@ -212,6 +212,7 @@ class Cluster(ABC):
             "--basename", self.experiment_name,
             "--cluster_folder", self.cluster_tmp_fp,
             "--experiments_folder", self.experiment_fp,
+            "--relative_fp_flag", self.relative_fp_flag
         ]
 
 
@@ -247,6 +248,7 @@ class Cluster(ABC):
             "--basename", self.experiment_name,
             "--cluster_folder", self.cluster_tmp_fp,
             "--experiments_folder", self.experiment_fp,
+            "--relative_fp_flag", self.relative_fp_flag
         ]
 
         subprocess.call(call_array)
@@ -283,3 +285,10 @@ HERE
 
         cmd = os.system(script_str)
 
+def dict_without_key(dict_obj, key):
+    """
+        Return a dictionary with the key removed.
+    """
+    new_dict_obj = dict_obj.copy()
+    new_dict_obj.pop(key)
+    return new_dict_obj

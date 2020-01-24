@@ -18,7 +18,7 @@ class Pearl(Cluster):
             Location of the slurm batch script template
         """
 
-        return 'validation/cluster/batch_files/batch_script_pearl_template.sh'
+        return self.root+'/batch_files/batch_script_pearl_template.sh'
 
     @property
     def default_config(self):

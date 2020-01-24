@@ -64,6 +64,7 @@ class Experiment(ABC):
         self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
         self.home_directory = kwargs['home_directory'] if 'home_directory' in kwargs else '~'
         self.secretfile = kwargs['secretfile'] if 'secretfile' in kwargs else '../terraform/.secrets/db_secrets.json'
+        self.cluster_root = 'validation/cluster'
 
         self.directory = util.ensure_last_backslash(self.directory)
         self.home_directory = util.ensure_last_backslash(self.home_directory)
@@ -224,6 +225,7 @@ class Experiment(ABC):
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
         cluster = self.__get_cluster_obj()(
+            root=self.cluster_root+'/',
             experiment_name=self.name,
             cluster_config={},
             experiment_configs=cluster_run_params,
@@ -231,7 +233,8 @@ class Experiment(ABC):
             cluster_tmp_fp=self.directory+'cluster',
             experiment_fp=self.directory,
             home_directory_fp=self.home_directory,
-            libs=['../containers/cleanair/']
+            libs=['../containers/cleanair/'],
+            relative_fp_flag=True
         )
         cluster.setup()
         return cluster

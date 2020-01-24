@@ -3,6 +3,7 @@ ROOT='/Users/ohamelijnck/Scripts/cluster'
 LIB_FLAG=0
 LIBS=()
 SLURM_FILES=()
+RELATIVE_FP_FLAG=0
 while [[ $# -gt 0 ]]
 do
    key="$1"
@@ -46,6 +47,10 @@ do
          BASENAME=$2
          shift;
       ;;
+      --relative_fp_flag)
+         RELATIVE_FP_FLAG=$2
+         shift;
+      ;;
       --cluster_folder)
          CLUSTER_FOLDER=$2
          shift;
@@ -80,7 +85,12 @@ if [ "$VERBOSE" -eq "1" ]; then
    echo "CLUSTER_FOLDER: $CLUSTER_FOLDER"
 fi
 
-TO_TAR="-C $EXPERIMENTS_FOLDER$BASENAME/ models data meta  -C ../../$CLUSTER_FOLDER  results ${SLURM_FILES[@]}"
+REL_CLUSTER=''
+if [ "$RELATIVE_FP_FLAG" -eq "1" ]; then
+   REL_CLUSTER='../../'
+fi
+
+TO_TAR="-C $EXPERIMENTS_FOLDER$BASENAME/ models data meta  -C $REL_CLUSTER$CLUSTER_FOLDER  results ${SLURM_FILES[@]}"
 
 
 
