@@ -5,6 +5,7 @@ Entry point for validation.
 import argparse
 
 from validation import util, metrics
+from validation.dashboard import dashboard
 
 class ValidationParser(argparse.ArgumentParser):
 
@@ -15,6 +16,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-k', '--check', action='store_true', help='check the status of a cluster')
         self.add_argument('-v', '--validate', action='store_true', help='run validation methods')
         self.add_argument('-f', '--force', action='store_true', help='force download data, even it exists')
+        self.add_argument('-dash', '--dashboard', action='store_true', help='show the dashboard')
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
         self.add_argument('-c', '--cluster', type=str, help='name of the cluster')
         self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
@@ -45,6 +47,14 @@ def main():
         for model_data in exp.model_data_list:
             print(metrics.measure_scores_by_sensor(model_data.normalised_pred_data_df, metrics.get_metric_methods()))
             print()
+
+    if args.dashboard:
+        # update the experiment results
+        exp = util.load_experiment_from_directory(args.name, directory=args.experiments_directory)
+        exp.update_model_data_list(update_train=True, update_test=True)
+
+        # run the dashboard
+        dashboard.main()
 
 if __name__ == "__main__":
     main()
