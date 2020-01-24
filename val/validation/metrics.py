@@ -105,13 +105,15 @@ def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat
     """
     Concatenate the sensor scores dataframe with static features of the sensor.
     """
-    point_df = pd.DataFrame(index=scores_df.index)
+    point_df = pd.DataFrame(index=list(scores_df.index))
     for feature in static_features:
-        point_df[feature] = [
-            pred_df[pred_df['point_id'] == pid].iloc[0][feature]
-            for pid in point_df.index
-        ]
-    return pd.concat([scores_df, point_df], join='inner')
+        feature_list = []
+        print(feature)
+        for pid in point_df.index:
+            value = pred_df[pred_df['point_id'] == pid].iloc[0][feature]
+            feature_list.append(value)
+        point_df[feature] = pd.Series(feature_list, index=point_df.index)
+    return pd.concat([scores_df, point_df], axis=1, ignore_index=False)
 
 def __remove_rows_with_nans(pred_df, pred_col='NO2_mean', test_col='NO2'):
     return pred_df.loc[pred_df[[pred_col, test_col]].dropna().index]
