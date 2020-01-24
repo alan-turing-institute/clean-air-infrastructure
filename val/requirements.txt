@@ -1,0 +1,2 @@
+# in addition to requirements for cleanair
+ipywidgets
