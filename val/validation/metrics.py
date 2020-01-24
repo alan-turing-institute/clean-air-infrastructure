@@ -108,7 +108,6 @@ def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat
     point_df = pd.DataFrame(index=list(scores_df.index))
     for feature in static_features:
         feature_list = []
-        print(feature)
         for pid in point_df.index:
             value = pred_df[pred_df['point_id'] == pid].iloc[0][feature]
             feature_list.append(value)
