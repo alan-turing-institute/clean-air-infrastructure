@@ -101,6 +101,18 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
 
+def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat', 'lon']):
+    """
+    Concatenate the sensor scores dataframe with static features of the sensor.
+    """
+    point_df = pd.DataFrame(index=scores_df.index)
+    for feature in static_features:
+        point_df[feature] = [
+            pred_df[pred_df['point_id'] == pid].iloc[0][feature]
+            for pid in point_df.index
+        ]
+    return pd.concat([scores_df, point_df], join='inner')
+
 def __remove_rows_with_nans(pred_df, pred_col='NO2_mean', test_col='NO2'):
     return pred_df.loc[pred_df[[pred_col, test_col]].dropna().index]
     

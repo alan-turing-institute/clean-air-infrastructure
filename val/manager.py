@@ -45,7 +45,9 @@ def main():
         exp = util.load_experiment_from_directory(args.name, directory=args.experiments_directory)
         exp.update_model_data_list(update_train=False, update_test=True)
         for model_data in exp.model_data_list:
-            print(metrics.measure_scores_by_sensor(model_data.normalised_pred_data_df, metrics.get_metric_methods()))
+            scores_df = metrics.measure_scores_by_sensor(model_data.normalised_training_data_df, metrics.get_metric_methods())
+            point_df = metrics.concat_static_features_with_scores(scores_df, model_data.normalised_training_data_df)
+            print(point_df)
             print()
 
     if args.dashboard:
@@ -54,7 +56,7 @@ def main():
         exp.update_model_data_list(update_train=True, update_test=True)
 
         # run the dashboard
-        dashboard.main()
+        dashboard.main(exp)
 
 if __name__ == "__main__":
     main()
