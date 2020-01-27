@@ -33,40 +33,47 @@ def main(exp):
     app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
     app.layout = html.Div([
-        dcc.Markdown("""
-            #### Showing the errors on sensors in space
-
-            Each dot in the diagram below shows a sensor.
-            The colour of a sensor is the error on that sensor.
-            When you hover over a sensor, the timeseries will show the predictive mean, variance and actual reading of the sensor.
-        """),
-        dcc.Graph(
-            id='london-sensors',
-            figure=maps.AqPointsFigure(point_df),
-            hoverData={'points':[{
-                'hovertext':default_point_id
-            }]}
-        ),
         html.Div(className='row', children=[
-            html.Div([
-                dcc.Graph(
-                    id='point-timeseries-hover',
-                    figure=go.Figure(
-                        data=timeseries.get_pollutant_point_trace(
-                            default_point_id,
-                            sensor_groupby.get_group(default_point_id)
-                        )
+            dcc.Markdown("""
+                #### Showing the errors on sensors in space
+
+                Each dot in the diagram below shows a sensor.
+                The colour of a sensor is the error on that sensor.
+                When you hover over a sensor, the timeseries will show the predictive mean, variance and actual reading of the sensor.
+            """),
+            dcc.Graph(
+                id='london-sensors',
+                figure=maps.AqPointsFigure(point_df),
+                hoverData={'points':[{
+                    'hovertext':default_point_id
+                }]}
+            ),
+            dcc.Graph(
+                id='point-timeseries-hover',
+                figure=go.Figure(
+                    data=timeseries.get_pollutant_point_trace(
+                        default_point_id,
+                        sensor_groupby.get_group(default_point_id)
+                    ),
+                    layout=dict(
+                        title='Prediction for point {id}'.format(id=default_point_id)
                     )
                 )
-            ])
+            ),
+            dcc.Graph(
+                id='sensor-time-series',
+                figure=timeseries.plot_sensor_time_series(model_data)
+            )
         ]),
+        dcc.Markdown("""
+            #### Comparison of experiments with different parameters.
+
+            The figure below shows metrics for different model parameter configurations.
+            The metric score at a given time is the metric over all sensors at that timestamp.
+        """),
         dcc.Graph(
             id='scores-by-time',
             figure=timeseries.scores_by_time(exp)
-        ),
-        dcc.Graph(
-            id='sensor-time-series',
-            figure=timeseries.plot_sensor_time_series(model_data)
         )
     ])
 
@@ -77,8 +84,12 @@ def main(exp):
         point_id = hover_data['points'][0]['hovertext']
         point_group = sensor_groupby.get_group(point_id)
         mean_trace = timeseries.get_pollutant_point_trace(point_id, point_group)
+        actual_trace = timeseries.get_pollutant_point_trace(point_id, point_group, col='NO2')
         return dict(
-            data=[mean_trace]
+            data=[mean_trace, actual_trace],
+            layout=dict(
+                title='Prediction for point {id}'.format(id=point_id)
+            )
         )
 
     print("Served at: http://127.0.0.1:8050")
