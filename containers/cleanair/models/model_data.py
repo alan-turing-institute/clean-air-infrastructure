@@ -121,8 +121,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Validating config")
 
         # Check required config keys present
-
-        if set(config_keys).issubset(set(config.keys())):
+        if not set(config_keys).issubset(set(config.keys())):
             raise AttributeError(
                 "Config dictionary does not contain correct keys. Must contain {}".format(
                     config_keys
