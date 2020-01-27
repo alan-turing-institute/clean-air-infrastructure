@@ -1,11 +1,10 @@
 imageTag: f8a4c5adbd033d4c63224989387db56a53b18be6
 
-jobs:  
+jobs:
   - name: ukmap
     image:
       repository: cleanairdocker.azurecr.io/ukmap
       imagePullPolicy: Always
-    schedule: "0,30 0 * * *"
     failedJobsHistoryLimit: 10
     successfulJobsHistoryLimit: 1
     concurrencyPolicy: Forbid
@@ -19,7 +18,6 @@ jobs:
     image:
       repository: cleanairdocker.azurecr.io/streetcanyon
       imagePullPolicy: Always
-    schedule: "0,30 0 * * *"
     failedJobsHistoryLimit: 10
     successfulJobsHistoryLimit: 1
     concurrencyPolicy: Forbid
@@ -33,7 +31,6 @@ jobs:
     image:
       repository: cleanairdocker.azurecr.io/oshighway
       imagePullPolicy: Always
-    schedule: "0,30 0 * * *"
     failedJobsHistoryLimit: 10
     successfulJobsHistoryLimit: 1
     concurrencyPolicy: Forbid
@@ -43,6 +40,7 @@ jobs:
       secret:
         secretName: secrets
 
+cronjobs:
   - name: laqn
     image:
       repository: cleanairdocker.azurecr.io/laqn
@@ -85,16 +83,16 @@ jobs:
       secret:
         secretName: secrets
 
-# deployments:
+deployments:
 
-#     - name: cleanairapi
-#       replicas: 2
-#       image: 
-#         repository: cleanairdocker.azurecr.io/cleanairapi
-#         imagePullPolicy: Always
-#       ports:
-#         containerPort: 80
+    - name: cleanairapi
+      replicas: 2
+      image:
+        repository: cleanairdocker.azurecr.io/cleanairapi
+        imagePullPolicy: Always
+      ports:
+        containerPort: 80
 
-# services:
-#     - name: cleanair-api
-#       type: LoadBalancer
+services:
+    - name: cleanair-api
+      type: LoadBalancer
