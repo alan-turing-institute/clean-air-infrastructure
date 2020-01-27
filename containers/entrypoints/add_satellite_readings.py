@@ -5,41 +5,49 @@ import argparse
 import json
 import logging
 import os
-from cleanair.inputs import ScootWriter
+from cleanair.inputs import SatelliteWriter
 from cleanair.loggers import get_log_level
 
 
 def main():
     """Update the scoot database"""
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get Scoot traffic data")
+    parser = argparse.ArgumentParser(description="Get Satellite data")
+    parser.add_argument(
+        "-k",
+        "--copernicus-key",
+        type=str,
+        default="",
+        help="copernicus key for accessing satellite data.",
+    )
     parser.add_argument(
         "-e",
         "--end",
         type=str,
-        default="yesterday",
+        default="today",
         help="The last date (YYYY-MM-DD) to get data for.",
-    )
-    parser.add_argument(
-        "-i",
-        "--aws-key-id",
-        type=str,
-        default="",
-        help="AWS key ID for accessing TfL SCOOT data.",
-    )
-    parser.add_argument(
-        "-k",
-        "--aws-key",
-        type=str,
-        default="",
-        help="AWS key for accessing TfL SCOOT data.",
     )
     parser.add_argument(
         "-n",
         "--ndays",
         type=int,
-        default=1,
+        default=2,
         help="The number of days to request data for.",
+    )
+    parser.add_argument(
+        "-i",
+        "--interestpoints",
+        dest="define_interest_points",
+        action="store_true",
+        help="""The first time satellite data is inserted into the database,
+                        this flag must be set to insert the interest points""",
+    )
+    parser.add_argument(
+        "-a",
+        "--archive",
+        dest="use_archive_data",
+        action="store_true",
+        help="""Use archive data rather than forecast data""",
     )
     parser.add_argument(
         "-s",
@@ -61,21 +69,20 @@ def main():
     # Perform update and notify any exceptions
     try:
         # Check that we have AWS connection information and try to retrieve it from a local secrets file if not
-        if not (args.aws_key_id and args.aws_key):
+        if not args.copernicus_key:
             try:
-                with open(os.path.join("/secrets", "aws_secrets.json")) as f_secret:
+                with open(
+                    os.path.join("/secrets", "copernicus_secrets.json")
+                ) as f_secret:
                     data = json.load(f_secret)
-                    args.aws_key_id = data["aws_key_id"]
-                    args.aws_key = data["aws_key"]
+                    args.copernicus_key = data["copernicus_key"]
             except json.decoder.JSONDecodeError:
-                raise argparse.ArgumentTypeError(
-                    "Could not determine SCOOT aws_key_id or aws_key"
-                )
+                raise argparse.ArgumentTypeError("Could not determine copernicus_key")
 
-        scoot_writer = ScootWriter(**kwargs)
+        satellite_writer = SatelliteWriter(**kwargs)
 
         # Update the Scoot readings table on the database
-        scoot_writer.update_remote_tables()
+        satellite_writer.update_remote_tables()
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
