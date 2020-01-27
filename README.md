@@ -30,6 +30,12 @@ You can install the `Azure` Python SDK with `pip` using:
 pip install -r containers/requirements.txt
 ```
 
+## CleanAir package (optional)
+To run the clean air functionality locally (without a docker image) pip install it:
+
+```bash
+pip install -e containers
+```
 
 ## Terraform
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
