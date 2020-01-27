@@ -57,20 +57,7 @@ def plot_sensor_time_series(model_data):
         #     showlegend=False
         # ), row=i, col=j)
 
-        fig.add_trace(go.Scatter(
-            x=time,
-            y=pred_df['NO2_mean'],
-            mode='lines',
-            error_y=dict(
-                type='data',
-                array=pred_df['NO2_var'],
-                visible=True
-            ),
-            # fill='tozerox',
-            # fillcolor='rgba(68, 68, 68, 0.3)',
-            # line=dict(color='rgb(31, 119, 180)'),
-            name=index
-        ), row=i, col=j)
+        fig.add_trace(get_pollutant_point_trace(index, pred_df), row=i, col=j)
 
         # fig.add_trace(go.Scatter(
         #     x=time,
@@ -81,11 +68,7 @@ def plot_sensor_time_series(model_data):
         #     showlegend=False
         # ), row=i, col=j)
 
-        fig.add_trace(go.Scatter(
-            x=time,
-            y=pred_df['NO2'],
-            name=index
-        ), row=i, col=j)
+        # fig.add_trace(get_pollutant_point_trace(index, pred_df['NO2']), row=i, col=j)
 
         j += 1
 
@@ -98,3 +81,29 @@ def plot_sensor_time_series(model_data):
             break
 
     return fig
+
+def get_pollutant_point_trace(point_id, point_pred_df, col='NO2_mean'):
+    """
+    Return a plotly trace dict for a timeseries of the mean prediction on a sensor.
+    """
+    return dict(
+        x=list(point_pred_df['measurement_start_utc']),
+        y=list(point_pred_df[col]),
+        mode='lines',
+        name=point_id
+    )
+    """
+    go.Scatter(
+        x=point_pred_df['measurement_start_utc'],
+        y=point_pred_df['NO2_mean'],
+        mode='lines',
+        # error_y=dict(
+        #     type='data',
+        #     array=pred_df['NO2_var'],
+        #     visible=True
+        # ),
+        # fill='tozerox',
+        # fillcolor='rgba(68, 68, 68, 0.3)',
+        # line=dict(color='rgb(31, 119, 180)'),
+        name=point_id
+    )"""
