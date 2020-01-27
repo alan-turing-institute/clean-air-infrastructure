@@ -4,29 +4,29 @@
 {{- $release_name := .Release.Name }}
 {{- $tag := .Values.imageTag }}
 
-{{- range $cronjon := .Values.cronjobs }}
+{{- range $cronjob := .Values.cronjobs }}
 ---
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: "{{ $release_name }}-{{ $cronjon.name }}"
+  name: "{{ $release_name }}-{{ $cronjob.name }}"
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
 spec:
-  concurrencyPolicy: {{ $cronjon.concurrencyPolicy }}
-  failedJobsHistoryLimit: {{ $cronjon.failedJobsHistoryLimit }}
+  concurrencyPolicy: {{ $cronjob.concurrencyPolicy }}
+  failedJobsHistoryLimit: {{ $cronjob.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
       template:
         metadata:
           labels:
             app: {{ $release_name }}
-            cron: {{ $cronjon.name }}
+            cron: {{ $cronjob.name }}
         spec:
           containers:
-          - image: "{{ $cronjon.image.repository }}:{{ $tag }}"
-            imagePullPolicy: {{ $cronjon.image.imagePullPolicy }}
-            name: {{ $cronjon.name }}
+          - image: "{{ $cronjob.image.repository }}:{{ $tag }}"
+            imagePullPolicy: {{ $cronjob.image.imagePullPolicy }}
+            name: {{ $cronjob.name }}
             volumeMounts:
             - name: secrets
               mountPath: "/secrets/"
@@ -35,42 +35,42 @@ spec:
           imagePullSecrets:
           - name: regcred
 
-            {{- with $cronjon.env }}
+            {{- with $cronjob.env }}
             env:
 {{ toYaml . | indent 12 }}
             {{- end }}
-            {{- if $cronjon.command }}
-            command: {{ $cronjon.command }}
+            {{- if $cronjob.command }}
+            command: {{ $cronjob.command }}
             {{- end }}
-            {{- with $cronjon.args }}
+            {{- with $cronjob.args }}
             args:
 {{ toYaml . | indent 12 }}
-            {{- with $cronjon.resources }}
+            {{- with $cronjob.resources }}
             resources:
 {{ toYaml . | indent 14 }}
             {{- end }}
-            {{- with $cronjon.volumeMounts }}
+            {{- with $cronjob.volumeMounts }}
             volumeMounts:
 {{ toYaml . | indent 12 }}
             {{- end }}
               {{- end }}
-          {{- with $cronjon.nodeSelector }}
+          {{- with $cronjob.nodeSelector }}
           nodeSelector:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          {{- with $cronjon.affinity }}
+          {{- with $cronjob.affinity }}
           affinity:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          {{- with $cronjon.tolerations }}
+          {{- with $cronjob.tolerations }}
           tolerations:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          restartPolicy: {{ $cronjon.restartPolicy }}
-          {{- with $cronjon.volumes }}
+          restartPolicy: {{ $cronjob.restartPolicy }}
+          {{- with $cronjob.volumes }}
           volumes:
 {{ toYaml . | indent 12 }}
           {{- end }}
-  schedule: {{ $cronjon.schedule | quote }}
-  successfulJobsHistoryLimit: {{ $cronjon.successfulJobsHistoryLimit }}
+  schedule: {{ $cronjob.schedule | quote }}
+  successfulJobsHistoryLimit: {{ $cronjob.successfulJobsHistoryLimit }}
 {{- end }}

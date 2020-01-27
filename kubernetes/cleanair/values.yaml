@@ -1,4 +1,4 @@
-imageTag: f8a4c5adbd033d4c63224989387db56a53b18be6
+imageTag: 5c8cba3c29f7968745933b626b1b0b73c9b6e5cc
 
 jobs:
   - name: ukmap
@@ -83,16 +83,16 @@ cronjobs:
       secret:
         secretName: secrets
 
-deployments:
+# deployments:
 
-    - name: cleanairapi
-      replicas: 2
-      image:
-        repository: cleanairdocker.azurecr.io/cleanairapi
-        imagePullPolicy: Always
-      ports:
-        containerPort: 80
+#     - name: cleanairapi
+#       replicas: 2
+#       image:
+#         repository: cleanairdocker.azurecr.io/cleanairapi
+#         imagePullPolicy: Always
+#       ports:
+#         containerPort: 80
 
-services:
-    - name: cleanair-api
-      type: LoadBalancer
+# services:
+#     - name: cleanair-api
+#       type: LoadBalancer
