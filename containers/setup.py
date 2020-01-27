@@ -1,3 +1,4 @@
+"""CleanAir module setup script"""
 import setuptools
 
 setuptools.setup(
@@ -7,11 +8,11 @@ setuptools.setup(
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk",
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(include=["cleanair"]),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7',
+    python_requires=">=3.7",
 )
