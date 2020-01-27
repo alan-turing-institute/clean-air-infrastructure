@@ -92,12 +92,13 @@ class DBQueryMixin:
             return feature_types_q
 
     @db_query
-    def get_available_interest_points(self, sources):
+    def get_available_interest_points(self, sources, point_ids=None):
         """Return the available interest points for a list of sources, excluding any LAQN or AQE sites that are closed.
         Only returns points withing the London boundary
         Satellite returns features outside of london boundary, while laqn and aqe do not.
         args:
             sources: A list of sources to include
+            point_ids: A list of point_ids to include. Default of None returns all points
         """
 
         bounded_geom = self.query_london_boundary()
@@ -161,17 +162,22 @@ class DBQueryMixin:
                     """Satellite can only be requested on a source on its own.
                     Ensure 'sources' contains no other options"""
                 )
-            elif sources[0] == "satellite":
+            if sources[0] == "satellite":
                 all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
             else:
                 all_sources_sq = remaining_sources_q.union(
                     aqe_sources_q, laqn_sources_q
                 ).subquery()
 
-            # Remove any sources where there is a closing date
+            # Remove any sources where there is a closing date and filter by point_ids
             all_sources_q = session.query(all_sources_sq).filter(
                 all_sources_sq.c.date_closed.is_(None)
             )
+
+            if point_ids:
+                all_source_q = all_source_q.filter(
+                    all_sources_sq.c.point_id.in_(point_ids)
+                )
 
         return all_sources_q
 
