@@ -13,7 +13,6 @@ from ..databases.tables import (
     ModelResult,
     SatelliteForecastReading,
     SatelliteDiscreteSite,
-    MetaPoint,
 )
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
@@ -124,7 +123,11 @@ class ModelData(DBWriter, DBQueryMixin):
         # Check required config keys present
 
         if set(config_keys).issubset(set(config.keys())):
-            raise AttributeError("Config dictionary does not contain correct keys. Must contain {}".format(config_keys))
+            raise AttributeError(
+                "Config dictionary does not contain correct keys. Must contain {}".format(
+                    config_keys
+                )
+            )
 
         # Check requested features are available
         if config["features"] == "all":
