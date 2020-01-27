@@ -5,14 +5,14 @@ Inspired by https://dash.plot.ly/interactive-graphing
 
 """
 
-from . import timeseries
-from . import layout
-from .. import util, metrics
-
+import json
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.dependencies import Input, Output
 
+from . import timeseries
+from .. import metrics
 from . import maps
 
 def main(exp):
@@ -46,7 +46,22 @@ def main(exp):
         dcc.Graph(
             id='sensor-time-series',
             figure=timeseries.plot_sensor_time_series(model_data)
-        )
+        ),
+        html.Div(className='row', children=[
+            html.Div([
+                dcc.Markdown("""
+                    #### Hello, world
+                """),
+                html.Pre(id='hover-data')
+            ])
+        ])
     ])
+
+    @app.callback(
+        Output('hover-data', 'children'),
+        [Input('london-sensors', 'hoverData')])
+    def display_hover_data(hover_data):
+        return json.dumps(hover_data, indent=2)
+
     print("Served at: http://127.0.0.1:8050")
     app.run_server(debug=True)

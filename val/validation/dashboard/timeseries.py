@@ -46,41 +46,46 @@ def plot_sensor_time_series(model_data):
 
     for index, pred_df in gb:
         time = pred_df['measurement_start_utc']
-        fig.add_trace(go.Scatter(
-            x=time,
-            y=pred_df['NO2_mean'] + pred_df['NO2_var'],
-            fill='tozerox',
-            fillcolor='rgba(68, 68, 68, 0.3)',
-            mode='lines',
-            marker=dict(color="#444"),
-            line=dict(width=0),
-            showlegend=False
-        ), row=i, col=j)
+        # fig.add_trace(go.Scatter(
+        #     x=time,
+        #     y=pred_df['NO2_mean'] + pred_df['NO2_var'],
+        #     fill='tozerox',
+        #     fillcolor='rgba(68, 68, 68, 0.3)',
+        #     mode='lines',
+        #     marker=dict(color="#444"),
+        #     line=dict(width=0),
+        #     showlegend=False
+        # ), row=i, col=j)
 
         fig.add_trace(go.Scatter(
             x=time,
             y=pred_df['NO2_mean'],
             mode='lines',
-            fill='tozerox',
-            fillcolor='rgba(68, 68, 68, 0.3)',
-            line=dict(color='rgb(31, 119, 180)'),
+            error_y=dict(
+                type='data',
+                array=pred_df['NO2_var'],
+                visible=True
+            ),
+            # fill='tozerox',
+            # fillcolor='rgba(68, 68, 68, 0.3)',
+            # line=dict(color='rgb(31, 119, 180)'),
             name=index
         ), row=i, col=j)
 
+        # fig.add_trace(go.Scatter(
+        #     x=time,
+        #     y=pred_df['NO2_mean'] - pred_df['NO2_var'],
+        #     mode='lines',
+        #     marker=dict(color="#444"),
+        #     line=dict(width=0),
+        #     showlegend=False
+        # ), row=i, col=j)
+
         fig.add_trace(go.Scatter(
             x=time,
-            y=pred_df['NO2_mean'] - pred_df['NO2_var'],
-            mode='lines',
-            marker=dict(color="#444"),
-            line=dict(width=0),
-            showlegend=False
+            y=pred_df['NO2'],
+            name=index
         ), row=i, col=j)
-
-        # fig.add_trace(go.Scatter(
-        #     x = time,
-        #     y = pred_df['NO2'],
-        #     name=index
-        # ), row=i, col=j)
 
         j += 1
 
@@ -93,6 +98,3 @@ def plot_sensor_time_series(model_data):
             break
 
     return fig
-
-def sensor_pred_plot(point_id, time, mean, var, test):
-    return 
