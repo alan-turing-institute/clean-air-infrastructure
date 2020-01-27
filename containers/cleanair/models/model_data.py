@@ -489,7 +489,7 @@ class ModelData(DBWriter, DBQueryMixin):
         point_ids,
         start_date=None,
         end_date=None,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """Query features from the database. Returns a pandas dataframe if values returned, else returns None"""
 
         with self.dbcnxn.open_session() as session:
