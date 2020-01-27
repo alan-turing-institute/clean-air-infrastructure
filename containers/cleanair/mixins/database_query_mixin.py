@@ -175,7 +175,7 @@ class DBQueryMixin:
             )
 
             if point_ids:
-                all_source_q = all_source_q.filter(
+                all_sources_q = all_sources_q.filter(
                     all_sources_sq.c.point_id.in_(point_ids)
                 )
 
