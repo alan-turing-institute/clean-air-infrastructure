@@ -30,6 +30,12 @@ You can install the `Azure` Python SDK with `pip` using:
 pip install -r containers/requirements.txt
 ```
 
+## CleanAir package (optional)
+To run the clean air functionality locally (without a docker image) pip install it:
+
+```bash
+pip install -e containers
+```
 
 ## Terraform
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
@@ -112,7 +118,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```bash
-python setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
+python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
@@ -185,7 +191,7 @@ Please note that you may need to increase the available memory under `Docker > P
 From the root directory, running the command
 
 ```bash
-python setup/insert_static_datasets.py
+python cleanair_setup/insert_static_datasets.py
 ```
 
 will download the static datasets to temporary local storage and then upload them to the database.
@@ -196,7 +202,7 @@ The live datasets (like LAQN or AQE) are populated using daily jobs that create 
 We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
-- Run `python setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
+- Run `python cleanair_setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 - In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
 - Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
 
@@ -318,7 +324,7 @@ echo '{
 - Download static data and insert into the database:
 
 ```
-python setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
+python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
 
 

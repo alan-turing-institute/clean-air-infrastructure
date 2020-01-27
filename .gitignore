@@ -19,4 +19,8 @@ python-virtual-environments/
 # Python
 *__pycache__
 
+# Python package
+*.egg-info
+
+# Misc
 images/
