@@ -39,18 +39,24 @@ class DateRangeMixin:
         )
 
     @staticmethod
-    def get_datetimes(start_date, end_date, unit='daily'):
+    def get_datetimes(start_date, end_date, unit="daily"):
         """Get min and max datetimes between start_date and end_date"""
 
-        if unit == 'daily':
+        if unit == "daily":
             start_datetime = datetime.datetime.combine(
                 start_date, datetime.datetime.min.time()
             )
-            end_datetime = datetime.datetime.combine(end_date, datetime.datetime.max.time())
+            end_datetime = datetime.datetime.combine(
+                end_date, datetime.datetime.max.time()
+            )
 
-        elif unit == 'hourly':
-            start_datetime = datetime.datetime.combine(start_date, datetime.time(start_date.hour, 0, 0, 0))
-            end_datetime = datetime.datetime.combine(end_date, datetime.time(start_date.hour, 59, 59, 999999))
+        elif unit == "hourly":
+            start_datetime = datetime.datetime.combine(
+                start_date, datetime.time(start_date.hour, 0, 0, 0)
+            )
+            end_datetime = datetime.datetime.combine(
+                end_date, datetime.time(start_date.hour, 59, 59, 999999)
+            )
 
         else:
             raise ValueError("Argument unit must be either 'daily' or 'hourly'")
