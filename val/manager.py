@@ -18,8 +18,8 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-f', '--force', action='store_true', help='force download data, even it exists')
         self.add_argument('-dash', '--dashboard', action='store_true', help='show the dashboard')
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
-        self.add_argument('-c', '--cluster', type=str, help='name of the cluster')
-        self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
+        self.add_argument('-c', '--cluster', type=str, help='name of the cluster', default='laptop')
+        self.add_argument('-d', '--home_directory', type=str, help='path to home directory', default='~')
         self.add_argument('-e', '--experiments_directory', type=str, default='experiment_data/', help='path to experiments directory')
 
 def main():
@@ -31,7 +31,7 @@ def main():
     print(vars(args))
 
     if args.setup:
-        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp = experiment_class(models=models, directory=args.experiments_directory, **vars(args))
         exp.setup(force_redownload=args.force)
 
     if args.run:

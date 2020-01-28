@@ -60,11 +60,11 @@ class Experiment(ABC):
         self.data_config = kwargs['data_config'] if 'data_config' in kwargs else []
         self.experiment_df = kwargs['experiment_df'] if 'experiment_df' in kwargs else pd.DataFrame()
         self.model_data_list = kwargs['model_data_list'] if 'model_data_list' in kwargs else []
-        self.directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
+        self.experiments_directory = kwargs['directory'] if 'directory' in kwargs else 'experiment_data/'
         self.home_directory = kwargs['home_directory'] if 'home_directory' in kwargs else '~'
         self.secretfile = kwargs['secretfile'] if 'secretfile' in kwargs else '../terraform/.secrets/db_secrets.json'
 
-        self.directory = util.ensure_last_backslash(self.directory)
+        self.experiments_directory = util.ensure_last_backslash(self.experiments_directory)
         self.home_directory = util.ensure_last_backslash(self.home_directory)
 
         self.available_clusters = {
@@ -111,7 +111,7 @@ class Experiment(ABC):
             ) for r in experiment_df.itertuples()])
 
         experiment_df['model_state_fp'] = pd.Series([
-            self.directory + '{name}/models/restore/m_{model_name}_'.format(name=self.name, model_name=r.model_name) + util.create_experiment_prefix(
+            self.experiments_directory + '{name}/models/restore/m_{model_name}_'.format(name=self.name, model_name=r.model_name) + util.create_experiment_prefix(
                 r.model_name, r.param_id, r.data_id
             ) + '.model' for r in experiment_df.itertuples()])
 
@@ -122,7 +122,7 @@ class Experiment(ABC):
         Given an experiment create directories, data and files.
         """
         # create directories for experiment data
-        experiment_dir = self.directory + self.name + '/'
+        experiment_dir = self.experiments_directory + self.name + '/'
         self.__create_experiment_data_directories()
 
         # store a list of ModelData objects to validate over
@@ -163,7 +163,7 @@ class Experiment(ABC):
         """
         Save the experiment_df, model_params and data_config to csv and json.
         """
-        exp_dir = self.directory + self.name + '/'
+        exp_dir = self.experiments_directory + self.name + '/'
 
         # save experiment dataframe to csv
         self.experiment_df.to_csv(exp_dir + 'meta/experiment.csv')
@@ -179,8 +179,8 @@ class Experiment(ABC):
         """
         Create directories if they don't exist.
         """
-        exp_dir = self.directory + self.name + '/'
-        pathlib.Path(self.directory).mkdir(exist_ok=True)
+        exp_dir = self.experiments_directory + self.name + '/'
+        pathlib.Path(self.experiments_directory).mkdir(exist_ok=True)
         pathlib.Path(exp_dir).mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'results').mkdir(exist_ok=True)
         pathlib.Path(exp_dir + 'data').mkdir(exist_ok=True)
@@ -193,7 +193,7 @@ class Experiment(ABC):
         Create directories to store results in if they don't already exist.
         """
         for row in self.experiment_df.itertuples():
-            pathlib.Path(os.path.join(self.directory, self.name, 'results', row.results_dir)).mkdir(exist_ok=True)
+            pathlib.Path(os.path.join(self.experiments_directory, self.name, 'results', row.results_dir)).mkdir(exist_ok=True)
 
     def __get_cluster_obj(self):
         """
@@ -231,8 +231,8 @@ class Experiment(ABC):
             cluster_config={},
             experiment_configs=cluster_run_params,
             input_format_fn=input_format_fn,
-            cluster_tmp_fp=self.directory+'cluster',
-            experiment_fp=self.directory,
+            cluster_tmp_fp=self.experiments_directory+'cluster',
+            experiment_fp=self.experiments_directory,
             home_directory_fp=self.home_directory,
         )
         cluster.setup()
@@ -263,13 +263,13 @@ class Experiment(ABC):
         model_data_list = []
         for index, row in self.experiment_df.iterrows():
             # load model data from directory
-            config_dir = self.directory + '{name}/data/data{id}/'.format(name=self.name, id=row['data_id'])
+            config_dir = self.experiments_directory + '{name}/data/data{id}/'.format(name=self.name, id=row['data_id'])
             model_data = ModelData(config_dir=config_dir, secretfile=self.secretfile)
 
             # get the predictions from the model for testing data
             results_dir = row['results_dir']
             if update_test:
-                test_pred_fp = '{dir}{name}/results/{id}/test_pred.pickle'.format(dir=self.directory, name=self.name, id=results_dir)
+                test_pred_fp = '{dir}{name}/results/{id}/test_pred.pickle'.format(dir=self.experiments_directory, name=self.name, id=results_dir)
                 with open(test_pred_fp, 'rb') as handle:
                     print()
                     print(test_pred_fp)
@@ -282,7 +282,7 @@ class Experiment(ABC):
             if update_train:
                 # try to update the predictions for the training set
                 try:
-                    train_pred_fp = '{dir}{name}/results/{id}/train_pred.pickle'.format(dir=self.directory, name=self.name, id=results_dir)
+                    train_pred_fp = '{dir}{name}/results/{id}/train_pred.pickle'.format(dir=self.experiments_directory, name=self.name, id=results_dir)
                     with open(train_pred_fp, 'rb') as handle:
                         train_pred_dict = pickle.load(handle)
                     model_data.update_training_df_with_preds(train_pred_dict)
