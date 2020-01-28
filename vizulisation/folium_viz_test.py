@@ -88,8 +88,20 @@ url = 'http://localhost:8080/geoserver/gwc/service/wms/'
 #                                   control=True,
 #                                   show=True).add_to(m)
 
+# folium.raster_layers.WmsTileLayer(url,
+#                                   'london:laqn_park_features',
+#                                   styles='',
+#                                   fmt='image/png',
+#                                   transparent=True,
+#                                   version='1.1.1',
+#                                   attr='',
+#                                   name=None,
+#                                   overlay=True,
+#                                   control=True,
+#                                   show=True).add_to(m)
+
 folium.raster_layers.WmsTileLayer(url,
-                                  'london:laqn_park_features',
+                                  'london:latest_forecast',
                                   styles='',
                                   fmt='image/png',
                                   transparent=True,
@@ -100,7 +112,8 @@ folium.raster_layers.WmsTileLayer(url,
                                   control=True,
                                   show=True).add_to(m)
 
-m.save('images/park_features.html')
+
+m.save('images/forecast.html')
 
 # w0 = WmsTileLayer(
 #     'http://this.wms.server/ncWMS/wms',
