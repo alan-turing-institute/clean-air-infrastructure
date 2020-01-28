@@ -98,7 +98,7 @@ def main():
     model_data = ModelData(config=model_config, **kwargs)
     # model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
-    # model_data.save_config_state('run_model_test/')
+    model_data.save_config_state('run_model_test/')
 
     # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
