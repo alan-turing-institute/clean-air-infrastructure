@@ -114,7 +114,7 @@ class SVGP:
             train_dataset, max_iter, model_params["minibatch_size"], refresh=refresh
         )
 
-    def predict(self, X):
+    def predict(self, X, batch_size=50000):
         """Predict values Y from X
 
         args:
@@ -125,10 +125,30 @@ class SVGP:
 
         self.logger.info("Model prediction: Starting")
         x_pred_array = X.copy()
-        mean_pred, var_pred = self.model.predict_y(x_pred_array)
+        x_pred_size = x_pred_array.shape[0]
+
+        n_batch = int(x_pred_size / batch_size)
+
+        # Initialise output arrays
+        mean_pred = np.empty(x_pred_array.shape[0])
+        var_pred = np.empty(x_pred_array.shape[0])
+
+        x_pred_array = np.array_split(x_pred_array, n_batch)
+        x_pred_array_size = len(x_pred_array)
+
+        index = 0
+        for i, x_pred_batch in enumerate(x_pred_array):
+
+            self.logger.info("Predicting batch %s of %s with batch size %s",
+                             i, x_pred_array_size, x_pred_batch.shape[0])
+            tmp_mean, tmp_var = self.model.predict_y(x_pred_batch)
+            mean_pred[index:index+tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
+            var_pred[index:index+tmp_var.shape[0]] = tmp_var.numpy().squeeze()
+            index += tmp_mean.shape[0]
+
         self.logger.info("Model prediction: Finished")
 
-        Y_pred = np.array([mean_pred.numpy(), var_pred.numpy()]).T.squeeze()
+        Y_pred = np.array([mean_pred, var_pred]).T.squeeze()
 
         return Y_pred
 
