@@ -83,7 +83,7 @@ def main():
         "features": ['value_1000_avg_min_width', 'value_1000_avg_ratio_avg', 'value_1000_building_height', 'value_1000_hospitals', 'value_1000_max_min_width', 'value_1000_max_ratio_avg', 'value_1000_min_min_width', 'value_1000_min_ratio_avg', 'value_1000_museums', 'value_1000_park', 'value_1000_total_a_road_length', 'value_1000_total_a_road_primary_length', 'value_1000_total_b_road_length', 'value_1000_total_length', 'value_1000_total_road_length', 'value_1000_water', 'value_500_avg_min_width', 'value_500_avg_ratio_avg', 'value_500_building_height', 'value_500_hospitals', 'value_500_max_min_width', 'value_500_max_ratio_avg', 'value_500_min_min_width', 'value_500_min_ratio_avg', 'value_500_museums', 'value_500_park', 'value_500_total_a_road_length', 'value_500_total_a_road_primary_length', 'value_500_total_b_road_length', 'value_500_total_length', 'value_500_total_road_length', 'value_500_water'],
         "norm_by": "laqn",
         "model_type": "svgp",
-        "tag": "testing",
+        "tag": "full_test",
     }
 
     # Model fitting parameters
@@ -98,7 +98,7 @@ def main():
     model_data = ModelData(config=model_config, **kwargs)
     # model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
-    # model_data.save_config_state('/secrets/run_model/')
+    model_data.save_config_state('/secrets/run_model_test/')
     # quit()
 
     # # training_data_dict = model_data.training_data_df
@@ -111,7 +111,7 @@ def main():
     model_fitter.fit(
         training_data_dict["X"],
         training_data_dict["Y"],
-        max_iter=20000,
+        max_iter=100,
         model_params=model_params,
     )
 
