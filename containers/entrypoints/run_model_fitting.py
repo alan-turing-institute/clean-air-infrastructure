@@ -72,15 +72,15 @@ def main():
         "train_end_date": train_end,
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
-        "include_satellite": True,
+        "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn", "aqe"],
-        "pred_sources": ["laqn", "aqe"],
+        "pred_sources": ["grid_100"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
-        "features": ["value_1000_total_road_length"],
+        "features": ['value_1000_avg_min_width', 'value_1000_avg_ratio_avg', 'value_1000_building_height', 'value_1000_hospitals', 'value_1000_max_min_width', 'value_1000_max_ratio_avg', 'value_1000_min_min_width', 'value_1000_min_ratio_avg', 'value_1000_museums', 'value_1000_park', 'value_1000_total_a_road_length', 'value_1000_total_a_road_primary_length', 'value_1000_total_b_road_length', 'value_1000_total_length', 'value_1000_total_road_length', 'value_1000_water', 'value_500_avg_min_width', 'value_500_avg_ratio_avg', 'value_500_building_height', 'value_500_hospitals', 'value_500_max_min_width', 'value_500_max_ratio_avg', 'value_500_min_min_width', 'value_500_min_ratio_avg', 'value_500_museums', 'value_500_park', 'value_500_total_a_road_length', 'value_500_total_a_road_primary_length', 'value_500_total_b_road_length', 'value_500_total_length', 'value_500_total_road_length', 'value_500_water'],
         "norm_by": "laqn",
         "model_type": "svgp",
         "tag": "testing",
@@ -98,7 +98,8 @@ def main():
     model_data = ModelData(config=model_config, **kwargs)
     # model_data = ModelData(config_dir='/secrets/test/', **kwargs)
 
-    # model_data.save_config_state('/secrets/test/')
+    # model_data.save_config_state('/secrets/run_model/')
+    # quit()
 
     # # training_data_dict = model_data.training_data_df
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
