@@ -79,7 +79,7 @@ class Experiment(ABC):
         """
 
     @abstractmethod
-    def get_default_data_config(self):
+    def get_default_data_config(self, **kwargs):
         """
         Get the default data configurations for this experiment.
         """

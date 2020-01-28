@@ -2,8 +2,105 @@
 Methods for evaluating metrics.
 """
 
+import itertools
 import pandas as pd
 from sklearn import metrics
+
+def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_training=False):
+    """
+    Given an experiment, measure the metrics.
+    
+    We assume that the `model_data_list` of an experiment
+    has already been updated with the predictions.
+
+    Parameters
+    ___
+
+    xp : Experiment
+
+    evaluate_testing : bool, optional
+        If true, this function will evaluate the predictions made
+        on the testing set of data.    
+
+    evaluate_training : bool, optional
+        If true, this function will evaluate the predictions made
+        on the training set of data.
+
+    Returns
+    ___
+
+    sensor_scores_df : pd.DataFrame
+        For every instance of the experiment, we calculate the score
+        of a sensor over the whole prediction time period.
+
+    temporal_scores_df : pd.DataFrame
+        For every instance of an experiment, we calculate the scores
+        over all sensors given a slice in time.
+
+    Notes
+    ___
+
+    We assume that all instances of an experiment predict on the same
+    species of pollutant.
+
+    Examples
+    ___
+        >>> xp.update_model_data_list() # remember to update predictions
+        >>> scores_df = evaluate_experiment(xp)
+    """
+    # the basic cols that every scoring dataframe should have
+    cols = [
+        'experiment_name', 'instance_id' 'cluster_name', 'param_id',
+        'data_id', 'training_set', 'testing_set'
+    ]
+    sensor_cols = cols.copy().append('point_id')
+    temporal_cols = cols.copy().append('measurement_start_utc')
+
+    # add columns that will measure the metrics for each pollutant
+    list_of_species = xp.model_data_list[0].config['species'].copy()
+    metric_cols = [
+        '{species}_{mtc}'.format(species=s, mtc=m)
+        for s, m in itertools.product(list_of_species, metric_methods.keys())
+    ]
+    sensor_cols.extend(metric_cols)
+    temporal_cols.extend(metric_cols)
+
+    # create dataframes for collecting scores over space and time
+    sensor_scores_df = pd.DataFrame(columns=sensor_cols)
+    temporal_scores_df = pd.DataFrame(columns=temporal_cols)
+
+    # sensor_scores_df = pd.DataFrame(columns=)
+    for model_data in xp.model_data_list:
+        for spc in model_data.config['species']:
+            # for each pollutant, measure the r2, mae and mse
+            pred_col = '{s}_mean'.format(s=spc)
+            if evaluate_training:
+                # evaluate training predictions of sensors over the whole training period
+                training_sensor_scores_df = measure_scores_by_sensor(
+                    model_data.normalised_training_data_df, metric_methods,
+                    pred_col=pred_col, test_col=spc
+                )
+                # evaluate training predictions for each timestamp over all sensors
+                training_temporal_scores_df = measure_scores_by_hour(
+                    model_data.normalised_training_data_df, metric_methods,
+                    pred_col=pred_col, test_col=spc
+                )
+                # ToDo: append the scores dataframes
+                
+            elif evaluate_testing:
+                # evaluate testing predictions of sensors over the whole testing period
+                testing_sensor_scores_df = measure_scores_by_sensor(
+                    model_data.normalised_pred_data_df, metric_methods,
+                    pred_col=pred_col, test_col=spc
+                )
+                # evaluate testing predictions for each timestamp over all sensors
+                testing_temporal_scores_df = measure_scores_by_hour(
+                    model_data.normalised_testing_data_df, metric_methods,
+                    pred_col=pred_col, test_col=spc
+                )
+                # ToDo: append the scores dataframes
+
+    return sensor_scores_df, temporal_scores_df
 
 def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
     """
@@ -80,7 +177,7 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
     return pd.concat([
         pd.Series(gb.apply(
             lambda x : method(x[test_col], x[pred_col])
-        ), name=key)
+        ), name='{species}_{metric}'.format(species=test_col, metric=key))
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
 

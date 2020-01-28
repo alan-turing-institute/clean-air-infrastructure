@@ -217,6 +217,21 @@ def create_params_list(**kwargs):
 def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
     """
     Create a list of dictionaries with train and pred dates rolled up.
+
+    Parameters
+    ___
+
+    train_start : str
+        Start date of the training period for the first roll.
+
+    train_n_hours : int
+        Number of hours in each training period.
+
+    pred_n_hours : int
+        Number of hours in each testing period.
+
+    num_rolls : int
+        The number of times to train and predict.
     """
     start_of_roll = train_start
     rolls = []

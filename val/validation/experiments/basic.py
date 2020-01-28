@@ -17,7 +17,7 @@ class BasicExperiment(Experiment):
         if 'data_config' not in kwargs:
             self.data_config = self.get_default_data_config()
         if 'experiment_df' not in kwargs:
-            self.experiment_df = self.get_default_experiment_df()        
+            self.experiment_df = self.get_default_experiment_df()      
 
     def get_default_model_params(self):
         return {'svgp' : util.create_params_list(
@@ -32,12 +32,17 @@ class BasicExperiment(Experiment):
             laqn_id=[0]
         )}
 
-    def get_default_data_config(self, n_rolls=1):
+    def get_default_data_config(self, **kwargs):
+        # initial parameters and dates
+        train_start = "2019-11-01T00:00:00" if 'train_start' not in kwargs else kwargs['train_start']
+        train_n_hours = 48 if 'train_n_hours' not in kwargs else kwargs['train_n_hours']
+        pred_n_hours = 24 if 'pred_n_hours' not in kwargs else kwargs['pred_n_hours']
+        num_rolls = 1 if 'num_rolls' not in kwargs else kwargs['num_rolls']
+
         # create dates for rolling over
-        train_start = "2019-11-01T00:00:00"
-        train_n_hours = 48
-        pred_n_hours = 24
-        rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
+        rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls)
+
+        # create the data config file
         data_dir = '{dir}{name}/data/'.format(dir=self.experiments_directory, name=self.name)
         data_config = util.create_data_list(rolls, data_dir)
         for index in range(len(data_config)):
