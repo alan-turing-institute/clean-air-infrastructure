@@ -15,6 +15,7 @@ from ..databases.tables import (
     LAQNReading,
     AQEReading,
 )
+from ..databases import DBWriter
 from ..loggers import get_logger
 
 
@@ -49,6 +50,28 @@ class DBQueryMixin:
             )
 
             return feature_types_q
+
+    @db_query
+    def get_available_static_features_by_source(self):
+
+        sources = self.get_available_sources(output_type="list")
+        available_interest_points_sq = self.get_available_interest_points(
+            sources=sources, output_type="subquery"
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(
+                func.count(available_interest_points_sq.c.point_id).label("Count_available"),
+                available_interest_points_sq.c.source,
+                IntersectionValue.feature_name,
+            ).join(IntersectionValue)
+
+            return feature_types_q.group_by(
+                available_interest_points_sq.c.source, IntersectionValue.feature_name
+            ).order_by(
+                IntersectionValue.feature_name, available_interest_points_sq.c.source
+            )
 
     @db_query
     def get_available_dynamic_features(self, start_date, end_date):
@@ -157,11 +180,11 @@ class DBQueryMixin:
                 )
             )
 
-            if ("satellite" in sources) and (len(sources) != 1):
-                raise ValueError(
-                    """Satellite can only be requested on a source on its own.
-                    Ensure 'sources' contains no other options"""
-                )
+            # if ("satellite" in sources) and (len(sources) != 1):
+            #     raise ValueError(
+            #         """Satellite can only be requested on a source on its own.
+            #         Ensure 'sources' contains no other options"""
+            #     )
             if sources[0] == "satellite":
                 all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
             else:
@@ -214,3 +237,14 @@ class DBQueryMixin:
                 AQEReading.measurement_start_utc < end_date,
             )
             return aqe_reading_q
+
+
+class DBStatus(DBQueryMixin, DBWriter):
+    def __init__(self, **kwargs):
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)

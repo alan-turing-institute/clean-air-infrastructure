@@ -72,7 +72,7 @@ def main():
         "train_end_date": train_end,
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
-        "include_satellite": True,
+        "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn", "aqe"],
         "pred_sources": ["laqn", "aqe"],
@@ -83,7 +83,7 @@ def main():
         "features": ["value_1000_total_road_length"],
         "norm_by": "laqn",
         "model_type": "svgp",
-        "tag": "testing",
+        "tag": "static_fit",
     }
 
     # Model fitting parameters
