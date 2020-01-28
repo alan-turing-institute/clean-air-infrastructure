@@ -42,10 +42,13 @@ def load_experiment_from_directory(name, experiments_directory='experiment_data/
 
     experiment_df = pd.read_csv(os.path.join(experiments_directory, name, 'meta', 'experiment.csv'), index_col=0)
 
-    models = list(experiment_df['model_name'].unique()) if 'models' not in kwargs else kwargs['models']
-    cluster_name = list(experiment_df['cluster'].unique())[0] if 'cluster_name' not in kwargs else kwargs['cluster_name']
+    experiment_params_dict = kwargs.copy()
+    experiment_params_dict['models'] = list(experiment_df['model_name'].unique()) if 'models' not in kwargs else kwargs['models']
+    experiment_params_dict['cluster_name'] = list(experiment_df['cluster'].unique())[0] if 'cluster_name' not in kwargs else kwargs['cluster_name']
+    experiment_params_dict['experiments_directory'] = experiments_directory if 'experiments_directory' not in kwargs else kwargs['experiments_directory']
+    experiment_params_dict['name'] = name
 
-    return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiments_directory, **kwargs)
+    return get_experiment_class(name)(model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiments_directory, **experiment_params_dict)
     
 def get_experiment_class(name):
     """
