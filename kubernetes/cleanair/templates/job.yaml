@@ -23,6 +23,7 @@ spec:
                - name: secrets
                  mountPath: "/secrets/"
                  readOnly: true
+              args: {{ $job.args }}
             imagePullSecrets:
             - name: regcred
             restartPolicy: {{ $job.restartPolicy }}
@@ -51,6 +52,5 @@ spec:
           tolerations:
 {{ toYaml . | indent 12 }}
           {{- end }}
-
     
 {{- end }}

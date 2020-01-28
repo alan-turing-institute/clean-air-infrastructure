@@ -1,4 +1,4 @@
-imageTag: 5c8cba3c29f7968745933b626b1b0b73c9b6e5cc
+imageTag: b42111cac281af48dab6b12f1c2f291ab720e31a
 
 jobs:
   - name: ukmap
@@ -40,12 +40,26 @@ jobs:
       secret:
         secretName: secrets
 
+  - name: scoot-backdate
+    image:
+      repository: cleanairdocker.azurecr.io/scoot
+      imagePullPolicy: Always
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    args: ['-n', 30]
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    
 cronjobs:
   - name: laqn
     image:
       repository: cleanairdocker.azurecr.io/laqn
       imagePullPolicy: Always
-    schedule: "0 * * * *"
+    schedule: "5 * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
@@ -59,7 +73,7 @@ cronjobs:
     image:
       repository: cleanairdocker.azurecr.io/aqe
       imagePullPolicy: Always
-    schedule: "0 * * * *"
+    schedule: "5 * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
@@ -73,7 +87,7 @@ cronjobs:
     image:
       repository: cleanairdocker.azurecr.io/scoot
       imagePullPolicy: Always
-    schedule: "0 * * * *"
+    schedule: "5 * * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
