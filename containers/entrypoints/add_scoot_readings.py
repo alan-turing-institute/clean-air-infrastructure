@@ -1,5 +1,5 @@
 """
-Update SCOOT database
+Update SCOOT database and run feature processing
 """
 import argparse
 import json
@@ -7,6 +7,7 @@ import logging
 import os
 from cleanair.inputs import ScootWriter
 from cleanair.loggers import get_log_level
+from cleanair.features import ScootFeatures
 
 
 def main():
@@ -17,7 +18,7 @@ def main():
         "-e",
         "--end",
         type=str,
-        default="yesterday",
+        default="today",
         help="The last date (YYYY-MM-DD) to get data for.",
     )
     parser.add_argument(
@@ -72,10 +73,17 @@ def main():
                     "Could not determine SCOOT aws_key_id or aws_key"
                 )
 
-        scoot_writer = ScootWriter(**kwargs)
-
         # Update the Scoot readings table on the database
+        scoot_writer = ScootWriter(**kwargs)
         scoot_writer.update_remote_tables()
+
+        # Extract static features into the appropriate tables on the database
+        # List which sources to process
+        kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
+        static_feature_extractor = ScootFeatures(**kwargs)
+        static_feature_extractor.update_scoot_road_reading(find_closest_roads=False)
+        static_feature_extractor.update_remote_tables()
+
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
         raise
