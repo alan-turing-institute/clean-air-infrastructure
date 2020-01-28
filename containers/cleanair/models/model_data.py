@@ -280,7 +280,7 @@ class ModelData(DBWriter, DBQueryMixin):
             index_col=0,
         )
         self.normalised_pred_data_df = pd.read_csv(
-            os.path.join(os.path.join(dir_path, "normalised_training_data.csv")),
+            os.path.join(os.path.join(dir_path, "normalised_pred_data.csv")),
             index_col=0,
         )
 
