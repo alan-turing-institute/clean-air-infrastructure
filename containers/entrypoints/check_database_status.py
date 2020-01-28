@@ -34,6 +34,7 @@ def main():
     database_status = DBStatus(**kwargs)
 
     # print(database_status.get_available_static_features(output_type='df'))
+    # print(database_status.get_available_interest_points()
     print(database_status.get_available_static_features_by_source(output_type="df"))
 
     # print(database_status.get_available_dynamic_features(start_date='2020-01-01', end_date='2020-01-05', output_type='df'))

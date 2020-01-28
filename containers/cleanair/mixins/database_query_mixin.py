@@ -53,8 +53,9 @@ class DBQueryMixin:
 
     @db_query
     def get_available_static_features_by_source(self):
-
+        """Get the available static features by source with the number of interest points features are available for"""
         sources = self.get_available_sources(output_type="list")
+
         available_interest_points_sq = self.get_available_interest_points(
             sources=sources, output_type="subquery"
         )
@@ -62,16 +63,16 @@ class DBQueryMixin:
         with self.dbcnxn.open_session() as session:
 
             feature_types_q = session.query(
-                func.count(available_interest_points_sq.c.point_id).label("Count_available"),
+                func.count(IntersectionValue.feature_name).label("Count_available"),
                 available_interest_points_sq.c.source,
                 IntersectionValue.feature_name,
-            ).join(IntersectionValue)
-
-            return feature_types_q.group_by(
+            ).join(IntersectionValue).group_by(
                 available_interest_points_sq.c.source, IntersectionValue.feature_name
             ).order_by(
                 IntersectionValue.feature_name, available_interest_points_sq.c.source
             )
+
+            return feature_types_q
 
     @db_query
     def get_available_dynamic_features(self, start_date, end_date):
