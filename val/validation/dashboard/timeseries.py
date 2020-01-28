@@ -26,7 +26,7 @@ def scores_by_time(exp):
         )
         fig.add_trace(go.Scatter(
             x=scores_df.index,
-            y=scores_df.r2,
+            y=scores_df['NO2_mae'],
             name='experiment {i}'.format(i=k),
         ), row=i, col=j)
         k += 1

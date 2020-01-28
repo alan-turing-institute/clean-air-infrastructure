@@ -70,35 +70,73 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
     temporal_scores_df = pd.DataFrame(columns=temporal_cols)
 
     # sensor_scores_df = pd.DataFrame(columns=)
-    for model_data in xp.model_data_list:
-        for spc in model_data.config['species']:
-            # for each pollutant, measure the r2, mae and mse
-            pred_col = '{s}_mean'.format(s=spc)
-            if evaluate_training:
-                # evaluate training predictions of sensors over the whole training period
-                training_sensor_scores_df = measure_scores_by_sensor(
-                    model_data.normalised_training_data_df, metric_methods,
-                    pred_col=pred_col, test_col=spc
-                )
-                # evaluate training predictions for each timestamp over all sensors
-                training_temporal_scores_df = measure_scores_by_hour(
-                    model_data.normalised_training_data_df, metric_methods,
-                    pred_col=pred_col, test_col=spc
-                )
-                # ToDo: append the scores dataframes
-                
-            elif evaluate_testing:
-                # evaluate testing predictions of sensors over the whole testing period
-                testing_sensor_scores_df = measure_scores_by_sensor(
-                    model_data.normalised_pred_data_df, metric_methods,
-                    pred_col=pred_col, test_col=spc
-                )
-                # evaluate testing predictions for each timestamp over all sensors
-                testing_temporal_scores_df = measure_scores_by_hour(
-                    model_data.normalised_testing_data_df, metric_methods,
-                    pred_col=pred_col, test_col=spc
-                )
-                # ToDo: append the scores dataframes
+    for index, row in xp.experiment_df.iterrows():
+        model_data = xp.model_data_list[index]
+
+        pred_cols = ['{s}_mean'.format(s=spc) for spc in model_data.config['species']]
+        test_cols = model_data.config['species'].copy()
+
+        if evaluate_training:
+            # evaluate training predictions of sensors over the whole training period
+            training_sensor_scores_df = measure_scores_by_sensor(
+                model_data.normalised_training_data_df, metric_methods,
+                pred_cols=pred_cols, test_cols=test_cols
+            )
+            # add columns to training sensor dataframe
+            training_sensor_scores_df['experiment_name'] = xp.name
+            training_sensor_scores_df['instance_id'] = index
+            training_sensor_scores_df['cluster_name'] = xp.cluster
+            training_sensor_scores_df['param_id'] = row['param_id']
+            training_sensor_scores_df['data_id'] = row['data_id']
+            training_sensor_scores_df['training_set'] = True
+            training_sensor_scores_df['testing_set'] = False
+
+            # evaluate training predictions for each timestamp over all sensors
+            training_temporal_scores_df = measure_scores_by_hour(
+                model_data.normalised_training_data_df, metric_methods,
+                pred_cols=pred_cols, test_cols=test_cols
+            )
+            # add columns to training temporal dataframe
+            training_temporal_scores_df['experiment_name'] = xp.name
+            training_temporal_scores_df['instance_id'] = index
+            training_temporal_scores_df['cluster_name'] = xp.cluster
+            training_temporal_scores_df['param_id'] = row['param_id']
+            training_temporal_scores_df['data_id'] = row['data_id']
+            training_temporal_scores_df['training_set'] = True
+            training_temporal_scores_df['testing_set'] = False
+
+            # ToDo: append to dataframe
+
+        if evaluate_testing:
+            # evaluate testing predictions of sensors over the whole testing period
+            testing_sensor_scores_df = measure_scores_by_sensor(
+                model_data.normalised_pred_data_df, metric_methods,
+                pred_cols=pred_cols, test_cols=test_cols
+            )
+            # add columns to training sensor dataframe
+            testing_sensor_scores_df['experiment_name'] = xp.name
+            testing_sensor_scores_df['instance_id'] = index
+            testing_sensor_scores_df['cluster_name'] = xp.cluster
+            testing_sensor_scores_df['param_id'] = row['param_id']
+            testing_sensor_scores_df['data_id'] = row['data_id']
+            testing_sensor_scores_df['training_set'] = False
+            testing_sensor_scores_df['testing_set'] = True
+            # evaluate testing predictions for each timestamp over all sensors
+            testing_temporal_scores_df = measure_scores_by_hour(
+                model_data.normalised_testing_data_df, metric_methods,
+                pred_cols=pred_cols, test_cols=test_cols
+            )
+            # add columns to training temporal dataframe
+            testing_temporal_scores_df['experiment_name'] = xp.name
+            testing_temporal_scores_df['instance_id'] = index
+            testing_temporal_scores_df['cluster_name'] = xp.cluster
+            testing_temporal_scores_df['param_id'] = row['param_id']
+            testing_temporal_scores_df['data_id'] = row['data_id']
+            testing_temporal_scores_df['training_set'] = False
+            testing_temporal_scores_df['testing_set'] = True
+
+            # ToDo: append to dataframe
+
 
     return sensor_scores_df, temporal_scores_df
 
@@ -143,7 +181,7 @@ def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
 
     return metric_methods
 
-def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_col='NO2_mean', test_col='NO2'):
+def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_cols=['NO2_mean'], test_cols=['NO2']):
     """
     Measure metric scores for each hour of prediction.
 
@@ -167,33 +205,35 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
         Each column is a metric in metric_methods.
     """
     # remove nans from rows
-    pred_df = __remove_rows_with_nans(pred_df, pred_col=pred_col, test_col=test_col)
+    pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
 
     # group by datetime
     gb = pred_df.groupby(datetime_col)
+
+    # ToDo: generalise for multiple species
 
     # get a series for each metric for all sensors at each hour
     # concat each series into a dataframe
     return pd.concat([
         pd.Series(gb.apply(
-            lambda x : method(x[test_col], x[pred_col])
-        ), name='{species}_{metric}'.format(species=test_col, metric=key))
+            lambda x : method(x[test_cols[0]], x[pred_cols[0]])
+        ), name='{species}_{metric}'.format(species=test_cols, metric=key))
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
 
-def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_col='NO2_mean', test_col='NO2'):
+def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_cols=['NO2_mean'], test_cols=['NO2']):
     """
     Group the pred_df by sensor then measure scores on each sensor.
     """
     # remove nans from rows
-    pred_df = __remove_rows_with_nans(pred_df, pred_col=pred_col, test_col=test_col)
+    pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
 
     # group by sensor id
     gb = pred_df.groupby(sensor_col)
 
     return pd.concat([
         pd.Series(gb.apply(
-            lambda x : method(x[test_col], x[pred_col])
+            lambda x : method(x[test_cols], x[pred_cols])
         ), name=key)
         for key, method in metric_methods.items()
     ], axis=1, names=metric_methods.keys())
@@ -211,6 +251,6 @@ def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat
         point_df[feature] = pd.Series(feature_list, index=point_df.index)
     return pd.concat([scores_df, point_df], axis=1, ignore_index=False)
 
-def __remove_rows_with_nans(pred_df, pred_col='NO2_mean', test_col='NO2'):
-    return pred_df.loc[pred_df[[pred_col, test_col]].dropna().index]
+def __remove_rows_with_nans(pred_df, pred_cols=['NO2_mean'], test_cols=['NO2']):
+    return pred_df.loc[pred_df[pred_cols.copy().extend(test_cols)].dropna().index]
     
