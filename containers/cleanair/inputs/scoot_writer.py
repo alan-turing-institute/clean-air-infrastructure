@@ -248,6 +248,16 @@ class ScootWriter(DateRangeMixin, DBWriter):
             end_time = start_time + datetime.timedelta(hours=1)
             start_datetime, end_datetime = self.get_datetimes(start_time, end_time, unit='hourly')
 
+            # Check if data already exists for that hour
+            with self.dbcnxn.open_session() as session:
+                n_readings = session.query(ScootReading).filter(ScootReading.measurement_start_utc >=
+                                                                start_datetime, ScootReading.measurement_start_utc <= end_datetime).count()
+
+            if n_readings > 0:
+                self.logger.info(
+                    "%s readings already in database for hour %s. Not requesting from S3 bucket", green(n_readings), green(start_datetime))
+                continue
+
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
 
