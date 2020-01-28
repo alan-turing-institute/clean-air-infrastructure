@@ -129,8 +129,8 @@ class Experiment(ABC):
         self.model_data_list = []
 
         # create ModelData objects for each roll
-        for index, row in self.experiment_df.iterrows():
-            data_id = row['data_id']
+        # Each roll is defined by data_id in experiment_df
+        for data_id in pd.unique(self.experiment_df['data_id']):
             data_config = self.data_config[data_id]
 
             # If the numpy files do not exist locally
