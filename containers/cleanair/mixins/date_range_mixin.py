@@ -17,20 +17,28 @@ class DateRangeMixin:
             self.logger = get_logger(__name__)
 
         # Set the date range
-        if end == "today":
-            self.end_date = datetime.datetime.today().date()
-        elif end == "yesterday":
-            self.end_date = (
-                datetime.datetime.today() - datetime.timedelta(days=1)
-            ).date()
+        if end == "now":
+            self.end_datetime = (
+                datetime.datetime.now() - datetime.timedelta(hours=1)
+            ).replace(microsecond=0, second=0, minute=0)
+            self.start_datetime = self.end_datetime - datetime.timedelta(days=(ndays))
         else:
-            self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
-        self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
+            if end == "today":
+                self.end_date = datetime.datetime.today().date()
+            elif end == "yesterday":
+                self.end_date = (
+                    datetime.datetime.today() - datetime.timedelta(days=1)
+                ).date()
 
-        # Set the time range
-        self.start_datetime, self.end_datetime = self.get_datetimes(
-            self.start_date, self.end_date
-        )
+            else:
+                self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
+
+            self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
+
+            # Set the time range
+            self.start_datetime, self.end_datetime = self.get_datetimes(
+                self.start_date, self.end_date
+            )
 
         # Log an introductory message
         self.logger.info("Requesting data between the following time points:")
@@ -39,25 +47,12 @@ class DateRangeMixin:
         )
 
     @staticmethod
-    def get_datetimes(start_date, end_date, unit="daily"):
+    def get_datetimes(start_date, end_date):
         """Get min and max datetimes between start_date and end_date"""
 
-        if unit == "daily":
-            start_datetime = datetime.datetime.combine(
-                start_date, datetime.datetime.min.time()
-            )
-            end_datetime = datetime.datetime.combine(
-                end_date, datetime.datetime.max.time()
-            )
+        start_datetime = datetime.datetime.combine(
+            start_date, datetime.datetime.min.time()
+        )
+        end_datetime = datetime.datetime.combine(end_date, datetime.datetime.max.time())
 
-        elif unit == "hourly":
-            start_datetime = datetime.datetime.combine(
-                start_date, datetime.time(start_date.hour, 0, 0, 0)
-            )
-            end_datetime = datetime.datetime.combine(
-                end_date, datetime.time(start_date.hour, 59, 59, 999999)
-            )
-
-        else:
-            raise ValueError("Argument unit must be either 'daily' or 'hourly'")
         return start_datetime, end_datetime
