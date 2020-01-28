@@ -72,13 +72,17 @@ class ScootWriter(DateRangeMixin, DBWriter):
     @staticmethod
     def get_remote_filenames(start_datetime, end_datetime):
         """Get all possible remote file details for the period in question"""
+
+        print(start_datetime, end_datetime)
         file_list = []
         for date in rrule.rrule(
-            rrule.DAILY, dtstart=start_datetime, until=end_datetime
+            rrule.HOURLY, dtstart=start_datetime, until=end_datetime
         ):
+
             year, month, day = date.strftime(r"%Y-%m-%d").split("-")
+            hour = date.hour
             for timestring in [
-                str(h).zfill(2) + str(m).zfill(2) for h in range(24) for m in range(60)
+                str(hour).zfill(2) + str(m).zfill(2) for m in range(60)
             ]:
                 csv_name = "{y}{m}{d}-{timestring}.csv".format(
                     y=year, m=month, d=day, timestring=timestring
@@ -237,13 +241,12 @@ class ScootWriter(DateRangeMixin, DBWriter):
         )
 
         n_records = 0
-        # Process a day at a time
+        # Process an hour at a time
         for start_time in rrule.rrule(
-            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
+            rrule.HOURLY, dtstart=self.start_datetime, until=self.end_datetime
         ):
             end_time = start_time + datetime.timedelta(hours=1)
-
-            start_datetime, end_datetime = self.get_datetimes(start_time, end_time)
+            start_datetime, end_datetime = self.get_datetimes(start_time, end_time, unit='hourly')
 
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
@@ -258,10 +261,6 @@ class ScootWriter(DateRangeMixin, DBWriter):
                     green(len(site_records)),
                 )
 
-                # The following database operations can be slow. However, with the switch to hourly data they are not
-                # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
-                # using bulk insertions does not provide a speed-up but does increase the risk of data loss. We are
-                # therefore sticking to the higher-level functions here.
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
