@@ -32,3 +32,30 @@ stages:
         docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
         docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
       displayName: 'Push Docker images to ACR'
+
+
+- stage: Kubernetes
+  displayName: Update Helm chart on Azure Kubernetes cluster
+  jobs:
+  - job: DoSomeKubernetesThings
+    displayName: Build and DoSomeKubernetesThings
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      # Stage 1: Installation
+      - task: KubectlInstaller@0
+        displayName: 'Stage 1 Step 1: Install kubectl'
+        inputs:
+          kubectlVersion: '1.14.8'
+
+      - task: AzureCLI@1
+        displayName: 'Stage 1 Step 2: Merge kubectl config'
+        inputs:
+          azureSubscription: 'cleanair-scn'
+          scriptLocation: 'inlineScript'
+          inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+
+      - task: HelmInstaller@1
+        displayName: 'Stage 1 Step 3: Install helm'
+        inputs:
+          helmVersionToInstall: '3.0.3'

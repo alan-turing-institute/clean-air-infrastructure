@@ -25,14 +25,13 @@ If you have not already installed the command line interface for `Azure`, please
 
 ## Azure Python SDK
 You can install the `Azure` Python SDK with `pip` using:
-
 ```bash
 pip install -r containers/requirements.txt
 ```
 
-## CleanAir package (optional)
-To run the clean air functionality locally (without a docker image) pip install it:
 
+## CleanAir package (optional)
+To run the clean air functionality locally (without a docker image) you can install the package with `pip` as follows:
 ```bash
 pip install -e containers
 ```
@@ -46,13 +45,12 @@ brew install terraform
 
 
 ## Travis CI CLI
- Ensure you have Ruby 1.9.3 or above installed:
+Ensure you have Ruby 1.9.3 or above installed:
 ```bash
 ruby -v
 ```
 
 Then install the Travis CI CLI with:
-
 ```bash
 gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
 ```
@@ -68,13 +66,11 @@ travis version
 ```
 
 If this fails ensure Gems user_dir is on the path:
-
 ```
 cat << EOF >> ~/.bash_profile
 export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
-
 
 
 # Setting up the Clean Air infrastructure
@@ -83,20 +79,16 @@ The following steps are needed to setup the Clean Air cloud infrastructure.
 
 ## Setup Azure
 To start working with `Azure`, you must first login to your account from the terminal:
-
 ```bash
 az login
 ```
 
 Check which `Azure` subscriptions you have access to by running
-
 ```bash
 az account list --output table --refresh
 ```
 
 Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
-
-
 ```bash
 az account set --subscription "CleanAir"
 ```
@@ -129,7 +121,7 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 ## Building the Clean Air infrastructure with Terraform
 To build the `Terraform` infrastructure go to the `terraform` directory
 
-```
+```bash
 cd terraform
 ```
 
@@ -143,13 +135,11 @@ If you want to, you can look at the `backend_config.tf` file, which should conta
 **NB. It is important that this file is in `.gitignore` . Do not push this file to the remote repository**
 
 Then run:
-
 ```bash
 terraform plan
 ```
 
 which creates an execution plan. Check this matches your expectations. If you are happy then run:
-
 ```bash
 terraform apply
 ```
@@ -190,7 +180,6 @@ Please note that you may need to increase the available memory under `Docker > P
 **NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`. Ensure you have pushed your latest commit to github if working on a branch**
 
 From the root directory, running the command
-
 ```bash
 python cleanair_setup/insert_static_datasets.py
 ```
@@ -216,7 +205,6 @@ We tell this job which version of the container to run by using GitHub webhooks 
 
 ## Removing Terraform infrastructure
 To destroy all the resources created by `Terraform` run:
-
 ```
 terraform destroy
 ```
@@ -226,18 +214,13 @@ Then login to TravisCI and delete the Azure Container repo environment variables
 
 
 # Miscellaneous
-
 ## Create a local secrets file
 
 To run the clean air docker images locally you will need to create a local secrets file:
-
 Run the following to create a file with the database secrets:
-
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
-```
-
-```
+mkdir -p terraform/.secrets
+touch terraform/.secrets/db_secrets.json
 echo '{
     "username": "<db_admin_username>@<db_server_name>",
     "password": "<db_admin_password>",
@@ -252,17 +235,17 @@ Open the file and replace the <> with the secret values which can be found in th
 
 ### Build and run docker images
 **AQE - Download AQE data**
-```
+```bash
 docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
 ```
 
 **LAQN - Download LAQN data**
-```
+```bash
 docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
 ```
 
 **UKMAP feature extraction**
-```
+```bash
 docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v <repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
 ```
 
@@ -272,7 +255,7 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 ```
 
 **Model fitting**
-```
+```bash
 docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
 ```
 
@@ -282,18 +265,13 @@ docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model
 
 It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
 
-- Install postgres and start
-
+- Install postgres and start it running
 ```bash
 brew install postgresql postgis
-```
-
-```bash
 brew services start postgres
 ```
 
 - Create a database called 'cleanair_inputs_db'. In a terminal run:
-
 ```bash
 psql postgres
 ```
@@ -303,37 +281,23 @@ and then create the database:
 CREATE DATABASE cleanair_inputs_db;
 ```
 
-- Create a secret file with login information for the database with following commands:
-
-```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
-```
-
-```
-echo '{
-    "username": "postgres",
-    "password": "password",
-    "host": "host.docker.internal",
-    "port": 5432,
-    "db_name": "cleanair_inputs_db",
-    "ssl_mode": "prefer"
-}' >> terraform/.secrets/db_secrets.json
-```
+- Create a local secrets file following the instructions above
 
 - Follow all instructions above as per cloud until add static datasets.
 
 - Download static data and insert into the database:
-
 ```
 python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
+
+add a Devops Service Connection (Azure Resource manager)
+call it cleanair-scn
 
 
 ## Configure Kubernetes Cluster:
 
 ### Local cluster
 You can set up a local cluster on your machine. To do this install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
- -->
 
 To start the cluster run:
 ```
@@ -341,7 +305,6 @@ minikube start --vm-driver=virtualbox
 ```
 
 Start the cluster dashboard with:
-
 ```
 minikube dashboard
 ```
@@ -349,7 +312,6 @@ minikube dashboard
 Next follow these instruction to [install helm](https://helm.sh/docs/using_helm/).
 
 ### Adding secrets
-
 The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the Kubernetes cluster.
 
 The ACR login details are in a file called .regcred_secret.json
@@ -364,12 +326,10 @@ kubectl create secret generic secrets --from-file=<path_to_aws_secret>aws_secret
 
 
 ### Configure the cluster with Helm
-
 Go to the `/kubernetes` directory and run:
 
 ```
 helm install kubernetes/cleanair
 ```
-
 
 Now you to the minikube dashboard and you can see everything that was installed.
