@@ -16,101 +16,38 @@ stages:
 #     pool:
 #       vmImage: 'ubuntu-latest'
 #     steps:
+#     # Build AQE
 #     - script: |
 #         docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
 #       displayName: 'Build AQE'
+#     # Build LAQN
 #     - script: |
 #         docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
 #       displayName: 'Build LAQN'
+#     # Build SCOOT
 #     - script: |
 #         docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
 #       displayName: 'Build SCOOT'
+#     # List available images
 #     - script: |
 #         docker images
 #       displayName: 'List images'
+#     # Login to ACR
 #     - script: |
 #         echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
 #       displayName: 'Login to ACR'
+#     # Push Docker images to ACR
 #     - script: |
 #         docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
 #         docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
 #         docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
 #       displayName: 'Push Docker images to ACR'
 
-
-# - stage: Kubernetes
-#   displayName: Update Helm chart on Azure Kubernetes cluster
-#   jobs:
-#   - job: UpdateAzureKubernetesHelmChart
-#     displayName: Install kubectl and install/upgrade helm
-#     pool:
-#       vmImage: 'ubuntu-latest'
-#     steps:
-#     # Install kubectl
-#     - task: KubectlInstaller@0
-#       displayName: 'Install kubectl'
-#       inputs:
-#         kubectlVersion: '1.14.8'
-#     # Get Azure credentials
-#     - task: AzureCLI@1
-#       displayName: 'Get Azure credentials'
-#       inputs:
-#         azureSubscription: 'cleanair-scn'
-#         scriptLocation: 'inlineScript'
-#         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
-#     # Install helm 3
-#     - task: HelmInstaller@1
-#       displayName: 'Install helm 3'
-#       inputs:
-#         helmVersionToInstall: '3.0.3'
-#     # Package helm chart
-#     - script: |
-#         sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
-#         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
-#         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
-#       displayName: 'Package helm chart'
-#     # Install/upgrade helm chart
-#     - task: HelmDeploy@0
-#       displayName: 'Install/upgrade helm chart'
-#       inputs:
-#         connectionType: Azure Resource Manager
-#         azureSubscriptionEndpoint: 'cleanair-scn'
-#         azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)
-#         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
-#         command: upgrade
-#         chartType: filepath
-#         chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(version).tgz
-#         releaseName: cleanair
-#         install: true
-
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
   jobs:
-  # Prepare Helm Chart
-  - job: PrepareHelmChart
-    displayName: Install kubectl and prepare helm chart
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    # Install kubectl
-    - task: KubectlInstaller@0
-      displayName: 'Install kubectl'
-      inputs:
-        kubectlVersion: '1.14.8'
-    # Install helm 3
-    - task: HelmInstaller@1
-      displayName: 'Install helm 3'
-      inputs:
-        helmVersionToInstall: '3.0.3'
-    # Package helm chart
-    - script: |
-        sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
-        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
-        helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
-      displayName: 'Package helm chart'
-  # Install Helm Chart
-  - job: InstallHelmChart
-    displayName: Install helm chart on Azure Kubernetes cluster
+  - job: UpdateAzureKubernetesHelmChart
+    displayName: Install Kubectl and install/upgrade helm
     pool:
       vmImage: 'ubuntu-latest'
     steps:
@@ -121,9 +58,27 @@ stages:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
-    # Install/upgrade helm chart
+    # Install Kubectl
+    - task: KubectlInstaller@0
+      displayName: 'Install Kubectl'
+      inputs:
+        kubectlVersion: '1.14.8'
+    # Install Helm 3
+    - task: HelmInstaller@1
+      displayName: 'Update to Helm 3'
+      inputs:
+        helmVersionToInstall: '3.0.3'
+    # Package Helm chart
+    - script: |
+        PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
+        echo "##vso[task.setvariable variable=pkgversion]$PKGVERSION"
+        # sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+        helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
+      displayName: 'Package Helm chart'
+    # Install/upgrade Helm chart
     - task: HelmDeploy@0
-      displayName: 'Install/upgrade helm chart'
+      displayName: 'Install/upgrade Helm chart'
       inputs:
         connectionType: Azure Resource Manager
         azureSubscriptionEndpoint: 'cleanair-scn'
@@ -131,6 +86,6 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(version).tgz
+        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(PKGVERSION).tgz
         releaseName: cleanair
         install: true
