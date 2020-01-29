@@ -124,6 +124,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         valid_models = [
             "svgp",
+            "mr_gprn",
         ]
 
         self.logger.info("Validating config")
@@ -447,6 +448,9 @@ class ModelData(DBWriter, DBQueryMixin):
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
 
+            print(self.training_satellite_data_x)
+            print(self.training_satellite_data_y)
+
             data_dict["X_sat"] = X_sat
             data_dict["Y_sat"] = Y_sat
 
@@ -665,7 +669,9 @@ class ModelData(DBWriter, DBQueryMixin):
             names=["point_id", "measurement_start_utc"],
         )
         time_df = pd.DataFrame(index=index).reset_index()
+
         time_df_merged = time_df.merge(feature_df)
+
         time_df_merged["epoch"] = time_df_merged["measurement_start_utc"].apply(
             lambda x: x.timestamp()
         )
