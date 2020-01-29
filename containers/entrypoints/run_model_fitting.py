@@ -83,7 +83,7 @@ def main():
         "features": ['value_1000_total_a_road_length', 'value_500_total_a_road_length', 'value_500_total_a_road_primary_length', 'value_500_total_b_road_length'],
         "norm_by": "laqn",
         "model_type": "svgp",
-        "tag": "full_test",
+        "tag": "test_grid",
     }
 
     # Model fitting parameters
@@ -95,10 +95,11 @@ def main():
     }
 
     # Get the model data
-    # model_data = ModelData(config=model_config, **kwargs)
-    model_data = ModelData(config_dir='run_model_test/', **kwargs)
 
-    # model_data.save_config_state('run_model_test/')
+    model_data = ModelData(config=model_config, **kwargs)
+    # model_data = ModelData(config_dir='run_model_test/', **kwargs)
+
+    model_data.save_config_state('run_model_full_test/')
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
@@ -125,6 +126,8 @@ def main():
         Y_pred=Y_pred,
         model_fit_info=model_fit_info,
     )
+
+    model_data.save_config_state('run_model_full_test/')
 
     # Write the model results to the database
     model_data.update_remote_tables()

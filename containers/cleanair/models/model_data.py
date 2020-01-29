@@ -3,6 +3,7 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
+import math
 import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
@@ -832,7 +833,15 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
+        # n_batches = math.ceil(len(upload_records) / batch_size)
 
-        self.logger.info("Inserting %s records into the database", len(upload_records))
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ModelResult)
+        # self.logger.info("Inserting %s records into the database", len(upload_records))
+
+        # with self.dbcnxn.open_session() as session:
+        #     for idx in range(0, len(upload_records), batch_size):
+
+        #         self.logger.info("Inserting batch %s of %s with batch size %s",
+        #                          idx//batch_size + 1, n_batches, batch_size)
+
+        #         batch_records = upload_records[idx:idx+batch_size]
+        self.commit_records(session, upload_records, table=ModelResult)

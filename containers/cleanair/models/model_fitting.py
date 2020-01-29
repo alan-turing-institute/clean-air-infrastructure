@@ -1,5 +1,6 @@
 """Model Fitting"""
 from datetime import datetime
+import math
 from scipy.cluster.vq import kmeans2
 import gpflow
 import tensorflow as tf
@@ -119,6 +120,7 @@ class SVGP:
 
         args:
             X:  X: NxM numpy array of N observations of M covariates
+            batch_size: Prediction batch size
         """
         if not self.model:
             raise AttributeError("No model has been fit. Fit the model first")
@@ -127,30 +129,24 @@ class SVGP:
         x_pred_array = X.copy()
         x_pred_size = x_pred_array.shape[0]
 
-        n_batch = int(x_pred_size / batch_size)
-
         # Initialise output arrays
         mean_pred = np.empty(x_pred_array.shape[0])
         var_pred = np.empty(x_pred_array.shape[0])
 
-        x_pred_array = np.array_split(x_pred_array, n_batch)
-        x_pred_array_size = len(x_pred_array)
+        # Predict in batches
+        n_batches = math.ceil(x_pred_size / batch_size)
+        for idx in range(0, x_pred_size, batch_size):
+            self.logger.info("Predicting %s points. Batch %s of %s with batch size %s",
+                             x_pred_size, idx//batch_size + 1, n_batches, batch_size)
 
-        index = 0
-        for i, x_pred_batch in enumerate(x_pred_array):
-
-            self.logger.info("Predicting batch %s of %s with batch size %s",
-                             i, x_pred_array_size, x_pred_batch.shape[0])
+            x_pred_batch = x_pred_array[idx:idx+batch_size]
             tmp_mean, tmp_var = self.model.predict_y(x_pred_batch)
-            mean_pred[index:index+tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
-            var_pred[index:index+tmp_var.shape[0]] = tmp_var.numpy().squeeze()
-            index += tmp_mean.shape[0]
+            mean_pred[idx:idx+tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
+            var_pred[idx:idx+tmp_var.shape[0]] = tmp_var.numpy().squeeze()
 
         self.logger.info("Model prediction: Finished")
 
-        Y_pred = np.array([mean_pred, var_pred]).T.squeeze()
-
-        return Y_pred
+        return np.array([mean_pred, var_pred]).T.squeeze()
 
     def fit_info(self):
         """
