@@ -83,10 +83,13 @@ def build_backend(args):
 
     # Ensure all secrets are recorded in the key vault
     secrets = {
-        "aws_key": args.aws_key,
         "aws_key_id": args.aws_key_id,
-        "location": args.location,
+        "aws_key": args.aws_key,
         "azure_group_id": args.azure_group_id,
+        "azure_sp_id": args.azure_sp_id,
+        "azure_sp_name": args.azure_sp_name,
+        "azure_sp_password": args.azure_sp_password,
+        "location": args.location,
         "subscription_id": subscription_id,
         "tenant_id": tenant_id,
     }
@@ -167,82 +170,74 @@ def get_valid_storage_account_name(storage_mgmt_client):
 def record_all_secrets(vault_uri, vault_name, secrets):
     """Ensure secrets are recorded in the key"""
     # Write secrets to the key vault
-    key_vault_client = get_client_from_cli_profile(KeyVaultClient)
+    kv_client = get_client_from_cli_profile(KeyVaultClient)
     logging.info("Ensuring secrets are in key vault: %s", emphasised(vault_name))
     available_secrets = [
-        s.id.split("/")[-1] for s in key_vault_client.get_secrets(vault_uri)
+        s.id.split("/")[-1] for s in kv_client.get_secrets(vault_uri)
     ]
 
     # Add secrets unless they are already in the vault
     # AWS key
     if secrets["aws_key"]:
         if "scoot-aws-key" in available_secrets:
-            kv_aws_key = key_vault_client.get_secret(
-                vault_uri, "scoot-aws-key", ""
-            ).value
+            kv_aws_key = kv_client.get_secret(vault_uri, "scoot-aws-key", "").value
             if kv_aws_key != secrets["aws_key"]:
-                logging.warning(
-                    "AWS key from key vault does not match user-provided version!"
-                )
+                logging.warning("AWS key from key vault does not match user-provided version!")
         else:
-            key_vault_client.set_secret(vault_uri, "scoot-aws-key", secrets["aws_key"])
+            kv_client.set_secret(vault_uri, "scoot-aws-key", secrets["aws_key"])
     else:
         if "scoot-aws-key" in available_secrets:
-            logging.info(
-                "AWS key found in existing key vault: %s", emphasised(vault_name)
-            )
+            logging.info("AWS key found in existing key vault: %s", emphasised(vault_name))
         else:
-            logging.warning(
-                "No AWS key was provided as an argument and there is not one saved in the key vault!"
-            )
+            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
     # AWS key ID
     if secrets["aws_key_id"]:
         if "scoot-aws-key-id" in available_secrets:
-            kv_aws_key_id = key_vault_client.get_secret(
-                vault_uri, "scoot-aws-key-id", ""
-            ).value
+            kv_aws_key_id = kv_client.get_secret(vault_uri, "scoot-aws-key-id", "").value
             if kv_aws_key_id != secrets["aws_key_id"]:
-                logging.warning(
-                    "AWS key ID from key vault does not match user-provided version!"
-                )
+                logging.warning("AWS key ID from key vault does not match user-provided version!")
         else:
-            key_vault_client.set_secret(
-                vault_uri, "scoot-aws-key-id", secrets["aws_key_id"]
-            )
+            kv_client.set_secret(vault_uri, "scoot-aws-key-id", secrets["aws_key_id"])
     else:
         if "scoot-aws-key-id" in available_secrets:
-            logging.info(
-                "AWS key ID found in existing key vault: %s", emphasised(vault_name)
-            )
+            logging.info("AWS key ID found in existing key vault: %s", emphasised(vault_name))
         else:
-            logging.warning(
-                "No AWS key ID was provided as an argument and there is not one saved in the key vault!"
-            )
+            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
     # Subscription ID
     if "subscription-id" in available_secrets:
-        kv_subscription_id = key_vault_client.get_secret(
-            vault_uri, "subscription-id", ""
-        ).value
+        kv_subscription_id = kv_client.get_secret(vault_uri, "subscription-id", "").value
         if kv_subscription_id != secrets["subscription_id"]:
             logging.warning(
                 "Updating subscription ID in key vault to %s",
                 emphasised(secrets["subscription_id"]),
             )
-            key_vault_client.set_secret(
-                vault_uri, "subscription-id", secrets["subscription_id"]
-            )
+            kv_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
     else:
-        key_vault_client.set_secret(
-            vault_uri, "subscription-id", secrets["subscription_id"]
-        )
+        kv_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
+    # Generated secrets
     if "tenant-id" not in available_secrets:
-        key_vault_client.set_secret(vault_uri, "tenant-id", secrets["tenant_id"])
-    if "location" not in available_secrets:
-        key_vault_client.set_secret(vault_uri, "location", secrets["location"])
+        kv_client.set_secret(vault_uri, "tenant-id", secrets["tenant_id"])
+    # User-provided secrets
     if "azure-group-id" not in available_secrets:
-        key_vault_client.set_secret(
-            vault_uri, "azure-group-id", secrets["azure_group_id"]
-        )
+        if not secrets["azure_group_id"]:
+            raise ValueError("Please provide a value for '--azure-group-id'")
+        kv_client.set_secret(vault_uri, "azure-group-id", secrets["azure_group_id"])
+    if "azure-service-principal-name" not in available_secrets:
+        if not secrets["azure_sp_name"]:
+            raise ValueError("Please provide a value for '--azure-sp-name'")
+        kv_client.set_secret(vault_uri, "azure-service-principal-name", secrets["azure_sp_name"])
+    if "azure-service-principal-id" not in available_secrets:
+        if not secrets["azure_sp_id"]:
+            raise ValueError("Please provide a value for '--azure-sp-id'")
+        kv_client.set_secret(vault_uri, "azure-service-principal-id", secrets["azure_sp_id"])
+    if "azure-service-principal-password" not in available_secrets:
+        if not secrets["azure_sp_password"]:
+            raise ValueError("Please provide a value for '--azure-sp-password'")
+        kv_client.set_secret(vault_uri, "azure-service-principal-password", secrets["azure_sp_password"])
+    if "location" not in available_secrets:
+        if not secrets["location"]:
+            raise ValueError("Please provide a value for '--location'")
+        kv_client.set_secret(vault_uri, "location", secrets["location"])
 
 
 def write_backend_configuration(
@@ -282,20 +277,6 @@ def main():
         description="Initialise the Azure infrastructure needed by Terraform"
     )
     parser.add_argument(
-        "-a",
-        "--azure-group-id",
-        type=str,
-        default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
-        help="ID of an Azure group containing all developers. Default is Turing's 'All Users' group.",
-    )
-    parser.add_argument(
-        "-g",
-        "--resource-group",
-        type=str,
-        default="RG_TERRAFORM_BACKEND",
-        help="Resource group where the Terraform backend will be stored",
-    )
-    parser.add_argument(
         "-i",
         "--aws-key-id",
         type=str,
@@ -310,6 +291,32 @@ def main():
         help="AWS key for accessing TfL SCOOT data.",
     )
     parser.add_argument(
+        "-a",
+        "--azure-group-id",
+        type=str,
+        default="35cf3fea-9d3c-4a60-bd00-2c2cd78fbd4c",
+        help="ID of an Azure group containing all developers. Default is Turing's 'All Users' group.",
+    )
+    parser.add_argument(
+        "-n",
+        "--azure-sp-name",
+        type=str,
+        default="CleanAir",
+        help="Name of an Azure service principal that has Contributor permissions on the subscription.",
+    )
+    parser.add_argument(
+        "-s",
+        "--azure-sp-id",
+        type=str,
+        help="App ID for the Azure service principal named above.",
+    )
+    parser.add_argument(
+        "-p",
+        "--azure-sp-password",
+        type=str,
+        help="Password for the Azure service principal named above.",
+    )
+    parser.add_argument(
         "-l",
         "--location",
         type=str,
@@ -317,7 +324,13 @@ def main():
         help="Azure datacentre where the Terraform backend will be stored",
     )
     parser.add_argument(
-        "-s",
+        "-g",
+        "--resource-group",
+        type=str,
+        default="RG_TERRAFORM_BACKEND",
+        help="Resource group where the Terraform backend will be stored",
+    )
+    parser.add_argument(
         "--storage-container-name",
         type=str,
         default="terraformbackend",

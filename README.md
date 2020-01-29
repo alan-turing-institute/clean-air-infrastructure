@@ -101,6 +101,8 @@ Then set your default subscription to the Clean Air project (if you cannot see i
 az account set --subscription "CleanAir"
 ```
 
+Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the name, id and password.
+
 
 ## Login to Travis CLI
 
@@ -118,7 +120,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```bash
-python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
+python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY> -n <SERVICE_PRINCIPAL_NAME> -s <SERVICE_PRINCIPAL_ID> -p <SERVICE_PRINCIPAL_PASSWORD>
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
