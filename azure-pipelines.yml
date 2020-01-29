@@ -43,20 +43,28 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-      # Stage 1: Installation
-      - task: KubectlInstaller@0
-        displayName: 'Stage 1 Step 1: Install kubectl'
-        inputs:
-          kubectlVersion: '1.14.8'
+    # Stage 1: Installation
+    - task: KubectlInstaller@0
+      displayName: 'Stage 1 Step 1: Install kubectl'
+      inputs:
+        kubectlVersion: '1.14.8'
 
-      - task: AzureCLI@1
-        displayName: 'Stage 1 Step 2: Merge kubectl config'
-        inputs:
-          azureSubscription: 'cleanair-scn'
-          scriptLocation: 'inlineScript'
-          inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+    - task: AzureCLI@1
+      displayName: 'Stage 1 Step 2: Merge kubectl config'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
 
-      - task: HelmInstaller@1
-        displayName: 'Stage 1 Step 3: Install helm'
-        inputs:
-          helmVersionToInstall: '3.0.3'
+    - task: HelmInstaller@1
+      displayName: 'Stage 1 Step 3: Install helm'
+      inputs:
+        helmVersionToInstall: '3.0.3'
+
+    - script: |
+        cat kubernetes/cleanair/values.yaml
+      displayName: 'Cat values files'
+
+    - script: |
+        helm install kubernetes/cleanair/ --generate-name --dry-run
+      displayName: 'Helm install'
