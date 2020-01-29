@@ -4,6 +4,9 @@ trigger:
 
 pr: none
 
+variables:
+  version: "0.2.0"
+
 stages:
 # - stage: Docker
 #   displayName: Add new Docker images to ACR
@@ -43,13 +46,6 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    # Install helm 3
-    - script: |
-        # cat kubernetes/cleanair/values.yaml
-        echo $(Build.ArtifactStagingDirectory)
-        ls $(Build.ArtifactStagingDirectory)/
-        pwd
-      displayName: 'List directory'
     # Install kubectl
     - task: KubectlInstaller@0
       displayName: Install kubectl'
@@ -68,13 +64,9 @@ stages:
       inputs:
         helmVersionToInstall: '3.0.3'
     # Package helm chart
-    # - task: HelmDeploy@0
-    #   displayName: 'Package helm chart'
-    #   inputs:
-    #     command: package
-    #     chartPath: kubernetes/cleanair
-    #     destination: $(Build.ArtifactStagingDirectory)
     - script: |
+        sed 's/version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+        cat kubernetes/cleanair/Chart.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
       displayName: 'Package helm chart'
     # Install/upgrade helm chart
@@ -87,6 +79,6 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-v0.1.0.tgz
+        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-0.1.0.tgz
         releaseName: cleanair
         install: true
