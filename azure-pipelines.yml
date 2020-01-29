@@ -1,5 +1,6 @@
 trigger:
 - master
+- k8s_webserver
 
 pr: none
 
