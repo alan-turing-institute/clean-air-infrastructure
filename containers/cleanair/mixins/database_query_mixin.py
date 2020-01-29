@@ -13,7 +13,7 @@ from ..databases.tables import (
     AQESite,
     LAQNSite,
     LAQNReading,
-    AQEReading,
+    AQEReading
 )
 from ..loggers import get_logger
 
