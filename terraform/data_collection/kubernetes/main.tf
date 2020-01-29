@@ -82,11 +82,17 @@ data "azurerm_role_definition" "kubernetes_cluster_user" {
   name = "Azure Kubernetes Service Cluster User Role"
 }
 
+# ##[error]Error: Cannot download access profile/kube config file for the cluster cleanair-kubernetes.
+# Reason The client '90f9b685-9e8c-486a-b52b-703ea3f22d78' with object id '90f9b685-9e8c-486a-b52b-703ea3f22d78' does not have authorization to perform
+# action 'Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action' over
+# scope '/subscriptions/edab2992-222c-4caa-949b-e64e56e6b61f/resourceGroups/RG_CLEANAIR_DATA_COLLECTION'/providers/Microsoft.ContainerService/managedClusters/cleanair-kubernetes/accessProfiles/clusterUser' or the scope is invalid. If access was recently granted, please refresh your credentials. (CODE: 403).
+
+
 # :: grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${data.azurerm_resource_group.this.id}"
-  # role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
-  role_definition_id = "${data.azurerm_role_definition.kubernetes_cluster_user.id}"
+  role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
+  # role_definition_id = "${data.azurerm_role_definition.kubernetes_cluster_user.id}"
   principal_id       = "${data.azuread_service_principal.this.id}"
 }
 # # :: grant the managed identity for this VM "ACRPull" access to the container registry

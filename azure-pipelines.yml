@@ -48,6 +48,7 @@ stages:
         # cat kubernetes/cleanair/values.yaml
         echo $(Build.ArtifactStagingDirectory)
         ls $(Build.ArtifactStagingDirectory)/
+        pwd
       displayName: 'List directory'
     # Install kubectl
     - task: KubectlInstaller@0
@@ -70,8 +71,9 @@ stages:
     - task: HelmDeploy@0
       displayName: 'Install/upgrade helm chart'
       inputs:
+        connectionType: Azure Resource Manager
         azureSubscriptionEndpoint: 'cleanair-scn'
-        azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)'
+        azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
