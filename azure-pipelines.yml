@@ -45,9 +45,10 @@ stages:
     steps:
     # Install helm 3
     - script: |
-        cat kubernetes/cleanair/values.yaml
+        # cat kubernetes/cleanair/values.yaml
+        echo $(Build.ArtifactStagingDirectory)
         ls $(Build.ArtifactStagingDirectory)/
-      displayName: 'Cat values files'
+      displayName: 'List directory'
     # Install kubectl
     - task: KubectlInstaller@0
       displayName: Install kubectl'

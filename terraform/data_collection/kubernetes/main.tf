@@ -5,9 +5,28 @@ module "configuration" {
 }
 
 
-locals {
-  rg_scope = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
+# locals {
+#   rg_scope = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
+# }
+
+
+data "azurerm_resource_group" "this" {
+  name = "${var.resource_group}"
 }
+
+# resource "azurerm_resource_group" "example" {
+#   name     = "locked-resource-group"
+#   location = "West Europe"
+# }
+
+# resource "azurerm_management_lock" "resource-group-level" {
+#   name       = "resource-group-level"
+#   scope      =
+#   lock_level = "ReadOnly"
+#   notes      = "This Resource Group is Read-Only"
+# }
+
+
 
 # Deploy a Kubernetes cluster
 # ---------------------------
@@ -41,33 +60,31 @@ data "azuread_service_principal" "this" {
   application_id = "${module.configuration.azure_service_principal_id}"
 }
 
-# # :: create a role with appropriate permissions to run container instances
-# resource "azurerm_role_definition" "configure_kubernetes" {
-#   name        = "Configure Kubernetes"
-#   scope       = "${local.rg_scope}"
-#   description = "Configure Kubernetes cluster"
+# :: create a role with appropriate permissions to run container instances
+resource "azurerm_role_definition" "configure_kubernetes" {
+  name        = "Configure Kubernetes"
+  # scope       = "${local.rg_scope}"
+  scope       = "${data.azurerm_resource_group.this.id}"
+  description = "Configure Kubernetes cluster"
 
-#   permissions {
-#     actions = [
-#       "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
-#       "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action"
-#     ]
-#     not_actions = []
-#   }
-#   assignable_scopes = [
-#     "${local.rg_scope}"
-#   ]
-# }
-
-
+  permissions {
+    actions = [
+      "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
+      "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"
+    ]
+    not_actions = []
+  }
+  assignable_scopes = [
+    "${data.azurerm_resource_group.this.id}"
+  ]
+}
 data "azurerm_role_definition" "kubernetes_cluster_user" {
   name = "Azure Kubernetes Service Cluster User Role"
 }
 
-
 # :: grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
-  scope              = "${local.rg_scope}"
+  scope              = "${data.azurerm_resource_group.this.id}"
   # role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
   role_definition_id = "${data.azurerm_role_definition.kubernetes_cluster_user.id}"
   principal_id       = "${data.azuread_service_principal.this.id}"
