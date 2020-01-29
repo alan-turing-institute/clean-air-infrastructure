@@ -70,7 +70,10 @@ stages:
         helmVersionToInstall: '3.0.3'
     # Package Helm chart
     - script: |
+        helm list
+        helm delete cleanair --purge
         PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
+        echo "PKGVERSION: $PKGVERSION"
         echo "##vso[task.setvariable variable=pkgversion]$PKGVERSION"
         # sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
