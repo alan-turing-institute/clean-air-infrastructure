@@ -67,6 +67,13 @@ stages:
       displayName: 'Install helm 3'
       inputs:
         helmVersionToInstall: '3.0.3'
+    # Package helm chart
+    - task: HelmDeploy@0
+      displayName: 'Package helm chart'
+      inputs:
+        command: package
+        chartPath: kubernetes/cleanair
+        destination: $(Build.ArtifactStagingDirectory)
     # Install/upgrade helm chart
     - task: HelmDeploy@0
       displayName: 'Install/upgrade helm chart'
@@ -77,16 +84,6 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: kubernetes/cleanair/values.yaml
+        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-v0.1.0.tgz
         releaseName: cleanair
         install: true
-        # waitForExecution: false
-
-    # - script: |
-    #     helm list
-    #     if [ "$(helm list | grep cleanair)" == "" ]; then
-    #       helm install cleanair kubernetes/cleanair/
-    #     else
-    #       helm upgrade cleanair kubernetes/cleanair/
-    #     fi
-    #   displayName: 'Helm install'
