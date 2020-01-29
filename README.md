@@ -1,5 +1,8 @@
 # clean-air-infrastructure
+[![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
+
 Azure Infrastructure for the Clean Air project
+
 
 # Prerequisites
 To run this project you will need:
@@ -27,6 +30,12 @@ You can install the `Azure` Python SDK with `pip` using:
 pip install -r containers/requirements.txt
 ```
 
+## CleanAir package (optional)
+To run the clean air functionality locally (without a docker image) pip install it:
+
+```bash
+pip install -e containers
+```
 
 ## Terraform
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
@@ -95,7 +104,7 @@ az account set --subscription "CleanAir"
 
 ## Login to Travis CLI
 
-Login to travis with your github credentials, making sure you are in the Clean Air repository (travis automatically detects your repository):
+Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
 
 ```bash
 travis login --pro
@@ -109,7 +118,7 @@ We keep the backend in `Azure` storage so that everyone has a synchronised versi
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```bash
-python setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
+python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY>
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
@@ -117,7 +126,7 @@ This will only need to be run once (by anyone), but it's not a problem if you ru
 
 
 ## Building the Clean Air infrastructure with Terraform
-To build the `Terraform` infrastructure go to the `terraform` directory 
+To build the `Terraform` infrastructure go to the `terraform` directory
 
 ```
 cd terraform
@@ -149,12 +158,26 @@ to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should 
 
 # Initialising the input databases
 Terraform will now have created a number of databases. We need to add the datasets to the database.
-
 This is done using Docker images from the Azure container registry.
+You will need the username, password and server name for the Azure container registry.
+All of these will be stored as secrets in the `RG_CLEANAIR_INFRASTRUCTURE > cleanair-secrets` Azure KeyVault.
+
+## Using Travis (old)
 These Docker images are built by Travis whenever commits are made to the GitHub repository.
+Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Travis secrets.
 
 To run the next steps we need to ensure that Travis runs a build in order to add the Docker images to the Azure container registry created by Terraform.
 Either push to the GitHub repository, or rerun the last build by going to https://travis-ci.com/alan-turing-institute/clean-air-infrastructure/ and clicking on the `Restart build` button.
+This will build all of the Docker images and add them to the registry.
+
+## Using Azure pipelines (new)
+These Docker images are built by an Azure pipeline whenever commits are made to the master branch of the GitHub repository.
+Ensure that you have configured Azure pipelines to [use this GitHub repository](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/pipelines-get-started).
+Currently a pipeline is set up [here](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build).
+Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Azure pipeline Variables, using the [web interface to the pipeline](https://dev.azure.com)
+
+To run the next steps we need to ensure that this pipeline runs a build in order to add the Docker images to the Azure container registry created by Terraform.
+Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.
 This will build all of the Docker images and add them to the registry.
 
 
@@ -168,7 +191,7 @@ Please note that you may need to increase the available memory under `Docker > P
 From the root directory, running the command
 
 ```bash
-python setup/insert_static_datasets.py
+python cleanair_setup/insert_static_datasets.py
 ```
 
 will download the static datasets to temporary local storage and then upload them to the database.
@@ -179,7 +202,7 @@ The live datasets (like LAQN or AQE) are populated using daily jobs that create 
 We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
-- Run `python setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
+- Run `python cleanair_setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
 - In GitHub go to `clean-air-infrastructure > Settings > Deploy keys` and click on `Add deploy key`
 - Paste the key into `Key` and give it a memorable title (like `laqn-cleanair`)
 
@@ -210,7 +233,7 @@ To run the clean air docker images locally you will need to create a local secre
 Run the following to create a file with the database secrets:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
 ```
 
 ```
@@ -282,7 +305,7 @@ CREATE DATABASE cleanair_inputs_db;
 - Create a secret file with login information for the database with following commands:
 
 ```
-mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json  
+mkdir terraform/.secrets & touch terraform/.secrets/db_secrets.json
 ```
 
 ```
@@ -301,7 +324,7 @@ echo '{
 - Download static data and insert into the database:
 
 ```
-python setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
+python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
 
 

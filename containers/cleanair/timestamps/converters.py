@@ -12,8 +12,12 @@ def safe_strptime(naive_string, format_str):
     except ValueError:
         if naive_string[11:19] == "24:00:00":
             naive_string = naive_string[:11] + "23:59:59"
-            return datetime.datetime.strptime(naive_string, format_str) + datetime.timedelta(seconds=1)
-    raise ValueError("Time data '{}' does not match format '{}'".format(naive_string, format_str))
+            return datetime.datetime.strptime(
+                naive_string, format_str
+            ) + datetime.timedelta(seconds=1)
+    raise ValueError(
+        "Time data '{}' does not match format '{}'".format(naive_string, format_str)
+    )
 
 
 def datetime_from_str(naive_string, timezone, rounded=False):

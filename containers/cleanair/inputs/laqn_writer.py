@@ -15,6 +15,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
     """
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -32,10 +33,12 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Information/MonitoringSites/GroupName=London/Json"
             raw_data = self.get_response(endpoint, timeout=5.0).json()["Sites"]["Site"]
             # Remove sites with no opening date
-            processed_data = [site for site in raw_data if site['@DateOpened']]
+            processed_data = [site for site in raw_data if site["@DateOpened"]]
             if len(processed_data) != len(raw_data):
-                self.logger.warning("Excluded %i site(s) with no opening date from the database",
-                                    len(raw_data) - len(processed_data))
+                self.logger.warning(
+                    "Excluded %i site(s) with no opening date from the database",
+                    len(raw_data) - len(processed_data),
+                )
             return processed_data
         except requests.exceptions.HTTPError as error:
             self.logger.warning("Request to %s failed: %s", endpoint, error)
@@ -52,13 +55,17 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             endpoint = "http://api.erg.kcl.ac.uk/AirQuality/Data/Site/SiteCode={}/StartDate={}/EndDate={}/Json".format(
                 site_code, str(start_date), str(end_date)
             )
-            raw_data = self.get_response(endpoint, timeout=120.0).json()["AirQualityData"]["Data"]
+            raw_data = self.get_response(endpoint, timeout=120.0).json()[
+                "AirQualityData"
+            ]["Data"]
             # Drop duplicates
             processed_data = [dict(t) for t in {tuple(d.items()) for d in raw_data}]
             # Add the site_code
             for reading in processed_data:
                 reading["SiteCode"] = site_code
-                timestamp_start = datetime_from_str(reading.pop("@MeasurementDateGMT"), timezone="GMT", rounded=True)
+                timestamp_start = datetime_from_str(
+                    reading.pop("@MeasurementDateGMT"), timezone="GMT", rounded=True
+                )
                 timestamp_end = timestamp_start + datetime.timedelta(hours=1)
                 reading["MeasurementStartUTC"] = utcstr_from_datetime(timestamp_start)
                 reading["MeasurementEndUTC"] = utcstr_from_datetime(timestamp_end)
@@ -82,13 +89,21 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Requesting site info from %s", green("KCL API"))
 
             # Retrieve site entries (discarding any that do not have a known position)
-            site_entries = [s for s in self.request_site_entries() if s["@Latitude"] and s["@Longitude"]]
+            site_entries = [
+                s
+                for s in self.request_site_entries()
+                if s["@Latitude"] and s["@Longitude"]
+            ]
             for entry in site_entries:
-                entry["geometry"] = MetaPoint.build_ewkt(entry["@Latitude"], entry["@Longitude"])
+                entry["geometry"] = MetaPoint.build_ewkt(
+                    entry["@Latitude"], entry["@Longitude"]
+                )
 
             # Only consider unique sites
-            unique_sites = {s["geometry"]: MetaPoint.build_entry("laqn", geometry=s["geometry"])
-                            for s in site_entries}
+            unique_sites = {
+                s["geometry"]: MetaPoint.build_entry("laqn", geometry=s["geometry"])
+                for s in site_entries
+            }
 
             # Update the interest_points table and retrieve point IDs
             point_id = {}
@@ -105,9 +120,11 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             self.logger.info("Updating site info database records")
             for site in site_entries:
                 session.merge(LAQNSite.build_entry(site))
-            self.logger.info("Committing changes to database tables %s and %s",
-                             green(MetaPoint.__tablename__),
-                             green(LAQNSite.__tablename__))
+            self.logger.info(
+                "Committing changes to database tables %s and %s",
+                green(MetaPoint.__tablename__),
+                green(LAQNSite.__tablename__),
+            )
             session.commit()
 
     def update_reading_table(self, usecore=True):
@@ -118,26 +135,34 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
             # Load readings for all sites and update the database accordingly
             site_info_query = session.query(LAQNSite)
-            self.logger.info("Requesting readings from %s for %s sites",
-                             green("KCL API"), green(len(list(site_info_query))))
+            self.logger.info(
+                "Requesting readings from %s for %s sites",
+                green("KCL API"),
+                green(len(list(site_info_query))),
+            )
 
         # Get all readings for each site between its start and end dates and update the database
-        site_readings = self.get_readings_by_site(site_info_query, self.start_date, self.end_date)
-        site_records = [LAQNReading.build_entry(site_reading, return_dict=usecore)
-                        for site_reading in site_readings]
+        site_readings = self.get_readings_by_site(
+            site_info_query, self.start_date, self.end_date
+        )
+        site_records = [
+            LAQNReading.build_entry(site_reading, return_dict=usecore)
+            for site_reading in site_readings
+        ]
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
             # Commit the records to the database
-            if usecore:
-                self.commit_records(session, site_records, table=LAQNReading)
-            else:
-                self.commit_records(session, site_records)
+            self.commit_records(
+                session, site_records, table=LAQNReading, on_conflict_do_nothing=True
+            )
 
             # Commit changes
-            self.logger.info("Committing %s records to database table %s",
-                             green(len(site_readings)),
-                             green(LAQNReading.__tablename__))
+            self.logger.info(
+                "Committing %s records to database table %s",
+                green(len(site_readings)),
+                green(LAQNReading.__tablename__),
+            )
 
         self.logger.info("Finished %s readings update", green("LAQN"))
 

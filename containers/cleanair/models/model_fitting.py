@@ -7,7 +7,7 @@ import numpy as np
 from ..loggers import get_logger
 
 
-class SVGP():
+class SVGP:
     """Model fitting class"""
 
     def __init__(self):
@@ -25,7 +25,7 @@ class SVGP():
         """Optimization step for gpflow"""
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(self.model.trainable_variables)
-            objective = - self.model.elbo(*batch)
+            objective = -self.model.elbo(*batch)
             grads = tape.gradient(objective, self.model.trainable_variables)
         optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
         return objective
@@ -44,7 +44,7 @@ class SVGP():
         train_it = iter(train_dataset.batch(minibatch_size))
         adam = tf.optimizers.Adam()
         for step in range(iterations):
-            elbo = (- self.optimization_step(adam, next(train_it))).numpy()
+            elbo = (-self.optimization_step(adam, next(train_it))).numpy()
             logf.append(elbo)
             if step % refresh == 0:
                 self.logger.info("Model fitting. Iteration: %s, ELBO: %s", step, elbo)
@@ -81,23 +81,38 @@ class SVGP():
         #     n_inducing_points=int(n_data_points * .2))
         #     self.logger.info('Model fitting: No model_params provided. Using defaults')
 
-        if model_params['n_inducing_points'] > n_data_points:
+        if model_params["n_inducing_points"] > n_data_points:
             raise ValueError(
-                "model_params['n_inducing_points'] is larger than the number of data points {}".format(n_data_points))
+                "model_params['n_inducing_points'] is larger than the number of data points {}".format(
+                    n_data_points
+                )
+            )
 
         # Slice data for batches
-        train_dataset = tf.data.Dataset.from_tensor_slices((x_array, y_array)).repeat().shuffle(n_data_points)
+        train_dataset = (
+            tf.data.Dataset.from_tensor_slices((x_array, y_array))
+            .repeat()
+            .shuffle(n_data_points)
+        )
 
-        z_array = kmeans2(x_array, model_params['n_inducing_points'], minit='points')[0]
+        z_array = kmeans2(x_array, model_params["n_inducing_points"], minit="points")[0]
 
         # Define model
-        kernel = gpflow.kernels.RBF(k_covariates, lengthscale=model_params['lengthscale'])
-        self.model = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(variance=model_params['variance']), z_array)
+        kernel = gpflow.kernels.RBF(
+            k_covariates, lengthscale=model_params["lengthscale"]
+        )
+        self.model = gpflow.models.SVGP(
+            kernel,
+            gpflow.likelihoods.Gaussian(variance=model_params["variance"]),
+            z_array,
+        )
         # We turn of training for inducing point locations
         gpflow.utilities.set_trainable(self.model.inducing_variable, False)
 
         # Fit the model
-        self.logf = self.run_adam(train_dataset, max_iter, model_params['minibatch_size'], refresh=refresh)
+        self.logf = self.run_adam(
+            train_dataset, max_iter, model_params["minibatch_size"], refresh=refresh
+        )
 
     def predict(self, X):
         """Predict values Y from X
@@ -123,5 +138,7 @@ class SVGP():
         """
 
         if self.fit_start_time:
-            return {'logf': self.logf, 'fit_start_time': self.fit_start_time}
-        raise AttributeError("There are no model fit results. Call SVGP.fit() to fit the model")
+            return {"logf": self.logf, "fit_start_time": self.fit_start_time}
+        raise AttributeError(
+            "There are no model fit results. Call SVGP.fit() to fit the model"
+        )
