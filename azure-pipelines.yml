@@ -38,26 +38,65 @@ stages:
 #       displayName: 'Push Docker images to ACR'
 
 
+# - stage: Kubernetes
+#   displayName: Update Helm chart on Azure Kubernetes cluster
+#   jobs:
+#   - job: UpdateAzureKubernetesHelmChart
+#     displayName: Install kubectl and install/upgrade helm
+#     pool:
+#       vmImage: 'ubuntu-latest'
+#     steps:
+#     # Install kubectl
+#     - task: KubectlInstaller@0
+#       displayName: 'Install kubectl'
+#       inputs:
+#         kubectlVersion: '1.14.8'
+#     # Get Azure credentials
+#     - task: AzureCLI@1
+#       displayName: 'Get Azure credentials'
+#       inputs:
+#         azureSubscription: 'cleanair-scn'
+#         scriptLocation: 'inlineScript'
+#         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+#     # Install helm 3
+#     - task: HelmInstaller@1
+#       displayName: 'Install helm 3'
+#       inputs:
+#         helmVersionToInstall: '3.0.3'
+#     # Package helm chart
+#     - script: |
+#         sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+#         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+#         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
+#       displayName: 'Package helm chart'
+#     # Install/upgrade helm chart
+#     - task: HelmDeploy@0
+#       displayName: 'Install/upgrade helm chart'
+#       inputs:
+#         connectionType: Azure Resource Manager
+#         azureSubscriptionEndpoint: 'cleanair-scn'
+#         azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)
+#         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
+#         command: upgrade
+#         chartType: filepath
+#         chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(version).tgz
+#         releaseName: cleanair
+#         install: true
+
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
   jobs:
-  - job: UpdateAzureKubernetesHelmChart
-    displayName: Install kubectl and install/upgrade helm
+  # Prepare Helm Chart
+  - job: PrepareHelmChart
+    displayName: Install kubectl and prepare helm chart
     pool:
       vmImage: 'ubuntu-latest'
     steps:
     # Install kubectl
     - task: KubectlInstaller@0
-      displayName: Install kubectl'
+      displayName: 'Install kubectl'
       inputs:
         kubectlVersion: '1.14.8'
-    # Get Azure credentials
-    - task: AzureCLI@1
-      displayName: 'Get Azure credentials'
-      inputs:
-        azureSubscription: 'cleanair-scn'
-        scriptLocation: 'inlineScript'
-        inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
     # Install helm 3
     - task: HelmInstaller@1
       displayName: 'Install helm 3'
@@ -67,10 +106,20 @@ stages:
     - script: |
         sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
-        cat kubernetes/cleanair/Chart.yaml
-        cat kubernetes/cleanair/values.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
       displayName: 'Package helm chart'
+  # Install Helm Chart
+  - job: InstallHelmChart
+    displayName: Install helm chart on Azure Kubernetes cluster
+    pool:
+      vmImage: 'ubuntu-latest'
+    # Get Azure credentials
+    - task: AzureCLI@1
+      displayName: 'Get Azure credentials'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
     # Install/upgrade helm chart
     - task: HelmDeploy@0
       displayName: 'Install/upgrade helm chart'
@@ -81,6 +130,6 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-0.1.0.tgz
+        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(version).tgz
         releaseName: cleanair
         install: true
