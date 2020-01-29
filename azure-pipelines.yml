@@ -77,7 +77,7 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: $(Build.ArtifactStagingDirectory)/kubernetes/cleanair/values.yaml
+        chartPath: kubernetes/cleanair/values.yaml
         releaseName: cleanair
         install: true
         # waitForExecution: false
