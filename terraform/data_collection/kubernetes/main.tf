@@ -41,26 +41,35 @@ data "azuread_service_principal" "this" {
   application_id = "${module.configuration.azure_service_principal_id}"
 }
 
-# :: create a role with appropriate permissions to run container instances
-resource "azurerm_role_definition" "configure_kubernetes" {
-  name        = "Configure Kubernetes"
-  scope       = "${local.rg_scope}"
-  description = "Configure Kubernetes cluster"
+# # :: create a role with appropriate permissions to run container instances
+# resource "azurerm_role_definition" "configure_kubernetes" {
+#   name        = "Configure Kubernetes"
+#   scope       = "${local.rg_scope}"
+#   description = "Configure Kubernetes cluster"
 
-  permissions {
-    actions = [
-      "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"
-    ]
-    not_actions = []
-  }
-  assignable_scopes = [
-    "${local.rg_scope}"
-  ]
+#   permissions {
+#     actions = [
+#       "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
+#       "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action"
+#     ]
+#     not_actions = []
+#   }
+#   assignable_scopes = [
+#     "${local.rg_scope}"
+#   ]
+# }
+
+
+data "azurerm_role_definition" "kubernetes_cluster_user" {
+  name = "Azure Kubernetes Service Cluster User Role"
 }
+
+
 # :: grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${local.rg_scope}"
-  role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
+  # role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
+  role_definition_id = "${data.azurerm_role_definition.kubernetes_cluster_user.id}"
   principal_id       = "${data.azuread_service_principal.this.id}"
 }
 # # :: grant the managed identity for this VM "ACRPull" access to the container registry

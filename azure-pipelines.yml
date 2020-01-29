@@ -38,36 +38,36 @@ stages:
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
   jobs:
-  - job: DoSomeKubernetesThings
-    displayName: Build and DoSomeKubernetesThings
+  - job: UpdateAzureKubernetesHelmChart
+    displayName: Install kubectl and install/upgrade helm
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    # Stage 1: Installation
+    # Install helm 3
+    - script: |
+        cat kubernetes/cleanair/values.yaml
+        ls $(Build.ArtifactStagingDirectory)/
+      displayName: 'Cat values files'
+    # Install kubectl
     - task: KubectlInstaller@0
       displayName: Install kubectl'
       inputs:
         kubectlVersion: '1.14.8'
-
+    # Get Azure credentials
     - task: AzureCLI@1
       displayName: 'Get Azure credentials'
       inputs:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
-
+    # Install helm 3
     - task: HelmInstaller@1
-      displayName: 'Install helm'
+      displayName: 'Install helm 3'
       inputs:
         helmVersionToInstall: '3.0.3'
-
-    - script: |
-        cat kubernetes/cleanair/values.yaml
-        ls $(Build.ArtifactStagingDirectory)/
-      displayName: 'Cat values files'
-
+    # Install/upgrade helm chart
     - task: HelmDeploy@0
-      displayName: Helm upgrade
+      displayName: 'Install/upgrade helm chart'
       inputs:
         azureSubscriptionEndpoint: 'cleanair-scn'
         azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)'
