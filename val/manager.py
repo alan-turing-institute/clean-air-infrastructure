@@ -42,13 +42,11 @@ def main():
         pass
 
     if args.validate:
-        exp = util.load_experiment_from_directory(**vars(args))
-        exp.update_model_data_list(update_train=False, update_test=True)
-        for model_data in exp.model_data_list:
-            scores_df = metrics.measure_scores_by_sensor(model_data.normalised_training_data_df, metrics.get_metric_methods())
-            point_df = metrics.concat_static_features_with_scores(scores_df, model_data.normalised_training_data_df)
-            print(point_df)
-            print()
+        xp = util.load_experiment_from_directory(**vars(args))
+        xp.update_model_data_list(update_train=False, update_test=True)
+        sensor_scores_df, temporal_scores_df = metrics.evaluate_experiment(xp, metrics.get_metric_methods(), evaluate_training=True, evaluate_testing=False)
+        print(sensor_scores_df)
+        print(temporal_scores_df)
 
     if args.dashboard:
         # update the experiment results

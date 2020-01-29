@@ -53,15 +53,19 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
         'experiment_name', 'instance_id' 'cluster_name', 'param_id',
         'data_id', 'training_set', 'testing_set'
     ]
-    sensor_cols = cols.copy().append('point_id')
-    temporal_cols = cols.copy().append('measurement_start_utc')
+    sensor_cols = cols.copy()
+    temporal_cols = cols.copy()
+    sensor_cols.append('point_id')
+    temporal_cols.append('measurement_start_utc')
 
     # add columns that will measure the metrics for each pollutant
     list_of_species = xp.model_data_list[0].config['species'].copy()
+    print('List of species:', list_of_species)
     metric_cols = [
         '{species}_{mtc}'.format(species=s, mtc=m)
         for s, m in itertools.product(list_of_species, metric_methods.keys())
     ]
+    print('Metric cols:', metric_cols)
     sensor_cols.extend(metric_cols)
     temporal_cols.extend(metric_cols)
 
@@ -106,6 +110,8 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
             training_temporal_scores_df['testing_set'] = False
 
             # ToDo: append to dataframe
+            sensor_scores_df = sensor_scores_df.append(training_sensor_scores_df, ignore_index=True)
+            temporal_scores_df = temporal_scores_df.append(training_temporal_scores_df, ignore_index=True)
 
         if evaluate_testing:
             # evaluate testing predictions of sensors over the whole testing period
@@ -136,7 +142,8 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
             testing_temporal_scores_df['testing_set'] = True
 
             # ToDo: append to dataframe
-
+            sensor_scores_df = sensor_scores_df.append(testing_sensor_scores_df, ignore_index=True)
+            temporal_scores_df = temporal_scores_df.append(testing_temporal_scores_df, ignore_index=True)
 
     return sensor_scores_df, temporal_scores_df
 
@@ -252,5 +259,8 @@ def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat
     return pd.concat([scores_df, point_df], axis=1, ignore_index=False)
 
 def __remove_rows_with_nans(pred_df, pred_cols=['NO2_mean'], test_cols=['NO2']):
-    return pred_df.loc[pred_df[pred_cols.copy().extend(test_cols)].dropna().index]
+    cols_to_check = pred_cols.copy()
+    cols_to_check.extend(test_cols)
+    print(cols_to_check)
+    return pred_df.loc[pred_df[cols_to_check].dropna().index]
     
