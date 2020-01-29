@@ -136,13 +136,18 @@ class SVGP:
         # Predict in batches
         n_batches = math.ceil(x_pred_size / batch_size)
         for idx in range(0, x_pred_size, batch_size):
-            self.logger.info("Predicting %s points. Batch %s of %s with batch size %s",
-                             x_pred_size, idx//batch_size + 1, n_batches, batch_size)
+            self.logger.info(
+                "Predicting %s points. Batch %s of %s with batch size %s",
+                x_pred_size,
+                idx // batch_size + 1,
+                n_batches,
+                batch_size,
+            )
 
-            x_pred_batch = x_pred_array[idx:idx+batch_size]
+            x_pred_batch = x_pred_array[idx : idx + batch_size]
             tmp_mean, tmp_var = self.model.predict_y(x_pred_batch)
-            mean_pred[idx:idx+tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
-            var_pred[idx:idx+tmp_var.shape[0]] = tmp_var.numpy().squeeze()
+            mean_pred[idx : idx + tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
+            var_pred[idx : idx + tmp_var.shape[0]] = tmp_var.numpy().squeeze()
 
         self.logger.info("Model prediction: Finished")
 
