@@ -66,5 +66,10 @@ stages:
       displayName: 'Cat values files'
 
     - script: |
-        helm install kubernetes/cleanair/ --generate-name --dry-run
+        helm list
+        if [ "$(helm list | grep cleanair)" == "" ]; then
+          helm install cleanair kubernetes/cleanair/
+        else
+          helm upgrade cleanair kubernetes/cleanair/
+        fi
       displayName: 'Helm install'
