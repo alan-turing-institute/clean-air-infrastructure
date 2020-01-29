@@ -71,13 +71,11 @@ stages:
     # Package Helm chart
     - script: |
         helm list
-        helm delete cleanair --purge
-        PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
-        echo "PKGVERSION: $PKGVERSION"
-        echo "##vso[task.setvariable variable=pkgversion]$PKGVERSION"
-        # sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+        helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
+        PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
+        echo "##vso[task.setvariable variable=pkgversion]$PKGVERSION"
       displayName: 'Package Helm chart'
     # Install/upgrade Helm chart
     - task: HelmDeploy@0
