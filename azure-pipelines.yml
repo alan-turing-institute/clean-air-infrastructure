@@ -5,34 +5,34 @@ trigger:
 pr: none
 
 stages:
-- stage: Docker
-  displayName: Add new Docker images to ACR
-  jobs:
-  # - job: BuildAndPushDocker
-  #   displayName: Build and register Docker images
-  #   pool:
-  #     vmImage: 'ubuntu-latest'
-  #   steps:
-  #   - script: |
-  #       docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-  #     displayName: 'Build AQE'
-  #   - script: |
-  #       docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-  #     displayName: 'Build LAQN'
-  #   - script: |
-  #       docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-  #     displayName: 'Build SCOOT'
-  #   - script: |
-  #       docker images
-  #     displayName: 'List images'
-  #   - script: |
-  #       echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
-  #     displayName: 'Login to ACR'
-  #   - script: |
-  #       docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
-  #       docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
-  #       docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
-  #     displayName: 'Push Docker images to ACR'
+# - stage: Docker
+#   displayName: Add new Docker images to ACR
+#   jobs:
+#   - job: BuildAndPushDocker
+#     displayName: Build and register Docker images
+#     pool:
+#       vmImage: 'ubuntu-latest'
+#     steps:
+#     - script: |
+#         docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+#       displayName: 'Build AQE'
+#     - script: |
+#         docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+#       displayName: 'Build LAQN'
+#     - script: |
+#         docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+#       displayName: 'Build SCOOT'
+#     - script: |
+#         docker images
+#       displayName: 'List images'
+#     - script: |
+#         echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
+#       displayName: 'Login to ACR'
+#     - script: |
+#         docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
+#         docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
+#         docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
+#       displayName: 'Push Docker images to ACR'
 
 
 - stage: Kubernetes
@@ -63,13 +63,27 @@ stages:
 
     - script: |
         cat kubernetes/cleanair/values.yaml
+        ls $(Build.ArtifactStagingDirectory)/
       displayName: 'Cat values files'
 
-    - script: |
-        helm list
-        if [ "$(helm list | grep cleanair)" == "" ]; then
-          helm install cleanair kubernetes/cleanair/
-        else
-          helm upgrade cleanair kubernetes/cleanair/
-        fi
-      displayName: 'Helm install'
+    - task: HelmDeploy@0
+      displayName: Helm upgrade
+      inputs:
+        azureSubscriptionEndpoint: 'cleanair-scn'
+        azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)'
+        kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
+        command: upgrade
+        chartType: filepath
+        chartPath: $(Build.ArtifactStagingDirectory)/kubernetes/cleanair/values.yaml
+        releaseName: cleanair
+        install: true
+        # waitForExecution: false
+
+    # - script: |
+    #     helm list
+    #     if [ "$(helm list | grep cleanair)" == "" ]; then
+    #       helm install cleanair kubernetes/cleanair/
+    #     else
+    #       helm upgrade cleanair kubernetes/cleanair/
+    #     fi
+    #   displayName: 'Helm install'
