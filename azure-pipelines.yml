@@ -65,8 +65,10 @@ stages:
         helmVersionToInstall: '3.0.3'
     # Package helm chart
     - script: |
-        sed 's/version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+        sed -i 's/^version:.*$/version: $(version)/' kubernetes/cleanair/Chart.yaml
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         cat kubernetes/cleanair/Chart.yaml
+        cat kubernetes/cleanair/values.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
       displayName: 'Package helm chart'
     # Install/upgrade helm chart
