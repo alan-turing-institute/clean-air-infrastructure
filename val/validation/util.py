@@ -49,6 +49,10 @@ def load_experiment_from_directory(name, experiments_directory='experiment_data/
     experiment_params_dict['name'] = name
 
     return get_experiment_class(name)(model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiments_directory, **experiment_params_dict)
+
+def save_experiment_scores_df(xp, scores_df, filename):
+    filepath = os.path.join(xp.experiments_directory, xp.name, 'meta', filename)
+    scores_df.to_csv(filepath)
     
 def get_experiment_class(name):
     """

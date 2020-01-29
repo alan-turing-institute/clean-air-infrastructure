@@ -50,7 +50,7 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
     """
     # the basic cols that every scoring dataframe should have
     cols = [
-        'experiment_name', 'instance_id' 'cluster_name', 'param_id',
+        'experiment_name', 'instance_id', 'cluster_name', 'param_id',
         'data_id', 'training_set', 'testing_set'
     ]
     sensor_cols = cols.copy()
@@ -87,6 +87,7 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
                 pred_cols=pred_cols, test_cols=test_cols
             )
             # add columns to training sensor dataframe
+            training_sensor_scores_df['point_id'] = training_sensor_scores_df.index.copy()
             training_sensor_scores_df['experiment_name'] = xp.name
             training_sensor_scores_df['instance_id'] = index
             training_sensor_scores_df['cluster_name'] = xp.cluster
@@ -101,6 +102,7 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
                 pred_cols=pred_cols, test_cols=test_cols
             )
             # add columns to training temporal dataframe
+            training_temporal_scores_df['measurement_start_utc'] = training_temporal_scores_df.index.copy()
             training_temporal_scores_df['experiment_name'] = xp.name
             training_temporal_scores_df['instance_id'] = index
             training_temporal_scores_df['cluster_name'] = xp.cluster
@@ -120,6 +122,7 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
                 pred_cols=pred_cols, test_cols=test_cols
             )
             # add columns to training sensor dataframe
+            testing_sensor_scores_df['point_id'] = testing_sensor_scores_df.index.copy()
             testing_sensor_scores_df['experiment_name'] = xp.name
             testing_sensor_scores_df['instance_id'] = index
             testing_sensor_scores_df['cluster_name'] = xp.cluster
@@ -133,6 +136,7 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
                 pred_cols=pred_cols, test_cols=test_cols
             )
             # add columns to training temporal dataframe
+            testing_temporal_scores_df['measurement_start_utc'] = testing_temporal_scores_df.index.copy()
             testing_temporal_scores_df['experiment_name'] = xp.name
             testing_temporal_scores_df['instance_id'] = index
             testing_temporal_scores_df['cluster_name'] = xp.cluster
@@ -224,9 +228,9 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
     return pd.concat([
         pd.Series(gb.apply(
             lambda x : method(x[test_cols[0]], x[pred_cols[0]])
-        ), name='{species}_{metric}'.format(species=test_cols, metric=key))
+        ), name='{species}_{metric}'.format(species=test_cols[0], metric=key))
         for key, method in metric_methods.items()
-    ], axis=1, names=metric_methods.keys())
+    ], axis=1)
 
 def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_cols=['NO2_mean'], test_cols=['NO2']):
     """
@@ -241,9 +245,9 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
     return pd.concat([
         pd.Series(gb.apply(
             lambda x : method(x[test_cols], x[pred_cols])
-        ), name=key)
+        ), name='{species}_{metric}'.format(species=test_cols[0], metric=key))
         for key, method in metric_methods.items()
-    ], axis=1, names=metric_methods.keys())
+    ], axis=1)
 
 def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat', 'lon']):
     """
@@ -261,6 +265,5 @@ def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat
 def __remove_rows_with_nans(pred_df, pred_cols=['NO2_mean'], test_cols=['NO2']):
     cols_to_check = pred_cols.copy()
     cols_to_check.extend(test_cols)
-    print(cols_to_check)
     return pred_df.loc[pred_df[cols_to_check].dropna().index]
     
