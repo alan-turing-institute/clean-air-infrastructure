@@ -37,7 +37,7 @@ resource "azurerm_kubernetes_cluster" "this" {
 
 # Set permissions for the pre-existing service principal
 # ------------------------------------------------------
-resource "azurerm_azuread_service_principal" "this" {
+data "azuread_service_principal" "this" {
   application_id = "${module.configuration.azure_service_principal_id}"
 }
 
@@ -61,7 +61,7 @@ resource "azurerm_role_definition" "configure_kubernetes" {
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${local.rg_scope}"
   role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
-  principal_id       = "${azurerm_azuread_service_principal.this.id}"
+  principal_id       = "${data.azuread_service_principal.this.id}"
 }
 # # :: grant the managed identity for this VM "ACRPull" access to the container registry
 # resource "azurerm_role_assignment" "orchestrator_get_image" {

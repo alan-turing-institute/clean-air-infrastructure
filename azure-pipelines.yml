@@ -8,31 +8,31 @@ stages:
 - stage: Docker
   displayName: Add new Docker images to ACR
   jobs:
-  - job: BuildAndPushDocker
-    displayName: Build and register Docker images
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - script: |
-        docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-      displayName: 'Build AQE'
-    - script: |
-        docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-      displayName: 'Build LAQN'
-    - script: |
-        docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-      displayName: 'Build SCOOT'
-    - script: |
-        docker images
-      displayName: 'List images'
-    - script: |
-        echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
-      displayName: 'Login to ACR'
-    - script: |
-        docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
-        docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
-        docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
-      displayName: 'Push Docker images to ACR'
+  # - job: BuildAndPushDocker
+  #   displayName: Build and register Docker images
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   steps:
+  #   - script: |
+  #       docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+  #     displayName: 'Build AQE'
+  #   - script: |
+  #       docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+  #     displayName: 'Build LAQN'
+  #   - script: |
+  #       docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+  #     displayName: 'Build SCOOT'
+  #   - script: |
+  #       docker images
+  #     displayName: 'List images'
+  #   - script: |
+  #       echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
+  #     displayName: 'Login to ACR'
+  #   - script: |
+  #       docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
+  #       docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
+  #       docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
+  #     displayName: 'Push Docker images to ACR'
 
 
 - stage: Kubernetes
@@ -45,21 +45,21 @@ stages:
     steps:
     # Stage 1: Installation
     - task: KubectlInstaller@0
-      displayName: 'Stage 1 Step 1: Install kubectl'
+      displayName: Install kubectl'
       inputs:
         kubectlVersion: '1.14.8'
 
-    # - task: AzureCLI@1
-    #   displayName: 'Stage 1 Step 2: Merge kubectl config'
-    #   inputs:
-    #     azureSubscription: 'cleanair-scn'
-    #     scriptLocation: 'inlineScript'
-    #     inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+    - task: AzureCLI@1
+      displayName: 'Get Azure credentials'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        scriptLocation: 'inlineScript'
+        inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
 
-    # - task: HelmInstaller@1
-    #   displayName: 'Stage 1 Step 3: Install helm'
-    #   inputs:
-    #     helmVersionToInstall: '3.0.3'
+    - task: HelmInstaller@1
+      displayName: 'Install helm'
+      inputs:
+        helmVersionToInstall: '3.0.3'
 
     - script: |
         cat kubernetes/cleanair/values.yaml
