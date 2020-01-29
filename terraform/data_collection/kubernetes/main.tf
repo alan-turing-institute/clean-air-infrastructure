@@ -4,6 +4,11 @@ module "configuration" {
   source = "../../configuration"
 }
 
+
+locals {
+  rg_scope = "/subscriptions/${module.configuration.subscription_id}/resourcegroups/${var.resource_group}"
+}
+
 # Deploy a Kubernetes cluster
 # ---------------------------
 resource "azurerm_kubernetes_cluster" "this" {
@@ -12,11 +17,10 @@ resource "azurerm_kubernetes_cluster" "this" {
   resource_group_name = "${var.resource_group}"
   dns_prefix          = "${var.cluster_name}"
 
-  agent_pool_profile {
+  default_node_pool {
     name            = "default"
-    count           = 1
+    node_count      = 1
     vm_size         = "Standard_D2_v2"
-    os_type         = "Linux"
     os_disk_size_gb = 30
   }
 
@@ -31,12 +35,12 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 }
 
-# Set permissions for managed identity
-# ------------------------------------
+# Set permissions for the pre-existing service principal
+# ------------------------------------------------------
 # :: create a role with appropriate permissions to run container instances
 resource "azurerm_role_definition" "configure_kubernetes" {
   name        = "Configure Kubernetes"
-  scope       = "${local.rg_data_collection_scope}"
+  scope       = "${local.rg_scope}"
   description = "Configure Kubernetes cluster"
 
   permissions {
@@ -46,12 +50,12 @@ resource "azurerm_role_definition" "configure_kubernetes" {
     not_actions = []
   }
   assignable_scopes = [
-    "${local.rg_data_collection_scope}"
+    "${local.rg_scope}"
   ]
 }
 # :: grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
-  scope              = "${local.rg_data_collection_scope}"
+  scope              = "${local.rg_scope}"
   role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
   principal_id       = "${module.configuration.azure_service_principal_id}"
 }

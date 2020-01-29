@@ -1,13 +1,13 @@
 # Setup required providers
 provider "azurerm" {
-  version = "~>1.34"
+  version = "~>1.42"
 }
 provider "external" {
   version = "~> 1.2"
 }
 provider "random" {
-  version = "~>2.1"
+  version = "~>2.2"
 }
 provider "template" {
-  version = "~> 2.1"
+  version = "~> 2.1.2"
 }
