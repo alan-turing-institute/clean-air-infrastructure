@@ -105,7 +105,6 @@ Create an Azure service principal using the documentation for the [Azure CLI](ht
 
 
 ## Login to Travis CLI
-
 Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
 
 ```bash

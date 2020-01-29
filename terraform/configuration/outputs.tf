@@ -31,6 +31,30 @@ output "azure_group_id" {
   description = "ID of a group containing all accounts that will be allowed to access the infrastructure"
   value       = "${data.external.azure_group_id.result.value}"
 }
+# :: Azure service principal name
+data "external" "azure_service_principal_name" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "azure-service-principal-name", "--query", "{value: value}"]
+}
+output "azure_service_principal_name" {
+  description = "Name of the service principal used by the Kubernetes cluster"
+  value       = "${data.external.azure_service_principal_name.result.value}"
+}
+# :: Azure service principal id
+data "external" "azure_service_principal_id" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "azure-service-principal-id", "--query", "{value: value}"]
+}
+output "azure_service_principal_id" {
+  description = "ID of the service principal used by the Kubernetes cluster"
+  value       = "${data.external.azure_service_principal_id.result.value}"
+}
+# :: Azure service principal password
+data "external" "azure_service_principal_password" {
+  program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "azure-service-principal-password", "--query", "{value: value}"]
+}
+output "azure_service_principal_password" {
+  description = "Password for the service principal used by the Kubernetes cluster"
+  value       = "${data.external.azure_service_principal_password.result.value}"
+}
 # :: SCOOT AWS key
 data "external" "scoot_aws_key" {
   program = ["az", "keyvault", "secret", "show", "--vault-name", "terraform-configuration", "--name", "scoot-aws-key", "--query", "{value: value}"]

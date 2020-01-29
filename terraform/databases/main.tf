@@ -17,10 +17,10 @@ resource "azurerm_resource_group" "this" {
 
 # Create the inputs database
 # --------------------------
-module "inputs" {
+module "postgres" {
   source         = "./postgres"
   db_name        = "cleanair-inputs"
-  db_size_gb     = 20
+  db_size_gb     = 375 #20
   key_vault_id   = "${var.infrastructure.key_vault.id}"
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"

@@ -28,3 +28,9 @@ module "container_orchestrator" {
   networking     = module.networking
   resource_group = "${azurerm_resource_group.this.name}"
 }
+
+# Set up a Kubernetes cluster to orchestrate the containers
+module "kubernetes" {
+  source         = "./kubernetes"
+  resource_group = "${azurerm_resource_group.this.name}"
+}

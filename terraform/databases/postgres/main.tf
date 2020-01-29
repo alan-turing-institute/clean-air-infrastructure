@@ -66,8 +66,8 @@ resource "azurerm_postgresql_server" "this" {
   resource_group_name = "${var.resource_group}"
 
   sku {
-    name     = "MO_Gen5_2"
-    capacity = 2
+    name     = "MO_Gen5_4"
+    capacity = 4
     tier     = "MemoryOptimized"
     family   = "Gen5"
   }
