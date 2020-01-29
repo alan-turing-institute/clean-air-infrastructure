@@ -19,6 +19,7 @@ from .scoot_tables import (
     ScootRoadMatch,
     ScootRoadUnmatched,
     ScootRoadReading,
+    ScootRoadInverseDistance,
 )
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon
@@ -52,6 +53,7 @@ __all__ = [
     "ScootRoadMatch",
     "ScootRoadUnmatched",
     "ScootRoadReading",
+    "ScootRoadInverseDistance",
     "UKMap",
     "StreetCanyon",
     "ModelResult",

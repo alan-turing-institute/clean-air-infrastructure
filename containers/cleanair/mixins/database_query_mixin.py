@@ -7,16 +7,16 @@ from sqlalchemy import func
 from sqlalchemy import null, literal, and_
 from ..decorators import db_query
 from ..databases.tables import (
-    LondonBoundary,
+    AQEReading,
+    AQESite,
     IntersectionValue,
     IntersectionValueDynamic,
-    MetaPoint,
-    AQESite,
-    LAQNSite,
     LAQNReading,
-    AQEReading,
-    ScootReading,
+    LAQNSite,
+    LondonBoundary,
+    MetaPoint,
     SatelliteForecastReading,
+    ScootReading,
 )
 from ..loggers import get_logger
 

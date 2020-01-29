@@ -128,6 +128,22 @@ class ScootRoadUnmatched(Base):
         return "<ScootRoadUnmatch(" + ", ".join(vals)
 
 
+class ScootRoadInverseDistance(Base):
+    """Table of total inverse road distance to each scoot sensor for each road segment"""
+
+    __tablename__ = "scoot_total_inverse_distance"
+    __table_args__ = {"schema": "dynamic_features"}
+
+    road_toid = Column(
+        String(),
+        ForeignKey("static_data.oshighway_roadlink.toid"),
+        primary_key=True,
+        nullable=False,
+    )
+
+    total_inverse_distance = Column(DOUBLE_PRECISION, nullable=False)
+
+
 class ScootRoadReading(Base):
     """Table of scoot readings mapped to road segments"""
 
@@ -140,7 +156,7 @@ class ScootRoadReading(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False, index=True)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
