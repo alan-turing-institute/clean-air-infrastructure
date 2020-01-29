@@ -68,12 +68,15 @@ stages:
       inputs:
         helmVersionToInstall: '3.0.3'
     # Package helm chart
-    - task: HelmDeploy@0
+    # - task: HelmDeploy@0
+    #   displayName: 'Package helm chart'
+    #   inputs:
+    #     command: package
+    #     chartPath: kubernetes/cleanair
+    #     destination: $(Build.ArtifactStagingDirectory)
+    - script: |
+        helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
       displayName: 'Package helm chart'
-      inputs:
-        command: package
-        chartPath: kubernetes/cleanair
-        destination: $(Build.ArtifactStagingDirectory)
     # Install/upgrade helm chart
     - task: HelmDeploy@0
       displayName: 'Install/upgrade helm chart'
