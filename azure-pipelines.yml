@@ -113,6 +113,7 @@ stages:
     displayName: Install helm chart on Azure Kubernetes cluster
     pool:
       vmImage: 'ubuntu-latest'
+    steps:
     # Get Azure credentials
     - task: AzureCLI@1
       displayName: 'Get Azure credentials'
