@@ -71,7 +71,7 @@ stages:
     # Package Helm chart
     - script: |
         helm list
-        helm delete cleanair
+        # helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
         PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
