@@ -1,0 +1,36 @@
+
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
+
+{{- range $deployment := .Values.deployments }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  metadata:
+  name: "{{ $release_name }}-{{ $deployment.name }}"
+  labels:
+    chart: "{{ $chart_name }}-{{ $chart_version }}"
+    app: {{ $deployment.name }}
+spec:
+  replicas: {{ $deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $deployment.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $deployment.name }}
+    spec:
+      containers:
+      - image: "{{ $deployment.image.repository }}:{{ $tag }}"
+        imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
+        name: {{ $deployment.name }}
+        ports:
+          - containerPort: {{ $deployment.ports.containerPort }}
+      imagePullSecrets:
+          - name: regcred
+
+{{- end }}

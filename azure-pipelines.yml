@@ -5,8 +5,8 @@ trigger:
 pr: none
 
 variables:
-  namespace: "cleanairtest2"
-  helm_release: "cleanairtest2"
+  namespace: "cleanairtest3"
+  helm_release: "cleanairtest3"
 
 stages:
 # - stage: Docker
@@ -74,11 +74,11 @@ stages:
       displayName: 'Install Kubectl'
       inputs:
         kubectlVersion: $(KUBERNETES_VERSION) #'1.14.8'
-    # # Install Helm 3
-    # - task: HelmInstaller@1
-    #   displayName: 'Update to Helm 3'
-    #   inputs:
-    #     helmVersionToInstall: '3.0.2'
+    # Install Helm 3
+    - task: HelmInstaller@1
+      displayName: 'Update to latest Helm'
+      inputs:
+        helmVersionToInstall: latest #'3.0.2'
     # Prepare Helm chart
     - script: |
         echo "Kubectl version"
@@ -86,11 +86,11 @@ stages:
         if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
-        #
-        echo "Install helm by hand"
-        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-        chmod u+x get_helm.sh && ./get_helm.sh
-        #
+        # #
+        # echo "Install helm by hand"
+        # curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+        # chmod u+x get_helm.sh && ./get_helm.sh
+        # #
         helm list --namespace $(NAMESPACE)
         helm version
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
