@@ -64,23 +64,23 @@ stages:
           az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
-          AWS_KEY=$(az keyvault secret show --vault-name cleanair-secrets --name scoot-aws-key --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=aws_key]$AWS_KEY"
-          AWS_KEY_ID=$(az keyvault secret show --vault-name cleanair-secrets --name scoot-aws-key-id --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=aws_key_id]$AWS_KEY_ID"
-          DB_NAME=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-name --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=db_name]$DB_NAME"
-          DB_PASSWORD=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-admin-password --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=db_password]$DB_PASSWORD"
-          DB_USERNAME=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-admin-username --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=db_username]$DB_USERNAME"
-          DB_SERVER=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-server-name --query "value" -o tsv)
-          echo "##vso[task.setvariable variable=db_password]$DB_SERVER"
+          # AWS_KEY=$(az keyvault secret show --vault-name cleanair-secrets --name scoot-aws-key --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=aws_key]$AWS_KEY"
+          # AWS_KEY_ID=$(az keyvault secret show --vault-name cleanair-secrets --name scoot-aws-key-id --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=aws_key_id]$AWS_KEY_ID"
+          # DB_NAME=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-name --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=db_name]$DB_NAME"
+          # DB_PASSWORD=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-admin-password --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=db_password]$DB_PASSWORD"
+          # DB_USERNAME=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-admin-username --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=db_username]$DB_USERNAME"
+          # DB_SERVER=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-server-name --query "value" -o tsv)
+          # echo "##vso[task.setvariable variable=db_password]$DB_SERVER"
     - task: AzureKeyVault@1
       inputs:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
-        SecretsFilter: 'container-registry-login-server'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,cleanair-inputs-db-name,cleanair-inputs-db-admin-password,cleanair-inputs-db-admin-username,cleanair-inputs-db-server-name'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -104,14 +104,11 @@ stages:
     # Add secrets to Kubernetes
     - script: |
         echo "Adding secrets to Kubernetes"
-        echo "container-registry-login-server $(CONTAINER-REGISTRY-LOGIN-SERVER)"
         if [ "$(kubectl get secret regcred --namespace cleanair | grep regcred)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
         fi
-        echo "DB_SERVER: $(DB_SERVER)"
-        echo "DB_SERVER: ${DB_SERVER}"
         if [ "$(kubectl get secret secrets --namespace cleanair | grep secrets)" == "" ]; then
-          kubectl create secret generic --namespace cleanair secrets --from-literal=host=${DB_SERVER).postgres.database.azure.com --from-literal=port=5432 --from-literal=db_name=$(DB_NAME) --from-literal=username=$(DB_USERNAME)@$(DB_SERVER) --from-literal=password=$(DB_PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(AWS_KEY_ID) --from-literal=aws_key=$(AWS_KEY)
+          kubectl create secret generic --namespace cleanair secrets --from-literal=host=$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com --from-literal=port=5432 --from-literal=db_name=$(CLEANAIR-INPUTS-DB-NAME) --from-literal=username=$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME) --from-literal=password=$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(SCOOT-AWS-KEY-ID) --from-literal=aws_key=$(SCOOT-AWS-KEY)
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
