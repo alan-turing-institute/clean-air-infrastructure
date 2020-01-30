@@ -81,6 +81,7 @@ stages:
         helmVersionToInstall: latest #'3.0.2'
     # Prepare Helm chart
     - script: |
+        echo "test"
         echo "Kubectl version"
         kubectl version
         if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
