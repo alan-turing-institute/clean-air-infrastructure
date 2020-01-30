@@ -99,8 +99,7 @@ stages:
     # Add secrets to Kubernetes
     - script: |
         echo "Adding secrets to Kubernetes"
-        echo "DB_USERNAME $DB_USERNAME"
-        if [ "$(kubectl get secret docker-registry --namespace cleanair | grep docker-registry)" == "" ]; then
+        if [ "$(kubectl get secret regcred --namespace cleanair | grep docker-registry)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
         fi
         if [ "$(kubectl get secret secrets --namespace cleanair | grep secrets)" == "" ]; then
