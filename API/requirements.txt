@@ -1,5 +1,6 @@
 flask-restful
 flask
+Flask-SQLAlchemy
 uwsgi
 supervisor
 numpy
