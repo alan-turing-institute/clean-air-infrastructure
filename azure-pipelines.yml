@@ -81,7 +81,7 @@ stages:
         helmVersionToInstall: '3.0.2'
     # Prepare Helm chart
     - script: |
-        kubectl version
+        echo "Kubectl version: $(kubectl version)"
         if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
