@@ -52,23 +52,23 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    # Get Azure credentials
+    # Connect to Azure Kubernetes cluster
     - task: AzureCLI@1
-      displayName: 'Load Azure credentials'
-      inputs:
-        azureSubscription: 'cleanair-scn'
-        scriptLocation: 'inlineScript'
-        inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
-    # Query Azure Kubernetes cluster
-    - task: AzureCLI@1
-      displayName: 'Query Azure Kubernetes cluster'
+      displayName: 'Connect to Azure Kubernetes cluster'
       inputs:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
-          echo "Kubernetes version on the cluster is ${KUBERNETES_VERSION}"
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
+    # # Query Azure Kubernetes cluster
+    # - task: AzureCLI@1
+    #   displayName: 'Query Azure Kubernetes cluster'
+    #   inputs:
+    #     azureSubscription: 'cleanair-scn'
+    #     scriptLocation: 'inlineScript'
+    #     inlineScript: |
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -81,7 +81,8 @@ stages:
         helmVersionToInstall: latest
     # Get installed versions
     - script: |
-        echo "Kubectl version"
+        echo "Kubernetes version on the cluster is ${KUBERNETES_VERSION}"
+        echo "Kubectl version (local)"
         kubectl version
         echo "Helm version"
         helm version
