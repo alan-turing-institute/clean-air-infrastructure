@@ -347,4 +347,4 @@ class ScootFeatures(DateRangeMixin, Features):
             weighted_traffic_sq = self.weighted_average_traffic('2019-01-01', self.end_datetime, output_type='subquery')
 
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, weighted_traffic_sq, table=ScootRoadReading)
+            self.commit_records(session, weighted_traffic_sq, table=ScootRoadReading, on_conflict_do_nothing=True)
