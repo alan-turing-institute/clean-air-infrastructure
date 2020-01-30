@@ -5,8 +5,8 @@ trigger:
 pr: none
 
 variables:
-  namespace: "cleanairtest"
-  helm_release: "cleanairtest"
+  namespace: "cleanairtest1"
+  helm_release: "cleanairtest1"
 
 stages:
 # - stage: Docker
@@ -95,6 +95,7 @@ stages:
         echo "##vso[task.setvariable variable=chart_version]$CHART_VERSION"
       displayName: 'Package Helm chart'
     - script: |
+        helm version
         helm upgrade --namespace $(NAMESPACE) --install --wait $(HELM_RELEASE) kubernetes/cleanair
       displayName: 'Install/upgrade Helm chart'
 
