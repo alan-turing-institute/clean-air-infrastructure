@@ -107,7 +107,7 @@ stages:
           USERNAME="$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)"
           echo "Host $HOST"
           echo "USERNAME $USERNAME"
-          # kubectl create secret generic --namespace cleanair secrets --from-literal=host=${HOST} --from-literal=port=5432 --from-literal=db_name=$(CLEANAIR-INPUTS-DB-NAME) --from-literal=username=${USERNAME} --from-literal=password=$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(SCOOT-AWS-KEY-ID) --from-literal=aws_key=$(SCOOT-AWS-KEY)
+          kubectl create secret generic --namespace cleanair secrets --from-literal=host=${HOST} --from-literal=port=5432 --from-literal=db_name=$(CLEANAIR-INPUTS-DB-NAME) --from-literal=username=${USERNAME} --from-literal=password=$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(SCOOT-AWS-KEY-ID) --from-literal=aws_key=$(SCOOT-AWS-KEY)
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
