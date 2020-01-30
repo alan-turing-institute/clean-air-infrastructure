@@ -22,7 +22,7 @@ from ..databases.tables import (
 )
 
 
-class ScootFeatures(DateRangeMixin, Features):
+class ScootFeatures(Features):
     """Process scoot features"""
 
     def __init__(self, **kwargs):
@@ -31,16 +31,6 @@ class ScootFeatures(DateRangeMixin, Features):
 
         # Set baseclass property 'dynamic' True to take time into account
         self.dynamic = True
-        # Subset of columns of interest for table columns
-        self.scoot_columns = [
-            ScootDetector.toid.label("scoot_toid"),
-            ScootDetector.detector_n.label("scoot_detector_n"),
-            ScootDetector.point_id.label("scoot_point_id"),
-        ]
-        self.os_highway_columns = [
-            OSHighway.identifier.label("road_identifier"),
-            OSHighway.toid.label("road_toid"),
-        ]
 
     @property
     def table(self):
@@ -104,6 +94,27 @@ class ScootFeatures(DateRangeMixin, Features):
             },
         }
 
+
+class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
+    """Extract features for Scoot"""
+
+    def __init__(self, **kwargs):
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Subset of columns of interest for table columns
+        self.scoot_columns = [
+            ScootDetector.toid.label("scoot_toid"),
+            ScootDetector.detector_n.label("scoot_detector_n"),
+            ScootDetector.point_id.label("scoot_point_id"),
+        ]
+        self.os_highway_columns = [
+            OSHighway.identifier.label("road_identifier"),
+            OSHighway.toid.label("road_toid"),
+        ]
+
+    @db_query
     def join_scoot_with_road(self):
         """Match all scoot sensors (ScootDetector) with a road (OSHighway)"""
 
@@ -249,7 +260,9 @@ class ScootFeatures(DateRangeMixin, Features):
         Get a weighted average of traffic flow metrics for each road segment
         """
 
-        sr_sq = self.get_scoot_reading(start_date, end_date).subquery()
+        sr_sq = self.get_scoot_reading(
+            start_date, end_date, output_type="subquery"
+        )
         arm_sq = self.get_all_road_matched().subquery()
         tid_sq = self.total_inverse_distance().subquery()
 
@@ -269,17 +282,25 @@ class ScootFeatures(DateRangeMixin, Features):
             agg_func(sr_sq.c.saturation_percentage).label(
                 "saturation_percentage_waverage"
             ),
-            agg_func(sr_sq.c.flow_raw_count).label("flow_count_waverage"),
-            agg_func(sr_sq.c.occupancy_raw_count).label("occupancy_count_waverage"),
-            agg_func(sr_sq.c.congestion_raw_count).label("congestion_count_waverage"),
-            agg_func(sr_sq.c.saturation_raw_count).label("saturation_count_waverage"),
+            agg_func(scoot_reading_sq.c.flow_raw_count).label("flow_count_waverage"),
+            agg_func(scoot_reading_sq.c.occupancy_raw_count).label(
+                "occupancy_count_waverage"
+            ),
+            agg_func(scoot_reading_sq.c.congestion_raw_count).label(
+                "congestion_count_waverage"
+            ),
+            agg_func(scoot_reading_sq.c.saturation_raw_count).label(
+                "saturation_count_waverage"
+            ),
         ]
 
         with self.dbcnxn.open_session() as session:
 
             scoot_road_distance_q = (
                 session.query(
-                    OSHighway.toid, sr_sq.c.measurement_start_utc, *aggregated_funcs
+                    OSHighway.toid,
+                    sr_sq.c.measurement_start_utc,
+                    *aggregated_funcs
                 )
                 .join(arm_sq)
                 .join(tid_sq)
@@ -297,13 +318,15 @@ class ScootFeatures(DateRangeMixin, Features):
         Only needs to be recalculated if new scoot sensors have come online"""
 
         # Get sensors on road segements and insert into database
-        scoot_road_matched = self.join_scoot_with_road().subquery()
+        scoot_road_matched = self.join_scoot_with_road(output_type="subquery")
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all scoot sensors to road")
             self.commit_records(session, scoot_road_matched, table=ScootRoadMatch)
 
         # Get unmatched road segments, find the 5 closest scoot sensors and insert into database
-        scoot_road_unmatched = self.join_unmatached_scoot_with_road().subquery()
+        scoot_road_unmatched = self.join_unmatached_scoot_with_road(
+            output_type="subquery"
+        )
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
             self.commit_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
@@ -332,35 +355,37 @@ class ScootFeatures(DateRangeMixin, Features):
             return scoot_road_reading_sq
 
     def update_remote_tables(self):
+        last_scoot_road_match = self.get_last_scoot_road_reading(output_type="list")[0]
 
-        self.logger.info(
-            "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
-            self.start_datetime,
-            self.end_datetime,
-        )
-
-        for start_datetime in rrule.rrule(
-            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
-        ):
-            end_datetime = start_datetime + datetime.timedelta(days=1)
-
+        if last_scoot_road_match:
             self.logger.info(
-                "Processing data between %s and %s", green(start_datetime), green(end_datetime)
+                "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
+                last_scoot_road_match,
+                self.end_datetime,
             )
 
             weighted_traffic_sq = self.weighted_average_traffic(
-                start_datetime, end_datetime, output_type="subquery"
+                last_scoot_road_match, self.end_datetime, output_type="subquery"
             )
 
-            with self.dbcnxn.open_session() as session:
-                self.commit_records(
-                    session,
-                    weighted_traffic_sq,
-                    table=ScootRoadReading,
-                    on_conflict_do_nothing=True,
-                )
+        else:
+            self.logger.info(
+                "No data in scoot_road_match. Processing any available scoot data from %s to %s",
+                "2019-01-01",
+                self.end_datetime,
+            )
 
+            weighted_traffic_sq = self.weighted_average_traffic(
+                "2019-01-01", self.end_datetime, output_type="subquery"
+            )
 
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(
+                session,
+                weighted_traffic_sq,
+                table=ScootRoadReading,
+                on_conflict_do_nothing=True,
+            )
 
     def update_average_traffic(self):
         """Map scoot data to road segments and commit to database"""
