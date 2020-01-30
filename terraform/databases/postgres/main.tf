@@ -66,13 +66,6 @@ resource "azurerm_postgresql_server" "this" {
   resource_group_name = "${var.resource_group}"
   sku_name            = "MO_Gen5_4"
 
-  # sku {
-  #   name     = "MO_Gen5_4"
-  #   capacity = 4
-  #   tier     = "MemoryOptimized"
-  #   family   = "Gen5"
-  # }
-
   storage_profile {
     storage_mb            = "${local.db_size_mb}"
     backup_retention_days = 7

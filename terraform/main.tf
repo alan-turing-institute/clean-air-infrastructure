@@ -14,8 +14,9 @@ module "databases" {
 }
 
 module "data_collection" {
-  source         = "./data_collection"
-  databases      = module.databases
-  infrastructure = module.infrastructure
-  resource_group = "${var.resource_group_data_collection}"
+  source                 = "./data_collection"
+  databases              = module.databases
+  infrastructure         = module.infrastructure
+  cluster_resource_group = "${var.resource_group_k8s_cluster}"
+  node_resource_group    = "${var.resource_group_k8s_nodes}"
 }
