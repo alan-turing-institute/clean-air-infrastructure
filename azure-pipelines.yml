@@ -5,7 +5,7 @@ trigger:
 pr: none
 
 variables:
-  version: "0.2.0"
+  namespace: "cleanair"
 
 stages:
 # - stage: Docker
@@ -65,8 +65,9 @@ stages:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: |
+          az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
-          echo "Kubernetes version is $KUBERNETES_VERSION"
+          echo "Kubernetes version is ${KUBERNETES_VERSION}"
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
     # Install Kubectl
     - task: KubectlInstaller@0
@@ -80,6 +81,9 @@ stages:
         helmVersionToInstall: '3.0.3'
     # Package Helm chart
     - script: |
+        if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
+          kubectl create namespace $(NAMESPACE)
+        fi
         helm list
         # helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
@@ -95,7 +99,7 @@ stages:
         azureSubscriptionEndpoint: 'cleanair-scn'
         azureResourceGroup: $(KUBERNETES_RESOURCE_GROUP)
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
-        namespace: cleanair
+        namespace: $(NAMESPACE)
         command: upgrade
         chartType: filepath
         chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(HELM_VERSION).tgz
