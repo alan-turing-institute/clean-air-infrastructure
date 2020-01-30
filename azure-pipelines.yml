@@ -53,16 +53,20 @@ stages:
     steps:
     # Get Azure credentials
     - task: AzureCLI@1
-      displayName: 'Get Azure credentials'
+      displayName: 'Load Azure credentials'
       inputs:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
     # Get cluster Kubernetes version
-    - script: |
-        KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
-        echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
+    - task: AzureCLI@1
       displayName: 'Get version of Kubernetes installed on the cluster'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
+          echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
     # Install Kubectl
     - task: KubectlInstaller@0
       displayName: 'Install Kubectl'
