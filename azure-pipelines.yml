@@ -70,6 +70,7 @@ stages:
           az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
+    # Read Azure key vault
     - task: AzureKeyVault@1
       displayName: 'Read KeyVault secrets'
       inputs:
@@ -112,6 +113,7 @@ stages:
         if [ "$(kubectl get namespace $(NAMESPACE) 2> /dev/null | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
+        echo "Setting image tag to $(Build.SourceVersion)"
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
       displayName: 'Prepare Helm chart'
     # Install/upgrade Helm chart
