@@ -156,7 +156,7 @@ class ScootRoadReading(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False, index=True)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
