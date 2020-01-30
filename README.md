@@ -171,6 +171,10 @@ To run the next steps we need to ensure that this pipeline runs a build in order
 Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.
 This will build all of the Docker images and add them to the registry.
 
+<!-- add a Devops Service Connection (Azure Resource manager)
+call it cleanair-scn -->
+
+
 
 ## Add static datasets
 Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
@@ -289,10 +293,6 @@ CREATE DATABASE cleanair_inputs_db;
 ```
 python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
-
-add a Devops Service Connection (Azure Resource manager)
-call it cleanair-scn
-
 
 ## Configure Kubernetes Cluster:
 
