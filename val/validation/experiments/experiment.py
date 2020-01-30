@@ -204,6 +204,28 @@ class Experiment(ABC):
         else:
             raise ValueError("Cluster does not exist: ",self.cluster)
 
+    def get(self):
+        """
+        Get results from cluster.
+        """
+        experiment_df = self.get_default_experiment_df()
+        cluster_run_params = []
+        input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
+        
+        cluster = self.__get_cluster_obj()(
+            root = 'validation/cluster/',
+            experiment_name=self.name,
+            cluster_config={},
+            experiment_configs=cluster_run_params,
+            input_format_fn=input_format_fn,
+            cluster_tmp_fp=self.directory+'cluster',
+            experiment_fp=self.directory,
+            home_directory_fp=self.home_directory,
+        )
+        cluster.setup()
+
+        cluster.get()
+
     def run(self):
         """
         Run the experiment.
@@ -216,7 +238,7 @@ class Experiment(ABC):
 
         for model in self.models:
             model_experiment_df = experiment_df[experiment_df['model_name'] == model]
-            for index, row in self.experiment_df.iterrows():
+            for index, row in model_experiment_df.iterrows():
                 exp_dict = {
                     'filename': model,
                     'data_id': row['data_id'],
@@ -224,9 +246,13 @@ class Experiment(ABC):
                 }
                 cluster_run_params.append(exp_dict)
 
+
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
+        print(self.directory+'../libs/')
+
         cluster = self.__get_cluster_obj()(
+            root = 'validation/cluster/',
             experiment_name=self.name,
             cluster_config={},
             experiment_configs=cluster_run_params,
