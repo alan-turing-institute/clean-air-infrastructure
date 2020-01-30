@@ -99,11 +99,11 @@ stages:
     # Add secrets to Kubernetes
     - script: |
         echo "Adding secrets to Kubernetes"
-        if [ "$(kubectl get secret regcred --namespace cleanair | grep docker-registry)" == "" ]; then
+        if [ "$(kubectl get secret regcred --namespace cleanair | grep regcred)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
         fi
         if [ "$(kubectl get secret secrets --namespace cleanair | grep secrets)" == "" ]; then
-          kubectl create secret generic --namespace cleanair secrets --from-literal=host=$(DB_SERVER).postgres.database.azure.com --from-literal=port=5432 --from-literal=db_name=$(DB_NAME) --from-literal=username=$(DB_USERNAME)@$(DB_SERVER) --from-literal=password=$(DB_PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(AWS_KEY_ID) --from-literal=aws_key=$(AWS_KEY) `
+          kubectl create secret generic --namespace cleanair secrets --from-literal=host=$(DB_SERVER).postgres.database.azure.com --from-literal=port=5432 --from-literal=db_name=$(DB_NAME) --from-literal=username=$(DB_USERNAME)@$(DB_SERVER) --from-literal=password=$(DB_PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(AWS_KEY_ID) --from-literal=aws_key=$(AWS_KEY)
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
