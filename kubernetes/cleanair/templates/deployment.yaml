@@ -9,7 +9,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  metadata:
   name: "{{ $release_name }}-{{ $deployment.name }}"
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
@@ -26,7 +25,7 @@ spec:
     spec:
       containers:
       - image: "{{ $deployment.image.repository }}:{{ $tag }}"
-        imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
+        imagePullPolicy: {{ $deployment.image.imagePullPolicy }}
         name: {{ $deployment.name }}
         ports:
           - containerPort: {{ $deployment.ports.containerPort }}

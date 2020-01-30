@@ -81,15 +81,15 @@ stages:
     #     helmVersionToInstall: '3.0.2'
     # Prepare Helm chart
     - script: |
-        echo "Kubectl version: $(kubectl version)"
+        echo "Kubectl version"
+        kubectl version
         if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
         #
         echo "Install helm by hand"
         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
-        chmod 700 get_helm.sh
-        ./get_helm.sh
+        chmod u+x get_helm.sh && ./get_helm.sh
         #
         helm list --namespace $(NAMESPACE)
         helm version
