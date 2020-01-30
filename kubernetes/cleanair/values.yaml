@@ -53,7 +53,7 @@ jobs:
     - name: secrets
       secret:
         secretName: secrets
-    
+
 cronjobs:
   - name: laqn
     image:
@@ -97,16 +97,15 @@ cronjobs:
       secret:
         secretName: secrets
 
-# deployments:
+deployments:
+    - name: cleanairapi
+      replicas: 2
+      image:
+        repository: cleanairdocker.azurecr.io/cleanairapi
+        imagePullPolicy: Always
+      ports:
+        containerPort: 80
 
-#     - name: cleanairapi
-#       replicas: 2
-#       image:
-#         repository: cleanairdocker.azurecr.io/cleanairapi
-#         imagePullPolicy: Always
-#       ports:
-#         containerPort: 80
-
-# services:
-#     - name: cleanair-api
-#       type: LoadBalancer
+services:
+    - name: cleanair-api
+      type: LoadBalancer

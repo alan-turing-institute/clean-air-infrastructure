@@ -24,7 +24,7 @@ script:
   - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
   - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
 
-  - docker build -t $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA -f API/cleanairapi.Dockerfile API
+  - docker build -t $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/cleanairapi.Dockerfile containers
 
   - docker build -t $ACR_SERVER/oshighway:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
   - docker build -t $ACR_SERVER/streetcanyon:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
@@ -41,5 +41,3 @@ script:
   - docker push $ACR_SERVER/oshighway:$TRAVIS_PULL_REQUEST_SHA
   - docker push $ACR_SERVER/streetcanyon:$TRAVIS_PULL_REQUEST_SHA
   - docker push $ACR_SERVER/ukmap:$TRAVIS_PULL_REQUEST_SHA
-
-
