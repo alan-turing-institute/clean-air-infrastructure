@@ -11,46 +11,46 @@ variables:
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
 
 stages:
-# - stage: Docker
-#   displayName: Add new Docker images to ACR
-#   jobs:
-#   - job: BuildAndPushDocker
-#     displayName: Build and register Docker images
-#     pool:
-#       vmImage: 'ubuntu-latest'
-#     steps:
-#     - task: AzureKeyVault@1
-#       displayName: 'Read KeyVault secrets'
-#       inputs:
-#         azureSubscription: 'cleanair-scn'
-#         KeyVaultName: 'cleanair-secrets'
-#         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
-#     # Build AQE
-#     - script: |
-#         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-#       displayName: 'Build AQE'
-#     # Build LAQN
-#     - script: |
-#         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-#       displayName: 'Build LAQN'
-#     # Build SCOOT
-#     - script: |
-#         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-#       displayName: 'Build SCOOT'
-#     # List available images
-#     - script: |
-#         docker images
-#       displayName: 'List images'
-#     # Login to ACR
-#     - script: |
-#         echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
-#       displayName: 'Login to ACR'
-#     # Push Docker images to ACR
-#     - script: |
-#         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
-#         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
-#         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
-#       displayName: 'Push Docker images to ACR'
+- stage: Docker
+  displayName: Add new Docker images to ACR
+  jobs:
+  - job: BuildAndPushDocker
+    displayName: Build and register Docker images
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureKeyVault@1
+      displayName: 'Read KeyVault secrets'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        KeyVaultName: 'cleanair-secrets'
+        SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
+    # Build AQE
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+      displayName: 'Build AQE'
+    # Build LAQN
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+      displayName: 'Build LAQN'
+    # Build SCOOT
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT'
+    # List available images
+    - script: |
+        docker images
+      displayName: 'List images'
+    # Login to ACR
+    - script: |
+        echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
+      displayName: 'Login to ACR'
+    # Push Docker images to ACR
+    - script: |
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
+      displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
@@ -103,16 +103,7 @@ stages:
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(CONTAINER-REGISTRY-LOGIN-SERVER) --docker-username=$(CONTAINER-REGISTRY-ADMIN-USERNAME) --docker-password=$(CONTAINER-REGISTRY-ADMIN-PASSWORD)
         fi
         if [ "$(kubectl get secret secrets --namespace cleanair 2> /dev/null | grep secrets)" == "" ]; then
-          # HOST="$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com"
-          # USERNAME="$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)"
-          # echo "Host $HOST"
-          # echo "USERNAME $USERNAME"
-          # echo "DB_NAME $(CLEANAIR-INPUTS-DB-NAME)"
-          # echo "password $(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)"
-          # echo "ssl_mode require"
-          # echo "aws_key_id $(SCOOT-AWS-KEY-ID)"
-          # echo "aws_key $(SCOOT-AWS-KEY)"
-          kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)' --from-literal='ssl_mode=require'--from-literal='aws_key_id=$(SCOOT-AWS-KEY-ID)' --from-literal='aws_key=$(SCOOT-AWS-KEY)'
+          kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)' --from-literal=ssl_mode='require'--from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
