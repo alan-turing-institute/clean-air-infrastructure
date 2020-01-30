@@ -58,11 +58,16 @@ stages:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+    # Get cluster Kubernetes version
+    - script: |
+        KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
+        echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
+      displayName: 'Get version of Kubernetes installed on the cluster'
     # Install Kubectl
     - task: KubectlInstaller@0
       displayName: 'Install Kubectl'
       inputs:
-        kubectlVersion: '1.14.8'
+        kubectlVersion: $(KUBERNETES_VERSION) #'1.14.8'
     # Install Helm 3
     - task: HelmInstaller@1
       displayName: 'Update to Helm 3'
@@ -74,8 +79,8 @@ stages:
         # helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
-        PKGVERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
-        echo "##vso[task.setvariable variable=pkgversion]$PKGVERSION"
+        HELM_VERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
+        echo "##vso[task.setvariable variable=helm_version]$HELM_VERSION"
       displayName: 'Package Helm chart'
     # Install/upgrade Helm chart
     - task: HelmDeploy@0
@@ -87,6 +92,6 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         command: upgrade
         chartType: filepath
-        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(PKGVERSION).tgz
+        chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(HELM_VERSION).tgz
         # releaseName: cleanair
         install: true
