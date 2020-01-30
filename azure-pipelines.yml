@@ -93,7 +93,7 @@ stages:
         # CHART_VERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
         # echo "Helm chart version is ${CHART_VERSION}"
         # helm version
-        helm upgrade --namespace $(NAMESPACE) --install --wait $(HELM_RELEASE) kubernetes/cleanair
+        helm upgrade --namespace $(NAMESPACE) --install $(HELM_RELEASE) kubernetes/cleanair
         echo "##vso[task.setvariable variable=chart_version]$CHART_VERSION"
       displayName: 'Prepare Helm chart'
     # - script: |
