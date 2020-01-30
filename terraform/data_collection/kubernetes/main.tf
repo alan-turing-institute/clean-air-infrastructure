@@ -57,7 +57,8 @@ resource "azurerm_role_definition" "configure_kubernetes" {
   permissions {
     actions = [
       "Microsoft.ContainerService/managedClusters/accessProfiles/listCredential/action",
-      "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action"
+      "Microsoft.ContainerService/managedClusters/listClusterUserCredential/action",
+      "Microsoft.ContainerService/managedClusters/read"
     ]
     not_actions = []
   }
@@ -65,14 +66,10 @@ resource "azurerm_role_definition" "configure_kubernetes" {
     "${data.azurerm_resource_group.this.id}"
   ]
 }
-data "azurerm_role_definition" "kubernetes_cluster_user" {
-  name = "Azure Kubernetes Service Cluster User Role"
-}
 
 # :: grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${data.azurerm_resource_group.this.id}"
   role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
-  # role_definition_id = "${data.azurerm_role_definition.kubernetes_cluster_user.id}"
   principal_id       = "${data.azuread_service_principal.this.id}"
 }
