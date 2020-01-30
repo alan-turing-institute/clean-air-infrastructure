@@ -5,8 +5,8 @@ trigger:
 pr: none
 
 variables:
-  namespace: "cleanairtest3"
-  helm_release: "cleanairtest3"
+  namespace: "cleanair"
+  helm_release: "cleanair"
 
 stages:
 # - stage: Docker
@@ -62,13 +62,6 @@ stages:
           az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
-    # # Query Azure Kubernetes cluster
-    # - task: AzureCLI@1
-    #   displayName: 'Query Azure Kubernetes cluster'
-    #   inputs:
-    #     azureSubscription: 'cleanair-scn'
-    #     scriptLocation: 'inlineScript'
-    #     inlineScript: |
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -79,16 +72,16 @@ stages:
       displayName: 'Install latest Helm version'
       inputs:
         helmVersionToInstall: latest
-    # Get installed versions
+    # List installed versions
     - script: |
         echo "Kubernetes version on the cluster is ${KUBERNETES_VERSION}"
-        echo "Kubectl version (local)"
+        echo "Kubectl details:"
         kubectl version
-        echo "Helm version"
+        echo "Helm details:"
         helm version
-        echo "Helm $(NAMESPACE) namespace"
+        echo "Helm $(NAMESPACE) namespace:"
         helm list --namespace $(NAMESPACE)
-      displayName: 'Get installed versions'
+      displayName: 'List installed versions'
     # Prepare Helm chart
     - script: |
         # Check whether we need to create a new namespace
@@ -103,9 +96,6 @@ stages:
         # helm upgrade --namespace $(NAMESPACE) --cleanup-on-fail --install $(HELM_RELEASE) kubernetes/cleanair
         # echo "##vso[task.setvariable variable=chart_version]$CHART_VERSION"
       displayName: 'Prepare Helm chart'
-    # - script: |
-    #     helm upgrade --namespace $(NAMESPACE) --cleanup-on-fail --install $(HELM_RELEASE) kubernetes/cleanair
-    #   displayName: 'Install/upgrade Helm chart'
     # Install/upgrade Helm chart
     - task: HelmDeploy@0
       displayName: 'Install/upgrade Helm chart'
