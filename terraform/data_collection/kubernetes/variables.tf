@@ -1,6 +1,7 @@
 # Setup variables
-variable "cluster_name" { default = "cleanair-kubernetes" }
-variable "node_resource_group" {}
+variable "cluster_name" {}
 variable "cluster_resource_group" {}
+variable "infrastructure" {}
+variable "node_resource_group" {}
 
 

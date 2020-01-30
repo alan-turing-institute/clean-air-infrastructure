@@ -165,7 +165,7 @@ This will build all of the Docker images and add them to the registry.
 These Docker images are built by an Azure pipeline whenever commits are made to the master branch of the GitHub repository.
 Ensure that you have configured Azure pipelines to [use this GitHub repository](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/pipelines-get-started).
 Currently a pipeline is set up [here](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build).
-Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Azure pipeline Variables, using the [web interface to the pipeline](https://dev.azure.com)
+<!-- Add `ACR_PASSWORD`, `ACR_SERVER`, `ACR_USERNAME`, `AWS_KEY_ID`, `AWS_KEY` as Azure pipeline Variables, using the [web interface to the pipeline](https://dev.azure.com) -->
 
 To run the next steps we need to ensure that this pipeline runs a build in order to add the Docker images to the Azure container registry created by Terraform.
 Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.

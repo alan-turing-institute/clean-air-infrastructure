@@ -6,8 +6,10 @@ module "configuration" {
 # Set up a Kubernetes cluster to orchestrate the containers
 module "kubernetes" {
   source                 = "./kubernetes"
-  node_resource_group    = "${var.node_resource_group}"
-  cluster_resource_group = "${var.cluster_resource_group}"
+  cluster_name           = "cleanair-kubernetes"
+  cluster_resource_group = var.cluster_resource_group
+  infrastructure         = "${var.infrastructure}"
+  node_resource_group    = var.node_resource_group
 }
 
 

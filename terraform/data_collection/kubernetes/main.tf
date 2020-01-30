@@ -60,7 +60,7 @@ resource "azurerm_kubernetes_cluster" "this" {
 
 # Set permissions for the pre-existing service principal
 # ------------------------------------------------------
-# :: create a role with appropriate permissions for Kubernetes clusters
+# Create a role with appropriate permissions for Kubernetes clusters
 resource "azurerm_role_definition" "configure_kubernetes" {
   name        = "Configure Kubernetes"
   scope       = "${azurerm_resource_group.this.id}"
@@ -78,10 +78,23 @@ resource "azurerm_role_definition" "configure_kubernetes" {
     "${azurerm_resource_group.this.id}"
   ]
 }
-
-# :: grant the service principal the "configure_kubernetes" role
+# Grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${azurerm_resource_group.this.id}"
   role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
   principal_id       = "${data.azuread_service_principal.this.id}"
+}
+# :: grant the managed identity for this VM "get" and "list" access to the key vault
+resource "azurerm_key_vault_access_policy" "allow_service_principal" {
+  key_vault_id = "${var.infrastructure.key_vault.id}"
+  tenant_id    = "${module.configuration.tenant_id}"
+  object_id    = "${data.azuread_service_principal.this.id}"
+  key_permissions = [
+    "get",
+    "list",
+  ]
+  secret_permissions = [
+    "get",
+    "list",
+  ]
 }
