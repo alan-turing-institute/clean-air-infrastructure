@@ -85,6 +85,7 @@ stages:
           kubectl create namespace $(NAMESPACE)
         fi
         helm list --namespace $(NAMESPACE)
+        helm version
         # helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         #helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
