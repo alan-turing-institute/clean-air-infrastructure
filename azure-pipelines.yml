@@ -84,6 +84,11 @@ stages:
         echo "Helm $(NAMESPACE) namespace:"
         helm list --namespace $(NAMESPACE)
       displayName: 'List installed versions'
+    # Add secrets to Kubernetes
+    - script: |
+        echo "Adding secrets to Kubernetes"
+        kubectl create secret docker-registry regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
+      displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
     - script: |
         # Check whether we need to create a new namespace
