@@ -28,15 +28,27 @@ stages:
     # Build AQE
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-      displayName: 'Build AQE'
+      displayName: 'Build AQE data collection image'
     # Build LAQN
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-      displayName: 'Build LAQN'
+      displayName: 'Build LAQN data collection image'
     # Build SCOOT
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-      displayName: 'Build SCOOT'
+      displayName: 'Build SCOOT data collection image'
+    # Build OSHighway
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
+      displayName: 'Build OSHighway feature processing image'
+    # Build Street Canyon
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion) -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
+      displayName: 'Build street canyon feature processing image'
+    # Build UKMap
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
+      displayName: 'Build UKMap feature processing image'
     # List available images
     - script: |
         docker images
@@ -50,6 +62,9 @@ stages:
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
