@@ -59,6 +59,11 @@ stages:
         azureSubscription: 'cleanair-scn'
         scriptLocation: 'inlineScript'
         inlineScript: 'az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP)'
+    # Install Helm 3
+    - task: HelmInstaller@1
+      displayName: 'Update to latest Helm'
+      inputs:
+        helmVersionToInstall: latest
     # Get cluster Kubernetes version
     - task: AzureCLI@1
       displayName: 'Get version of Kubernetes installed on the cluster'
@@ -73,12 +78,12 @@ stages:
     - task: KubectlInstaller@0
       displayName: 'Install Kubectl'
       inputs:
-        kubectlVersion: $(KUBERNETES_VERSION) #'1.14.8'
-    # Install Helm 3
-    - task: HelmInstaller@1
-      displayName: 'Update to latest Helm'
-      inputs:
-        helmVersionToInstall: latest #'3.0.2'
+        kubectlVersion: $(KUBERNETES_VERSION)
+    # # Install Helm 3
+    # - task: HelmInstaller@1
+    #   displayName: 'Update to latest Helm'
+    #   inputs:
+    #     helmVersionToInstall: latest
     # Prepare Helm chart
     - script: |
         echo "test"
