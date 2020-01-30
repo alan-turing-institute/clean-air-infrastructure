@@ -97,5 +97,5 @@ stages:
         command: upgrade
         chartType: filepath
         chartPath: $(Build.ArtifactStagingDirectory)/cleanair-$(HELM_VERSION).tgz
-        # releaseName: cleanair
+        releaseName: cleanair
         install: true
