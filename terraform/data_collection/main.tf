@@ -13,6 +13,16 @@ resource "azurerm_resource_group" "this" {
   }
 }
 
+# # Ensure the Kubernetes resource group exists
+# resource "azurerm_resource_group" "this" {
+#   name     = "${var.resource_group}"
+#   location = "${module.configuration.location}"
+#   tags = {
+#     environment = "Terraform Clean Air"
+#     segment     = "Input data"
+#   }
+# }
+
 # Set up the necessary networking infrastructure
 module "networking" {
   source         = "./networking"

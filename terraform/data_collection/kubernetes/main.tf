@@ -21,6 +21,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   location            = "${module.configuration.location}"
   resource_group_name = "${var.resource_group}"
   dns_prefix          = "${var.cluster_name}"
+  node_resource_group = "${var.resource_group}"
 
   default_node_pool {
     name            = "default"

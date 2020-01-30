@@ -5,7 +5,7 @@ trigger:
 pr: none
 
 variables:
-  namespace: "cleanair"
+  namespace: "cleanpipeair"
 
 stages:
 # - stage: Docker
@@ -78,13 +78,13 @@ stages:
     - task: HelmInstaller@1
       displayName: 'Update to Helm 3'
       inputs:
-        helmVersionToInstall: '3.0.3'
+        helmVersionToInstall: '3.0.2'
     # Package Helm chart
     - script: |
         if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
-        helm list
+        helm list --namespace $(NAMESPACE)
         # helm delete cleanair
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
         #helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
