@@ -1,6 +1,7 @@
 flask-restful
 flask
-Flask-SQLAlchemy
+flask-marshmallow
+webargs
 uwsgi
 supervisor
 numpy
