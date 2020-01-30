@@ -76,6 +76,11 @@ stages:
           echo "##vso[task.setvariable variable=db_username]$DB_USERNAME"
           DB_SERVER=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-server-name --query "value" -o tsv)
           echo "##vso[task.setvariable variable=db_password]$DB_SERVER"
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        KeyVaultName: 'cleanair-secrets'
+        SecretsFilter: 'container-registry-login-server'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -99,6 +104,7 @@ stages:
     # Add secrets to Kubernetes
     - script: |
         echo "Adding secrets to Kubernetes"
+        echo "container-registry-login-server $(CONTAINER-REGISTRY-LOGIN-SERVER)"
         if [ "$(kubectl get secret regcred --namespace cleanair | grep regcred)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
         fi
