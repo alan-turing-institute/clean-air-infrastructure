@@ -103,7 +103,7 @@ stages:
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(CONTAINER-REGISTRY-LOGIN-SERVER) --docker-username=$(CONTAINER-REGISTRY-ADMIN-USERNAME) --docker-password=$(CONTAINER-REGISTRY-ADMIN-PASSWORD)
         fi
         if [ "$(kubectl get secret secrets --namespace cleanair 2> /dev/null | grep secrets)" == "" ]; then
-          kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)' --from-literal=ssl_mode='require'--from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
+          kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
