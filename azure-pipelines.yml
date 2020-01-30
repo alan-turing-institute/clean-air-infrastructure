@@ -66,6 +66,7 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
+          echo "Kubernetes version is $KUBERNETES_VERSION"
           echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
     # Install Kubectl
     - task: KubectlInstaller@0
