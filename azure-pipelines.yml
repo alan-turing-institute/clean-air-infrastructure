@@ -11,40 +11,46 @@ variables:
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
 
 stages:
-# - stage: Docker
-#   displayName: Add new Docker images to ACR
-#   jobs:
-#   - job: BuildAndPushDocker
-#     displayName: Build and register Docker images
-#     pool:
-#       vmImage: 'ubuntu-latest'
-#     steps:
-#     # Build AQE
-#     - script: |
-#         docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-#       displayName: 'Build AQE'
-#     # Build LAQN
-#     - script: |
-#         docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-#       displayName: 'Build LAQN'
-#     # Build SCOOT
-#     - script: |
-#         docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-#       displayName: 'Build SCOOT'
-#     # List available images
-#     - script: |
-#         docker images
-#       displayName: 'List images'
-#     # Login to ACR
-#     - script: |
-#         echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
-#       displayName: 'Login to ACR'
-#     # Push Docker images to ACR
-#     - script: |
-#         docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)
-#         docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)
-#         docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)
-#       displayName: 'Push Docker images to ACR'
+- stage: Docker
+  displayName: Add new Docker images to ACR
+  jobs:
+  - job: BuildAndPushDocker
+    displayName: Build and register Docker images
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureKeyVault@1
+      displayName: 'Read KeyVault secrets'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        KeyVaultName: 'cleanair-secrets'
+        SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
+    # # Build AQE
+    # - script: |
+    #     docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+    #   displayName: 'Build AQE'
+    # # Build LAQN
+    # - script: |
+    #     docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+    #   displayName: 'Build LAQN'
+    # # Build SCOOT
+    # - script: |
+    #     docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+    #   displayName: 'Build SCOOT'
+    # # List available images
+    # - script: |
+    #     docker images
+    #   displayName: 'List images'
+    # Login to ACR
+    - script: |
+        echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
+      displayName: 'Login to ACR'
+    # # Push Docker images to ACR
+    # - script: |
+    #     docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)
+    #     docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)
+    #     docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)
+    #   displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
@@ -77,10 +83,11 @@ stages:
           # DB_SERVER=$(az keyvault secret show --vault-name cleanair-secrets --name cleanair-inputs-db-server-name --query "value" -o tsv)
           # echo "##vso[task.setvariable variable=db_password]$DB_SERVER"
     - task: AzureKeyVault@1
+      displayName: 'Read KeyVault secrets'
       inputs:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
-        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,cleanair-inputs-db-name,cleanair-inputs-db-admin-password,cleanair-inputs-db-admin-username,cleanair-inputs-db-server-name'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,cleanair-inputs-db-name,cleanair-inputs-db-admin-password,cleanair-inputs-db-admin-username,cleanair-inputs-db-server-name,container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
@@ -104,26 +111,20 @@ stages:
     # Add secrets to Kubernetes
     - script: |
         echo "Adding secrets to Kubernetes"
-        if [ "$(kubectl get secret regcred --namespace cleanair | grep regcred)" == "" ]; then
+        if [ "$(kubectl get secret regcred --namespace cleanair 2> /dev/null | grep regcred)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(ACR_SERVER) --docker-username=$(ACR_USERNAME) --docker-password=$(ACR_PASSWORD)
         fi
-        if [ "$(kubectl get secret secrets --namespace cleanair | grep secrets)" == "" ]; then
+        if [ "$(kubectl get secret secrets --namespace cleanair 2> /dev/null | grep secrets)" == "" ]; then
           kubectl create secret generic --namespace cleanair secrets --from-literal=host=$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com --from-literal=port=5432 --from-literal=db_name=$(CLEANAIR-INPUTS-DB-NAME) --from-literal=username=$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME) --from-literal=password=$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD) --from-literal=ssl_mode=require --from-literal=aws_key_id=$(SCOOT-AWS-KEY-ID) --from-literal=aws_key=$(SCOOT-AWS-KEY)
         fi
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
     - script: |
         # Check whether we need to create a new namespace
-        if [ "$(kubectl get namespace | grep $(NAMESPACE))" == "" ]; then
+        if [ "$(kubectl get namespace $(NAMESPACE) 2> /dev/null | grep $(NAMESPACE))" == "" ]; then
           kubectl create namespace $(NAMESPACE)
         fi
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
-        # helm package --destination $(Build.ArtifactStagingDirectory) kubernetes/cleanair
-        # CHART_VERSION=$(grep version kubernetes/cleanair/Chart.yaml | cut -d' ' -f2)
-        # echo "Helm chart version is ${CHART_VERSION}"
-        # helm version
-        # helm upgrade --namespace $(NAMESPACE) --cleanup-on-fail --install $(HELM_RELEASE) kubernetes/cleanair
-        # echo "##vso[task.setvariable variable=chart_version]$CHART_VERSION"
       displayName: 'Prepare Helm chart'
     # Install/upgrade Helm chart
     - task: HelmDeploy@0
