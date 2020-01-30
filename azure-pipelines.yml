@@ -11,40 +11,40 @@ variables:
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
 
 stages:
-# - stage: Docker
-#   displayName: Add new Docker images to ACR
-#   jobs:
-#   - job: BuildAndPushDocker
-#     displayName: Build and register Docker images
-#     pool:
-#       vmImage: 'ubuntu-latest'
-#     steps:
-#     # Build AQE
-#     - script: |
-#         docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-#       displayName: 'Build AQE'
-#     # Build LAQN
-#     - script: |
-#         docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-#       displayName: 'Build LAQN'
-#     # Build SCOOT
-#     - script: |
-#         docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-#       displayName: 'Build SCOOT'
-#     # List available images
-#     - script: |
-#         docker images
-#       displayName: 'List images'
-#     # Login to ACR
-#     - script: |
-#         echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
-#       displayName: 'Login to ACR'
-#     # Push Docker images to ACR
-#     - script: |
-#         docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
-#         docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
-#         docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
-#       displayName: 'Push Docker images to ACR'
+- stage: Docker
+  displayName: Add new Docker images to ACR
+  jobs:
+  - job: BuildAndPushDocker
+    displayName: Build and register Docker images
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    # Build AQE
+    - script: |
+        docker build -t $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+      displayName: 'Build AQE'
+    # Build LAQN
+    - script: |
+        docker build -t $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+      displayName: 'Build LAQN'
+    # Build SCOOT
+    - script: |
+        docker build -t $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT'
+    # List available images
+    - script: |
+        docker images
+      displayName: 'List images'
+    # Login to ACR
+    - script: |
+        echo "$(ACR_PASSWORD)" | docker login -u "$(ACR_USERNAME)" --password-stdin "$(ACR_SERVER)"
+      displayName: 'Login to ACR'
+    # Push Docker images to ACR
+    - script: |
+        docker push $(ACR_SERVER)/aqe:$(Build.SourceVersion)FromPipeline
+        docker push $(ACR_SERVER)/laqn:$(Build.SourceVersion)FromPipeline
+        docker push $(ACR_SERVER)/scoot:$(Build.SourceVersion)FromPipeline
+      displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
   displayName: Update Helm chart on Azure Kubernetes cluster
