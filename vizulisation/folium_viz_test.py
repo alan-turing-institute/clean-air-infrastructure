@@ -100,17 +100,20 @@ url = 'http://localhost:8080/geoserver/gwc/service/wms/'
 #                                   control=True,
 #                                   show=True).add_to(m)
 
-folium.raster_layers.WmsTileLayer(url,
-                                  'london:latest_forecast',
-                                  styles='',
-                                  fmt='image/png',
-                                  transparent=True,
-                                  version='1.1.1',
-                                  attr='',
-                                  name=None,
-                                  overlay=True,
-                                  control=True,
-                                  show=True).add_to(m)
+wmslay = folium.raster_layers.WmsTileLayer(url,
+                                           'london:latest_forecast',
+                                           styles='',
+                                           fmt='image/png',
+                                           transparent=True,
+                                           version='1.1.1',
+                                           attr='',
+                                           name=None,
+                                           overlay=True,
+                                           control=True,
+                                           show=True).add_to(m)
+# wmslay.add_to(m)
+
+# TimestampedWmsTileLayers(wmslay,   loop=True, auto_play=True, period='P1H').add_to(m)
 
 
 m.save('images/forecast.html')
