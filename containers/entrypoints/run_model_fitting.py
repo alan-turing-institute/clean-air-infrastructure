@@ -101,10 +101,10 @@ def main():
 
     # Get the model data
 
-    model_data = ModelData(config=model_config, **kwargs)
-    # model_data = ModelData(config_dir='run_model_test/', **kwargs)
+    # model_data = ModelData(config=model_config, **kwargs)
+    model_data = ModelData(config_dir='run_model_full_test/', **kwargs)
 
-    model_data.save_config_state("run_model_full_test/")
+    # model_data.save_config_state("run_model_full_test/")
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
@@ -115,7 +115,7 @@ def main():
     model_fitter.fit(
         training_data_dict["X"],
         training_data_dict["Y"],
-        max_iter=1,
+        max_iter=20000,
         model_params=model_params,
     )
 
