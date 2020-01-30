@@ -34,6 +34,12 @@ resource "azurerm_kubernetes_cluster" "this" {
     client_secret = "${module.configuration.azure_service_principal_password}"
   }
 
+  addon_profile {
+    kube_dashboard {
+      enabled = true
+    }
+  }
+
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Input data / Kubernetes"
