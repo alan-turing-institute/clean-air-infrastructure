@@ -1,4 +1,5 @@
-from App import app
+"""WSGI configuration"""
+from App import FLASK_APP
 
 if __name__ == "__main__":
-    app.run()
+    FLASK_APP.run()
