@@ -101,8 +101,8 @@ def main():
 
     # Get the model data
 
-    # model_data = ModelData(config=model_config, **kwargs)
-    model_data = ModelData(config_dir='run_model_full_test/', **kwargs)
+    model_data = ModelData(config=model_config, **kwargs)
+    # model_data = ModelData(config_dir="run_model_full_test/", **kwargs)
 
     # model_data.save_config_state("run_model_full_test/")
 
@@ -132,7 +132,7 @@ def main():
         model_fit_info=model_fit_info,
     )
 
-    model_data.save_config_state("run_model_full_test/")
+    # model_data.save_config_state("run_model_full_test/")
 
     # Write the model results to the database
     model_data.update_remote_tables()

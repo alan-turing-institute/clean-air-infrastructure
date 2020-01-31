@@ -840,8 +840,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         for idx in range(0, n_records, batch_size):
 
-            batch_records = upload_records[idx:idx+batch_size]
-            self.logger.info("Uploading batch %s of %s", idx//batch_size + 1, n_batches)
+            batch_records = upload_records[idx : idx + batch_size]
+            self.logger.info(
+                "Uploading batch %s of %s", idx // batch_size + 1, n_batches
+            )
 
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, batch_records, table=ModelResult)
