@@ -1,7 +1,7 @@
 # Setup variables
-variable "databases" {}
+variable "cluster_name" {}
+variable "cluster_resource_group" {}
 variable "infrastructure" {}
 variable "node_resource_group" {}
-variable "cluster_resource_group" {}
 
 

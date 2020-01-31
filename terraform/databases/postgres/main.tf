@@ -64,13 +64,7 @@ resource "azurerm_postgresql_server" "this" {
   name                = "${azurerm_key_vault_secret.db_server_name.value}"
   location            = "${var.location}"
   resource_group_name = "${var.resource_group}"
-
-  sku {
-    name     = "MO_Gen5_2"
-    capacity = 2
-    tier     = "MemoryOptimized"
-    family   = "Gen5"
-  }
+  sku_name            = "MO_Gen5_4"
 
   storage_profile {
     storage_mb            = "${local.db_size_mb}"

@@ -1,0 +1,26 @@
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
+
+{{- range $service := .Values.services }}
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ $release_name }}-{{ $service.name }}"
+  labels:
+    chart: "{{ $chart_name }}-{{ $chart_version }}"
+spec:
+  type: {{ $service.type }}
+  selector:
+    app: "{{ $release_name }}-{{ $service.name }}"
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  selector:
+    app: {{ $service.name }}
+
+{{- end }}

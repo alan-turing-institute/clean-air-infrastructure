@@ -8,7 +8,7 @@ setuptools.setup(
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk",
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
-    packages=setuptools.find_packages(include=["cleanair"]),
+    packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
