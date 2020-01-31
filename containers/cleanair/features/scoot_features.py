@@ -1,10 +1,16 @@
 """
 Scoot feature extraction
 """
+import datetime
+from dateutil import rrule
 from sqlalchemy import asc, func
+import datetime
 from .features import Features
 from .feature_funcs import sum_, avg_, max_
-from ..mixins import DateRangeMixin
+from ..databases import DBWriter
+from ..mixins import DateRangeMixin, DBQueryMixin
+from ..decorators import db_query
+from ..loggers import green
 from ..databases.tables import (
     OSHighway,
     ScootDetector,
@@ -302,6 +308,60 @@ class ScootFeatures(DateRangeMixin, Features):
             self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
             self.commit_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
 
+    def update_scoot_road_reading(self, find_closest_roads=False):
+        """Update all remote tables"""
+        if find_closest_roads:
+            self.insert_closest_roads()
+        self.update_average_traffic()
+        # total_inverse_distance = self.total_inverse_distance(output_type="subquery")
+        # with self.dbcnxn.open_session() as session:
+        #     self.logger.info("Calculating total inverse distance for each road")
+        #     self.commit_records(
+        #         session, total_inverse_distance, table=ScootRoadInverseDistance
+        #     )
+
+    @db_query
+    def get_last_scoot_road_reading(self):
+        """Get the last scoot road reading"""
+        with self.dbcnxn.open_session() as session:
+
+            scoot_road_reading_sq = session.query(
+                func.max(ScootRoadReading.measurement_start_utc).label("last_processed")
+            )
+
+            return scoot_road_reading_sq
+
+    def update_remote_tables(self):
+
+        self.logger.info(
+            "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
+            self.start_datetime,
+            self.end_datetime,
+        )
+
+        for start_datetime in rrule.rrule(
+            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
+        ):
+            end_datetime = start_datetime + datetime.timedelta(days=1)
+
+            self.logger.info(
+                "Processing data between %s and %s", green(start_datetime), green(end_datetime)
+            )
+
+            weighted_traffic_sq = self.weighted_average_traffic(
+                start_datetime, end_datetime, output_type="subquery"
+            )
+
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(
+                    session,
+                    weighted_traffic_sq,
+                    table=ScootRoadReading,
+                    on_conflict_do_nothing=True,
+                )
+
+
+
     def update_average_traffic(self):
         """Map scoot data to road segments and commit to database"""
         self.logger.info(
@@ -345,9 +405,3 @@ class ScootFeatures(DateRangeMixin, Features):
         with self.dbcnxn.open_session() as session:
             drop_q = session.query(ScootRoadReading).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
                                                             ScootRoadReading.measurement_start_utc < self.end_datetime).delete()
-
-    def update_scoot_road_reading(self, find_closest_roads=False):
-        """Update all remote tables"""
-        if find_closest_roads:
-            self.insert_closest_roads()
-        self.update_average_traffic()
