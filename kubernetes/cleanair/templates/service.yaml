@@ -16,10 +16,9 @@ metadata:
 spec:
   type: {{ $service.type }}
   selector:
-    app: {{ $service.name }}
+    app: "{{ $release_name }}-{{ $service.name }}"
   ports:
     - name: http
-      protocol: TCP
       port: 80
       targetPort: 80 
 
