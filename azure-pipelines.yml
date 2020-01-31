@@ -131,7 +131,7 @@ stages:
               "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
               "ssl_mode": "require"
           }' > db_secrets.json
-          kubectl create secret generic secrets --from-file=aws_secrets.json --from-file=db_secrets.json
+          kubectl create secret generic --namespace cleanair secrets --from-file=aws_secrets.json --from-file=db_secrets.json
           rm -f aws_secrets.json db_secrets.json
           # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
         fi
