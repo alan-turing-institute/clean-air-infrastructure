@@ -183,9 +183,6 @@ class Features(DBWriter, DBQueryMixin):
                 isouter=True,
             )
 
-        # print(sq_intersections.statement.compile(compile_kwargs={"literal_binds": True}))
-        # quit()
-
         # Return the overall query
         return q_intersections
 
