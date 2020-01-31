@@ -21,7 +21,7 @@ api = Api(app)
 
 # Configure session
 DB_CONNECTION_INFO = DBConnectionMixin(
-    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+    "db_secrets.json"
 )
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
@@ -54,7 +54,7 @@ results = Results(many=True)
 class Welcome(Resource):
     def get(self):
 
-        return "Welcome to the CleanAir API"
+        return "Welcome to the CleanAir API developed by the Alan Turing Institute"
 
 
 @api.resource("/point")
