@@ -87,12 +87,17 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
     interest_point_sq = interest_point_q.subquery()
 
     latest_model_result_sq = session.query(
-        func.max(ModelResult.fit_start_time).label("latest_forecast")).subquery()
+        func.max(ModelResult.fit_start_time).label("latest_forecast")
+    ).subquery()
 
-    return session.query(
-        interest_point_sq.c.lon,
-        interest_point_sq.c.lat,
-        ModelResult.measurement_start_utc,
-        ModelResult.predict_mean,
-        ModelResult.predict_var,
-    ).join(ModelResult).filter(ModelResult.fit_start_time == latest_model_result_sq.c.latest_forecast)
+    return (
+        session.query(
+            interest_point_sq.c.lon,
+            interest_point_sq.c.lat,
+            ModelResult.measurement_start_utc,
+            ModelResult.predict_mean,
+            ModelResult.predict_var,
+        )
+        .join(ModelResult)
+        .filter(ModelResult.fit_start_time == latest_model_result_sq.c.latest_forecast)
+    )
