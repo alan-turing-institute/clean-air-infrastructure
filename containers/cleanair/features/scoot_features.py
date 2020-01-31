@@ -4,7 +4,6 @@ Scoot feature extraction
 import datetime
 from dateutil import rrule
 from sqlalchemy import asc, func
-import datetime
 from .features import Features
 from .feature_funcs import sum_, avg_, max_
 from ..databases import DBWriter
@@ -372,7 +371,9 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
             end_datetime = start_datetime + datetime.timedelta(days=1)
 
             self.logger.info(
-                "Processing data between %s and %s", green(start_datetime), green(end_datetime)
+                "Processing data between %s and %s",
+                green(start_datetime),
+                green(end_datetime),
             )
 
             weighted_traffic_sq = self.weighted_average_traffic(
