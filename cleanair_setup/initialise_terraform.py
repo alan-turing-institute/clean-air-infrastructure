@@ -172,9 +172,7 @@ def record_all_secrets(vault_uri, vault_name, secrets):
     # Write secrets to the key vault
     kv_client = get_client_from_cli_profile(KeyVaultClient)
     logging.info("Ensuring secrets are in key vault: %s", emphasised(vault_name))
-    available_secrets = [
-        s.id.split("/")[-1] for s in kv_client.get_secrets(vault_uri)
-    ]
+    available_secrets = [s.id.split("/")[-1] for s in kv_client.get_secrets(vault_uri)]
 
     # Add secrets unless they are already in the vault
     # AWS key
@@ -182,36 +180,54 @@ def record_all_secrets(vault_uri, vault_name, secrets):
         if "scoot-aws-key" in available_secrets:
             kv_aws_key = kv_client.get_secret(vault_uri, "scoot-aws-key", "").value
             if kv_aws_key != secrets["aws_key"]:
-                logging.warning("AWS key from key vault does not match user-provided version!")
+                logging.warning(
+                    "AWS key from key vault does not match user-provided version!"
+                )
         else:
             kv_client.set_secret(vault_uri, "scoot-aws-key", secrets["aws_key"])
     else:
         if "scoot-aws-key" in available_secrets:
-            logging.info("AWS key found in existing key vault: %s", emphasised(vault_name))
+            logging.info(
+                "AWS key found in existing key vault: %s", emphasised(vault_name)
+            )
         else:
-            logging.warning("No AWS key was provided as an argument and there is not one saved in the key vault!")
+            logging.warning(
+                "No AWS key was provided as an argument and there is not one saved in the key vault!"
+            )
     # AWS key ID
     if secrets["aws_key_id"]:
         if "scoot-aws-key-id" in available_secrets:
-            kv_aws_key_id = kv_client.get_secret(vault_uri, "scoot-aws-key-id", "").value
+            kv_aws_key_id = kv_client.get_secret(
+                vault_uri, "scoot-aws-key-id", ""
+            ).value
             if kv_aws_key_id != secrets["aws_key_id"]:
-                logging.warning("AWS key ID from key vault does not match user-provided version!")
+                logging.warning(
+                    "AWS key ID from key vault does not match user-provided version!"
+                )
         else:
             kv_client.set_secret(vault_uri, "scoot-aws-key-id", secrets["aws_key_id"])
     else:
         if "scoot-aws-key-id" in available_secrets:
-            logging.info("AWS key ID found in existing key vault: %s", emphasised(vault_name))
+            logging.info(
+                "AWS key ID found in existing key vault: %s", emphasised(vault_name)
+            )
         else:
-            logging.warning("No AWS key ID was provided as an argument and there is not one saved in the key vault!")
+            logging.warning(
+                "No AWS key ID was provided as an argument and there is not one saved in the key vault!"
+            )
     # Subscription ID
     if "subscription-id" in available_secrets:
-        kv_subscription_id = kv_client.get_secret(vault_uri, "subscription-id", "").value
+        kv_subscription_id = kv_client.get_secret(
+            vault_uri, "subscription-id", ""
+        ).value
         if kv_subscription_id != secrets["subscription_id"]:
             logging.warning(
                 "Updating subscription ID in key vault to %s",
                 emphasised(secrets["subscription_id"]),
             )
-            kv_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
+            kv_client.set_secret(
+                vault_uri, "subscription-id", secrets["subscription_id"]
+            )
     else:
         kv_client.set_secret(vault_uri, "subscription-id", secrets["subscription_id"])
     # Generated secrets
@@ -225,15 +241,21 @@ def record_all_secrets(vault_uri, vault_name, secrets):
     if "azure-service-principal-name" not in available_secrets:
         if not secrets["azure_sp_name"]:
             raise ValueError("Please provide a value for '--azure-sp-name'")
-        kv_client.set_secret(vault_uri, "azure-service-principal-name", secrets["azure_sp_name"])
+        kv_client.set_secret(
+            vault_uri, "azure-service-principal-name", secrets["azure_sp_name"]
+        )
     if "azure-service-principal-id" not in available_secrets:
         if not secrets["azure_sp_id"]:
             raise ValueError("Please provide a value for '--azure-sp-id'")
-        kv_client.set_secret(vault_uri, "azure-service-principal-id", secrets["azure_sp_id"])
+        kv_client.set_secret(
+            vault_uri, "azure-service-principal-id", secrets["azure_sp_id"]
+        )
     if "azure-service-principal-password" not in available_secrets:
         if not secrets["azure_sp_password"]:
             raise ValueError("Please provide a value for '--azure-sp-password'")
-        kv_client.set_secret(vault_uri, "azure-service-principal-password", secrets["azure_sp_password"])
+        kv_client.set_secret(
+            vault_uri, "azure-service-principal-password", secrets["azure_sp_password"]
+        )
     if "location" not in available_secrets:
         if not secrets["location"]:
             raise ValueError("Please provide a value for '--location'")

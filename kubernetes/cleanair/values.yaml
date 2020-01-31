@@ -1,4 +1,6 @@
-imageTag: f6aa4429812bb5bf3bb63aa3cd974ab7883147c1
+# This is a YAML-formatted file.
+# Variables to be passed into the templates.
+imageTag: b42111cac281af48dab6b12f1c2f291ab720e31a
 
 jobs:
   - name: ukmap

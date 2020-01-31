@@ -9,7 +9,6 @@
 apiVersion: v1
 kind: Service
 metadata:
-  metadata:
   name: "{{ $release_name }}-{{ $service.name }}"
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
@@ -20,6 +19,8 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 80 
+      targetPort: 80
+  selector:
+    app: {{ $service.name }}
 
 {{- end }}

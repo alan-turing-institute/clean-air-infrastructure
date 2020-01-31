@@ -3,9 +3,6 @@ language: python
 install:
   - pip install -r containers/requirements.txt
 
-services:
-  - docker
-
 script:
   # # Run all pytest unit tests
   # - python -m pytest -v tests --cov containers --cov-report term-missing
@@ -18,26 +15,3 @@ script:
 
   # Run pylint for stricter error checking
   - pylint */
-
-  # Build all docker images
-  - docker build -t $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
-  - docker build -t $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
-  - docker build -t $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-
-  - docker build -t $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/cleanairapi.Dockerfile containers
-
-  - docker build -t $ACR_SERVER/oshighway:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
-  - docker build -t $ACR_SERVER/streetcanyon:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
-  - docker build -t $ACR_SERVER/ukmap:$TRAVIS_PULL_REQUEST_SHA -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
-
-  # Push all our docker images to the container registry
-  - echo "$ACR_PASSWORD" | docker login -u "$ACR_USERNAME" --password-stdin "$ACR_SERVER"
-  - docker push $ACR_SERVER/aqe:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/laqn:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/scoot:$TRAVIS_PULL_REQUEST_SHA
-
-
-  - docker push $ACR_SERVER/cleanairapi:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/oshighway:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/streetcanyon:$TRAVIS_PULL_REQUEST_SHA
-  - docker push $ACR_SERVER/ukmap:$TRAVIS_PULL_REQUEST_SHA
