@@ -102,9 +102,6 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         Remove readings with unknown detector ID or detector faults.
         """
         start_aws = time.time()
-        self.logger.info(
-            "This will take approximately 1 minute for each hour requested..."
-        )
 
         # Get an AWS client
         client = boto3.client(
@@ -245,6 +242,10 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         # Get a count of records already in the database per hour
         db_records = self.get_nscoot_by_day(
             start_date=self.start_datetime, end_date=self.end_datetime, output_type="df"
+        )
+
+        self.logger.info(
+            "This will take approximately 1 minute for each hour requested..."
         )
 
         # Process an hour at a time
