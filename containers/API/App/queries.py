@@ -77,10 +77,12 @@ def get_all_forecasts(session, lon_min, lat_min, lon_max, lat_max):
 
     interest_point_sq = session.query(func.ST_X(MetaPoint.location).label("lon"),
                                       func.ST_Y(MetaPoint.location).label("lat"),
-                                      MetaPoint.id).filter(func.ST_Intersects(
-                                          MetaPoint.location,
-                                          func.ST_MakeEnvelope(lon_min, lat_min, lon_max, lat_max, 4326)
-                                      )).subquery()
+                                      MetaPoint.id).filter(MetaPoint.source == "grid_100",
+                                                           func.ST_Intersects(
+                                                               MetaPoint.location,
+                                                               func.ST_MakeEnvelope(
+                                                                   lon_min, lat_min, lon_max, lat_max, 4326)
+                                                           )).subquery()
 
     return session.query(interest_point_sq.c.lon,
                          interest_point_sq.c.lat,

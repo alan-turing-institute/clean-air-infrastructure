@@ -73,25 +73,11 @@ class Points(Resource):
     @use_args({"xmin": fields.Float(), "ymin": fields.Float(), 'xmax': fields.Float(), 'ymax': fields.Float()})
     def get(self, args):
 
-        # -0.1686, 51.5247 -.0579, 51.4636
         session = db_session()
         all_points = get_all_forecasts(session, args['xmin'], args['ymin'], args['xmax'], args['ymax'])
 
         return results.dump(all_points)
 
 
-#     def get(self):
-#         session = db_session()
-#         q = session.query(func.max(ModelResult.fit_start_time).label("fit_time")).all()
-#         return results.dump(q)
-# @api.resource("/forecast")
-# class Forecast(Resource):
-#     @use_args({"number": fields.Int()})
-#     def get(self, args):
-#         print(args)
-#         session = db_session()
-#         q = session.query(ModelResult).limit(args["number"]).all()
-#         return results.dump(q)
-# api.add_resource(HelloWorld, '/')
 if __name__ == "__main__":
     app.run(host="0.0.0.0")

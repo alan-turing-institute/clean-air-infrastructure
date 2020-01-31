@@ -1,0 +1,9 @@
+flask-restful
+flask
+flask-marshmallow
+webargs
+uwsgi
+supervisor
+numpy
+sqlalchemy
+geoalchemy2
