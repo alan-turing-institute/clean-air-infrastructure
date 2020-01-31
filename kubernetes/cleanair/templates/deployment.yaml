@@ -33,4 +33,9 @@ spec:
       imagePullSecrets:
           - name: regcred
 
+      {{- with $deployment.volumes }}
+      volumes:
+{{ toYaml . | indent 6}}
+      {{- end }}
+
 {{- end }}
