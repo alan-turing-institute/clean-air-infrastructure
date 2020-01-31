@@ -13,11 +13,11 @@ import pandas
 from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..loggers import get_logger, green
-from ..mixins import DateRangeMixin
+from ..mixins import DateRangeMixin, DBQueryMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(DateRangeMixin, DBWriter):
+class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
     """
     Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
@@ -72,14 +72,19 @@ class ScootWriter(DateRangeMixin, DBWriter):
     @staticmethod
     def get_remote_filenames(start_datetime, end_datetime):
         """Get all possible remote file details for the period in question"""
+
         file_list = []
         for date in rrule.rrule(
-            rrule.DAILY, dtstart=start_datetime, until=end_datetime
+            rrule.HOURLY, dtstart=start_datetime, until=end_datetime
         ):
-            year, month, day = date.strftime(r"%Y-%m-%d").split("-")
-            for timestring in [
-                str(h).zfill(2) + str(m).zfill(2) for h in range(24) for m in range(60)
-            ]:
+
+            year, month, day, hour = (
+                str(date.year),
+                str(date.month).zfill(2),
+                str(date.day).zfill(2),
+                str(date.hour).zfill(2),
+            )
+            for timestring in [hour + str(m).zfill(2) for m in range(60)]:
                 csv_name = "{y}{m}{d}-{timestring}.csv".format(
                     y=year, m=month, d=day, timestring=timestring
                 )
@@ -237,13 +242,27 @@ class ScootWriter(DateRangeMixin, DBWriter):
         )
 
         n_records = 0
-        # Process a day at a time
-        for start_time in rrule.rrule(
-            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
-        ):
-            end_time = start_time + datetime.timedelta(hours=1)
+        # Get a count of records already in the database per hour
+        db_records = self.get_nscoot_by_day(
+            start_date=self.start_datetime, end_date=self.end_datetime, output_type="df"
+        )
 
-            start_datetime, end_datetime = self.get_datetimes(start_time, end_time)
+        # Process an hour at a time
+        start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
+        for start_datetime in rrule.rrule(
+            rrule.HOURLY, dtstart=start_hour, until=self.end_datetime
+        ):
+            end_datetime = start_datetime + datetime.timedelta(hours=1)
+
+            n_readings = db_records[db_records["hour"] == start_datetime]
+
+            if not n_readings.empty:
+                self.logger.info(
+                    "%s readings already in database for hour %s. Not requesting from S3 bucket",
+                    green(n_readings["n_entries"].values[0]),
+                    green(start_datetime),
+                )
+                continue
 
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
@@ -258,10 +277,6 @@ class ScootWriter(DateRangeMixin, DBWriter):
                     green(len(site_records)),
                 )
 
-                # The following database operations can be slow. However, with the switch to hourly data they are not
-                # problematic. In contrast to the claims at https://docs.sqlalchemy.org/en/13/faq/performance.html,
-                # using bulk insertions does not provide a speed-up but does increase the risk of data loss. We are
-                # therefore sticking to the higher-level functions here.
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
