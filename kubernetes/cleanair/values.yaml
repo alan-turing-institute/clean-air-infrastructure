@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: b42111cac281af48dab6b12f1c2f291ab720e31a
+imageTag: be268870c1c9da26b98a6fac0964df0ed67a80df
 
 jobs:
   - name: ukmap
@@ -116,7 +116,6 @@ deployments:
       - name: secrets
         secret:
             secretName: secrets
-
 
 services:
     - name: cleanair-api
