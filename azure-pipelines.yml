@@ -1,6 +1,5 @@
 trigger:
 - master
-- k8s_webserver
 
 pr: none
 
@@ -120,16 +119,16 @@ stages:
         fi
         if [ "$(kubectl get secret secrets --namespace cleanair 2> /dev/null | grep secrets)" == "" ]; then
           echo  '{
-              "aws_key_id": "$(SCOOT-AWS-KEY-ID)",
-              "aws_key": "$(SCOOT-AWS-KEY)"
+            "aws_key_id": "$(SCOOT-AWS-KEY-ID)",
+            "aws_key": "$(SCOOT-AWS-KEY)"
           }' > aws_secrets.json
           echo '{
-              "username": "$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)",
-              "password": "$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)",
-              "host": "$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com",
-              "port": 5432,
-              "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
-              "ssl_mode": "require"
+            "username": "$(CLEANAIR-INPUTS-DB-ADMIN-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)",
+            "password": "$(CLEANAIR-INPUTS-DB-ADMIN-PASSWORD)",
+            "host": "$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com",
+            "port": 5432,
+            "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
+            "ssl_mode": "require"
           }' > db_secrets.json
           kubectl create secret generic --namespace cleanair secrets --from-file=aws_secrets.json --from-file=db_secrets.json
           rm -f aws_secrets.json db_secrets.json

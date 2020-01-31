@@ -31,7 +31,7 @@ pip install -r containers/requirements.txt
 
 
 ## CleanAir package (optional)
-To run the clean air functionality locally (without a docker image) you can install the package with `pip` as follows:
+To run the CleanAir functionality locally (without a docker image) you can install the package with `pip` as follows:
 ```bash
 pip install -e containers
 ```
@@ -77,6 +77,13 @@ EOF
 The following steps are needed to setup the Clean Air cloud infrastructure.
 
 
+## Login to Travis CLI
+Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
+
+```bash
+travis login --pro
+```
+
 ## Setup Azure
 To start working with `Azure`, you must first login to your account from the terminal:
 ```bash
@@ -93,15 +100,7 @@ Then set your default subscription to the Clean Air project (if you cannot see i
 az account set --subscription "CleanAir"
 ```
 
-Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the name, id and password.
-
-
-## Login to Travis CLI
-Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
-
-```bash
-travis login --pro
-```
+Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the `NAME`, `ID` and `PASSWORD/SECRET` for the service principal, as these will be needed later.
 
 
 ## Setup Terraform with Python
@@ -153,27 +152,23 @@ This is done using Docker images from the Azure container registry.
 You will need the username, password and server name for the Azure container registry.
 All of these will be stored as secrets in the `RG_CLEANAIR_INFRASTRUCTURE > cleanair-secrets` Azure KeyVault.
 
-## Using Travis (old)
+<!-- ## Using Travis (old)
 These Docker images are built by Travis whenever commits are made to the GitHub repository.
 Add `ACR_PASSWORD`, `ACR_SERVER` and `ACR_USERNAME` as Travis secrets.
 
 To run the next steps we need to ensure that Travis runs a build in order to add the Docker images to the Azure container registry created by Terraform.
 Either push to the GitHub repository, or rerun the last build by going to https://travis-ci.com/alan-turing-institute/clean-air-infrastructure/ and clicking on the `Restart build` button.
-This will build all of the Docker images and add them to the registry.
+This will build all of the Docker images and add them to the registry. -->
 
-## Using Azure pipelines (new)
+## Setting up Azure pipelines
 These Docker images are built by an Azure pipeline whenever commits are made to the master branch of the GitHub repository.
 Ensure that you have configured Azure pipelines to [use this GitHub repository](https://docs.microsoft.com/en-us/azure/devops/pipelines/get-started/pipelines-get-started).
+You will need to add Service Connections to GitHub and to Azure (the Azure one should be called `cleanair-scn`).
 Currently a pipeline is set up [here](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build).
-<!-- Add `ACR_PASSWORD`, `ACR_SERVER`, `ACR_USERNAME`, `AWS_KEY_ID`, `AWS_KEY` as Azure pipeline Variables, using the [web interface to the pipeline](https://dev.azure.com) -->
 
 To run the next steps we need to ensure that this pipeline runs a build in order to add the Docker images to the Azure container registry created by Terraform.
 Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.
 This will build all of the Docker images and add them to the registry.
-
-<!-- add a Devops Service Connection (Azure Resource manager)
-call it cleanair-scn -->
-
 
 
 ## Add static datasets
@@ -192,8 +187,10 @@ will download the static datasets to temporary local storage and then upload the
 The process takes approximately 1hr (most of this is for the UKMap data) and you must have internet connectivity throughout.
 
 ## Adding live datasets
-The live datasets (like LAQN or AQE) are populated using daily jobs that create an Azure container instance and add the most recent data to the database.
-We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
+The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
+These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
+
+<!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
 - Run `python cleanair_setup/get_github_keys.py` to get the SSH keys and webhook settings for each of the relevant servers
@@ -204,8 +201,7 @@ We tell this job which version of the container to run by using GitHub webhooks 
 - In GitHub go to `clean-air-infrastructure > Settings > Webhooks` and click on `Add webhook`
 - Set the `Payload URL` to the value given by `get_github_keys.py`
 - Set the `Content type` to `application/json` (not required but preferred)
-- Select `Let me select individual events` and tick `Pull requests` only
-
+- Select `Let me select individual events` and tick `Pull requests` only -->
 
 ## Removing Terraform infrastructure
 To destroy all the resources created by `Terraform` run:
@@ -217,9 +213,10 @@ You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
-# Miscellaneous
-## Create a local secrets file
+# Running locally
+It is also possible to run this code entirely locally, without using Azure at all.
 
+## Create a local secrets file
 To run the clean air docker images locally you will need to create a local secrets file:
 Run the following to create a file with the database secrets:
 ```
@@ -237,7 +234,7 @@ echo '{
 
 Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
 
-### Build and run docker images
+## Build and run docker images locally
 **AQE - Download AQE data**
 ```bash
 docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
