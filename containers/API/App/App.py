@@ -28,7 +28,7 @@ Base.query = db_session.query_property()
 
 # Ensure sessions are closed by flask
 @app.teardown_appcontext
-def shutdown_session():
+def shutdown_session(exception=None):
     """Close down database connections"""
     db_session.remove()
 
@@ -53,7 +53,7 @@ results = Results(many=True)
 class Welcome(Resource):
     """Welcome resource"""
 
-    def get():
+    def get(self):
         """CleanAir API welcome message"""
         return "Welcome to the CleanAir API developed by the Alan Turing Institute"
 
@@ -62,7 +62,7 @@ class Welcome(Resource):
 class Point(Resource):
     "Point resource"
 
-    @use_args({"lat": fields.Float(), "lon": fields.Float()})
+    @use_args({"lat": fields.Float(required=True), "lon": fields.Float(required=True)})
     def get(self, args):
         """CleanAir API Point request"""
         session = db_session()
@@ -79,6 +79,30 @@ class Points(Resource):
 
     @use_args(
         {
+            "xmin": fields.Float(required=True),
+            "ymin": fields.Float(required=True),
+            "xmax": fields.Float(required=True),
+            "ymax": fields.Float(required=True),
+        }
+    )
+    def get(self, args):
+        """CleanAir API Points request
+           Get forecast for all points within a bounding box"""
+        session = db_session()
+
+        all_points = get_all_forecasts(
+            session, args["xmin"], args["ymin"], args["xmax"], args["ymax"]
+        )
+
+        return results.dump(all_points)
+
+
+@api.resource("/allpoints")
+class AllPoints(Resource):
+    "Points resource"
+
+    @use_args(
+        {
             "xmin": fields.Float(),
             "ymin": fields.Float(),
             "xmax": fields.Float(),
@@ -86,11 +110,11 @@ class Points(Resource):
         }
     )
     def get(self, args):
-        """CleanAir API Points request"""
+        """CleanAir API Points request
+           Get entire forecast for all points"""
         session = db_session()
-        all_points = get_all_forecasts(
-            session, args["xmin"], args["ymin"], args["xmax"], args["ymax"]
-        )
+
+        all_points = get_all_forecasts(session)
 
         return results.dump(all_points)
 
