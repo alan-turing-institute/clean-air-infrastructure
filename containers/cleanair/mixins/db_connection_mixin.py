@@ -25,6 +25,7 @@ class DBConnectionMixin:
 
     @property
     def connection_string(self):
+        """Get a connection string"""
         return "postgresql://{username}:{password}@{host}:{port}/{db_name}?{options}".format(
             **self.connection_dict
         )

@@ -2,8 +2,6 @@
 Class for connecting to Azure databases
 """
 from contextlib import contextmanager
-import json
-import os
 import time
 import requests
 from sqlalchemy import create_engine
