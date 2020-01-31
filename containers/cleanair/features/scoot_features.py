@@ -1,12 +1,16 @@
 """
 Scoot feature extraction
 """
+import datetime
+from dateutil import rrule
 from sqlalchemy import asc, func
+import datetime
 from .features import Features
 from .feature_funcs import sum_, avg_, max_
 from ..databases import DBWriter
 from ..mixins import DateRangeMixin, DBQueryMixin
 from ..decorators import db_query
+from ..loggers import green
 from ..databases.tables import (
     OSHighway,
     ScootDetector,
@@ -356,34 +360,29 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
 
-        last_scoot_road_match = self.get_last_scoot_road_reading(output_type="list")[0]
+        self.logger.info(
+            "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
+            self.start_datetime,
+            self.end_datetime,
+        )
 
-        if last_scoot_road_match:
+        for start_datetime in rrule.rrule(
+            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
+        ):
+            end_datetime = start_datetime + datetime.timedelta(days=1)
+
             self.logger.info(
-                "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
-                last_scoot_road_match,
-                self.end_datetime,
+                "Processing data between %s and %s", green(start_datetime), green(end_datetime)
             )
 
             weighted_traffic_sq = self.weighted_average_traffic(
-                last_scoot_road_match, self.end_datetime, output_type="subquery"
+                start_datetime, end_datetime, output_type="subquery"
             )
 
-        else:
-            self.logger.info(
-                "No data in scoot_road_match. Processing any available scoot data from %s to %s",
-                "2019-01-01",
-                self.end_datetime,
-            )
-
-            weighted_traffic_sq = self.weighted_average_traffic(
-                "2019-01-01", self.end_datetime, output_type="subquery"
-            )
-
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(
-                session,
-                weighted_traffic_sq,
-                table=ScootRoadReading,
-                on_conflict_do_nothing=True,
-            )
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(
+                    session,
+                    weighted_traffic_sq,
+                    table=ScootRoadReading,
+                    on_conflict_do_nothing=True,
+                )
