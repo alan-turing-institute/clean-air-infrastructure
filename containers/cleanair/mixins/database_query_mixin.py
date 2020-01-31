@@ -14,6 +14,7 @@ from ..databases.tables import (
     LAQNSite,
     LAQNReading,
     AQEReading,
+    ScootReading,
 )
 from ..loggers import get_logger
 
@@ -36,6 +37,26 @@ class DBQueryMixin:
                 func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom))
             )
         return hull
+
+    @db_query
+    def get_nscoot_by_day(self, start_date=None, end_date=None):
+        """Get the number of scoot readings that are in the database for each day"""
+
+        with self.dbcnxn.open_session() as session:
+            n_readings_q = session.query(
+                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
+                    "hour"
+                ),
+                func.count(ScootReading.measurement_start_utc).label("n_entries"),
+            ).group_by(func.date_trunc("hour", ScootReading.measurement_start_utc))
+
+            if start_date and end_date:
+                n_readings_q = n_readings_q.filter(
+                    ScootReading.measurement_start_utc >= start_date,
+                    ScootReading.measurement_start_utc <= end_date,
+                )
+
+            return n_readings_q
 
     @db_query
     def get_available_static_features(self):

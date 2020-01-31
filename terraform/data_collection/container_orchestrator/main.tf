@@ -65,10 +65,10 @@ data "template_file" "apache_config" {
 data "template_file" "run_application" {
   template = "${file("${path.module}/templates/run_application.template.sh")}"
   vars = {
-    db_admin_password_keyname       = "${var.databases.inputs.db_admin_password_keyname}"
-    db_admin_username_keyname       = "${var.databases.inputs.db_admin_username_keyname}"
-    db_name                         = "${var.databases.inputs.db_name}"
-    db_server_name_keyname          = "${var.databases.inputs.db_server_name_keyname}"
+    db_admin_password_keyname       = "${var.databases.postgres.db_admin_password_keyname}"
+    db_admin_username_keyname       = "${var.databases.postgres.db_admin_username_keyname}"
+    db_name                         = "${var.databases.postgres.db_name}"
+    db_server_name_keyname          = "${var.databases.postgres.db_server_name_keyname}"
     key_vault_name                  = "${var.infrastructure.key_vault.name}"
     registry_admin_password_keyname = "${var.infrastructure.containers.admin_password_keyname}"
     registry_admin_username_keyname = "${var.infrastructure.containers.admin_username_keyname}"

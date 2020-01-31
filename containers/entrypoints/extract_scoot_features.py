@@ -17,7 +17,7 @@ def main():
         "-e",
         "--end",
         type=str,
-        default="yesterday",
+        default="today",
         help="The last date (YYYY-MM-DD) to get data for.",
     )
     parser.add_argument(

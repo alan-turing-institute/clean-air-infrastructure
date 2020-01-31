@@ -7,8 +7,8 @@ module "configuration" {
 # Create the infrastructure resource group
 # ----------------------------------------
 resource "azurerm_resource_group" "this" {
-  name     = "${var.resource_group}"
-  location = "${module.configuration.location}"
+  name     = var.resource_group
+  location = module.configuration.location
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Infrastructure"
