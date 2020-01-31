@@ -84,7 +84,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 str(date.day).zfill(2),
                 str(date.hour).zfill(2),
             )
-            for timestring in [str(hour).zfill(2) + str(m).zfill(2) for m in range(60)]:
+            for timestring in [hour + str(m).zfill(2) for m in range(60)]:
                 csv_name = "{y}{m}{d}-{timestring}.csv".format(
                     y=year, m=month, d=day, timestring=timestring
                 )
