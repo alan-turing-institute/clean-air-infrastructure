@@ -1,5 +1,6 @@
 flask-restful
 flask
+flask-marshmallow
+webargs
 uwsgi
 supervisor
-numpy

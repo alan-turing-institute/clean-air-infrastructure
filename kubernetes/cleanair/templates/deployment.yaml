@@ -17,19 +17,31 @@ spec:
   replicas: {{ $deployment.replicas }}
   selector:
     matchLabels:
-      app: {{ $deployment.name }}
+      app: "{{ $release_name }}-{{ $deployment.name }}"
   template:
     metadata:
       labels:
-        app: {{ $deployment.name }}
+        app: "{{ $release_name }}-{{ $deployment.name }}"
     spec:
-      containers:
-      - image: "{{ $deployment.image.repository }}:{{ $tag }}"
-        imagePullPolicy: {{ $deployment.image.imagePullPolicy }}
-        name: {{ $deployment.name }}
-        ports:
-          - containerPort: {{ $deployment.ports.containerPort }}
-      imagePullSecrets:
-          - name: regcred
+        containers:
+        - image: "{{ $deployment.image.repository }}:{{ $tag }}"
+          imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
+          name: "{{ $release_name }}-{{ $deployment.name }}"
+          ports:
+            - containerPort: {{ $deployment.ports.containerPort }}
+          {{- with $deployment.volumeMounts }}
+          volumeMounts:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+        imagePullSecrets:
+        - name: regcred
+        restartPolicy: {{ $deployment.restartPolicy }}
+        {{- with $deployment.volumes }}
+        volumes:
+{{ toYaml . | indent 8 }}
+        {{- end }}
+        
+      
+
 
 {{- end }}

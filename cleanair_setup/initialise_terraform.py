@@ -169,6 +169,7 @@ def get_valid_storage_account_name(storage_mgmt_client):
 
 def record_all_secrets(vault_uri, vault_name, secrets):
     """Ensure secrets are recorded in the key"""
+    # pylint: disable=R0915
     # Write secrets to the key vault
     kv_client = get_client_from_cli_profile(KeyVaultClient)
     logging.info("Ensuring secrets are in key vault: %s", emphasised(vault_name))
