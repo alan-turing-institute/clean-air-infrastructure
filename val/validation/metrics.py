@@ -18,6 +18,10 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
 
     xp : Experiment
 
+    metric_methods : dict
+        A dictionary where keys are the name of a metric and values
+        are a function that takes two numpy arrays of the same shape.
+
     evaluate_testing : bool, optional
         If true, this function will evaluate the predictions made
         on the testing set of data.    
@@ -77,77 +81,104 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
     for index, row in xp.experiment_df.iterrows():
         model_data = xp.model_data_list[index]
 
+        # get prediction and testing column names
         pred_cols = ['{s}_mean'.format(s=spc) for spc in model_data.config['species']]
         test_cols = model_data.config['species'].copy()
 
-        if evaluate_training:
-            # evaluate training predictions of sensors over the whole training period
-            training_sensor_scores_df = measure_scores_by_sensor(
-                model_data.normalised_training_data_df, metric_methods,
-                pred_cols=pred_cols, test_cols=test_cols
-            )
-            # add columns to training sensor dataframe
-            training_sensor_scores_df['point_id'] = training_sensor_scores_df.index.copy()
-            training_sensor_scores_df['experiment_name'] = xp.name
-            training_sensor_scores_df['instance_id'] = index
-            training_sensor_scores_df['cluster_name'] = xp.cluster
-            training_sensor_scores_df['param_id'] = row['param_id']
-            training_sensor_scores_df['data_id'] = row['data_id']
-            training_sensor_scores_df['training_set'] = True
-            training_sensor_scores_df['testing_set'] = False
+        # evaluate the metrics at sensors and in time
+        instance_sensor_scores_df, instance_temporal_scores_df = evaluate_model_data(
+            model_data, metric_methods,
+            evaluate_training=evaluate_training,
+            evaluate_testing=evaluate_testing,
+            pred_cols=pred_cols,
+            test_cols=test_cols,
+            experiment_name=xp.name,
+            instance_id=index,
+            cluster_name=xp.cluser_name,
+            param_id=row['param_id'],
+            data_id=row['data_id']
+        )
 
-            # evaluate training predictions for each timestamp over all sensors
-            training_temporal_scores_df = measure_scores_by_hour(
-                model_data.normalised_training_data_df, metric_methods,
-                pred_cols=pred_cols, test_cols=test_cols
-            )
-            # add columns to training temporal dataframe
-            training_temporal_scores_df['measurement_start_utc'] = training_temporal_scores_df.index.copy()
-            training_temporal_scores_df['experiment_name'] = xp.name
-            training_temporal_scores_df['instance_id'] = index
-            training_temporal_scores_df['cluster_name'] = xp.cluster
-            training_temporal_scores_df['param_id'] = row['param_id']
-            training_temporal_scores_df['data_id'] = row['data_id']
-            training_temporal_scores_df['training_set'] = True
-            training_temporal_scores_df['testing_set'] = False
+        # append to the bigger dataframes
+        sensor_scores_df = sensor_scores_df.append(instance_sensor_scores_df, ignore_index=True)
+        temporal_scores_df = temporal_scores_df.append(instance_temporal_scores_df, ignore_index=True)
 
-            # ToDo: append to dataframe
-            sensor_scores_df = sensor_scores_df.append(training_sensor_scores_df, ignore_index=True)
-            temporal_scores_df = temporal_scores_df.append(training_temporal_scores_df, ignore_index=True)
+    return sensor_scores_df, temporal_scores_df
 
-        if evaluate_testing:
-            # evaluate testing predictions of sensors over the whole testing period
-            testing_sensor_scores_df = measure_scores_by_sensor(
-                model_data.normalised_pred_data_df, metric_methods,
-                pred_cols=pred_cols, test_cols=test_cols
-            )
-            # add columns to training sensor dataframe
-            testing_sensor_scores_df['point_id'] = testing_sensor_scores_df.index.copy()
-            testing_sensor_scores_df['experiment_name'] = xp.name
-            testing_sensor_scores_df['instance_id'] = index
-            testing_sensor_scores_df['cluster_name'] = xp.cluster
-            testing_sensor_scores_df['param_id'] = row['param_id']
-            testing_sensor_scores_df['data_id'] = row['data_id']
-            testing_sensor_scores_df['training_set'] = False
-            testing_sensor_scores_df['testing_set'] = True
-            # evaluate testing predictions for each timestamp over all sensors
-            testing_temporal_scores_df = measure_scores_by_hour(
-                model_data.normalised_testing_data_df, metric_methods,
-                pred_cols=pred_cols, test_cols=test_cols
-            )
-            # add columns to training temporal dataframe
-            testing_temporal_scores_df['measurement_start_utc'] = testing_temporal_scores_df.index.copy()
-            testing_temporal_scores_df['experiment_name'] = xp.name
-            testing_temporal_scores_df['instance_id'] = index
-            testing_temporal_scores_df['cluster_name'] = xp.cluster
-            testing_temporal_scores_df['param_id'] = row['param_id']
-            testing_temporal_scores_df['data_id'] = row['data_id']
-            testing_temporal_scores_df['training_set'] = False
-            testing_temporal_scores_df['testing_set'] = True
+def evaluate_model_data(model_data, metric_methods, evaluate_training=False, evaluate_testing=True, pred_cols=['NO2_mean'], test_cols=['NO2'], **kwargs):
+    """
+    Given a model data object, evaluate the predictions.
 
-            # ToDo: append to dataframe
-            sensor_scores_df = sensor_scores_df.append(testing_sensor_scores_df, ignore_index=True)
-            temporal_scores_df = temporal_scores_df.append(testing_temporal_scores_df, ignore_index=True)
+    Parameters
+    ___
+
+    model_data : ModelData
+        A model data object with updated predictions.
+
+    metric_methods : dict
+        A dictionary where keys are the name of a metric and values
+        are a function that takes two numpy arrays of the same shape.
+
+    evaluate_testing : bool, optional
+        If true, this function will evaluate the predictions made
+        on the testing set of data.    
+
+    evaluate_training : bool, optional
+        If true, this function will evaluate the predictions made
+        on the training set of data.
+
+    Returns
+    ___
+
+    sensor_scores_df : pd.DataFrame
+        For every instance of the experiment, we calculate the score
+        of a sensor over the whole prediction time period.
+
+    temporal_scores_df : pd.DataFrame
+        For every instance of an experiment, we calculate the scores
+        over all sensors given a slice in time.
+    """
+
+    if evaluate_training:
+        training_sensor_scores_df, training_temporal_scores_df = __evaluate_sensor_and_temporal_scores(
+            model_data.normalised_training_data_df, metric_methods,
+            training_set=True, testing_set=False,
+            pred_cols=pred_cols, test_cols=test_cols, **kwargs
+        )
+        if not evaluate_testing:
+            return training_sensor_scores_df, training_temporal_scores_df
+
+    if evaluate_testing:
+        testing_sensor_scores_df, testing_temporal_scores_df = __evaluate_sensor_and_temporal_scores(
+            model_data.normalised_pred_data_df, metric_methods,
+            training_set=False, testing_set=True,
+            pred_cols=pred_cols, test_cols=test_cols, **kwargs
+        )
+        if not evaluate_training:
+            return testing_sensor_scores_df, testing_temporal_scores_df
+
+    if evaluate_training and evaluate_testing:
+        return training_sensor_scores_df.append(testing_sensor_scores_df, ignore_index=True), training_temporal_scores_df.append(testing_temporal_scores_df, ignore_index=True)
+    
+    raise Exception("You must set either evaluate_training or evaluate_testing to True")
+
+def __evaluate_sensor_and_temporal_scores(
+            pred_df, metric_methods, pred_cols=['NO2_mean'], test_cols=['NO2'],
+            sensor_col='point_id', temporal_col='measurement_start_utc', **kwargs
+        ):
+    """
+    Given a prediction dataframe, measure scores over sensors and time.
+    """
+    sensor_scores_df = measure_scores_by_sensor(pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols)
+    temporal_scores_df = measure_scores_by_hour(pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols)
+
+    sensor_scores_df[sensor_col] = sensor_scores_df.index.copy()
+    temporal_scores_df[temporal_col] = temporal_scores_df.index.copy()
+
+    # meta info for the evaluation
+    for key, value in kwargs.items():
+        sensor_scores_df[key] = value
+        temporal_scores_df[key] = value
 
     return sensor_scores_df, temporal_scores_df
 
@@ -166,6 +197,10 @@ def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
 
     mse : bool, optional
         Whether to use mean squared error.
+
+    kwargs : dict, optional
+        Keys are names of metrics, values are a function that takes
+        two numpy arrays of the same shape.
 
     Returns
     ___
@@ -208,6 +243,16 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
         Keys are name of metric.
         Values are functions that take in two numpy/series and compute the score.
 
+    datetime_col : str, optional
+        Name of the datetime columns in the dataframe.
+
+    pred_cols : list, optional
+        Names of the column that are predictions.
+        Length must match `test_cols`.
+
+    test_cols : list, optional
+        Names of columns in the dataframe that are the true observations.
+
     Returns
     ___
 
@@ -235,6 +280,28 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
 def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_cols=['NO2_mean'], test_cols=['NO2']):
     """
     Group the pred_df by sensor then measure scores on each sensor.
+
+    Parameters
+    ___
+
+    pred_df : DataFrame
+        Indexed by datetime. Must have a column of testing data and
+        a column from the predicted air quality at the same points 
+        as the testing data.
+
+    metric_methods : dict
+        Keys are name of metric.
+        Values are functions that take in two numpy/series and compute the score.
+
+    sensor_col : str, optional
+        Name of the column containing the sensor ids.
+    
+    pred_cols : list, optional
+        Names of the column that are predictions.
+        Length must match `test_cols`.
+
+    test_cols : list, optional
+        Names of columns in the dataframe that are the true observations.
     """
     # remove nans from rows
     pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
