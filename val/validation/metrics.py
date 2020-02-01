@@ -50,7 +50,8 @@ def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_trai
     Examples
     ___
         >>> xp.update_model_data_list() # remember to update predictions
-        >>> scores_df = evaluate_experiment(xp)
+        >>> metric_methods = get_metric_methods()
+        >>> scores_df = evaluate_experiment(xp, metric_methods)
     """
     # the basic cols that every scoring dataframe should have
     cols = [
