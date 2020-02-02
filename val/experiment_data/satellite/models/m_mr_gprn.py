@@ -18,7 +18,7 @@ sys.path.append('../../../libs')
 sys.path.append('..') #for when running on a cluster
 
 import _gprn as gprn
-from cleanair.models import SVGP_TF1
+#from cleanair.models import SVGP_TF1
 
 import pandas as pd
 import json
@@ -116,12 +116,13 @@ def get_context(data_config, param_config, X, Y):
     context.use_diag_covar = False
     context.use_diag_covar_flag = False
 
-    context.train_inducing_points_flag = True
+    context.train_inducing_points_flag = False
 
     context.whiten=True
     context.jitter = 1e-5
     context.shuffle_seed = 0
     context.num_epochs = 10000
+    context.split_optimize=True
     context.seed = 0
     context.restore_location = 'restore/{name}.ckpt'.format(name=param_config['model_state_fp'])
 
@@ -144,8 +145,8 @@ def get_context(data_config, param_config, X, Y):
 
     context.kernels = [
         {
-            'f': [get_prod(D=X[0].shape[-1], init_vars=[inv(0.1)]) for i in range(context.num_latent)],
-            'w': [[get_prod(D=X[0].shape[-1], init_vars=[inv(0.1)]) for j in range(context.num_latent)] for i in range(context.num_outputs)]
+            'f': [get_prod(D=X[0].shape[-1], init_vars=[inv(0.01)]) for i in range(context.num_latent)],
+            'w': [[get_prod(D=X[0].shape[-1], init_vars=[inv(0.01)]) for j in range(context.num_latent)] for i in range(context.num_outputs)]
         }, #r=0
     ]
     context.noise_sigmas = [
@@ -165,8 +166,6 @@ def get_dataset(data_config, param_config, X, Y, z_r):
         y = np.array(Y[i])
 
         M = x.shape[1]
-        print(M)
-        print(x.shape)
 
         b = 400
         b = b if b < x.shape[0] else x.shape[0]
@@ -211,12 +210,9 @@ def main(data_config, param_config, experiment_config):
     X_laqn = X_laqn[idx, :] 
     Y_laqn = Y_laqn[idx, :] 
 
-
-    
     #===========================Setup SAT Data===========================
     X_sat = train_dict['satellite']['X'].copy()
     Y_sat = train_dict['satellite']['Y'][:, None].copy()
-
 
     #===========================Only Lat/Lon/Epochs===========================
     X_laqn = X_laqn[:, :3]
@@ -226,11 +222,20 @@ def main(data_config, param_config, experiment_config):
     X = [X_laqn[:, None, :], X_sat]
     Y = [Y_laqn, Y_sat]
 
+    #X = [X[1]]
+    #Y = [Y[1]]
+
     #===========================Get Inducing Points===========================
     #get inducing points across the whole of the satellite period
 
-    num_z = param_config['n_inducing_points']
-    z_r = kmeans2(X_sat.reshape([X_sat.shape[0]*X_sat.shape[1], X_sat.shape[2]]), num_z, minit='points')[0] 
+    #num_z = param_config['n_inducing_points']
+    num_z = 100
+    XX = X[1]
+    z_r = kmeans2(XX.reshape([XX.shape[0]*XX.shape[1], XX.shape[2]]), num_z, minit='points')[0] 
+
+    print('LAQN: ', X[0].shape, Y[0].shape)
+    #print('SAT: ', X[1].shape, Y[1].shape)
+    print('Z: ', z_r.shape)
 
     #===========================Quick fixes===========================
     #TODO: ask patrick where these configs should go
@@ -239,13 +244,12 @@ def main(data_config, param_config, experiment_config):
     param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
 
     #===========================Create Model===========================
-    print('LAQN: ', X[0].shape, Y[0].shape)
-    print('SAT: ', X[1].shape, Y[1].shape)
+
 
     dataset = get_dataset(data_config, param_config, X, Y, z_r)
     context = get_context(data_config, param_config, X, Y)
 
-    elbo_model =  gprn.models.GPRN_Aggr
+    elbo_model =  gprn.models.GPAggr
 
     m = gprn.GPRN(
         model = elbo_model,
@@ -292,7 +296,7 @@ if __name__ == '__main__':
 
     param_config = param_config[model][param_idx]
     data_config = data_config[data_idx]
-    experiment_config = experiment_config[(experiment_config['param_id'] == param_idx) & (experiment_config['data_id'] == data_idx)]
+    experiment_config = experiment_config[(experiment_config['param_id'] == param_idx) & (experiment_config['data_id'] == data_idx) & (experiment_config['model_name'] == model)]
 
     experiment_config = experiment_config.iloc[0]
 
