@@ -22,7 +22,7 @@ from .scoot_tables import (
 )
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon
-from .model_results_table import ModelResult
+from .model_results_table import ModelResult, ModelResultsView
 from .satellite_tables import (
     SatelliteSite,
     SatelliteDiscreteSite,

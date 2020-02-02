@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import func
 from cleanair.loggers import get_log_level
 from cleanair.decorators import db_query
-from cleanair.databases.tables import ModelResult, MetaPoint
+from cleanair.databases.tables import ModelResult, MetaPoint, ModelResultsView
 
 logging.basicConfig(level=get_log_level(0))
 
@@ -63,26 +63,19 @@ def get_point_forecast(session, lon, lat, max_dist=0.001):
 
 
 @db_query
-def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max=None):
+def get_all_forecast_bounded(session, lon_min=None, lat_min=None, lon_max=None, lat_max=None):
     """Get all the scoot forecasts within a bounding box
 
     args:
         session: A session object
         bounding_box: A tuple of (lat_min, lon_min, lat_max, lon_max)"""
 
-    interest_point_q = session.query(
-        func.ST_X(MetaPoint.location).label("lon"),
-        func.ST_Y(MetaPoint.location).label("lat"),
-        MetaPoint.id,
-    ).filter(MetaPoint.source == "grid_100")
-
-    if lon_min and lat_min and lon_max and lat_max:
-        interest_point_q = interest_point_q.filter(
-            func.ST_Intersects(
-                MetaPoint.location,
-                func.ST_MakeEnvelope(lon_min, lat_min, lon_max, lat_max, 4326),
-            )
-        )
+    interest_point_q = session.query(ModelResultsView).filter(func.ST_Intersects(
+        ModelResultsView.location,
+        func.ST_MakeEnvelope(
+            lon_min, lat_min, lon_max, lat_max, 4326),
+    )
+    )
 
     interest_point_sq = interest_point_q.subquery()
 
@@ -101,3 +94,16 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
         .join(ModelResult)
         .filter(ModelResult.fit_start_time == latest_model_result_sq.c.latest_forecast)
     )
+
+
+@db_query
+def get_all_forecast(session):
+    """Get all the scoot forecasts within a bounding box
+    """
+
+    return session.query(ModelResultsView.id.label("point_id"),
+                         ModelResultsView.lat.label("lat"),
+                         ModelResultsView.lon.label("lon"),
+                         ModelResultsView.measurement_start_utc.label("measurement_start_utc"),
+                         ModelResultsView.predict_mean.label("predict_mean"),
+                         ModelResultsView.predict_var.label("predict_var"))

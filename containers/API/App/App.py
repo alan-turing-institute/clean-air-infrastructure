@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
 from webargs import fields
 from webargs.flaskparser import use_args
-from .queries import get_point_forecast, get_all_forecasts
+from .queries import get_point_forecast, get_all_forecast, get_all_forecast_bounded
 
 # Initialise application
 app = Flask(__name__)
@@ -18,7 +18,8 @@ ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json")
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -90,7 +91,7 @@ class Points(Resource):
            Get forecast for all points within a bounding box"""
         session = db_session()
 
-        all_points = get_all_forecasts(
+        all_points = get_all_forecast_bounded(
             session, args["xmin"], args["ymin"], args["xmax"], args["ymax"]
         )
 
@@ -101,20 +102,12 @@ class Points(Resource):
 class AllPoints(Resource):
     "Points resource"
 
-    @use_args(
-        {
-            "xmin": fields.Float(),
-            "ymin": fields.Float(),
-            "xmax": fields.Float(),
-            "ymax": fields.Float(),
-        }
-    )
-    def get(self, args):
+    def get(self):
         """CleanAir API Points request
            Get entire forecast for all points"""
         session = db_session()
 
-        all_points = get_all_forecasts(session)
+        all_points = get_all_forecast(session)
 
         return results.dump(all_points)
 
