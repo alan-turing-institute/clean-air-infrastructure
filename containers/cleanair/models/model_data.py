@@ -433,10 +433,10 @@ class ModelData(DBWriter, DBQueryMixin):
             N_sat_box = self.training_satellite_data_x["box_id"].unique().size
             N_hours = self.training_satellite_data_x["epoch"].unique().size
             # N_interest_points = self.training_satellite_data_x['point_id'].unique().size
-            N_x_names = len(self.config["x_names"])
+            N_x_names = len(self.x_names_norm)
 
             X_sat = (
-                self.training_satellite_data_x[self.config["x_names"]]
+                self.training_satellite_data_x[self.x_names_norm]
                 .to_numpy()
                 .reshape((N_sat_box * N_hours, 100, N_x_names))
             )
