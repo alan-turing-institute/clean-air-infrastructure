@@ -40,3 +40,6 @@ val/cluster/
 run_model/cluster
 run_model/data
 
+# csv files
+*.csv
+
