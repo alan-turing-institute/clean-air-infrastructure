@@ -43,3 +43,8 @@ run_model/data
 # csv files
 *.csv
 
+# Python package
+*.egg-info
+
+# Misc
+images/

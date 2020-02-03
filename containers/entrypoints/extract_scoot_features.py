@@ -17,7 +17,7 @@ def main():
         "-e",
         "--end",
         type=str,
-        default="yesterday",
+        default="today",
         help="The last date (YYYY-MM-DD) to get data for.",
     )
     parser.add_argument(
@@ -45,7 +45,7 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn", "satellite"]
+    kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
 
     # Extract features and notify any exceptions
     try:

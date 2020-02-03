@@ -14,7 +14,7 @@ from dateutil.relativedelta import relativedelta
 def pickle_files_exist(data_config):
     return os.path.exists(data_config['train_fp']) and os.path.exists(data_config['test_fp'])
 
-def load_experiment_from_directory(name, experiment_data='experiment_data/'):
+def load_experiment_from_directory(name, experiments_directory='experiment_data/', **kwargs):
     """
     Return an experiment with a name from a directory.
 
@@ -33,20 +33,26 @@ def load_experiment_from_directory(name, experiment_data='experiment_data/'):
     Experiment
         Initialised from directory.
     """
-    directory = experiment_data + name + '/'
 
-    with open(directory + 'meta/model_params.json', 'r') as fp:
+    with open(os.path.join(experiments_directory, name, 'meta', 'model_params.json'), 'r') as fp:
         model_params = json.load(fp)
 
-    with open(directory + 'meta/data.json', 'r') as fp:
+    with open(os.path.join(experiments_directory, name, 'meta', 'data.json'), 'r') as fp:
         data_config = json.load(fp)
 
-    experiment_df = pd.read_csv(directory + 'meta/experiment.csv', index_col=0)
+    experiment_df = pd.read_csv(os.path.join(experiments_directory, name, 'meta', 'experiment.csv'), index_col=0)
 
-    models = list(experiment_df['model_name'].unique())
-    cluster_name = list(experiment_df['cluster'].unique())[0]
+    experiment_params_dict = kwargs.copy()
+    experiment_params_dict['models'] = list(experiment_df['model_name'].unique()) if 'models' not in kwargs else kwargs['models']
+    experiment_params_dict['cluster_name'] = list(experiment_df['cluster'].unique())[0] if 'cluster_name' not in kwargs else kwargs['cluster_name']
+    experiment_params_dict['experiments_directory'] = experiments_directory if 'experiments_directory' not in kwargs else kwargs['experiments_directory']
+    experiment_params_dict['name'] = name
 
-    return get_experiment_class(name)(name, models, cluster_name, model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiment_data)
+    return get_experiment_class(name)(model_params=model_params, data_config=data_config, experiment_df=experiment_df, directory=experiments_directory, **experiment_params_dict)
+
+def save_experiment_scores_df(xp, scores_df, filename):
+    filepath = os.path.join(xp.experiments_directory, xp.name, 'meta', filename)
+    scores_df.to_csv(filepath)
     
 def get_experiment_class(name):
     """
@@ -215,6 +221,21 @@ def create_params_list(**kwargs):
 def create_rolls(train_start, train_n_hours, pred_n_hours, num_rolls):
     """
     Create a list of dictionaries with train and pred dates rolled up.
+
+    Parameters
+    ___
+
+    train_start : str
+        Start date of the training period for the first roll.
+
+    train_n_hours : int
+        Number of hours in each training period.
+
+    pred_n_hours : int
+        Number of hours in each testing period.
+
+    num_rolls : int
+        The number of times to train and predict.
     """
     start_of_roll = train_start
     rolls = []
