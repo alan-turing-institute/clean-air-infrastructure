@@ -306,7 +306,7 @@ class Features(DBWriter, DBQueryMixin):
             q_filtered = q_metapoints
 
         n_interest_points = q_filtered.count()
-        batch_size = 50
+        batch_size = 1000
         self.logger.info(
             "Preparing to analyse %s interest points in batches of %i...",
             green(n_interest_points),

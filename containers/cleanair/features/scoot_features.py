@@ -388,3 +388,14 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
                     table=ScootRoadReading,
                     on_conflict_do_nothing=True,
                 )
+
+            return
+
+    def delete_remote_entries(self):
+        """Remove entries from the ScootRoadReading table"""
+
+        with self.dbcnxn.open_session() as session:
+            drop_q = session.query(ScootRoadReading).filter(ScootRoadReading.measurement_start_utc > self.start_datetime,
+                                                            ScootRoadReading.measurement_start_utc < self.end_datetime).delete()
+
+            session.commit()
