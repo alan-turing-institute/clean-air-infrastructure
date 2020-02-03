@@ -6,15 +6,15 @@ from abc import ABC, abstractmethod
 import subprocess
 import pathlib
 
-from .. import util
+import os
 
 class Cluster(ABC):
     """
         Cluster base class
     """
-    def __init__(self, experiment_name='', cluster_config=None, experiment_configs=None,
+    def __init__(self, root='cluster',experiment_name='', cluster_config=None, experiment_configs=None,
                  experiment_fp='', cluster_tmp_fp='cluster', home_directory_fp='~/',
-                 input_format_fn=lambda x: x):
+                 input_format_fn=lambda x: x, libs=[],relative_fp_flag=False):
         """
             experiment_fp: location of the experiment to run
             cluster_tmp_fp: location of tmp folder to store temporal files created in this class
@@ -22,7 +22,7 @@ class Cluster(ABC):
             experiment_configs: an array of dictionaries
         """
 
-        self.root = 'validation/cluster/'
+        self.root = root
         self.experiment_name = experiment_name
         self.config = cluster_config or {}
         self.experiment_configs = experiment_configs or {}
@@ -30,6 +30,8 @@ class Cluster(ABC):
         self.cluster_tmp_fp = cluster_tmp_fp
         self.home_directory_fp = home_directory_fp
         self.input_format_fn = input_format_fn
+        self.libs = libs
+        self.relative_fp_flag = str(int(relative_fp_flag))
 
         self.max_config = {}
 
@@ -116,13 +118,14 @@ class Cluster(ABC):
         template = self.template
 
         template = template.replace('<MODELS_DIR>', self.experiment_name+'/models/')
-        template = template.replace('<LOGS_DIR>', self.experiment_name+'/cluster/logs')
+        template = template.replace('<LOGS_DIR>', self.experiment_name+'/logs')
         template = template.replace('<NODES>', str(self.config['nodes']))
         template = template.replace('<CPUS>', str(self.config['cpus']))
         template = template.replace('<MEMORY>', str(self.config['memory']))
         template = template.replace('<TIME>', str(self.config['time']))
         template = template.replace('<FILE_NAMES>', file_name)
         template = template.replace('<FILE_INPUTS>', file_inputs)
+        template = template.replace('<LOG_NAME>', log_name)
 
         return template
 
@@ -141,7 +144,7 @@ class Cluster(ABC):
             file_name = 'm_{model}'.format(model=model)
 
             #get the ordered keys and values
-            ordered_config_keys = self.get_key_order(util.dict_without_key(config, 'filename'))
+            ordered_config_keys = self.get_key_order(dict_without_key(config, 'filename'))
             inputs = [config[key] for key in ordered_config_keys]
 
             #convert values to file input format
@@ -209,6 +212,7 @@ class Cluster(ABC):
             "--basename", self.experiment_name,
             "--cluster_folder", self.cluster_tmp_fp,
             "--experiments_folder", self.experiment_fp,
+            "--relative_fp_flag", self.relative_fp_flag
         ]
 
 
@@ -216,11 +220,9 @@ class Cluster(ABC):
             call_array.append("--slurm_file")
             call_array.append('scripts/'+f_name)
 
-        for lib in self.config['libs']:
+        for lib in self.libs:
             call_array.append("--lib")
             call_array.append(lib)
-
-        print(call_array)
 
         subprocess.call(call_array)
 
@@ -231,3 +233,62 @@ class Cluster(ABC):
 
         batch_file_names = self.create_batch_scripts()
         self.send_files_to_cluster(batch_file_names)
+
+    def get(self):
+        """
+            Get files from the cluster and store experiment folder.
+        """
+
+        call_array = [
+            "sudo",
+            "sh", "validation/cluster/scripts/get_results.sh",
+            "--user", self.config['user'],
+            "--ip", self.config['ip'],
+            "--ssh_key", self.home_directory_fp +  self.config['ssh_key'],
+            "--basename", self.experiment_name,
+            "--cluster_folder", self.cluster_tmp_fp,
+            "--experiments_folder", self.experiment_fp,
+            "--relative_fp_flag", self.relative_fp_flag
+        ]
+
+        subprocess.call(call_array)
+
+
+    def check(self):
+        """
+            Print cluster state.
+        """
+        #TODO: move into script
+        script_str = """
+ssh  -i "{SSH_KEY}" "{USER}@{IP}" -o StrictHostKeyChecking=no 'bash -s' << HERE
+squeue -u {USER}
+HERE
+        """.format(
+            SSH_KEY=self.home_directory_fp +  self.config['ssh_key'],
+            USER=self.config['user'],
+            IP=self.config['ip'],
+        )
+
+        cmd = os.system(script_str)
+
+    def clean(self):
+        script_str = """
+ssh  -i "{SSH_KEY}" "{USER}@{IP}" -o StrictHostKeyChecking=no 'bash -s' << HERE
+rm -rf {name}
+HERE
+    """.format(
+            SSH_KEY=self.home_directory_fp +  self.config['ssh_key'],
+            USER=self.config['user'],
+            IP=self.config['ip'],
+            name=self.experiment_name
+        )
+
+        cmd = os.system(script_str)
+
+def dict_without_key(dict_obj, key):
+    """
+        Return a dictionary with the key removed.
+    """
+    new_dict_obj = dict_obj.copy()
+    new_dict_obj.pop(key)
+    return new_dict_obj

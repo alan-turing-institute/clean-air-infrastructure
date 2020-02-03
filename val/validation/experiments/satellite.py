@@ -44,7 +44,7 @@ class SatelliteExperiment(experiment.Experiment):
                 lengthscale=[0.1],
                 variance=[0.1],
                 minibatch_size=[100],
-                n_inducing_points=[30],
+                n_inducing_points=[200],
                 max_iter=[100],
                 refresh=[10],
                 train=[True],
