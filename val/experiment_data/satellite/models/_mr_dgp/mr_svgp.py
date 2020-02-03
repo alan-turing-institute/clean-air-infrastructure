@@ -14,7 +14,7 @@ from gpflow import params_as_tensors, ParamList
 
 
 class MR_SVGP(Parameterized):
-    def __init__(self, Z, K, noise_sigma, white=True,**kwargs):
+    def __init__(self, Z, K, noise_sigma, white=True, **kwargs):
         Parameterized.__init__(self, **kwargs)
 
         self.white=True

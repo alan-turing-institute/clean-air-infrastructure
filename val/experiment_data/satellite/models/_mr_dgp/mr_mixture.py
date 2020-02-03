@@ -87,7 +87,7 @@ class MR_Mixture(Model):
             k = self.kernels[0][i]
             sig = self.noise_sigmas[0][i]
 
-            gp = MR_SVGP(z, k, sig)
+            gp = MR_SVGP(z, k, sig, name='base_{i}'.format(i=i))
             self.base_gps.append(gp)
 
             if i > 0:
@@ -95,7 +95,7 @@ class MR_Mixture(Model):
                 k = self.kernels[1][i-1]
                 sig = self.noise_sigmas[1][i-1]
 
-                dgp = MR_SVGP(z, k, sig)
+                dgp = MR_SVGP(z, k, sig, name='dgp_{i}'.format(i=i))
                 self.deep_gps.append(dgp)
 
         if self.parent_mixtures:
@@ -104,7 +104,7 @@ class MR_Mixture(Model):
                 k = self.kernels[2][i]
                 sig = self.noise_sigmas[2][i]
 
-                gp = MR_SVGP(z, k, sig)
+                gp = MR_SVGP(z, k, sig, name='parent_{i}'.format(i=i))
 
                 self.parent_gps.append(gp)
 
@@ -450,7 +450,10 @@ class MR_Mixture(Model):
         dgp_mu = dgp_mu + parent_mu
         dgp_sig = dgp_sig + parent_sig
 
-        mu, sig = self.mixing_weight.predict(base_mu, base_sig, dgp_mu, dgp_sig)
+        base_mu = tf.Print(base_mu, [num_samples, tf.shape(base_mu)], 'base_mu: ', summarize=10)
+        base_mu = tf.Print(base_mu, [num_samples, tf.shape(dgp_mu)], 'dgp_mu: ', summarize=10)
+
+        mu, sig = self.mixing_weight.predict(base_mu, base_sig, dgp_mu, dgp_sig, num_samples=num_samples)
 
         return mu, sig
 

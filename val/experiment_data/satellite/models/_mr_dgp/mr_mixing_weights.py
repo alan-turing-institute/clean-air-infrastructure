@@ -19,7 +19,7 @@ class MR_Average_Mixture(MR_Mixing_Weights):
     def __init__(self):
         MR_Mixing_Weights.__init__(self)
     
-    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig):
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         base_mu_samples = tf.tile(tf.expand_dims(base_mu[0], 0), [tf.shape(dgp_mu[0])[0], 1, 1, 1])
         base_sig_samples = tf.tile(tf.expand_dims(base_sig[0], 0), [tf.shape(dgp_mu[0])[0], 1, 1, 1])
 
@@ -44,9 +44,9 @@ class MR_Base_Only(MR_Mixing_Weights):
         MR_Mixing_Weights.__init__(self)
         self.i=i
 
-    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig):
-        base_mu_samples = tf.tile(tf.expand_dims(base_mu[self.i], 0), [tf.shape(base_mu[0])[0], 1, 1, 1])
-        base_sig_samples = tf.tile(tf.expand_dims(base_sig[self.i], 0), [tf.shape(base_mu[0])[0], 1, 1, 1])
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
+        base_mu_samples = tf.tile(tf.expand_dims(base_mu[self.i], 0), [num_samples, 1, 1, 1])
+        base_sig_samples = tf.tile(tf.expand_dims(base_sig[self.i], 0), [num_samples, 1, 1, 1])
 
         return base_mu_samples, base_sig_samples
 
@@ -66,7 +66,7 @@ class MR_DGP_Only(MR_Mixing_Weights):
         MR_Mixing_Weights.__init__(self)
         self.i=i
 
-    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig):
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         base_mu_samples = dgp_mu[self.i]
         base_sig_samples = dgp_sig[self.i]
 
@@ -86,7 +86,7 @@ class MR_Variance_Mixing(MR_Mixing_Weights):
     def __init__(self):
         MR_Mixing_Weights.__init__(self)
 
-    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig):
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         pred_vars = []
         for i in range(len(base_sig)):
             pred_var = base_sig[i]
@@ -161,7 +161,7 @@ class MR_Variance_Mixing_1(MR_Mixing_Weights):
     def __init__(self):
         MR_Mixing_Weights.__init__(self)
 
-    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig):
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         pred_vars = []
         for i in range(len(base_sig)):
             pred_var = base_sig[i]

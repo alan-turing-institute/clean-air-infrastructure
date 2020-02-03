@@ -52,6 +52,7 @@ def predict(x_dict, predict_fn, species, ignore=[]):
         species_dict = {}
         src_x = x_dict[src]['X']
         src_ys, src_var = predict_fn(src_x)
+
         src_ys, src_var = get_sample_mean_var(src_ys, src_var)
         src_dict = {
             'mean': src_ys,
@@ -62,7 +63,7 @@ def predict(x_dict, predict_fn, species, ignore=[]):
     return dict_results
 
 def batch_predict(m, XS, num_samples):
-    batch_size = 100
+    batch_size = 130
     NS = XS.shape[0]
 
     if NS < batch_size:
@@ -94,6 +95,9 @@ def batch_predict(m, XS, num_samples):
             ys_arr = ys
             ys_var_arr = ys_var
         else:
+            print('ys_var_arr.shape, ys_var.shape: ', ys_var_arr.shape, ys_var.shape)
+            print('ys_arr.shape, ys.shape: ', ys_arr.shape, ys.shape)
+            print('batch, num_samples: ', batch.shape, num_samples)
             ys_var_arr = np.concatenate([ys_var_arr, ys_var], axis=1)
             ys_arr = np.concatenate([ys_arr, ys], axis=1)
 
@@ -262,11 +266,12 @@ def main(data_config, param_config, experiment_config):
         dgp_kernel_ls = [1.0, 0.1, 0.1, 0.1,  0.1]
         dgp_kernel_v = [1.0, 1.0, 1.0, 1.0, 0.1]
 
+        #K_dgp_1 = get_kernel_product([MR_Linear, MR_SE, MR_SE], active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
         K_dgp_1 = get_kernel_product(MR_SE, active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
         K_parent_1 = None
         
 
-        num_z = 100
+        num_z = 200
         base_Z = [get_inducing_points(dataset[0][0], num_z), get_inducing_points(dataset[1][0], num_z)]
 
         sliced_dataset = np.concatenate([np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1)
@@ -295,9 +300,9 @@ def main(data_config, param_config, experiment_config):
             kernels = [[K_base_1, K_base_2], [K_dgp_1], [K_parent_1]], 
             noise_sigmas = noise_sigmas,
             minibatch_sizes = minibatch_sizes,
-            mixing_weight = MR_DGP_Only(), 
+            #mixing_weight = MR_DGP_Only(), 
             #mixing_weight = MR_Variance_Mixing_1(), 
-            #mixing_weight = MR_Base_Only(i=1), 
+            mixing_weight = MR_Base_Only(i=1), 
             parent_mixtures = parent_mixtures,
             num_samples=1,
             name=name_prefix+"MRDGP"
@@ -311,15 +316,23 @@ def main(data_config, param_config, experiment_config):
     tf.global_variables_initializer()
     m1.compile()
     m = m1
+    tf_session = m.enquire_session()
+
+    variables_names = [v.name for v in tf.trainable_variables()]
+    values = tf_session.run(variables_names)
+    for k, v in zip(variables_names, values):
+        print ("Variable: ", k)
+        print ("Shape: ", v.shape)
+
 
     #===========================Quick fixes===========================
     #TODO: ask patrick where these configs should go
-    param_config['train'] = True
-    param_config['restore'] = False
-    param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
+    param_config['train'] = False
+    param_config['restore'] = True
+    param_config['model_state_fp'] = os.path.basename(experiment_config['model_state_fp'])
+    print(param_config['model_state_fp'])
 
     #===========================Optimize===========================
-    tf_session = m.enquire_session()
 
     def logger(x):    
         if (logger.i % 10) == 0:
@@ -334,18 +347,22 @@ def main(data_config, param_config, experiment_config):
         saver = tf.train.Saver()
         saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=param_config['model_state_fp']))
 
-    opt = AdamOptimizer(0.1)
 
-    if False:
-        set_objective(AdamOptimizer, 'base_elbo')
-        opt.minimize(m, step_callback=logger, maxiter=1000)
+    if param_config['train']:
+        opt = AdamOptimizer(0.1)
 
-        #m.disable_base_elbo()
-        #set_objective(AdamOptimizer, 'elbo')
-        #opt.minimize(m, step_callback=logger, maxiter=10)
-    else:
-        opt.minimize(m, step_callback=logger, maxiter=10000)
+        if False:
+            set_objective(AdamOptimizer, 'base_elbo')
+            opt.minimize(m, step_callback=logger, maxiter=1000)
 
+            #m.disable_base_elbo()
+            #set_objective(AdamOptimizer, 'elbo')
+            #opt.minimize(m, step_callback=logger, maxiter=10)
+        else:
+            opt.minimize(m, step_callback=logger, maxiter=1)
+
+    saver = tf.train.Saver()
+    save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=param_config['model_state_fp']))
     #===========================Predict and store results===========================
     elbos = None
 
@@ -355,8 +372,8 @@ def main(data_config, param_config, experiment_config):
 
     os.makedirs(os.path.dirname(test_pred_fp), exist_ok=True)
 
-    train_pred = predict(train_dict, lambda x: m.predict_y_experts(x,  1), 'NO2', ignore='satellite')
-    test_pred = predict(test_dict, lambda x: m.predict_y_experts(x,  1), 'NO2')
+    train_pred = predict(train_dict, lambda x: batch_predict(m, x, 1), 'NO2', ignore='satellite')
+    test_pred = predict(test_dict, lambda x: batch_predict(m, x, 1), 'NO2')
 
     pickle.dump(train_pred, open( train_pred_fp, "wb" ) )
     pickle.dump(test_pred, open( test_pred_fp, "wb" ) )
