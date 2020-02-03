@@ -6,17 +6,17 @@ import plotly.graph_objects as go
 
 class AqPointsFigure(go.Figure):
 
-    def __init__(self, point_df, **kwargs):
+    def __init__(self, point_df, metric_key='NO2_mae', metric_name='Mean absolute error', **kwargs):
         trace = dict(
             type='scattergeo',
             lon=point_df['lon'],
             lat=point_df['lat'],
             mode='markers',
-            hovertext=point_df.index,
+            hovertext=point_df['point_id'],
             marker=dict(
                 colorscale='Reds',
-                color=point_df['mae'],
-                colorbar_title='Mean absolute error'
+                color=point_df[metric_key],
+                colorbar_title=metric_name
             )
         )
 

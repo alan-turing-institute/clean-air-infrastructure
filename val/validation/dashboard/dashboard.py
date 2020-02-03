@@ -22,14 +22,9 @@ def main(exp):
     sensors_df, temporal_df = metrics.evaluate_model_data(
         model_data, metrics.get_metric_methods(), evaluate_training=True, evaluate_testing=True
     )
-    scores_df = metrics.measure_scores_by_sensor(
-        model_data.normalised_training_data_df, metrics.get_metric_methods()
-    )
-    point_df = metrics.concat_static_features_with_scores(
-        scores_df, model_data.normalised_training_data_df
-    )
+    
     sensor_groupby = model_data.normalised_training_data_df.groupby('point_id')
-    default_point_id = '30951185-acb8-45ba-b311-31a51249d556'
+    default_point_id = sensors_df.iloc[0]['point_id']
 
     # create the base layout
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -46,7 +41,7 @@ def main(exp):
             """),
             dcc.Graph(
                 id='london-sensors',
-                figure=maps.AqPointsFigure(point_df),
+                figure=maps.AqPointsFigure(sensors_df),
                 hoverData={'points':[{
                     'hovertext':default_point_id
                 }]}
