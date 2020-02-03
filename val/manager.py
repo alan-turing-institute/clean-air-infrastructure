@@ -18,7 +18,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-f', '--force', action='store_true', help='force download data, even it exists')
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
         self.add_argument('-c', '--cluster', type=str, help='name of the cluster')
-        self.add_argument('-d', '--home_directory', type=str, help='path to home directory')
+        self.add_argument('-d', '--home_directory', type=str, help='path to home directory', default='~')
         self.add_argument('-e', '--experiments_directory', type=str, default='experiment_data/', help='path to experiments directory')
         self.add_argument('-g', '--get_results', action='store_true', help='get results from cluster')
 
@@ -37,10 +37,6 @@ def main():
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.run()
 
-    if args.get_results:
-        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
-        exp.get()
-
     if args.check:
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.check_status()
@@ -49,8 +45,9 @@ def main():
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.clean()
 
-    if args.check:
-        pass
+    if args.get:
+        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp.get()
 
     if args.validate:
         exp = util.load_experiment_from_directory(args.name, experiment_data=args.experiments_directory)

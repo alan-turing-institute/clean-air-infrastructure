@@ -51,6 +51,10 @@ def main(data_config, param_config, experiment_config):
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
+    print(train_dict.keys())
+    print(test_dict.keys())
+    exit()
+
     X = [train_dict['laqn']['X'][:, None, :]]
     Y = [train_dict['laqn']['Y']['NO2'][:, None]]
 
@@ -72,6 +76,7 @@ def main(data_config, param_config, experiment_config):
     print()
     print(train_pred)
     print()
+
     save(train_pred_fp, train_pred)
     save(test_pred_fp, test_pred)
 
@@ -102,4 +107,6 @@ if __name__ == '__main__':
     experiment_config = experiment_config.iloc[0]
 
     main(data_config, param_config, experiment_config)
+
+
 

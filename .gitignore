@@ -28,12 +28,18 @@ val/experiment_data/*/data
 val/experiment_data/*/results
 val/experiment_data/*/models/restore
 val/experiment_data/*/meta
-val/experiment_data/cluster
+val/experiment_data/cluster/
+val/cluster/
 
 # Python & notebooks
 *__pycache__
 .ipynb_checkpoints
+*.pyc 
 
 # run_model
 run_model/cluster
 run_model/data
+
+# csv files
+*.csv
+

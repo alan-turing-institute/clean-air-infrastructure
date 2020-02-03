@@ -19,7 +19,7 @@ class Orac(Cluster):
             Location of the slurm batch script template
         """
 
-        return self.root+'/batch_files/batch_script_template.sh'
+        return 'validation/cluster/batch_files/batch_script_template.sh'
 
     @property
     def default_config(self):
@@ -28,10 +28,10 @@ class Orac(Cluster):
         """
 
         defaults = {
-            'cpus': 8,
+            'cpus': 12,
             'gpus': 1,
             'nodes': 1,
-            'time': '05:00:00',
+            'time': '12:00:00',
             'memory': 4571,
             'ip': 'orac.csc.warwick.ac.uk',
             'user': 'csrcqm',

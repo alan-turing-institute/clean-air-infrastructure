@@ -241,7 +241,7 @@ class Cluster(ABC):
 
         call_array = [
             "sudo",
-            "sh", self.root+"scripts/get_results.sh",
+            "sh", "validation/cluster/scripts/get_results.sh",
             "--user", self.config['user'],
             "--ip", self.config['ip'],
             "--ssh_key", self.home_directory_fp +  self.config['ssh_key'],

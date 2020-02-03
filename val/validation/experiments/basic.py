@@ -32,8 +32,9 @@ class BasicExperiment(Experiment):
             laqn_id=[0]
         )}
 
-    def get_default_data_config(self, n_rolls=1):
+    def get_default_data_config(self):
         # create dates for rolling over
+        n_rolls = 1
         train_start = "2019-11-01T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24

@@ -26,10 +26,10 @@ class Pearl(Cluster):
             Default cluster configs for Pearl
         """
         defaults = {
-            'cpus': 1,
+            'cpus': 12,
             'gpus': 1,
             'nodes': 1,
-            'time': '05:00:00',
+            'time': '15:00:00',
             'memory': 4571,
             'ip': 'ui.pearl.scd.stfc.ac.uk',
             'user': 'pearl023',

@@ -132,8 +132,8 @@ class Experiment(ABC):
         self.model_data_list = []
 
         # create ModelData objects for each roll
-        for index, row in self.experiment_df.iterrows():
-            data_id = row['data_id']
+        # Each roll is defined by data_id in experiment_df
+        for data_id in pd.unique(self.experiment_df['data_id']):
             data_config = self.data_config[data_id]
 
             # If the numpy files do not exist locally
@@ -180,7 +180,7 @@ class Experiment(ABC):
 
     def __create_experiment_data_directories(self):
         """
-        Create directories if they don't exist.
+        Create data directories if they don't exist.
         """
         exp_dir = self.directory + self.name + '/'
         pathlib.Path(self.directory).mkdir(exist_ok=True)
@@ -207,14 +207,41 @@ class Experiment(ABC):
         else:
             raise ValueError("Cluster does not exist: ",self.cluster)
 
-    def __get_cluster(self):
+    def get(self):
+        """
+        Get results from cluster.
+        """
+        experiment_df = self.get_default_experiment_df()
+        cluster_run_params = []
+        input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
+        
+        cluster = self.__get_cluster_obj()(
+            root = 'validation/cluster/',
+            experiment_name=self.name,
+            cluster_config={},
+            experiment_configs=cluster_run_params,
+            input_format_fn=input_format_fn,
+            cluster_tmp_fp=self.directory+'cluster',
+            experiment_fp=self.directory,
+            home_directory_fp=self.home_directory,
+        )
+        cluster.setup()
+
+        cluster.get()
+
+    def run(self):
+        """
+        Run the experiment.
+        """
+        # before running any models, create the results directories
+        self.__create_experiment_results_directories()
         experiment_df = self.get_default_experiment_df()
 
         cluster_run_params = []
 
         for model in self.models:
             model_experiment_df = experiment_df[experiment_df['model_name'] == model]
-            for index, row in self.experiment_df.iterrows():
+            for index, row in model_experiment_df.iterrows():
                 exp_dict = {
                     'filename': model,
                     'data_id': row['data_id'],
@@ -222,10 +249,13 @@ class Experiment(ABC):
                 }
                 cluster_run_params.append(exp_dict)
 
+
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
+        print(self.directory+'../libs/')
+
         cluster = self.__get_cluster_obj()(
-            root=self.cluster_root+'/',
+            root = 'validation/cluster/',
             experiment_name=self.name,
             cluster_config={},
             experiment_configs=cluster_run_params,
