@@ -335,7 +335,6 @@ class ScootFeatures(DateRangeMixin, Features):
 
     def delete_remote_entries(self):
         """Remove entries from the ScootRoadReading table"""
-
         self.logger.info(
             "Deleting all scoot road match data between %s and %s",
             green(self.start_datetime),

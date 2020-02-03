@@ -131,7 +131,7 @@ class ScootRoadUnmatched(Base):
 class ScootRoadReading(Base):
     """Table of scoot readings mapped to road segments"""
 
-    __tablename__ = "scoot_road_readings"
+    __tablename__ = "scoot_road_readings_tmp"
     __table_args__ = {"schema": "dynamic_features"}
 
     road_toid = Column(

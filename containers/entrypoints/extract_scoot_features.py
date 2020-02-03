@@ -17,7 +17,7 @@ def main():
         "-e",
         "--end",
         type=str,
-        default="today",
+        default="yesterday",
         help="The last date (YYYY-MM-DD) to get data for.",
     )
     parser.add_argument(
@@ -51,15 +51,18 @@ def main():
     try:
         # Map scoot features to roads/
         scoot_road_map = ScootMapToRoads(**kwargs)
-        # scoot_road_map.insert_closest_roads() #Needs to run first
-        scoot_road_map.update_remote_tables()
+        # # scoot_road_map.insert_closest_roads() #Needs to run first
+        # scoot_road_map.update_remote_tables()
 
-        # # Process features
+        # Process features
         kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
         scoot_feature_extractor = ScootFeatures(**kwargs)
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_scoot_road_reading(find_closest_roads=False)
         static_feature_extractor.update_remote_tables()
+
+        # Clean up
+        scoot_road_map.delete_remote_entries()
 
         # Clean up
         scoot_road_map.delete_remote_entries()
