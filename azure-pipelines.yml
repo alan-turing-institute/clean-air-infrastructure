@@ -52,9 +52,10 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
       displayName: 'Build UKMap feature processing image'
-    
-
-
+    # Build extract SCOOT
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)extract_scoot:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_features.Dockerfile containers
+      displayName: 'Build scoot feature processing image'
     # Build API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion) -f containers/dockerfiles/cleanairapi.Dockerfile containers

@@ -24,7 +24,11 @@ def main():
         "-n",
         "--ndays",
         type=int,
+<<<<<<< HEAD
         default=2,
+=======
+        default=1,
+>>>>>>> f832593... Dont exclude features based on id if dynamic
         help="The number of days to request data for.",
     )
     parser.add_argument(
@@ -60,9 +64,6 @@ def main():
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_scoot_road_reading(find_closest_roads=False)
         static_feature_extractor.update_remote_tables()
-
-        # Clean up
-        scoot_road_map.delete_remote_entries()
 
         # Clean up
         scoot_road_map.delete_remote_entries()

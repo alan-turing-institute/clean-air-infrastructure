@@ -17,7 +17,7 @@ from ..databases.tables import (
 
 
 class ScootFeatures(DateRangeMixin, Features):
-    """Extract features for Scoot"""
+    """Process scoot features"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
@@ -43,7 +43,8 @@ class ScootFeatures(DateRangeMixin, Features):
 
             return (
                 session.query(ScootRoadReading, OSHighway.geom)
-                .join(OSHighway)
+                .join(OSHighway).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
+                                        ScootRoadReading.measurement_start_utc < self.end_datetime)
                 .subquery()
             )
 
@@ -281,7 +282,7 @@ class ScootFeatures(DateRangeMixin, Features):
 
             scoot_road_distance_q = scoot_road_distance_q.group_by(
                 OSHighway.toid, sr_sq.c.measurement_start_utc
-            ).order_by(OSHighway.toid, sr_sq.c.measurement_start_utc)
+            ).order_by(sr_sq.c.measurement_start_utc, OSHighway.toid)
 
             return scoot_road_distance_q
 
