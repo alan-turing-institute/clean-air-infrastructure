@@ -34,7 +34,9 @@ val/cluster/
 # Python & notebooks
 *__pycache__
 .ipynb_checkpoints
+*.pyc 
 
 # run_model
 run_model/cluster
 run_model/data
+
