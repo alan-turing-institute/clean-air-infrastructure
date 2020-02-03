@@ -130,6 +130,7 @@ def main():
     # Write the model results to the database
     model_data.update_remote_tables()
 
+    return model_data
 
 if __name__ == "__main__":
     main()

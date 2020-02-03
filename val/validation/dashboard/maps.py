@@ -26,4 +26,3 @@ class AqPointsFigure(go.Figure):
             lonaxis_range=[-0.5, 0.2]
         ))
         super().update_layout(width=800)
-
