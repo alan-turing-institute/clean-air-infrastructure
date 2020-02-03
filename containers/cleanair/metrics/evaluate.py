@@ -5,7 +5,10 @@ Methods for evaluating a model data fit.
 import pandas as pd
 from sklearn import metrics
 
-def evaluate_model_data(model_data, metric_methods, evaluate_training=False, evaluate_testing=True, pred_cols=['NO2_mean'], test_cols=['NO2'], **kwargs):
+def evaluate_model_data(
+        model_data, metric_methods, evaluate_training=False, evaluate_testing=True,
+        pred_cols=['NO2_mean'], test_cols=['NO2'], **kwargs
+    ):
     """
     Given a model data object, evaluate the predictions.
 
@@ -61,8 +64,11 @@ def evaluate_model_data(model_data, metric_methods, evaluate_training=False, eva
 
     # return training and testing dataframes appending to eachother
     if evaluate_training and evaluate_testing:
-        return training_sensor_scores_df.append(testing_sensor_scores_df, ignore_index=True), training_temporal_scores_df.append(testing_temporal_scores_df, ignore_index=True)
-    
+        return training_sensor_scores_df.append(
+            testing_sensor_scores_df, ignore_index=True
+        ), training_temporal_scores_df.append(
+            testing_temporal_scores_df, ignore_index=True
+        )
     raise Exception("You must set either evaluate_training or evaluate_testing to True")
 
 def __evaluate_sensor_and_temporal_scores(
@@ -130,7 +136,9 @@ def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
 
     return metric_methods
 
-def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_start_utc', pred_cols=['NO2_mean'], test_cols=['NO2']):
+def measure_scores_by_hour(pred_df, metric_methods,
+        datetime_col='measurement_start_utc', pred_cols=['NO2_mean'], test_cols=['NO2']
+    ):
     """
     Measure metric scores for each hour of prediction.
 
@@ -139,7 +147,7 @@ def measure_scores_by_hour(pred_df, metric_methods, datetime_col='measurement_st
 
     pred_df : DataFrame
         Indexed by datetime. Must have a column of testing data and
-        a column from the predicted air quality at the same points 
+        a column from the predicted air quality at the same points
         as the testing data.
 
     metric_methods : dict
@@ -214,7 +222,7 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
 
     return pd.concat([
         pd.Series(gb.apply(
-            lambda x : method(x[test_cols], x[pred_cols])
+            lambda x: method(x[test_cols], x[pred_cols])
         ), name='{species}_{metric}'.format(species=test_cols[0], metric=key))
         for key, method in metric_methods.items()
     ], axis=1)
