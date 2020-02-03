@@ -24,7 +24,7 @@ def main():
         "-n",
         "--ndays",
         type=int,
-        default=30,
+        default=1,
         help="The number of days to request data for.",
     )
     parser.add_argument(
@@ -47,15 +47,15 @@ def main():
     # Extract features and notify any exceptions
     try:
 
-        # MAP scoot features to roads
+        # # MAP scoot features to roads/
         scoot_road_map = ScootMapToRoads(**kwargs)
         # scoot_road_map.insert_closest_roads() #Needs to run first
         scoot_road_map.update_remote_tables()
 
         # Process features
-        scoot_feature_extractor = ScootFeatures(**kwargs)
-        # Extract static features into the appropriate tables on the database
-        scoot_feature_extractor.update_remote_tables()
+        # scoot_feature_extractor = ScootFeatures(**kwargs)
+        # # # Extract static features into the appropriate tables on the database
+        # scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

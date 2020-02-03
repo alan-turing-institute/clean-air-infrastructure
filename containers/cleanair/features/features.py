@@ -291,14 +291,19 @@ class Features(DBWriter, DBQueryMixin):
         Process value features in batches since some of them are extremely slow
         (and they need to be independentely calculated for each interest point anyway)
         """
-        # Filter out any that have already been calculated
-        with self.dbcnxn.open_session() as session:
-            sq_intersection_value = session.query(
-                IntersectionValue.point_id, IntersectionValue.feature_name
-            ).subquery()
-        q_filtered = q_metapoints.filter(
-            ~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value)
-        )
+
+        if not self.dynamic:
+            # Filter out any that have already been calculated
+            with self.dbcnxn.open_session() as session:
+                sq_intersection_value = session.query(
+                    IntersectionValue.point_id, IntersectionValue.feature_name
+                ).subquery()
+
+            q_filtered = q_metapoints.filter(
+                ~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_value)
+            )
+        else:
+            q_filtered = q_metapoints
 
         n_interest_points = q_filtered.count()
         batch_size = 50
@@ -328,14 +333,18 @@ class Features(DBWriter, DBQueryMixin):
         Process geometric features in large batches as none of them are particularly slow at present
         (and they need to be independentely calculated for each interest point anyway)
         """
-        # Filter out any that have already been calculated
-        with self.dbcnxn.open_session() as session:
-            sq_intersection_geom = session.query(
-                IntersectionGeom.point_id, IntersectionGeom.feature_name
-            ).subquery()
-        q_filtered = q_metapoints.filter(
-            ~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom)
-        )
+
+        if not self.dynamic:
+            # Filter out any that have already been calculated
+            with self.dbcnxn.open_session() as session:
+                sq_intersection_geom = session.query(
+                    IntersectionGeom.point_id, IntersectionGeom.feature_name
+                ).subquery()
+            q_filtered = q_metapoints.filter(
+                ~tuple_(MetaPoint.id, literal(feature_name)).in_(sq_intersection_geom)
+            )
+        else:
+            q_filtered = q_metapoints
 
         self.logger.debug(
             "Processing the following interest points: %s",

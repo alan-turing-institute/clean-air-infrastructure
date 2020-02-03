@@ -22,7 +22,7 @@ from ..databases.tables import (
 )
 
 
-class ScootFeatures(Features):
+class ScootFeatures(DateRangeMixin, Features):
     """Process scoot features"""
 
     def __init__(self, **kwargs):
@@ -39,7 +39,8 @@ class ScootFeatures(Features):
 
             return (
                 session.query(ScootRoadReading, OSHighway.geom)
-                .join(OSHighway)
+                .join(OSHighway).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
+                                        ScootRoadReading.measurement_start_utc < self.end_datetime)
                 .subquery()
             )
 
@@ -315,7 +316,7 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
 
             scoot_road_distance_q = scoot_road_distance_q.group_by(
                 OSHighway.toid, scoot_reading_sq.c.measurement_start_utc
-            ).order_by(OSHighway.toid, scoot_reading_sq.c.measurement_start_utc)
+            ).order_by(scoot_reading_sq.c.measurement_start_utc, OSHighway.toid)
 
             return scoot_road_distance_q
 
@@ -366,9 +367,9 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         for start_datetime in rrule.rrule(
-            rrule.DAILY, dtstart=self.start_datetime, until=self.end_datetime
+            rrule.HOURLY, dtstart=self.start_datetime, until=self.end_datetime
         ):
-            end_datetime = start_datetime + datetime.timedelta(days=1)
+            end_datetime = start_datetime + datetime.timedelta(hours=1)
 
             self.logger.info(
                 "Processing data between %s and %s",
