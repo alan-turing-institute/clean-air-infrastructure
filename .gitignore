@@ -34,6 +34,8 @@ val/experiment_data/cluster/
 *__pycache__
 .ipynb_checkpoints
 
-# run_model
-run_model/cluster
-run_model/data
+# Python package
+*.egg-info
+
+# Misc
+images/

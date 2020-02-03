@@ -7,8 +7,8 @@ module "configuration" {
 # Ensure the databases resource group exists
 # ------------------------------------------
 resource "azurerm_resource_group" "this" {
-  name     = "${var.resource_group}"
-  location = "${module.configuration.location}"
+  name     = var.resource_group
+  location = module.configuration.location
   tags = {
     environment = "Terraform Clean Air"
     segment     = "Databases"
@@ -17,11 +17,11 @@ resource "azurerm_resource_group" "this" {
 
 # Create the inputs database
 # --------------------------
-module "inputs" {
+module "postgres" {
   source         = "./postgres"
   db_name        = "cleanair-inputs"
-  db_size_gb     = 20
-  key_vault_id   = "${var.infrastructure.key_vault.id}"
+  db_size_gb     = 500 #20
+  key_vault_id   = var.infrastructure.key_vault.id
   location       = "${azurerm_resource_group.this.location}"
   resource_group = "${azurerm_resource_group.this.name}"
 }

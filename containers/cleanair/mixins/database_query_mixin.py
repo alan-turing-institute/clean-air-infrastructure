@@ -14,6 +14,7 @@ from ..databases.tables import (
     LAQNSite,
     LAQNReading,
     AQEReading,
+    ScootReading,
 )
 from ..loggers import get_logger
 
@@ -36,6 +37,26 @@ class DBQueryMixin:
                 func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom))
             )
         return hull
+
+    @db_query
+    def get_nscoot_by_day(self, start_date=None, end_date=None):
+        """Get the number of scoot readings that are in the database for each day"""
+
+        with self.dbcnxn.open_session() as session:
+            n_readings_q = session.query(
+                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
+                    "hour"
+                ),
+                func.count(ScootReading.measurement_start_utc).label("n_entries"),
+            ).group_by(func.date_trunc("hour", ScootReading.measurement_start_utc))
+
+            if start_date and end_date:
+                n_readings_q = n_readings_q.filter(
+                    ScootReading.measurement_start_utc >= start_date,
+                    ScootReading.measurement_start_utc <= end_date,
+                )
+
+            return n_readings_q
 
     @db_query
     def get_available_static_features(self):
@@ -92,12 +113,13 @@ class DBQueryMixin:
             return feature_types_q
 
     @db_query
-    def get_available_interest_points(self, sources):
+    def get_available_interest_points(self, sources, point_ids=None):
         """Return the available interest points for a list of sources, excluding any LAQN or AQE sites that are closed.
         Only returns points withing the London boundary
         Satellite returns features outside of london boundary, while laqn and aqe do not.
         args:
             sources: A list of sources to include
+            point_ids: A list of point_ids to include. Default of None returns all points
         """
 
         bounded_geom = self.query_london_boundary()
@@ -161,17 +183,22 @@ class DBQueryMixin:
                     """Satellite can only be requested on a source on its own.
                     Ensure 'sources' contains no other options"""
                 )
-            elif sources[0] == "satellite":
+            if sources[0] == "satellite":
                 all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
             else:
                 all_sources_sq = remaining_sources_q.union(
                     aqe_sources_q, laqn_sources_q
                 ).subquery()
 
-            # Remove any sources where there is a closing date
+            # Remove any sources where there is a closing date and filter by point_ids
             all_sources_q = session.query(all_sources_sq).filter(
                 all_sources_sq.c.date_closed.is_(None)
             )
+
+            if point_ids:
+                all_sources_q = all_sources_q.filter(
+                    all_sources_sq.c.point_id.in_(point_ids)
+                )
 
         return all_sources_q
 
