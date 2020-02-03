@@ -28,19 +28,19 @@ name = 'latest_forecast'
 # )
 
 # print(time_interval)
-time_interval = '2020-01-10T00:00:00.000Z/2020-01-10T05:00:00.000Z'
+time_interval = '2020-01-10T00:00:00.000Z/2020-01-10T23:00:00.000Z'
 style = 'london:forecast'
 
 # if style not in wms.styles:
 #     style = None
 
 
-lon, lat = -0.12665390000006, 51.5297753
+lon, lat = -0.118092, 51.509865
 
 m = folium.Map(
     location=[lat, lon],
     tiles='Stamen Toner',
-    zoom_start=12,
+    zoom_start=14,
     control_scale=True
 )
 
