@@ -45,7 +45,7 @@ def main():
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.clean()
 
-    if args.get:
+    if args.get_results:
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.get()
 

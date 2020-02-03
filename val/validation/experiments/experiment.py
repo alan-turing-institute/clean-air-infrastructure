@@ -267,17 +267,6 @@ class Experiment(ABC):
             relative_fp_flag=True
         )
         cluster.setup()
-        return cluster
-
-
-    def run(self):
-        """
-        Run the experiment.
-        """
-        # before running any models, create the results directories
-        self.__create_experiment_results_directories()
-
-        cluster = self.__get_cluster()
 
         #Ensure cluster folders exist
         dir_name = self.directory+'cluster'
@@ -294,27 +283,19 @@ class Experiment(ABC):
 
         cluster.run()
 
-    def get(self):
-        """
-        Get the experiments results.
-        """
-        cluster = self.__get_cluster()
-
-        cluster.get()
-
 
     def check_status(self):
         """
         Check the status of an experiment on a cluster.
         """
-        cluster = self.__get_cluster()
+        cluster = self.__get_cluster_obj()
         cluster.check()
 
     def clean(self):
         """
         Clean up after experiment. Remove tempory files locally and on cluster.
         """
-        cluster = self.__get_cluster()
+        cluster = self.__get_cluster_obj()
         cluster.clean()
 
     def update_model_data_list(self, update_test=True, update_train=False):
