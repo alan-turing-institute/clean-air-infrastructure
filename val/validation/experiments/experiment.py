@@ -6,10 +6,10 @@ import os
 import sys
 import json
 import pickle
-from abc import ABC, abstractmethod
-import pandas as pd
 import pathlib
 import itertools
+from abc import ABC, abstractmethod
+import pandas as pd
 
 from .. import util
 from ..cluster import *
@@ -41,15 +41,15 @@ class Experiment(ABC):
         cluster_name : str
             String to identify the cluster the experiment was ran on.
 
-        model_params : list of dicts
+        model_params : list of dicts, optional
             A list of model parameter configurations.
             Each model config is a dictionary.
 
-        data_config : list of dicts
+        data_config : list of dicts, optional
             A list of data configurations.
             Each config is a dictionary.
 
-        experiment_df : DataFrame
+        experiment_df : DataFrame, optional
             A dataframe describing every run in the experiment.
         """
         super().__init__()
