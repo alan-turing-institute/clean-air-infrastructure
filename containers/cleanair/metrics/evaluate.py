@@ -78,9 +78,14 @@ def __evaluate_sensor_and_temporal_scores(
     """
     Given a prediction dataframe, measure scores over sensors and time.
     """
+    # measure scores by sensor and by hour
     sensor_scores_df = measure_scores_by_sensor(pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols)
     temporal_scores_df = measure_scores_by_hour(pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols)
 
+    # add lat and lon to sensor scores cols
+    sensor_scores_df = __concat_static_features_with_scores(sensor_scores_df, pred_df)
+
+    # make a new column with the index
     sensor_scores_df[sensor_col] = sensor_scores_df.index.copy()
     temporal_scores_df[temporal_col] = temporal_scores_df.index.copy()
 
@@ -227,7 +232,7 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
         for key, method in metric_methods.items()
     ], axis=1)
 
-def concat_static_features_with_scores(scores_df, pred_df, static_features=['lat', 'lon']):
+def __concat_static_features_with_scores(scores_df, pred_df, static_features=['lat', 'lon']):
     """
     Concatenate the sensor scores dataframe with static features of the sensor.
     """

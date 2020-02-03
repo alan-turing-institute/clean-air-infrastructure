@@ -19,6 +19,9 @@ from cleanair import metrics
 def main(exp):
     # get the model data object and create metrics
     model_data = exp.model_data_list[0]
+    sensors_df, temporal_df = metrics.evaluate_model_data(
+        model_data, metrics.get_metric_methods(), evaluate_training=True, evaluate_testing=True
+    )
     scores_df = metrics.measure_scores_by_sensor(
         model_data.normalised_training_data_df, metrics.get_metric_methods()
     )
