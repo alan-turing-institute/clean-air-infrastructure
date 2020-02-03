@@ -29,6 +29,7 @@ val/experiment_data/*/results
 val/experiment_data/*/models/restore
 val/experiment_data/*/meta
 val/experiment_data/cluster/
+val/cluster/
 
 # Python & notebooks
 *__pycache__

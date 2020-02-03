@@ -1,2 +1,0 @@
-model_checkpoint_path: "m_mr_gprn_mr_gprn_param0_data0.model.ckpt"
-all_model_checkpoint_paths: "m_mr_gprn_mr_gprn_param0_data0.model.ckpt"
