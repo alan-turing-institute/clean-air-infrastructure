@@ -13,6 +13,7 @@ class ValidationParser(argparse.ArgumentParser):
         self.add_argument('-s', '--setup', action='store_true', help='setup an experiment with parameters and data')
         self.add_argument('-r', '--run', action='store_true', help='train and predict a model')
         self.add_argument('-k', '--check', action='store_true', help='check the status of a cluster')
+        self.add_argument('-g', '--get', action='store_true', help='get results from cluster')
         self.add_argument('-v', '--validate', action='store_true', help='run validation methods')
         self.add_argument('-f', '--force', action='store_true', help='force download data, even it exists')
         self.add_argument('-n', '--name', type=str, help='name of the experiment')
@@ -35,6 +36,10 @@ def main():
     if args.run:
         exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
         exp.run()
+
+    if args.get:
+        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp.get()
 
     if args.check:
         pass
