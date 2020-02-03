@@ -11,7 +11,6 @@ import pandas as pd
 import pathlib
 import itertools
 
-from .. import metrics
 from .. import util
 from ..cluster import *
 
@@ -21,6 +20,7 @@ sys.path.append("../../containers/")
 
 try:
     from cleanair.models import ModelData
+    from cleanair import metrics
 except ImportError:
     print('WARNING: Could not import ModelData')
 
@@ -325,7 +325,7 @@ class Experiment(ABC):
 
         Notes
         ___
-        
+
         We assume that the `model_data_list` of an experiment
         has already been updated with the predictions.
         We assume that all instances of an experiment predict on the same

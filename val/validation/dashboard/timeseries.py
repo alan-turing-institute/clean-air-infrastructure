@@ -6,7 +6,7 @@ import math
 import itertools
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from .. import metrics
+from cleanair import metrics
 
 def scores_by_time(exp):
     n = len(exp.experiment_df.index)

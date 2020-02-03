@@ -1,4 +1,0 @@
-"""
-Methods for evaluating metrics.
-"""
-    

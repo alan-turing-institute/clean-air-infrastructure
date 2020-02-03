@@ -4,7 +4,8 @@ Entry point for validation.
 
 import argparse
 
-from validation import util, metrics
+from cleanair import metrics
+from validation import util
 from validation.dashboard import dashboard
 
 class ValidationParser(argparse.ArgumentParser):

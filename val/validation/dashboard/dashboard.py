@@ -13,8 +13,8 @@ from dash.dependencies import Input, Output
 import plotly.graph_objects as go
 
 from . import timeseries
-from .. import metrics
 from . import maps
+from cleanair import metrics
 
 def main(exp):
     # get the model data object and create metrics
