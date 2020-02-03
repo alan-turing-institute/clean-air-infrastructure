@@ -1,2 +1,0 @@
-model_checkpoint_path: "m_svgp_svgp_param3_data0.model.ckpt"
-all_model_checkpoint_paths: "m_svgp_svgp_param3_data0.model.ckpt"
