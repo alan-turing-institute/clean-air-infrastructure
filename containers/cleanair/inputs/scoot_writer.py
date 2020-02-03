@@ -111,6 +111,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         # Parse each CSV file into a dataframe and add these to a list
+        n_failed = 0
         processed_readings = []
         for filepath, filename in self.get_remote_filenames(
             start_datetime, end_datetime
@@ -147,11 +148,15 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 botocore.exceptions.EndpointConnectionError,
             ) as error:
                 self.logger.error("Failed to retrieve %s. Error: %s", filename, error)
-                raise Exception
+                n_failed += 1
             finally:
                 if os.path.isfile(filename):
                     os.remove(filename)
                 self.logger.debug("Loaded readings from %s", green(filename))
+
+        if n_failed > 3:
+            raise Exception("{} expected file could not be downloaded".format(n_failed))
+
         # Combine the readings into a single data frame
         df_combined = pandas.concat(processed_readings, ignore_index=True)
         self.logger.info(
