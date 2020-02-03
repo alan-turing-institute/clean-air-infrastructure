@@ -6,106 +6,6 @@ import itertools
 import pandas as pd
 from sklearn import metrics
 
-def evaluate_experiment(xp, metric_methods, evaluate_testing=True, evaluate_training=False):
-    """
-    Given an experiment, measure the metrics.
-    
-    We assume that the `model_data_list` of an experiment
-    has already been updated with the predictions.
-
-    Parameters
-    ___
-
-    xp : Experiment
-
-    metric_methods : dict
-        A dictionary where keys are the name of a metric and values
-        are a function that takes two numpy arrays of the same shape.
-
-    evaluate_testing : bool, optional
-        If true, this function will evaluate the predictions made
-        on the testing set of data.    
-
-    evaluate_training : bool, optional
-        If true, this function will evaluate the predictions made
-        on the training set of data.
-
-    Returns
-    ___
-
-    sensor_scores_df : pd.DataFrame
-        For every instance of the experiment, we calculate the score
-        of a sensor over the whole prediction time period.
-
-    temporal_scores_df : pd.DataFrame
-        For every instance of an experiment, we calculate the scores
-        over all sensors given a slice in time.
-
-    Notes
-    ___
-
-    We assume that all instances of an experiment predict on the same
-    species of pollutant.
-
-    Examples
-    ___
-        >>> xp.update_model_data_list() # remember to update predictions
-        >>> metric_methods = get_metric_methods()
-        >>> scores_df = evaluate_experiment(xp, metric_methods)
-    """
-    # the basic cols that every scoring dataframe should have
-    cols = [
-        'experiment_name', 'instance_id', 'cluster_name', 'param_id',
-        'data_id', 'training_set', 'testing_set'
-    ]
-    sensor_cols = cols.copy()
-    temporal_cols = cols.copy()
-    sensor_cols.append('point_id')
-    temporal_cols.append('measurement_start_utc')
-
-    # add columns that will measure the metrics for each pollutant
-    list_of_species = xp.model_data_list[0].config['species'].copy()
-    print('List of species:', list_of_species)
-    metric_cols = [
-        '{species}_{mtc}'.format(species=s, mtc=m)
-        for s, m in itertools.product(list_of_species, metric_methods.keys())
-    ]
-    print('Metric cols:', metric_cols)
-    sensor_cols.extend(metric_cols)
-    temporal_cols.extend(metric_cols)
-
-    # create dataframes for collecting scores over space and time
-    sensor_scores_df = pd.DataFrame(columns=sensor_cols)
-    temporal_scores_df = pd.DataFrame(columns=temporal_cols)
-
-    # sensor_scores_df = pd.DataFrame(columns=)
-    for index, row in xp.experiment_df.iterrows():
-        model_data = xp.model_data_list[index]
-
-        # get prediction and testing column names
-        pred_cols = ['{s}_mean'.format(s=spc) for spc in model_data.config['species']]
-        test_cols = model_data.config['species'].copy()
-
-        # evaluate the metrics at sensors and in time
-        instance_sensor_scores_df, instance_temporal_scores_df = evaluate_model_data(
-            model_data, metric_methods,
-            evaluate_training=evaluate_training,
-            evaluate_testing=evaluate_testing,
-            pred_cols=pred_cols,
-            test_cols=test_cols,
-            experiment_name=xp.name,
-            instance_id=index,
-            cluster_name=xp.cluser_name,
-            param_id=row['param_id'],
-            data_id=row['data_id']
-        )
-
-        # append to the bigger dataframes
-        sensor_scores_df = sensor_scores_df.append(instance_sensor_scores_df, ignore_index=True)
-        temporal_scores_df = temporal_scores_df.append(instance_temporal_scores_df, ignore_index=True)
-
-    return sensor_scores_df, temporal_scores_df
-
 def evaluate_model_data(model_data, metric_methods, evaluate_training=False, evaluate_testing=True, pred_cols=['NO2_mean'], test_cols=['NO2'], **kwargs):
     """
     Given a model data object, evaluate the predictions.
@@ -146,6 +46,7 @@ def evaluate_model_data(model_data, metric_methods, evaluate_training=False, eva
             training_set=True, testing_set=False,
             pred_cols=pred_cols, test_cols=test_cols, **kwargs
         )
+        # return training scores if we are not evaluating testing
         if not evaluate_testing:
             return training_sensor_scores_df, training_temporal_scores_df
 
@@ -155,9 +56,11 @@ def evaluate_model_data(model_data, metric_methods, evaluate_training=False, eva
             training_set=False, testing_set=True,
             pred_cols=pred_cols, test_cols=test_cols, **kwargs
         )
+        # return testing scores if we are only evaluating testing
         if not evaluate_training:
             return testing_sensor_scores_df, testing_temporal_scores_df
 
+    # return training and testing dataframes appending to eachother
     if evaluate_training and evaluate_testing:
         return training_sensor_scores_df.append(testing_sensor_scores_df, ignore_index=True), training_temporal_scores_df.append(testing_temporal_scores_df, ignore_index=True)
     

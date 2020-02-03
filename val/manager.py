@@ -45,8 +45,15 @@ def main():
         evaluate_training = True
         evaluate_testing = False
         xp = util.load_experiment_from_directory(**vars(args))
-        xp.update_model_data_list(update_train=evaluate_training, update_test=evaluate_testing)
-        sensor_scores_df, temporal_scores_df = metrics.evaluate_experiment(xp, metrics.get_metric_methods(), evaluate_training=evaluate_training, evaluate_testing=evaluate_testing)
+        xp.update_model_data_list(
+            update_train=evaluate_training,
+            update_test=evaluate_testing
+        )
+        sensor_scores_df, temporal_scores_df = xp.evaluate(
+            metrics.get_metric_methods(),
+            evaluate_training=evaluate_training,
+            evaluate_testing=evaluate_testing
+        )
         print(sensor_scores_df.sample(3))
         print(temporal_scores_df.sample(3))
         util.save_experiment_scores_df(xp, sensor_scores_df, 'sensor_scores.csv')
