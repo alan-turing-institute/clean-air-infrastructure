@@ -19,12 +19,6 @@ class AqPointsFigure(go.Figure):
                 colorbar_title='Mean absolute error'
             )
         )
-        # lyt = dict(
-        #     resolution=50,
-        #     lonaxis=dict(showgrid=True),
-        #     showrivers=True,
-        #     projection = dict(scale=1)
-        # )
 
         super().__init__(data=[trace])
         super().update_geos(dict(
