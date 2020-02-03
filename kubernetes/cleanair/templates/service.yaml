@@ -21,6 +21,6 @@ spec:
       port: 80
       targetPort: 80
   selector:
-    app: {{ $service.name }}
+    app: "{{ $release_name }}-{{ $service.name }}"
 
 {{- end }}

@@ -12,7 +12,7 @@ metadata:
   name: "{{ $release_name }}-{{ $deployment.name }}"
   labels:
     chart: "{{ $chart_name }}-{{ $chart_version }}"
-    app: {{ $deployment.name }}
+    app: "{{ $release_name }}-{{ $deployment.name }}"
 spec:
   replicas: {{ $deployment.replicas }}
   selector:
@@ -40,8 +40,4 @@ spec:
         volumes:
 {{ toYaml . | indent 8 }}
         {{- end }}
-        
-      
-
-
 {{- end }}
