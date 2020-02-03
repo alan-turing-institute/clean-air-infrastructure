@@ -3,6 +3,7 @@
 {{- $chart_version := .Chart.Version | replace "+" "_" }}
 {{- $release_name := .Release.Name }}
 {{- $tag := .Values.imageTag }}
+{{- $pull_secret := .Values.pullSecret }}
 
 {{- range $deployment := .Values.deployments }}
 ---
@@ -24,7 +25,7 @@ spec:
         app: "{{ $release_name }}-{{ $deployment.name }}"
     spec:
         containers:
-        - image: "{{ $deployment.image.repository }}:{{ $tag }}"
+        - image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag | default $tag }}"
           imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
           name: "{{ $release_name }}-{{ $deployment.name }}"
           ports:
@@ -34,7 +35,7 @@ spec:
 {{ toYaml . | indent 10 }}
         {{- end }}
         imagePullSecrets:
-        - name: regcred
+        - name: {{$pull_secret}}
         restartPolicy: {{ $deployment.restartPolicy }}
         {{- with $deployment.volumes }}
         volumes:
