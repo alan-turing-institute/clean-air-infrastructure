@@ -224,6 +224,7 @@ def main(data_config, param_config, experiment_config):
     experiment_id = os.path.basename(experiment_config['results_dir'])
     train_pred_fp = '../results/{id}/train_pred.pickle'.format(id=experiment_id)
     test_pred_fp = '../results/{id}/test_pred.pickle'.format(id=experiment_id)
+    meta_fp = '../results/{id}/meta.pickle'.format(id=experiment_id)
 
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
@@ -341,10 +342,12 @@ def main(data_config, param_config, experiment_config):
 
     #===========================Optimize===========================
 
+    elbos = []
     def logger(x):    
         if (logger.i % 10) == 0:
             session =  m.enquire_session()
             objective = m.objective.eval(session=session)
+            elbos.append(objective)
             print(logger.i, ': ', objective)
 
         logger.i+=1
@@ -366,12 +369,11 @@ def main(data_config, param_config, experiment_config):
             #set_objective(AdamOptimizer, 'elbo')
             #opt.minimize(m, step_callback=logger, maxiter=10)
         else:
-            opt.minimize(m, step_callback=logger, maxiter=1000)
+            opt.minimize(m, step_callback=logger, maxiter=100)
 
     saver = tf.train.Saver()
     save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=param_config['model_state_fp']))
     #===========================Predict and store results===========================
-    elbos = None
 
     meta = {
         'elbos': elbos
@@ -384,7 +386,8 @@ def main(data_config, param_config, experiment_config):
 
     pickle.dump(train_pred, open( train_pred_fp, "wb" ) )
     pickle.dump(test_pred, open( test_pred_fp, "wb" ) )
-    #pickle.dump(meta, open( test_pred_fp, "wb" ) )
+
+    pickle.dump(meta, open( meta_fp, "wb" ) )
 
     print(m)
 
