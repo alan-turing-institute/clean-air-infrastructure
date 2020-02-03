@@ -147,7 +147,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 botocore.exceptions.EndpointConnectionError,
             ) as error:
                 self.logger.error("Failed to retrieve %s. Error: %s", filename, error)
-                continue
+                raise Exception
             finally:
                 if os.path.isfile(filename):
                     os.remove(filename)
