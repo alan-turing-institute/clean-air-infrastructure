@@ -3,6 +3,7 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
+import math
 import pandas as pd
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
@@ -61,6 +62,9 @@ class ModelData(DBWriter, DBQueryMixin):
             raise ValueError(
                 "Either config or config_dir must be supplied as arguments"
             )
+
+        # Batch size for uploading to database
+        self.batch_size = 500000
 
         if config:
             # Validate the configuration
@@ -280,7 +284,7 @@ class ModelData(DBWriter, DBQueryMixin):
             index_col=0,
         )
         self.normalised_pred_data_df = pd.read_csv(
-            os.path.join(os.path.join(dir_path, "normalised_training_data.csv")),
+            os.path.join(os.path.join(dir_path, "normalised_pred_data.csv")),
             index_col=0,
         )
 
@@ -832,7 +836,19 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
+        n_records = len(upload_records)
+        n_batches = math.ceil(n_records / self.batch_size)
 
-        self.logger.info("Inserting %s records into the database", len(upload_records))
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ModelResult)
+        self.logger.info(
+            "Uploading %s records in batches of %s", n_records, self.batch_size
+        )
+
+        for idx in range(0, n_records, self.batch_size):
+
+            batch_records = upload_records[idx : idx + self.batch_size]
+            self.logger.info(
+                "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
+            )
+
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(session, batch_records, table=ModelResult)
