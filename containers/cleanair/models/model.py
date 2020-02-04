@@ -16,7 +16,7 @@ class Model(ABC):
         self.model_params = dict(restore=False)
 
     @abstractmethod
-    def __get_default_model_params(self):
+    def get_default_model_params(self):
         """
         The default model parameters if none are supplied.
 

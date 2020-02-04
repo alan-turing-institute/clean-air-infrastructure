@@ -6,6 +6,7 @@ import argparse
 from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+import numpy as np
 from cleanair.models import ModelData, SVGP_TF1
 from cleanair.loggers import get_log_level
 
@@ -119,12 +120,15 @@ def main():
     print('Y pred')
     print(type(Y_pred))
     print(Y_pred)
-    print(Y_pred.shape)
+    print('shape of mean:', Y_pred['laqn']['NO2']['mean'].shape)
     print()
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
-        Y_pred=Y_pred,
+        Y_pred=np.array([
+            Y_pred['laqn']['NO2']['mean'],
+            Y_pred['laqn']['NO2']['var']
+        ]).T.squeeze(),
         model_fit_info=dict(fit_start_time=datetime.now()),
     )
 

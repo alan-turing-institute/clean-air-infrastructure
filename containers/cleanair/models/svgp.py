@@ -36,12 +36,12 @@ class SVGP_TF1(Model):
         # check model parameters
         if model_params is None:
             print()
-            # self.model_params = self.__get_default_model_params()
+            self.model_params = self.get_default_model_params()
         else:
             self.__check_model_params_are_valid()
             self.model_params = model_params
 
-    def __get_default_model_params(self):
+    def get_default_model_params(self):
         """
         The default model parameters if none are supplied.
 
@@ -220,8 +220,13 @@ class SVGP_TF1(Model):
         XS = XS['laqn']
         y_mean, y_var = self.batch_predict(XS)
         return dict(
-
-        ) 
+            laqn=dict(
+                NO2=dict(
+                    mean=y_mean,
+                    var=y_var
+                )
+            )
+        )
 
     # ToDo: move this method into a different function
     # or assume that the model data has already been cleaned
