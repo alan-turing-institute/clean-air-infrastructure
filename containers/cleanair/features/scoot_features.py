@@ -308,11 +308,43 @@ class ScootFeatures(DateRangeMixin, Features):
             self.start_datetime,
             self.end_datetime,
         )
-        traffic_q = self.weighted_average_traffic(
-            self.start_datetime, self.end_datetime
+        for start_datetime in rrule.rrule(
+            rrule.HOURLY, dtstart=self.start_datetime, until=self.end_datetime
+        ):
+            end_datetime = start_datetime + datetime.timedelta(hours=1)
+
+            self.logger.info(
+                "Processing data between %s and %s",
+                green(start_datetime),
+                green(end_datetime),
+            )
+
+            weighted_traffic_sq = self.weighted_average_traffic(
+                start_datetime, end_datetime, output_type="subquery"
+            )
+
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(
+                    session,
+                    weighted_traffic_sq,
+                    table=ScootRoadReading,
+                    on_conflict_do_nothing=True,
+                )
+
+            return
+
+    def delete_remote_entries(self):
+        """Remove entries from the ScootRoadReading table"""
+
+        self.logger.info(
+            "Deleting all scoot road match data between %s and %s",
+            green(self.start_datetime),
+            green(self.end_datetime),
         )
+
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, traffic_q.subquery(), table=ScootRoadReading)
+            drop_q = session.query(ScootRoadReading).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
+                                                            ScootRoadReading.measurement_start_utc < self.end_datetime).delete()
 
     def update_scoot_road_reading(self, find_closest_roads=False):
         """Update all remote tables"""
