@@ -233,7 +233,9 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         peroid = "0H24H"
         # Request satellite data for an arbitary day
-        grib_bytes = self.request_satellite_data(date.today().strftime("%Y-%m-%d"), period=peroid, pollutant="NO2")
+        grib_bytes = self.request_satellite_data(
+            date.today().strftime("%Y-%m-%d"), period=peroid, pollutant="NO2"
+        )
 
         # Convert to dataframe
         grib_data_df = self.grib_to_df(grib_bytes, peroid)
