@@ -158,9 +158,12 @@ class DBQueryMixin:
 
             aqe_sources_q = (
                 session.query(
-                    *base_query_columns, AQESite.date_opened, AQESite.date_closed
+                    *base_query_columns,
+                    func.min(AQESite.date_opened),
+                    func.min(AQESite.date_closed),
                 )
                 .join(AQESite, isouter=True)
+                .group_by(*base_query_columns)
                 .filter(
                     MetaPoint.source.in_(["aqe"]),
                     MetaPoint.location.ST_Within(bounded_geom),
@@ -169,9 +172,12 @@ class DBQueryMixin:
 
             laqn_sources_q = (
                 session.query(
-                    *base_query_columns, LAQNSite.date_opened, LAQNSite.date_closed
+                    *base_query_columns,
+                    func.min(LAQNSite.date_opened),
+                    func.min(LAQNSite.date_closed),
                 )
                 .join(LAQNSite, isouter=True)
+                .group_by(*base_query_columns)
                 .filter(
                     MetaPoint.source.in_(["laqn"]),
                     MetaPoint.location.ST_Within(bounded_geom),

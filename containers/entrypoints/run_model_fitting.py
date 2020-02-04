@@ -101,10 +101,15 @@ def main():
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
-        "features": ["value_1000_total_road_length"],
+        "features": [
+            "value_1000_total_a_road_length",
+            "value_500_total_a_road_length",
+            "value_500_total_a_road_primary_length",
+            "value_500_total_b_road_length",
+        ],
         "norm_by": "laqn",
         "model_type": "svgp_tf1",
-        "tag": "testing",
+        "tag": "testing_dashboard",
     }
 
     # initialise the model
