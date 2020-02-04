@@ -839,11 +839,13 @@ class ModelData(DBWriter, DBQueryMixin):
         n_records = len(upload_records)
         n_batches = math.ceil(n_records / self.batch_size)
 
-        self.logger.info("Uploading %s records in batches of %s", n_records, self.batch_size)
+        self.logger.info(
+            "Uploading %s records in batches of %s", n_records, self.batch_size
+        )
 
         for idx in range(0, n_records, self.batch_size):
 
-            batch_records = upload_records[idx: idx + self.batch_size]
+            batch_records = upload_records[idx : idx + self.batch_size]
             self.logger.info(
                 "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
             )
