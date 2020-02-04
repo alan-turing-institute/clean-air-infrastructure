@@ -3,9 +3,10 @@ Model fitting
 """
 import logging
 import argparse
+from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP
+from cleanair.models import ModelData, SVGP_TF1
 from cleanair.loggers import get_log_level
 
 
@@ -72,17 +73,17 @@ def main():
         "train_end_date": train_end,
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
-        "include_satellite": True,
+        "include_satellite": False,
         "include_prediction_y": False,
-        "train_sources": ["laqn", "aqe"],
-        "pred_sources": ["laqn", "aqe"],
+        "train_sources": ["laqn"],
+        "pred_sources": ["laqn"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
         "features": ["value_1000_total_road_length"],
         "norm_by": "laqn",
-        "model_type": "svgp",
+        "model_type": "svgp_tf1",
         "tag": "testing",
     }
 
@@ -105,30 +106,35 @@ def main():
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # Fit the model
-    model_fitter = SVGP()
+    model_fitter = SVGP_TF1()
 
     model_fitter.fit(
-        training_data_dict["X"],
-        training_data_dict["Y"],
-        max_iter=20000,
+        dict(laqn=training_data_dict["X"]),
+        dict(laqn=dict(
+            no2=training_data_dict["Y"]
+        )),
+        # max_iter=20000,
         model_params=model_params,
+        save_model_state=False
     )
 
     # Get info about the model fit
-    model_fit_info = model_fitter.fit_info()
+    # model_fit_info = model_fitter.fit_info()
 
     # # Do prediction and write to database
-    Y_pred = model_fitter.predict(predict_data_dict["X"])
+    Y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
         Y_pred=Y_pred,
-        model_fit_info=model_fit_info,
+        model_fit_info=dict(fit_start_time=datetime.now()),
     )
 
+    print(model_data.normalised_pred_data_df.sample(5))
+
     # Write the model results to the database
-    model_data.update_remote_tables()
+    # model_data.update_remote_tables()
 
 
 if __name__ == "__main__":
