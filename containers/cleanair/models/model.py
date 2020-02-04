@@ -10,7 +10,7 @@ class Model(ABC):
     All other air quality models should extend this class.
     """
     def __init__(self, **kwargs):
-        raise NotImplementedError
+        self.model = None
 
     @abstractmethod
     def fit(self, X, Y, **kwargs):
