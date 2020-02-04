@@ -57,19 +57,13 @@ def main():
         "--testdir",
         default="/secrets/test/",
         type=str,
-        help="The directory to save test data."   
+        help="The directory to save test data.",
     )
     parser.add_argument(
-        "-w",
-        "--write",
-        action='store_true',
-        help="Write model data to file."
+        "-w", "--write", action="store_true", help="Write model data to file."
     )
     parser.add_argument(
-        "-r",
-        "--read",
-        action='store_true',
-        help="Read model data from file."
+        "-r", "--read", action="store_true", help="Read model data from file."
     )
 
     # Parse and interpret arguments
@@ -78,9 +72,9 @@ def main():
     write = args.write
     read = args.read
     kwargs = vars(args)
-    del kwargs['testdir']
-    del kwargs['write']
-    del kwargs['read']
+    del kwargs["testdir"]
+    del kwargs["write"]
+    del kwargs["read"]
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -133,26 +127,23 @@ def main():
     # Fit the model
     model_fitter.fit(
         dict(laqn=training_data_dict["X"]),
-        dict(laqn=dict(
-            NO2=training_data_dict["Y"]
-        )),
+        dict(laqn=dict(NO2=training_data_dict["Y"])),
         save_model_state=False,
-        max_iter=5
+        max_iter=5,
     )
 
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction and write to database
-    Y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
+    y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
-        Y_pred=np.array([
-            Y_pred['laqn']['NO2']['mean'],
-            Y_pred['laqn']['NO2']['var']
-        ]).T.squeeze(),
+        y_pred=np.array(
+            [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
+        ).T.squeeze(),
         model_fit_info=dict(fit_start_time=datetime.now()),
     )
 

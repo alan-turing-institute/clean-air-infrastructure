@@ -11,8 +11,19 @@ import tensorflow as tf
 from ..loggers import get_logger
 from .model import Model
 
+
 class SVGP_TF1(Model):
-    def __init__(self, model_params=None, log=True, batch_size=100, disable_tf_warnings=True, **kwargs):
+    """
+    Sparse variational Gaussian Process for air quality.
+    """
+    def __init__(
+            self,
+            model_params=None,
+            log=True,
+            batch_size=100,
+            disable_tf_warnings=True,
+            **kwargs
+    ):
         super().__init__(**kwargs)
 
         # Ensure logging is available
@@ -26,8 +37,13 @@ class SVGP_TF1(Model):
             tf.logging.set_verbosity(tf.logging.ERROR)
 
         self.minimum_param_keys = [
-            'restore', 'lengthscale', 'variance', 'minibatch_size',
-            'n_inducing_points', 'train', 'model_state_fp'
+            "restore",
+            "lengthscale",
+            "variance",
+            "minibatch_size",
+            "n_inducing_points",
+            "train",
+            "model_state_fp",
         ]
         self.epoch = 0
         self.refresh = None
@@ -58,58 +74,68 @@ class SVGP_TF1(Model):
             "n_inducing_points": 2000,
             "restore": False,
             "train": True,
-            "model_state_fp": None
+            "model_state_fp": None,
         }
 
-    def setup_model(self, X, Y, Z, D):
+    def setup_model(self, x_train, y_train, inducing_locations, num_input_dimensions):
         """Create GPFlow sparse variational Gaussian Processes
 
         args:
-            X: N x D numpy array - observations input,
-            Y: N x 1 numpy array - observations output,
-            Y: M x D numpy array - inducing locations,
-            D: integer - number of input dimensions
+            x_train: N x D numpy array - observations input,
+            y_train: N x 1 numpy array - observations output,
+            inducing_locations: M x D numpy array - inducing locations,
+            num_input_dimensions: integer - number of input dimensions
 
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = 1e-5
-        with gpflow.settings.temp_settings(custom_config), gpflow.session_manager.get_session().as_default():
-            kern = gpflow.kernels.RBF(D, lengthscales=1.0, ARD=True)
-            self.model = gpflow.models.SVGP(X, Y, kern, gpflow.likelihoods.Gaussian(variance=5.0), Z, minibatch_size=300)
+        with gpflow.settings.temp_settings(
+                custom_config
+        ), gpflow.session_manager.get_session().as_default():
+            kern = gpflow.kernels.RBF(num_input_dimensions, lengthscales=1.0, ARD=True)
+            self.model = gpflow.models.SVGP(
+                x_train,
+                y_train,
+                kern,
+                gpflow.likelihoods.Gaussian(variance=5.0),
+                inducing_locations,
+                minibatch_size=300,
+            )
 
     def elbo_logger(self, x):
         """Log optimisation progress
 
         args:
-            x: argument passed as a callback from GPFlow optimiser. 
-
+            x: argument passed as a callback from GPFlow optimiser.
         """
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)
             if self.logger:
-                self.logger.info("Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective)
+                self.logger.info(
+                    "Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective
+                )
 
-            print(self.epoch, ': ', objective)
+            print(self.epoch, ": ", objective)
 
         self.epoch += 1
 
-    def fit(self, X, Y, max_iter=100, refresh=10, save_model_state=True):
+    def fit(self, x_train, y_train, max_iter=100, refresh=10, save_model_state=True):
         """
         Fit the SVGP.
 
         Parameters
         ___
 
-        X : dict
+        x_train : dict
             See `Model.fit` method in the base class for further details.
             NxM numpy array of N observations of M covariates.
             Only the 'laqn' key is used in this fit method, so all observations
             come from this source.
-        
-        Y : dict
-            Only `Y['laqn']['NO2']` is used for fitting.
+
+        y_train : dict
+            Only `y_train['laqn']['NO2']` is used for fitting.
             The size of this array is NX1 with N sensor observations from 'laqn'.
             See `Model.fit` method in the base class for further details.
 
@@ -133,30 +159,33 @@ class SVGP_TF1(Model):
                 'model_state_fp': 'experiments/NAME/models/restore/m_MODEL_NAME'
             }
         >>> model = SVGP_TF1(model_params=model_params)
-        >>> model.fit(X, Y)
+        >>> model.fit(x_train, y_train)
         """
         self.refresh = refresh
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
-        X = X['laqn'].copy()
-        Y = Y['laqn']['NO2'].copy()
+        x_train = x_train["laqn"].copy()
+        y_train = y_train["laqn"]["NO2"].copy()
 
-        X, Y = self.clean_data(X, Y)
+        x_train, y_train = self.clean_data(x_train, y_train)
 
-        #setup inducing points
-        z_r = kmeans2(X, self.model_params['n_inducing_points'], minit='points')[0]
+        # setup inducing points
+        z_r = kmeans2(x_train, self.model_params["n_inducing_points"], minit="points")[0]
 
         # setup SVGP model
-        self.setup_model(X, Y, z_r, X.shape[1])
+        self.setup_model(x_train, y_train, z_r, x_train.shape[1])
         self.model.compile()
 
         tf_session = self.model.enquire_session()
 
-        if self.model_params['restore']:
+        if self.model_params["restore"]:
             saver = tf.train.Saver()
-            saver.restore(tf_session, '{filepath}.ckpt'.format(filepath=self.model_params['model_state_fp']))
+            saver.restore(
+                tf_session,
+                "{filepath}.ckpt".format(filepath=self.model_params["model_state_fp"]),
+            )
 
-        if self.model_params['train']:
+        if self.model_params["train"]:
             # optimize and setup elbo logging
             opt = gpflow.train.AdamOptimizer()
             opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=max_iter)
@@ -164,37 +193,42 @@ class SVGP_TF1(Model):
             # save model state
             if save_model_state:
                 saver = tf.train.Saver()
-                saver.save(tf_session, "{filepath}.ckpt".format(filepath=self.model_params['model_state_fp']))
+                saver.save(
+                    tf_session,
+                    "{filepath}.ckpt".format(
+                        filepath=self.model_params["model_state_fp"]
+                    ),
+                )
 
-    def batch_predict(self, XS):
+    def batch_predict(self, x_test):
         """Split up prediction into indepedent batchs.
         #TODO: move into parent class as this will be used by all models
 
         args:
-            XS: N x D numpy array of locations to predict at
+            x_test: N x D numpy array of locations to predict at
         """
         batch_size = self.batch_size
 
         # Ensure batch is less than the number of test points
-        if XS.shape[0] < batch_size:
-            batch_size = XS.shape[0]
+        if x_test.shape[0] < batch_size:
+            batch_size = x_test.shape[0]
 
         # Split up test points into equal batches
-        num_batches = int(np.ceil(XS.shape[0]/batch_size))
+        num_batches = int(np.ceil(x_test.shape[0] / batch_size))
 
         ys_arr = []
         ys_var_arr = []
         i = 0
 
         for b in range(num_batches):
-            print('Batch: ', b, num_batches)
-            if b == num_batches-1:
+            print("Batch: ", b, num_batches)
+            if b == num_batches - 1:
                 # in last batch just use remaining of test points
-                batch = XS[i:, :]
+                batch = x_test[i:, :]
             else:
-                batch = XS[i:i+batch_size, :]
+                batch = x_test[i : i + batch_size, :]
 
-            i = i+batch_size
+            i = i + batch_size
 
             # predict for current batch
             ys, ys_var = self.model.predict_y(batch)
@@ -207,38 +241,31 @@ class SVGP_TF1(Model):
 
         return ys, ys_var
 
-    def predict(self, XS):
+    def predict(self, x_test):
         """
         Predict using the model at the laqn sites for NO2.
 
         Parameters
         ___
 
-        XS : dict
+        x_test : dict
             See `Model.predict` for further details.
         """
-        XS = XS['laqn']
-        y_mean, y_var = self.batch_predict(XS)
-        return dict(
-            laqn=dict(
-                NO2=dict(
-                    mean=y_mean,
-                    var=y_var
-                )
-            )
-        )
+        x_test = x_test["laqn"]
+        y_mean, y_var = self.batch_predict(x_test)
+        return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
 
     # ToDo: move this method into a different function
     # or assume that the model data has already been cleaned
-    def clean_data(self, X, Y):
+    def clean_data(self, x_train, y_train):
         """Remove nans and missing data for use in GPflow
 
         args:
-            X: N x D numpy array,
-            Y: N x 1 numpy array
+            x_train: N x D numpy array,
+            y_train: N x 1 numpy array
         """
-        idx = (~np.isnan(Y[:, 0]))
-        X = X[idx, :]
-        Y = Y[idx, :]
+        idx = ~np.isnan(y_train[:, 0])
+        x_train = x_train[idx, :]
+        y_train = y_train[idx, :]
 
-        return X, Y
+        return x_train, y_train
