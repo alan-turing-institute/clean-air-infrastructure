@@ -3,8 +3,9 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
-import math
+import pickle
 import pandas as pd
+import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
@@ -63,9 +64,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 "Either config or config_dir must be supplied as arguments"
             )
 
-        # Batch size for uploading to database
-        self.batch_size = 500000
-
         if config:
             # Validate the configuration
             self.__validate_config(config)
@@ -90,9 +88,14 @@ class ModelData(DBWriter, DBQueryMixin):
                 self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
                     ["box_id", "measurement_start_utc", "point_id"]
                 )
+                self.training_satellite_data_x = self.__normalise_data(self.training_satellite_data_x)
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ["box_id", "measurement_start_utc"]
                 )
+
+            if self.config['tag'] == 'validation':
+                self.training_dict = self.get_training_dict()
+                self.test_dict = self.get_test_dict()
 
         else:
             self.restore_config_state(config_dir)
@@ -120,6 +123,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         valid_models = [
             "svgp",
+            "mr_gprn",
         ]
 
         self.logger.info("Validating config")
@@ -298,6 +302,13 @@ class ModelData(DBWriter, DBQueryMixin):
                 index_col=0,
             )
 
+        if self.config['tag'] == 'validation':
+            # load train and test dicts from pickle
+            with open(os.path.join(dir_path, 'train.pickle'), 'rb') as handle:
+                self.training_dict = pickle.load(handle)
+            with open(os.path.join(dir_path, 'test.pickle'), 'rb') as handle:
+                self.test_dict = pickle.load(handle)
+
     @property
     def x_names_norm(self):
         """Get the normalised x names"""
@@ -335,6 +346,52 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
+
+    def __get_model_dicts(self, data_df, sources, return_sat=False):
+        data_dict = {}
+
+        sat_dict = None
+        for src in sources:
+            # filter the dataframe by source
+            data_src = data_df[data_df['source']==src]
+
+            # get the a data dict for the filtered data
+            data_src = self.__get_model_data_arrays(data_src, return_y=True, dropna=False)
+
+            # change Y to be a dict of species
+            X = data_src['X'].copy()
+            index = data_src['index'].copy()
+            Y = {}
+            i = 0
+            for specie in self.config['species']:
+                Y[specie] = data_src['Y'][:, i]
+                i += 1
+
+            # setup data_dict for this source
+            data_dict[src] = {'index':index, 'X':X, 'Y':Y}
+
+            if return_sat and sat_dict is None:
+                #currenly __get_model_data_arrays reurns X_sat for all sources
+                sat_dict = {}
+                sat_dict['X'] = data_src['X_sat'].copy()
+                sat_dict['Y'] = data_src['Y_sat'].copy()
+                sat_dict['mask'] = data_src['X_sat_mask'].copy()
+                data_dict['satellite'] = sat_dict
+
+        return data_dict
+
+    def get_training_dict(self):
+        """
+        Get a training dictionary.
+        """
+        return self.__get_model_dicts(self.normalised_training_data_df, self.config['train_sources'], return_sat=self.config['include_satellite'])
+
+    def get_test_dict(self):
+        """
+        Get a training dictionary of data indexed in the same way as get_training_dict.
+        """
+        return self.__get_model_dicts(self.normalised_pred_data_df, self.config['pred_sources'])
+
     def __get_model_data_arrays(self, data_df, return_y, dropna=True):
         """Return a dictionary of data arrays for model fitting.
         The returned dictionary includes and index to allow model predictions
@@ -371,7 +428,7 @@ class ModelData(DBWriter, DBQueryMixin):
             n_x_names = len(self.config["x_names"])
 
             X_sat = (
-                self.training_satellite_data_x[self.config["x_names"]]
+                self.training_satellite_data_x[self.x_names_norm]
                 .to_numpy()
                 .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
             )
@@ -382,6 +439,9 @@ class ModelData(DBWriter, DBQueryMixin):
                 .reshape(n_sat_box * n_hours, n_interest_points)
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
+
+            print(self.training_satellite_data_x)
+            print(self.training_satellite_data_y)
 
             data_dict["X_sat"] = X_sat
             data_dict["Y_sat"] = Y_sat
@@ -603,7 +663,9 @@ class ModelData(DBWriter, DBQueryMixin):
             names=["point_id", "measurement_start_utc"],
         )
         time_df = pd.DataFrame(index=index).reset_index()
+
         time_df_merged = time_df.merge(feature_df)
+
         time_df_merged["epoch"] = time_df_merged["measurement_start_utc"].apply(
             lambda x: x.timestamp()
         )
@@ -814,6 +876,51 @@ class ModelData(DBWriter, DBQueryMixin):
             [self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False
         )
 
+    def __update_df_with_pred_dict(self, data_df, data_dict, pred_dict, sources):
+        """
+        Return a new dataframe with columns updated from pred_dict.
+        """
+        # create new dataframe and track indices for different sources
+        indices = []
+        for source in sources:
+            indices.extend(data_dict[source]['index'])
+        predict_df = pd.DataFrame(index=indices)
+        print('predict df shape:', predict_df.shape)
+
+        # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
+        for property in ['mean', 'var']:
+            for species in self.config['species']:
+                # add a column containing pred results for all sources
+                column = np.array([])
+                for source in sources:
+                    column = np.append(column, pred_dict[source][species][property])
+                print(species, property, 'shape:', column.shape)
+                predict_df[species + '_' + property] = column
+
+        # add predict_df as new columns to data_df - they should share an index
+        return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+
+    def update_testing_df_with_preds(self, test_pred_dict):
+        """
+        Update the normalised_pred_data_df with predictions for all pred sources.
+        
+        Parameters
+        ___
+
+        test_pred_dict : dict
+            Dictionary with first level keys for pred_sources (e.g. 'laqn', 'aqe').
+            Second level keys are species (e.g. 'NO2', 'PM10').
+            Third level keys are either 'mean' or 'var'.
+            Values are numpy arrays of predictions for a source and specie.
+        """
+        self.normalised_pred_data_df = self.__update_df_with_pred_dict(self.normalised_pred_data_df, self.test_dict, test_pred_dict, self.config['pred_sources'])
+
+    def update_training_df_with_preds(self, training_pred_dict):
+        """
+        Updated the normalised_training_data_df with predictions on the training set.
+        """
+        self.normalised_training_data_df = self.__update_df_with_pred_dict(self.normalised_training_data_df, self.training_dict, training_pred_dict, self.config['train_sources'])
+
     def update_remote_tables(self):
         """Update the model results table with the model results"""
 
@@ -836,19 +943,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-        n_records = len(upload_records)
-        n_batches = math.ceil(n_records / self.batch_size)
 
-        self.logger.info(
-            "Uploading %s records in batches of %s", n_records, self.batch_size
-        )
-
-        for idx in range(0, n_records, self.batch_size):
-
-            batch_records = upload_records[idx : idx + self.batch_size]
-            self.logger.info(
-                "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
-            )
-
-            with self.dbcnxn.open_session() as session:
-                self.commit_records(session, batch_records, table=ModelResult)
+        self.logger.info("Inserting %s records into the database", len(upload_records))
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, upload_records, table=ModelResult)
