@@ -50,13 +50,13 @@ def main():
         # # MAP scoot features to roads/
         scoot_road_map = ScootMapToRoads(**kwargs)
         # # scoot_road_map.insert_closest_roads() #Needs to run first
-        # scoot_road_map.update_remote_tables()
+        scoot_road_map.update_remote_tables()
 
         # # Process features
-        # kwargs["sources"] = ["aqe", "laqn", "satellite"]
-        # scoot_feature_extractor = ScootFeatures(**kwargs)
-        # # # # Extract static features into the appropriate tables on the database
-        # scoot_feature_extractor.update_remote_tables()
+        kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
+        scoot_feature_extractor = ScootFeatures(**kwargs)
+        # # # Extract static features into the appropriate tables on the database
+        scoot_feature_extractor.update_remote_tables()
 
         # Clean up
         scoot_road_map.delete_remote_entries()
