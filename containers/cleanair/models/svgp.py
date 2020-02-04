@@ -12,7 +12,7 @@ from ..loggers import get_logger
 from .model import Model
 
 class SVGP_TF1(Model):
-    def __init__(self, log=True, batch_size=100, disable_tf_warnings=True, **kwargs):
+    def __init__(self, model_params=None, log=True, batch_size=100, disable_tf_warnings=True, **kwargs):
         super().__init__(**kwargs)
 
         # Ensure logging is available
@@ -25,11 +25,43 @@ class SVGP_TF1(Model):
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
             tf.logging.set_verbosity(tf.logging.ERROR)
 
+        self.minimum_param_keys = [
+            'restore', 'lengthscale', 'variance', 'minibatch_size',
+            'n_inducing_points', 'train', 'model_state_fp'
+        ]
         self.epoch = 0
         self.refresh = None
         self.batch_size = batch_size
 
-    def setup_model(self, X, Y, Z, D, model_params):
+        # check model parameters
+        if model_params is None:
+            print()
+            # self.model_params = self.__get_default_model_params()
+        else:
+            self.__check_model_params_are_valid()
+            self.model_params = model_params
+
+    def __get_default_model_params(self):
+        """
+        The default model parameters if none are supplied.
+
+        Returns
+        ___
+
+        dict
+            Dictionary of parameters.
+        """
+        return {
+            "lengthscale": 0.1,
+            "variance": 0.1,
+            "minibatch_size": 100,
+            "n_inducing_points": 2000,
+            "restore": False,
+            "train": True,
+            "model_state_fp": None
+        }
+
+    def setup_model(self, X, Y, Z, D):
         """Create GPFlow sparse variational Gaussian Processes
 
         args:
@@ -37,7 +69,6 @@ class SVGP_TF1(Model):
             Y: N x 1 numpy array - observations output,
             Y: M x D numpy array - inducing locations,
             D: integer - number of input dimensions
-            model_params: a dictionary of model parameters
 
         """
         custom_config = gpflow.settings.get_settings()
@@ -64,7 +95,7 @@ class SVGP_TF1(Model):
 
         self.epoch += 1
 
-    def fit(self, X, Y, max_iter=100, model_params=None, refresh=10, save_model_state=True):
+    def fit(self, X, Y, max_iter=100, refresh=10, save_model_state=True):
         """
         Fit the SVGP.
 
@@ -85,9 +116,6 @@ class SVGP_TF1(Model):
         max_iter : int, optional
             The number of iterations to fit the model for.
 
-        model_params : dict, optional
-            A dictionary of model parameters (see example below).
-
         refresh : int, optional
             The number of iterations before printing the model's ELBO
 
@@ -104,7 +132,8 @@ class SVGP_TF1(Model):
                 'n_inducing_points': 3000
                 'model_state_fp': 'experiments/NAME/models/restore/m_MODEL_NAME'
             }
-        >>> model.fit(X, Y, model_params=model_params)
+        >>> model = SVGP_TF1(model_params=model_params)
+        >>> model.fit(X, Y)
         """
         self.refresh = refresh
 
@@ -112,30 +141,30 @@ class SVGP_TF1(Model):
         X = X['laqn'].copy()
         Y = Y['laqn']['NO2'].copy()
 
-        X, Y = __clean_data(X, Y)
+        X, Y = self.clean_data(X, Y)
 
         #setup inducing points
-        z_r = kmeans2(X, model_params['n_inducing_points'], minit='points')[0]
+        z_r = kmeans2(X, self.model_params['n_inducing_points'], minit='points')[0]
 
         # setup SVGP model
-        self.setup_model(X, Y, z_r, X.shape[1], model_params)
+        self.setup_model(X, Y, z_r, X.shape[1])
         self.model.compile()
 
         tf_session = self.model.enquire_session()
 
-        if model_params['restore']:
+        if self.model_params['restore']:
             saver = tf.train.Saver()
-            saver.restore(tf_session, '{filepath}.ckpt'.format(filepath=model_params['model_state_fp']))
+            saver.restore(tf_session, '{filepath}.ckpt'.format(filepath=self.model_params['model_state_fp']))
 
-        if model_params['train']:
+        if self.model_params['train']:
             # optimize and setup elbo logging
-            opt = gpflow.training.AdamOptimizer()
+            opt = gpflow.train.AdamOptimizer()
             opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=max_iter)
 
             # save model state
             if save_model_state:
                 saver = tf.train.Saver()
-                saver.save(tf_session, "{filepath}.ckpt".format(filepath=model_params['model_state_fp']))
+                saver.save(tf_session, "{filepath}.ckpt".format(filepath=self.model_params['model_state_fp']))
 
     def batch_predict(self, XS):
         """Split up prediction into indepedent batchs.
@@ -179,23 +208,32 @@ class SVGP_TF1(Model):
         return ys, ys_var
 
     def predict(self, XS):
-        """Model Prediction
+        """
+        Predict using the model at the laqn sites for NO2.
 
-        args:
-            XS: N x D numpy array of locations to predict at
+        Parameters
+        ___
+
+        XS : dict
+            See `Model.predict` for further details.
         """
         XS = XS['laqn']
-        return self.batch_predict(XS)
+        y_mean, y_var = self.batch_predict(XS)
+        return dict(
 
-def __clean_data(X, Y):
-    """Remove nans and missing data for use in GPflow
+        ) 
 
-    args:
-        X: N x D numpy array,
-        Y: N x 1 numpy array
-    """
-    idx = (~np.isnan(Y[:, 0]))
-    X = X[idx, :]
-    Y = Y[idx, :]
+    # ToDo: move this method into a different function
+    # or assume that the model data has already been cleaned
+    def clean_data(self, X, Y):
+        """Remove nans and missing data for use in GPflow
 
-    return X, Y
+        args:
+            X: N x D numpy array,
+            Y: N x 1 numpy array
+        """
+        idx = (~np.isnan(Y[:, 0]))
+        X = X[idx, :]
+        Y = Y[idx, :]
+
+        return X, Y

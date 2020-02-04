@@ -87,13 +87,8 @@ def main():
         "tag": "testing",
     }
 
-    # Model fitting parameters
-    model_params = {
-        "lengthscale": 0.1,
-        "variance": 0.1,
-        "minibatch_size": 100,
-        "n_inducing_points": 2000,
-    }
+    # initialise the model
+    model_fitter = SVGP_TF1()
 
     # Get the model data
     model_data = ModelData(config=model_config, **kwargs)
@@ -106,15 +101,11 @@ def main():
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # Fit the model
-    model_fitter = SVGP_TF1()
-
     model_fitter.fit(
         dict(laqn=training_data_dict["X"]),
         dict(laqn=dict(
-            no2=training_data_dict["Y"]
+            NO2=training_data_dict["Y"]
         )),
-        # max_iter=20000,
-        model_params=model_params,
         save_model_state=False
     )
 
@@ -124,6 +115,12 @@ def main():
     # # Do prediction and write to database
     Y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
 
+    print()
+    print('Y pred')
+    print(type(Y_pred))
+    print(Y_pred)
+    print(Y_pred.shape)
+    print()
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
