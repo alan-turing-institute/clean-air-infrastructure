@@ -139,11 +139,11 @@ def main():
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
-        predict_data_dict=predict_data_dict,
-        y_pred=np.array(
+        predict_data_dict,
+        np.array(
             [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
         ).T.squeeze(),
-        model_fit_info=dict(fit_start_time=datetime.now()),
+        dict(fit_start_time=datetime.now()),
     )
 
     print(model_data.normalised_pred_data_df.sample(5))
