@@ -12,7 +12,6 @@ from ..databases.tables import (
     IntersectionValue,
     IntersectionValueDynamic,
     ModelResult,
-    SatelliteForecastReading,
     SatelliteDiscreteSite,
 )
 from ..databases import DBWriter
@@ -780,8 +779,12 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
         # Get satellite readings
-        sat_train_df = self.get_satellite_readings_training(train_start_date, train_end_date, output_type='df')
-        sat_pred_df = self.get_satellite_readings_pred(pred_start_date, pred_end_date, output_type='df')
+        sat_train_df = self.get_satellite_readings_training(
+            train_start_date, train_end_date, output_type="df"
+        )
+        sat_pred_df = self.get_satellite_readings_pred(
+            pred_start_date, pred_end_date, output_type="df"
+        )
 
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
 
@@ -848,7 +851,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         for idx in range(0, n_records, self.batch_size):
 
-            batch_records = upload_records[idx: idx + self.batch_size]
+            batch_records = upload_records[idx : idx + self.batch_size]
             self.logger.info(
                 "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
             )

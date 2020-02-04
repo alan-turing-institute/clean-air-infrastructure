@@ -16,7 +16,7 @@ from ..databases.tables import (
     LAQNReading,
     AQEReading,
     ScootReading,
-    SatelliteForecastReading
+    SatelliteForecastReading,
 )
 from ..loggers import get_logger
 
@@ -247,8 +247,11 @@ class DBQueryMixin:
     @db_query
     def get_satellite_readings_training(self, start_date, end_date):
         """Get Satellite data for the training period
-           As we get 72 hours of Satellite forecast on each day, here we only get Satellite data where the reference date is the same as the forecast time.
-           i.e. Get data between start_datetime and end_datetime which consists of the first 24 hours of forecasts on each of those days
+           As we get 72 hours of Satellite forecast on each day,
+           here we only get Satellite data where the reference date
+           is the same as the forecast time.
+           i.e. Get data between start_datetime and end_datetime which
+           consists of the first 24 hours of forecasts on each of those days
         """
 
         with self.dbcnxn.open_session() as session:
@@ -256,8 +259,8 @@ class DBQueryMixin:
             sat_q = session.query(SatelliteForecastReading).filter(
                 SatelliteForecastReading.measurement_start_utc >= start_date,
                 SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.measurement_start_utc) == func.date(
-                    SatelliteForecastReading.reference_start_utc)
+                func.date(SatelliteForecastReading.measurement_start_utc)
+                == func.date(SatelliteForecastReading.reference_start_utc),
             )
 
             return sat_q
@@ -265,18 +268,25 @@ class DBQueryMixin:
     @db_query
     def get_satellite_readings_pred(self, start_date, end_date):
         """Get Satellite data for the prediction period
-           Gets up to 72 hours of predicted data from the satellite readings from the same reference_start_utc date as start_date
+           Gets up to 72 hours of predicted data from the satellite readings
+           from the same reference_start_utc date as start_date
         """
 
-        if int((isoparse(end_date) - isoparse(start_date)).total_seconds()//60//60) > 72:
-            raise ValueError("You may only request forecast data up to 72 hours from start_date")
+        if (
+            int((isoparse(end_date) - isoparse(start_date)).total_seconds() // 60 // 60)
+            > 72
+        ):
+            raise ValueError(
+                "You may only request forecast data up to 72 hours from start_date"
+            )
 
         with self.dbcnxn.open_session() as session:
 
             sat_q = session.query(SatelliteForecastReading).filter(
                 SatelliteForecastReading.measurement_start_utc >= start_date,
                 SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.reference_start_utc) == isoparse(start_date).date().isoformat()
+                func.date(SatelliteForecastReading.reference_start_utc)
+                == isoparse(start_date).date().isoformat(),
             )
 
             return sat_q
