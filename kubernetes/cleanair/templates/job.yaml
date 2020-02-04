@@ -1,0 +1,56 @@
+
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
+
+{{- range $job := .Values.jobs }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ $release_name }}-{{ $job.name }}"
+  labels:
+    chart: "{{ $chart_name }}-{{ $chart_version }}"
+spec:
+    template:
+        spec:
+            containers:
+            - name: {{ $job.name }}
+              image: "{{ $job.image.repository }}:{{ $tag }}"
+              imagePullPolicy: {{ $job.image.imagePullPolicy }}
+              volumeMounts:
+               - name: secrets
+                 mountPath: "/secrets/"
+                 readOnly: true
+              args: {{ $job.args }}
+            imagePullSecrets:
+            - name: regcred
+            restartPolicy: {{ $job.restartPolicy }}
+
+            {{- with $job.volumes }}
+            volumes:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+            {{- with $job.env }}
+            env:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+            {{- with $job.volumeMounts }}
+            volumeMounts:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+            {{- with $job.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.affinity }}
+          affinity:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{- with $job.tolerations }}
+          tolerations:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+    
+{{- end }}
