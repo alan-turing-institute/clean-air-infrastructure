@@ -140,17 +140,10 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction and write to database
-    y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
+    y_pred_dict = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
 
     # Internally update the model results in the ModelData object
-    model_data.update_model_results_df(
-        predict_data_dict,
-        np.array(
-            [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
-        ).T.squeeze(),
-        dict(fit_start_time=datetime.now()),
-    )
-
+    model_data.update_testing_df_with_preds(y_pred_dict)
     print(model_data.normalised_pred_data_df.sample(5))
     
     # Write the model results to the database
