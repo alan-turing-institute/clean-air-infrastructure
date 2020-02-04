@@ -71,15 +71,6 @@ class ModelData(DBWriter, DBQueryMixin):
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
 
-            # Get training and prediciton data frames
-            self.training_data_df = self.get_training_data_inputs()
-            self.normalised_training_data_df = self.__normalise_data(
-                self.training_data_df
-            )
-
-            self.pred_data_df = self.get_pred_data_inputs()
-            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
-
             # Process satellite data
             if self.config["include_satellite"]:
                 (
@@ -93,6 +84,15 @@ class ModelData(DBWriter, DBQueryMixin):
                 self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
                     ["box_id", "measurement_start_utc"]
                 )
+
+            # Get training and prediciton data frames
+            self.training_data_df = self.get_training_data_inputs()
+            self.normalised_training_data_df = self.__normalise_data(
+                self.training_data_df
+            )
+
+            self.pred_data_df = self.get_pred_data_inputs()
+            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
         else:
             self.restore_config_state(config_dir)
@@ -758,33 +758,37 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def get_training_satellite_inputs(self):
         """Get satellite inputs"""
-        start_date = self.config["train_start_date"]
-        end_date = self.config["pred_end_date"]
+        train_start_date = self.config["train_start_date"]
+        train_end_date = self.config["train_end_date"]
+        pred_start_date = self.config["pred_start_date"]
+        pred_end_date = self.config["pred_end_date"]
         sources = ["satellite"]
         species = self.config["species"]
         point_ids = self.config["train_satellite_interest_points"]
         features = self.config["feature_names"]
 
         self.logger.info(
-            """Getting Satellite training data for sources:
-                            %s, species: %s, from %s (inclusive) to %s (exclusive)""",
-            sources,
+            "Getting Satellite training data for species: %s, from %s (inclusive) to %s (exclusive)",
             species,
-            start_date,
-            end_date,
+            train_start_date,
+            pred_end_date,
         )
 
+        # Get model features between train_start_date and pred_end_date
         all_features = self.__get_model_features(
-            start_date, end_date, features, sources, point_ids
+            train_start_date, pred_end_date, features, sources, point_ids
         )
+
+        # Get satellite readings
+        sat_train_df = self.get_satellite_readings_training(train_start_date, train_end_date, output_type='df')
+        sat_pred_df = self.get_satellite_readings_pred(pred_start_date, pred_end_date, output_type='df')
+
+        satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
 
         with self.dbcnxn.open_session() as session:
 
             sat_site_map_q = session.query(SatelliteDiscreteSite)
-            sat_q = session.query(SatelliteForecastReading).filter(
-                SatelliteForecastReading.measurement_start_utc >= start_date,
-                SatelliteForecastReading.measurement_start_utc < end_date,
-            )
+
         sat_site_map_df = pd.read_sql(
             sat_site_map_q.statement, sat_site_map_q.session.bind
         )
@@ -797,7 +801,6 @@ class ModelData(DBWriter, DBQueryMixin):
         all_features = all_features.merge(sat_site_map_df, how="left", on=["point_id"])
 
         # Get satellite data
-        satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
         return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
@@ -845,7 +848,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         for idx in range(0, n_records, self.batch_size):
 
-            batch_records = upload_records[idx : idx + self.batch_size]
+            batch_records = upload_records[idx: idx + self.batch_size]
             self.logger.info(
                 "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
             )

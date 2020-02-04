@@ -61,7 +61,7 @@ def db_query(query_f):
             return output_q.subquery()
 
         if output_type == "sql":
-            return query_df.statement.compile(compile_kwargs={"literal_binds": True})
+            return output_q.statement.compile(compile_kwargs={"literal_binds": True})
 
         return output_q
 
