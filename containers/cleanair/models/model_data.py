@@ -125,7 +125,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         valid_models = [
             "svgp",
-            "svgp_tf1"
+            "svgp_tf1",
             "mr_gprn",
         ]
 

@@ -94,7 +94,7 @@ def main():
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
         "include_satellite": False,
-        "include_prediction_y": False,
+        "include_prediction_y": True,
         "train_sources": ["laqn"],
         "pred_sources": ["laqn"],
         "train_interest_points": "all",
@@ -127,6 +127,8 @@ def main():
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+    model_data.test_dict = model_data.get_test_dict()
+    model_data.training_dict = model_data.get_training_dict()
 
     # Fit the model
     model_fitter.fit(
