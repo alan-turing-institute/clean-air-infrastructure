@@ -7,6 +7,7 @@ from .features_tables import (
     IntersectionValue,
     IntersectionValueDynamic,
 )
+
 # from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
@@ -55,5 +56,5 @@ __all__ = [
     "UKMap",
     "StreetCanyon",
     "ModelResult",
-    "User"
+    "User",
 ]

@@ -10,7 +10,7 @@ SCHEMA_NAMES = [
     "static_data",
     "static_features",
     "model_results",
-    "api_auth"
+    "api_auth",
 ]
 EVENTS = [
     event.listen(
