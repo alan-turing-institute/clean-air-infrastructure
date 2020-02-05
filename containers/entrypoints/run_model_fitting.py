@@ -126,7 +126,7 @@ def main():
         model_data.save_config_state(testdir)
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=True)
 
     # the shapes of the arrays
     # y_train_shape = training_data_dict['Y'].shape
@@ -176,12 +176,17 @@ def main():
         raise ValueError(error_message)
 
     # Internally update the model results in the ModelData object
-    model_data.update_model_results_df(
-        predict_data_dict=predict_data_dict,
-        Y_pred=np.array(
-            [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
-        ).T.squeeze(),
-        model_fit_info=dict(fit_start_time=datetime.now()),
+    # model_data.update_model_results_df(
+    #     predict_data_dict=predict_data_dict,
+    #     Y_pred=np.array(
+    #         [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
+    #     ).T.squeeze(),
+    #     model_fit_info=dict(fit_start_time=datetime.now()),
+    # )
+    updated_df = model_data.get_df_from_pred_dict(
+        model_data.normalised_pred_data_df,
+        predict_data_dict,
+        y_pred
     )
 
     print(model_data.normalised_pred_data_df.sample(5))

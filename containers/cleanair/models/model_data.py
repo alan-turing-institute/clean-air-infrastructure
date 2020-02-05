@@ -467,9 +467,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
             # case for laqn, aqe, grid
             else:
-                print('COLUMNS:')
-                print(list(data_df.columns))
-                print()
                 src_mask = data_df[data_df['source'] == src].index
                 x_src = data_subset.loc[src_mask.intersection(data_subset.index)].to_numpy()
                 data_dict['X'][src] = x_src
@@ -921,12 +918,14 @@ class ModelData(DBWriter, DBQueryMixin):
         satellite_readings = pd.read_sql(sat_q.statement, sat_q.session.bind)
         return all_features, satellite_readings
 
-    def update_model_results_df(self, predict_data_dict, Y_pred, model_fit_info):
-        """Update the model results data frame with model predictions"""
+    def update_model_results_df(self, predict_data_dict, y_pred, model_fit_info):
+        """
+        Update the model results data frame with model predictions.
+        """
         # Create new dataframe with predictions
         predict_df = pd.DataFrame(index=predict_data_dict["index"])
-        predict_df["predict_mean"] = Y_pred[:, 0]
-        predict_df["predict_var"] = Y_pred[:, 1]
+        predict_df["predict_mean"] = y_pred[:, 0]
+        predict_df["predict_var"] = y_pred[:, 1]
         predict_df["fit_start_time"] = model_fit_info["fit_start_time"]
         predict_df["tag"] = self.config["tag"]
 
@@ -935,26 +934,33 @@ class ModelData(DBWriter, DBQueryMixin):
             [self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False
         )
 
-    def __update_df_with_pred_dict(self, data_df, data_dict, pred_dict, sources):
+    def get_df_from_pred_dict(self, data_df, data_dict, pred_dict, sources='all', species='all'):
         """
         Return a new dataframe with columns updated from pred_dict.
         """
-        # create new dataframe and track indices for different sources
+        if sources == 'all':
+            sources = pred_dict.keys()
+        if species == 'all':
+            species = self.config['species']
+        # create new dataframe and track indices for different sources + pollutants
         indices = []
         for source in sources:
-            indices.extend(data_dict[source]["index"])
+            for pollutant in pred_dict[source]:
+                print(len(data_dict['index'][source][pollutant]))
+                indices.extend(data_dict['index'][source][pollutant])
         predict_df = pd.DataFrame(index=indices)
+        data_df = data_df.loc[indices]
         print("predict df shape:", predict_df.shape)
 
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
-        for property in ["mean", "var"]:
-            for species in self.config["species"]:
+        for pred_type in ["mean", "var"]:
+            for pollutant in species:
                 # add a column containing pred results for all sources
                 column = np.array([])
                 for source in sources:
-                    column = np.append(column, pred_dict[source][species][property])
-                print(species, property, "shape:", column.shape)
-                predict_df[species + "_" + property] = column
+                    column = np.append(column, pred_dict[source][pollutant][pred_type])
+                print(pollutant, pred_type, "shape:", column.shape)
+                predict_df[pollutant + "_" + pred_type] = column
 
         # add predict_df as new columns to data_df - they should share an index
         return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
@@ -972,18 +978,17 @@ class ModelData(DBWriter, DBQueryMixin):
             Third level keys are either 'mean' or 'var'.
             Values are numpy arrays of predictions for a source and specie.
         """
-        self.normalised_pred_data_df = self.__update_df_with_pred_dict(
+        self.normalised_pred_data_df = self.update_df_with_pred_dict(
             self.normalised_pred_data_df,
-            self.test_dict,
+            self.get_pred_data_arrays(),
             test_pred_dict,
-            self.config["pred_sources"],
         )
 
     def update_training_df_with_preds(self, training_pred_dict):
         """
         Updated the normalised_training_data_df with predictions on the training set.
         """
-        self.normalised_training_data_df = self.__update_df_with_pred_dict(
+        self.normalised_training_data_df = self.update_df_with_pred_dict(
             self.normalised_training_data_df,
             self.training_dict,
             training_pred_dict,
