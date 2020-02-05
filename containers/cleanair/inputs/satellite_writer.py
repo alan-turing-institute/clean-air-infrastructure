@@ -63,7 +63,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         self.half_gridsize = 0.05
         self.define_interest_points = define_interest_points
         self.periods = ["0H24H", "25H48H", "49H72H"]
-        self.species = ['NO2', 'PM25', 'PM10', 'O3']  # Species to get data for
+        self.species = ["NO2", "PM25", "PM10", "O3"]  # Species to get data for
 
     @staticmethod
     @robust_api
@@ -159,8 +159,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                 + datetime.timedelta(hours=x["_id"]),
                 axis=1,
             )
-            grib_data_df['species'] = species
-            if species == 'NO2':
+            grib_data_df["species"] = species
+            if species == "NO2":
                 grib_data_df["val"] = (
                     grib_data_df["val"] * 1000000000
                 )  # convert to the correct units
@@ -190,7 +190,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
                 self.logger.info(
                     "Requesting 72 hours of satellite forecast data for reference date %s for species %s",
-                    green(start_date.date()), green(self.species)
+                    green(start_date.date()),
+                    green(self.species),
                 )
 
                 # Make three calls to API top get all 72 hours of data for all species
@@ -199,7 +200,11 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                 all_grib_df = pd.DataFrame()
                 for period in self.periods:
                     for species in self.species:
-                        self.logger.info("Requesting data for period: %s, species: %s", period, species)
+                        self.logger.info(
+                            "Requesting data for period: %s, species: %s",
+                            period,
+                            species,
+                        )
                         # Get gribdata
                         grib_bytes = self.request_satellite_data(
                             reference_date, period, species
@@ -216,7 +221,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                     lambda x, rd=reference_date: SatelliteForecastReading(
                         reference_start_utc=rd,
                         measurement_start_utc=x["date"],
-                        species_code=x['species'],
+                        species_code=x["species"],
                         box_id=x["box_id"],
                         value=x["val"],
                     ),
@@ -242,7 +247,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         )
 
         # Convert to dataframe
-        grib_data_df = self.grib_to_df(grib_bytes, peroid)
+        grib_data_df = self.grib_to_df(grib_bytes, peroid, "NO2")
 
         # Get interest points
         sat_interest_points = grib_data_df.groupby(["lat", "lon"]).first().reset_index()

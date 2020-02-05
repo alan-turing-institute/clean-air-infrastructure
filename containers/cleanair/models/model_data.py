@@ -766,9 +766,10 @@ class ModelData(DBWriter, DBQueryMixin):
         point_ids = self.config["train_satellite_interest_points"]
         features = self.config["feature_names"]
 
-        if len(species) > 1 and species[0] != 'NO2':
+        if len(species) > 1 and species[0] != "NO2":
             raise NotImplementedError(
-                "Can only request NO2 for Satellite at present. ModelData class needs to handle this")
+                "Can only request NO2 for Satellite at present. ModelData class needs to handle this"
+            )
 
         self.logger.info(
             "Getting Satellite training data for species: %s, from %s (inclusive) to %s (exclusive)",
@@ -855,7 +856,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         for idx in range(0, n_records, self.batch_size):
 
-            batch_records = upload_records[idx: idx + self.batch_size]
+            batch_records = upload_records[idx : idx + self.batch_size]
             self.logger.info(
                 "Uploading batch %s of %s", idx // self.batch_size + 1, n_batches
             )
