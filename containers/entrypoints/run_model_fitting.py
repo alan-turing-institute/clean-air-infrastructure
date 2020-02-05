@@ -104,7 +104,7 @@ def main():
         "features": ["value_1000_total_road_length"],
         "norm_by": "laqn",
         "model_type": "svgp_tf1",
-        "tag": "testing",
+        "tag": "tf1_test",
     }
 
     # initialise the model
@@ -124,16 +124,7 @@ def main():
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # the shapes of the arrays
-    x_train_shape = training_data_dict['X'].shape
     y_train_shape = training_data_dict['Y'].shape
-    x_test_shape = predict_data_dict['X'].shape
-    y_test_shape = predict_data_dict['Y'].shape
-    print()
-    print('x train:', x_train_shape)
-    print('y train:', y_train_shape)
-    print('x test:', x_test_shape)
-    print('y test:', y_test_shape)
-    print()
 
     # get the training and testing data into the correct format
     x_train = dict(
@@ -147,13 +138,6 @@ def main():
     x_test = dict(
         laqn=predict_data_dict['X']
     )
-    y_test = dict(
-        laqn=dict(
-            NO2=np.reshape(predict_data_dict['Y'], (y_test_shape[0], 1))
-        )
-    )
-    print('updated y train shape:', y_train['laqn']['NO2'].shape)
-    print('updated y test shape:', y_test['laqn']['NO2'].shape)
 
     # Fit the model
     model_fitter.fit(
