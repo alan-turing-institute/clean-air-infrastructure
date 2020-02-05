@@ -4,7 +4,7 @@ Geospatial data plotted on a map.
 
 import plotly.graph_objects as go
 
-LATAXIS_RANGE = [51.25, 51.75],
+LATAXIS_RANGE = [51.25, 51.75]
 LONAXIS_RANGE = [-0.5, 0.2]
 
 class InterestPointsMap(go.Figure):

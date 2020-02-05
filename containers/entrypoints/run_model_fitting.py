@@ -161,12 +161,14 @@ def main():
         raise ValueError(error_message)
 
     # Internally update the model results in the ModelData object
-    updated_df = model_data.update_test_df_with_preds(y_pred)
+    model_data.update_test_df_with_preds(y_pred)
 
     print(model_data.normalised_pred_data_df.sample(5))
 
     # Write the model results to the database
     # model_data.update_remote_tables()
+
+    return model_data
 
 if __name__ == "__main__":
     main()
