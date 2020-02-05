@@ -4,3 +4,6 @@ flask-marshmallow
 webargs
 uwsgi
 supervisor
+flask_httpauth 
+itsdangerous 
+passlib 

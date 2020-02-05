@@ -1,8 +1,9 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask
-from flask_restful import Resource, Api
+from flask import Flask, url_for
+from flask_restful import Resource, Api, abort
 from flask_marshmallow import Marshmallow
+from flask_httpauth import HTTPBasicAuth
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -10,21 +11,26 @@ from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
 from webargs import fields
 from webargs.flaskparser import use_args
-from .queries import get_point_forecast, get_all_forecasts
+from .queries import get_point_forecast, get_all_forecasts, check_user_exists, create_user
+
 
 # Initialise application
+auth = HTTPBasicAuth()
 app = Flask(__name__)
 ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets-offline.json")
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
 DeferredReflection.prepare(engine)
 Base.query = db_session.query_property()
+
+Base.metadata.create_all(engine, checkfirst=True)
 
 # Ensure sessions are closed by flask
 @app.teardown_appcontext
@@ -56,6 +62,22 @@ class Welcome(Resource):
     def get(self):
         """CleanAir API welcome message"""
         return "Welcome to the CleanAir API developed by the Alan Turing Institute"
+
+
+@api.resource('/users')
+class Users(Resource):
+    'User auth resources'
+    @use_args({"username": fields.String(required=True), "password": fields.String(required=True)})
+    def post(self, args):
+        """Check if a user exists and if not add them and their hashed password to the database"""
+        session = db_session()
+        username = args['username']
+        password = args['password']
+        if check_user_exists(session, username=username).first() is not None:
+            abort(400, message="username already exists")  # existing user
+        user = create_user(session, username, password)
+
+        return {'username': user.username}, 201
 
 
 @api.resource("/point")

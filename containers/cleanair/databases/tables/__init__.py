@@ -7,7 +7,7 @@ from .features_tables import (
     IntersectionValue,
     IntersectionValueDynamic,
 )
-from .hexgrid_table import HexGrid
+# from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
@@ -28,12 +28,12 @@ from .satellite_tables import (
     SatelliteDiscreteSite,
     SatelliteForecastReading,
 )
-
+from .api_auth import User
 
 __all__ = [
     "AQEReading",
     "AQESite",
-    "HexGrid",
+    # "HexGrid",
     "IntersectionGeom",
     "IntersectionValue",
     "IntersectionValueDynamic",
@@ -55,4 +55,5 @@ __all__ = [
     "UKMap",
     "StreetCanyon",
     "ModelResult",
+    "User"
 ]

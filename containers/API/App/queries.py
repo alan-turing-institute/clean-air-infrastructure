@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import func
 from cleanair.loggers import get_log_level
 from cleanair.decorators import db_query
-from cleanair.databases.tables import ModelResult, MetaPoint
+from cleanair.databases.tables import ModelResult, MetaPoint, User
 
 logging.basicConfig(level=get_log_level(0))
 
@@ -101,3 +101,17 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
         .join(ModelResult)
         .filter(ModelResult.fit_start_time == latest_model_result_sq.c.latest_forecast)
     )
+
+
+@db_query
+def check_user_exists(session, username):
+    """Check if an API user exists"""
+    return session.query(User).filter(User.username == username)
+
+
+def create_user(session, username, password):
+    user = User(username=username)
+    user.hash_password(password)
+    session.add(user)
+    session.commit()
+    return user
