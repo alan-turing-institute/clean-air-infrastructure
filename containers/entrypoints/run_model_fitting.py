@@ -94,7 +94,7 @@ def main():
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
         "include_satellite": False,
-        "include_prediction_y": True,
+        "include_prediction_y": False,
         "train_sources": ["laqn"],
         "pred_sources": ["laqn"],
         "train_interest_points": "all",
@@ -125,15 +125,17 @@ def main():
         print(testdir)
         model_data.save_config_state(testdir)
 
+    # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
-    model_data.test_dict = model_data.get_test_dict()
-    model_data.training_dict = model_data.get_training_dict()
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=True)
+    x_train = training_data_dict['X']
+    y_train = training_data_dict['Y']
+    x_test = predict_data_dict['X']
 
     # Fit the model
     model_fitter.fit(
-        model_data.training_dict,
-        model_data.training_dict,
+        x_train,
+        y_train,
         save_model_state=False,
         max_iter=5,
     )
@@ -142,23 +144,29 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction and write to database
-    y_pred_dict = model_fitter.predict(model_data.test_dict)
+    y_pred = model_fitter.predict(x_test)
 
-    # print shapes
-    print()
-    print('Shape of test X:', model_data.test_dict['laqn']['X'].shape)
-    print('Shape of test Y:', model_data.test_dict['laqn']['Y']['NO2'].shape)
-    print('Shape of mean Y:', y_pred_dict['laqn']['NO2']['mean'].shape)
-    print('Shape of var Y:', y_pred_dict['laqn']['NO2']['var'].shape)
+    try:
+        num_pred_rows = y_pred['laqn']['NO2']['mean'].shape[0]
+        num_x_rows = x_test['laqn'].shape[0]
+        assert num_pred_rows == num_x_rows
+    except AssertionError:
+        error_message = 'Rows in y_pred laqn No2 mean is {pred_rows}. '.format(
+            pred_rows=num_pred_rows
+        )
+        error_message += 'Rows in x_test laqn is {x_rows}. '.format(
+            x_rows=num_x_rows
+        )
+        error_message += 'The number of rows in both arrays should be the same.'
+        raise ValueError(error_message)
 
     # Internally update the model results in the ModelData object
-    model_data.update_testing_df_with_preds(y_pred_dict)
+    updated_df = model_data.update_test_df_with_preds(y_pred)
+
     print(model_data.normalised_pred_data_df.sample(5))
-    
+
     # Write the model results to the database
     # model_data.update_remote_tables()
-
-    return model_data
 
 if __name__ == "__main__":
     main()

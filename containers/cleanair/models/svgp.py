@@ -77,12 +77,12 @@ class SVGP_TF1(Model):
             "model_state_fp": None,
         }
 
-    def setup_model(self, x_train, y_train, inducing_locations, num_input_dimensions):
+    def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
         """Create GPFlow sparse variational Gaussian Processes
 
         args:
-            x_train: N x D numpy array - observations input,
-            y_train: N x 1 numpy array - observations output,
+            x_array: N x D numpy array - observations input,
+            y_array: N x 1 numpy array - observations output,
             inducing_locations: M x D numpy array - inducing locations,
             num_input_dimensions: integer - number of input dimensions
 
@@ -95,8 +95,8 @@ class SVGP_TF1(Model):
         ), gpflow.session_manager.get_session().as_default():
             kern = gpflow.kernels.RBF(num_input_dimensions, lengthscales=1.0, ARD=True)
             self.model = gpflow.models.SVGP(
-                x_train,
-                y_train,
+                x_array,
+                y_array,
                 kern,
                 gpflow.likelihoods.Gaussian(variance=5.0),
                 inducing_locations,
@@ -161,22 +161,20 @@ class SVGP_TF1(Model):
         >>> model = SVGP_TF1(model_params=model_params)
         >>> model.fit(x_train, y_train)
         """
+        super().fit(x_train, y_train)
         self.refresh = refresh
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
-        x_train = x_train["laqn"]['X'].copy()
-        y_train = y_train["laqn"]['Y']["NO2"].copy()
+        x_array = x_train["laqn"].copy()
+        y_array = y_train["laqn"]["NO2"].copy()
 
-        print('x train shape:', x_train.shape)
-        print('y train shape:', y_train.shape)
-
-        x_train, y_train = self.clean_data(x_train, y_train)
+        x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
-        z_r = kmeans2(x_train, self.model_params["n_inducing_points"], minit="points")[0]
+        z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[0]
 
         # setup SVGP model
-        self.setup_model(x_train, y_train, z_r, x_train.shape[1])
+        self.setup_model(x_array, y_array, z_r, x_array.shape[1])
         self.model.compile()
 
         tf_session = self.model.enquire_session()
@@ -253,22 +251,32 @@ class SVGP_TF1(Model):
 
         x_test : dict
             See `Model.predict` for further details.
+
+        Returns
+        ___
+
+        dict
+            See `Model.predict` for further details.
+            The shape for each pollutant will be (n, 1).
         """
-        x_test = x_test["laqn"]['X']
+        super().predict(x_test)
+        x_test = x_test["laqn"]
         y_mean, y_var = self.batch_predict(x_test)
+        y_mean = np.reshape(y_mean, (len(y_mean), 1))
+        y_var = np.reshape(y_var, (len(y_var), 1))
         return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
 
     # ToDo: move this method into a different function
     # or assume that the model data has already been cleaned
-    def clean_data(self, x_train, y_train):
+    def clean_data(self, x_array, y_array):
         """Remove nans and missing data for use in GPflow
 
         args:
-            x_train: N x D numpy array,
-            y_train: N x 1 numpy array
+            x_array: N x D numpy array,
+            y_array: N x 1 numpy array
         """
-        idx = ~np.isnan(y_train[:, 0])
-        x_train = x_train[idx, :]
-        y_train = y_train[idx, :]
+        idx = ~np.isnan(y_array[:, 0])
+        x_array = x_array[idx, :]
+        y_array = y_array[idx, :]
 
-        return x_train, y_train
+        return x_array, y_array
