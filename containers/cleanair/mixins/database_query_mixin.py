@@ -245,7 +245,7 @@ class DBQueryMixin:
             return aqe_reading_q
 
     @db_query
-    def get_satellite_readings_training(self, start_date, end_date):
+    def get_satellite_readings_training(self, start_date, end_date, species):
         """Get Satellite data for the training period
            As we get 72 hours of Satellite forecast on each day,
            here we only get Satellite data where the reference date
@@ -261,12 +261,13 @@ class DBQueryMixin:
                 SatelliteForecastReading.measurement_start_utc < end_date,
                 func.date(SatelliteForecastReading.measurement_start_utc)
                 == func.date(SatelliteForecastReading.reference_start_utc),
+                SatelliteForecastReading.in_(species)
             )
 
             return sat_q
 
     @db_query
-    def get_satellite_readings_pred(self, start_date, end_date):
+    def get_satellite_readings_pred(self, start_date, end_date, species):
         """Get Satellite data for the prediction period
            Gets up to 72 hours of predicted data from the satellite readings
            from the same reference_start_utc date as start_date
@@ -287,6 +288,7 @@ class DBQueryMixin:
                 SatelliteForecastReading.measurement_start_utc < end_date,
                 func.date(SatelliteForecastReading.reference_start_utc)
                 == isoparse(start_date).date().isoformat(),
+                SatelliteForecastReading.in_(species)
             )
 
             return sat_q

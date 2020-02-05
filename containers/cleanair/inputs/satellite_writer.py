@@ -62,6 +62,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         self.discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
         self.half_gridsize = 0.05
         self.define_interest_points = define_interest_points
+        self.periods = ["0H24H", "25H48H", "49H72H"]
+        self.species = ['NO2', 'PM25', 'PM10', 'O3']  # Species to get data for
 
     @staticmethod
     @robust_api
@@ -142,8 +144,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         return pd.concat(grib_layers, axis=0)
 
-    def grib_to_df(self, satellite_bytes, period):
-        """Take satellite bytes and load into a pandas dataframe, converting NO2 units"""
+    def grib_to_df(self, satellite_bytes, period, species):
+        """Take satellite bytes and load into a pandas dataframe, converting NO2 units if required"""
 
         # Write the grib file to a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -157,10 +159,11 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                 + datetime.timedelta(hours=x["_id"]),
                 axis=1,
             )
-
-            grib_data_df["no2"] = (
-                grib_data_df["val"] * 1000000000
-            )  # convert to the correct units
+            grib_data_df['species'] = species
+            if species == 'NO2':
+                grib_data_df["val"] = (
+                    grib_data_df["val"] * 1000000000
+                )  # convert to the correct units
             # Round to stop errors in checking location
             grib_data_df["lon"] = np.round(grib_data_df["lon"], 4)
             grib_data_df["lat"] = np.round(grib_data_df["lat"], 4)
@@ -186,22 +189,23 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             ):
 
                 self.logger.info(
-                    "Requesting 72 hours of satellite forecast data for reference date %s",
-                    green(start_date.date()),
+                    "Requesting 72 hours of satellite forecast data for reference date %s for species %s",
+                    green(start_date.date()), green(self.species)
                 )
 
-                # Make three calls to API top get all 72 hours of data
+                # Make three calls to API top get all 72 hours of data for all species
                 reference_date = str(start_date.date())
-                periods = ["0H24H", "25H48H", "49H72H"]
 
                 all_grib_df = pd.DataFrame()
-                for period in periods:
-                    # Get gribdata
-                    grib_bytes = self.request_satellite_data(
-                        reference_date, period, "NO2"
-                    )
-                    grib_data_df = self.grib_to_df(grib_bytes, period)
-                    all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
+                for period in self.periods:
+                    for species in self.species:
+                        self.logger.info("Requesting data for period: %s, species: %s", period, species)
+                        # Get gribdata
+                        grib_bytes = self.request_satellite_data(
+                            reference_date, period, species
+                        )
+                        grib_data_df = self.grib_to_df(grib_bytes, period, species)
+                        all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
 
                 # Join grib data
                 grib_data_joined = all_grib_df.merge(
@@ -212,9 +216,9 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                     lambda x, rd=reference_date: SatelliteForecastReading(
                         reference_start_utc=rd,
                         measurement_start_utc=x["date"],
-                        species_code="NO2",
+                        species_code=x['species'],
                         box_id=x["box_id"],
-                        value=x["no2"],
+                        value=x["val"],
                     ),
                     axis=1,
                 ).tolist()
