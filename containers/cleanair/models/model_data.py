@@ -467,12 +467,20 @@ class ModelData(DBWriter, DBQueryMixin):
 
             # case for laqn, aqe, grid
             else:
-                x_src = data_subset[data_subset['source'] == src].to_numpy()
+                print('COLUMNS:')
+                print(list(data_df.columns))
+                print()
+                src_mask = data_df[data_df['source'] == src].index
+                x_src = data_subset.loc[src_mask.intersection(data_subset.index)].to_numpy()
                 data_dict['X'][src] = x_src
                 if return_y:
+                    # get a numpy array for the pollutant of shape (n,1)
                     data_dict['Y'][src] = {
-                        pollutant: data_subset[pollutant].to_numpy()
-                        for pollutant in species
+                        pollutant: np.reshape(
+                            data_subset[pollutant].to_numpy(), (
+                                data_subset[pollutant].shape[0], 1
+                            )
+                        ) for pollutant in species
                     }
                     data_dict['index'][src] = {
                         pollutant: data_subset[pollutant].index.copy()

@@ -161,6 +161,20 @@ def main():
     # Do prediction and write to database
     y_pred = model_fitter.predict(x_test)
 
+    try:
+        num_pred_rows = y_pred['laqn']['NO2']['mean'].shape[0]
+        num_x_rows = x_test['laqn'].shape[0]
+        assert num_pred_rows == num_x_rows
+    except AssertionError:
+        error_message = 'Rows in y_pred laqn No2 mean is {pred_rows}. '.format(
+            pred_rows=num_pred_rows
+        )
+        error_message += 'Rows in x_test laqn is {x_rows}. '.format(
+            x_rows=num_x_rows
+        )
+        error_message += 'The number of rows in both arrays should be the same.'
+        raise ValueError(error_message)
+
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,

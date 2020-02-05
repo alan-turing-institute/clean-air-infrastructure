@@ -251,10 +251,19 @@ class SVGP_TF1(Model):
 
         x_test : dict
             See `Model.predict` for further details.
+
+        Returns
+        ___
+
+        dict
+            See `Model.predict` for further details.
+            The shape for each pollutant will be (n, 1).
         """
         super().predict(x_test)
         x_test = x_test["laqn"]
         y_mean, y_var = self.batch_predict(x_test)
+        y_mean = np.reshape(y_mean, (len(y_mean), 1))
+        y_var = np.reshape(y_var, (len(y_var), 1))
         return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
 
     # ToDo: move this method into a different function
