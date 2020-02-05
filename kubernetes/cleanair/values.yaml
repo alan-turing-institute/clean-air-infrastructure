@@ -3,6 +3,20 @@
 imageTag: be268870c1c9da26b98a6fac0964df0ed67a80df
 
 jobs:
+  - name: satellite
+    image:
+      repository: cleanairdocker.azurecr.io/satellite
+      imagePullPolicy: Always
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    args: ['-n', 30]
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
   - name: ukmap
     image:
       repository: cleanairdocker.azurecr.io/ukmap
@@ -90,6 +104,20 @@ cronjobs:
       repository: cleanairdocker.azurecr.io/scoot
       imagePullPolicy: Always
     schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
+  - name: satellite
+    image:
+      repository: cleanairdocker.azurecr.io/satellite
+      imagePullPolicy: Always
+    schedule: "30 10 * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid

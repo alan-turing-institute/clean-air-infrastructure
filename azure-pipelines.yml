@@ -36,6 +36,10 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
       displayName: 'Build SCOOT data collection image'
+    # Build satellite
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion) -f containers/dockerfiles/add_satellite_readings.Dockerfile containers
+      displayName: 'Build satellite data collection image'
     # Build OSHighway
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
@@ -48,6 +52,9 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
       displayName: 'Build UKMap feature processing image'
+    
+
+
     # Build API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion) -f containers/dockerfiles/cleanairapi.Dockerfile containers

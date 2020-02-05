@@ -26,6 +26,7 @@ db_session = scoped_session(
 DeferredReflection.prepare(engine)
 Base.query = db_session.query_property()
 
+
 # Ensure sessions are closed by flask
 @app.teardown_appcontext
 def shutdown_session(exception=None):

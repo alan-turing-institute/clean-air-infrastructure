@@ -32,7 +32,7 @@ def main():
     parser.add_argument(
         "--trainend",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
     )
     parser.add_argument(
@@ -44,7 +44,7 @@ def main():
     parser.add_argument(
         "--predstart",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
     )
     parser.add_argument(
@@ -72,7 +72,7 @@ def main():
         "train_end_date": train_end,
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
-        "include_satellite": False,
+        "include_satellite": True,
         "include_prediction_y": False,
         "train_sources": ["laqn", "aqe"],
         "pred_sources": ["grid_100"],
@@ -100,11 +100,12 @@ def main():
     }
 
     # Get the model data
-
     model_data = ModelData(config=model_config, **kwargs)
     # model_data = ModelData(config_dir="run_model_full_test/", **kwargs)
+    # print(model_data.get_satellite_readings_training(train_start, train_end, output_type='sql'))
+    # quit()
 
-    # model_data.save_config_state("run_model_full_test/")
+    model_data.save_config_state("run_model_full_test/")
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
