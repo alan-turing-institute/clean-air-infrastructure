@@ -164,8 +164,11 @@ class SVGP_TF1(Model):
         self.refresh = refresh
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
-        x_train = x_train["laqn"].copy()
-        y_train = y_train["laqn"]["NO2"].copy()
+        x_train = x_train["laqn"]['X'].copy()
+        y_train = y_train["laqn"]['Y']["NO2"].copy()
+
+        print('x train shape:', x_train.shape)
+        print('y train shape:', y_train.shape)
 
         x_train, y_train = self.clean_data(x_train, y_train)
 
@@ -251,7 +254,7 @@ class SVGP_TF1(Model):
         x_test : dict
             See `Model.predict` for further details.
         """
-        x_test = x_test["laqn"]
+        x_test = x_test["laqn"]['X']
         y_mean, y_var = self.batch_predict(x_test)
         return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
 

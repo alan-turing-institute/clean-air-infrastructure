@@ -132,8 +132,8 @@ def main():
 
     # Fit the model
     model_fitter.fit(
-        dict(laqn=training_data_dict["X"]),
-        dict(laqn=dict(NO2=training_data_dict["Y"])),
+        model_data.training_dict,
+        model_data.training_dict,
         save_model_state=False,
         max_iter=5,
     )
@@ -142,7 +142,14 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction and write to database
-    y_pred_dict = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
+    y_pred_dict = model_fitter.predict(model_data.test_dict)
+
+    # print shapes
+    print()
+    print('Shape of test X:', model_data.test_dict['laqn']['X'].shape)
+    print('Shape of test Y:', model_data.test_dict['laqn']['Y']['NO2'].shape)
+    print('Shape of mean Y:', y_pred_dict['laqn']['NO2']['mean'].shape)
+    print('Shape of var Y:', y_pred_dict['laqn']['NO2']['var'].shape)
 
     # Internally update the model results in the ModelData object
     model_data.update_testing_df_with_preds(y_pred_dict)
