@@ -402,16 +402,22 @@ class ModelData(DBWriter, DBQueryMixin):
             self.normalised_pred_data_df, self.config["pred_sources"]
         )
 
-    def __get_model_data_arrays(self, data_df, return_y, dropna=True):
-        """Return a dictionary of data arrays for model fitting.
+    def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True):
+        """
+        Return a dictionary of data arrays for model fitting.
         The returned dictionary includes and index to allow model predictions
-        to be appended to dataframes (required when dropna is used)"""
-
+        to be appended to dataframes (required when dropna is used)
+        """
+        data_dict = dict(
+            X=dict(),
+            index=dict(),
+        )
         if return_y:
+            data_dict['Y'] = dict()
             data_subset = data_df[self.x_names_norm + self.config["species"]]
         else:
             data_subset = data_df[self.x_names_norm]
-
+        # ToDo: this should be generalised to drop a subset of sources
         if dropna:
             data_subset = data_subset.dropna()  # Must have complete dataset
             n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
@@ -420,43 +426,56 @@ class ModelData(DBWriter, DBQueryMixin):
                 n_dropped_rows,
                 data_df.shape[0],
             )
+        # iterate through sources
+        for src in sources:
+            # special case for satellite data
+            if src == 'satellite':
+                # Check dimensions
+                n_sat_box = self.training_satellite_data_x["box_id"].unique().size
+                n_hours = self.training_satellite_data_x["epoch"].unique().size
+                # Number of interest points in each satellite square
+                n_interest_points = 100
+                n_x_names = len(self.config["x_names"])
 
-        data_dict = {
-            "X": data_subset[self.x_names_norm].to_numpy(),
-            "index": data_subset[self.x_names_norm].index,
-        }
+                X_sat = (
+                    self.training_satellite_data_x[self.x_names_norm]
+                    .to_numpy()
+                    .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
+                )
 
-        if return_y:
-            data_dict["Y"] = data_subset[self.config["species"]].to_numpy()
+                X_sat_mask = (
+                    self.training_satellite_data_x["in_london"]
+                    .to_numpy()
+                    .reshape(n_sat_box * n_hours, n_interest_points)
+                )
+                Y_sat = self.training_satellite_data_y["value"].to_numpy()
 
-        if self.config["include_satellite"]:
-            # Check dimensions
-            n_sat_box = self.training_satellite_data_x["box_id"].unique().size
-            n_hours = self.training_satellite_data_x["epoch"].unique().size
-            # Number of interest points in each satellite square
-            n_interest_points = 100
-            n_x_names = len(self.config["x_names"])
+                print(self.training_satellite_data_x)
+                print(self.training_satellite_data_y)
 
-            X_sat = (
-                self.training_satellite_data_x[self.x_names_norm]
-                .to_numpy()
-                .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
-            )
+                data_dict["X_sat"] = X_sat
+                data_dict["Y_sat"] = Y_sat
 
-            X_sat_mask = (
-                self.training_satellite_data_x["in_london"]
-                .to_numpy()
-                .reshape(n_sat_box * n_hours, n_interest_points)
-            )
-            Y_sat = self.training_satellite_data_y["value"].to_numpy()
+                data_dict["X_sat_mask"] = X_sat_mask
 
-            print(self.training_satellite_data_x)
-            print(self.training_satellite_data_y)
-
-            data_dict["X_sat"] = X_sat
-            data_dict["Y_sat"] = Y_sat
-
-            data_dict["X_sat_mask"] = X_sat_mask
+            # case for laqn, aqe, grid
+            else:
+                x_src = data_subset[data_subset['source'] == src].to_numpy()
+                data_dict['X'][src] = x_src
+                if return_y:
+                    data_dict['Y'][src] = {
+                        pollutant: data_subset[pollutant].to_numpy()
+                        for pollutant in species
+                    }
+                    data_dict['index'][src] = {
+                        pollutant: data_subset[pollutant].index
+                        for pollutant in species
+                    }
+                else:
+                    data_dict['index'][src] = {
+                        pollutant: data_subset.index
+                        for pollutant in species
+                    }
         return data_dict
 
     def get_training_data_arrays(self, dropna=True):
