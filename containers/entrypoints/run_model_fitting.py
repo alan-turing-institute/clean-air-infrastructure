@@ -123,10 +123,42 @@ def main():
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
+    # the shapes of the arrays
+    x_train_shape = training_data_dict['X'].shape
+    y_train_shape = training_data_dict['Y'].shape
+    x_test_shape = predict_data_dict['X'].shape
+    y_test_shape = predict_data_dict['Y'].shape
+    print()
+    print('x train:', x_train_shape)
+    print('y train:', y_train_shape)
+    print('x test:', x_test_shape)
+    print('y test:', y_test_shape)
+    print()
+
+    # get the training and testing data into the correct format
+    x_train = dict(
+        laqn=training_data_dict['X']
+    )
+    y_train = dict(
+        laqn=dict(
+            NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
+        )
+    )
+    x_test = dict(
+        laqn=predict_data_dict['X']
+    )
+    y_test = dict(
+        laqn=dict(
+            NO2=np.reshape(predict_data_dict['Y'], (y_test_shape[0], 1))
+        )
+    )
+    print('updated y train shape:', y_train['laqn']['NO2'].shape)
+    print('updated y test shape:', y_test['laqn']['NO2'].shape)
+
     # Fit the model
     model_fitter.fit(
-        dict(laqn=training_data_dict["X"]),
-        dict(laqn=dict(NO2=training_data_dict["Y"])),
+        x_train,
+        y_train,
         save_model_state=False,
         max_iter=5,
     )
@@ -135,12 +167,12 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction and write to database
-    y_pred = model_fitter.predict(dict(laqn=predict_data_dict["X"]))
+    y_pred = model_fitter.predict(x_test)
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
-        y_pred=np.array(
+        Y_pred=np.array(
             [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
         ).T.squeeze(),
         model_fit_info=dict(fit_start_time=datetime.now()),

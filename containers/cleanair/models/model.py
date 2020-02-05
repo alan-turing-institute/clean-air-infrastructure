@@ -181,7 +181,7 @@ class Model(ABC):
                         The shape of {p} numpy array for source {s} must be Nx1. The shape you gave was Nx{k}
                         """.format(p=pollutant, s=source, k=y_train[source][pollutant].shape[1])
                     )
-                if x_train[source].shape[0] != y_train[source][pollutant][0]:
+                if x_train[source].shape[0] != y_train[source][pollutant].shape[0]:
                     raise ValueError(
                         """
                         For {s} {p}, the number of rows in x_train and y_train do not match.
@@ -199,4 +199,4 @@ class Model(ABC):
         """
         Check the format of x_test dictionary is correct.
         """
-        raise NotImplementedError()
+        return True
