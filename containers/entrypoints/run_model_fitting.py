@@ -3,9 +3,11 @@ Model fitting
 """
 import logging
 import argparse
+from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP
+import numpy as np
+from cleanair.models import ModelData, SVGP_TF1
 from cleanair.loggers import get_log_level
 
 
@@ -50,10 +52,29 @@ def main():
     parser.add_argument(
         "--predhours", type=int, default=48, help="The number of hours to predict for"
     )
+    parser.add_argument(
+        "-t",
+        "--testdir",
+        default="/secrets/test/",
+        type=str,
+        help="The directory to save test data.",
+    )
+    parser.add_argument(
+        "-w", "--write", action="store_true", help="Write model data to file."
+    )
+    parser.add_argument(
+        "-r", "--read", action="store_true", help="Read model data from file."
+    )
 
     # Parse and interpret arguments
     args = parser.parse_args()
+    testdir = args.testdir
+    write = args.write
+    read = args.read
     kwargs = vars(args)
+    del kwargs["testdir"]
+    del kwargs["write"]
+    del kwargs["read"]
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -74,8 +95,8 @@ def main():
         "pred_end_date": pred_end,
         "include_satellite": False,
         "include_prediction_y": False,
-        "train_sources": ["laqn", "aqe"],
-        "pred_sources": ["grid_100"],
+        "train_sources": ["laqn"],
+        "pred_sources": ["laqn"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
@@ -87,56 +108,69 @@ def main():
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp",
-        "tag": "test_grid",
+        "model_type": "svgp_tf1",
+        "tag": "tf1_test",
     }
 
-    # Model fitting parameters
-    model_params = {
-        "lengthscale": 0.1,
-        "variance": 0.1,
-        "minibatch_size": 100,
-        "n_inducing_points": 2000,
-    }
+    # initialise the model
+    model_fitter = SVGP_TF1()
 
     # Get the model data
+    if read:
+        model_data = ModelData(config_dir=testdir, **kwargs)
+    else:
+        model_data = ModelData(config=model_config, **kwargs)
 
-    model_data = ModelData(config=model_config, **kwargs)
-    # model_data = ModelData(config_dir="run_model_full_test/", **kwargs)
-
-    # model_data.save_config_state("run_model_full_test/")
+    if write:
+        print(testdir)
+        model_data.save_config_state(testdir)
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
-    # Fit the model
-    model_fitter = SVGP()
+    # the shapes of the arrays
+    y_train_shape = training_data_dict['Y'].shape
 
+    # get the training and testing data into the correct format
+    x_train = dict(
+        laqn=training_data_dict['X']
+    )
+    y_train = dict(
+        laqn=dict(
+            NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
+        )
+    )
+    x_test = dict(
+        laqn=predict_data_dict['X']
+    )
+
+    # Fit the model
     model_fitter.fit(
-        training_data_dict["X"],
-        training_data_dict["Y"],
-        max_iter=20000,
-        model_params=model_params,
+        x_train,
+        y_train,
+        save_model_state=False,
+        max_iter=5,
     )
 
     # Get info about the model fit
-    model_fit_info = model_fitter.fit_info()
+    # model_fit_info = model_fitter.fit_info()
 
-    # # Do prediction and write to database
-    Y_pred = model_fitter.predict(predict_data_dict["X"])
+    # Do prediction and write to database
+    y_pred = model_fitter.predict(x_test)
 
     # Internally update the model results in the ModelData object
     model_data.update_model_results_df(
         predict_data_dict=predict_data_dict,
-        Y_pred=Y_pred,
-        model_fit_info=model_fit_info,
+        Y_pred=np.array(
+            [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
+        ).T.squeeze(),
+        model_fit_info=dict(fit_start_time=datetime.now()),
     )
 
-    # model_data.save_config_state("run_model_full_test/")
+    print(model_data.normalised_pred_data_df.sample(5))
 
     # Write the model results to the database
-    model_data.update_remote_tables()
-
+    # model_data.update_remote_tables()
 
 if __name__ == "__main__":
     main()
