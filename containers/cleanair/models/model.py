@@ -66,20 +66,39 @@ class Model(ABC):
         ___
 
         >>> x_train = {
-            'laqn' : np.array,
-            'satellite' : np.array
+            'laqn' : x_laqn,
+            'satellite' : x_satellite
         }
         >>> y_train = {
             'laqn' : {
-                'NO2' : np.array,
-                'PM10' : np.array
+                'NO2' : y_laqn_no2,
+                'PM10' : y_laqn_pm10
             },
             'satellite' : {
-                'NO2' : np.array,
-                'PM10' : np.array
+                'NO2' : y_satellite_no2,
+                'PM10' : y_satellite_pm10
             }
         }
         >>> model.fit(x_train, y_train)
+
+        Notes
+        ___
+
+        Every value (e.g. `x_laqn`, `y_satellite_no2`, etc) is a numpy array.
+        The shapes are given in the table below:
+
+        +-------------------+-------+
+        | `x_laqn`          | (NxD) |
+        +-------------------+-------+
+        | `x_satellite`     | (MxD) |
+        +-------------------+-------+
+        | `y_laqn_*`        | (Nx1) |
+        +-------------------+-------+
+        | `y_satellite_*`   | (Mx1) |
+        +-------------------+-------+
+
+        where N is the number of laqn observations, D is the number of features,
+        M is the number of satellite observations, and * represents a pollutant name.
         """
         Model.check_training_set_is_valid(x_train, y_train)
 
