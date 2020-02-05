@@ -97,8 +97,8 @@ class ModelData(DBWriter, DBQueryMixin):
 
             if self.config["tag"] == "validation":
                 self.config["include_prediction_y"] = True
-                self.training_dict = self.get_training_dict()
-                self.test_dict = self.get_test_dict()
+                self.training_dict = self.get_training_data_arrays()
+                self.test_dict = self.get_pred_data_arrays()
 
         else:
             self.restore_config_state(config_dir)
@@ -965,7 +965,7 @@ class ModelData(DBWriter, DBQueryMixin):
         # add predict_df as new columns to data_df - they should share an index
         return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
 
-    def update_testing_df_with_preds(self, test_pred_dict):
+    def update_test_df_with_preds(self, test_pred_dict):
         """
         Update the normalised_pred_data_df with predictions for all pred sources.
 

@@ -125,24 +125,9 @@ def main():
         print(testdir)
         model_data.save_config_state(testdir)
 
+    # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=True)
-
-    # the shapes of the arrays
-    # y_train_shape = training_data_dict['Y'].shape
-
-    # get the training and testing data into the correct format
-    # x_train = dict(
-    #     laqn=training_data_dict['X']
-    # )
-    # y_train = dict(
-    #     laqn=dict(
-    #         NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
-    #     )
-    # )
-    # x_test = dict(
-    #     laqn=predict_data_dict['X']
-    # )
     x_train = training_data_dict['X']
     y_train = training_data_dict['Y']
     x_test = predict_data_dict['X']
@@ -176,14 +161,7 @@ def main():
         raise ValueError(error_message)
 
     # Internally update the model results in the ModelData object
-    # model_data.update_model_results_df(
-    #     predict_data_dict=predict_data_dict,
-    #     Y_pred=np.array(
-    #         [y_pred["laqn"]["NO2"]["mean"], y_pred["laqn"]["NO2"]["var"]]
-    #     ).T.squeeze(),
-    #     model_fit_info=dict(fit_start_time=datetime.now()),
-    # )
-    updated_df = model_data.update_testing_df_with_preds(y_pred)
+    updated_df = model_data.update_test_df_with_preds(y_pred)
 
     print(model_data.normalised_pred_data_df.sample(5))
 
