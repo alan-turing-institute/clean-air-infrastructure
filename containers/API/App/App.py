@@ -1,6 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask, url_for
+from flask import Flask, url_for, g
 from flask_restful import Resource, Api, abort
 from flask_marshmallow import Marshmallow
 from flask_httpauth import HTTPBasicAuth
@@ -12,7 +12,7 @@ from cleanair.databases.base import Base
 from webargs import fields
 from webargs.flaskparser import use_args
 from .queries import get_point_forecast, get_all_forecasts, check_user_exists, create_user
-
+from cleanair.databases.tables import User
 
 # Initialise application
 auth = HTTPBasicAuth()
@@ -37,6 +37,17 @@ Base.metadata.create_all(engine, checkfirst=True)
 def shutdown_session(exception=None):
     """Close down database connections"""
     db_session.remove()
+
+
+@auth.verify_password
+def verify_password(username, password):
+    session = db_session()
+
+    user = session.query(User).filter(User.username == username).first()
+    g.user = user
+    if not user or not user.verify_password(password):
+        return False
+    return True
 
 
 class Results(ma.Schema):
@@ -67,17 +78,38 @@ class Welcome(Resource):
 @api.resource('/users')
 class Users(Resource):
     'User auth resources'
-    @use_args({"username": fields.String(required=True), "password": fields.String(required=True)})
+    @use_args({"username": fields.String(required=True), "password": fields.String(required=True), 'email': fields.String(required=True)})
     def post(self, args):
         """Check if a user exists and if not add them and their hashed password to the database"""
         session = db_session()
         username = args['username']
         password = args['password']
+        email = args['email']
         if check_user_exists(session, username=username).first() is not None:
             abort(400, message="username already exists")  # existing user
-        user = create_user(session, username, password)
+        user = create_user(session, username, password, email)
 
         return {'username': user.username}, 201
+
+
+@api.resource('/test')
+class Test(Resource):
+    decorators = [auth.login_required]
+
+    def get(self):
+
+        return 'HI'
+
+
+@api.resource('/token')
+class Token(Resource):
+    decorators = [auth.login_required]
+
+    def get(self):
+        token = g.user.generate_auth_token()
+        if not token:
+            abort(401, message="Token has not been approved")
+        return token.decode('ascii')
 
 
 @api.resource("/point")

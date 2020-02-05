@@ -109,8 +109,8 @@ def check_user_exists(session, username):
     return session.query(User).filter(User.username == username)
 
 
-def create_user(session, username, password):
-    user = User(username=username)
+def create_user(session, username, password, email):
+    user = User(username=username, email=email)
     user.hash_password(password)
     session.add(user)
     session.commit()
