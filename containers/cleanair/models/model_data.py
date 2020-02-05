@@ -978,7 +978,7 @@ class ModelData(DBWriter, DBQueryMixin):
             Third level keys are either 'mean' or 'var'.
             Values are numpy arrays of predictions for a source and specie.
         """
-        self.normalised_pred_data_df = self.update_df_with_pred_dict(
+        self.normalised_pred_data_df = self.get_df_from_pred_dict(
             self.normalised_pred_data_df,
             self.get_pred_data_arrays(),
             test_pred_dict,
@@ -988,11 +988,10 @@ class ModelData(DBWriter, DBQueryMixin):
         """
         Updated the normalised_training_data_df with predictions on the training set.
         """
-        self.normalised_training_data_df = self.update_df_with_pred_dict(
+        self.normalised_training_data_df = self.get_df_from_pred_dict(
             self.normalised_training_data_df,
-            self.training_dict,
+            self.get_training_data_arrays(),
             training_pred_dict,
-            self.config["train_sources"],
         )
 
     def update_remote_tables(self):

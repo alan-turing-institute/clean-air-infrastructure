@@ -183,11 +183,7 @@ def main():
     #     ).T.squeeze(),
     #     model_fit_info=dict(fit_start_time=datetime.now()),
     # )
-    updated_df = model_data.get_df_from_pred_dict(
-        model_data.normalised_pred_data_df,
-        predict_data_dict,
-        y_pred
-    )
+    updated_df = model_data.update_testing_df_with_preds(y_pred)
 
     print(model_data.normalised_pred_data_df.sample(5))
 
