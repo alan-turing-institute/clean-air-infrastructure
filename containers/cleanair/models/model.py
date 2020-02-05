@@ -13,7 +13,7 @@ class Model(ABC):
     def __init__(self, **kwargs):
         self.model = None
         self.minimum_param_keys = ['restore']
-        self.model_params = dict(restore=False)
+        self.model_params = kwargs['model_params'] if 'model_params' in kwargs else dict(restore=False)
 
     @abstractmethod
     def get_default_model_params(self):
