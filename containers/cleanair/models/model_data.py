@@ -350,59 +350,6 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
-    def __get_model_dicts(self, data_df, sources, return_sat=False):
-        data_dict = {}
-
-        sat_dict = None
-        for src in sources:
-            # filter the dataframe by source
-            data_src = data_df[data_df["source"] == src]
-
-            # get the a data dict for the filtered data
-            data_src = self.__get_model_data_arrays(
-                data_src, return_y=True, dropna=False
-            )
-
-            # change Y to be a dict of species
-            src_x = data_src["X"].copy()
-            index = data_src["index"].copy()
-            src_y = {}
-            i = 0
-            for specie in self.config["species"]:
-                src_y[specie] = data_src["Y"][:, i]
-                i += 1
-
-            # setup data_dict for this source
-            data_dict[src] = {"index": index, "X": src_x, "Y": src_y}
-
-            if return_sat and sat_dict is None:
-                # currenly __get_model_data_arrays reurns X_sat for all sources
-                sat_dict = {}
-                sat_dict["X"] = data_src["X_sat"].copy()
-                sat_dict["Y"] = data_src["Y_sat"].copy()
-                sat_dict["mask"] = data_src["X_sat_mask"].copy()
-                data_dict["satellite"] = sat_dict
-
-        return data_dict
-
-    def get_training_dict(self):
-        """
-        Get a training dictionary.
-        """
-        return self.__get_model_dicts(
-            self.normalised_training_data_df,
-            self.config["train_sources"],
-            return_sat=self.config["include_satellite"],
-        )
-
-    def get_test_dict(self):
-        """
-        Get a training dictionary of data indexed in the same way as get_training_dict.
-        """
-        return self.__get_model_dicts(
-            self.normalised_pred_data_df, self.config["pred_sources"]
-        )
-
     def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True):
         """
         Return a dictionary structure of data arrays for model fitting.
