@@ -87,17 +87,18 @@ class Model(ABC):
         Every value (e.g. `x_laqn`, `y_satellite_no2`, etc) is a numpy array.
         The shapes are given in the table below:
 
-        +-------------------+-------+
-        | `x_laqn`          | (NxD) |
-        +-------------------+-------+
-        | `x_satellite`     | (MxD) |
-        +-------------------+-------+
-        | `y_laqn_*`        | (Nx1) |
-        +-------------------+-------+
-        | `y_satellite_*`   | (Mx1) |
-        +-------------------+-------+
+        +-------------------+---------+
+        | `x_laqn`          | (NxSxD) |
+        +-------------------+---------+
+        | `x_satellite`     | (MxSxD) |
+        +-------------------+---------+
+        | `y_laqn_*`        | (Nx1)   |
+        +-------------------+---------+
+        | `y_satellite_*`   | (Mx1)   |
+        +-------------------+---------+
 
         where N is the number of laqn observations, D is the number of features,
+        S is the discretization amount,
         M is the number of satellite observations, and * represents a pollutant name.
         """
         Model.check_training_set_is_valid(x_train, y_train)
@@ -198,6 +199,4 @@ class Model(ABC):
         """
         Check the format of x_test dictionary is correct.
         """
-        # ToDo: implemention
-        
         raise NotImplementedError()
