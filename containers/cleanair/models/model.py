@@ -13,7 +13,10 @@ class Model(ABC):
     def __init__(self, **kwargs):
         self.model = None
         self.minimum_param_keys = ['restore']
-        self.model_params = kwargs['model_params'] if 'model_params' in kwargs else dict(restore=False)
+        if 'model_params' in kwargs:
+            self.model_params = kwargs['model_params']
+        else:
+            self.model_params = dict(restore=False)
 
     @abstractmethod
     def get_default_model_params(self):
@@ -175,12 +178,17 @@ class Model(ABC):
         # check the shape of numpy arrays
         for source in y_train:
             for pollutant in y_train[source]:
+                # check that each pollutant has the right shape
                 if y_train[source][pollutant].shape[1] != 1:
-                    raise ValueError(
-                        """
-                        The shape of {p} numpy array for source {s} must be Nx1. The shape you gave was Nx{k}
-                        """.format(p=pollutant, s=source, k=y_train[source][pollutant].shape[1])
+                    error_message = 'The shape of {p} numpy array for source {s} must be Nx1. '
+                    error_message += 'The shape you gave was Nx{k}'
+                    error_message.format(
+                        p=pollutant,
+                        s=source,
+                        k=y_train[source][pollutant].shape[1]
                     )
+                    raise ValueError(error_message)
+                # check that the shape of x_train and y_train is the same
                 if x_train[source].shape[0] != y_train[source][pollutant].shape[0]:
                     raise ValueError(
                         """
@@ -199,4 +207,7 @@ class Model(ABC):
         """
         Check the format of x_test dictionary is correct.
         """
-        return True
+        for source in x_test:
+            # no data error
+            if x_test[source].shape[0] == 0:
+                raise ValueError('x_test has not data.')
