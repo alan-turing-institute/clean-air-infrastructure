@@ -96,6 +96,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
             if self.config["tag"] == "validation":
+                self.config["include_prediction_y"] = True
                 self.training_dict = self.get_training_dict()
                 self.test_dict = self.get_test_dict()
 
@@ -404,9 +405,67 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True):
         """
-        Return a dictionary of data arrays for model fitting.
-        The returned dictionary includes and index to allow model predictions
-        to be appended to dataframes (required when dropna is used)
+        Return a dictionary structure of data arrays for model fitting.
+
+        Parameters
+        ___
+
+        data_df : DataFrame
+            All of the data in one dataframe.
+
+        sources : list
+            A list of interest point sources, e.g. 'laqn', 'satellite'.
+
+        species : list
+            Pollutants to get data for, e.g. 'no2', 'o3'.
+
+        return_y : bool, optional
+            If true, the returned dictionary will have a 'Y' key/value.
+
+        dropna : bool, optional
+            If true, any rows in data_df that contain NaN will be dropped.
+
+        Returns
+        ___
+
+        data_dict : dict
+            A dictionary structure will all the requested data inside.
+            See examples for details.
+
+        Examples
+        ___
+
+        >>> data_df = model_data.normalised_training_data_df
+        >>> sources = ['laqn']
+        >>> species = ['NO2', 'PM10']
+        >>> print(model_data.__get_model_data_arrays(data_df, sources, species)
+            {
+                'X': {
+                    'laqn': x_laqn
+                },
+                'Y': {
+                    'laqn': {
+                        'NO2': y_laqn_no2,
+                        'PM10': y_laqn_pm10
+                    }
+                },
+                'index': {
+                    'laqn': {
+                        'NO2': laqn_no2_index,
+                        'PM10: laqn_pm10_index
+                    }
+                }
+            }
+
+        Notes
+        ___
+
+        The returned dictionary includes index to allow model predictions
+        to be appended to dataframes (required when dropna is used).
+
+        At the moment, `laqn_no2_index` and `laqn_pm10_index` will be the same.
+        But in the future if we want to drop some rows for specific pollutants
+        then these indices may be different.
         """
         data_dict = dict(
             X=dict(),
@@ -430,6 +489,9 @@ class ModelData(DBWriter, DBQueryMixin):
         for src in sources:
             # special case for satellite data
             if src == 'satellite':
+                if len(species) > 1:
+                    raise NotImplementedError('Can only get satellite data for NO2')
+
                 # Check dimensions
                 n_sat_box = self.training_satellite_data_x["box_id"].unique().size
                 n_hours = self.training_satellite_data_x["epoch"].unique().size
@@ -450,13 +512,11 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
                 Y_sat = self.training_satellite_data_y["value"].to_numpy()
 
-                print(self.training_satellite_data_x)
-                print(self.training_satellite_data_y)
-
-                data_dict["X_sat"] = X_sat
-                data_dict["Y_sat"] = Y_sat
-
-                data_dict["X_sat_mask"] = X_sat_mask
+                data_dict['X']['satellite'] = X_sat
+                if return_y:
+                    data_dict['Y']['satellite']['NO2'] = Y_sat
+                # ToDo: can we set mask to be index? or vice verse?
+                data_dict['mask']['satellite'] = X_sat_mask
 
             # case for laqn, aqe, grid
             else:
@@ -468,40 +528,55 @@ class ModelData(DBWriter, DBQueryMixin):
                         for pollutant in species
                     }
                     data_dict['index'][src] = {
-                        pollutant: data_subset[pollutant].index
+                        pollutant: data_subset[pollutant].index.copy()
                         for pollutant in species
                     }
                 else:
                     data_dict['index'][src] = {
-                        pollutant: data_subset.index
+                        pollutant: data_subset.index.copy()
                         for pollutant in species
                     }
         return data_dict
 
-    def get_training_data_arrays(self, dropna=True):
+    def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=True):
         """The the training data arrays.
 
         args:
             dropna: Drop any rows which contain NaN
         """
+        # get all sources and species as default
+        if sources == 'all':
+            sources = self.config['train_sources']
+        if species == 'all':
+            species = self.config['species']
+        # get the data dictionaries
         return self.__get_model_data_arrays(
-            self.normalised_training_data_df, return_y=True, dropna=dropna
+            self.normalised_training_data_df, sources, species,
+            return_y=return_y, dropna=dropna
         )
 
-    def get_pred_data_arrays(self, dropna=True):
+    def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=True):
         """The the pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
         """
-        if self.config["include_prediction_y"]:
+        # get all sources and species as default
+        if sources == 'all':
+            sources = self.config['pred_sources']
+        if species == 'all':
+            species = self.config['species']
+        # return the y column as well
+        if self.config["include_prediction_y"] or return_y:
             return self.__get_model_data_arrays(
-                self.normalised_pred_data_df, return_y=True, dropna=dropna
+                self.normalised_pred_data_df, sources, species,
+                return_y=True, dropna=dropna
             )
-
+        # return dicts without y
         return self.__get_model_data_arrays(
-            self.normalised_pred_data_df, return_y=False, dropna=dropna
+            self.normalised_pred_data_df, sources, species,
+            return_y=False, dropna=dropna
         )
 
     def __check_features_available(self, features, start_date, end_date):
