@@ -261,7 +261,7 @@ class DBQueryMixin:
                 SatelliteForecastReading.measurement_start_utc < end_date,
                 func.date(SatelliteForecastReading.measurement_start_utc)
                 == func.date(SatelliteForecastReading.reference_start_utc),
-                SatelliteForecastReading.in_(species)
+                SatelliteForecastReading.species_code.in_(species)
             )
 
             return sat_q
@@ -288,7 +288,7 @@ class DBQueryMixin:
                 SatelliteForecastReading.measurement_start_utc < end_date,
                 func.date(SatelliteForecastReading.reference_start_utc)
                 == isoparse(start_date).date().isoformat(),
-                SatelliteForecastReading.in_(species)
+                SatelliteForecastReading.species_code.in_(species)
             )
 
             return sat_q
