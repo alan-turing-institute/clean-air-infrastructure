@@ -81,7 +81,7 @@ class Model(ABC):
         }
         >>> model.fit(x_train, y_train)
         """
-        Model.__check_training_set_is_valid(x_train, y_train)
+        Model.check_training_set_is_valid(x_train, y_train)
 
     @abstractmethod
     def predict(self, x_test, **kwargs):
@@ -123,10 +123,10 @@ class Model(ABC):
             }
         }
         """
-        Model.__check_test_set_is_valid(x_test)
-        
+        Model.check_test_set_is_valid(x_test)
+
     @staticmethod
-    def __check_training_set_is_valid(x_train, y_train):
+    def check_training_set_is_valid(x_train, y_train):
         """
         Check the format of x_train and y_train dictionaries are correct.
 
@@ -144,6 +144,9 @@ class Model(ABC):
 
         KeyError
             If 'laqn' is not in x_train and y_train.
+
+        ValueError
+            If the shape of x_train or y_train are incorrect.
         """
         if 'laqn' not in x_train:
             raise KeyError("'laqn' must be a key in x_train")
@@ -158,10 +161,21 @@ class Model(ABC):
                         The shape of {p} numpy array for source {s} must be Nx1. The shape you gave was Nx{k}
                         """.format(p=pollutant, s=source, k=y_train[source][pollutant].shape[1])
                     )
-                # ToDo: check x_train[source] against y_train
+                if x_train[source].shape[0] != y_train[source][pollutant][0]:
+                    raise ValueError(
+                        """
+                        For {s} {p}, the number of rows in x_train and y_train do not match.
+                        x_train has {x} rows, y_train has {y} rows.
+                        """.format(
+                            s=source,
+                            p=pollutant,
+                            x=x_train[source].shape[0],
+                            y=y_train[source][pollutant].shape[0]
+                        )
+                    )
 
     @staticmethod
-    def __check_test_set_is_valid(x_test):
+    def check_test_set_is_valid(x_test):
         """
         Check the format of x_test dictionary is correct.
         """
