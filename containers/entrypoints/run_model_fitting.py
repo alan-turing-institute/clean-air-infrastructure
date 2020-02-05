@@ -129,20 +129,23 @@ def main():
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # the shapes of the arrays
-    y_train_shape = training_data_dict['Y'].shape
+    # y_train_shape = training_data_dict['Y'].shape
 
     # get the training and testing data into the correct format
-    x_train = dict(
-        laqn=training_data_dict['X']
-    )
-    y_train = dict(
-        laqn=dict(
-            NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
-        )
-    )
-    x_test = dict(
-        laqn=predict_data_dict['X']
-    )
+    # x_train = dict(
+    #     laqn=training_data_dict['X']
+    # )
+    # y_train = dict(
+    #     laqn=dict(
+    #         NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
+    #     )
+    # )
+    # x_test = dict(
+    #     laqn=predict_data_dict['X']
+    # )
+    x_train = training_data_dict['X']
+    y_train = training_data_dict['Y']
+    x_test = predict_data_dict['X']
 
     # Fit the model
     model_fitter.fit(
