@@ -49,27 +49,27 @@ class Model(ABC):
         """.format(min=self.minimum_param_keys, params=self.model_params.keys()))
 
     @abstractmethod
-    def fit(self, X, Y, **kwargs):
+    def fit(self, x_train, y_train, **kwargs):
         """
         Fit the model to some training data.
 
         Parameters
         ___
 
-        X : dict
+        x_train : dict
             Keys are sources. Values are numpy arrays.
 
-        Y : dict
+        y_train : dict
             Keys are sources. Values are a dict of pollutants and numpys.
 
         Examples
         ___
 
-        >>> X = {
+        >>> x_train = {
             'laqn' : np.array,
             'satellite' : np.array
         }
-        >>> Y = {
+        >>> y_train = {
             'laqn' : {
                 'NO2' : np.array,
                 'PM10' : np.array
@@ -79,32 +79,37 @@ class Model(ABC):
                 'PM10' : np.array
             }
         }
-        >>> model.fit(X, Y)
+        >>> model.fit(x_train, y_train)
         """
+        Model.__check_training_set_is_valid(x_train, y_train)
 
     @abstractmethod
-    def predict(self, X, **kwargs):
+    def predict(self, x_test, **kwargs):
         """
         Predict using the model.
 
         Parameters
         ___
 
-        X : dict
+        x_test : dict
             Keys are sources. Values are numpy arrays.
 
         Returns
         ___
 
-        Y : dict
+        y_pred : dict
             Keys are sources.
             Values are dicts of pollutants for keys and dict for values.
 
         Examples
         ___
 
-        >>> Y = model.predict(X)
-        >>> json.dumps(Y)
+        >>> x_test = {
+            'laqn' : np.array,
+            'satellite' : np.array
+        }
+        >>> y_pred = model.predict(x_test)
+        >>> json.dumps(y_pred)
         {
             'laqn' : {
                 'NO2' : {
@@ -118,3 +123,48 @@ class Model(ABC):
             }
         }
         """
+        Model.__check_test_set_is_valid(x_test)
+        
+    @staticmethod
+    def __check_training_set_is_valid(x_train, y_train):
+        """
+        Check the format of x_train and y_train dictionaries are correct.
+
+        Parameters
+        ___
+
+        x_train : dict
+            Dictionary containing X training data.
+
+        y_train : dict
+            Dictionary containing Y training data.
+
+        Raises
+        ___
+
+        KeyError
+            If 'laqn' is not in x_train and y_train.
+        """
+        if 'laqn' not in x_train:
+            raise KeyError("'laqn' must be a key in x_train")
+        if 'laqn' not in y_train:
+            raise KeyError("'laqn' must be a key in y_train")
+        # check the shape of numpy arrays
+        for source in y_train:
+            for pollutant in y_train[source]:
+                if y_train[source][pollutant].shape[1] != 1:
+                    raise ValueError(
+                        """
+                        The shape of {p} numpy array for source {s} must be Nx1. The shape you gave was Nx{k}
+                        """.format(p=pollutant, s=source, k=y_train[source][pollutant].shape[1])
+                    )
+                # ToDo: check x_train[source] against y_train
+
+    @staticmethod
+    def __check_test_set_is_valid(x_test):
+        """
+        Check the format of x_test dictionary is correct.
+        """
+        # ToDo: implemention
+        
+        raise NotImplementedError()
