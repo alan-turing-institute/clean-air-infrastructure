@@ -96,14 +96,15 @@ def main():
     if 'aqe' in model_config['sources']:
         NotImplementedError("AQE cannot currently be run. Coming soon")
 
+    if model_config['species'] != ['NO2']:
+        NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
+
     # initialise the model
     model_fitter = SVGP_TF1()
 
     # Get the model data
-    if read:
-        model_data = ModelData(config_dir=testdir, **kwargs)
-    else:
-        model_data = ModelData(config=model_config, **kwargs)
+    # model_data = ModelData(config_dir=testdir, **kwargs)
+    model_data = ModelData(config=model_config, **kwargs)
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)

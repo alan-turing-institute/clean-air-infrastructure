@@ -43,6 +43,7 @@ class SVGP_TF1(Model):
             "minibatch_size",
             "n_inducing_points",
             "train",
+            "jitter",
             "model_state_fp",
         ]
         self.epoch = 0
@@ -69,6 +70,7 @@ class SVGP_TF1(Model):
         """
         return {
             "lengthscale": 0.1,
+            "jitter": 1e-5,
             "variance": 0.1,
             "minibatch_size": 100,
             "n_inducing_points": 2000,
@@ -89,18 +91,22 @@ class SVGP_TF1(Model):
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
-        custom_config.jitter = 1e-5
+        custom_config.jitter = self.model_params['jitter']
         with gpflow.settings.temp_settings(
                 custom_config
         ), gpflow.session_manager.get_session().as_default():
-            kern = gpflow.kernels.RBF(num_input_dimensions, lengthscales=1.0, ARD=True)
+            kern = gpflow.kernels.RBF(
+                num_input_dimensions,
+                lengthscales=self.model_params['lengthscale'],
+                ARD=True
+            )
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
                 kern,
-                gpflow.likelihoods.Gaussian(variance=5.0),
+                gpflow.likelihoods.Gaussian(variance=self.model_params['variance']),
                 inducing_locations,
-                minibatch_size=300,
+                minibatch_size=self.model_params['minibatch_size'],
             )
 
     def elbo_logger(self, x):
@@ -147,19 +153,6 @@ class SVGP_TF1(Model):
 
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
-
-        Examples
-        ___
-
-        >>> model_params = {
-                'lengthscale': 0.1,
-                'variance': 0.1,
-                'minibatch_size': 100,
-                'n_inducing_points': 3000
-                'model_state_fp': 'experiments/NAME/models/restore/m_MODEL_NAME'
-            }
-        >>> model = SVGP_TF1(model_params=model_params)
-        >>> model.fit(x_train, y_train)
         """
         super().fit(x_train, y_train)
         self.refresh = refresh
