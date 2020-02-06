@@ -22,6 +22,7 @@ def main():
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(model_data, sensor_scores_df, temporal_scores_df)
+    print("Web app available at: http://127.0.0.1:8050")
     model_data_fit_app.run_server(debug=True)
 
 if __name__ == '__main__':

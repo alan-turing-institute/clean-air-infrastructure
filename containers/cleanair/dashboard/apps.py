@@ -4,7 +4,9 @@ Create dash apps.
 
 import dash
 import dash_html_components as html
+from dash.dependencies import Input, Output
 from . import components
+from . import callbacks
 
 def get_model_data_fit_app(
         model_data, sensor_scores_df, temporal_scores_df, evaluate_training=False, evaluate_testing=True
@@ -39,6 +41,19 @@ def get_model_data_fit_app(
         ),
         components.get_interest_points_timeseries(
             interest_points_timeseries_id, default_point_id, point_groupby
-        )
+        ),
+        components.get_temporal_metrics_timeseries(
+            temporal_metrics_timeseries_id, temporal_scores_df, metric_key, pollutant=pollutant
+        ),
     ])
+    # add callbacks for interacting with figures
+    @app.callback(
+        Output(interest_points_timeseries_id, 'figure'),
+        [
+            Input(interest_points_map_id, 'hoverData'),
+        ]
+    )
+    def hover_over_interest_point_map(hover_data):
+        return callbacks.interest_point_map_callback(hover_data, point_groupby)
+
     return app
