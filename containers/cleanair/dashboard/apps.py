@@ -4,6 +4,8 @@ Create dash apps.
 
 import dash
 import dash_html_components as html
+import dash_core_components as dcc
+import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 from . import components
 from . import callbacks
@@ -50,8 +52,11 @@ def get_model_data_fit_app(
             interest_points_timeseries_id, default_point_id, point_groupby,
             pollutant=default_pollutant
         ),
-        components.get_temporal_metrics_timeseries(
-            temporal_metrics_timeseries_id, temporal_scores_df, default_metric_key, default_pollutant
+        dcc.Graph(
+            id=temporal_metrics_timeseries_id,
+            figure=components.get_temporal_metrics_timeseries(
+                temporal_scores_df, default_metric_key, default_pollutant
+            )
         ),
     ])
     # update the timeseries of a sensor when it is hovered over
@@ -84,18 +89,8 @@ def get_model_data_fit_app(
         ]
     )
     def update_temporal_metrics_timeseries(metric_key, pollutant):
-        return dict(
-            data=[
-                dict(
-                    x=list(temporal_scores_df['measurement_start_utc']),
-                    y=list(temporal_scores_df[pollutant + '_' + metric_key]),
-                    mode='lines',
-                    name=components.METRIC_NAMES[metric_key]
-                ),
-            ],
-            layout=dict(
-                title='{mtc} score for all sensors over time.'.format(mtc=components.METRIC_NAMES[metric_key])
-            )
+        return components.get_temporal_metrics_timeseries(
+            temporal_scores_df, metric_key, pollutant
         )
 
     return app

@@ -74,25 +74,22 @@ def get_interest_points_timeseries(component_id, default_point_id, point_groupby
     )
 
 def get_temporal_metrics_timeseries(
-        component_id, temporal_scores_df, metric_key, pollutant='NO2'
+        temporal_scores_df, metric_key, pollutant='NO2'
     ):
     """
     Get a timeseries of the score for a given metric over the prediction period.
     """
     col = pollutant + '_' + metric_key
     name = METRIC_NAMES[metric_key]
-    return dcc.Graph(
-        id=component_id,
-        figure=go.Figure(
-            data=dict(
-                x=list(temporal_scores_df['measurement_start_utc']),
-                y=list(temporal_scores_df[col]),
-                mode='lines',
-                name=name
-            ),
-            layout=dict(
-                title='{mtc} score for all sensors over time.'.format(mtc=METRIC_NAMES[metric_key])
-            )
+    return dict(
+        data=[dict(
+            x=list(temporal_scores_df['measurement_start_utc']),
+            y=list(temporal_scores_df[col]),
+            mode='lines',
+            name=name
+        )],
+        layout=dict(
+            title='{mtc} score for all sensors over time.'.format(mtc=METRIC_NAMES[metric_key])
         )
     )
 
