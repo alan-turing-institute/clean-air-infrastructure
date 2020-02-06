@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--trainend",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
     )
     parser.add_argument(
@@ -46,7 +46,7 @@ def main():
     parser.add_argument(
         "--predstart",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
     )
     parser.add_argument(
@@ -112,6 +112,12 @@ def main():
         "tag": "tf1_test",
     }
 
+    if 'aqe' in model_config['train_sources'] + model_config['pred_sources']:
+        NotImplementedError("AQE cannot currently be run. Coming soon")
+
+    if model_config['species'] != ['NO2']:
+        NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
+
     # initialise the model
     model_fitter = SVGP_TF1()
 
@@ -124,6 +130,7 @@ def main():
     if write:
         print(testdir)
         model_data.save_config_state(testdir)
+
 
     # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
