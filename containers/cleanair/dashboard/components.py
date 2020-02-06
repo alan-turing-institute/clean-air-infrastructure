@@ -32,7 +32,7 @@ def get_interest_points_map(
     """
     Get a map with interest points plotted and the colour of points is the metric score.
     """
-    dcc.Graph(
+    return dcc.Graph(
         id=component_id,
         figure=geomap.InterestPointsMap(
             sensors_df, pollutant=pollutant, metric_key=metric_key, metric_name=METRIC_NAMES[metric_key]
