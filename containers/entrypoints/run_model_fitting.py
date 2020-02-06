@@ -93,7 +93,7 @@ def main():
         "tag": "tf1_test",
     }
 
-    if 'aqe' in model_config['sources']:
+    if 'aqe' in model_config['train_sources'] + model_config['pred_sources']:
         NotImplementedError("AQE cannot currently be run. Coming soon")
 
     if model_config['species'] != ['NO2']:
