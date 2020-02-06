@@ -19,7 +19,9 @@ def get_model_data_fit_app(
     elif evaluate_testing:
         point_groupby = model_data.normalised_pred_data_df.groupby('point_id')
 
-    # must have a default sensor to start with
+    # default start variables
+    default_metric_key = 'r2'
+    default_pollutant = 'NO2'
     default_point_id = sensor_scores_df.iloc[0]['point_id']
 
     # create the base layout
@@ -32,8 +34,6 @@ def get_model_data_fit_app(
     interest_points_map_id = 'interest-points-map'
     interest_points_timeseries_id = 'interest-points-timeseries'
     temporal_metrics_timeseries_id = 'temporal-metrics-timeseries'
-    default_metric_key = 'r2'
-    default_pollutant = 'NO2'
 
     # create the layout for a single model data fit
     app.layout = html.Div(className='row', children=[
@@ -54,7 +54,7 @@ def get_model_data_fit_app(
             temporal_metrics_timeseries_id, temporal_scores_df, default_metric_key, default_pollutant
         ),
     ])
-    # add callbacks for interacting with figures
+    # update the timeseries of a sensor when it is hovered over
     @app.callback(
         Output(interest_points_timeseries_id, 'figure'),
         [
@@ -64,7 +64,7 @@ def get_model_data_fit_app(
     )
     def update_interest_points_timeseries(hover_data, pollutant):
         return callbacks.interest_point_timeseries_callback(hover_data, point_groupby, pollutant)
-    
+    # update the colour of sensors when a new metric or pollutant is selected
     @app.callback(
         Output(interest_points_map_id, 'figure'),
         [
@@ -73,6 +73,29 @@ def get_model_data_fit_app(
         ]
     )
     def update_interest_points_map(metric_key, pollutant):
+        # ToDo: we don't need to redraw the whole figure, only the colours
         return callbacks.interest_point_map_callback(sensor_scores_df, metric_key, pollutant)
+    # update the timeseries of the metrics
+    @app.callback(
+        Output(temporal_metrics_timeseries_id, 'figure'),
+        [
+            Input(metric_dropdown_id, 'value'),
+            Input(pollutant_dropdown_id, 'value')
+        ]
+    )
+    def update_temporal_metrics_timeseries(metric_key, pollutant):
+        return dict(
+            data=[
+                dict(
+                    x=list(temporal_scores_df['measurement_start_utc']),
+                    y=list(temporal_scores_df[pollutant + '_' + metric_key]),
+                    mode='lines',
+                    name=components.METRIC_NAMES[metric_key]
+                ),
+            ],
+            layout=dict(
+                title='{mtc} score for all sensors over time.'.format(mtc=components.METRIC_NAMES[metric_key])
+            )
+        )
 
     return app
