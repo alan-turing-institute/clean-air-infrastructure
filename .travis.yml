@@ -8,7 +8,7 @@ script:
   # - python -m pytest -v tests --cov containers --cov-report term-missing
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
-  - flake8
+  - flake8 --ignore=E203, W503
 
   # Check black formatting would not make any chages
   - black --check */

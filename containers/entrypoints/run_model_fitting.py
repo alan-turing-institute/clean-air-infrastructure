@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--trainend",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
     )
     parser.add_argument(
@@ -46,35 +46,16 @@ def main():
     parser.add_argument(
         "--predstart",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
     )
     parser.add_argument(
         "--predhours", type=int, default=48, help="The number of hours to predict for"
     )
-    parser.add_argument(
-        "-t",
-        "--testdir",
-        default="/secrets/test/",
-        type=str,
-        help="The directory to save test data.",
-    )
-    parser.add_argument(
-        "-w", "--write", action="store_true", help="Write model data to file."
-    )
-    parser.add_argument(
-        "-r", "--read", action="store_true", help="Read model data from file."
-    )
 
     # Parse and interpret arguments
     args = parser.parse_args()
-    testdir = args.testdir
-    write = args.write
-    read = args.read
     kwargs = vars(args)
-    del kwargs["testdir"]
-    del kwargs["write"]
-    del kwargs["read"]
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -101,11 +82,19 @@ def main():
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
-        "features": ["value_1000_total_road_length"],
+        "features": [
+            "value_1000_total_a_road_length",
+            "value_500_total_a_road_length",
+            "value_500_total_a_road_primary_length",
+            "value_500_total_b_road_length",
+        ],
         "norm_by": "laqn",
         "model_type": "svgp_tf1",
         "tag": "tf1_test",
     }
+
+    if 'aqe' in model_config['sources']:
+        NotImplementedError("AQE cannot currently be run. Coming soon")
 
     # initialise the model
     model_fitter = SVGP_TF1()
@@ -115,10 +104,6 @@ def main():
         model_data = ModelData(config_dir=testdir, **kwargs)
     else:
         model_data = ModelData(config=model_config, **kwargs)
-
-    if write:
-        print(testdir)
-        model_data.save_config_state(testdir)
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
@@ -162,10 +147,11 @@ def main():
         model_fit_info=dict(fit_start_time=datetime.now()),
     )
 
-    print(model_data.normalised_pred_data_df.sample(5))
+    # model_data.save_config_state("run_model_full_test/")
 
     # Write the model results to the database
-    # model_data.update_remote_tables()
+    model_data.update_remote_tables()
+
 
 if __name__ == "__main__":
     main()
