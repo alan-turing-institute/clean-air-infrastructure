@@ -45,7 +45,8 @@ class Model(ABC):
         KeyError
             If the model parameters are not sufficient.
         """
-        if set(self.minimum_param_keys) != set(self.model_params.keys()):
+        # if the set of minimial keys is NOT a subset of the parameters
+        if not set(self.minimum_param_keys).issubset(set(self.model_params.keys())):
             raise KeyError("""Model parameters are not sufficient. \n
         The minimal set of keys is: {min} \n
         You supplied the following keys: {params}
@@ -210,4 +211,4 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError('x_test has not data.')
+                raise ValueError('x_test has no data.')

@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--trainend",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
     )
     parser.add_argument(
@@ -46,7 +46,7 @@ def main():
     parser.add_argument(
         "--predstart",
         type=str,
-        default="2020-01-10T00:00:00",
+        default="2020-01-30T00:00:00",
         help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
     )
     parser.add_argument(
@@ -111,6 +111,12 @@ def main():
         "model_type": "svgp_tf1",
         "tag": "testing_dashboard",
     }
+
+    if 'aqe' in model_config['train_sources'] + model_config['pred_sources']:
+        NotImplementedError("AQE cannot currently be run. Coming soon")
+
+    if model_config['species'] != ['NO2']:
+        NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
     model_fitter = SVGP_TF1()
