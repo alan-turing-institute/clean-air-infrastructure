@@ -17,8 +17,15 @@ def interest_point_timeseries_callback(hover_data, point_groupby, pollutant='NO2
         )
     )
 
-def interest_point_map_callback(mapbox_fig, sensor_scores_df, metric_key, pollutant):
+def interest_point_mapbox_callback(mapbox_fig, sensor_scores_df, metric_key, pollutant):
     """
     Update the map of sensors when a different pollutant or metric is chosen.
     """
-    pass
+    mapbox_fig.update_layout(coloraxis_colorbar=dict(
+        title=pollutant + ' ' + metric_key
+    ))
+    return mapbox_fig.update_traces(dict(
+        marker=dict(
+            color=sensor_scores_df[pollutant + '_' + metric_key]
+        )
+    ))

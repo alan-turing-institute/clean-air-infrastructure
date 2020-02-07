@@ -5,6 +5,7 @@ Create dash apps.
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 import plotly.graph_objects as go
 import plotly.express as px
 from dash.dependencies import Input, Output
@@ -41,25 +42,29 @@ def get_model_data_fit_app(
 
     # create the mapbox figure
     px.set_mapbox_access_token(mapbox_access_token)
-    interest_points_mapbox = px.scatter_mapbox(
+    interest_points_mapbox = components.get_interest_points_map(
         sensor_scores_df,
-        lat='lat',
-        lon='lon',
-        size=[15 for i in range(len(list(sensor_scores_df.index)))],
-        color=default_pollutant + '_' + default_metric_key,
-        zoom=10,
-        mapbox_style='basic',
-        hover_name=sensor_scores_df['point_id']
+        metric_key=default_metric_key,
+        pollutant=default_pollutant
     )
 
     # create the layout for a single model data fit
     app.layout = html.Div(className='row', children=[
+        # text introduction
         components.get_model_data_fit_intro(),
-        components.get_pollutant_dropdown(
-            pollutant_dropdown_id,
-            model_data.config['species']
-        ),
-        components.get_metric_dropdown(metric_dropdown_id, all_metrics),
+        dbc.Row([
+            dbc.Col(
+                components.get_pollutant_dropdown(
+                    pollutant_dropdown_id,
+                    model_data.config['species']
+                ), width=6
+            ),
+            dbc.Col(
+                components.get_metric_dropdown(metric_dropdown_id, all_metrics),
+                width=6
+            )
+        ]),
+        # map of sensors and their scores
         dcc.Graph(
             id=interest_points_map_id,
             figure=interest_points_mapbox,
@@ -67,9 +72,6 @@ def get_model_data_fit_app(
                 'hovertext': default_point_id
             }]}
         ),
-        # components.get_interest_points_map(
-        #     interest_points_map_id, default_point_id, sensor_scores_df, default_metric_key, default_pollutant
-        # ),
         components.get_interest_points_timeseries(
             interest_points_timeseries_id, default_point_id, point_groupby,
             pollutant=default_pollutant
@@ -99,31 +101,21 @@ def get_model_data_fit_app(
             Input(pollutant_dropdown_id, 'value'),
         ]
     )
-    def update_interest_points_map(metric_key, pollutant):
+    def update_interest_points_mapbox(metric_key, pollutant):
         # ToDo: we don't need to redraw the whole figure, only the colours
-        # return callbacks.interest_point_map_callback(mapbox_fig, sensor_scores_df, metric_key, pollutant)
-        return interest_points_mapbox.update_traces(dict(
-            # patch=dict(
-            marker=dict(
-                color=sensor_scores_df[pollutant + '_' + metric_key],
-                # coloraxis=dict(
-                #     cauto=True
-                # )
-            )
-            # ),
-            # overwrite=True
-        ))
-    # # update the timeseries of the metrics
-    # @app.callback(
-    #     Output(temporal_metrics_timeseries_id, 'figure'),
-    #     [
-    #         Input(metric_dropdown_id, 'value'),
-    #         Input(pollutant_dropdown_id, 'value')
-    #     ]
-    # )
-    # def update_temporal_metrics_timeseries(metric_key, pollutant):
-    #     return components.get_temporal_metrics_timeseries(
-    #         temporal_scores_df, metric_key, pollutant
-    #     )
+        return callbacks.interest_point_mapbox_callback(interest_points_mapbox, sensor_scores_df, metric_key, pollutant)
+
+    # update the timeseries of the metrics
+    @app.callback(
+        Output(temporal_metrics_timeseries_id, 'figure'),
+        [
+            Input(metric_dropdown_id, 'value'),
+            Input(pollutant_dropdown_id, 'value')
+        ]
+    )
+    def update_temporal_metrics_timeseries(metric_key, pollutant):
+        return components.get_temporal_metrics_timeseries(
+            temporal_scores_df, metric_key, pollutant
+        )
 
     return app

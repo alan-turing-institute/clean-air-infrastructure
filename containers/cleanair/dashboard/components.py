@@ -4,6 +4,7 @@ Meta components that make up the dashboard.
 
 import dash_core_components as dcc
 import plotly.graph_objects as go
+import plotly.express as px
 
 from . import geomap
 from . import timeseries
@@ -35,47 +36,21 @@ def get_model_data_fit_intro():
     return dcc.Markdown(introduction)
 
 def get_interest_points_map(
-        sensors_df, metric_key='r2', pollutant='NO2'
+        sensor_scores_df, metric_key='r2', pollutant='NO2'
     ):
     """
     Get a map with interest points plotted and the colour of points is the metric score.
     """
-    return dict(
-        data=go.Scattergeo(
-            # type='scattergeo',
-            lon=sensors_df['lon'],
-            lat=sensors_df['lat'],
-            mode='markers',
-            hovertext=sensors_df['point_id'],
-            marker=dict(
-                colorscale='Reds',
-                color=sensors_df[pollutant + '_' + metric_key],
-                colorbar_title='{mtc} for {pol}'.format(
-                    mtc=METRIC_NAMES[metric_key],
-                    pol=POLLUTANT_NAMES[pollutant]
-                )
-            )
-        ),
-        geo=dict(
-            lonaxis=dict(
-                range=geomap.LONAXIS_RANGE
-            ),
-            lataxis=dict(
-                range=geomap.LATAXIS_RANGE
-            )
-            # lataxis_range=geomap.LATAXIS_RANGE,
-            # lonaxis_range=geomap.LONAXIS_RANGE
-        )
+    return px.scatter_mapbox(
+        sensor_scores_df,
+        lat='lat',
+        lon='lon',
+        size=[15 for i in range(len(list(sensor_scores_df.index)))],
+        color=pollutant + '_' + metric_key,
+        zoom=10,
+        mapbox_style='basic',
+        hover_name=sensor_scores_df['point_id']
     )
-    # return dcc.Graph(
-    #     id=component_id,
-    #     figure=geomap.InterestPointsMap(
-    #         sensors_df, pollutant=pollutant, metric_key=metric_key, metric_name=METRIC_NAMES[metric_key]
-    #     ),
-    #     hoverData={'points':[{
-    #         'hovertext':default_point_id
-    #     }]}
-    # )
 
 def get_interest_points_timeseries(component_id, default_point_id, point_groupby, pollutant='NO2'):
     """
@@ -126,6 +101,7 @@ def get_pollutant_dropdown(component_id, species):
     """
     return dcc.Dropdown(
         id=component_id,
+        className='col-6',
         options=[
             dict(
                 label=POLLUTANT_NAMES[pollutant],
@@ -141,6 +117,7 @@ def get_metric_dropdown(component_id, metric_keys):
     """
     return dcc.Dropdown(
         id=component_id,
+        className='col-6',
         options=[
             dict(
                 label=METRIC_NAMES[key],
