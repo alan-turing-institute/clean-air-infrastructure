@@ -140,7 +140,7 @@ def main():
         x_train,
         y_train,
         save_model_state=False,
-        max_iter=5,
+        max_iter=10
     )
 
     # Get info about the model fit
