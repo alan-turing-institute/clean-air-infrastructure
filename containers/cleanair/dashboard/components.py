@@ -35,20 +35,47 @@ def get_model_data_fit_intro():
     return dcc.Markdown(introduction)
 
 def get_interest_points_map(
-        component_id, default_point_id, sensors_df, metric_key, pollutant='NO2'
+        sensors_df, metric_key='r2', pollutant='NO2'
     ):
     """
     Get a map with interest points plotted and the colour of points is the metric score.
     """
-    return dcc.Graph(
-        id=component_id,
-        figure=geomap.InterestPointsMap(
-            sensors_df, pollutant=pollutant, metric_key=metric_key, metric_name=METRIC_NAMES[metric_key]
+    return dict(
+        data=go.Scattergeo(
+            # type='scattergeo',
+            lon=sensors_df['lon'],
+            lat=sensors_df['lat'],
+            mode='markers',
+            hovertext=sensors_df['point_id'],
+            marker=dict(
+                colorscale='Reds',
+                color=sensors_df[pollutant + '_' + metric_key],
+                colorbar_title='{mtc} for {pol}'.format(
+                    mtc=METRIC_NAMES[metric_key],
+                    pol=POLLUTANT_NAMES[pollutant]
+                )
+            )
         ),
-        hoverData={'points':[{
-            'hovertext':default_point_id
-        }]}
+        geo=dict(
+            lonaxis=dict(
+                range=geomap.LONAXIS_RANGE
+            ),
+            lataxis=dict(
+                range=geomap.LATAXIS_RANGE
+            )
+            # lataxis_range=geomap.LATAXIS_RANGE,
+            # lonaxis_range=geomap.LONAXIS_RANGE
+        )
     )
+    # return dcc.Graph(
+    #     id=component_id,
+    #     figure=geomap.InterestPointsMap(
+    #         sensors_df, pollutant=pollutant, metric_key=metric_key, metric_name=METRIC_NAMES[metric_key]
+    #     ),
+    #     hoverData={'points':[{
+    #         'hovertext':default_point_id
+    #     }]}
+    # )
 
 def get_interest_points_timeseries(component_id, default_point_id, point_groupby, pollutant='NO2'):
     """

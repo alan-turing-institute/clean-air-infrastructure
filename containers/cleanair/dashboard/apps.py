@@ -37,6 +37,8 @@ def get_model_data_fit_app(
     interest_points_timeseries_id = 'interest-points-timeseries'
     temporal_metrics_timeseries_id = 'temporal-metrics-timeseries'
 
+    # create the mapbox figure
+
     # create the layout for a single model data fit
     app.layout = html.Div(className='row', children=[
         components.get_model_data_fit_intro(),
@@ -45,9 +47,20 @@ def get_model_data_fit_app(
             model_data.config['species']
         ),
         components.get_metric_dropdown(metric_dropdown_id, all_metrics),
-        components.get_interest_points_map(
-            interest_points_map_id, default_point_id, sensor_scores_df, default_metric_key, default_pollutant
+        dcc.Graph(
+            id=interest_points_map_id,
+            figure=components.get_interest_points_map(
+                sensor_scores_df,
+                metric_key=default_metric_key,
+                pollutant=default_pollutant
+            ),
+            hoverData={'points':[{
+                'hovertext': default_point_id
+            }]}
         ),
+        # components.get_interest_points_map(
+        #     interest_points_map_id, default_point_id, sensor_scores_df, default_metric_key, default_pollutant
+        # ),
         components.get_interest_points_timeseries(
             interest_points_timeseries_id, default_point_id, point_groupby,
             pollutant=default_pollutant
