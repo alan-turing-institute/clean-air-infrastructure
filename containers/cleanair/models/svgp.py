@@ -45,6 +45,7 @@ class SVGP_TF1(Model):
             "train",
             "jitter",
             "model_state_fp",
+            "maxiter",
         ]
         self.epoch = 0
         self.refresh = None
@@ -76,6 +77,7 @@ class SVGP_TF1(Model):
             "restore": False,
             "train": True,
             "model_state_fp": None,
+            "maxiter": 100,
         }
 
     def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
@@ -126,7 +128,7 @@ class SVGP_TF1(Model):
 
         self.epoch += 1
 
-    def fit(self, x_train, y_train, max_iter=100, refresh=10, save_model_state=True):
+    def fit(self, x_train, y_train, refresh=10, save_model_state=True):
         """
         Fit the SVGP.
 
@@ -143,9 +145,6 @@ class SVGP_TF1(Model):
             Only `y_train['laqn']['NO2']` is used for fitting.
             The size of this array is NX1 with N sensor observations from 'laqn'.
             See `Model.fit` method in the base class for further details.
-
-        max_iter : int, optional
-            The number of iterations to fit the model for.
 
         refresh : int, optional
             The number of iterations before printing the model's ELBO
@@ -181,7 +180,7 @@ class SVGP_TF1(Model):
         if self.model_params["train"]:
             # optimize and setup elbo logging
             opt = gpflow.train.AdamOptimizer()
-            opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=max_iter)
+            opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=self.model_params['maxiter'])
 
             # save model state
             if save_model_state:
