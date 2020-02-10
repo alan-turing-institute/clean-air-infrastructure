@@ -29,6 +29,24 @@ def main():
         default="db_secrets.json",
         help="File with connection secrets.",
     )
+    parser.add_argument(
+        "-d",
+        "--config_dir",
+        default="./",
+        help="Filepath to directory to store model and data."
+    )
+    parser.add_argument(
+        "-w",
+        "--write",
+        action="store_true",
+        help="Write model data config to file.",
+    )
+    parser.add_argument(
+        "-u",
+        "--update",
+        action="store_true",
+        help="Update the database with model results.",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     parser.add_argument(
@@ -57,6 +75,10 @@ def main():
     args = parser.parse_args()
     kwargs = vars(args)
 
+    # Update database/write to file
+    update = kwargs.pop("update")
+    write = kwargs.pop("write")
+
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
@@ -77,7 +99,7 @@ def main():
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
-        "pred_sources": ["laqn", "grid100"],
+        "pred_sources": ["laqn", "hexgrid"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
@@ -100,8 +122,9 @@ def main():
         NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
-    model_fitter = SVGP_TF1()
+    model_fitter = SVGP_TF1(batch_size=1000)   # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["model_state_fp"] = args.config_dir
 
     # Get the model data
     # model_data = ModelData(config_dir=testdir, **kwargs)
@@ -147,11 +170,13 @@ def main():
         ).T.squeeze(),
         model_fit_info=dict(fit_start_time=datetime.now()),
     )
-
-    # model_data.save_config_state("run_model_full_test/")
+    # write model results to file
+    if write:
+        model_data.save_config_state(args.config_dir)
 
     # Write the model results to the database
-    model_data.update_remote_tables()
+    if update:
+        model_data.update_remote_tables()
 
 
 if __name__ == "__main__":
