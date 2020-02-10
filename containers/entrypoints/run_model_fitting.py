@@ -77,7 +77,7 @@ def main():
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
+        "pred_sources": ["laqn", "grid100"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
@@ -101,6 +101,7 @@ def main():
 
     # initialise the model
     model_fitter = SVGP_TF1()
+    model_fitter.model_params["maxiter"] = 1
 
     # Get the model data
     # model_data = ModelData(config_dir=testdir, **kwargs)
@@ -129,8 +130,7 @@ def main():
     model_fitter.fit(
         x_train,
         y_train,
-        save_model_state=False,
-        max_iter=5,
+        save_model_state=False
     )
 
     # Get info about the model fit
