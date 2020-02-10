@@ -194,8 +194,6 @@ class SVGP_TF1(Model):
 
     def batch_predict(self, x_test):
         """Split up prediction into indepedent batchs.
-        #TODO: move into parent class as this will be used by all models
-
         args:
             x_test: N x D numpy array of locations to predict at
         """
@@ -243,13 +241,11 @@ class SVGP_TF1(Model):
         x_test : dict
             See `Model.predict` for further details.
         """
-        super().predict(x_test)
+        self.check_test_set_is_valid(x_test)
         x_test = x_test["laqn"]
         y_mean, y_var = self.batch_predict(x_test)
         return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
 
-    # ToDo: move this method into a different function
-    # or assume that the model data has already been cleaned
     def clean_data(self, x_array, y_array):
         """Remove nans and missing data for use in GPflow
 
