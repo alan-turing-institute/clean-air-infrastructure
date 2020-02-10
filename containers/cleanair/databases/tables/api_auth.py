@@ -25,8 +25,10 @@ class User(Base):
         return pwd_context.verify(password, self.password_hash)
 
     def generate_auth_token(self, expiration=600):
-        s = Serializer('secret', expires_in=expiration)
-        return s.dumps({'id': self.id})
+        if self.approved:
+            s = Serializer('secret', expires_in=expiration)
+            return s.dumps({'id': self.id})
+        return None
 
     @staticmethod
     def verify_auth_token(token):
