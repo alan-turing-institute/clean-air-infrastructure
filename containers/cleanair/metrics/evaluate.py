@@ -193,7 +193,14 @@ def measure_scores_by_hour(pred_df, metric_methods,
         for key, method in metric_methods.items()
     ], axis=1)
 
-def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pred_cols=['NO2_mean'], test_cols=['NO2']):
+def measure_scores_by_sensor(
+        pred_df,
+        metric_methods,
+        precision_metrics=None,
+        sensor_col='point_id',
+        pred_cols=['NO2_mean'],
+        test_cols=['NO2'],
+        var_cols=['NO2_var']):
     """
     Group the pred_df by sensor then measure scores on each sensor.
 
@@ -202,7 +209,7 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
 
     pred_df : DataFrame
         Indexed by datetime. Must have a column of testing data and
-        a column from the predicted air quality at the same points 
+        a column from the predicted air quality at the same points
         as the testing data.
 
     metric_methods : dict
@@ -225,12 +232,29 @@ def measure_scores_by_sensor(pred_df, metric_methods, sensor_col='point_id', pre
     # group by sensor id
     gb = pred_df.groupby(sensor_col)
 
-    return pd.concat([
-        pd.Series(gb.apply(
-            lambda x: method(x[test_cols], x[pred_cols])
-        ), name='{species}_{metric}'.format(species=test_cols[0], metric=key))
-        for key, method in metric_methods.items()
-    ], axis=1)
+    scores_df = pd.DataFrame(index=gb.groups.keys())
+    for key, method in metric_methods.items():
+        for i in range(test_cols):
+            col_name = '{species}_{metric}'.format(species=test_cols[i], metric=key)
+            scores_df[col_name] = gb.apply(
+                lambda x: method(x[test_cols[i]], x[pred_cols[i]])
+            )
+    
+    if not precision_metrics is None:
+        for key, method in precision_metrics.items():
+            col_name = '{species}_{metric}'.format(species=test_cols[0], metric=key)
+            scores_df[col_name] = gb.apply(
+                lambda x: method(x[test_cols[i]], x[pred_cols[i]], x[var_cols[i]])
+            )
+
+    # scores_df = pd.concat([
+    #     pd.Series(gb.apply(
+    #         lambda x: method(x[test_cols], x[pred_cols])
+    #     ), name='{species}_{metric}'.format(species=test_cols[0], metric=key))
+    #     for key, method in metric_methods.items()
+    # ], axis=1)
+
+    return scores_df
 
 def __concat_static_features_with_scores(scores_df, pred_df, static_features=['lat', 'lon']):
     """
