@@ -42,6 +42,12 @@ def main():
         help="Write model data config to file.",
     )
     parser.add_argument(
+        "-r",
+        "--read",
+        action="store_true",
+        help="Read model data from config_dir.",
+    )
+    parser.add_argument(
         "-u",
         "--update",
         action="store_true",
@@ -78,6 +84,7 @@ def main():
     # Update database/write to file
     update = kwargs.pop("update")
     write = kwargs.pop("write")
+    read = kwargs.pop("read")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -127,8 +134,10 @@ def main():
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
     # Get the model data
-    # model_data = ModelData(config_dir=testdir, **kwargs)
-    model_data = ModelData(config=model_config, **kwargs)
+    if read:
+        model_data = ModelData(**kwargs)
+    else:
+        model_data = ModelData(config=model_config, **kwargs)
 
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
