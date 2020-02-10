@@ -105,7 +105,6 @@ class Model(ABC):
         S is the discretization amount,
         M is the number of satellite observations, and * represents a pollutant name.
         """
-        Model.check_training_set_is_valid(x_train, y_train)
 
     @abstractmethod
     def predict(self, x_test, **kwargs):

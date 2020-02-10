@@ -52,7 +52,6 @@ class SVGP_TF1(Model):
 
         # check model parameters
         if model_params is None:
-            print()
             self.model_params = self.get_default_model_params()
         else:
             self.__check_model_params_are_valid()
@@ -154,7 +153,7 @@ class SVGP_TF1(Model):
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
         """
-        super().fit(x_train, y_train)
+        self.check_training_set_is_valid(x_train, y_train)
         self.refresh = refresh
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
