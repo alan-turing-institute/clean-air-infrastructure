@@ -67,6 +67,15 @@ class ModelData(DBWriter, DBQueryMixin):
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
+            
+            # Get training and prediciton data frames
+            self.training_data_df = self.get_training_data_inputs()
+            self.normalised_training_data_df = self.__normalise_data(
+                self.training_data_df
+            )
+
+            self.pred_data_df = self.get_pred_data_inputs()
+            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
             # Process satellite data
             if self.config["include_satellite"]:
@@ -89,14 +98,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 self.config["include_prediction_y"] = True
                 self.training_dict = self.get_training_data_arrays()
                 self.test_dict = self.get_pred_data_arrays()
-            # Get training and prediciton data frames
-            self.training_data_df = self.get_training_data_inputs()
-            self.normalised_training_data_df = self.__normalise_data(
-                self.training_data_df
-            )
-
-            self.pred_data_df = self.get_pred_data_inputs()
-            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
         else:
             self.restore_config_state(config_dir)

@@ -107,7 +107,7 @@ def main():
         "train_end_date": train_end,
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
-        "include_satellite": False,
+        "include_satellite": True,
         "include_prediction_y": return_y,
         "train_sources": ["laqn"],
         "pred_sources": ["laqn"],
