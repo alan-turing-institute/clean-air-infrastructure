@@ -280,23 +280,23 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
             )
 
         aggregated_funcs = [
-            agg_func(scoot_reading_sq.c.occupancy_percentage).label(
+            agg_func(sr_sq.c.occupancy_percentage).label(
                 "occupancy_percentage_waverage"
             ),
-            agg_func(scoot_reading_sq.c.congestion_percentage).label(
+            agg_func(sr_sq.c.congestion_percentage).label(
                 "congestion_percentage_waverage"
             ),
-            agg_func(scoot_reading_sq.c.saturation_percentage).label(
+            agg_func(sr_sq.c.saturation_percentage).label(
                 "saturation_percentage_waverage"
             ),
-            agg_func(scoot_reading_sq.c.flow_raw_count).label("flow_count_waverage"),
-            agg_func(scoot_reading_sq.c.occupancy_raw_count).label(
+            agg_func(sr_sq.c.flow_raw_count).label("flow_count_waverage"),
+            agg_func(sr_sq.c.occupancy_raw_count).label(
                 "occupancy_count_waverage"
             ),
-            agg_func(scoot_reading_sq.c.congestion_raw_count).label(
+            agg_func(sr_sq.c.congestion_raw_count).label(
                 "congestion_count_waverage"
             ),
-            agg_func(scoot_reading_sq.c.saturation_raw_count).label(
+            agg_func(sr_sq.c.saturation_raw_count).label(
                 "saturation_count_waverage"
             ),
         ]
@@ -311,7 +311,7 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
                 )
                 .join(arm_sq)
                 .join(tid_sq)
-                .filter(scoot_reading_sq.c.detector_id == arm_sq.c.detector_n)
+                .filter(sr_sq.c.detector_id == arm_sq.c.detector_n)
             )
 
             scoot_road_distance_q = scoot_road_distance_q.group_by(
