@@ -82,7 +82,7 @@ def main(data_config, param_config, experiment_config):
 
 if __name__ == '__main__':
     #default config
-    model='svgp'
+    model='svgp_tf1'
     data_idx = 0
     param_idx = 0
 
