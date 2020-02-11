@@ -125,8 +125,8 @@ class ModelData(DBWriter, DBQueryMixin):
 
         valid_models = [
             "mr_gprn",
-            "mr_dgp"
-            "svgp_tf1"
+            "mr_dgp",
+            "svgp_tf1",
         ]
 
         self.logger.info("Validating config")
