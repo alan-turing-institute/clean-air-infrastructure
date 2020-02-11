@@ -48,7 +48,7 @@ class SVGP_TF1(Model):
             "maxiter",
         ]
         self.epoch = 0
-        self.refresh = None
+        self.refresh = 10
         self.batch_size = batch_size
 
         # check model parameters
@@ -211,7 +211,8 @@ class SVGP_TF1(Model):
         i = 0
 
         for b in range(num_batches):
-            print("Batch: ", b, num_batches)
+            if b % self.refresh == 0:
+                print("Batch", b, "out of", num_batches)
             if b == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_test[i:, :]

@@ -464,29 +464,25 @@ class ModelData(DBWriter, DBQueryMixin):
             # case for laqn, aqe, grid
             else:
                 src_mask = data_df[data_df['source'] == src].index
-                x_src = data_subset.loc[src_mask.intersection(data_subset.index)].to_numpy()
-                data_dict['X'][src] = x_src
+                x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
+                data_dict['X'][src] = x_src[self.x_names_norm].to_numpy()
                 if return_y:
                     # get a numpy array for the pollutant of shape (n,1)
                     data_dict['Y'][src] = {
                         pollutant: np.reshape(
-                            data_subset[pollutant].to_numpy(), (
-                                data_subset[pollutant].shape[0], 1
+                            x_src[pollutant].to_numpy(), (
+                                len(x_src), 1
                             )
                         ) for pollutant in species
                     }
-                    data_dict['index'][src] = {
-                        pollutant: data_subset[pollutant].index.copy()
-                        for pollutant in species
-                    }
-                else:
-                    data_dict['index'][src] = {
-                        pollutant: data_subset.index.copy()
-                        for pollutant in species
-                    }
+                # store index
+                data_dict['index'][src] = {
+                    pollutant: x_src.index.copy()
+                    for pollutant in species
+                }
         return data_dict
 
-    def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=True):
+    def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=False):
         """The the training data arrays.
 
         args:
@@ -503,7 +499,7 @@ class ModelData(DBWriter, DBQueryMixin):
             return_y=return_y, dropna=dropna
         )
 
-    def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=True):
+    def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=False):
         """The the pred data arrays.
 
         args:
@@ -954,11 +950,9 @@ class ModelData(DBWriter, DBQueryMixin):
         indices = []
         for source in sources:
             for pollutant in pred_dict[source]:
-                print(len(data_dict['index'][source][pollutant]))
                 indices.extend(data_dict['index'][source][pollutant])
         predict_df = pd.DataFrame(index=indices)
         data_df = data_df.loc[indices]
-        print("predict df shape:", predict_df.shape)
 
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
         for pred_type in ["mean", "var"]:
@@ -967,7 +961,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 column = np.array([])
                 for source in sources:
                     column = np.append(column, pred_dict[source][pollutant][pred_type])
-                print(pollutant, pred_type, "shape:", column.shape)
                 predict_df[pollutant + "_" + pred_type] = column
 
         # add predict_df as new columns to data_df - they should share an index

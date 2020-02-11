@@ -3,10 +3,8 @@ Model fitting
 """
 import logging
 import argparse
-from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-import numpy as np
 from cleanair.models import ModelData, SVGP_TF1
 from cleanair.loggers import get_log_level
 
@@ -79,9 +77,6 @@ def main():
 
     # Parse and interpret arguments
     args = parser.parse_args()
-    testdir = args.testdir
-    write = args.write
-    read = args.read
     kwargs = vars(args)
 
     # Update database/write to file
@@ -109,7 +104,7 @@ def main():
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
-        "pred_sources": ["laqn", "hexgrid"],
+        "pred_sources": ["laqn"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
@@ -132,7 +127,7 @@ def main():
         NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
-    model_fitter = SVGP_TF1(batch_size=1000)   # big batch size for the grid
+    model_fitter = SVGP_TF1(batch_size=100)   # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
@@ -142,12 +137,13 @@ def main():
     else:
         model_data = ModelData(config=model_config, **kwargs)
 
+    # write model results to file
     if write:
-        model_data.save_config_state(testdir)
+        model_data.save_config_state(args.config_dir)
 
     # get the training and test dictionaries
-    training_data_dict = model_data.get_training_data_arrays(dropna=True)
-    predict_data_dict = model_data.get_pred_data_arrays(dropna=True)
+    training_data_dict = model_data.get_training_data_arrays(dropna=False)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
     x_train = training_data_dict['X']
     y_train = training_data_dict['Y']
     x_test = predict_data_dict['X']
@@ -181,10 +177,6 @@ def main():
 
     # Internally update the model results in the ModelData object
     updated_df = model_data.update_test_df_with_preds(y_pred)
-
-    # write model results to file
-    if write:
-        model_data.save_config_state(args.config_dir)
 
     # Write the model results to the database
     if update:
