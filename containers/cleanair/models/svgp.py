@@ -96,9 +96,18 @@ class SVGP_TF1(Model):
         with gpflow.settings.temp_settings(
                 custom_config
         ), gpflow.session_manager.get_session().as_default():
-            kern = gpflow.kernels.RBF(
+            # kern = gpflow.kernels.RBF(
+            #     num_input_dimensions,
+            #     lengthscales=self.model_params['lengthscale'],
+            #     ARD=True
+            # )
+            kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
+                variance=self.model_params['variance'],
                 lengthscales=self.model_params['lengthscale'],
+            ) + gpflow.kernels.Linear(
+                num_input_dimensions,
+                variance=self.model_params['variance'],
                 ARD=True
             )
             self.model = gpflow.models.SVGP(
@@ -108,6 +117,9 @@ class SVGP_TF1(Model):
                 gpflow.likelihoods.Gaussian(variance=self.model_params['variance']),
                 inducing_locations,
                 minibatch_size=self.model_params['minibatch_size'],
+                mean_function=gpflow.mean_functions.Linear(
+                    A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
+                )
             )
 
     def elbo_logger(self, x):
