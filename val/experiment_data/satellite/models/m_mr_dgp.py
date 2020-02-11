@@ -112,10 +112,17 @@ def get_kernel_product(K, active_dims=[0], lengthscales=[1.0], variances=[1.0], 
     if not isinstance(K, list):
         K = [K for i in range(len(active_dims))]
 
-    if lengthscales is None:
-        kernels = [K[i](input_dim=1, variance=variances[i], active_dims=[active_dims[i]], name=name+'_{i}'.format(i=i)) for i in range(len(active_dims))]
-    else:
-        kernels = [K[i](input_dim=1, lengthscales=lengthscales[i], variance=variances[i], active_dims=[active_dims[i]], name=name+'_{i}'.format(i=i)) for i in range(len(active_dims))]
+    kernels = []
+    for i, k in enumerate(K):
+        if (lengthscales is None) or (k is MR_Linear):
+            kernels.append(
+                K[i](input_dim=1, variance=variances[i], active_dims=[active_dims[i]], name=name+'_{i}'.format(i=i)) 
+            )
+        else:
+            kernels.append(
+                K[i](input_dim=1, lengthscales=lengthscales[i], variance=variances[i], active_dims=[active_dims[i]], name=name+'_{i}'.format(i=i)) 
+            )
+
     return gpflow.kernels.Product(kernels, name=name+'_product')
 
 def get_inducing_points(X, num_z=None):
@@ -217,6 +224,7 @@ def main(data_config, param_config, experiment_config):
     experiment_id = os.path.basename(experiment_config['results_dir'])
     train_pred_fp = '../results/{id}/train_pred.pickle'.format(id=experiment_id)
     test_pred_fp = '../results/{id}/test_pred.pickle'.format(id=experiment_id)
+    meta_fp = '../results/{id}/meta.pickle'.format(id=experiment_id)
 
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
@@ -266,12 +274,12 @@ def main(data_config, param_config, experiment_config):
         dgp_kernel_ls = [1.0, 0.1, 0.1, 0.1,  0.1]
         dgp_kernel_v = [1.0, 1.0, 1.0, 1.0, 0.1]
 
-        #K_dgp_1 = get_kernel_product([MR_Linear, MR_SE, MR_SE], active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
-        K_dgp_1 = get_kernel_product(MR_SE, active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
+        K_dgp_1 = get_kernel_product([MR_Linear, MR_SE, MR_SE], active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
+        #K_dgp_1 = get_kernel_product(MR_SE, active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
         K_parent_1 = None
         
 
-        num_z = 200
+        num_z = 300
         base_Z = [get_inducing_points(dataset[0][0], num_z), get_inducing_points(dataset[1][0], num_z)]
 
         sliced_dataset = np.concatenate([np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1)
@@ -327,17 +335,19 @@ def main(data_config, param_config, experiment_config):
 
     #===========================Quick fixes===========================
     #TODO: ask patrick where these configs should go
-    param_config['train'] = False
-    param_config['restore'] = True
+    param_config['train'] = True
+    param_config['restore'] = False
     param_config['model_state_fp'] = os.path.basename(experiment_config['model_state_fp'])
     print(param_config['model_state_fp'])
 
     #===========================Optimize===========================
 
+    elbos = []
     def logger(x):    
         if (logger.i % 10) == 0:
             session =  m.enquire_session()
             objective = m.objective.eval(session=session)
+            elbos.append(objective)
             print(logger.i, ': ', objective)
 
         logger.i+=1
@@ -348,23 +358,25 @@ def main(data_config, param_config, experiment_config):
         saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=param_config['model_state_fp']))
 
 
-    if param_config['train']:
-        opt = AdamOptimizer(0.1)
+    try:
+        if param_config['train']:
+            opt = AdamOptimizer(0.1)
 
-        if False:
-            set_objective(AdamOptimizer, 'base_elbo')
-            opt.minimize(m, step_callback=logger, maxiter=1000)
+            if False:
+                set_objective(AdamOptimizer, 'base_elbo')
+                opt.minimize(m, step_callback=logger, maxiter=1000)
 
-            #m.disable_base_elbo()
-            #set_objective(AdamOptimizer, 'elbo')
-            #opt.minimize(m, step_callback=logger, maxiter=10)
-        else:
-            opt.minimize(m, step_callback=logger, maxiter=1)
+                #m.disable_base_elbo()
+                #set_objective(AdamOptimizer, 'elbo')
+                #opt.minimize(m, step_callback=logger, maxiter=10)
+            else:
+                opt.minimize(m, step_callback=logger, maxiter=10000)
+    except KeyboardInterrupt:
+        print('Ending early')
 
     saver = tf.train.Saver()
     save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=param_config['model_state_fp']))
     #===========================Predict and store results===========================
-    elbos = None
 
     meta = {
         'elbos': elbos
@@ -377,13 +389,14 @@ def main(data_config, param_config, experiment_config):
 
     pickle.dump(train_pred, open( train_pred_fp, "wb" ) )
     pickle.dump(test_pred, open( test_pred_fp, "wb" ) )
-    #pickle.dump(meta, open( test_pred_fp, "wb" ) )
+
+    pickle.dump(meta, open( meta_fp, "wb" ) )
 
     print(m)
 
 if __name__ == '__main__':
     #default config
-    model='mr_gprn'
+    model='mr_dgp'
     data_idx = 0
     param_idx = 0
 
