@@ -1,0 +1,27 @@
+
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
+{{ if .Values.routes}}
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: name-virtual-host-ingress
+spec:
+  tls:
+  - hosts:
+    - urbanair.turing.ac.uk
+    secretName: test
+  rules:
+  {{- range $route := .Values.routes }}
+  - host: {{ $route.host }}
+    http:
+      paths:
+      - path: {{ $route.path }}
+        backend:
+          serviceName: "{{ $release_name }}-{{ $route.serviceName }}"
+          servicePort: {{ $route.servicePort }}
+  {{- end }}
+{{ end }}

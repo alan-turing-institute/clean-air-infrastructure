@@ -147,3 +147,9 @@ deployments:
 
 services:
     - name: cleanair-api
+
+routes:
+    - host: urbanair.turing.ac.uk
+      path: /
+      serviceName: cleanair-api
+      servicePort: 80
