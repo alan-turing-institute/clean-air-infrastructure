@@ -21,34 +21,29 @@ def main():
         default="db_secrets.json",
         help="File with connection secrets.",
     )
-    # parser.add_argument(
-    #     "--trainend",
-    #     type=str,
-    #     default="2020-01-30T00:00:00",
-    #     help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
-    # )
-    # parser.add_argument(
-    #     "--trainhours",
-    #     type=int,
-    #     default=48,
-    #     help="The number of hours to get training data for.",
-    # )
-    # parser.add_argument(
-    #     "--predstart",
-    #     type=str,
-    #     default="2020-01-30T00:00:00",
-    #     help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
-    # )
-    # parser.add_argument(
-    #     "--predhours", type=int, default=48, help="The number of hours to predict for"
-    # )
+    parser.add_argument(
+        "-e",
+        "--end",
+        type=str,
+        default="now",
+        help="The last datetime (YYYY-MM-DD HH:MM:SS) to get data for.",
+    )
+    parser.add_argument(
+        "-n",
+        "--ndays",
+        type=int,
+        default=7,
+        help="The number of days to request data for.",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
     args = parser.parse_args()
-    kwargs = vars(args)
+    if args.ndays < 1:
+        raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
+    kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # # Get training and pred start and end datetimes
