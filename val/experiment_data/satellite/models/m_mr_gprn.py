@@ -229,7 +229,7 @@ def main(data_config, param_config, experiment_config):
     #get inducing points across the whole of the satellite period
 
     #num_z = param_config['n_inducing_points']
-    num_z = 100
+    num_z = 300
     XX = X[1]
     z_r = kmeans2(XX.reshape([XX.shape[0]*XX.shape[1], XX.shape[2]]), num_z, minit='points')[0] 
 

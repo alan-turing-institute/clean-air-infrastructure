@@ -20,7 +20,11 @@ from ..cluster import *
 sys.path.append("../containers/")
 sys.path.append("../../containers/")
 
+import cleanair
+from cleanair.models import ModelData
+
 try:
+    import cleanair
     from cleanair.models import ModelData
     from cleanair import metrics
 except ImportError:
@@ -223,7 +227,7 @@ class Experiment(ABC):
             experiment_configs=cluster_run_params,
             input_format_fn=input_format_fn,
             cluster_tmp_fp=self.directory+'cluster',
-            experiment_fp=self.directory,
+            experiment_fp=self.experiments_directory,
             home_directory_fp=self.home_directory,
         )
         cluster.setup()
@@ -253,8 +257,6 @@ class Experiment(ABC):
 
         input_format_fn = lambda config: ' {param_id} {data_id}'.format(data_id=config['data_id'], param_id=config['param_id'])
 
-        print(self.directory+'../libs/')
-
         cluster = self.__get_cluster_obj()(
             root = 'validation/cluster/',
             experiment_name=self.name,
@@ -270,15 +272,15 @@ class Experiment(ABC):
         cluster.setup()
 
         #Ensure cluster folders exist
-        dir_name = self.directory+'cluster'
+        dir_name = self.experiments_directory+'cluster'
         pathlib.Path(dir_name).mkdir(exist_ok=True)
 
-        dir_name = self.directory+'cluster'+'/results/'
+        dir_name = self.experiments_directory+'cluster'+'/results/'
         pathlib.Path(dir_name).mkdir(exist_ok=True)
 
         for row in self.experiment_df.itertuples():
 
-            dir_name = self.directory+'cluster'+'/results/'+os.path.basename(row.results_dir)
+            dir_name = self.experiments_directory+'cluster'+'/results/'+os.path.basename(row.results_dir)
             pathlib.Path(dir_name).mkdir(exist_ok=True)
 
 

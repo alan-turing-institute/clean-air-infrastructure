@@ -279,7 +279,7 @@ def main(data_config, param_config, experiment_config):
         K_parent_1 = None
         
 
-        num_z = 200
+        num_z = 300
         base_Z = [get_inducing_points(dataset[0][0], num_z), get_inducing_points(dataset[1][0], num_z)]
 
         sliced_dataset = np.concatenate([np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1)
@@ -358,18 +358,21 @@ def main(data_config, param_config, experiment_config):
         saver.restore(tf_session, 'restore/{name}.ckpt'.format(name=param_config['model_state_fp']))
 
 
-    if param_config['train']:
-        opt = AdamOptimizer(0.1)
+    try:
+        if param_config['train']:
+            opt = AdamOptimizer(0.1)
 
-        if False:
-            set_objective(AdamOptimizer, 'base_elbo')
-            opt.minimize(m, step_callback=logger, maxiter=1000)
+            if False:
+                set_objective(AdamOptimizer, 'base_elbo')
+                opt.minimize(m, step_callback=logger, maxiter=1000)
 
-            #m.disable_base_elbo()
-            #set_objective(AdamOptimizer, 'elbo')
-            #opt.minimize(m, step_callback=logger, maxiter=10)
-        else:
-            opt.minimize(m, step_callback=logger, maxiter=100)
+                #m.disable_base_elbo()
+                #set_objective(AdamOptimizer, 'elbo')
+                #opt.minimize(m, step_callback=logger, maxiter=10)
+            else:
+                opt.minimize(m, step_callback=logger, maxiter=10000)
+    except KeyboardInterrupt:
+        print('Ending early')
 
     saver = tf.train.Saver()
     save_path = saver.save(tf_session, "restore/{name}.ckpt".format(name=param_config['model_state_fp']))
@@ -393,7 +396,7 @@ def main(data_config, param_config, experiment_config):
 
 if __name__ == '__main__':
     #default config
-    model='mr_gprn'
+    model='mr_dgp'
     data_idx = 0
     param_idx = 0
 

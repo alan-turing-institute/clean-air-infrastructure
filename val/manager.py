@@ -33,23 +33,23 @@ def main():
     models = ['svgp']
 
     if args.setup:
-        exp = experiment_class(models=models, **vars(args))
+        exp = experiment_class(args.name, models=models, **vars(args))
         exp.setup(force_redownload=args.force)
 
     if args.run:
-        exp = experiment_class(models=models, **vars(args))
+        exp = experiment_class(args.name, models=models, **vars(args))
         exp.run()
 
     if args.check:
-        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp = experiment_class(args.name, models,  **vars(args))
         exp.check_status()
 
     if args.clean:
-        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp = experiment_class(args.name, models,  **vars(args))
         exp.clean()
 
     if args.get_results:
-        exp = experiment_class(args.name, models, args.cluster, directory=args.experiments_directory, **vars(args))
+        exp = experiment_class(args.name, models,  **vars(args))
         exp.get()
 
     if args.validate:
