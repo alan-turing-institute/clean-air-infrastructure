@@ -134,7 +134,7 @@ def main():
 
     # initialise the model
     model_fitter = SVGP_TF1(batch_size=100)   # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["maxiter"] = 100
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
     # Get the model data
