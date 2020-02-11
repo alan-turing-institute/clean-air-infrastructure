@@ -1,5 +1,5 @@
 """
-Scoot Feature extraction
+SCOOT feature extraction
 """
 import argparse
 import logging
@@ -62,13 +62,8 @@ def main():
         # print(static_feature_extractor.total_inverse_distance(output_type='df'))
 
         # Extract static features into the appropriate tables on the database
-<<<<<<< HEAD
-        # static_feature_extractor.update_scoot_road_reading(find_closest_roads=False)
-        static_feature_extractor.update_remote_tables()
-=======
         static_feature_extractor.update_scoot_road_reading_tables(find_closest_roads=False)
-        # static_feature_extractor.update_remote_tables() 
->>>>>>> 7d88060... Testing traffic model
+        static_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
