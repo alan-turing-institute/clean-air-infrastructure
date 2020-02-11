@@ -1,14 +1,13 @@
-FROM nginx
+FROM python:3.7
 
 RUN apt-get update && apt-get install -y python3 python3-pip
 
 COPY . /tmp/containers
 RUN pip3 install /tmp/containers
 
+
 COPY requirements.txt /var/www/html/my_app/requirements.txt
 COPY API /var/www/html/my_app
-COPY API/nginx.conf /etc/nginx/nginx.conf
-COPY API/supervisord.conf /etc/supervisord.conf
 
 # RUN ls /var/www/html/my_app
 # RUN cat /etc/supervisord.conf
@@ -28,4 +27,4 @@ WORKDIR /var/www/html/my_app
 # CMD [ "uwsgi", "--ini", "app_nginx.ini" ]
 
 ### Run on Nginx
-ENTRYPOINT ["/usr/local/bin/supervisord"]
+ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/var/www/html/my_app/app_nginx.ini"]
