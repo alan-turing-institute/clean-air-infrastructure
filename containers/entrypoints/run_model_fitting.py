@@ -51,6 +51,12 @@ def main():
         action="store_true",
         help="Update the database with model results.",
     )
+    parser.add_argument(
+        "-y",
+        "--return_y",
+        action="store_true",
+        help="Include pollutant data in the test dataset.",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     parser.add_argument(
@@ -83,6 +89,7 @@ def main():
     update = kwargs.pop("update")
     write = kwargs.pop("write")
     read = kwargs.pop("read")
+    return_y = kwargs.pop("return_y")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -102,7 +109,7 @@ def main():
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
         "include_satellite": False,
-        "include_prediction_y": False,
+        "include_prediction_y": return_y,
         "train_sources": ["laqn"],
         "pred_sources": ["laqn"],
         "train_interest_points": "all",
