@@ -152,7 +152,6 @@ tls:
     - host: urbanair.turing.ac.uk
       secretName: secret
 
-
 ingressRules:
     - host: urbanair.turing.ac.uk
       paths:
