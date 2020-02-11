@@ -10,7 +10,6 @@ from ..base import Base
 
 class ScootReading(Base):
     """Table of Scoot readings"""
-
     __tablename__ = "scoot_reading"
     __table_args__ = {"schema": "dynamic_data"}
 
@@ -54,6 +53,45 @@ class ScootReading(Base):
                 "congestion_raw_count='{}'".format(self.congestion_raw_count),
                 "saturation_raw_count='{}'".format(self.saturation_raw_count),
                 "region='{}'".format(self.region),
+            ]
+        )
+
+
+class ScootForecast(Base):
+    """Table of Scoot forecasts"""
+    __tablename__ = "scoot_forecast"
+    __table_args__ = {"schema": "dynamic_data"}
+
+    detector_id = Column(
+        String(9),
+        ForeignKey("interest_points.scoot_detector.detector_n"),
+        primary_key=True,
+        nullable=False,
+    )
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False
+    )
+    measurement_end_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False
+    )
+    n_vehicles_in_interval = Column(Integer)
+    occupancy_percentage = Column(DOUBLE_PRECISION)
+    congestion_percentage = Column(DOUBLE_PRECISION)
+    saturation_percentage = Column(DOUBLE_PRECISION)
+
+    # Create ScootForecast.detector with no reverse relationship
+    detector = relationship("ScootDetector")
+
+    def __repr__(self):
+        return "<ScootForecast(" + ", ".join(
+            [
+                "detector_id='{}'".format(self.detector_id),
+                "measurement_start_utc='{}'".format(self.measurement_start_utc),
+                "measurement_end_utc='{}'".format(self.measurement_end_utc),
+                "n_vehicles_in_interval='{}'".format(self.n_vehicles_in_interval),
+                "occupancy_percentage='{}'".format(self.occupancy_percentage),
+                "congestion_percentage='{}'".format(self.congestion_percentage),
+                "saturation_percentage='{}'".format(self.saturation_percentage),
             ]
         )
 
@@ -140,8 +178,14 @@ class ScootRoadInverseDistance(Base):
         primary_key=True,
         nullable=False,
     )
-
     total_inverse_distance = Column(DOUBLE_PRECISION, nullable=False)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<ScootRoadInverseDistance(" + ", ".join(vals)
 
 
 class ScootRoadReading(Base):
