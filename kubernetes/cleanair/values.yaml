@@ -134,7 +134,7 @@ deployments:
         repository: cleanairdocker.azurecr.io/cleanairapi
         imagePullPolicy: Always
       ports:
-        containerPort: 80
+        containerPort: 8080
       restartPolicy: Always
       volumeMounts:
       - name: secrets
@@ -147,6 +147,13 @@ deployments:
 
 services:
     - name: cleanair-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+        - name: https
+          port: 443
+          targetPort: 8080
 
 tls:
     - host: urbanair.turing.ac.uk
