@@ -105,7 +105,6 @@ class Model(ABC):
         S is the discretization amount,
         M is the number of satellite observations, and * represents a pollutant name.
         """
-        Model.check_training_set_is_valid(x_train, y_train)
 
     @abstractmethod
     def predict(self, x_test, **kwargs):
@@ -211,4 +210,4 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError('x_test has no data.')
+                raise ValueError('x_test has no data for {src}.'.format(src=source))

@@ -45,14 +45,14 @@ class SVGP_TF1(Model):
             "train",
             "jitter",
             "model_state_fp",
+            "maxiter",
         ]
         self.epoch = 0
-        self.refresh = None
+        self.refresh = 10
         self.batch_size = batch_size
 
         # check model parameters
         if model_params is None:
-            print()
             self.model_params = self.get_default_model_params()
         else:
             self.__check_model_params_are_valid()
@@ -77,6 +77,7 @@ class SVGP_TF1(Model):
             "restore": False,
             "train": True,
             "model_state_fp": None,
+            "maxiter": 100,
         }
 
     def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
@@ -127,7 +128,7 @@ class SVGP_TF1(Model):
 
         self.epoch += 1
 
-    def fit(self, x_train, y_train, max_iter=100, refresh=10, save_model_state=True):
+    def fit(self, x_train, y_train, refresh=10, save_model_state=True):
         """
         Fit the SVGP.
 
@@ -145,16 +146,13 @@ class SVGP_TF1(Model):
             The size of this array is NX1 with N sensor observations from 'laqn'.
             See `Model.fit` method in the base class for further details.
 
-        max_iter : int, optional
-            The number of iterations to fit the model for.
-
         refresh : int, optional
             The number of iterations before printing the model's ELBO
 
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
         """
-        super().fit(x_train, y_train)
+        self.check_training_set_is_valid(x_train, y_train)
         self.refresh = refresh
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
@@ -182,7 +180,7 @@ class SVGP_TF1(Model):
         if self.model_params["train"]:
             # optimize and setup elbo logging
             opt = gpflow.train.AdamOptimizer()
-            opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=max_iter)
+            opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=self.model_params['maxiter'])
 
             # save model state
             if save_model_state:
@@ -196,8 +194,6 @@ class SVGP_TF1(Model):
 
     def batch_predict(self, x_test):
         """Split up prediction into indepedent batchs.
-        #TODO: move into parent class as this will be used by all models
-
         args:
             x_test: N x D numpy array of locations to predict at
         """
@@ -215,7 +211,8 @@ class SVGP_TF1(Model):
         i = 0
 
         for b in range(num_batches):
-            print("Batch: ", b, num_batches)
+            if b % self.refresh == 0:
+                print("Batch", b, "out of", num_batches)
             if b == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_test[i:, :]
@@ -235,7 +232,7 @@ class SVGP_TF1(Model):
 
         return ys, ys_var
 
-    def predict(self, x_test):
+    def predict(self, x_test, species=['NO2']):
         """
         Predict using the model at the laqn sites for NO2.
 
@@ -252,15 +249,21 @@ class SVGP_TF1(Model):
             See `Model.predict` for further details.
             The shape for each pollutant will be (n, 1).
         """
-        super().predict(x_test)
-        x_test = x_test["laqn"]
-        y_mean, y_var = self.batch_predict(x_test)
-        y_mean = np.reshape(y_mean, (len(y_mean), 1))
-        y_var = np.reshape(y_var, (len(y_var), 1))
-        return dict(laqn=dict(NO2=dict(mean=y_mean, var=y_var)))
+        if species != ['NO2']:
+            raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
+        self.check_test_set_is_valid(x_test)
+        y_dict = dict()
+        for src, x_src in x_test.items():
+            for pollutant in species:
+                y_mean, y_var = self.batch_predict(x_src)
+                y_dict[src] = {
+                    pollutant: dict(
+                        mean=y_mean,
+                        var=y_var
+                    )
+                }
+        return y_dict
 
-    # ToDo: move this method into a different function
-    # or assume that the model data has already been cleaned
     def clean_data(self, x_array, y_array):
         """Remove nans and missing data for use in GPflow
 
