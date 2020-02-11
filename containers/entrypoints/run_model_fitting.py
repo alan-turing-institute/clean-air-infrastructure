@@ -29,6 +29,30 @@ def main():
         default="db_secrets.json",
         help="File with connection secrets.",
     )
+    parser.add_argument(
+        "-d",
+        "--config_dir",
+        default="./",
+        help="Filepath to directory to store model and data."
+    )
+    parser.add_argument(
+        "-w",
+        "--write",
+        action="store_true",
+        help="Write model data config to file.",
+    )
+    parser.add_argument(
+        "-r",
+        "--read",
+        action="store_true",
+        help="Read model data from config_dir.",
+    )
+    parser.add_argument(
+        "-u",
+        "--update",
+        action="store_true",
+        help="Update the database with model results.",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     parser.add_argument(
@@ -52,19 +76,6 @@ def main():
     parser.add_argument(
         "--predhours", type=int, default=48, help="The number of hours to predict for"
     )
-    parser.add_argument(
-        "-t",
-        "--testdir",
-        default="/secrets/test/",
-        type=str,
-        help="The directory to save test data.",
-    )
-    parser.add_argument(
-        "-w", "--write", action="store_true", help="Write model data to file."
-    )
-    parser.add_argument(
-        "-r", "--read", action="store_true", help="Read model data from file."
-    )
 
     # Parse and interpret arguments
     args = parser.parse_args()
@@ -72,9 +83,11 @@ def main():
     write = args.write
     read = args.read
     kwargs = vars(args)
-    del kwargs["testdir"]
-    del kwargs["write"]
-    del kwargs["read"]
+
+    # Update database/write to file
+    update = kwargs.pop("update")
+    write = kwargs.pop("write")
+    read = kwargs.pop("read")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -96,7 +109,7 @@ def main():
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
+        "pred_sources": ["laqn", "hexgrid"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
@@ -119,18 +132,18 @@ def main():
         NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
-    model_fitter = SVGP_TF1()
+    model_fitter = SVGP_TF1(batch_size=1000)   # big batch size for the grid
+    model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["model_state_fp"] = args.config_dir
 
     # Get the model data
     if read:
-        model_data = ModelData(config_dir=testdir, **kwargs)
+        model_data = ModelData(**kwargs)
     else:
         model_data = ModelData(config=model_config, **kwargs)
 
     if write:
-        print(testdir)
         model_data.save_config_state(testdir)
-
 
     # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=True)
@@ -143,8 +156,7 @@ def main():
     model_fitter.fit(
         x_train,
         y_train,
-        save_model_state=False,
-        max_iter=5,
+        save_model_state=False
     )
 
     # Get info about the model fit
@@ -170,10 +182,13 @@ def main():
     # Internally update the model results in the ModelData object
     updated_df = model_data.update_test_df_with_preds(y_pred)
 
-    print(model_data.normalised_pred_data_df.sample(5))
+    # write model results to file
+    if write:
+        model_data.save_config_state(args.config_dir)
 
     # Write the model results to the database
-    # model_data.update_remote_tables()
+    if update:
+        model_data.update_remote_tables()
 
 if __name__ == "__main__":
     main()
