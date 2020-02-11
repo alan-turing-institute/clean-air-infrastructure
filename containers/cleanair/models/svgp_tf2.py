@@ -1,5 +1,6 @@
 """Model Fitting"""
 from datetime import datetime
+import math
 from scipy.cluster.vq import kmeans2
 import gpflow
 import tensorflow as tf
@@ -117,23 +118,43 @@ class SVGP:
             train_dataset, max_iter, model_params["minibatch_size"], refresh=refresh
         )
 
-    def predict(self, X):
+    def predict(self, X, batch_size=50000):
         """Predict values Y from X
 
         args:
             X:  X: NxM numpy array of N observations of M covariates
+            batch_size: Prediction batch size
         """
         if not self.model:
             raise AttributeError("No model has been fit. Fit the model first")
 
         self.logger.info("Model prediction: Starting")
         x_pred_array = X.copy()
-        mean_pred, var_pred = self.model.predict_y(x_pred_array)
+        x_pred_size = x_pred_array.shape[0]
+
+        # Initialise output arrays
+        mean_pred = np.empty(x_pred_array.shape[0])
+        var_pred = np.empty(x_pred_array.shape[0])
+
+        # Predict in batches
+        n_batches = math.ceil(x_pred_size / batch_size)
+        for idx in range(0, x_pred_size, batch_size):
+            self.logger.info(
+                "Predicting %s points. Batch %s of %s with batch size %s",
+                x_pred_size,
+                idx // batch_size + 1,
+                n_batches,
+                batch_size,
+            )
+
+            x_pred_batch = x_pred_array[idx : idx + batch_size]
+            tmp_mean, tmp_var = self.model.predict_y(x_pred_batch)
+            mean_pred[idx : idx + tmp_mean.shape[0]] = tmp_mean.numpy().squeeze()
+            var_pred[idx : idx + tmp_var.shape[0]] = tmp_var.numpy().squeeze()
+
         self.logger.info("Model prediction: Finished")
 
-        Y_pred = np.array([mean_pred.numpy(), var_pred.numpy()]).T.squeeze()
-
-        return Y_pred
+        return np.array([mean_pred, var_pred]).T.squeeze()
 
     def fit_info(self):
         """

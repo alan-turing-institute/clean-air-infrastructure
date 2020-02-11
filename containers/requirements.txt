@@ -5,13 +5,12 @@ black==19.10b0
 boto3==1.10.37
 colorlog==4.0.2
 dash==1.8.0
+dash-bootstrap-components==0.8.2
 docker==4.1.0
 flake8==3.7.9
 flask==1.1.1
 geoalchemy2==0.6.3
 geopandas==0.6.2
-haversine==2.1.2
-ipywidgets==7.5.1
 gpflow==1.5.1
 matplotlib==3.1.2
 networkx==2.4.0
