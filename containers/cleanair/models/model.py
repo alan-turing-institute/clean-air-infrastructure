@@ -30,7 +30,7 @@ class Model(ABC):
             Dictionary of parameters.
         """
 
-    def __check_model_params_are_valid(self):
+    def check_model_params_are_valid(self):
         """
         Check the model parameters are valid for the model.
 
@@ -45,12 +45,13 @@ class Model(ABC):
         KeyError
             If the model parameters are not sufficient.
         """
+        min_keys = set(self.minimum_param_keys)
+        actual_keys = set(self.model_params.keys())
+        diff = min_keys - actual_keys
         # if the set of minimial keys is NOT a subset of the parameters
-        if not set(self.minimum_param_keys).issubset(set(self.model_params.keys())):
-            raise KeyError("""Model parameters are not sufficient. \n
-        The minimal set of keys is: {min} \n
-        You supplied the following keys: {params}
-        """.format(min=self.minimum_param_keys, params=self.model_params.keys()))
+        if len(diff) > 0:
+            error_message = "Model parameters are not sufficient."
+            error_message += " You must also supply {d}.".format(d=diff)
 
     @abstractmethod
     def fit(self, x_train, y_train, **kwargs):

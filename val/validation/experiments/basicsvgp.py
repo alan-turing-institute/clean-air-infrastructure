@@ -16,11 +16,12 @@ class BasicSvgpExperiment(basic.BasicExperiment):
             variance=[0.1],
             minibatch_size=[100],
             n_inducing_points=[30, 300],
-            max_iter=[10000],
+            maxiter=[10000],
             refresh=[10],
             train=[True],
             restore=[False],
-            laqn_id=[0]
+            jitter=[1e-5],
+            model_state_fp=[None],
         )}
 
     def get_default_data_config(self):

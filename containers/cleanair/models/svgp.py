@@ -55,8 +55,8 @@ class SVGP_TF1(Model):
         if model_params is None:
             self.model_params = self.get_default_model_params()
         else:
-            self.__check_model_params_are_valid()
             self.model_params = model_params
+            super().check_model_params_are_valid()
 
     def get_default_model_params(self):
         """
