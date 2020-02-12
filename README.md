@@ -190,6 +190,14 @@ The process takes approximately 1hr (most of this is for the UKMap data) and you
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
 These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
 
+## Creating A Record for cleanair API
+Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEANAIR_KUBERNETES_CLUSTER`). Navigate to the DNS Zone on the Azure portal and copy the four nameservers in the “NS” record. Send the nameserver to Turing IT Services. Ask them to add the subdomain’s DNS record as an NS record for `urbanair` in the `turing.ac.uk` DNS zone record.
+
+1. When viewing the DNS zone on the Azure Portal, click `+ Record set`
+2. In the Name field, enter `urbanair`.
+3. Set Alias record set to “Yes” and this will bring up some new options.
+4. Make sure the subscription is set to `cleanair`. Under Azure resource select the correct Public IP Address. Click “OK”.
+
 <!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
