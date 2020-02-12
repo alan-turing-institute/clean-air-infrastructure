@@ -13,15 +13,19 @@ from . import callbacks
 
 def get_model_data_fit_app(
         model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token,
-        evaluate_training=False, evaluate_testing=True, all_metrics=['r2', 'mae', 'mse']
+        evaluate_training=False, evaluate_testing=True,
+        all_metrics=['r2', 'mae', 'mse'],
     ):
     """
     Return an app showing the scores for a model data fit.
     """
-    if evaluate_training:
-        point_groupby = model_data.normalised_training_data_df.groupby('point_id')
-    elif evaluate_testing:
-        point_groupby = model_data.normalised_pred_data_df.groupby('point_id')
+    # get a model fit component object
+    instance_id = 0
+    mfc = components.ModelFitComponent(
+        instance_id, model_data, sensor_scores_df, temporal_scores_df,
+        evaluate_training=evaluate_training, evaluate_testing=evaluate_testing
+    )
+    mfc_list = [mfc]
 
     # default start variables
     default_metric_key = 'r2'
@@ -35,17 +39,10 @@ def get_model_data_fit_app(
     # store ids of figures and graphs
     pollutant_dropdown_id = 'pollutant-dropdown'
     metric_dropdown_id = 'metric-dropdown'
-    interest_points_map_id = 'interest-points-map'
-    interest_points_timeseries_id = 'interest-points-timeseries'
-    temporal_metrics_timeseries_id = 'temporal-metrics-timeseries'
 
-    # create the mapbox figure
+    # set token for mapbox
     px.set_mapbox_access_token(mapbox_access_token)
-    interest_points_mapbox = components.get_interest_points_map(
-        sensor_scores_df,
-        metric_key=default_metric_key,
-        pollutant=default_pollutant
-    )
+    interest_points_mapbox = mfc_list[instance_id].get_interest_points_map(default_metric_key, default_pollutant)
 
     # create the layout for a single model data fit
     app.layout = html.Div(className='row', children=[
@@ -65,56 +62,60 @@ def get_model_data_fit_app(
         ]),
         # map of sensors and their scores
         dcc.Graph(
-            id=interest_points_map_id,
-            figure=interest_points_mapbox,
+            id=mfc_list[instance_id].interest_points_map_id,
+            figure=mfc_list[instance_id].get_interest_points_map(default_metric_key, default_pollutant),
             hoverData={'points':[{
                 'hovertext': default_point_id
             }]}
         ),
-        components.get_interest_points_timeseries(
-            interest_points_timeseries_id, default_point_id, point_groupby,
-            pollutant=default_pollutant
+        mfc_list[instance_id].get_interest_points_timeseries(
+            default_point_id, default_pollutant
         ),
         dcc.Graph(
-            id=temporal_metrics_timeseries_id,
-            figure=components.get_temporal_metrics_timeseries(
-                temporal_scores_df, default_metric_key, default_pollutant
+            id=mfc_list[instance_id].temporal_metrics_timeseries_id,
+            figure=mfc_list[instance_id].get_temporal_metrics_timeseries(
+                default_metric_key, default_pollutant
             )
         ),
     ])
     # update the timeseries of a sensor when it is hovered over
     @app.callback(
-        Output(interest_points_timeseries_id, 'figure'),
+        Output(mfc_list[instance_id].interest_points_timeseries_id, 'figure'),
         [
-            Input(interest_points_map_id, 'hoverData'),
+            Input(mfc_list[instance_id].interest_points_map_id, 'hoverData'),
             Input(pollutant_dropdown_id, 'value'),
         ]
     )
     def update_interest_points_timeseries(hover_data, pollutant):
-        return callbacks.interest_point_timeseries_callback(hover_data, point_groupby, pollutant)
+        return callbacks.interest_point_timeseries_callback(hover_data, mfc_list[instance_id].point_groupby, pollutant)
     # update the colour of sensors when a new metric or pollutant is selected
     @app.callback(
-        Output(interest_points_map_id, 'figure'),
+        Output(mfc_list[instance_id].interest_points_map_id, 'figure'),
         [
             Input(metric_dropdown_id, 'value'),
             Input(pollutant_dropdown_id, 'value'),
         ]
     )
     def update_interest_points_mapbox(metric_key, pollutant):
-        # ToDo: we don't need to redraw the whole figure, only the colours
-        return callbacks.interest_point_mapbox_callback(interest_points_mapbox, sensor_scores_df, metric_key, pollutant)
+        return callbacks.interest_point_mapbox_callback(
+            interest_points_mapbox,
+            mfc_list[instance_id].sensor_scores_df,
+            metric_key,
+            pollutant
+        )
 
     # update the timeseries of the metrics
     @app.callback(
-        Output(temporal_metrics_timeseries_id, 'figure'),
+        Output(mfc_list[instance_id].temporal_metrics_timeseries_id, 'figure'),
         [
             Input(metric_dropdown_id, 'value'),
             Input(pollutant_dropdown_id, 'value')
         ]
     )
     def update_temporal_metrics_timeseries(metric_key, pollutant):
-        return components.get_temporal_metrics_timeseries(
-            temporal_scores_df, metric_key, pollutant
+        return mfc_list[instance_id].get_temporal_metrics_timeseries(
+            metric_key, pollutant
         )
+    #ToDo: add callback to update the instance id.
 
     return app

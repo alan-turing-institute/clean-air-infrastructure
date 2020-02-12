@@ -6,7 +6,6 @@ import dash_core_components as dcc
 import plotly.graph_objects as go
 import plotly.express as px
 
-from . import geomap
 from . import timeseries
 
 METRIC_NAMES = {
@@ -22,6 +21,102 @@ POLLUTANT_NAMES = dict(
     PM25='Particulate Matter (2.5 micro m)'
 )
 
+class ModelFitComponent():
+    """
+    Collect all the components of a model fit and its layout in the app.
+    """
+
+    def __init__(
+            self, instance_id, model_data, sensor_scores_df, temporal_scores_df,
+            evaluate_training=False, evaluate_testing=True,
+            interest_points_map_id='interest-points-map',
+            interest_points_timeseries_id='interest-points-timeseries',
+            temporal_metrics_timeseries_id='temporal_metrics_timeseries'
+        ):
+        """
+        Initialise with a model data object and the scores for the fit.
+        """
+        self.instance_id = instance_id
+        self.model_data = model_data
+        self.sensor_scores_df = sensor_scores_df
+        self.temporal_scores_df = temporal_scores_df
+        self.evaluate_training = evaluate_training
+        self.evaluate_testing = evaluate_testing
+        self.interest_points_map_id = interest_points_map_id
+        self.interest_points_timeseries_id = interest_points_timeseries_id
+        self.temporal_metrics_timeseries_id = temporal_metrics_timeseries_id
+        # execute and store the group bys
+        if self.evaluate_training and self.evaluate_testing:
+            # ToDo: test this works
+            # append train and test dfs then group by point id
+            self.point_groupby = self.model_data.normalised_training_data_df.append(
+                self.model_data.normalised_pred_data_df, ignore_index=True
+            ).groupby('point_id')
+        elif self.evaluate_training:
+            # only groupby on training set
+            self.point_groupby = self.model_data.normalised_training_data_df.groupby('point_id')
+        elif self.evaluate_testing:
+            # only groupby on test set
+            self.point_groupby = self.model_data.normalised_pred_data_df.groupby('point_id')
+        else:
+            raise ValueError("Must set either evaluate_training or evauluate_testing (or both) to True.")
+
+    def get_interest_points_map(self, metric_key, pollutant):
+        """
+        Get a map with interest points plotted and the colour of points is the metric score.
+        """
+        return px.scatter_mapbox(
+            self.sensor_scores_df,
+            lat='lat',
+            lon='lon',
+            size=[15 for i in range(len(list(self.sensor_scores_df.index)))],
+            color=pollutant + '_' + metric_key,
+            zoom=10,
+            mapbox_style='basic',
+            hover_name=self.sensor_scores_df['point_id']
+        )
+
+    def get_interest_points_timeseries(self, point_id, pollutant):
+        """
+        Get a map with interest points plotted.
+        """
+        return dcc.Graph(
+            id=self.interest_points_timeseries_id,
+            figure=go.Figure(
+                data=[
+                    timeseries.get_pollutant_point_trace(
+                        self.point_groupby.get_group(point_id),
+                        col=pollutant
+                    ),
+                    timeseries.get_pollutant_point_trace(
+                        self.point_groupby.get_group(point_id),
+                        col=pollutant + '_mean'
+                    )
+                ],
+                layout=dict(
+                    title='Prediction for point {id}'.format(id=point_id)
+                )
+            )
+        )
+
+    def get_temporal_metrics_timeseries(self, metric_key, pollutant):
+        """
+        Get a timeseries of the score for a given metric over the prediction period.
+        """
+        col = pollutant + '_' + metric_key
+        name = METRIC_NAMES[metric_key]
+        return dict(
+            data=[dict(
+                x=list(self.temporal_scores_df['measurement_start_utc']),
+                y=list(self.temporal_scores_df[col]),
+                mode='lines',
+                name=name
+            )],
+            layout=dict(
+                title='{mtc} score for all sensors over time.'.format(mtc=METRIC_NAMES[metric_key])
+            )
+        )
+
 def get_model_data_fit_intro():
     """
     Get the markdown for the introduction text for a model fit.
@@ -34,66 +129,6 @@ def get_model_data_fit_intro():
         When you hover over a sensor, the timeseries will show the predictive mean, variance and actual reading of the sensor.
     """
     return dcc.Markdown(introduction)
-
-def get_interest_points_map(
-        sensor_scores_df, metric_key='r2', pollutant='NO2'
-    ):
-    """
-    Get a map with interest points plotted and the colour of points is the metric score.
-    """
-    return px.scatter_mapbox(
-        sensor_scores_df,
-        lat='lat',
-        lon='lon',
-        size=[15 for i in range(len(list(sensor_scores_df.index)))],
-        color=pollutant + '_' + metric_key,
-        zoom=10,
-        mapbox_style='basic',
-        hover_name=sensor_scores_df['point_id']
-    )
-
-def get_interest_points_timeseries(component_id, default_point_id, point_groupby, pollutant='NO2'):
-    """
-    Get a map with interest points plotted.
-    """
-    return dcc.Graph(
-        id=component_id,
-        figure=go.Figure(
-            data=[
-                timeseries.get_pollutant_point_trace(
-                    point_groupby.get_group(default_point_id),
-                    col=pollutant
-                ),
-                timeseries.get_pollutant_point_trace(
-                    point_groupby.get_group(default_point_id),
-                    col=pollutant + '_mean'
-                )
-            ],
-            layout=dict(
-                title='Prediction for point {id}'.format(id=default_point_id)
-            )
-        )
-    )
-
-def get_temporal_metrics_timeseries(
-        temporal_scores_df, metric_key, pollutant='NO2'
-    ):
-    """
-    Get a timeseries of the score for a given metric over the prediction period.
-    """
-    col = pollutant + '_' + metric_key
-    name = METRIC_NAMES[metric_key]
-    return dict(
-        data=[dict(
-            x=list(temporal_scores_df['measurement_start_utc']),
-            y=list(temporal_scores_df[col]),
-            mode='lines',
-            name=name
-        )],
-        layout=dict(
-            title='{mtc} score for all sensors over time.'.format(mtc=METRIC_NAMES[metric_key])
-        )
-    )
 
 def get_pollutant_dropdown(component_id, species):
     """

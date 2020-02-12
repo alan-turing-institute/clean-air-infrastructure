@@ -94,7 +94,7 @@ class Model(ABC):
         The shapes are given in the table below:
 
         +-------------------+---------+
-        | `x_laqn`          | (NxSxD) |
+        | `x_laqn`          | (NxD) |
         +-------------------+---------+
         | `x_satellite`     | (MxSxD) |
         +-------------------+---------+
@@ -168,15 +168,15 @@ class Model(ABC):
         ___
 
         KeyError
-            If 'laqn' is not in x_train and y_train.
+            If there are no keys in x_train or y_train.
 
         ValueError
             If the shape of x_train or y_train are incorrect.
         """
-        if 'laqn' not in x_train:
-            raise KeyError("'laqn' must be a key in x_train")
-        if 'laqn' not in y_train:
-            raise KeyError("'laqn' must be a key in y_train")
+        if len(x_train) == 0:
+            raise KeyError("x_train must have at least one data source.")
+        if len(y_train) == 0:
+            raise KeyError("y_train must have at least one data source.")
         # check the shape of numpy arrays
         for source in y_train:
             for pollutant in y_train[source]:
@@ -203,6 +203,13 @@ class Model(ABC):
                             y=y_train[source][pollutant].shape[0]
                         )
                     )
+                # check that the shape of the satellite data is correct
+                if source == 'satellite' and len(x_train[source].shape) != 3:
+                    error_message = "The shape of the satellite data must be (NxSxD)."
+                    error_message += "The shape you provided was {shp}.".format(
+                        shp=x_train[source].shape
+                    )
+                    raise ValueError(error_message)
 
     @staticmethod
     def check_test_set_is_valid(x_test):
