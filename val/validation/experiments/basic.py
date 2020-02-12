@@ -10,8 +10,8 @@ class BasicExperiment(Experiment):
     A basic experiment on just air quality sensors with an SVGP.
     """
 
-    def __init__(self, experiment_name, models, cluster_name, **kwargs):
-        super().__init__(experiment_name, models, cluster_name, **kwargs)
+    def __init__(self, name, models, cluster_name, **kwargs):
+        super().__init__(name, models, cluster_name, **kwargs)
         if 'model_params' not in kwargs:
             self.model_params = self.get_default_model_params()
         if 'data_config' not in kwargs:
@@ -21,15 +21,16 @@ class BasicExperiment(Experiment):
 
     def get_default_model_params(self):
         return {'svgp_tf1' : util.create_params_list(
-            lengthscale=[0.1, 0.5],
-            variance=[0.1, 0.5],
+            lengthscale=[0.1],
+            variance=[0.1],
             minibatch_size=[100],
             n_inducing_points=[30],
-            max_iter=[100],
+            maxiter=[1],
             refresh=[10],
             train=[True],
             restore=[False],
-            laqn_id=[0]
+            jitter=[1e-5],
+            model_state_fp=[None],
         )}
 
     def get_default_data_config(self, **kwargs):

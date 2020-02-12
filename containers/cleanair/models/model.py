@@ -52,6 +52,7 @@ class Model(ABC):
         if len(diff) > 0:
             error_message = "Model parameters are not sufficient."
             error_message += " You must also supply {d}.".format(d=diff)
+            raise KeyError(error_message)
 
     @abstractmethod
     def fit(self, x_train, y_train, **kwargs):

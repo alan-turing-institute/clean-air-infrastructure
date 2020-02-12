@@ -25,14 +25,14 @@ except ImportError:
     print('WARNING: Could not import ModelData')
 
 class Experiment(ABC):
-    def __init__(self, experiment_name, models, cluster_name, **kwargs):
+    def __init__(self, name, models, cluster_name, **kwargs):
         """
         An abstract experiment class.
 
         Parameters
         ___
 
-        experiment_name : str
+        name : str
             Name that identifies the experiment.
 
         models : list
@@ -53,7 +53,7 @@ class Experiment(ABC):
             A dataframe describing every run in the experiment.
         """
         super().__init__()
-        self.name = experiment_name
+        self.name = name
         self.models = models
         self.cluster = cluster_name
         self.model_params = kwargs['model_params'] if 'model_params' in kwargs else []
