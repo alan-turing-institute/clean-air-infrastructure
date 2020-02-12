@@ -24,7 +24,7 @@ class DBWriter(DBInteractor):
             self.logger = get_logger(__name__)
 
     def __commit_records_core(
-        self, session, records, table, on_conflict_do_nothing=True
+        self, session, records, table, on_conflict_do_nothing
     ):
         """Add records using sqlalchemy core
         args:

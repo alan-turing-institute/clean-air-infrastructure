@@ -18,7 +18,6 @@ class Connector(DBConnectionMixin):
     """
     Base class for connecting to databases with sqlalchemy
     """
-
     __engine = None
     __sessionfactory = None
 
@@ -46,8 +45,6 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
-            # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
-
             self.__engine = create_engine(self.connection_string, pool_pre_ping=True,)
             self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
