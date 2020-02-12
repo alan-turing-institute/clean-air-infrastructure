@@ -62,8 +62,10 @@ class DBWriter(DBInteractor):
             )
         else:
             self.logger.debug("Add records, overwriting duplicates.")
+            # Define a dict of all non-primary keys
+            update_dict = {c.name: c for c in insert_stmt.excluded if not c.primary_key}
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_update(
-                index_elements=inspect(table).primary_key
+                index_elements=inspect(table).primary_key, set_=update_dict
             )
 
         # Insert records

@@ -9,8 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
-from ..loggers import get_logger, green, red
 from .base import Base
+from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
 
 
@@ -46,10 +46,7 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
-            self.__engine = create_engine(
-                self.connection_string, pool_pre_ping=True, echo=False
-            )
-            # self.__sessionfactory = sessionmaker(bind=self.__engine)
+            self.__engine = create_engine(self.connection_string, pool_pre_ping=True)
         # Return the class-level engine
         return self.__engine
 
@@ -58,7 +55,6 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy sessionfactory"""
         # Initialise the class-level sessionfactory if it does not already exist
         if not self.__sessionfactory:
-            # _ = self.engine
             self.__sessionfactory = sessionmaker(bind=self.engine)
         # Return the class-level sessionfactory
         return self.__sessionfactory

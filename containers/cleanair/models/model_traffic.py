@@ -90,11 +90,9 @@ class TrafficForecast(DateRangeMixin, DBWriter):
         )
 
         # Iterate over each detector ID and obtain the forecast for it
-        # per_detector_forecasts = []
         # print("There are", len(per_detector_forecasts), "per_detector_forecasts")
         for idx, (detector_id, fit_data) in enumerate(training_data.items()):
-            per_feature_dfs = []
-            print("For detector_id", detector_id, "fit_data is", fit_data.shape)
+            feature_predictions = []
 
             # Iterate over each feature and obtain the forecast for it
             for feature in self.features:
@@ -121,34 +119,24 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                     forecast["measurement_start_utc"] > last_reading_time
                 ]
                 forecast[feature].clip(lower=0, inplace=True)
-                per_feature_dfs.append(forecast)
-            print("There are", len(per_feature_dfs), "per_feature_dfs")
-            print("->", [d.shape for d in per_feature_dfs])
+                feature_predictions.append(forecast)
             # Combine predicted features and add detector ID
             combined_predictions = reduce(
                 lambda df1, df2: df1.merge(df2, on="measurement_start_utc"),
-                per_feature_dfs,
+                feature_predictions,
             )
-            print("combined_predictions shape is", combined_predictions.shape)
             combined_predictions["detector_id"] = detector_id
             combined_predictions["measurement_end_utc"] = combined_predictions[
                 "measurement_start_utc"
             ] + datetime.timedelta(hours=1)
-            # per_detector_forecasts.append(combined_predictions)
-            # print("Finished forecasting", idx, "of", len(training_data))
             self.logger.info(
-                "Finished forecasting detector %i of %i after %s seconds",
+                "Finished forecasting detector %s (%i/%i) after %s seconds",
+                detector_id,
                 idx,
                 len(training_data),
                 green(duration(start_time, time.time())),
             )
             yield combined_predictions
-
-        # self.logger.info(
-        #     "Completed scoot model fits after %s seconds",
-        #     green(duration(start_time, time.time())),
-        # )
-        # return pd.concat(per_detector_forecasts, ignore_index=True)
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""
