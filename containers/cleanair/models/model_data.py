@@ -862,4 +862,6 @@ class ModelData(DBWriter, DBQueryMixin):
             )
 
             with self.dbcnxn.open_session() as session:
-                self.commit_records(session, batch_records, table=ModelResult)
+                self.commit_records(
+                    session, batch_records, on_conflict="overwrite", table=ModelResult
+                )

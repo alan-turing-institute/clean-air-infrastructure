@@ -231,8 +231,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                 self.commit_records(
                     session,
                     reading_entries,
+                    on_conflict="ignore",
                     table=SatelliteForecastReading,
-                    on_conflict_do_nothing=True,
                 )
 
     def update_interest_points(self):
@@ -311,12 +311,19 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         # Commit to database
         with self.dbcnxn.open_session() as session:
             self.logger.info("Insert satellite meta points")
-            self.commit_records(session, meta_entries, table=MetaPoint)
+            self.commit_records(
+                session, meta_entries, on_conflict="overwrite", table=MetaPoint
+            )
             self.logger.info("Insert satellite sites")
-            self.commit_records(session, sat_interest_points_entries)
+            self.commit_records(
+                session, sat_interest_points_entries, on_conflict="overwrite"
+            )
             self.logger.info("Insert satellite discrete entries")
             self.commit_records(
-                session, sat_discrete_entries, table=SatelliteDiscreteSite
+                session,
+                sat_discrete_entries,
+                on_conflict="overwrite",
+                table=SatelliteDiscreteSite,
             )
 
     def get_grid_in_region(self, lat, lon, box_id):

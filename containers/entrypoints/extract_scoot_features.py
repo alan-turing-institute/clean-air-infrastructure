@@ -62,7 +62,9 @@ def main():
         # print(static_feature_extractor.total_inverse_distance(output_type='df'))
 
         # Extract static features into the appropriate tables on the database
-        static_feature_extractor.update_scoot_road_reading_tables(find_closest_roads=False)
+        static_feature_extractor.update_scoot_road_reading_tables(
+            find_closest_roads=False
+        )
         static_feature_extractor.update_remote_tables()
 
     except Exception as error:

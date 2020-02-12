@@ -5,7 +5,8 @@ from https://github.com/facebook/prophet/issues/223
 """
 import os
 
-class SuppressStdoutStderr():
+
+class SuppressStdoutStderr:
     """
     A context manager for doing a "deep suppression" of stdout and stderr in
     Python, i.e. will suppress all print, even if the print originates in a
@@ -14,6 +15,7 @@ class SuppressStdoutStderr():
     to stderr just before a script exits, and after the context manager has
     exited (at least, I think that is why it lets exceptions through).
     """
+
     def __init__(self):
         # Open a pair of null files
         self.null_fds = [os.open(os.devnull, os.O_RDWR) for x in range(2)]
@@ -32,4 +34,3 @@ class SuppressStdoutStderr():
         # Close the null files
         for file_descriptor in self.null_fds + self.save_fds:
             os.close(file_descriptor)
-

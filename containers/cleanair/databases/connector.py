@@ -18,6 +18,7 @@ class Connector(DBConnectionMixin):
     """
     Base class for connecting to databases with sqlalchemy
     """
+
     __engine = None
     __sessionfactory = None
 
@@ -45,16 +46,21 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
-            self.__engine = create_engine(self.connection_string, pool_pre_ping=True,)
-            self.__sessionfactory = sessionmaker(bind=self.__engine)
+            self.__engine = create_engine(
+                self.connection_string, pool_pre_ping=True, echo=False
+            )
+            # self.__sessionfactory = sessionmaker(bind=self.__engine)
         # Return the class-level engine
         return self.__engine
 
     @property
     def sessionfactory(self):
         """Access the class-level sqlalchemy sessionfactory"""
+        # Initialise the class-level sessionfactory if it does not already exist
         if not self.__sessionfactory:
-            _ = self.engine
+            # _ = self.engine
+            self.__sessionfactory = sessionmaker(bind=self.engine)
+        # Return the class-level sessionfactory
         return self.__sessionfactory
 
     def ensure_schema(self, schema_name):

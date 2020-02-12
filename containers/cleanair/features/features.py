@@ -400,15 +400,15 @@ class Features(DBWriter, DBQueryMixin):
                             self.commit_records(
                                 session,
                                 select_stmt,
+                                on_conflict="ignore",
                                 table=IntersectionValueDynamic,
-                                on_conflict_do_nothing=True,
                             )
                         else:
                             self.commit_records(
                                 session,
                                 select_stmt,
+                                on_conflict="ignore",
                                 table=IntersectionValue,
-                                on_conflict_do_nothing=True,
                             )
             else:
                 q_metapoints = self.query_meta_points(
@@ -421,8 +421,8 @@ class Features(DBWriter, DBQueryMixin):
                         self.commit_records(
                             session,
                             select_stmt,
+                            on_conflict="ignore",
                             table=IntersectionGeom,
-                            on_conflict_do_nothing=True,
                         )
 
             # Print a final timing message
@@ -463,8 +463,8 @@ class Features(DBWriter, DBQueryMixin):
                     self.commit_records(
                         session,
                         select_stmt,
+                        on_conflict="ignore",
                         table=IntersectionValue,
-                        on_conflict_do_nothing=True,
                     )
 
             # Print a final timing message

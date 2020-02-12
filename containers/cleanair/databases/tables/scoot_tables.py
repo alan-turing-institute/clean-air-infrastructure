@@ -10,6 +10,7 @@ from ..base import Base
 
 class ScootReading(Base):
     """Table of Scoot readings"""
+
     __tablename__ = "scoot_reading"
     __table_args__ = {"schema": "dynamic_data"}
 
@@ -59,6 +60,7 @@ class ScootReading(Base):
 
 class ScootForecast(Base):
     """Table of Scoot forecasts"""
+
     __tablename__ = "scoot_forecast"
     __table_args__ = {"schema": "dynamic_data"}
 
@@ -68,12 +70,8 @@ class ScootForecast(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False
-    )
-    measurement_end_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False
-    )
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
@@ -200,7 +198,9 @@ class ScootRoadReading(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False, index=True)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
+    )
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)

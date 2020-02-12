@@ -289,8 +289,8 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                         self.commit_records(
                             session,
                             site_records,
+                            on_conflict="ignore",
                             table=ScootReading,
-                            on_conflict_do_nothing=True,
                         )
                         n_records += len(site_records)
                     except IntegrityError as error:

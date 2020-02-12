@@ -23,14 +23,15 @@ class DBWriter(DBInteractor):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def __commit_records_core(
-        self, session, records, table, on_conflict_do_nothing
-    ):
-        """Add records using sqlalchemy core
+    def __commit_records_core(self, session, records, table, on_conflict):
+        """
+        Add records using sqlalchemy core
         args:
             records: Either a list of dictionary or an slqalchemy subquery
             table: An sqlalchemy table object
-            on_conflict_do_nothing: Bool, when False will raise error if conflicts with existing database entires"""
+            on_conflict: "overwrite" or "ignore".
+        """
+        # on_conflict_do_nothing: Bool, when False will raise error if conflicts with existing database entires"""
 
         def row2dict(row):
             """Convert an sqlalchemy row object to a dictionary"""
@@ -50,21 +51,24 @@ class DBWriter(DBInteractor):
             insert_stmt = insert(table).values(records_insert)
         else:
             raise TypeError(
-                "records arg must be a list of dictionaries or sqlalchemy subquery"
+                "Records arg must be a list of dictionaries or sqlalchemy subquery"
             )
 
-        # Insert records
-        if on_conflict_do_nothing:
-            self.logger.debug("Add records, ignoring duplicates")
+        # Define duplicates policy
+        if on_conflict == "ignore":
+            self.logger.debug("Add records, ignoring duplicates.")
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(
                 index_elements=inspect(table).primary_key
             )
-            session.execute(on_duplicate_key_stmt)
-            session.commit()
         else:
-            self.logger.debug("Attempting to add all records.")
-            session.execute(insert_stmt)
-            session.commit()
+            self.logger.debug("Add records, overwriting duplicates.")
+            on_duplicate_key_stmt = insert_stmt.on_conflict_do_update(
+                index_elements=inspect(table).primary_key
+            )
+
+        # Insert records
+        session.execute(on_duplicate_key_stmt)
+        session.commit()
 
     def __commit_records_orm(self, session, records):
         """Add records using sqlalchemy ORM"""
@@ -84,16 +88,14 @@ class DBWriter(DBInteractor):
             self.logger.debug("Duplicate records found - rolling back transaction.")
             session.rollback()
             self.logger.debug("Attempting to merge records one at a time.")
-            for i, record in enumerate(records):
-                self.logger.debug("Merging record %s of %s", i, len(records))
+            for idx, record in enumerate(records):
+                self.logger.debug("Merging record %s of %s", idx, len(records))
                 session.merge(record)
             self.logger.debug("Flushing transaction...")
             session.flush()
             session.commit()
 
-    def commit_records(
-        self, session, records, table=None, on_conflict_do_nothing=False
-    ):
+    def commit_records(self, session, records, on_conflict, table=None):
         """
         Commit records to the database
 
@@ -101,15 +103,24 @@ class DBWriter(DBInteractor):
             session: a session object
             records: Either a list of sqlalchemy records, list of dictionaries (table arg must be provided)
                         or an sqlalchemy subquery object (table arg must be provided)
+            on_conflict: "overwrite" or "ignore".
             table: Optional. sqlalchemy table. If table provide sqlalchemy core used for insert
-            on_conflict_do_nothing: bool (default False). Core will ignore duplicate entires.
 
         If table is provided it will insert using sqlalchemy's core rather than the ORM.
         """
+        if on_conflict not in ["overwrite", "ignore"]:
+            raise ValueError(
+                "Only 'merge' or 'ignore' are valid arguments for 'on_conflict'"
+            )
 
         if table:
-            self.__commit_records_core(session, records, table, on_conflict_do_nothing)
+            self.__commit_records_core(session, records, table, on_conflict)
         else:
+            if on_conflict != "overwrite":
+                self.logger.warning(
+                    "Ignoring conflict instruction '%s', using 'merge' strategy instead",
+                    on_conflict,
+                )
             self.__commit_records_orm(session, records)
 
     def update_remote_tables(self):

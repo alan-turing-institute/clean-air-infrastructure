@@ -39,8 +39,11 @@ class ScootFeatures(Features):
 
             return (
                 session.query(ScootRoadReading, OSHighway.geom)
-                .join(OSHighway).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
-                                        ScootRoadReading.measurement_start_utc < self.end_datetime)
+                .join(OSHighway)
+                .filter(
+                    ScootRoadReading.measurement_start_utc >= self.start_datetime,
+                    ScootRoadReading.measurement_start_utc < self.end_datetime,
+                )
                 .subquery()
             )
 
@@ -265,9 +268,7 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
         Get a weighted average of traffic flow metrics for each road segment
         """
 
-        sr_sq = self.get_scoot_reading(
-            start_date, end_date, output_type="subquery"
-        )
+        sr_sq = self.get_scoot_reading(start_date, end_date, output_type="subquery")
         arm_sq = self.get_all_road_matched().subquery()
 
         with self.dbcnxn.open_session() as session:
@@ -290,24 +291,16 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
                 "saturation_percentage_waverage"
             ),
             agg_func(sr_sq.c.flow_raw_count).label("flow_count_waverage"),
-            agg_func(sr_sq.c.occupancy_raw_count).label(
-                "occupancy_count_waverage"
-            ),
-            agg_func(sr_sq.c.congestion_raw_count).label(
-                "congestion_count_waverage"
-            ),
-            agg_func(sr_sq.c.saturation_raw_count).label(
-                "saturation_count_waverage"
-            ),
+            agg_func(sr_sq.c.occupancy_raw_count).label("occupancy_count_waverage"),
+            agg_func(sr_sq.c.congestion_raw_count).label("congestion_count_waverage"),
+            agg_func(sr_sq.c.saturation_raw_count).label("saturation_count_waverage"),
         ]
 
         with self.dbcnxn.open_session() as session:
 
             scoot_road_distance_q = (
                 session.query(
-                    OSHighway.toid,
-                    sr_sq.c.measurement_start_utc,
-                    *aggregated_funcs
+                    OSHighway.toid, sr_sq.c.measurement_start_utc, *aggregated_funcs
                 )
                 .join(arm_sq)
                 .join(tid_sq)
@@ -330,7 +323,12 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
         scoot_road_matched = self.join_scoot_with_road(output_type="subquery")
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all scoot sensors to road")
-            self.commit_records(session, scoot_road_matched, table=ScootRoadMatch)
+            self.commit_records(
+                session,
+                scoot_road_matched,
+                on_conflict="overwrite",
+                table=ScootRoadMatch,
+            )
 
         # Get unmatched road segments, find the 5 closest scoot sensors and insert into database
         scoot_road_unmatched = self.join_unmatached_scoot_with_road(
@@ -338,7 +336,12 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
         )
         with self.dbcnxn.open_session() as session:
             self.logger.info("Matching all unmatched scoot sensors to 5 closest roads")
-            self.commit_records(session, scoot_road_unmatched, table=ScootRoadUnmatched)
+            self.commit_records(
+                session,
+                scoot_road_unmatched,
+                on_conflict="overwrite",
+                table=ScootRoadUnmatched,
+            )
 
     def update_scoot_road_reading(self, find_closest_roads=False):
         """Update all remote tables"""
@@ -348,9 +351,7 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
         # total_inverse_distance = self.total_inverse_distance(output_type="subquery")
         # with self.dbcnxn.open_session() as session:
         #     self.logger.info("Calculating total inverse distance for each road")
-        #     self.commit_records(
-        #         session, total_inverse_distance, table=ScootRoadInverseDistance
-        #     )
+        #     self.commit_records(session, total_inverse_distance, on_conflict="overwrite", table=ScootRoadInverseDistance)
 
     def update_average_traffic(self):
         """Map scoot data to road segments and commit to database"""
@@ -378,23 +379,22 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
                 self.commit_records(
                     session,
                     weighted_traffic_sq,
+                    on_conflict="ignore",
                     table=ScootRoadReading,
-                    on_conflict_do_nothing=True,
                 )
+            # return
 
-            return
+    # def delete_remote_entries(self):
+    #     """Remove entries from the ScootRoadReading table"""
+    #     self.logger.info(
+    #         "Deleting all scoot road match data between %s and %s",
+    #         green(self.start_datetime),
+    #         green(self.end_datetime),
+    #     )
 
-    def delete_remote_entries(self):
-        """Remove entries from the ScootRoadReading table"""
-        self.logger.info(
-            "Deleting all scoot road match data between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
-        )
-
-        with self.dbcnxn.open_session() as session:
-            drop_q = session.query(ScootRoadReading).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
-                                                            ScootRoadReading.measurement_start_utc < self.end_datetime).delete()
+    #     with self.dbcnxn.open_session() as session:
+    #         drop_q = session.query(ScootRoadReading).filter(ScootRoadReading.measurement_start_utc >= self.start_datetime,
+    #                                                         ScootRoadReading.measurement_start_utc < self.end_datetime).delete()
 
     @db_query
     def get_last_scoot_road_reading(self):
@@ -409,20 +409,34 @@ class ScootMapToRoads(DateRangeMixin, DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
 
-        last_scoot_road_match = self.get_last_scoot_road_reading(output_type='list')[0]
+        last_scoot_road_match = self.get_last_scoot_road_reading(output_type="list")[0]
 
         if last_scoot_road_match:
-            self.logger.info("Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
-                             last_scoot_road_match, self.end_datetime)
+            self.logger.info(
+                "Matching scoot data to roads from last date found in scoot_road_match. Processing from %s to %s",
+                last_scoot_road_match,
+                self.end_datetime,
+            )
 
             weighted_traffic_sq = self.weighted_average_traffic(
-                last_scoot_road_match, self.end_datetime, output_type='subquery')
+                last_scoot_road_match, self.end_datetime, output_type="subquery"
+            )
 
         else:
-            self.logger.info("No data in scoot_road_match. Processing any available scoot data from %s to %s",
-                             '2019-01-01', self.end_datetime)
+            self.logger.info(
+                "No data in scoot_road_match. Processing any available scoot data from %s to %s",
+                "2019-01-01",
+                self.end_datetime,
+            )
 
-            weighted_traffic_sq = self.weighted_average_traffic('2019-01-01', self.end_datetime, output_type='subquery')
+            weighted_traffic_sq = self.weighted_average_traffic(
+                "2019-01-01", self.end_datetime, output_type="subquery"
+            )
 
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, weighted_traffic_sq, table=ScootRoadReading)
+            self.commit_records(
+                session,
+                weighted_traffic_sq,
+                on_conflict="overwrite",
+                table=ScootRoadReading,
+            )

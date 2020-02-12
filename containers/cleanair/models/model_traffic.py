@@ -42,6 +42,7 @@ class TrafficForecast(DateRangeMixin, DBWriter):
             self.start_datetime,
             self.end_datetime,
         )
+        start_time = time.time()
 
         with self.dbcnxn.open_session() as session:
             scoot_road_q = session.query(ScootReading).filter(
@@ -55,14 +56,20 @@ class TrafficForecast(DateRangeMixin, DBWriter):
             scoot_road_q = scoot_road_q.order_by(
                 ScootReading.detector_id, ScootReading.measurement_start_utc
             )
-        return pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
+        readings = pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
+        self.logger.info(
+            "Retrieved %s SCOOT readings in %s minutes",
+            green(len(readings)),
+            green("{:.2f}".format((time.time() - start_time) / 60.0)),
+        )
+        return readings
 
-    def forecast(self, forecast_length_hrs):
-        """Forecast for the next `forecast_length_hrs`"""
+    def forecasts(self, forecast_length_hrs):
+        """Forecast all features at each detector for the next `forecast_length_hrs`"""
         start_time = time.time()
 
         # Get SCOOT readings from database
-        readings = self.scoot_readings() #detector_ids=["N08/227b1", "N10/210s1"]
+        readings = self.scoot_readings()  # detector_ids=["N08/227b1", "N10/210s1"]
         training_data = dict(tuple(readings.groupby(["detector_id"])))
 
         # As the most recent reading will not be now but we still want to forecast
@@ -83,16 +90,18 @@ class TrafficForecast(DateRangeMixin, DBWriter):
         )
 
         # Iterate over each detector ID and obtain the forecast for it
-        per_detector_forecasts = []
-        for detector_id, fit_data in training_data.items():
+        # per_detector_forecasts = []
+        # print("There are", len(per_detector_forecasts), "per_detector_forecasts")
+        for idx, (detector_id, fit_data) in enumerate(training_data.items()):
             per_feature_dfs = []
+            print("For detector_id", detector_id, "fit_data is", fit_data.shape)
 
             # Iterate over each feature and obtain the forecast for it
             for feature in self.features:
                 # Set the maximum value for the fit - this requires the use of
                 # logistic regression in the fit itself
                 capacity = (
-                    100 if "percentage" in feature else 2 * max(fit_data[feature])
+                    100 if "percentage" in feature else 10 * max(fit_data[feature])
                 )
                 # Construct the prophet model using the fit data
                 prophet_data = fit_data.rename(
@@ -108,55 +117,71 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                     columns={"ds": "measurement_start_utc", "yhat": feature}
                 )
                 # Restrict to future predictions and force all predictions to be positive
-                forecast["measurement_start_utc"].clip(lower=last_reading_time, inplace=True)
+                forecast = forecast[
+                    forecast["measurement_start_utc"] > last_reading_time
+                ]
                 forecast[feature].clip(lower=0, inplace=True)
                 per_feature_dfs.append(forecast)
+            print("There are", len(per_feature_dfs), "per_feature_dfs")
+            print("->", [d.shape for d in per_feature_dfs])
             # Combine predicted features and add detector ID
             combined_predictions = reduce(
                 lambda df1, df2: df1.merge(df2, on="measurement_start_utc"),
                 per_feature_dfs,
             )
+            print("combined_predictions shape is", combined_predictions.shape)
             combined_predictions["detector_id"] = detector_id
             combined_predictions["measurement_end_utc"] = combined_predictions[
                 "measurement_start_utc"
             ] + datetime.timedelta(hours=1)
-            per_detector_forecasts.append(combined_predictions)
+            # per_detector_forecasts.append(combined_predictions)
+            # print("Finished forecasting", idx, "of", len(training_data))
+            self.logger.info(
+                "Finished forecasting detector %i of %i after %s seconds",
+                idx,
+                len(training_data),
+                green(duration(start_time, time.time())),
+            )
+            yield combined_predictions
 
-        self.logger.info(
-            "Completed scoot model fits after %s seconds",
-            green(duration(start_time, time.time())),
-        )
-        return pd.concat(per_detector_forecasts, ignore_index=True)
+        # self.logger.info(
+        #     "Completed scoot model fits after %s seconds",
+        #     green(duration(start_time, time.time())),
+        # )
+        # return pd.concat(per_detector_forecasts, ignore_index=True)
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""
         self.logger.info("Starting %s forecasts update...", green("SCOOT"))
         start_time = time.time()
+        n_records = 0
 
         # Get the forecasts and convert to a list of dictionaries
-        forecast_df = self.forecast(forecast_length_hrs=48)
-        forecast_records = forecast_df.to_dict("records")
-
-        self.logger.info(
-            "Preparing to insert %s forecasts into database",
-            green(len(forecast_records)),
-        )
-
-        # Add forecasts to the database
-        n_records = 0
-        with self.dbcnxn.open_session() as session:
-            try:
-                # Commit and override any existing forecasts
-                self.commit_records(
-                    session, forecast_records, table=ScootForecast,
+        for forecast_df in self.forecasts(forecast_length_hrs=72):
+            forecast_records = forecast_df.to_dict("records")
+            if len(forecast_records) > 0:
+                self.logger.info(
+                    "Preparing to insert %s forecasts into database",
+                    green(len(forecast_records)),
                 )
-                n_records += len(forecast_records)
-            except IntegrityError as error:
-                self.logger.error(
-                    "Failed to add forecasts to the database: %s", type(error)
-                )
-                self.logger.error(str(error))
-                session.rollback()
+
+                # Add forecasts to the database
+                with self.dbcnxn.open_session() as session:
+                    try:
+                        # Commit and override any existing forecasts
+                        self.commit_records(
+                            session,
+                            forecast_records,
+                            on_conflict="overwrite",
+                            table=ScootForecast,
+                        )
+                        n_records += len(forecast_records)
+                    except IntegrityError as error:
+                        self.logger.error(
+                            "Failed to add forecasts to the database: %s", type(error)
+                        )
+                        self.logger.error(str(error))
+                        session.rollback()
 
         # Summarise updates
         self.logger.info(
