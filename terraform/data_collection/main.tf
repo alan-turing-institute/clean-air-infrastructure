@@ -7,6 +7,7 @@ module "configuration" {
 module "kubernetes" {
   source                 = "./kubernetes"
   cluster_name           = "cleanair-kubernetes"
+  service_hostname       = "urbanair.turing.ac.uk"
   cluster_resource_group = var.cluster_resource_group
   infrastructure         = "${var.infrastructure}"
   node_resource_group    = var.node_resource_group

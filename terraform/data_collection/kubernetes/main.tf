@@ -31,10 +31,13 @@ resource "azurerm_kubernetes_cluster" "this" {
   node_resource_group = "${var.node_resource_group}"
 
   default_node_pool {
-    name            = "default"
-    node_count      = 1
-    vm_size         = "Standard_D2_v2"
-    os_disk_size_gb = 30
+    name                = "default"
+    enable_auto_scaling = true
+    max_count           = 3
+    min_count           = 1
+    node_count          = 1
+    vm_size             = "Standard_D2_v2"
+    os_disk_size_gb     = 30
   }
 
   service_principal {
@@ -97,4 +100,10 @@ resource "azurerm_key_vault_access_policy" "allow_service_principal" {
     "get",
     "list",
   ]
+}
+
+# Add a DNS Zone for the api service
+resource "azurerm_dns_zone" "cleanair_api_service" {
+    name                = "${var.service_hostname}"
+    resource_group_name = "${azurerm_resource_group.this.name}"
 }
