@@ -38,14 +38,14 @@ class SVGP_TF1(Model):
 
         self.minimum_param_keys = [
             "restore",
-            "lengthscale",
-            "variance",
+            "likelihood_variance",
             "minibatch_size",
             "n_inducing_points",
             "train",
             "jitter",
             "model_state_fp",
             "maxiter",
+            "kernel",
         ]
         self.epoch = 0
         self.refresh = 10
@@ -69,15 +69,19 @@ class SVGP_TF1(Model):
             Dictionary of parameters.
         """
         return {
-            "lengthscale": 0.1,
             "jitter": 1e-5,
-            "variance": 0.1,
+            "likelihood_variance": 0.1,
             "minibatch_size": 100,
             "n_inducing_points": 2000,
             "restore": False,
             "train": True,
             "model_state_fp": None,
             "maxiter": 100,
+            "kernel": {
+                "name": "mat32+linear",
+                "variance": 0.1,
+                "lengthscale": 0.1,
+            }
         }
 
     def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
@@ -96,25 +100,20 @@ class SVGP_TF1(Model):
         with gpflow.settings.temp_settings(
                 custom_config
         ), gpflow.session_manager.get_session().as_default():
-            # kern = gpflow.kernels.RBF(
-            #     num_input_dimensions,
-            #     lengthscales=self.model_params['lengthscale'],
-            #     ARD=True
-            # )
             kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
-                variance=self.model_params['variance'],
-                lengthscales=self.model_params['lengthscale'],
+                variance=self.model_params['kernel']['variance'],
+                lengthscales=self.model_params['kernel']['lengthscale'],
             ) + gpflow.kernels.Linear(
                 num_input_dimensions,
-                variance=self.model_params['variance'],
-                ARD=True
+                variance=self.model_params['kernel']['variance'],
+                ARD=True,
             )
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
                 kern,
-                gpflow.likelihoods.Gaussian(variance=self.model_params['variance']),
+                gpflow.likelihoods.Gaussian(variance=self.model_params['likelihood_variance']),
                 inducing_locations,
                 minibatch_size=self.model_params['minibatch_size'],
                 mean_function=gpflow.mean_functions.Linear(
