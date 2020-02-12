@@ -210,8 +210,8 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 "Processing data between %s and %s", green(start_time), green(end_time)
             )
             df_hourly = df_processed.loc[
-                (df_processed["timestamp"] > start_time.timestamp()) &
-                (df_processed["timestamp"] <= end_time.timestamp())
+                (df_processed["timestamp"] > start_time.timestamp())
+                & (df_processed["timestamp"] <= end_time.timestamp())
             ].copy()
 
             # Drop unused columns and aggregate
@@ -272,7 +272,10 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
             if df_processed.shape[0] < 1:
-                self.logger.warning("Skipping hour %s as it has no available data", green(start_datetime))
+                self.logger.warning(
+                    "Skipping hour %s as it has no available data",
+                    green(start_datetime),
+                )
                 continue
 
             for df_aggregated in self.aggregate_scoot_data(df_processed):
