@@ -209,6 +209,7 @@ kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cer
 ```
 
 Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/
+
 <!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
