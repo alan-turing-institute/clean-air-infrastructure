@@ -32,7 +32,7 @@ def main():
         "-n",
         "--ndays",
         type=int,
-        default=7,
+        default=14,
         help="The number of days to request data for.",
     )
     parser.add_argument("-v", "--verbose", action="count", default=0)

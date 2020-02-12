@@ -1,31 +1,27 @@
 """Traffic model fitting"""
-# import sys
-# import logging
-# import time
-# from datetime import datetime
-# from dateutil.parser import isoparse
+import datetime
 from functools import reduce
-
 from fbprophet import Prophet
-# from multiprocessing import Pool, cpu_count
-# from scipy.cluster.vq import kmeans2
-# import numpy as np
+import logging
+import warnings
 import pandas as pd
 from ..databases import DBReader
 from ..loggers import get_logger, green
 from ..mixins import DateRangeMixin
-from cleanair.databases.tables import ScootDetector, ScootReading #, ScootRoadReading
+from cleanair.databases.tables import ScootDetector, ScootReading
 
-# logging.basicConfig()
+# Turn off fbprophet stdout logger
+logging.getLogger('fbprophet').setLevel(logging.ERROR)
 
 
 class TrafficForecast(DateRangeMixin, DBReader):
+    """Traffic forecasting using FB prophet"""
 
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        self.n_forecast_hours = 48
+        self.forecast_length_hrs = 48
         self.features = ["n_vehicles_in_interval", "occupancy_percentage", "congestion_percentage", "saturation_percentage"]
 
         # Ensure logging is available
@@ -33,17 +29,17 @@ class TrafficForecast(DateRangeMixin, DBReader):
             self.logger = get_logger(__name__)
 
     def forecast(self):
-        self.logger.info("Forecasting between ...")
-
-
-        # self.n_forecast_hours
-
-        # import os
-        # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-        # readings = self.scoot_readings()
         readings = self.scoot_readings(detector_ids=["N08/227b1", "N10/210s1"])
         training_data = dict(tuple(readings.groupby(["detector_id"])))
+
+        # As the most recent reading will not be now but we still want to forecast
+        # a fixed distance into the future, we have to calculate how many hours
+        # of forecast we need
+        last_read_time = max(readings["measurement_start_utc"])
+        forecast_end_time = self.end_datetime + datetime.timedelta(hours=self.forecast_length_hrs)
+        n_hours_to_predict = int((forecast_end_time - last_read_time).total_seconds() / 3600)
+
+        self.logger.info("Forecasting SCOOT traffic data between %s and %s...", last_read_time, forecast_end_time)
 
         # Iterate over each detector ID and obtain the forecast for it
         per_detector_forecasts = []
@@ -52,15 +48,30 @@ class TrafficForecast(DateRangeMixin, DBReader):
 
             # Iterate over each feature and obtain the forecast for it
             for feature in self.features:
+                # Set the maximum value for the fit
+                capacity = 100 if "percentage" in feature else 2 * max(fit_data[feature])
+                # Construct the prophet model using the fit data
                 prophet_data = fit_data.rename(columns={"measurement_start_utc": "ds", feature: "y"})
-                model = Prophet().fit(prophet_data)
-                future = model.make_future_dataframe(self.n_forecast_hours, freq="H") #, include_history=True)
-                print(future)
-                forecast = model.predict(future)[["ds", "yhat"]].rename(columns={"ds": "measurement_start_utc", "yhat": feature})
+                prophet_data["cap"] = capacity
+                model = Prophet(growth="logistic").fit(prophet_data)
+                # Predict over a future time range
+                time_range = model.make_future_dataframe(n_hours_to_predict, freq="H")
+                time_range["cap"] = capacity
+                # forecast = model.predict(time_range)[["ds", "yhat"]].rename(columns={"ds": "measurement_start_utc", "yhat": feature})
+
+                forecast = model.predict(time_range)
+                plot = model.plot(forecast)
+                plot.savefig("/secrets/{}_{}.png".format(feature, detector_id.replace("/", "-")))
+
+
+                # Only keep future predictions and force all predictions to be positive
+                forecast = forecast[["ds", "yhat"]].rename(columns={"ds": "measurement_start_utc", "yhat": feature})
+                forecast = forecast[forecast["measurement_start_utc"] > last_read_time]
+                forecast[feature][forecast[feature] < 0] = 0
                 per_feature_dfs.append(forecast)
             per_detector_forecasts.append(reduce(lambda df1, df2: df1.merge(df2, on="measurement_start_utc"), per_feature_dfs))
 
-        output = pd.concat(per_detector_forecasts)
+        output = pd.concat(per_detector_forecasts, ignore_index=True)
         print(output)
         return output
 
@@ -131,7 +142,6 @@ class TrafficForecast(DateRangeMixin, DBReader):
             if detector_ids:
                 scoot_road_q = scoot_road_q.filter(ScootReading.detector_id.in_(detector_ids))
             scoot_road_q = scoot_road_q.order_by(ScootReading.detector_id, ScootReading.measurement_start_utc)
-        # return pd.read_sql(scoot_road_q.limit(1000).statement, scoot_road_q.session.bind)
         return pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
 
 
