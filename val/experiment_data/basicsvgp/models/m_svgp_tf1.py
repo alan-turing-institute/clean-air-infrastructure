@@ -19,22 +19,6 @@ def save(fp, obj):
     with open(fp, 'wb') as handle:
         pickle.dump(obj, handle)
 
-def predict(x_dict, predict_fn, species):
-    # ToDo: get this to work for multiple pollutants
-    dict_results = {}
-    for src in x_dict:
-        species_dict = {}
-        src_x = x_dict[src]['X']
-        src_ys, src_var = predict_fn(src_x)
-        src_dict = {
-            'mean': src_ys,
-            'var': src_var,
-        }
-        species_dict[species] = src_dict
-        dict_results[src] = species_dict
-    return dict_results
-
-
 def main(data_config, param_config, experiment_config):
     #TODO: fix files paths in experiments
     dirname = os.path.dirname
@@ -51,34 +35,20 @@ def main(data_config, param_config, experiment_config):
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
-    print(train_dict.keys())
-    print(test_dict.keys())
-    exit()
+    x_train = train_dict['X']
+    y_train = train_dict['Y']
+    x_test = test_dict['X']
 
-    X = [train_dict['laqn']['X'][:, None, :]]
-    Y = [train_dict['laqn']['Y']['NO2'][:, None]]
-
-    print(X[0].shape)
-    print(Y[0].shape)
-
-    #TODO: ask patrick where these configs should go
-    param_config['train'] = True
-    param_config['restore'] = False
     param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
 
-    m = SVGP_TF1()
+    m = SVGP_TF1(model_params=param_config)
 
-    m.fit(X, Y, max_iter=param_config['max_iter'], model_params=param_config, refresh=param_config['refresh'])
+    m.fit(x_train, y_train, save_model_state=True)
+    y_train_pred = m.predict(x_train)
+    y_test_pred = m.predict(x_test)
 
-    train_pred = predict(train_dict, lambda x: m.predict(x), 'NO2')
-    test_pred = predict(test_dict, lambda x: m.predict(x), 'NO2')
-
-    print()
-    print(train_pred)
-    print()
-
-    save(train_pred_fp, train_pred)
-    save(test_pred_fp, test_pred)
+    save(train_pred_fp, y_train_pred)
+    save(test_pred_fp, y_test_pred)
 
 if __name__ == '__main__':
     #default config
@@ -107,6 +77,4 @@ if __name__ == '__main__':
     experiment_config = experiment_config.iloc[0]
 
     main(data_config, param_config, experiment_config)
-
-
 

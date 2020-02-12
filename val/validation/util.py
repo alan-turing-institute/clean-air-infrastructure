@@ -121,7 +121,7 @@ def get_model_data_config_default(id, train_start, train_end, pred_start, pred_e
         'species': ['NO2'],
         'features': 'all',
         'norm_by': 'laqn',
-        'model_type': 'svgp',
+        'model_type': 'svgp_tf1',
         'tag': 'validation',
         'include_satellite':False,
         'include_prediction_y':True,

@@ -1,18 +1,17 @@
 """Model fitting classes"""
+
 try:
     from .model_data import ModelData
     MODEL_DATA_FLAG = True
 except Exception as ex:
     MODEL_DATA_FLAG = False
 
-from .model_fitting import SVGP
 from .model import Model
-from .model_svgp import SVGP_TF1
-
+from .svgp import SVGP_TF1
 
 ALL_ARR = [
-    "SVGP",
-    "SVGP_TF1"
+    "SVGP_TF1",
+    "Model",
 ]
 
 if MODEL_DATA_FLAG:

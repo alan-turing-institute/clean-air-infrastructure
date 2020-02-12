@@ -68,7 +68,7 @@ disable=duplicate-code,
         bad-continuation,
 [REPORTS]
 
-signature-mutators=db_query
+signature-mutators=db_query, robust_api
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
 # (visual studio) and html. You can also give a reporter class, eg

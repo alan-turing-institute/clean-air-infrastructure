@@ -12,33 +12,27 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 from .. import util
-import os
-
 from ..cluster import *
 
 #requires cleanair
 sys.path.append("../containers/")
 sys.path.append("../../containers/")
 
-import cleanair
-from cleanair.models import ModelData
-
 try:
-    import cleanair
     from cleanair.models import ModelData
     from cleanair import metrics
 except ImportError:
     print('WARNING: Could not import ModelData')
 
 class Experiment(ABC):
-    def __init__(self, experiment_name, models, cluster_name, **kwargs):
+    def __init__(self, name, models, cluster_name, **kwargs):
         """
         An abstract experiment class.
 
         Parameters
         ___
 
-        experiment_name : str
+        name : str
             Name that identifies the experiment.
 
         models : list
@@ -59,7 +53,7 @@ class Experiment(ABC):
             A dataframe describing every run in the experiment.
         """
         super().__init__()
-        self.name = experiment_name
+        self.name = name
         self.models = models
         self.cluster = cluster_name
         self.model_params = kwargs['model_params'] if 'model_params' in kwargs else []
@@ -155,8 +149,8 @@ class Experiment(ABC):
                 model_data.save_config_state(data_dir_path)
 
                 # get the training and testing dicts indexed by source
-                training_dict = model_data.get_training_dict()
-                test_dict = model_data.get_test_dict()
+                training_dict = model_data.get_training_data_arrays()
+                test_dict = model_data.get_pred_data_arrays(return_y=True)
 
                 # write to a pickle
                 with open(data_config['train_fp'], 'wb') as handle:
@@ -226,7 +220,7 @@ class Experiment(ABC):
             cluster_config={},
             experiment_configs=cluster_run_params,
             input_format_fn=input_format_fn,
-            cluster_tmp_fp=self.directory+'cluster',
+            cluster_tmp_fp=self.experiments_directory+'cluster',    # ToDo: end in backslash?
             experiment_fp=self.experiments_directory,
             home_directory_fp=self.home_directory,
         )
@@ -332,7 +326,7 @@ class Experiment(ABC):
                     test_pred_dict = pickle.load(handle)
 
                 # update model data with predictions
-                model_data.update_testing_df_with_preds(test_pred_dict)
+                model_data.update_test_df_with_preds(test_pred_dict)
 
             if update_train:
                 # try to update the predictions for the training set
