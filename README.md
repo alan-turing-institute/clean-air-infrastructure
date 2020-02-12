@@ -198,6 +198,17 @@ Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEAN
 3. Set Alias record set to “Yes” and this will bring up some new options.
 4. Make sure the subscription is set to `cleanair`. Under Azure resource select the correct Public IP Address. Click “OK”.
 
+## Configuring certificates for the cleanair API
+
+```bash
+helm dep update kubernetes/cleanair
+```
+
+```bash
+kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.0/deploy/manifests/00-crds.yaml
+```
+
+Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/
 <!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
 ### Setting up webhooks in the GitHub repository
