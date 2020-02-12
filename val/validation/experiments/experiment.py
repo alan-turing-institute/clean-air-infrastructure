@@ -19,7 +19,6 @@ sys.path.append("../containers/")
 sys.path.append("../../containers/")
 
 try:
-    import cleanair
     from cleanair.models import ModelData
     from cleanair import metrics
 except ImportError:
