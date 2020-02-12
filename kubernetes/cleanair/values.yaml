@@ -157,7 +157,7 @@ services:
 
 tls:
     - host: urbanair.turing.ac.uk
-      secretName: tlsSecret
+      secretName: urbanairTls
 
 ingressRules:
     - host: urbanair.turing.ac.uk
