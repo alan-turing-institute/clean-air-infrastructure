@@ -306,6 +306,7 @@ class StaticWriter(DBWriter):
                        DROP COLUMN elevatio_1,
                        DROP COLUMN elevationg,
                        DROP COLUMN identifi_1,
+                       DROP COLUMN identifier,
                        DROP COLUMN ogc_fid,
                        DROP COLUMN provenance,
                        DROP COLUMN roadclas_1,
@@ -393,6 +394,8 @@ class StaticWriter(DBWriter):
                 """ALTER TABLE {} ADD PRIMARY KEY (detector_n);""".format(
                     self.schema_table
                 ),
+                # Add the osgb prefix to the toid column
+                """UPDATE {0} SET toid = CONCAT('osgb', toid);""".format(self.schema_table),
                 # Move geometry data to interest_points table - note that some detectors share a location
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT DISTINCT on (geom) 'scoot', geom, uuid_generate_v4()

@@ -263,13 +263,13 @@ def main():
     )
     rectgrid_image = build_docker_image("rectgrid:upload", "upload_rectgrid.Dockerfile")
 
-    # List of available datasets
+    List of available datasets
     datasets = [
-        "rectgrid_100",
-        "scoot_detector",
         "hexgrid",
         "london_boundary",
         "oshighway_roadlink",
+        "rectgrid_100",
+        "scoot_detector",
         "street_canyon",
         "ukmap",
     ]

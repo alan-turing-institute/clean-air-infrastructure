@@ -40,13 +40,21 @@ def main():
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
+
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    logging.basicConfig(level=get_log_level(args.verbose))
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = ScootFeatures(**kwargs)
+        static_feature_extractor = ScootFeatures(ndays=args.ndays, end=args.end, secretfile=args.secretfile)
+        road_mapper = ScootMapToRoads(secretfile=args.secretfile)
+
+        # Match all road segments to their closest SCOOT detector(s)
+        # - if the segment has a detector on it then match to one
+        # - otherwise match to the five closest detectors
+        road_mapper.match_to_roads()
+
+
 
         # Insert closest roads and calculate inverse distance
         # static_feature_extractor.insert_closest_roads()
@@ -61,11 +69,11 @@ def main():
         # print(static_feature_extractor.join_unmatached_scoot_with_road(output_type='df'))
         # print(static_feature_extractor.total_inverse_distance(output_type='df'))
 
-        # Extract static features into the appropriate tables on the database
-        static_feature_extractor.update_scoot_road_reading_tables(
-            find_closest_roads=False
-        )
-        static_feature_extractor.update_remote_tables()
+        # # Extract static features into the appropriate tables on the database
+        # static_feature_extractor.update_scoot_road_reading_tables(
+        #     find_closest_roads=False
+        # )
+        # static_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

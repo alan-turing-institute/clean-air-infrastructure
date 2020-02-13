@@ -19,7 +19,7 @@ from ..loggers import duration, green, get_logger
 class Features(DBWriter, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, dynamic=False, **kwargs):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -38,7 +38,7 @@ class Features(DBWriter, DBQueryMixin):
         # Radius around each interest point used for feature extraction.
         # Changing these would require redefining the database schema
         self.buffer_radii_metres = [1000, 500, 200, 100, 10]
-        self.dynamic = False
+        self.dynamic = dynamic
 
     @property
     def features(self):
