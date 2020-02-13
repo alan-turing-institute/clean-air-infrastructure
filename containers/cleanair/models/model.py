@@ -42,8 +42,8 @@ class Model(ABC):
                 "Multiple pollutants not supported. Use only NO2."
             )
         self.model = None
-        self.log = True if 'log' not in kwargs else kwargs['log']
-        self.restore = False if 'restore' not in kwargs else kwargs['restore']
+        self.log = True if "log" not in kwargs else kwargs["log"]
+        self.restore = False if "restore" not in kwargs else kwargs["restore"]
         self.minimum_param_keys = []
 
     @abstractmethod

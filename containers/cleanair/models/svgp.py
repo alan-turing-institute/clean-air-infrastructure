@@ -164,7 +164,9 @@ class SVGP_TF1(Model):
             if self.logger:
                 self.logger.info(
                     "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
-                    self.epoch, objective, logger_arg
+                    self.epoch,
+                    objective,
+                    logger_arg,
                 )
 
             print(self.epoch, ": ", objective)
@@ -197,7 +199,9 @@ class SVGP_TF1(Model):
             Default is False.
         """
         self.check_training_set_is_valid(x_train, y_train)
-        save_model_state = kwargs["save_model_state"] if "save_model_state" in kwargs else False
+        save_model_state = (
+            kwargs["save_model_state"] if "save_model_state" in kwargs else False
+        )
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
         x_array = x_train["laqn"].copy()
@@ -225,7 +229,7 @@ class SVGP_TF1(Model):
 
         if self.model_params["train"]:
             # optimize and setup elbo logging
-            opt = gpflow.train.AdamOptimizer()
+            opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
             opt.minimize(
                 self.model,
                 step_callback=self.elbo_logger,
