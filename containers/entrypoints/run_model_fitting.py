@@ -23,7 +23,7 @@ def model_data_tests(model_data, y_pred):
     x_train = training_data_dict['X']
     y_train = training_data_dict['Y']
     x_test = predict_data_dict['X']
-    
+
     # checks for satellite
     assert 'satellite' not in x_test
     assert not 'include_satellite' in model_data.config or 'satellite' in x_train
@@ -173,7 +173,7 @@ def main():
     x_test = predict_data_dict['X']
 
     # Fit the model
-    model_fitter.fit(x_train, y_train, save_model_state=False)
+    model_fitter.fit(x_train, y_train)
 
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()
