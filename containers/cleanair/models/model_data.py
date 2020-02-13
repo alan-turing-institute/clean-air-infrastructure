@@ -347,7 +347,7 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
-    def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True):
+    def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True, return_sat=True):
         """
         Return a dictionary structure of data arrays for model fitting.
 
@@ -431,36 +431,8 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         # iterate through sources
         for src in sources:
-            # special case for satellite data
             if src == 'satellite':
-                if len(species) > 1:
-                    raise NotImplementedError('Can only get satellite data for NO2')
-
-                # Check dimensions
-                n_sat_box = self.training_satellite_data_x["box_id"].unique().size
-                n_hours = self.training_satellite_data_x["epoch"].unique().size
-                # Number of interest points in each satellite square
-                n_interest_points = 100
-                n_x_names = len(self.config["x_names"])
-
-                X_sat = (
-                    self.training_satellite_data_x[self.x_names_norm]
-                    .to_numpy()
-                    .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
-                )
-
-                X_sat_mask = (
-                    self.training_satellite_data_x["in_london"]
-                    .to_numpy()
-                    .reshape(n_sat_box * n_hours, n_interest_points)
-                )
-                Y_sat = self.training_satellite_data_y["value"].to_numpy()
-
-                data_dict['X']['satellite'] = X_sat
-                if return_y:
-                    data_dict['Y']['satellite']['NO2'] = Y_sat
-                # ToDo: can we set mask to be index? or vice verse?
-                data_dict['mask']['satellite'] = X_sat_mask
+                raise NotImplementedError("Satellite cannot be a source - see issue 212 on GitHub.")
 
             # case for laqn, aqe, grid
             else:
@@ -481,13 +453,48 @@ class ModelData(DBWriter, DBQueryMixin):
                     pollutant: x_src.index.copy()
                     for pollutant in species
                 }
+        # special case for satellite data
+        if self.config["include_satellite"] and return_sat:
+            if len(species) > 1:
+                raise NotImplementedError('Can only get satellite data for NO2')
+
+            # Check dimensions
+            n_sat_box = self.training_satellite_data_x["box_id"].unique().size
+            n_hours = self.training_satellite_data_x["epoch"].unique().size
+            # Number of interest points in each satellite square
+            n_interest_points = 100
+            n_x_names = len(self.config["x_names"])
+
+            X_sat = (
+                self.training_satellite_data_x[self.x_names_norm]
+                .to_numpy()
+                .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
+            )
+
+            X_sat_mask = (
+                self.training_satellite_data_x["in_london"]
+                .to_numpy()
+                .reshape(n_sat_box * n_hours, n_interest_points)
+            )
+            Y_sat = self.training_satellite_data_y["value"].to_numpy()
+            Y_sat = np.reshape(Y_sat, (Y_sat.shape[0], 1))
+
+            data_dict['X']['satellite'] = X_sat
+            if return_y:
+                data_dict['Y']['satellite'] = dict(NO2=Y_sat)
+            # ToDo: can we set mask to be index? or vice verse?
+            data_dict['mask'] = dict(satellite=X_sat_mask)
         return data_dict
 
     def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=False):
-        """The the training data arrays.
+        """
+        The training data arrays.
 
-        args:
-            dropna: Drop any rows which contain NaN
+        Notes
+        ___
+
+            If the `include_satellite` flag is set to `True` in `config`,
+            then satellite is always returned as a source.
         """
         # get all sources and species as default
         if sources == 'all':
@@ -501,11 +508,18 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=False):
-        """The the pred data arrays.
+        """
+        The pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
             dropna: Drop any rows which contain NaN
+
+        Notes
+        ___
+
+        Satellite is never included as a key, value for prediction arrays
+        because it is considered a training source only.
         """
         # get all sources and species as default
         if sources == 'all':
@@ -516,12 +530,12 @@ class ModelData(DBWriter, DBQueryMixin):
         if self.config["include_prediction_y"] or return_y:
             return self.__get_model_data_arrays(
                 self.normalised_pred_data_df, sources, species,
-                return_y=True, dropna=dropna
+                return_y=True, dropna=dropna, return_sat=False
             )
         # return dicts without y
         return self.__get_model_data_arrays(
             self.normalised_pred_data_df, sources, species,
-            return_y=False, dropna=dropna
+            return_y=False, dropna=dropna, return_sat=False
         )
 
     def __check_features_available(self, features, start_date, end_date):
