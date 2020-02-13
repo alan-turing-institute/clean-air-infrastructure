@@ -46,11 +46,12 @@ def get_sample_mean_var(ys, vs):
 
 def predict(x_dict, predict_fn, species, ignore=[]):
     # ToDo: get this to work for multiple pollutants
+    x_dict = x_dict['X']
     dict_results = {}
     for src in x_dict:
         if src in ignore: continue
         species_dict = {}
-        src_x = x_dict[src]['X']
+        src_x = x_dict[src]
         src_ys, src_var = predict_fn(src_x)
 
         src_ys, src_var = get_sample_mean_var(src_ys, src_var)
@@ -242,10 +243,8 @@ def main(data_config, param_config, experiment_config):
     Y_laqn = Y_laqn[idx, :] 
 
     #===========================Setup SAT Data===========================
-    print(train_dict['X'].keys())
     X_sat = train_dict['X']['satellite'].copy()
-    Y_sat = train_dict['Y']['satellite'][:, None].copy()
-
+    Y_sat = train_dict['Y']['satellite']['NO2'].copy()
 
     #===========================Only Lat/Lon/Epochs===========================
     X_laqn = X_laqn[:, :3]
