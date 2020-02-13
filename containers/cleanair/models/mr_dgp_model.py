@@ -11,12 +11,14 @@ import tensorflow as tf
 from ..loggers import get_logger
 from .model import Model
 
+from .mr_dgp import MR_DGP 
 
-class MR_DGP(Model):
+
+class MR_DGP_MODEL(Model):
     """
     MR-DGP for air quality.
     """
-    def __inti__(model_params=None, log=True, batch_size=100, disable_tf_warnings=True, **kwargs):
+    def __init__(model_params=None, log=True, batch_size=100, disable_tf_warnings=True, **kwargs):
         super().__init__(**kwargs)
 
     def get_default_model_params(self):

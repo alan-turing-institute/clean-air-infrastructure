@@ -5,7 +5,7 @@ import logging
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP_TF1, MR_DGP
+from cleanair.models import ModelData, SVGP_TF1, MR_DGP_MODEL
 from cleanair.loggers import get_log_level
 
 def strtime_offset(strtime, offset_hours):
@@ -171,7 +171,7 @@ def main():
     
     models = {
         'svgp_tf1': SVGP_TF1,
-        'mr_dgp': MR_DGP,
+        'mr_dgp': MR_DGP_MODEL,
     }
 
     model_name = kwargs.pop('model')
