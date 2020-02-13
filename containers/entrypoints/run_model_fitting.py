@@ -7,7 +7,7 @@ from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 import numpy as np
-from cleanair.models import ModelData, SVGP_TF1
+from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
 
@@ -112,7 +112,7 @@ def main():
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp_tf1",
+        "model_type": "svgp",
         "tag": "tf1_test",
     }
 
@@ -125,7 +125,7 @@ def main():
         )
 
     # initialise the model
-    model_fitter = SVGP_TF1(batch_size=1000)  # big batch size for the grid
+    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 

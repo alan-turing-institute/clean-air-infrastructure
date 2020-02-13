@@ -117,7 +117,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "tag",
         ]
 
-        valid_models = ["svgp_tf1"]
+        valid_models = ["svgp"]
 
         self.logger.info("Validating config")
 

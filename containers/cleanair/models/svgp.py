@@ -12,7 +12,7 @@ from ..loggers import get_logger
 from .model import Model
 
 
-class SVGP_TF1(Model):
+class SVGP(Model):
     """
     Sparse Variational Gaussian Process for air quality.
     """
