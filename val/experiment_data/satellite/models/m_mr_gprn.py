@@ -203,16 +203,16 @@ def main(data_config, param_config, experiment_config):
 
     #===========================Remove NaNs===========================
     #Remove nans from  LAQN data
-    X_laqn = train_dict['laqn']['X'].copy()
-    Y_laqn = train_dict['laqn']['Y']['NO2'][:, None].copy()
+    X_laqn = train_dict['X']['laqn'].copy()
+    Y_laqn = train_dict['Y']['laqn']['NO2'].copy()
 
     idx = (~np.isnan(Y_laqn[:, 0]))
     X_laqn = X_laqn[idx, :] 
     Y_laqn = Y_laqn[idx, :] 
 
     #===========================Setup SAT Data===========================
-    X_sat = train_dict['satellite']['X'].copy()
-    Y_sat = train_dict['satellite']['Y'][:, None].copy()
+    X_sat = train_dict['X']['satellite'].copy()
+    Y_sat = train_dict['Y']['satellite'][:, None].copy()
 
     #===========================Only Lat/Lon/Epochs===========================
     X_laqn = X_laqn[:, :3]
