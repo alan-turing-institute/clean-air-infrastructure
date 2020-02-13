@@ -5,7 +5,8 @@ import logging
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP_TF1
+import numpy as np
+from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
 
@@ -52,26 +53,20 @@ def main():
     parser.add_argument(
         "-s",
         "--secretfile",
-        default="db_secrets.json",
+        default="../../terraform/.secrets/db_secrets.json",
         help="File with connection secrets.",
     )
     parser.add_argument(
         "-d",
         "--config_dir",
         default="./",
-        help="Filepath to directory to store model and data."
+        help="Filepath to directory to store model and data.",
     )
     parser.add_argument(
-        "-w",
-        "--write",
-        action="store_true",
-        help="Write model data config to file.",
+        "-w", "--write", action="store_true", help="Write model data config to file.",
     )
     parser.add_argument(
-        "-r",
-        "--read",
-        action="store_true",
-        help="Read model data from config_dir.",
+        "-r", "--read", action="store_true", help="Read model data from config_dir.",
     )
     parser.add_argument(
         "-u",
@@ -144,18 +139,20 @@ def main():
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp_tf1",
+        "model_type": "svgp",
         "tag": "tf1_test",
     }
 
-    if 'aqe' in model_config['train_sources'] + model_config['pred_sources']:
-        NotImplementedError("AQE cannot currently be run. Coming soon")
+    if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
+        raise NotImplementedError("AQE cannot currently be run. Coming soon")
 
-    if model_config['species'] != ['NO2']:
-        NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
+    if model_config["species"] != ["NO2"]:
+        raise NotImplementedError(
+            "The only pollutant we can model right now is NO2. Coming soon"
+        )
 
     # initialise the model
-    model_fitter = SVGP_TF1(batch_size=100)   # big batch size for the grid
+    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
@@ -177,11 +174,7 @@ def main():
     x_test = predict_data_dict['X']
 
     # Fit the model
-    model_fitter.fit(
-        x_train,
-        y_train,
-        save_model_state=False
-    )
+    model_fitter.fit(x_train, y_train, save_model_state=False)
 
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()

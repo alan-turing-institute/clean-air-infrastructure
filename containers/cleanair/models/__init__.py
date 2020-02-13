@@ -1,10 +1,6 @@
 """Model fitting classes"""
 from .model_data import ModelData
 from .model import Model
-from .svgp import SVGP_TF1
+from .svgp import SVGP
 
-__all__ = [
-    "ModelData",
-    "SVGP_TF1",
-    "Model"
-]
+__all__ = ["ModelData", "SVGP", "Model"]
