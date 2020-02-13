@@ -5,6 +5,8 @@ import logging
 import os
 import numpy as np
 import gpflow
+from gpflow import settings
+from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 
@@ -129,9 +131,7 @@ class SVGP(Model):
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = self.model_params["jitter"]
-        with gpflow.settings.temp_settings(
-                custom_config
-        ), gpflow.session_manager.get_session().as_default():
+        with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.RBF(
                 num_input_dimensions,
                 lengthscales=self.model_params["kernel"]["lengthscale"],
@@ -317,7 +317,7 @@ class SVGP(Model):
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict
 
-    def clean_data(self, x_array, y_array):
+    def clean_data(self, x_array, y_array):  # pylint: disable=no-self-use
         """Remove nans and missing data for use in GPflow
 
         args:
