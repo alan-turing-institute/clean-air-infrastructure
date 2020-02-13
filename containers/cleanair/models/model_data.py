@@ -477,12 +477,13 @@ class ModelData(DBWriter, DBQueryMixin):
                 .reshape(n_sat_box * n_hours, n_interest_points)
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
+            Y_sat = np.reshape(Y_sat, (Y_sat.shape[0], 1))
 
             data_dict['X']['satellite'] = X_sat
             if return_y:
-                data_dict['Y']['satellite']['NO2'] = Y_sat
+                data_dict['Y']['satellite'] = dict(NO2=Y_sat)
             # ToDo: can we set mask to be index? or vice verse?
-            data_dict['mask']['satellite'] = X_sat_mask
+            data_dict['mask'] = dict(satellite=X_sat_mask)
         return data_dict
 
     def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=False):
