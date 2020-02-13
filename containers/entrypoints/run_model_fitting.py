@@ -14,6 +14,34 @@ def strtime_offset(strtime, offset_hours):
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
+def model_data_tests(model_data, y_pred):
+    """
+    Check a model data fit is as expected.
+    """
+    training_data_dict = model_data.get_training_data_arrays(dropna=False)
+    predict_data_dict = model_data.get_pred_data_arrays(dropna=False, return_y=True)
+    x_train = training_data_dict['X']
+    y_train = training_data_dict['Y']
+    x_test = predict_data_dict['X']
+    
+    # checks for satellite
+    assert 'satellite' not in x_test
+    assert not 'include_satellite' in model_data.config or 'satellite' in x_train
+
+    # check the shape of x_test and y_pred
+    try:
+        num_pred_rows = y_pred['laqn']['NO2']['mean'].shape[0]
+        num_x_rows = x_test['laqn'].shape[0]
+        assert num_pred_rows == num_x_rows
+    except AssertionError:
+        error_message = 'Rows in y_pred laqn No2 mean is {pred_rows}. '.format(
+            pred_rows=num_pred_rows
+        )
+        error_message += 'Rows in x_test laqn is {x_rows}. '.format(
+            x_rows=num_x_rows
+        )
+        error_message += 'The number of rows in both arrays should be the same.'
+        raise ValueError(error_message)
 
 def main():
     """
@@ -158,25 +186,14 @@ def main():
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()
 
-    # Do prediction and write to database
+    # Do prediction
     y_pred = model_fitter.predict(x_test)
 
-    try:
-        num_pred_rows = y_pred['laqn']['NO2']['mean'].shape[0]
-        num_x_rows = x_test['laqn'].shape[0]
-        assert num_pred_rows == num_x_rows
-    except AssertionError:
-        error_message = 'Rows in y_pred laqn No2 mean is {pred_rows}. '.format(
-            pred_rows=num_pred_rows
-        )
-        error_message += 'Rows in x_test laqn is {x_rows}. '.format(
-            x_rows=num_x_rows
-        )
-        error_message += 'The number of rows in both arrays should be the same.'
-        raise ValueError(error_message)
+    # Check the model data fit is as expected
+    model_data_tests(model_data, y_pred)
 
     # Internally update the model results in the ModelData object
-    updated_df = model_data.update_test_df_with_preds(y_pred)
+    model_data.update_test_df_with_preds(y_pred)
 
     # Write the model results to the database
     if update:
