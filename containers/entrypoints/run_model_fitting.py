@@ -5,7 +5,6 @@ import logging
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-import numpy as np
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
