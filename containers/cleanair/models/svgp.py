@@ -121,24 +121,6 @@ class SVGP_TF1(Model):
                 )
             )
 
-    def elbo_logger(self, x):
-        """Log optimisation progress
-
-        args:
-            x: argument passed as a callback from GPFlow optimiser.
-        """
-        if (self.epoch % self.refresh) == 0:
-            session = self.model.enquire_session()
-            objective = self.model.objective.eval(session=session)
-            if self.logger:
-                self.logger.info(
-                    "Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective
-                )
-
-            print(self.epoch, ": ", objective)
-
-        self.epoch += 1
-
     def fit(self, x_train, y_train, refresh=10, save_model_state=True):
         """
         Fit the SVGP.
@@ -203,45 +185,7 @@ class SVGP_TF1(Model):
                     ),
                 )
 
-    def batch_predict(self, x_test):
-        """Split up prediction into indepedent batchs.
-        args:
-            x_test: N x D numpy array of locations to predict at
-        """
-        batch_size = self.batch_size
 
-        # Ensure batch is less than the number of test points
-        if x_test.shape[0] < batch_size:
-            batch_size = x_test.shape[0]
-
-        # Split up test points into equal batches
-        num_batches = int(np.ceil(x_test.shape[0] / batch_size))
-
-        ys_arr = []
-        ys_var_arr = []
-        i = 0
-
-        for b in range(num_batches):
-            if b % self.refresh == 0:
-                print("Batch", b, "out of", num_batches)
-            if b == num_batches - 1:
-                # in last batch just use remaining of test points
-                batch = x_test[i:, :]
-            else:
-                batch = x_test[i : i + batch_size, :]
-
-            i = i + batch_size
-
-            # predict for current batch
-            ys, ys_var = self.model.predict_y(batch)
-
-            ys_arr.append(ys)
-            ys_var_arr.append(ys_var)
-
-        ys = np.concatenate(ys_arr, axis=0)
-        ys_var = np.concatenate(ys_var_arr, axis=0)
-
-        return ys, ys_var
 
     def predict(self, x_test, species=['NO2']):
         """
@@ -264,9 +208,11 @@ class SVGP_TF1(Model):
             raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
+        predict_fn = lambda x: self.model.predict_y(x)
+
         for src, x_src in x_test.items():
             for pollutant in species:
-                y_mean, y_var = self.batch_predict(x_src)
+                y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {
                     pollutant: dict(
                         mean=y_mean,
@@ -275,15 +221,3 @@ class SVGP_TF1(Model):
                 }
         return y_dict
 
-    def clean_data(self, x_array, y_array):
-        """Remove nans and missing data for use in GPflow
-
-        args:
-            x_array: N x D numpy array,
-            y_array: N x 1 numpy array
-        """
-        idx = ~np.isnan(y_array[:, 0])
-        x_array = x_array[idx, :]
-        y_array = y_array[idx, :]
-
-        return x_array, y_array
