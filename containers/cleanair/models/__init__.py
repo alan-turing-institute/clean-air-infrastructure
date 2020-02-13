@@ -8,8 +8,10 @@ except Exception as ex:
 
 from .model import Model
 from .svgp import SVGP_TF1
+from .mr_dgp import MR_DGP
 
 ALL_ARR = [
+    "MR_DGP",
     "SVGP_TF1",
     "Model",
 ]

@@ -5,7 +5,7 @@ import logging
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP_TF1
+from cleanair.models import ModelData, SVGP_TF1, MR_DGP
 from cleanair.loggers import get_log_level
 
 def strtime_offset(strtime, offset_hours):
@@ -108,6 +108,13 @@ def main():
         "--predhours", type=int, default=48, help="The number of hours to predict for"
     )
 
+    parser.add_argument(
+        "--model",
+        type=str,
+        default='svgp_tf1',
+        help="Model to run.",
+    )
+
     # Parse and interpret arguments
     args = parser.parse_args()
     kwargs = vars(args)
@@ -161,7 +168,19 @@ def main():
         NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
-    model_fitter = SVGP_TF1(batch_size=100)   # big batch size for the grid
+    
+    models = {
+        'svgp_tf1': SVGP_TF1,
+        'mr_dgp': MR_DGP,
+    }
+
+    model_name = kwargs.pop('model')
+
+    if model_name not in models:
+        raise NotImplementedError('Model {model} has not been implmented'.format(model=kwargs['model']))
+
+    #TODO: should we move batch size into model params?
+    model_fitter = models[model_name](batch_size=100)   # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 

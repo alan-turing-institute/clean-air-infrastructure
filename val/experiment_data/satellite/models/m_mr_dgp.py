@@ -106,7 +106,6 @@ def batch_predict(m, XS, num_samples):
     #ys = np.concatenate(ys_arr, axis=0)
     #ys_var = np.concatenate(ys_var_arr, axis=0)
 
-    
     return ys_arr, ys_var_arr
 
 def get_kernel_product(K, active_dims=[0], lengthscales=[1.0], variances=[1.0], name=''):
