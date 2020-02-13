@@ -33,19 +33,13 @@ def main():
         "-d",
         "--config_dir",
         default="./",
-        help="Filepath to directory to store model and data."
+        help="Filepath to directory to store model and data.",
     )
     parser.add_argument(
-        "-w",
-        "--write",
-        action="store_true",
-        help="Write model data config to file.",
+        "-w", "--write", action="store_true", help="Write model data config to file.",
     )
     parser.add_argument(
-        "-r",
-        "--read",
-        action="store_true",
-        help="Read model data from config_dir.",
+        "-r", "--read", action="store_true", help="Read model data from config_dir.",
     )
     parser.add_argument(
         "-u",
@@ -122,14 +116,16 @@ def main():
         "tag": "tf1_test",
     }
 
-    if 'aqe' in model_config['train_sources'] + model_config['pred_sources']:
-        NotImplementedError("AQE cannot currently be run. Coming soon")
+    if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
+        raise NotImplementedError("AQE cannot currently be run. Coming soon")
 
-    if model_config['species'] != ['NO2']:
-        NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
+    if model_config["species"] != ["NO2"]:
+        raise NotImplementedError(
+            "The only pollutant we can model right now is NO2. Coming soon"
+        )
 
     # initialise the model
-    model_fitter = SVGP_TF1(batch_size=1000)   # big batch size for the grid
+    model_fitter = SVGP_TF1(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
@@ -143,27 +139,17 @@ def main():
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
 
     # the shapes of the arrays
-    y_train_shape = training_data_dict['Y'].shape
+    y_train_shape = training_data_dict["Y"].shape
 
     # get the training and testing data into the correct format
-    x_train = dict(
-        laqn=training_data_dict['X']
-    )
+    x_train = dict(laqn=training_data_dict["X"])
     y_train = dict(
-        laqn=dict(
-            NO2=np.reshape(training_data_dict['Y'], (y_train_shape[0], 1))
-        )
+        laqn=dict(NO2=np.reshape(training_data_dict["Y"], (y_train_shape[0], 1)))
     )
-    x_test = dict(
-        laqn=predict_data_dict['X']
-    )
+    x_test = dict(laqn=predict_data_dict["X"])
 
     # Fit the model
-    model_fitter.fit(
-        x_train,
-        y_train,
-        save_model_state=False
-    )
+    model_fitter.fit(x_train, y_train, save_model_state=False)
 
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()
