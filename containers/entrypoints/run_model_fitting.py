@@ -26,7 +26,7 @@ def main():
     parser.add_argument(
         "-s",
         "--secretfile",
-        default="db_secrets.json",
+        default="../../terraform/.secrets/db_secrets.json",
         help="File with connection secrets.",
     )
     parser.add_argument(
