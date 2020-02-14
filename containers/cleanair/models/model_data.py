@@ -67,7 +67,7 @@ class ModelData(DBWriter, DBQueryMixin):
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
-            
+
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
             self.normalised_training_data_df = self.__normalise_data(
@@ -345,7 +345,9 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
-    def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True, return_sat=True):
+    def __get_model_data_arrays(
+        self, data_df, sources, species, return_y=True, dropna=True, return_sat=True
+    ):
         """
         Return a dictionary structure of data arrays for model fitting.
 
@@ -409,12 +411,9 @@ class ModelData(DBWriter, DBQueryMixin):
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
         """
-        data_dict = dict(
-            X=dict(),
-            index=dict(),
-        )
+        data_dict = dict(X=dict(), index=dict(),)
         if return_y:
-            data_dict['Y'] = dict()
+            data_dict["Y"] = dict()
             data_subset = data_df[self.x_names_norm + self.config["species"]]
         else:
             data_subset = data_df[self.x_names_norm]
@@ -429,32 +428,32 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         # iterate through sources
         for src in sources:
-            if src == 'satellite':
-                raise NotImplementedError("Satellite cannot be a source - see issue 212 on GitHub.")
+            if src == "satellite":
+                raise NotImplementedError(
+                    "Satellite cannot be a source - see issue 212 on GitHub."
+                )
 
             # case for laqn, aqe, grid
             else:
-                src_mask = data_df[data_df['source'] == src].index
+                src_mask = data_df[data_df["source"] == src].index
                 x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
-                data_dict['X'][src] = x_src[self.x_names_norm].to_numpy()
+                data_dict["X"][src] = x_src[self.x_names_norm].to_numpy()
                 if return_y:
                     # get a numpy array for the pollutant of shape (n,1)
-                    data_dict['Y'][src] = {
+                    data_dict["Y"][src] = {
                         pollutant: np.reshape(
-                            x_src[pollutant].to_numpy(), (
-                                len(x_src), 1
-                            )
-                        ) for pollutant in species
+                            x_src[pollutant].to_numpy(), (len(x_src), 1)
+                        )
+                        for pollutant in species
                     }
                 # store index
-                data_dict['index'][src] = {
-                    pollutant: x_src.index.copy()
-                    for pollutant in species
+                data_dict["index"][src] = {
+                    pollutant: x_src.index.copy() for pollutant in species
                 }
         # special case for satellite data
         if self.config["include_satellite"] and return_sat:
             if len(species) > 1:
-                raise NotImplementedError('Can only get satellite data for NO2')
+                raise NotImplementedError("Can only get satellite data for NO2")
 
             # Check dimensions
             n_sat_box = self.training_satellite_data_x["box_id"].unique().size
@@ -477,14 +476,16 @@ class ModelData(DBWriter, DBQueryMixin):
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
             Y_sat = np.reshape(Y_sat, (Y_sat.shape[0], 1))
 
-            data_dict['X']['satellite'] = X_sat
+            data_dict["X"]["satellite"] = X_sat
             if return_y:
-                data_dict['Y']['satellite'] = dict(NO2=Y_sat)
+                data_dict["Y"]["satellite"] = dict(NO2=Y_sat)
             # ToDo: can we set mask to be index? or vice verse?
-            data_dict['mask'] = dict(satellite=X_sat_mask)
+            data_dict["mask"] = dict(satellite=X_sat_mask)
         return data_dict
 
-    def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=False):
+    def get_training_data_arrays(
+        self, sources="all", species="all", return_y=True, dropna=False
+    ):
         """
         The training data arrays.
 
@@ -495,17 +496,22 @@ class ModelData(DBWriter, DBQueryMixin):
             then satellite is always returned as a source.
         """
         # get all sources and species as default
-        if sources == 'all':
-            sources = self.config['train_sources']
-        if species == 'all':
-            species = self.config['species']
+        if sources == "all":
+            sources = self.config["train_sources"]
+        if species == "all":
+            species = self.config["species"]
         # get the data dictionaries
         return self.__get_model_data_arrays(
-            self.normalised_training_data_df, sources, species,
-            return_y=return_y, dropna=dropna
+            self.normalised_training_data_df,
+            sources,
+            species,
+            return_y=return_y,
+            dropna=dropna,
         )
 
-    def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=False):
+    def get_pred_data_arrays(
+        self, sources="all", species="all", return_y=False, dropna=False
+    ):
         """
         The pred data arrays.
 
@@ -520,20 +526,28 @@ class ModelData(DBWriter, DBQueryMixin):
         because it is considered a training source only.
         """
         # get all sources and species as default
-        if sources == 'all':
-            sources = self.config['pred_sources']
-        if species == 'all':
-            species = self.config['species']
+        if sources == "all":
+            sources = self.config["pred_sources"]
+        if species == "all":
+            species = self.config["species"]
         # return the y column as well
         if self.config["include_prediction_y"] or return_y:
             return self.__get_model_data_arrays(
-                self.normalised_pred_data_df, sources, species,
-                return_y=True, dropna=dropna, return_sat=False
+                self.normalised_pred_data_df,
+                sources,
+                species,
+                return_y=True,
+                dropna=dropna,
+                return_sat=False,
             )
         # return dicts without y
         return self.__get_model_data_arrays(
-            self.normalised_pred_data_df, sources, species,
-            return_y=False, dropna=dropna, return_sat=False
+            self.normalised_pred_data_df,
+            sources,
+            species,
+            return_y=False,
+            dropna=dropna,
+            return_sat=False,
         )
 
     def __check_features_available(self, features, start_date, end_date):
@@ -951,19 +965,21 @@ class ModelData(DBWriter, DBQueryMixin):
             [self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False
         )
 
-    def get_df_from_pred_dict(self, data_df, data_dict, pred_dict, sources='all', species='all'):
+    def get_df_from_pred_dict(
+        self, data_df, data_dict, pred_dict, sources="all", species="all"
+    ):
         """
         Return a new dataframe with columns updated from pred_dict.
         """
-        if sources == 'all':
+        if sources == "all":
             sources = pred_dict.keys()
-        if species == 'all':
-            species = self.config['species']
+        if species == "all":
+            species = self.config["species"]
         # create new dataframe and track indices for different sources + pollutants
         indices = []
         for source in sources:
             for pollutant in pred_dict[source]:
-                indices.extend(data_dict['index'][source][pollutant])
+                indices.extend(data_dict["index"][source][pollutant])
         predict_df = pd.DataFrame(index=indices)
         data_df = data_df.loc[indices]
 
@@ -993,9 +1009,7 @@ class ModelData(DBWriter, DBQueryMixin):
             Values are numpy arrays of predictions for a source and specie.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df,
-            self.get_pred_data_arrays(),
-            test_pred_dict,
+            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
         )
 
     def update_training_df_with_preds(self, training_pred_dict):
