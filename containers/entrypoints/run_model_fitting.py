@@ -22,7 +22,7 @@ def model_data_tests(model_data, y_pred):
     x_train = training_data_dict['X']
     y_train = training_data_dict['Y']
     x_test = predict_data_dict['X']
-    
+
     # checks for satellite
     assert 'satellite' not in x_test
     assert not 'include_satellite' in model_data.config or 'satellite' in x_train
@@ -168,7 +168,7 @@ def main():
         NotImplementedError("The only pollutant we can model right now is NO2. Coming soon")
 
     # initialise the model
-    
+
     models = {
         'svgp_tf1': SVGP_TF1,
         'mr_dgp': MR_DGP_MODEL,
