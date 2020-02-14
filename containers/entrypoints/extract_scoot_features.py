@@ -4,7 +4,7 @@ SCOOT feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import ScootMapToRoads, ScootFeatures
+from cleanair.features import ScootRoadMapper, ScootFeatures
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
     # Extract features and notify any exceptions
     try:
         static_feature_extractor = ScootFeatures(ndays=args.ndays, end=args.end, secretfile=args.secretfile)
-        road_mapper = ScootMapToRoads(secretfile=args.secretfile)
+        road_mapper = ScootRoadMapper(secretfile=args.secretfile)
 
         # Match all road segments to their closest SCOOT detector(s)
         # - if the segment has detectors on it then match to them

@@ -17,7 +17,7 @@ from .scoot_tables import (
     ScootDetector,
     ScootForecast,
     ScootReading,
-    ScootRoadInverseDistance,
+    # ScootRoadInverseDistance,
     ScootRoadMatch,
     ScootRoadReading,
     # ScootRoadUnmatched,
