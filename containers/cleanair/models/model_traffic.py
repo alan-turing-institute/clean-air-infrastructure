@@ -8,7 +8,7 @@ from fbprophet import Prophet
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
-from ..databases.tables import ScootDetector, ScootReading, ScootRoadMatch, ScootForecast
+from ..databases.tables import ScootDetector, ScootReading, ScootForecast
 from ..decorators import SuppressStdoutStderr
 from ..loggers import duration, get_logger, green
 from ..mixins import DateRangeMixin
@@ -66,10 +66,8 @@ class TrafficForecast(DateRangeMixin, DBWriter):
 
     def forecasts(self, forecast_length_hrs):
         """Forecast all features at each detector for the next `forecast_length_hrs`"""
-        start_time = time.time()
-
         # Get SCOOT readings from database
-        readings = self.scoot_readings()  # detector_ids=["N08/227b1", "N10/210s1"]
+        readings = self.scoot_readings()
         training_data = dict(tuple(readings.groupby(["detector_id"])))
 
         # As the most recent reading will not be now but we still want to forecast
@@ -92,6 +90,7 @@ class TrafficForecast(DateRangeMixin, DBWriter):
         # Iterate over each detector ID and obtain the forecast for it
         # print("There are", len(per_detector_forecasts), "per_detector_forecasts")
         for idx, (detector_id, fit_data) in enumerate(training_data.items()):
+            start_time = time.time()
             feature_predictions = []
 
             # Iterate over each feature and obtain the forecast for it
@@ -130,7 +129,7 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                 "measurement_start_utc"
             ] + datetime.timedelta(hours=1)
             self.logger.info(
-                "Finished forecasting detector %s (%i/%i) after %s seconds",
+                "Finished forecasting detector %s (%i/%i) after %s",
                 detector_id,
                 idx,
                 len(training_data),
@@ -161,7 +160,7 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                             session,
                             forecast_records,
                             on_conflict="overwrite",
-                            table=ScootRoadMatch,
+                            table=ScootForecast,
                         )
                         n_records += len(forecast_records)
                     except IntegrityError as error:
@@ -173,8 +172,8 @@ class TrafficForecast(DateRangeMixin, DBWriter):
 
         # Summarise updates
         self.logger.info(
-            "Committed %s forecasts to table %s in %s minutes",
+            "Committed %s forecasts to table %s in %s",
             green(n_records),
             green(ScootForecast.__tablename__),
-            green("{:.2f}".format((time.time() - start_time) / 60.0)),
+            green(duration(start_time, time.time())),
         )
