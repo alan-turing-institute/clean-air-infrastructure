@@ -7,14 +7,6 @@ except Exception as ex:
     MODEL_DATA_FLAG = False
 
 from .model import Model
-from .svgp import SVGP_TF1
+from .svgp import SVGP
 
-ALL_ARR = [
-    "SVGP_TF1",
-    "Model",
-]
-
-if MODEL_DATA_FLAG:
-    ALL_ARR = ["ModelData"] + ALL_ARR
-
-__all__ = ALL_ARR
+__all__ = ["ModelData", "SVGP", "Model"]

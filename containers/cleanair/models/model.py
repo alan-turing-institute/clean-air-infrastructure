@@ -4,19 +4,47 @@ The interface for London air quality models.
 
 from abc import ABC, abstractmethod
 
+
 class Model(ABC):
     """
     A base class for models.
     All other air quality models should extend this class.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, model_params=None, tasks=None, **kwargs):
+        """
+        Initialise a model with parameters and settings.
+
+        Parameters
+        ___
+
+        model_params : dict, optional
+            Parameters to run the model.
+            You may wish to pass parameters for the optimizer, kernel, etc.
+
+        tasks : list, optional
+            The name of the tasks (pollutants) we are modelling.
+            Default is ['NO2'].
+
+        Other Parameters
+        ___
+
+        log : bool, optional
+            Print logs. Default is True.
+
+        restore : bool, optional
+            Restore the model from a file.
+        """
+        self.model_params = dict() if model_params is None else model_params
+        self.tasks = ["NO2"] if tasks is None else tasks
+        if self.tasks != ["NO2"]:
+            raise NotImplementedError(
+                "Multiple pollutants not supported. Use only NO2."
+            )
         self.model = None
-        self.minimum_param_keys = ['restore']
-        if 'model_params' in kwargs:
-            self.model_params = kwargs['model_params']
-        else:
-            self.model_params = dict(restore=False)
+        self.log = True if "log" not in kwargs else kwargs["log"]
+        self.restore = False if "restore" not in kwargs else kwargs["restore"]
+        self.minimum_param_keys = []
 
     @abstractmethod
     def get_default_model_params(self):
@@ -109,7 +137,7 @@ class Model(ABC):
         """
 
     @abstractmethod
-    def predict(self, x_test, **kwargs):
+    def predict(self, x_test):
         """
         Predict using the model.
 
@@ -182,12 +210,12 @@ class Model(ABC):
             for pollutant in y_train[source]:
                 # check that each pollutant has the right shape
                 if y_train[source][pollutant].shape[1] != 1:
-                    error_message = 'The shape of {p} numpy array for source {s} must be Nx1. '
-                    error_message += 'The shape you gave was Nx{k}'
+                    error_message = (
+                        "The shape of {p} numpy array for source {s} must be Nx1. "
+                    )
+                    error_message += "The shape you gave was Nx{k}"
                     error_message.format(
-                        p=pollutant,
-                        s=source,
-                        k=y_train[source][pollutant].shape[1]
+                        p=pollutant, s=source, k=y_train[source][pollutant].shape[1]
                     )
                     raise ValueError(error_message)
                 # check that the shape of x_train and y_train is the same
@@ -200,11 +228,11 @@ class Model(ABC):
                             s=source,
                             p=pollutant,
                             x=x_train[source].shape[0],
-                            y=y_train[source][pollutant].shape[0]
+                            y=y_train[source][pollutant].shape[0],
                         )
                     )
                 # check that the shape of the satellite data is correct
-                if source == 'satellite' and len(x_train[source].shape) != 3:
+                if source == "satellite" and len(x_train[source].shape) != 3:
                     error_message = "The shape of the satellite data must be (NxSxD)."
                     error_message += "The shape you provided was {shp}.".format(
                         shp=x_train[source].shape
