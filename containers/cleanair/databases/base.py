@@ -9,6 +9,7 @@ SCHEMA_NAMES = [
     "interest_points",
     "static_data",
     "static_features",
+    "model_features",
     "model_results",
 ]
 EVENTS = [

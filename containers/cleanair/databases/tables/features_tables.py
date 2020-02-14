@@ -150,11 +150,11 @@ class IntersectionValue(Base):
         )
 
 
-class IntersectionValueDynamic(Base):
-    """Intersection between interest points and UKMap as values"""
+class DynamicFeatureValue(Base):
+    """Dynamic features as values"""
 
-    __tablename__ = "intersection_value_dynamic"
-    __table_args__ = {"schema": "dynamic_features"}
+    __tablename__ = "dynamic_feature_value"
+    __table_args__ = {"schema": "model_features"}
 
     point_id = Column(
         UUID,
@@ -170,7 +170,7 @@ class IntersectionValueDynamic(Base):
     value_100 = Column(Float, nullable=False)
     value_10 = Column(Float, nullable=False)
 
-    # Create IntersectionValue.point with no reverse relationship
+    # Create DynamicFeatureValue.point with no reverse relationship
     point = relationship("MetaPoint")
 
     def __repr__(self):
@@ -178,14 +178,14 @@ class IntersectionValueDynamic(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<IntersectionValueDynamic(" + ", ".join(vals)
+        return "<DynamicFeatureValue(" + ", ".join(vals)
 
     @staticmethod
     def build_entry(feature_name, reading_tuple):
         """
-        Create a IntersectionValue entry and return it
+        Create a DynamicFeatureValue entry and return it
         """
-        return IntersectionValue(
+        return DynamicFeatureValue(
             point_id=str(reading_tuple[0]),
             feature_name=feature_name,
             value_1000=reading_tuple[1],

@@ -93,7 +93,6 @@ class ScootForecast(Base):
             ]
         )
 
-
 class ScootDetector(DeferredReflection, Base):
     """Table of Scoot detectors"""
 
@@ -137,10 +136,10 @@ class ScootRoadMatch(Base):
         return "<ScootRoadMatch(" + ", ".join(vals)
 
 
-class ScootRoadReading(Base):
-    """Table of scoot readings mapped to road segments"""
+class ScootRoadForecast(Base):
+    """Table of SCOOT forecasts for each road segment"""
 
-    __tablename__ = "scoot_road_readings_tmp"
+    __tablename__ = "scoot_road_forecast"
     __table_args__ = {"schema": "dynamic_features"}
 
     road_toid = Column(
@@ -149,20 +148,16 @@ class ScootRoadReading(Base):
         primary_key=True,
         nullable=False,
     )
-    measurement_start_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False, index=True
-    )
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
-    flow_raw_count = Column(DOUBLE_PRECISION)
-    occupancy_raw_count = Column(DOUBLE_PRECISION)
-    congestion_raw_count = Column(DOUBLE_PRECISION)
-    saturation_raw_count = Column(DOUBLE_PRECISION)
 
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<ScootRoadReading(" + ", ".join(vals)
+        return "<ScootRoadForecast(" + ", ".join(vals)

@@ -4,7 +4,7 @@ SCOOT feature extraction
 import argparse
 import logging
 from cleanair.loggers import get_log_level
-from cleanair.features import ScootRoadMapper, ScootFeatures
+from cleanair.features import ScootFeatures
 
 
 def main():
@@ -46,34 +46,12 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = ScootFeatures(ndays=args.ndays, end=args.end, secretfile=args.secretfile)
-        road_mapper = ScootRoadMapper(secretfile=args.secretfile)
+        scoot_feature_extractor = ScootFeatures(ndays=args.ndays, end=args.end, secretfile=args.secretfile)
 
-        # Match all road segments to their closest SCOOT detector(s)
-        # - if the segment has detectors on it then match to them
-        # - otherwise match to the five closest detectors
-        road_mapper.update_remote_tables()
-
-
-
-        # Insert closest roads and calculate inverse distance
-        # static_feature_extractor.insert_closest_roads()
-
-        # Check what is in the database
-        # static_feature_extractor.update_remote_tables()
-        # print(static_feature_extractor.get_last_scoot_road_reading(
-        #     static_feature_extractor.start_datetime, static_feature_extractor.end_datetime, output_type='list'))
-        # Match roads
-
-        # print(static_feature_extractor.join_scoot_with_road(output_type='df'))
-        # print(static_feature_extractor.join_unmatached_scoot_with_road(output_type='df'))
-        # print(static_feature_extractor.total_inverse_distance(output_type='df'))
-
-        # # Extract static features into the appropriate tables on the database
-        # static_feature_extractor.update_scoot_road_reading_tables(
-        #     find_closest_roads=False
-        # )
-        # static_feature_extractor.update_remote_tables()
+        # Construct SCOOT feature for each road using:
+        # - the most recent SCOOT forecasts (from ScootForecast)
+        # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
+        scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

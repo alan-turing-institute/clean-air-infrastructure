@@ -8,7 +8,7 @@ from ..databases import DBWriter
 from ..databases.tables import (
     IntersectionGeom,
     IntersectionValue,
-    IntersectionValueDynamic,
+    DynamicFeatureValue,
     MetaPoint,
     UKMap,
 )
@@ -199,7 +199,7 @@ class Features(DBWriter, DBQueryMixin):
             sq_geometries = q_geometries.subquery()
 
             # ... restrict to only those within max(radius) of one another
-            # ... construct a column for each radius, containing building height if the building is inside that radius
+            # ... construct a column for each radius, containing <feature value> if the geometry is inside that radius
             # => [M < Npoints * Ngeometries records]
             intersection_columns = [
                 func.ST_Intersection(
@@ -231,7 +231,7 @@ class Features(DBWriter, DBQueryMixin):
                 .subquery()
             )
 
-            # Now group these by interest point, aggregating the height columns using the maximum in each group
+            # Now group these by interest point, aggregating the <feature value> columns using the maximum in each group
             # => [Npoints records]
             aggregate_funcs = [
                 func.coalesce(
@@ -401,7 +401,7 @@ class Features(DBWriter, DBQueryMixin):
                                 session,
                                 select_stmt,
                                 on_conflict="ignore",
-                                table=IntersectionValueDynamic,
+                                table=DynamicFeatureValue,
                             )
                         else:
                             self.commit_records(
