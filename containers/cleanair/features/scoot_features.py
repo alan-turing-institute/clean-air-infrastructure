@@ -1,19 +1,24 @@
 """
 Scoot feature extraction
 """
+import time
+from geoalchemy2.comparator import Comparator
+import pandas as pd
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from .features import Features
+from ..databases import DBWriter
+from ..databases.tables import MetaPoint, ScootDetector, OSHighway, ScootRoadMatch
+from ..loggers import duration, get_logger, green
+from ..mixins import DateRangeMixin, DBQueryMixin
+
 # import datetime
 # from dateutil import rrule
 # from sqlalchemy import asc, func
-from sqlalchemy import func
 # from sqlalchemy.sql import exists
-from .features import Features
 # from .feature_funcs import sum_, avg_, max_
-from ..databases import DBWriter
-from ..mixins import DateRangeMixin, DBQueryMixin
 # from ..decorators import db_query
 # from ..loggers import green
-from geoalchemy2.comparator import Comparator
-from ..databases.tables import MetaPoint, ScootDetector, OSHighway
 #     MetaPoint,
 #     OSHighway,
 #     ScootDetector,
@@ -23,7 +28,6 @@ from ..databases.tables import MetaPoint, ScootDetector, OSHighway
 #     ScootRoadReading,
 #     ScootRoadUnmatched,
 # )
-
 
 class ScootFeatures(DateRangeMixin, Features):
     """Process scoot features"""
@@ -112,98 +116,53 @@ class ScootMapToRoads(DBWriter, DBQueryMixin):
         # Initialise parent classes
         super().__init__(**kwargs)
 
-        # Subset of columns of interest for table columns
-        self.scoot_columns = [
-            ScootDetector.toid.label("scoot_toid"),
-            ScootDetector.detector_n.label("scoot_detector_n"),
-            # ScootDetector.point_id.label("scoot_point_id"),
-        ]
-        self.os_highway_columns = [
-            OSHighway.toid.label("road_toid"),
-            OSHighway.geom.label("road_geom"),
-        ]
+        # # Subset of columns of interest for table columns
+        # self.scoot_columns = [
+        #     ScootDetector.toid.label("scoot_toid"),
+        #     ScootDetector.detector_n.label("scoot_detector_n"),
+        #     # ScootDetector.point_id.label("scoot_point_id"),
+        # ]
+        # self.os_highway_columns = [
+        #     OSHighway.toid.label("road_toid"),
+        #     OSHighway.geom.label("road_geom"),
+        # ]
 
     def match_to_roads(self):
         """Match all road segments (OSHighway) with a SCOOT sensor (ScootDetector)"""
-        print("matching to roads")
+        start_time = time.time()
 
-        # Start by matching all detectors to the road they are on
-        # NB. a single road might have multiple detectors
-        #     12421 detectors only have 8160 distinct roads
         with self.dbcnxn.open_session() as session:
-
-            # q_scoot = session.query(*self.scoot_columns).distinct()
-            # print("SCOOT:", q_scoot.count())
-
-            # q_roads = session.query(*self.os_highway_columns).distinct()
-            # print("OSHighway:", q_roads.count())
-
-            # Get positions of all SCOOT sensors
-            # ['location', 'scoot_toid', 'scoot_detector_n']
-            sq_scoot_sensors = session.query(
-                MetaPoint.location,
-                *self.scoot_columns
-            ).join(ScootDetector).filter(MetaPoint.source == "scoot").subquery()
-            print("sq_scoot_sensors:", session.query(sq_scoot_sensors).count())
-            # print([c["name"] for c in session.query(sq_scoot_sensors).column_descriptions])
-            # print(session.query(sq_scoot_sensors).limit(5).all())
-
-            # # ['location', 'scoot_toid', 'scoot_detector_n', 'road_toid', 'road_geom']
-            # sq_roads_with_sensors = session.query(
-            #     MetaPoint.location,
-            #     *self.scoot_columns,
-            #     *self.os_highway_columns,
-            # ).join(ScootDetector, OSHighway.toid == ScootDetector.toid).join(MetaPoint).subquery()
-            # print("sq_roads_with_sensors:", session.query(sq_roads_with_sensors).count())
-            # # print([c["name"] for c in session.query(sq_roads_with_sensors).column_descriptions])
-            # # q_matched5 = session.query(sq_roads_with_sensors).limit(5).all()
-            # # print("sq_roads_with_sensors top 5:", q_matched5)
-
-            # ['location', 'scoot_toid', 'scoot_detector_n', 'road_toid', 'road_geom']
-
-            # ['road_toid', 'scoot_detector_n', 'distance_m']
+            # Start by matching all detectors to the road they are on
+            # NB. a single road might have multiple detectors
+            #     12421 detectors only have 8160 distinct roads
             sq_roads_with_sensors = session.query(
-                ScootDetector.detector_n.label("scoot_detector_n"),
                 OSHighway.toid.label("road_toid"),
+                ScootDetector.detector_n.label("scoot_detector_n"),
                 func.ST_Distance(
                     func.Geography(func.ST_Centroid(OSHighway.geom)),
                     func.Geography(MetaPoint.location),
                 ).label("distance_m"),
-            ).join(ScootDetector, OSHighway.toid == ScootDetector.toid).join(MetaPoint).subquery()
-            print("sq_roads_with_sensors:", session.query(sq_roads_with_sensors).count())
-            # print([c["name"] for c in session.query(sq_roads_with_sensors).column_descriptions])
-            # q_matched5 = session.query(sq_roads_with_sensors).limit(5).all()
-            # print("sq_roads_with_sensors top 5:", q_matched5)
+            # ).join(ScootDetector, OSHighway.toid == ScootDetector.toid).join(MetaPoint).subquery()
+            ).join(ScootDetector, OSHighway.toid == ScootDetector.toid).join(MetaPoint).limit(10).subquery()
 
-
-
-
-
-            # ['road_toid', 'road_geom']
+            # Load all roads that do not have sensors on them
             sq_unmatched_roads = session.query(
-                *self.os_highway_columns,
+                OSHighway.toid.label("road_toid"),
+                OSHighway.geom.label("road_geom"),
+            # ).outerjoin(ScootDetector, OSHighway.toid == ScootDetector.toid).filter(ScootDetector.toid == None).subquery()
             ).outerjoin(ScootDetector, OSHighway.toid == ScootDetector.toid).filter(ScootDetector.toid == None).limit(10).subquery()
-            print("sq_unmatched_roads:", session.query(sq_unmatched_roads).count())
-            # print([c["name"] for c in session.query(sq_unmatched_roads).column_descriptions])
-            # print(session.query(sq_unmatched_roads.c.road_toid).all())
 
-
-
-            # Get five closest sensors for each unmatched road segment
-            # xx ['location', 'scoot_toid', 'scoot_detector_n', 'road_toid', 'road_geom']
-            # ['lateral_scoot_location', 'lateral_scoot_detector_n', 'lateral_road_centroid', 'lateral_road_toid']
-            # ['lateral_road_toid', 'lateral_scoot_detector_n', 'distance_m']
+            # Get positions of all SCOOT sensors
+            sq_scoot_sensors = session.query(
+                MetaPoint.location,
+                ScootDetector.toid.label("scoot_toid"),
+                ScootDetector.detector_n.label("scoot_detector_n"),
+            ).join(ScootDetector).filter(MetaPoint.source == "scoot").subquery()
 
             # Define a lateral query that can get the five closest sensors for a given road segment
             lateral_top5_by_distance = session.query(
-                # sq_scoot_sensors.c.location.label("lateral_scoot_location"),
                 sq_unmatched_roads.c.road_toid.label("lateral_road_toid"),
                 sq_scoot_sensors.c.scoot_detector_n.label("lateral_scoot_detector_n"),
-                # func.ST_Centroid(sq_unmatched_roads.c.road_geom).label("lateral_road_centroid"),
-                # func.ST_Distance(
-                #     func.ST_Centroid(sq_unmatched_roads.c.road_geom),
-                #     sq_scoot_sensors.c.location,
-                # ).label("distance_latlon"),
                 func.ST_Distance(
                     func.Geography(func.ST_Centroid(sq_unmatched_roads.c.road_geom)),
                     func.Geography(sq_scoot_sensors.c.location),
@@ -213,69 +172,79 @@ class ScootMapToRoads(DBWriter, DBQueryMixin):
                 Comparator.distance_centroid(sq_unmatched_roads.c.road_geom, sq_scoot_sensors.c.location)
             ).limit(5).subquery().lateral()
 
-            print("lateral_top5_by_distance:", session.query(lateral_top5_by_distance).count())
-            print([c["name"] for c in session.query(lateral_top5_by_distance).column_descriptions])
-
-
-            # ['road_toid', 'scoot_detector_n', 'distance_m']
-            # [('osgb4000000030154456', 'N31/082b1', 193.47713525),
-            #  ('osgb4000000030154456', 'N31/082m1', 319.04120742),
-            #  ('osgb4000000030154456', 'N31/082d1', 371.12312762),
-            #  ('osgb4000000030154456', 'N31/082e1', 368.01218109),
-            #  ('osgb4000000030154456', 'N31/082n1', 370.51084346),
-            #  ('osgb4000000030150163', 'N19/078a1', 5355.51780324),
-            #  ('osgb4000000030150163', 'N19/077a1', 5602.37304273),
-            #  ('osgb4000000030150163', 'N19/111b1', 5660.81884143),
-            #  ('osgb4000000030150163', 'N19/111i1', 5808.18362376),
-            #  ('osgb4000000030150163', 'N19/111d1', 5808.18362376),
+            # fFr roads that do not have sensors on them, construct one row for each of of the five closest sensors
             q_roads_without_sensors = session.query(
                 sq_unmatched_roads.c.road_toid,
                 lateral_top5_by_distance.c.lateral_scoot_detector_n.label("scoot_detector_n"),
                 lateral_top5_by_distance.c.distance_m
             )
 
-            # q_roads_without_sensors = session.query(sq_unmatched_roads, lateral_top5_by_distance)
-            print("q_roads_without_sensors:", q_roads_without_sensors.count())
-            print([c["name"] for c in q_roads_without_sensors.column_descriptions])
-            print(q_roads_without_sensors.all())
+            q_roads_with_sensors = session.query(sq_roads_with_sensors)
+            df_matches = pd.read_sql(q_roads_with_sensors.statement, q_roads_with_sensors.session.bind)
+            print("q_roads_with_sensors")
+            print(df_matches.head())
 
+            df_matches = pd.read_sql(q_roads_without_sensors.statement, q_roads_without_sensors.session.bind)
+            print("q_roads_without_sensors")
+            print(df_matches.head())
 
-            # ['road_toid', 'lateral_scoot_detector_n', 'distance']
+            # Combine the two road lists and read them into a local dataframe
             q_combined = session.query(sq_roads_with_sensors).union_all(q_roads_without_sensors)
-            print("q_combined:", q_combined.count())
-            print([c["name"] for c in q_combined.column_descriptions])
+            df_matches = pd.read_sql(q_combined.statement, q_combined.session.bind).rename(
+                columns={
+                    "anon_1_scoot_detector_n": "detector_n",
+                    "anon_1_road_toid": "road_toid",
+                    "anon_1_distance_m": "distance_m"
+                }
+            )
+            self.logger.info("Loaded %s road-sensor associations from the database", green(df_matches.shape[0]))
+
+            # Construct the weight column. The weight for each sensor is d / sum_0^n (d)
+            df_matches["weight"] = df_matches["distance_m"].groupby(df_matches["road_toid"]).transform(lambda x: 1.0 / sum(x))
+            df_matches["weight"] = df_matches["distance_m"] * df_matches["weight"]
+
+        self.logger.info("Constructing road matches took %s", duration(start_time, time.time()))
+        return df_matches
+
+
+    def update_remote_tables(self):
+        """Update the database with SCOOT road matches."""
+        self.logger.info("Uploading %s road matches...", green("SCOOT"))
+        n_records = 0
+
+        # Get the forecasts and convert to a list of dictionaries
+        road_match_records = self.match_to_roads().to_dict("records")
+
+        # Insert road matches into the database
+        if len(road_match_records) > 0:
+            self.logger.info(
+                "Preparing to insert %s road matches into database",
+                green(len(road_match_records)),
+            )
+
+            # Open a session and insert the road matches
+            start_session = time.time()
+            with self.dbcnxn.open_session() as session:
+                try:
+                    # Commit and override any existing records
+                    self.commit_records(
+                        session,
+                        road_match_records,
+                        on_conflict="overwrite",
+                        table=ScootRoadMatch,
+                    )
+                    n_records += len(road_match_records)
+                except IntegrityError as error:
+                    self.logger.error(
+                        "Failed to add road matches to the database: %s", type(error)
+                    )
+                    self.logger.error(str(error))
+                    session.rollback()
+
+            self.logger.info("Insertion took %s", duration(start_session, time.time()))
 
 
 
-            print("q_combined top 5:", q_combined.limit(5).all())
-
-            # query = session.query(
-            #     sq_unmatched_roads,
-            # ).outerjoin(
-            #     lateral_top5_by_distance, sq_unmatched_roads.c.road_toid = lateral_top5_by_distance.c.road_toid
-            # )
-            # print("cross_q:", query.count())
-
-
-            # cross_sq = session.query(sq_unmatched_roads, lateral_top5_by_distance).subquery()
-            # print("cross_sq:", session.query(cross_sq).count())
-
-#             cross_q = session.query(
-#                 cross_sq.c.road_toid,
-#                 cross_sq.c.scoot_detector_n,
-#                 cross_sq.c.scoot_road_distance,
-#             )
-
-
-
-# q = db.session.query(cities1000.c.name,
-#                         cities1000.c.stateRegion,
-#                         cities1000.c.country).\
-#     order_by(
-#     func.ST_Distance(cities1000.c.geom,
-#                      func.Geometry(func.ST_GeographyFromText(
-#                          'POINT({} {})'.format(lon, lat))))
-#     ).limit(1).first()
 
 
 

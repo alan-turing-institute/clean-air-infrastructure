@@ -50,9 +50,9 @@ def main():
         road_mapper = ScootMapToRoads(secretfile=args.secretfile)
 
         # Match all road segments to their closest SCOOT detector(s)
-        # - if the segment has a detector on it then match to one
+        # - if the segment has detectors on it then match to them
         # - otherwise match to the five closest detectors
-        road_mapper.match_to_roads()
+        road_mapper.update_remote_tables()
 
 
 

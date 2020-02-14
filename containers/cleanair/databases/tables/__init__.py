@@ -20,7 +20,7 @@ from .scoot_tables import (
     ScootRoadInverseDistance,
     ScootRoadMatch,
     ScootRoadReading,
-    ScootRoadUnmatched,
+    # ScootRoadUnmatched,
 )
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon

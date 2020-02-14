@@ -109,7 +109,7 @@ class ScootDetector(DeferredReflection, Base):
 
 
 class ScootRoadMatch(Base):
-    """Table of Scoot sensors and their closest roads"""
+    """Table of all roads and their associated SCOOT sensors"""
 
     __tablename__ = "scoot_road_match"
     __table_args__ = {"schema": "dynamic_features"}
@@ -126,7 +126,8 @@ class ScootRoadMatch(Base):
         primary_key=True,
         nullable=False,
     )
-    scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)
+    distance_m = Column(DOUBLE_PRECISION, nullable=False)
+    weight = Column(DOUBLE_PRECISION, nullable=False)
 
     def __repr__(self):
         vals = [
@@ -134,56 +135,6 @@ class ScootRoadMatch(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<ScootRoadMatch(" + ", ".join(vals)
-
-
-class ScootRoadUnmatched(Base):
-    """Table of Scoot sensors and their closest roads"""
-
-    __tablename__ = "scoot_road_unmatched"
-    __table_args__ = {"schema": "dynamic_features"}
-
-    road_toid = Column(
-        String(),
-        ForeignKey("static_data.oshighway_roadlink.toid"),
-        primary_key=True,
-        nullable=False,
-    )
-    detector_n = Column(
-        String(),
-        ForeignKey("interest_points.scoot_detector.detector_n"),
-        primary_key=True,
-        nullable=False,
-    )
-    scoot_road_distance = Column(DOUBLE_PRECISION, nullable=False)
-
-    def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
-        return "<ScootRoadUnmatch(" + ", ".join(vals)
-
-
-class ScootRoadInverseDistance(Base):
-    """Table of total inverse road distance to each scoot sensor for each road segment"""
-
-    __tablename__ = "scoot_total_inverse_distance"
-    __table_args__ = {"schema": "dynamic_features"}
-
-    road_toid = Column(
-        String(),
-        ForeignKey("static_data.oshighway_roadlink.toid"),
-        primary_key=True,
-        nullable=False,
-    )
-    total_inverse_distance = Column(DOUBLE_PRECISION, nullable=False)
-
-    def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
-        return "<ScootRoadInverseDistance(" + ", ".join(vals)
 
 
 class ScootRoadReading(Base):

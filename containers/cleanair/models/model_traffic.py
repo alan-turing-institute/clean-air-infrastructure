@@ -8,7 +8,7 @@ from fbprophet import Prophet
 import pandas as pd
 from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
-from ..databases.tables import ScootDetector, ScootReading, ScootForecast
+from ..databases.tables import ScootDetector, ScootReading, ScootRoadMatch, ScootForecast
 from ..decorators import SuppressStdoutStderr
 from ..loggers import duration, get_logger, green
 from ..mixins import DateRangeMixin
@@ -161,7 +161,7 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                             session,
                             forecast_records,
                             on_conflict="overwrite",
-                            table=ScootForecast,
+                            table=ScootRoadMatch,
                         )
                         n_records += len(forecast_records)
                     except IntegrityError as error:
