@@ -67,7 +67,7 @@ def strtime_offset(strtime, offset_hours):
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
-def get_data_config(**kwargs):
+def get_data_config(kwargs):
     """
     Return a dictionary of model data configs given parser arguments.
     """
@@ -125,7 +125,7 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # get the model config from the parser arguments
-    model_config = get_data_config(**kwargs)
+    model_config = get_data_config(kwargs)
 
     if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
         raise NotImplementedError("AQE cannot currently be run. Coming soon")
@@ -136,7 +136,18 @@ def main():
         )
 
     # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
+    model_params = {
+            "jitter": 1e-5,
+            "likelihood_variance": 0.1,
+            "minibatch_size": 100,
+            "n_inducing_points": 2000,
+            "restore": False,
+            "train": True,
+            "model_state_fp": None,
+            "maxiter": 100,
+            "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
+        }
+    model_fitter = SVGP(model_params=model_params, batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = args.config_dir
 
