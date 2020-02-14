@@ -16,8 +16,32 @@ terraform/backend_config.tf
 .python-version
 python-virtual-environments/
 
-# Python
+# validation data directories
+run_model/experiments/*/data
+run_model/experiments/*/results
+run_model/experiments/*/models/restore
+run_model/experiments/*/meta
+run_model/cluster
+run_model/data
+
+val/experiment_data/*/data
+val/experiment_data/*/results
+val/experiment_data/*/models/restore
+val/experiment_data/*/meta
+val/experiment_data/cluster/
+val/cluster/
+
+# Python & notebooks
 *__pycache__
+.ipynb_checkpoints
+*.pyc 
+
+# run_model
+run_model/cluster
+run_model/data
+
+# csv files
+*.csv
 
 # Python package
 *.egg-info

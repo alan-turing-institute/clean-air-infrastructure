@@ -123,7 +123,11 @@ class ModelData(DBWriter, DBQueryMixin):
             "tag",
         ]
 
-        valid_models = ["svgp"]
+        valid_models = [
+            "mr_gprn",
+            "mr_dgp",
+            "svgp",
+        ]
 
         self.logger.info("Validating config")
 

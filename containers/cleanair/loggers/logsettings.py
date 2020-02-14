@@ -3,7 +3,12 @@ Central management of logger settings
 """
 import logging
 import os
-import colorlog
+
+try:
+    import colorlog
+    USE_COLORS_FLAG=True
+except:
+    USE_COLORS_FLAG=False
 
 
 def get_log_level(verbosity):
@@ -22,6 +27,9 @@ def get_logger(name):
         disable_colours = bool(os.environ["NO_TEXT_COLOUR"])
     except KeyError:
         disable_colours = False
+
+    disable_colours = (not USE_COLORS_FLAG) or disable_colours 
+
     # Enable either coloured or normal log levels (INFO is not coloured)
     stream = logging.root.handlers[0]
     if disable_colours:

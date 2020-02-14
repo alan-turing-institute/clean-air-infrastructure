@@ -1,0 +1,4 @@
+# in addition to requirements for cleanair
+ipywidgets>=7.5.1
+dash>=1.8.0
+ipython>=7.5.0
