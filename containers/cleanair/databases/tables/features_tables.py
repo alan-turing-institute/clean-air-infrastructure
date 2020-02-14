@@ -150,7 +150,7 @@ class IntersectionValue(Base):
         )
 
 
-class DynamicFeatureValue(Base):
+class FeatureDynamicValue(Base):
     """Dynamic features as values"""
 
     __tablename__ = "dynamic_feature_value"
@@ -170,7 +170,7 @@ class DynamicFeatureValue(Base):
     value_100 = Column(Float, nullable=False)
     value_10 = Column(Float, nullable=False)
 
-    # Create DynamicFeatureValue.point with no reverse relationship
+    # Create FeatureDynamicValue.point with no reverse relationship
     point = relationship("MetaPoint")
 
     def __repr__(self):
@@ -178,14 +178,14 @@ class DynamicFeatureValue(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<DynamicFeatureValue(" + ", ".join(vals)
+        return "<FeatureDynamicValue(" + ", ".join(vals)
 
     @staticmethod
     def build_entry(feature_name, reading_tuple):
         """
-        Create a DynamicFeatureValue entry and return it
+        Create a FeatureDynamicValue entry and return it
         """
-        return DynamicFeatureValue(
+        return FeatureDynamicValue(
             point_id=str(reading_tuple[0]),
             feature_name=feature_name,
             value_1000=reading_tuple[1],

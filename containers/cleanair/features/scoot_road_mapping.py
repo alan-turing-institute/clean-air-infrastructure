@@ -97,6 +97,7 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
     def update_remote_tables(self):
         """Update the database with SCOOT road matches."""
         self.logger.info("Uploading %s road matches...", green("SCOOT"))
+        start_time = time.time()
         n_records = 0
 
         # Get the forecasts and convert to a list of dictionaries
@@ -130,3 +131,10 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
 
             self.logger.info("Insertion took %s", duration(start_session, time.time()))
 
+        # Summarise updates
+        self.logger.info(
+            "Committed %s road matches to table %s in %s",
+            green(n_records),
+            green(ScootForecast.__tablename__),
+            green(duration(start_time, time.time())),
+        )

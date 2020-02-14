@@ -10,7 +10,7 @@ from ..databases.tables import (
     AQEReading,
     AQESite,
     IntersectionValue,
-    IntersectionValueDynamic,
+    FeatureDynamicValue,
     LAQNReading,
     LAQNSite,
     LondonBoundary,
@@ -83,15 +83,15 @@ class DBQueryMixin:
 
             available_dynamic_sq = (
                 session.query(
-                    IntersectionValueDynamic.feature_name,
-                    func.min(IntersectionValueDynamic.measurement_start_utc).label(
+                    FeatureDynamicValue.feature_name,
+                    func.min(FeatureDynamicValue.measurement_start_utc).label(
                         "min_date"
                     ),
-                    func.max(IntersectionValueDynamic.measurement_start_utc).label(
+                    func.max(FeatureDynamicValue.measurement_start_utc).label(
                         "max_date"
                     ),
                 )
-                .group_by(IntersectionValueDynamic.feature_name)
+                .group_by(FeatureDynamicValue.feature_name)
                 .subquery()
             )
 

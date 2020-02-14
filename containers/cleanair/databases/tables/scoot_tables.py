@@ -128,6 +128,9 @@ class ScootRoadMatch(Base):
     distance_m = Column(DOUBLE_PRECISION, nullable=False)
     weight = Column(DOUBLE_PRECISION, nullable=False)
 
+    # Create ScootRoadMatch.detector with no reverse relationship
+    detector = relationship("ScootDetector")
+
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))

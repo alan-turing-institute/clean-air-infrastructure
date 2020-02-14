@@ -51,7 +51,8 @@ def main():
         # Construct SCOOT feature for each road using:
         # - the most recent SCOOT forecasts (from ScootForecast)
         # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
-        scoot_feature_extractor.update_remote_tables()
+        scoot_feature_extractor.test()
+        # scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 from ..databases.tables import (
     IntersectionValue,
-    IntersectionValueDynamic,
+    FeatureDynamicValue,
     ModelResult,
     SatelliteDiscreteSite,
 )
@@ -572,7 +572,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """
 
         return self.__select_features(
-            IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
+            FeatureDynamicValue, features, sources, point_ids, start_date, end_date
         )
 
     def __select_static_features(self, features, sources, point_ids):

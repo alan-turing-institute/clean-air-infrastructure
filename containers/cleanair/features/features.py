@@ -8,7 +8,7 @@ from ..databases import DBWriter
 from ..databases.tables import (
     IntersectionGeom,
     IntersectionValue,
-    DynamicFeatureValue,
+    FeatureDynamicValue,
     MetaPoint,
     UKMap,
 )
@@ -401,7 +401,7 @@ class Features(DBWriter, DBQueryMixin):
                                 session,
                                 select_stmt,
                                 on_conflict="ignore",
-                                table=DynamicFeatureValue,
+                                table=FeatureDynamicValue,
                             )
                         else:
                             self.commit_records(

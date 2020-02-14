@@ -5,7 +5,7 @@ from .aqe_tables import AQESite, AQEReading
 from .features_tables import (
     IntersectionGeom,
     IntersectionValue,
-    DynamicFeatureValue,
+    FeatureDynamicValue,
 )
 from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
@@ -33,7 +33,7 @@ from .ukmap_tables import UKMap
 __all__ = [
     "AQEReading",
     "AQESite",
-    "DynamicFeatureValue",
+    "FeatureDynamicValue",
     "HexGrid",
     "IntersectionGeom",
     "IntersectionValue",
