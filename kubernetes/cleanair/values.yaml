@@ -56,6 +56,20 @@ jobs:
       secret:
         secretName: secrets
 
+  - name: scoot-roadmap
+    image:
+      repository: cleanairdocker.azurecr.io/scoot-roadmap
+      imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
   - name: scoot-backdate
     image:
       repository: cleanairdocker.azurecr.io/scoot

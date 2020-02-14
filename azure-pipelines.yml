@@ -36,6 +36,10 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
       displayName: 'Build SCOOT data collection image'
+    # Build SCOOT road maps
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot-roadmap:$(Build.SourceVersion) -f containers/dockerfiles/construct_scoot_roadmaps.Dockerfile containers
+      displayName: 'Build SCOOT road mapping image'
     # Build SCOOT forecasts
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecast:$(Build.SourceVersion) -f containers/dockerfiles/predict_scoot_forecast.Dockerfile containers
