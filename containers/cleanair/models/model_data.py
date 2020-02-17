@@ -29,26 +29,6 @@ class ModelData(DBWriter, DBQueryMixin):
         args:
             config: A config dictionary
             config_dir: A directory containing config files (created by ModelData.save_config_state())
-
-            Example config:
-                {
-                "train_start_date": "2019-11-01T00:00:00",
-                "train_end_date": "2019-11-30T00:00:00",
-                "pred_start_date": "2019-11-01T00:00:00",
-                "pred_end_date": "2019-11-30T00:00:00",
-
-                "train_sources": ["laqn", "aqe"],
-                "pred_sources": ["laqn", "aqe"],
-                "train_interest_points": ['point_id1', 'point_id2'],
-                'train_satellite_interest_points': ['point_id1', 'point_id2']
-                "pred_interest_points": ['point_id1', 'point_id2'],
-                "species": ["NO2"],
-                "features": "all",
-                "norm_by": "laqn",
-
-                "model_type": "svgp",
-                "tag": "production"
-                }
         """
 
         # Initialise parent classes
@@ -137,10 +117,8 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Check requested features are available
         if config["features"] == "all":
-            features = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
+            features = self.get_available_static_features() + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"]
             )
             if not features:
                 raise AttributeError(
@@ -216,10 +194,8 @@ class ModelData(DBWriter, DBQueryMixin):
             config["train_satellite_interest_points"] = []
 
         if config["features"] == "all":
-            feature_names = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
+            feature_names = self.get_available_static_features() + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"]
             )
             buff_size = [1000, 500, 200, 100, 10]
             config["features"] = [
@@ -348,8 +324,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __get_model_data_arrays(
         self, data_df, sources, species, return_y=True, dropna=True, return_sat=True
     ):
-        """
-        Return a dictionary structure of data arrays for model fitting.
+        """Return a dictionary structure of data arrays for model fitting.
 
         Parameters
         ___
@@ -376,37 +351,11 @@ class ModelData(DBWriter, DBQueryMixin):
             A dictionary structure will all the requested data inside.
             See examples for details.
 
-        Examples
-        ___
-
-        >>> data_df = model_data.normalised_training_data_df
-        >>> sources = ['laqn']
-        >>> species = ['NO2', 'PM10']
-        >>> print(model_data.__get_model_data_arrays(data_df, sources, species)
-            {
-                'X': {
-                    'laqn': x_laqn
-                },
-                'Y': {
-                    'laqn': {
-                        'NO2': y_laqn_no2,
-                        'PM10': y_laqn_pm10
-                    }
-                },
-                'index': {
-                    'laqn': {
-                        'NO2': laqn_no2_index,
-                        'PM10: laqn_pm10_index
-                    }
-                }
-            }
-
         Notes
         ___
 
         The returned dictionary includes index to allow model predictions
         to be appended to dataframes (required when dropna is used).
-
         At the moment, `laqn_no2_index` and `laqn_pm10_index` will be the same.
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
@@ -486,14 +435,12 @@ class ModelData(DBWriter, DBQueryMixin):
     def get_training_data_arrays(
         self, sources="all", species="all", return_y=True, dropna=False
     ):
-        """
-        The training data arrays.
+        """The training data arrays.
 
         Notes
         ___
-
-            If the `include_satellite` flag is set to `True` in `config`,
-            then satellite is always returned as a source.
+        If the `include_satellite` flag is set to `True` in `config`,
+        then satellite is always returned as a source.
         """
         # get all sources and species as default
         if sources == "all":
@@ -512,8 +459,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def get_pred_data_arrays(
         self, sources="all", species="all", return_y=False, dropna=False
     ):
-        """
-        The pred data arrays.
+        """The pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
@@ -553,10 +499,8 @@ class ModelData(DBWriter, DBQueryMixin):
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.get_available_static_features(
-            output_type="list"
-        ) + self.get_available_dynamic_features(
-            start_date, end_date, output_type="list"
+        available_features = self.get_available_static_features() + self.get_available_dynamic_features(
+            start_date, end_date
         )
         unavailable_features = []
 
@@ -580,7 +524,7 @@ class ModelData(DBWriter, DBQueryMixin):
             sources: A list of sources
         """
 
-        available_sources = self.get_available_sources(output_type="list")
+        available_sources = self.get_available_sources()
         unavailable_sources = []
 
         for source in sources:
@@ -597,7 +541,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __get_interest_point_ids(self, sources):
 
         return (
-            self.get_available_interest_points(sources, output_type="df")["point_id"]
+            self.get_available_interest_points(sources)["point_id"]
             .astype(str)
             .to_numpy()
             .tolist()
@@ -704,8 +648,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __select_dynamic_features(
         self, start_date, end_date, features, sources, point_ids
     ):
-        """Read static features from the database.
-        """
+        """Read static features from the database."""
 
         return self.__select_features(
             IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
@@ -763,7 +706,7 @@ class ModelData(DBWriter, DBQueryMixin):
         sensor_dfs = []
         if "laqn" in sources:
             laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_, output_type="df"
+                start_date_, end_date_
             )
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
@@ -773,7 +716,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if "aqe" in sources:
             aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_, output_type="df"
+                start_date_, end_date_
             )
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
@@ -821,9 +764,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_training_data_inputs(self):
-        """
-        Query the database to get inputs for model fitting.
-        """
+        """Query the database to get inputs for model fitting."""
 
         start_date = self.config["train_start_date"]
         end_date = self.config["train_end_date"]
@@ -923,10 +864,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Get satellite readings
         sat_train_df = self.get_satellite_readings_training(
-            train_start_date, train_end_date, species=species, output_type="df"
+            train_start_date, train_end_date, species=species
         )
         sat_pred_df = self.get_satellite_readings_pred(
-            pred_start_date, pred_end_date, species=species, output_type="df"
+            pred_start_date, pred_end_date, species=species
         )
 
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
