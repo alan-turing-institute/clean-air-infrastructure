@@ -2,7 +2,9 @@
 Visualise and run metrics for a single model data fit.
 """
 
+import pickle
 import run_model_fitting
+from cleanair.models import ModelData
 from cleanair import metrics
 from cleanair.dashboard import apps
 
@@ -10,8 +12,18 @@ def main():
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
-    # run a model data fit
-    model_data = run_model_fitting.main()
+    # get a model data object from the config_dir
+    parser = run_model_fitting.CleanAirParser(description="Dashboard")
+    args = parser.parse_args()
+    kwargs = vars(args)
+    model_data = ModelData(**kwargs)
+
+    # get the predictions of the model
+    with open(args.config_dir, "rb") as handle:
+        y_pred = pickle.load(handle)
+
+    # update the model data object with the predictions
+    model_data.update_test_df_with_preds(y_pred)
 
     # get the mapbox api key
     mapbox_access_token = open("../../terraform/.secrets/.mapbox_token").read()

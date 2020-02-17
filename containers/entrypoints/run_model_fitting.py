@@ -10,9 +10,9 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
-class ModelFitParser(argparse.ArgumentParser):
+class CleanAirParser(argparse.ArgumentParser):
     """
-    A parser for the model fitting entrypoint.
+    The base cleanair entrypoint parser.
     """
 
     def __init__(self, **kwargs):
@@ -29,6 +29,14 @@ class ModelFitParser(argparse.ArgumentParser):
             default="./",
             help="Filepath to directory to store model and data.",
         )
+
+class ModelFitParser(CleanAirParser):
+    """
+    A parser for the model fitting entrypoint.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.add_argument(
             "-results_dir",
             type=str,
