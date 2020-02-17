@@ -1,11 +1,12 @@
+"""
+Function to handle callbacks from apps.
+"""
 from . import timeseries
-from . import geomap
 
 def interest_point_timeseries_callback(hover_data, point_groupby, pollutant='NO2'):
     """
     When hovering over a point, update the timeseries showing the prediction.
     """
-    print(hover_data)
     point_id = hover_data['points'][0]['hovertext']
     point_pred_df = point_groupby.get_group(point_id)
     mean_trace = timeseries.get_pollutant_point_trace(point_pred_df, col=pollutant + '_mean')
