@@ -9,30 +9,36 @@ import plotly.express as px
 from . import timeseries
 
 METRIC_NAMES = {
-    'mae':'Mean absolute error',
-    'mse':'Mean squared error',
-    'r2':'R squared score'
+    "mae": "Mean absolute error",
+    "mse": "Mean squared error",
+    "r2": "R squared score",
 }
 POLLUTANT_NAMES = dict(
-    NO2='Nitrogen Dioxide',
-    O3='Ozone',
-    CO2='Carbon Dioxide',
-    PM10='Particulate Matter (10 micro m)',
-    PM25='Particulate Matter (2.5 micro m)'
+    NO2="Nitrogen Dioxide",
+    O3="Ozone",
+    CO2="Carbon Dioxide",
+    PM10="Particulate Matter (10 micro m)",
+    PM25="Particulate Matter (2.5 micro m)",
 )
 
-class ModelFitComponent():
+
+class ModelFitComponent:
     """
     Collect all the components of a model fit and its layout in the app.
     """
 
     def __init__(
-            self, instance_id, model_data, sensor_scores_df, temporal_scores_df,
-            evaluate_training=False, evaluate_testing=True,
-            interest_points_map_id='interest-points-map',
-            interest_points_timeseries_id='interest-points-timeseries',
-            temporal_metrics_timeseries_id='temporal_metrics_timeseries'
-        ):
+        self,
+        instance_id,
+        model_data,
+        sensor_scores_df,
+        temporal_scores_df,
+        evaluate_training=False,
+        evaluate_testing=True,
+        interest_points_map_id="interest-points-map",
+        interest_points_timeseries_id="interest-points-timeseries",
+        temporal_metrics_timeseries_id="temporal_metrics_timeseries",
+    ):
         """
         Initialise with a model data object and the scores for the fit.
         """
@@ -51,15 +57,21 @@ class ModelFitComponent():
             # append train and test dfs then group by point id
             self.point_groupby = self.model_data.normalised_training_data_df.append(
                 self.model_data.normalised_pred_data_df, ignore_index=True
-            ).groupby('point_id')
+            ).groupby("point_id")
         elif self.evaluate_training:
             # only groupby on training set
-            self.point_groupby = self.model_data.normalised_training_data_df.groupby('point_id')
+            self.point_groupby = self.model_data.normalised_training_data_df.groupby(
+                "point_id"
+            )
         elif self.evaluate_testing:
             # only groupby on test set
-            self.point_groupby = self.model_data.normalised_pred_data_df.groupby('point_id')
+            self.point_groupby = self.model_data.normalised_pred_data_df.groupby(
+                "point_id"
+            )
         else:
-            raise ValueError("Must set either evaluate_training or evauluate_testing (or both) to True.")
+            raise ValueError(
+                "Must set either evaluate_training or evauluate_testing (or both) to True."
+            )
 
     def get_interest_points_map(self, metric_key, pollutant):
         """
@@ -67,13 +79,13 @@ class ModelFitComponent():
         """
         return px.scatter_mapbox(
             self.sensor_scores_df,
-            lat='lat',
-            lon='lon',
+            lat="lat",
+            lon="lon",
             size=[15 for i in range(len(list(self.sensor_scores_df.index)))],
-            color=pollutant + '_' + metric_key,
+            color=pollutant + "_" + metric_key,
             zoom=10,
-            mapbox_style='basic',
-            hover_name=self.sensor_scores_df['point_id']
+            mapbox_style="basic",
+            hover_name=self.sensor_scores_df["point_id"],
         )
 
     def get_interest_points_timeseries(self, point_id, pollutant):
@@ -85,37 +97,38 @@ class ModelFitComponent():
             figure=go.Figure(
                 data=[
                     timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id),
-                        col=pollutant
+                        self.point_groupby.get_group(point_id), col=pollutant
                     ),
                     timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id),
-                        col=pollutant + '_mean'
-                    )
+                        self.point_groupby.get_group(point_id), col=pollutant + "_mean"
+                    ),
                 ],
-                layout=dict(
-                    title='Prediction for point {id}'.format(id=point_id)
-                )
-            )
+                layout=dict(title="Prediction for point {id}".format(id=point_id)),
+            ),
         )
 
     def get_temporal_metrics_timeseries(self, metric_key, pollutant):
         """
         Get a timeseries of the score for a given metric over the prediction period.
         """
-        col = pollutant + '_' + metric_key
+        col = pollutant + "_" + metric_key
         name = METRIC_NAMES[metric_key]
         return dict(
-            data=[dict(
-                x=list(self.temporal_scores_df['measurement_start_utc']),
-                y=list(self.temporal_scores_df[col]),
-                mode='lines',
-                name=name
-            )],
+            data=[
+                dict(
+                    x=list(self.temporal_scores_df["measurement_start_utc"]),
+                    y=list(self.temporal_scores_df[col]),
+                    mode="lines",
+                    name=name,
+                )
+            ],
             layout=dict(
-                title='{mtc} score for all sensors over time.'.format(mtc=METRIC_NAMES[metric_key])
-            )
+                title="{mtc} score for all sensors over time.".format(
+                    mtc=METRIC_NAMES[metric_key]
+                )
+            ),
         )
+
 
 def get_model_data_fit_intro():
     """
@@ -130,21 +143,21 @@ def get_model_data_fit_intro():
     """
     return dcc.Markdown(introduction)
 
+
 def get_pollutant_dropdown(component_id, species):
     """
     Get a dropdown menu with all possible pollutants inside.
     """
     return dcc.Dropdown(
         id=component_id,
-        className='col-6',
+        className="col-6",
         options=[
-            dict(
-                label=POLLUTANT_NAMES[pollutant],
-                value=pollutant
-            ) for pollutant in species
+            dict(label=POLLUTANT_NAMES[pollutant], value=pollutant)
+            for pollutant in species
         ],
         value=species[0],
     )
+
 
 def get_metric_dropdown(component_id, metric_keys):
     """
@@ -152,12 +165,7 @@ def get_metric_dropdown(component_id, metric_keys):
     """
     return dcc.Dropdown(
         id=component_id,
-        className='col-6',
-        options=[
-            dict(
-                label=METRIC_NAMES[key],
-                value=key
-            ) for key in metric_keys
-        ],
+        className="col-6",
+        options=[dict(label=METRIC_NAMES[key], value=key) for key in metric_keys],
         value=metric_keys[0],
     )
