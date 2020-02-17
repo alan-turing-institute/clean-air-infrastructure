@@ -996,3 +996,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, upload_records, table=ModelResult)
+
+    def read_results_table(self):
+        """Read results from the DB and update the dataframe."""
+        raise NotImplementedError("Coming soon")
