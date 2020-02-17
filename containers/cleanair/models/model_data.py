@@ -28,7 +28,8 @@ class ModelData(DBWriter, DBQueryMixin):
         Initialise the ModelData object with a config file
         args:
             config: A config dictionary
-            config_dir: A directory containing config files (created by ModelData.save_config_state())
+            config_dir: A directory containing config files 
+                        (created by ModelData.save_config_state())
         """
 
         # Initialise parent classes
@@ -321,9 +322,7 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
-    def __get_model_data_arrays(
-        self, data_df, sources, species, return_y=True, dropna=True, return_sat=True
-    ):
+    def __get_model_data_arrays(self, data_df, sources, species, **kwargs):
         """Return a dictionary structure of data arrays for model fitting.
 
         Parameters
@@ -338,18 +337,27 @@ class ModelData(DBWriter, DBQueryMixin):
         species : list
             Pollutants to get data for, e.g. 'no2', 'o3'.
 
-        return_y : bool, optional
-            If true, the returned dictionary will have a 'Y' key/value.
-
-        dropna : bool, optional
-            If true, any rows in data_df that contain NaN will be dropped.
-
         Returns
         ___
 
         data_dict : dict
             A dictionary structure will all the requested data inside.
             See examples for details.
+
+        Other Parameters
+        ___
+
+        return_y : bool, optional
+            Default is True.
+            If true, the returned dictionary will have a 'Y' key/value.
+
+        dropna : bool, optional
+            Default is False.
+            If true, any rows in data_df that contain NaN will be dropped.
+
+        return_sat : bool, optional
+            Default is True.
+            Returns satellite if "include_satellite" flag is also True in config.
 
         Notes
         ___
@@ -360,13 +368,17 @@ class ModelData(DBWriter, DBQueryMixin):
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
         """
+        # get key word arguments
+        return_y = True if "return_y" not in kwargs else kwargs["return_y"]
+        dropna = False if "dropna" not in kwargs else kwargs["dropna"]
+        return_sat = True if "return_sat" not in kwargs else kwargs["return_sat"]
+
         data_dict = dict(X=dict(), index=dict(),)
         if return_y:
             data_dict["Y"] = dict()
             data_subset = data_df[self.x_names_norm + self.config["species"]]
         else:
             data_subset = data_df[self.x_names_norm]
-        # ToDo: this should be generalised to drop a subset of sources
         if dropna:
             data_subset = data_subset.dropna()  # Must have complete dataset
             n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
@@ -381,42 +393,37 @@ class ModelData(DBWriter, DBQueryMixin):
                 raise NotImplementedError(
                     "Satellite cannot be a source - see issue 212 on GitHub."
                 )
-
             # case for laqn, aqe, grid
-            else:
-                src_mask = data_df[data_df["source"] == src].index
-                x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
-                data_dict["X"][src] = x_src[self.x_names_norm].to_numpy()
-                if return_y:
-                    # get a numpy array for the pollutant of shape (n,1)
-                    data_dict["Y"][src] = {
-                        pollutant: np.reshape(
-                            x_src[pollutant].to_numpy(), (len(x_src), 1)
-                        )
-                        for pollutant in species
-                    }
-                # store index
-                data_dict["index"][src] = {
-                    pollutant: x_src.index.copy() for pollutant in species
+            src_mask = data_df[data_df["source"] == src].index
+            x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
+            data_dict["X"][src] = x_src[self.x_names_norm].to_numpy()
+            if return_y:
+                # get a numpy array for the pollutant of shape (n,1)
+                data_dict["Y"][src] = {
+                    pollutant: np.reshape(
+                        x_src[pollutant].to_numpy(), (len(x_src), 1)
+                    )
+                    for pollutant in species
                 }
+            # store index
+            data_dict["index"][src] = {
+                pollutant: x_src.index.copy() for pollutant in species
+            }
         # special case for satellite data
         if self.config["include_satellite"] and return_sat:
             if len(species) > 1:
                 raise NotImplementedError("Can only get satellite data for NO2")
-
             # Check dimensions
             n_sat_box = self.training_satellite_data_x["box_id"].unique().size
             n_hours = self.training_satellite_data_x["epoch"].unique().size
             # Number of interest points in each satellite square
             n_interest_points = 100
             n_x_names = len(self.config["x_names"])
-
             X_sat = (
                 self.training_satellite_data_x[self.x_names_norm]
                 .to_numpy()
                 .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
             )
-
             X_sat_mask = (
                 self.training_satellite_data_x["in_london"]
                 .to_numpy()
@@ -424,11 +431,9 @@ class ModelData(DBWriter, DBQueryMixin):
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
             Y_sat = np.reshape(Y_sat, (Y_sat.shape[0], 1))
-
             data_dict["X"]["satellite"] = X_sat
             if return_y:
                 data_dict["Y"]["satellite"] = dict(NO2=Y_sat)
-            # ToDo: can we set mask to be index? or vice verse?
             data_dict["mask"] = dict(satellite=X_sat_mask)
         return data_dict
 
@@ -923,7 +928,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 indices.extend(data_dict["index"][source][pollutant])
         predict_df = pd.DataFrame(index=indices)
         data_df = data_df.loc[indices]
-
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
         for pred_type in ["mean", "var"]:
             for pollutant in species:
@@ -932,7 +936,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 for source in sources:
                     column = np.append(column, pred_dict[source][pollutant][pred_type])
                 predict_df[pollutant + "_" + pred_type] = column
-
         # add predict_df as new columns to data_df - they should share an index
         return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
 
