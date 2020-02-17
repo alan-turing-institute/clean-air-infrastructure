@@ -136,20 +136,9 @@ def main():
         )
 
     # initialise the model
-    model_params = {
-            "jitter": 1e-5,
-            "likelihood_variance": 0.1,
-            "minibatch_size": 100,
-            "n_inducing_points": 2000,
-            "restore": False,
-            "train": True,
-            "model_state_fp": None,
-            "maxiter": 100,
-            "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
-        }
-    model_fitter = SVGP(model_params=model_params, batch_size=1000)  # big batch size for the grid
+    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 1
-    model_fitter.model_params["model_state_fp"] = args.config_dir
+    model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data
     if read:
@@ -159,7 +148,7 @@ def main():
 
     # write model results to file
     if write:
-        model_data.save_config_state(args.config_dir)
+        model_data.save_config_state(kwargs["config_dir"])
 
     # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=False)

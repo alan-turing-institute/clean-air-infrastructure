@@ -33,7 +33,7 @@ class SVGP(Model):
             See super class.
 
         **kwargs : kwargs
-            See parent class.
+            See parent class and other parameters (below).
 
         Other Parameters
         ___
@@ -161,16 +161,13 @@ class SVGP(Model):
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)
-            if self.logger:
+            if self.log:
                 self.logger.info(
                     "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
                     self.epoch,
                     objective,
                     logger_arg,
                 )
-            # ToDo: add logger to print ELBO instead of print statement
-            print(self.epoch, ": ", objective)
-
         self.epoch += 1
 
     def fit(self, x_train, y_train, **kwargs):
@@ -279,7 +276,6 @@ class SVGP(Model):
         index = 0
 
         for count in range(num_batches):
-            # ToDo: add logger to print progress of batch predict
             if count == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_array[index:, :]
@@ -320,6 +316,12 @@ class SVGP(Model):
         y_dict = dict()
         for src, x_src in x_test.items():
             for pollutant in self.tasks:
+                if self.log:
+                    self.logger.info(
+                        "Batch predicting for %s on %s",
+                        pollutant,
+                        src,
+                    )
                 y_mean, y_var = self.batch_predict(x_src)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict
