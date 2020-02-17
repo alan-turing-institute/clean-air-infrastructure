@@ -1,13 +1,14 @@
 """
 Model fitting
 """
+import os
 import logging
 import argparse
+import pickle
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
-
 
 class ModelFitParser(argparse.ArgumentParser):
     """
@@ -29,6 +30,12 @@ class ModelFitParser(argparse.ArgumentParser):
             help="Filepath to directory to store model and data.",
         )
         self.add_argument(
+            "-results_dir",
+            type=str,
+            default=None,
+            help="Filepath to the directory of results.",
+        )
+        self.add_argument(
             "-w",
             "--write",
             action="store_true",
@@ -46,8 +53,19 @@ class ModelFitParser(argparse.ArgumentParser):
             action="store_true",
             help="Update the database with model results.",
         )
+        self.add_argument(
+            "-p",
+            "--write_prediction",
+            action="store_true",
+            help="Write the predictions to file.",
+        )
         self.add_argument("-v", "--verbose", action="count", default=0)
-
+        self.add_argument(
+                "-y",
+                "--return_y",
+                action="store_true",
+                help="Include pollutant data in the test dataset.",
+            )
         self.add_argument(
             "--trainend",
             type=str,
@@ -91,6 +109,7 @@ def get_data_config(kwargs):
     pred_n_hours = kwargs.pop("predhours")
     train_start = strtime_offset(train_end, -train_n_hours)
     pred_end = strtime_offset(pred_start, pred_n_hours)
+    return_y = kwargs.pop("return_y")
 
     # Model configuration
     model_config = {
@@ -99,7 +118,7 @@ def get_data_config(kwargs):
         "pred_start_date": pred_start,
         "pred_end_date": pred_end,
         "include_satellite": True,
-        "include_prediction_y": True,
+        "include_prediction_y": return_y,
         "train_sources": ["laqn"],
         "pred_sources": ["laqn"],
         "train_interest_points": "all",
@@ -114,7 +133,7 @@ def get_data_config(kwargs):
         ],
         "norm_by": "laqn",
         "model_type": "svgp",
-        "tag": "tf1_test",
+        "tag": "testing_dashboard",
     }
     return model_config
 
@@ -134,6 +153,8 @@ def main():
     update = kwargs.pop("update")
     write = kwargs.pop("write")
     read = kwargs.pop("read")
+    write_prediction = kwargs.pop("write_prediction")
+    results_dir = kwargs.pop("results_dir")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -187,6 +208,14 @@ def main():
     if update:
         model_data.update_remote_tables()
 
+    # Write the model results to file
+    if write_prediction:
+        if results_dir is None:
+            filepath = os.path.join(kwargs["config_dir"], "y_pred.pickle")
+        else:
+            filepath = os.path.join(results_dir, "y_pred.pickle")
+        with open(filepath, "wb") as results_file:
+            pickle.dump(y_pred, results_file)
 
 if __name__ == "__main__":
     main()
