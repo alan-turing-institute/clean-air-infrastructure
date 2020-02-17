@@ -249,4 +249,4 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError("x_test has no data.")
+                raise ValueError("x_test has no data for {src}.".format(src=source))
