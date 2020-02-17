@@ -2,6 +2,7 @@
 Visualise and run metrics for a single model data fit.
 """
 
+import os
 import pickle
 import run_model_fitting
 from cleanair.models import ModelData
@@ -19,7 +20,8 @@ def main():
     model_data = ModelData(**kwargs)
 
     # get the predictions of the model
-    with open(args.config_dir, "rb") as handle:
+    y_pred_fp = os.path.join(args.config_dir, "y_pred.pickle")
+    with open(y_pred_fp, "rb") as handle:
         y_pred = pickle.load(handle)
 
     # update the model data object with the predictions
