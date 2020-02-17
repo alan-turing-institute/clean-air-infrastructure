@@ -28,27 +28,8 @@ class ModelData(DBWriter, DBQueryMixin):
         Initialise the ModelData object with a config file
         args:
             config: A config dictionary
-            config_dir: A directory containing config files (created by ModelData.save_config_state())
-
-            Example config:
-                {
-                "train_start_date": "2019-11-01T00:00:00",
-                "train_end_date": "2019-11-30T00:00:00",
-                "pred_start_date": "2019-11-01T00:00:00",
-                "pred_end_date": "2019-11-30T00:00:00",
-
-                "train_sources": ["laqn", "aqe"],
-                "pred_sources": ["laqn", "aqe"],
-                "train_interest_points": ['point_id1', 'point_id2'],
-                'train_satellite_interest_points': ['point_id1', 'point_id2']
-                "pred_interest_points": ['point_id1', 'point_id2'],
-                "species": ["NO2"],
-                "features": "all",
-                "norm_by": "laqn",
-
-                "model_type": "svgp",
-                "tag": "production"
-                }
+            config_dir: A directory containing config files
+                        (created by ModelData.save_config_state())
         """
 
         # Initialise parent classes
@@ -67,7 +48,7 @@ class ModelData(DBWriter, DBQueryMixin):
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
-            
+
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
             self.normalised_training_data_df = self.__normalise_data(
@@ -141,10 +122,8 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Check requested features are available
         if config["features"] == "all":
-            features = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
+            features = self.get_available_static_features() + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"]
             )
             if not features:
                 raise AttributeError(
@@ -220,10 +199,8 @@ class ModelData(DBWriter, DBQueryMixin):
             config["train_satellite_interest_points"] = []
 
         if config["features"] == "all":
-            feature_names = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
+            feature_names = self.get_available_static_features() + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"]
             )
             buff_size = [1000, 500, 200, 100, 10]
             config["features"] = [
@@ -349,9 +326,8 @@ class ModelData(DBWriter, DBQueryMixin):
         ) / norm_std
         return data_df
 
-    def __get_model_data_arrays(self, data_df, sources, species, return_y=True, dropna=True, return_sat=True):
-        """
-        Return a dictionary structure of data arrays for model fitting.
+    def __get_model_data_arrays(self, data_df, sources, species, **kwargs):
+        """Return a dictionary structure of data arrays for model fitting.
 
         Parameters
         ___
@@ -365,12 +341,6 @@ class ModelData(DBWriter, DBQueryMixin):
         species : list
             Pollutants to get data for, e.g. 'no2', 'o3'.
 
-        return_y : bool, optional
-            If true, the returned dictionary will have a 'Y' key/value.
-
-        dropna : bool, optional
-            If true, any rows in data_df that contain NaN will be dropped.
-
         Returns
         ___
 
@@ -378,51 +348,41 @@ class ModelData(DBWriter, DBQueryMixin):
             A dictionary structure will all the requested data inside.
             See examples for details.
 
-        Examples
+        Other Parameters
         ___
 
-        >>> data_df = model_data.normalised_training_data_df
-        >>> sources = ['laqn']
-        >>> species = ['NO2', 'PM10']
-        >>> print(model_data.__get_model_data_arrays(data_df, sources, species)
-            {
-                'X': {
-                    'laqn': x_laqn
-                },
-                'Y': {
-                    'laqn': {
-                        'NO2': y_laqn_no2,
-                        'PM10': y_laqn_pm10
-                    }
-                },
-                'index': {
-                    'laqn': {
-                        'NO2': laqn_no2_index,
-                        'PM10: laqn_pm10_index
-                    }
-                }
-            }
+        return_y : bool, optional
+            Default is True.
+            If true, the returned dictionary will have a 'Y' key/value.
+
+        dropna : bool, optional
+            Default is False.
+            If true, any rows in data_df that contain NaN will be dropped.
+
+        return_sat : bool, optional
+            Default is True.
+            Returns satellite if "include_satellite" flag is also True in config.
 
         Notes
         ___
 
         The returned dictionary includes index to allow model predictions
         to be appended to dataframes (required when dropna is used).
-
         At the moment, `laqn_no2_index` and `laqn_pm10_index` will be the same.
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
         """
-        data_dict = dict(
-            X=dict(),
-            index=dict(),
-        )
+        # get key word arguments
+        return_y = True if "return_y" not in kwargs else kwargs["return_y"]
+        dropna = False if "dropna" not in kwargs else kwargs["dropna"]
+        return_sat = True if "return_sat" not in kwargs else kwargs["return_sat"]
+
+        data_dict = dict(X=dict(), index=dict(),)
         if return_y:
-            data_dict['Y'] = dict()
+            data_dict["Y"] = dict()
             data_subset = data_df[self.x_names_norm + self.config["species"]]
         else:
             data_subset = data_df[self.x_names_norm]
-        # ToDo: this should be generalised to drop a subset of sources
         if dropna:
             data_subset = data_subset.dropna()  # Must have complete dataset
             n_dropped_rows = data_df.shape[0] - data_subset.shape[0]
@@ -433,46 +393,39 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         # iterate through sources
         for src in sources:
-            if src == 'satellite':
-                raise NotImplementedError("Satellite cannot be a source - see issue 212 on GitHub.")
-
+            if src == "satellite":
+                raise NotImplementedError(
+                    "Satellite cannot be a source - see issue 212 on GitHub."
+                )
             # case for laqn, aqe, grid
-            else:
-                src_mask = data_df[data_df['source'] == src].index
-                x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
-                data_dict['X'][src] = x_src[self.x_names_norm].to_numpy()
-                if return_y:
-                    # get a numpy array for the pollutant of shape (n,1)
-                    data_dict['Y'][src] = {
-                        pollutant: np.reshape(
-                            x_src[pollutant].to_numpy(), (
-                                len(x_src), 1
-                            )
-                        ) for pollutant in species
-                    }
-                # store index
-                data_dict['index'][src] = {
-                    pollutant: x_src.index.copy()
+            src_mask = data_df[data_df["source"] == src].index
+            x_src = data_subset.loc[src_mask.intersection(data_subset.index)]
+            data_dict["X"][src] = x_src[self.x_names_norm].to_numpy()
+            if return_y:
+                # get a numpy array for the pollutant of shape (n,1)
+                data_dict["Y"][src] = {
+                    pollutant: np.reshape(x_src[pollutant].to_numpy(), (len(x_src), 1))
                     for pollutant in species
                 }
+            # store index
+            data_dict["index"][src] = {
+                pollutant: x_src.index.copy() for pollutant in species
+            }
         # special case for satellite data
         if self.config["include_satellite"] and return_sat:
             if len(species) > 1:
-                raise NotImplementedError('Can only get satellite data for NO2')
-
+                raise NotImplementedError("Can only get satellite data for NO2")
             # Check dimensions
             n_sat_box = self.training_satellite_data_x["box_id"].unique().size
             n_hours = self.training_satellite_data_x["epoch"].unique().size
             # Number of interest points in each satellite square
             n_interest_points = 100
             n_x_names = len(self.config["x_names"])
-
             X_sat = (
                 self.training_satellite_data_x[self.x_names_norm]
                 .to_numpy()
                 .reshape((n_sat_box * n_hours, n_interest_points, n_x_names))
             )
-
             X_sat_mask = (
                 self.training_satellite_data_x["in_london"]
                 .to_numpy()
@@ -480,38 +433,40 @@ class ModelData(DBWriter, DBQueryMixin):
             )
             Y_sat = self.training_satellite_data_y["value"].to_numpy()
             Y_sat = np.reshape(Y_sat, (Y_sat.shape[0], 1))
-
-            data_dict['X']['satellite'] = X_sat
+            data_dict["X"]["satellite"] = X_sat
             if return_y:
-                data_dict['Y']['satellite'] = dict(NO2=Y_sat)
-            # ToDo: can we set mask to be index? or vice verse?
-            data_dict['mask'] = dict(satellite=X_sat_mask)
+                data_dict["Y"]["satellite"] = dict(NO2=Y_sat)
+            data_dict["mask"] = dict(satellite=X_sat_mask)
         return data_dict
 
-    def get_training_data_arrays(self, sources='all', species='all', return_y=True, dropna=False):
-        """
-        The training data arrays.
+    def get_training_data_arrays(
+        self, sources="all", species="all", return_y=True, dropna=False
+    ):
+        """The training data arrays.
 
         Notes
         ___
-
-            If the `include_satellite` flag is set to `True` in `config`,
-            then satellite is always returned as a source.
+        If the `include_satellite` flag is set to `True` in `config`,
+        then satellite is always returned as a source.
         """
         # get all sources and species as default
-        if sources == 'all':
-            sources = self.config['train_sources']
-        if species == 'all':
-            species = self.config['species']
+        if sources == "all":
+            sources = self.config["train_sources"]
+        if species == "all":
+            species = self.config["species"]
         # get the data dictionaries
         return self.__get_model_data_arrays(
-            self.normalised_training_data_df, sources, species,
-            return_y=return_y, dropna=dropna
+            self.normalised_training_data_df,
+            sources,
+            species,
+            return_y=return_y,
+            dropna=dropna,
         )
 
-    def get_pred_data_arrays(self, sources='all', species='all', return_y=False, dropna=False):
-        """
-        The pred data arrays.
+    def get_pred_data_arrays(
+        self, sources="all", species="all", return_y=False, dropna=False
+    ):
+        """The pred data arrays.
 
         args:
             return_y: Return the sensor data if in the database for the prediction dates
@@ -524,29 +479,35 @@ class ModelData(DBWriter, DBQueryMixin):
         because it is considered a training source only.
         """
         # get all sources and species as default
-        if sources == 'all':
-            sources = self.config['pred_sources']
-        if species == 'all':
-            species = self.config['species']
+        if sources == "all":
+            sources = self.config["pred_sources"]
+        if species == "all":
+            species = self.config["species"]
         # return the y column as well
         if self.config["include_prediction_y"] or return_y:
             return self.__get_model_data_arrays(
-                self.normalised_pred_data_df, sources, species,
-                return_y=True, dropna=dropna, return_sat=False
+                self.normalised_pred_data_df,
+                sources,
+                species,
+                return_y=True,
+                dropna=dropna,
+                return_sat=False,
             )
         # return dicts without y
         return self.__get_model_data_arrays(
-            self.normalised_pred_data_df, sources, species,
-            return_y=False, dropna=dropna, return_sat=False
+            self.normalised_pred_data_df,
+            sources,
+            species,
+            return_y=False,
+            dropna=dropna,
+            return_sat=False,
         )
 
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.get_available_static_features(
-            output_type="list"
-        ) + self.get_available_dynamic_features(
-            start_date, end_date, output_type="list"
+        available_features = self.get_available_static_features() + self.get_available_dynamic_features(
+            start_date, end_date
         )
         unavailable_features = []
 
@@ -570,7 +531,7 @@ class ModelData(DBWriter, DBQueryMixin):
             sources: A list of sources
         """
 
-        available_sources = self.get_available_sources(output_type="list")
+        available_sources = self.get_available_sources()
         unavailable_sources = []
 
         for source in sources:
@@ -587,7 +548,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __get_interest_point_ids(self, sources):
 
         return (
-            self.get_available_interest_points(sources, output_type="df")["point_id"]
+            self.get_available_interest_points(sources)["point_id"]
             .astype(str)
             .to_numpy()
             .tolist()
@@ -694,8 +655,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __select_dynamic_features(
         self, start_date, end_date, features, sources, point_ids
     ):
-        """Read static features from the database.
-        """
+        """Read static features from the database."""
 
         return self.__select_features(
             IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
@@ -752,9 +712,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         sensor_dfs = []
         if "laqn" in sources:
-            laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_, output_type="df"
-            )
+            laqn_sensor_data = self.get_laqn_readings(start_date_, end_date_)
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -762,9 +720,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         if "aqe" in sources:
-            aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_, output_type="df"
-            )
+            aqe_sensor_data = self.get_aqe_readings(start_date_, end_date_)
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -811,9 +767,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_training_data_inputs(self):
-        """
-        Query the database to get inputs for model fitting.
-        """
+        """Query the database to get inputs for model fitting."""
 
         start_date = self.config["train_start_date"]
         end_date = self.config["train_end_date"]
@@ -913,10 +867,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Get satellite readings
         sat_train_df = self.get_satellite_readings_training(
-            train_start_date, train_end_date, species=species, output_type="df"
+            train_start_date, train_end_date, species=species
         )
         sat_pred_df = self.get_satellite_readings_pred(
-            pred_start_date, pred_end_date, species=species, output_type="df"
+            pred_start_date, pred_end_date, species=species
         )
 
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
@@ -955,22 +909,23 @@ class ModelData(DBWriter, DBQueryMixin):
             [self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False
         )
 
-    def get_df_from_pred_dict(self, data_df, data_dict, pred_dict, sources='all', species='all'):
+    def get_df_from_pred_dict(
+        self, data_df, data_dict, pred_dict, sources="all", species="all"
+    ):
         """
         Return a new dataframe with columns updated from pred_dict.
         """
-        if sources == 'all':
+        if sources == "all":
             sources = pred_dict.keys()
-        if species == 'all':
-            species = self.config['species']
+        if species == "all":
+            species = self.config["species"]
         # create new dataframe and track indices for different sources + pollutants
         indices = []
         for source in sources:
             for pollutant in pred_dict[source]:
-                indices.extend(data_dict['index'][source][pollutant])
+                indices.extend(data_dict["index"][source][pollutant])
         predict_df = pd.DataFrame(index=indices)
         data_df = data_df.loc[indices]
-
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
         for pred_type in ["mean", "var"]:
             for pollutant in species:
@@ -979,7 +934,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 for source in sources:
                     column = np.append(column, pred_dict[source][pollutant][pred_type])
                 predict_df[pollutant + "_" + pred_type] = column
-
         # add predict_df as new columns to data_df - they should share an index
         return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
 
@@ -997,9 +951,7 @@ class ModelData(DBWriter, DBQueryMixin):
             Values are numpy arrays of predictions for a source and specie.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df,
-            self.get_pred_data_arrays(),
-            test_pred_dict,
+            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
         )
 
     def update_training_df_with_preds(self, training_pred_dict):
