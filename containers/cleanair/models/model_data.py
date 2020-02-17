@@ -28,7 +28,7 @@ class ModelData(DBWriter, DBQueryMixin):
         Initialise the ModelData object with a config file
         args:
             config: A config dictionary
-            config_dir: A directory containing config files 
+            config_dir: A directory containing config files
                         (created by ModelData.save_config_state())
         """
 
@@ -400,9 +400,7 @@ class ModelData(DBWriter, DBQueryMixin):
             if return_y:
                 # get a numpy array for the pollutant of shape (n,1)
                 data_dict["Y"][src] = {
-                    pollutant: np.reshape(
-                        x_src[pollutant].to_numpy(), (len(x_src), 1)
-                    )
+                    pollutant: np.reshape(x_src[pollutant].to_numpy(), (len(x_src), 1))
                     for pollutant in species
                 }
             # store index
@@ -710,9 +708,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         sensor_dfs = []
         if "laqn" in sources:
-            laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_
-            )
+            laqn_sensor_data = self.get_laqn_readings(start_date_, end_date_)
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -720,9 +716,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         if "aqe" in sources:
-            aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_
-            )
+            aqe_sensor_data = self.get_aqe_readings(start_date_, end_date_)
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
                 raise AttributeError(

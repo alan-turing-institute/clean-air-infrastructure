@@ -8,10 +8,12 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
+
 class ModelFitParser(argparse.ArgumentParser):
     """
     A parser for the model fitting entrypoint.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
@@ -27,10 +29,16 @@ class ModelFitParser(argparse.ArgumentParser):
             help="Filepath to directory to store model and data.",
         )
         self.add_argument(
-            "-w", "--write", action="store_true", help="Write model data config to file.",
+            "-w",
+            "--write",
+            action="store_true",
+            help="Write model data config to file.",
         )
         self.add_argument(
-            "-r", "--read", action="store_true", help="Read model data from config_dir.",
+            "-r",
+            "--read",
+            action="store_true",
+            help="Read model data from config_dir.",
         )
         self.add_argument(
             "-u",
@@ -59,13 +67,18 @@ class ModelFitParser(argparse.ArgumentParser):
             help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
         )
         self.add_argument(
-            "--predhours", type=int, default=48, help="The number of hours to predict for"
+            "--predhours",
+            type=int,
+            default=48,
+            help="The number of hours to predict for",
         )
+
 
 def strtime_offset(strtime, offset_hours):
     """Give an datetime as an iso string and an offset and return a new time"""
 
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
+
 
 def get_data_config(kwargs):
     """
@@ -104,6 +117,7 @@ def get_data_config(kwargs):
         "tag": "tf1_test",
     }
     return model_config
+
 
 def main():
     """

@@ -318,9 +318,7 @@ class SVGP(Model):
             for pollutant in self.tasks:
                 if self.log:
                     self.logger.info(
-                        "Batch predicting for %s on %s",
-                        pollutant,
-                        src,
+                        "Batch predicting for %s on %s", pollutant, src,
                     )
                 y_mean, y_var = self.batch_predict(x_src)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}

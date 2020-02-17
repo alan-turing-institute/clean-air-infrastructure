@@ -79,7 +79,9 @@ class Model(ABC):
                 """Model parameters are not sufficient. \n
         The minimal set of keys is: {min} \n
         You supplied the following keys: {params}
-        """.format(min=self.minimum_param_keys, params=self.model_params.keys())
+        """.format(
+                    min=self.minimum_param_keys, params=self.model_params.keys()
+                )
             )
 
     @abstractmethod
