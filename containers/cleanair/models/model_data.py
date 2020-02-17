@@ -118,8 +118,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Check requested features are available
         if config["features"] == "all":
-            features = self.get_available_static_features() + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"]
+            features = self.get_available_static_features(
+                output_type="list"
+            ) + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"], output_type="list"
             )
             if not features:
                 raise AttributeError(
@@ -195,8 +197,10 @@ class ModelData(DBWriter, DBQueryMixin):
             config["train_satellite_interest_points"] = []
 
         if config["features"] == "all":
-            feature_names = self.get_available_static_features() + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"]
+            feature_names = self.get_available_static_features(
+                output_type="list"
+            ) + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"], output_type="list"
             )
             buff_size = [1000, 500, 200, 100, 10]
             config["features"] = [
@@ -502,8 +506,10 @@ class ModelData(DBWriter, DBQueryMixin):
     def __check_features_available(self, features, start_date, end_date):
         """Check that all requested features exist in the database"""
 
-        available_features = self.get_available_static_features() + self.get_available_dynamic_features(
-            start_date, end_date
+        available_features = self.get_available_static_features(
+            output_type="list"
+        ) + self.get_available_dynamic_features(
+            start_date, end_date, output_type="list"
         )
         unavailable_features = []
 
@@ -527,7 +533,7 @@ class ModelData(DBWriter, DBQueryMixin):
             sources: A list of sources
         """
 
-        available_sources = self.get_available_sources()
+        available_sources = self.get_available_sources(output_type="list")
         unavailable_sources = []
 
         for source in sources:
@@ -544,7 +550,7 @@ class ModelData(DBWriter, DBQueryMixin):
     def __get_interest_point_ids(self, sources):
 
         return (
-            self.get_available_interest_points(sources)["point_id"]
+            self.get_available_interest_points(sources, output_type="df")["point_id"]
             .astype(str)
             .to_numpy()
             .tolist()
@@ -708,7 +714,9 @@ class ModelData(DBWriter, DBQueryMixin):
 
         sensor_dfs = []
         if "laqn" in sources:
-            laqn_sensor_data = self.get_laqn_readings(start_date_, end_date_)
+            laqn_sensor_data = self.get_laqn_readings(
+                start_date_, end_date_, output_type="df"
+            )
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -716,7 +724,9 @@ class ModelData(DBWriter, DBQueryMixin):
                 )
 
         if "aqe" in sources:
-            aqe_sensor_data = self.get_aqe_readings(start_date_, end_date_)
+            aqe_sensor_data = self.get_aqe_readings(
+                start_date_, end_date_, output_type="df"
+            )
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
                 raise AttributeError(
@@ -863,10 +873,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Get satellite readings
         sat_train_df = self.get_satellite_readings_training(
-            train_start_date, train_end_date, species=species
+            train_start_date, train_end_date, species=species, output_type="df"
         )
         sat_pred_df = self.get_satellite_readings_pred(
-            pred_start_date, pred_end_date, species=species
+            pred_start_date, pred_end_date, species=species, output_type="df"
         )
 
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
