@@ -5,6 +5,7 @@ import datetime
 import os
 import time
 from dateutil import rrule
+from sqlalchemy import func
 from sqlalchemy import Table
 from sqlalchemy.exc import IntegrityError
 import boto3
@@ -12,6 +13,7 @@ import botocore
 import pandas
 from ..databases import DBWriter
 from ..databases.tables import ScootReading
+from ..decorators import db_query
 from ..loggers import get_logger, green
 from ..mixins import DateRangeMixin, DBQueryMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
@@ -68,6 +70,28 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 [s[0] for s in session.query(scoot_detector.c.detector_n).distinct()]
             )
         return detectors
+
+    @db_query
+    def get_nscoot_by_day(self, start_date=None, end_date=None, detector_ids=None):
+        """Get the number of scoot readings that are in the database for each day"""
+        with self.dbcnxn.open_session() as session:
+            n_readings_q = session.query(
+                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
+                    "hour"
+                ),
+                func.count(ScootReading.measurement_start_utc).label("n_entries"),
+            ).group_by(func.date_trunc("hour", ScootReading.measurement_start_utc))
+
+            if start_date and end_date:
+                n_readings_q = n_readings_q.filter(
+                    ScootReading.measurement_start_utc >= start_date,
+                    ScootReading.measurement_start_utc <= end_date,
+                )
+
+            if detector_ids:
+                n_readings_q = n_readings_q.filter(ScootReading.detector_id.in_(detector_ids))
+
+            return n_readings_q
 
     @staticmethod
     def get_remote_filenames(start_datetime, end_datetime):
