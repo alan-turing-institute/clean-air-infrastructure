@@ -141,7 +141,7 @@ def evaluate_sensor_and_temporal_scores(
     )
 
     # add lat and lon to sensor scores cols
-    sensor_scores_df = __concat_static_features_with_scores(sensor_scores_df, pred_df)
+    sensor_scores_df = concat_static_features_with_scores(sensor_scores_df, pred_df)
 
     # make a new column with the index
     sensor_scores_df[sensor_col] = sensor_scores_df.index.copy()
@@ -339,7 +339,7 @@ def measure_scores_by_sensor(
     #     axis=1,
     # )
 
-def __concat_static_features_with_scores(
+def concat_static_features_with_scores(
     scores_df, pred_df, static_features=None
 ):
     """

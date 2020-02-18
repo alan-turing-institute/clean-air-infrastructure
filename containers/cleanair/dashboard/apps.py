@@ -5,25 +5,63 @@ Create dash apps.
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
-import dash_bootstrap_components as dbc
 import plotly.express as px
 from dash.dependencies import Input, Output
+import dash_bootstrap_components as dbc
 from . import components
 from . import callbacks
-
+from ..metrics.evaluate import pop_kwarg
 
 def get_model_data_fit_app(
     model_data,
     sensor_scores_df,
     temporal_scores_df,
     mapbox_access_token,
-    evaluate_training=False,
-    evaluate_testing=True,
-    all_metrics=["r2_score", "mae", "mse"],
+    **kwargs,
 ):
     """
     Return an app showing the scores for a model data fit.
+
+    Parameters
+    ___
+
+    model_data : ModelData
+        Model data object with updated predictions.
+
+    sensor_scores_df : pd.DataFrame
+        Metric scores over sensors for this model fit.
+
+    temporal_scores_df : pd.DataFrame
+        Scores over time for this model fit.
+
+    mapbox_access_token : str
+        The API token for MapBox.
+
+    Returns
+    ___
+
+    App
+        Dash app.
+
+    Other Parameters
+    ___
+
+    evaluate_training : bool, optional
+        Default is False.
+        Show the metrics over the training period.
+
+    evaluate_testing : bool, optional
+        Default is True
+        Show the metrics over the testing period.
+
+    all_metrics : list, optional
+        List of metrics to show in the dashboard, e.g. r2_score, mae.
     """
+    # get key word arguments
+    evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
+    evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
+    all_metrics = pop_kwarg(kwargs, "all_metrics", ["r2_score", "mae", "mse"])
+
     # get a model fit component object
     instance_id = 0
     mfc = components.ModelFitComponent(
@@ -101,7 +139,7 @@ def get_model_data_fit_app(
             Input(mfc_list[instance_id].interest_points_map_id, "hoverData"),
             Input(pollutant_dropdown_id, "value"),
         ],
-    )
+    )   # pylint: disable=unused-variable
     def update_interest_points_timeseries(hover_data, pollutant):
         return callbacks.interest_point_timeseries_callback(
             hover_data, mfc_list[instance_id].point_groupby, pollutant
@@ -111,7 +149,7 @@ def get_model_data_fit_app(
     @app.callback(
         Output(mfc_list[instance_id].interest_points_map_id, "figure"),
         [Input(metric_dropdown_id, "value"), Input(pollutant_dropdown_id, "value"),],
-    )
+    )   # pylint: disable=unused-variable
     def update_interest_points_mapbox(metric_key, pollutant):
         return callbacks.interest_point_mapbox_callback(
             interest_points_mapbox,
@@ -124,12 +162,9 @@ def get_model_data_fit_app(
     @app.callback(
         Output(mfc_list[instance_id].temporal_metrics_timeseries_id, "figure"),
         [Input(metric_dropdown_id, "value"), Input(pollutant_dropdown_id, "value")],
-    )
+    )   # pylint: disable=unused-variable
     def update_temporal_metrics_timeseries(metric_key, pollutant):
         return mfc_list[instance_id].get_temporal_metrics_timeseries(
             metric_key, pollutant
         )
-
-    # ToDo: add callback to update the instance id.
-
     return app

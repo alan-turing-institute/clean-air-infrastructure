@@ -29,6 +29,8 @@ class CleanAirParser(argparse.ArgumentParser):
             default="./",
             help="Filepath to directory to store model and data.",
         )
+        self.add_argument("-v", "--verbose", action="count", default=0)
+
 
 class ModelFitParser(CleanAirParser):
     """
@@ -67,7 +69,6 @@ class ModelFitParser(CleanAirParser):
             action="store_true",
             help="Write the predictions to file.",
         )
-        self.add_argument("-v", "--verbose", action="count", default=0)
         self.add_argument(
                 "-y",
                 "--return_y",

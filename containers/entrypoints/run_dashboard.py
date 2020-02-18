@@ -4,11 +4,12 @@ Visualise and run metrics for a single model data fit.
 
 import os
 import pickle
+import logging
 import run_model_fitting
 from cleanair.models import ModelData
 from cleanair import metrics
 from cleanair.dashboard import apps
-
+from cleanair.loggers import get_log_level
 
 def main():
     """
@@ -18,6 +19,7 @@ def main():
     parser = run_model_fitting.CleanAirParser(description="Dashboard")
     args = parser.parse_args()
     kwargs = vars(args)
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
     model_data = ModelData(**kwargs)
 
     # get the predictions of the model
@@ -37,14 +39,10 @@ def main():
         model_data, metric_methods
     )
 
-    print(sensor_scores_df)
-    print(temporal_scores_df)
-
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
         model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token
     )
-    print("Web app available at: http://127.0.0.1:8050")
     model_data_fit_app.run_server(debug=True)
 
 

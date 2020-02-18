@@ -5,8 +5,8 @@ Meta components that make up the dashboard.
 import dash_core_components as dcc
 import plotly.graph_objects as go
 import plotly.express as px
-
 from . import timeseries
+from ..metrics.evaluate import pop_kwarg
 
 METRIC_NAMES = {
     "mae": "Mean absolute error",
@@ -33,11 +33,7 @@ class ModelFitComponent:
         model_data,
         sensor_scores_df,
         temporal_scores_df,
-        evaluate_training=False,
-        evaluate_testing=True,
-        interest_points_map_id="interest-points-map",
-        interest_points_timeseries_id="interest-points-timeseries",
-        temporal_metrics_timeseries_id="temporal_metrics_timeseries",
+        **kwargs,
     ):
         """
         Initialise with a model data object and the scores for the fit.
@@ -46,14 +42,26 @@ class ModelFitComponent:
         self.model_data = model_data
         self.sensor_scores_df = sensor_scores_df
         self.temporal_scores_df = temporal_scores_df
-        self.evaluate_training = evaluate_training
-        self.evaluate_testing = evaluate_testing
-        self.interest_points_map_id = interest_points_map_id
-        self.interest_points_timeseries_id = interest_points_timeseries_id
-        self.temporal_metrics_timeseries_id = temporal_metrics_timeseries_id
+        self.evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
+        self.evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
+        self.interest_points_map_id = pop_kwarg(
+            kwargs,
+            "interest_points_map_id",
+            "interest-points-map"
+        )
+        self.interest_points_timeseries_id = pop_kwarg(
+            kwargs,
+            "interest_points_timeseries_id",
+            "interest-points-timeseries"
+        )
+        self.temporal_metrics_timeseries_id = pop_kwarg(
+            kwargs,
+            "temporal_metrics_timeseries_id",
+            "temporal_metrics_timeseries"
+        )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
-            # ToDo: test this works
+            # ToDo: test eval training and testing works
             # append train and test dfs then group by point id
             self.point_groupby = self.model_data.normalised_training_data_df.append(
                 self.model_data.normalised_pred_data_df, ignore_index=True
