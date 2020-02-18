@@ -250,63 +250,74 @@ class Model(ABC):
             if x_test[source].shape[0] == 0:
                 raise ValueError('x_test has no data for {src}.'.format(src=source))
 
-    def elbo_logger(self, x):
-        """Log optimisation progress
-
-        args:
-            x: argument passed as a callback from GPFlow optimiser.
+    def elbo_logger(self, logger_arg):
+        """
+        Log optimisation progress.
+        Parameters
+        ___
+        logger_arg : unknown
+            Argument passed as a callback from GPFlow optimiser.
         """
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)
-            if self.logger:
+            if self.log:
                 self.logger.info(
-                    "Model fitting. Iteration: %s, ELBO: %s", self.epoch, objective
+                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                    self.epoch,
+                    objective,
+                    logger_arg,
                 )
-
-            print(self.epoch, ": ", objective)
-
         self.epoch += 1
 
-    def batch_predict(self, x_test, predict_fn):
-        """Split up prediction into indepedent batchs.
-        args:
-            x_test: N x D numpy array of locations to predict at
+    def batch_predict(self, x_array, predict_fn):
+        """
+        Split up prediction into indepedent batchs.
+        Parameters
+        ___
+        x_array : np.array
+            N x D numpy array of locations to predict at.
+        predict_fn : function
+            model spefic function to predict at.
+        Returns
+        ___
+        y_mean : np.array
+            N x D numpy array of means.
+        y_var : np.array
+            N x D numpy array of variances.
         """
         batch_size = self.batch_size
 
         # Ensure batch is less than the number of test points
-        if x_test.shape[0] < batch_size:
-            batch_size = x_test.shape[0]
+        if x_array.shape[0] < batch_size:
+            batch_size = x_array.shape[0]
 
         # Split up test points into equal batches
-        num_batches = int(np.ceil(x_test.shape[0] / batch_size))
+        num_batches = int(np.ceil(x_array.shape[0] / batch_size))
 
         ys_arr = []
         ys_var_arr = []
-        i = 0
+        index = 0
 
-        for b in range(num_batches):
-            if b % self.refresh == 0:
-                print("Batch", b, "out of", num_batches)
-            if b == num_batches - 1:
+        for count in range(num_batches):
+            if count == num_batches - 1:
                 # in last batch just use remaining of test points
-                batch = x_test[i:, :]
+                batch = x_array[index:, :]
             else:
-                batch = x_test[i : i + batch_size, :]
+                batch = x_array[index : index + batch_size, :]
 
-            i = i + batch_size
+            index = index + batch_size
 
             # predict for current batch
-            ys, ys_var = predict_fn(batch)
+            y_mean, y_var = predict_fn(batch)
 
-            ys_arr.append(ys)
-            ys_var_arr.append(ys_var)
+            ys_arr.append(y_mean)
+            ys_var_arr.append(y_var)
 
-        ys = np.concatenate(ys_arr, axis=0)
-        ys_var = np.concatenate(ys_var_arr, axis=0)
+        y_mean = np.concatenate(ys_arr, axis=0)
+        y_var = np.concatenate(ys_var_arr, axis=0)
 
-        return ys, ys_var
+        return y_mean, y_var
 
     def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=[]):
         """

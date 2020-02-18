@@ -161,27 +161,22 @@ class SVGP(Model):
                 )
             )
 
-    def fit(self, x_train, y_train, refresh=10, save_model_state=True):
+    def fit(self, x_train, y_train, **kwargs):
         """
         Fit the SVGP.
-
         Parameters
         ___
-
         x_train : dict
             See `Model.fit` method in the base class for further details.
             NxM numpy array of N observations of M covariates.
             Only the 'laqn' key is used in this fit method, so all observations
             come from this source.
-
         y_train : dict
             Only `y_train['laqn']['NO2']` is used for fitting.
             The size of this array is NX1 with N sensor observations from 'laqn'.
             See `Model.fit` method in the base class for further details.
-
         Other Parameters
         ___
-
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
             Default is False.
@@ -195,7 +190,7 @@ class SVGP(Model):
         x_array = x_train["laqn"].copy()
         y_array = y_train["laqn"]["NO2"].copy()
 
-        x_array, y_array = Model.clean_data(x_array, y_array)
+        x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
         z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
@@ -233,8 +228,6 @@ class SVGP(Model):
                         filepath=self.model_params["model_state_fp"]
                     ),
                 )
-
-
     def predict(self, x_test):
         """
         Predict using the model at the laqn sites for NO2.

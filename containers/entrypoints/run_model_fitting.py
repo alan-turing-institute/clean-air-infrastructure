@@ -41,12 +41,6 @@ class ModelFitParser(CleanAirParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
-            "-results_dir",
-            type=str,
-            default=None,
-            help="Filepath to the directory of results.",
-        )
-        self.add_argument(
             "-m",
             "--model",
             type=str,
