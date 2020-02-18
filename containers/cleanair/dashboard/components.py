@@ -50,7 +50,6 @@ class ModelFitComponent:
         )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
-            # ToDo: test eval training and testing works
             # append train and test dfs then group by point id
             self.point_groupby = self.model_data.normalised_training_data_df.append(
                 self.model_data.normalised_pred_data_df, ignore_index=True

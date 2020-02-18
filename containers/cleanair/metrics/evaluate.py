@@ -5,15 +5,13 @@ Methods for evaluating a model data fit.
 import pandas as pd
 from sklearn import metrics
 
+
 def pop_kwarg(kwargs, key, default):
     """Pop the value of key if its in kwargs, else use the default value."""
     return default if key not in kwargs else kwargs.pop(key)
 
-def evaluate_model_data(
-    model_data,
-    metric_methods,
-    **kwargs
-):
+
+def evaluate_model_data(model_data, metric_methods, **kwargs):
     """
     Given a model data object, evaluate the predictions.
 
@@ -85,7 +83,7 @@ def evaluate_model_data(
             testing_set=False,
             pred_cols=pred_cols,
             test_cols=test_cols,
-            **kwargs
+            **kwargs,
         )
         # return training scores if we are not evaluating testing
         if not evaluate_testing:
@@ -102,7 +100,7 @@ def evaluate_model_data(
             testing_set=True,
             pred_cols=pred_cols,
             test_cols=test_cols,
-            **kwargs
+            **kwargs,
         )
         # return testing scores if we are only evaluating testing
         if not evaluate_training:
@@ -118,14 +116,17 @@ def evaluate_model_data(
                 testing_temporal_scores_df, ignore_index=True
             ),
         )
-    raise ValueError("You must set either evaluate_training or evaluate_testing to True")
+    raise ValueError(
+        "You must set either evaluate_training or evaluate_testing to True"
+    )
+
 
 def evaluate_sensor_and_temporal_scores(
     pred_df,
     metric_methods,
     sensor_col="point_id",
     temporal_col="measurement_start_utc",
-    **kwargs
+    **kwargs,
 ):
     """
     Given a prediction dataframe, measure scores over sensors and time.
@@ -202,10 +203,7 @@ def get_metric_methods(r2_score=True, mae=True, mse=True, **kwargs):
 
 
 def measure_scores_by_hour(
-    pred_df,
-    metric_methods,
-    datetime_col="measurement_start_utc",
-    **kwargs
+    pred_df, metric_methods, datetime_col="measurement_start_utc", **kwargs
 ):
     """
     Measure metric scores for each hour of prediction.
@@ -268,10 +266,7 @@ def measure_scores_by_hour(
 
 
 def measure_scores_by_sensor(
-    pred_df,
-    metric_methods,
-    groupby_col="point_id",
-    **kwargs,
+    pred_df, metric_methods, groupby_col="point_id", **kwargs,
 ):
     """
     Group the pred_df by sensor then measure scores on each sensor.
@@ -320,11 +315,12 @@ def measure_scores_by_sensor(
     for key, meth in metric_methods.items():
         for i, pollutant in enumerate(test_cols):
             pred_col = pred_cols[i]
-            pollutant_metrics = pred_gb.apply(lambda x: meth(x[pollutant], x[pred_col]))    # pylint: disable=cell-var-from-loop
+            pollutant_metrics = pred_gb.apply(
+                lambda x: meth(x[pollutant], x[pred_col])
+            )  # pylint: disable=cell-var-from-loop
             pollutant_metrics_series = pd.Series(
-                pollutant_metrics, name="{species}_{metric}".format(
-                    species=pollutant, metric=key
-                )
+                pollutant_metrics,
+                name="{species}_{metric}".format(species=pollutant, metric=key),
             )
             list_of_series.append(pollutant_metrics_series)
     return pd.concat(list_of_series, axis=1)
@@ -339,9 +335,8 @@ def measure_scores_by_sensor(
     #     axis=1,
     # )
 
-def concat_static_features_with_scores(
-    scores_df, pred_df, static_features=None
-):
+
+def concat_static_features_with_scores(scores_df, pred_df, static_features=None):
     """
     Concatenate the sensor scores dataframe with static features of the sensor.
     """
@@ -355,6 +350,7 @@ def concat_static_features_with_scores(
             feature_list.append(value)
         point_df[feature] = pd.Series(feature_list, index=point_df.index)
     return pd.concat([scores_df, point_df], axis=1, ignore_index=False)
+
 
 def __remove_rows_with_nans(pred_df, **kwargs):
     """Remove rows with NaN as an observation."""

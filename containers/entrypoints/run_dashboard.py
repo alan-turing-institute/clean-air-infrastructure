@@ -49,8 +49,11 @@ def main():
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token,
-        evaluate_training=evaluate_training
+        model_data,
+        sensor_scores_df,
+        temporal_scores_df,
+        mapbox_access_token,
+        evaluate_training=evaluate_training,
     )
     model_data_fit_app.run_server(debug=True)
 
