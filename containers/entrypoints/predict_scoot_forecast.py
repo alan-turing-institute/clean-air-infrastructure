@@ -17,21 +17,28 @@ def main():
         "-s",
         "--secretfile",
         default="db_secrets.json",
-        help="File with connection secrets.",
+        help="File containing connection secrets, (default: 'db_secrets.json').",
     )
     parser.add_argument(
         "-e",
         "--end",
         type=str,
         default="now",
-        help="The last datetime (YYYY-MM-DD HH:MM:SS) to get data for.",
+        help="The last datetime (YYYY-MM-DD HH:MM:SS) to get data for, (default: 'now').",
     )
     parser.add_argument(
         "-n",
         "--ndays",
         type=int,
         default=14,
-        help="The number of days to request data for.",
+        help="The number of days to request data for, (default: 14).",
+    )
+    parser.add_argument(
+        "-d",
+        "--detectors",
+        nargs='+',
+        default=[],
+        help="List of detectors to forecast for, (default: all of them).",
     )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
@@ -43,11 +50,12 @@ def main():
     # Set logging verbosity
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    detector_ids = kwargs.pop("detectors", None)
 
     # Perform update and notify any exceptions
     try:
         scoot_forecaster = TrafficForecast(**kwargs)
-        scoot_forecaster.update_remote_tables()
+        scoot_forecaster.update_remote_tables(detector_ids=detector_ids)
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))

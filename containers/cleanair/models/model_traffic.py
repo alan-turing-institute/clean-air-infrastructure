@@ -64,39 +64,45 @@ class TrafficForecast(DateRangeMixin, DBWriter):
         )
         return readings
 
-    def forecasts(self, forecast_length_hrs):
+    def forecasts(self, forecast_length_hrs, detector_ids=None):
         """Forecast all features at each detector for the next `forecast_length_hrs`"""
         # Get SCOOT readings from database
-        readings = self.scoot_readings()
+        readings = self.scoot_readings(detector_ids=detector_ids)
         training_data = dict(tuple(readings.groupby(["detector_id"])))
 
-        # As the most recent reading will not be now but we still want to forecast
-        # a fixed distance into the future, we have to calculate how many hours
-        # of forecast we need
-        last_reading_time = max(readings["measurement_start_utc"])
-        forecast_end_time = self.end_datetime + datetime.timedelta(
-            hours=forecast_length_hrs
-        )
-        n_hours_to_predict = int(
-            (forecast_end_time - last_reading_time).total_seconds() / 3600
-        )
+        if readings.shape[0] == 0:
+            self.logger.error("Could not load any readings!")
+            return pd.DataFrame([])
 
+        # The end of the forecast will happen `forecast_length_hrs` into the future
+        forecast_end_time = datetime.datetime.now().replace(
+            second=0, microsecond=0, minute=0
+        ) + datetime.timedelta(hours=forecast_length_hrs)
         self.logger.info(
-            "Forecasting SCOOT traffic data between %s and %s...",
-            last_reading_time,
-            forecast_end_time,
+            "Forecasting SCOOT traffic data up until %s...", forecast_end_time
         )
 
         # Iterate over each detector ID and obtain the forecast for it
-        # print("There are", len(per_detector_forecasts), "per_detector_forecasts")
-        for idx, (detector_id, fit_data) in enumerate(training_data.items()):
+        for idx, (detector_id, fit_data) in enumerate(training_data.items(), start=1):
             start_time = time.time()
             feature_predictions = []
 
+            # Construct the time range to predict over. This is functionally identical
+            # to `make_future_dataframe` but works even in cases where there is
+            # insufficient data for Prophet to run.
+            last_reading_time = max(fit_data["measurement_start_utc"])
+            time_range = pd.DataFrame(
+                {
+                    "ds": pd.date_range(
+                        start=last_reading_time, end=forecast_end_time, freq="H"
+                    )[1:]
+                }
+            )
+
             # Iterate over each feature and obtain the forecast for it
             for feature in self.features:
-                # Set the maximum value for the fit - this requires the use of
-                # logistic regression in the fit itself
+                # Set the maximum value for the fit - this requires the use of logistic
+                # regression in the fit itself
                 capacity = (
                     100 if "percentage" in feature else 10 * max(fit_data[feature])
                 )
@@ -105,15 +111,27 @@ class TrafficForecast(DateRangeMixin, DBWriter):
                     columns={"measurement_start_utc": "ds", feature: "y"}
                 )
                 prophet_data["cap"] = capacity
-                with SuppressStdoutStderr():
-                    model = Prophet(growth="logistic").fit(prophet_data)
-                # Predict past and future readings for this feature
-                time_range = model.make_future_dataframe(n_hours_to_predict, freq="H")
-                time_range["cap"] = capacity
-                forecast = model.predict(time_range)[["ds", "yhat"]].rename(
-                    columns={"ds": "measurement_start_utc", "yhat": feature}
+                try:
+                    with SuppressStdoutStderr():
+                        model = Prophet(growth="logistic").fit(prophet_data)
+                    # Predict past and future readings for this feature
+                    time_range["cap"] = capacity
+                    forecast = model.predict(time_range)[["ds", "yhat"]]
+                except (ValueError, RuntimeError):
+                    self.logger.error(
+                        "Prophet prediction failed at '%s' for %s. Using zero instead.",
+                        detector_id,
+                        feature,
+                    )
+                    forecast = time_range.copy()
+                    forecast["yhat"] = 0
+
+                # Rename the columns
+                forecast.rename(
+                    columns={"ds": "measurement_start_utc", "yhat": feature},
+                    inplace=True,
                 )
-                # Restrict to future predictions and force all predictions to be positive
+                # Keep only future predictions and force all predictions to be positive
                 forecast = forecast[
                     forecast["measurement_start_utc"] > last_reading_time
                 ]
@@ -137,14 +155,14 @@ class TrafficForecast(DateRangeMixin, DBWriter):
             )
             yield combined_predictions
 
-    def update_remote_tables(self):
+    def update_remote_tables(self, detector_ids=None):
         """Update the database with new Scoot traffic forecasts."""
         self.logger.info("Starting %s forecasts update...", green("SCOOT"))
         start_time = time.time()
         n_records = 0
 
         # Get the forecasts and convert to a list of dictionaries
-        for forecast_df in self.forecasts(forecast_length_hrs=72):
+        for forecast_df in self.forecasts(forecast_length_hrs=72, detector_ids=detector_ids):
             forecast_records = forecast_df.to_dict("records")
             if len(forecast_records) > 0:
                 self.logger.info(
