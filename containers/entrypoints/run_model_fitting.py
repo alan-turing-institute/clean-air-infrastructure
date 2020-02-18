@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
+
 class CleanAirParser(argparse.ArgumentParser):
     """
     The base cleanair entrypoint parser.
@@ -231,8 +232,7 @@ def main():
         if results_dir is None:
             test_pred_filepath = os.path.join(kwargs["config_dir"], "test_pred.pickle")
             train_pred_filepath = os.path.join(
-                kwargs["config_dir"],
-                "train_pred.pickle"
+                kwargs["config_dir"], "train_pred.pickle"
             )
         else:
             test_pred_filepath = os.path.join(results_dir, "test_pred.pickle")
