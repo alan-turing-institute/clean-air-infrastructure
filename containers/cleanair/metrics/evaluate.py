@@ -78,7 +78,7 @@ def evaluate_model_data(
         (
             training_sensor_scores_df,
             training_temporal_scores_df,
-        ) = __evaluate_sensor_and_temporal_scores(
+        ) = evaluate_sensor_and_temporal_scores(
             model_data.normalised_training_data_df,
             metric_methods,
             training_set=True,
@@ -95,7 +95,7 @@ def evaluate_model_data(
         (
             testing_sensor_scores_df,
             testing_temporal_scores_df,
-        ) = __evaluate_sensor_and_temporal_scores(
+        ) = evaluate_sensor_and_temporal_scores(
             model_data.normalised_pred_data_df,
             metric_methods,
             training_set=False,
@@ -120,7 +120,7 @@ def evaluate_model_data(
         )
     raise ValueError("You must set either evaluate_training or evaluate_testing to True")
 
-def __evaluate_sensor_and_temporal_scores(
+def evaluate_sensor_and_temporal_scores(
     pred_df,
     metric_methods,
     sensor_col="point_id",
@@ -155,15 +155,15 @@ def __evaluate_sensor_and_temporal_scores(
     return sensor_scores_df, temporal_scores_df
 
 
-def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
+def get_metric_methods(r2_score=True, mae=True, mse=True, **kwargs):
     """
     Get a dictionary of metric keys and methods.
 
     Parameters
     ___
 
-    r2 : bool, optional
-        Whether to use the r2 score.
+    r2_score : bool, optional
+        Whether to use the r2_score score.
 
     mae : bool, optional
         Whether to use the mae score.
@@ -187,8 +187,8 @@ def get_metric_methods(r2=True, mae=True, mse=True, **kwargs):
     metric_methods = {}
 
     # default metrics
-    if r2:
-        metric_methods["r2"] = metrics.r2_score
+    if r2_score:
+        metric_methods["r2_score"] = metrics.r2_score
     if mse:
         metric_methods["mse"] = metrics.mean_squared_error
     if mae:
@@ -248,7 +248,7 @@ def measure_scores_by_hour(
     pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
 
     # group by datetime
-    gb = pred_df.groupby(datetime_col)
+    pred_gb = pred_df.groupby(datetime_col)
 
     if len(test_cols) > 1:
         raise NotImplementedError("Can only validate one pollutant.")
@@ -258,7 +258,7 @@ def measure_scores_by_hour(
     return pd.concat(
         [
             pd.Series(
-                gb.apply(lambda x: method(x[test_cols[0]], x[pred_cols[0]])),
+                pred_gb.apply(lambda x: method(x[test_cols[0]], x[pred_cols[0]])),
                 name="{species}_{metric}".format(species=test_cols[0], metric=key),
             )
             for key, method in metric_methods.items()
@@ -270,7 +270,7 @@ def measure_scores_by_hour(
 def measure_scores_by_sensor(
     pred_df,
     metric_methods,
-    sensor_col="point_id",
+    groupby_col="point_id",
     **kwargs,
 ):
     """
@@ -288,7 +288,7 @@ def measure_scores_by_sensor(
         Keys are name of metric.
         Values are functions that take in two numpy/series and compute the score.
 
-    sensor_col : str, optional
+    groupby_col : str
         Name of the column containing the sensor ids.
 
     Returns
@@ -313,19 +313,31 @@ def measure_scores_by_sensor(
     # remove nans from rows
     pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
 
-    # group by sensor id
-    gb = pred_df.groupby(sensor_col)
+    # group by col
+    pred_gb = pred_df.groupby(groupby_col)
 
-    return pd.concat(
-        [
-            pd.Series(
-                gb.apply(lambda x: meth(x[test_cols], x[pred_cols])),
-                name="{species}_{metric}".format(species=test_cols[0], metric=key),
+    list_of_series = []
+    for key, meth in metric_methods.items():
+        for i, pollutant in enumerate(test_cols):
+            pred_col = pred_cols[i]
+            pollutant_metrics = pred_gb.apply(lambda x: meth(x[pollutant], x[pred_col]))    # pylint: disable=cell-var-from-loop
+            pollutant_metrics_series = pd.Series(
+                pollutant_metrics, name="{species}_{metric}".format(
+                    species=pollutant, metric=key
+                )
             )
-            for key, meth in metric_methods.items()
-        ],
-        axis=1,
-    )
+            list_of_series.append(pollutant_metrics_series)
+    return pd.concat(list_of_series, axis=1)
+    # return pd.concat(
+    #     [
+    #         pd.Series(
+    #             pred_gb.apply(lambda x: meth(x[test_cols], x[pred_cols])),
+    #             name="{species}_{metric}".format(species=test_cols[0], metric=key),
+    #         )
+    #         for key, meth in metric_methods.items()
+    #     ],
+    #     axis=1,
+    # )
 
 def __concat_static_features_with_scores(
     scores_df, pred_df, static_features=None

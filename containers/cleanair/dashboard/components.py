@@ -11,7 +11,7 @@ from . import timeseries
 METRIC_NAMES = {
     "mae": "Mean absolute error",
     "mse": "Mean squared error",
-    "r2": "R squared score",
+    "r2_score": "R squared score",
 }
 POLLUTANT_NAMES = dict(
     NO2="Nitrogen Dioxide",

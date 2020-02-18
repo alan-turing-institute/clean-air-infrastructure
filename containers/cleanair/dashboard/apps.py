@@ -19,7 +19,7 @@ def get_model_data_fit_app(
     mapbox_access_token,
     evaluate_training=False,
     evaluate_testing=True,
-    all_metrics=["r2", "mae", "mse"],
+    all_metrics=["r2_score", "mae", "mse"],
 ):
     """
     Return an app showing the scores for a model data fit.
@@ -37,7 +37,7 @@ def get_model_data_fit_app(
     mfc_list = [mfc]
 
     # default start variables
-    default_metric_key = "r2"
+    default_metric_key = "r2_score"
     default_pollutant = "NO2"
     default_point_id = sensor_scores_df.iloc[0]["point_id"]
 
