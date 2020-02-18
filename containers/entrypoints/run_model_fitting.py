@@ -10,9 +10,10 @@ from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 
-class ModelFitParser(argparse.ArgumentParser):
+
+class CleanAirParser(argparse.ArgumentParser):
     """
-    A parser for the model fitting entrypoint.
+    The base cleanair entrypoint parser.
     """
 
     def __init__(self, **kwargs):
@@ -28,6 +29,22 @@ class ModelFitParser(argparse.ArgumentParser):
             "--config_dir",
             default="./",
             help="Filepath to directory to store model and data.",
+        )
+        self.add_argument("-v", "--verbose", action="count", default=0)
+
+
+class ModelFitParser(CleanAirParser):
+    """
+    A parser for the model fitting entrypoint.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-results_dir",
+            type=str,
+            default=None,
+            help="Filepath to the directory of results.",
         )
         self.add_argument(
             "-results_dir",
@@ -59,13 +76,18 @@ class ModelFitParser(argparse.ArgumentParser):
             action="store_true",
             help="Write the predictions to file.",
         )
-        self.add_argument("-v", "--verbose", action="count", default=0)
         self.add_argument(
-                "-y",
-                "--return_y",
-                action="store_true",
-                help="Include pollutant data in the test dataset.",
-            )
+            "-y",
+            "--return_y",
+            action="store_true",
+            help="Include pollutant data in the test dataset.",
+        )
+        self.add_argument(
+            "-t",
+            "--predict_training",
+            action="store_true",
+            help="Predict on the training set.",
+        )
         self.add_argument(
             "--trainend",
             type=str,
@@ -155,6 +177,7 @@ def main():
     read = kwargs.pop("read")
     write_prediction = kwargs.pop("write_prediction")
     results_dir = kwargs.pop("results_dir")
+    predict_training = kwargs.pop("predict_training")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -172,7 +195,7 @@ def main():
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["maxiter"] = 100
     model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data
@@ -199,10 +222,15 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction
-    y_pred = model_fitter.predict(x_test)
+    y_test_pred = model_fitter.predict(x_test)
+    if predict_training:
+        x_train_pred = x_train.copy()
+        if "satellite" in x_train:
+            x_train_pred.pop("satellite")
+        y_train_pred = model_fitter.predict(x_train_pred)
 
     # Internally update the model results in the ModelData object
-    model_data.update_test_df_with_preds(y_pred)
+    model_data.update_test_df_with_preds(y_test_pred)
 
     # Write the model results to the database
     if update:
@@ -211,11 +239,19 @@ def main():
     # Write the model results to file
     if write_prediction:
         if results_dir is None:
-            filepath = os.path.join(kwargs["config_dir"], "y_pred.pickle")
+            test_pred_filepath = os.path.join(kwargs["config_dir"], "test_pred.pickle")
+            train_pred_filepath = os.path.join(
+                kwargs["config_dir"], "train_pred.pickle"
+            )
         else:
-            filepath = os.path.join(results_dir, "y_pred.pickle")
-        with open(filepath, "wb") as results_file:
-            pickle.dump(y_pred, results_file)
+            test_pred_filepath = os.path.join(results_dir, "test_pred.pickle")
+            train_pred_filepath = os.path.join(results_dir, "train_pred.pickle")
+        with open(test_pred_filepath, "wb") as results_file:
+            pickle.dump(y_test_pred, results_file)
+        if predict_training:
+            with open(train_pred_filepath, "wb") as results_file:
+                pickle.dump(y_train_pred, results_file)
+
 
 if __name__ == "__main__":
     main()
