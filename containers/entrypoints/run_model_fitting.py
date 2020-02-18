@@ -189,7 +189,7 @@ def main():
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["maxiter"] = 100
     model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data
@@ -218,7 +218,10 @@ def main():
     # Do prediction
     y_test_pred = model_fitter.predict(x_test)
     if predict_training:
-        y_train_pred = model_fitter.predict(x_train)
+        x_train_pred = x_train.copy()
+        if "satellite" in x_train:
+            x_train_pred.pop("satellite")
+        y_train_pred = model_fitter.predict(x_train_pred)
 
     # Internally update the model results in the ModelData object
     model_data.update_test_df_with_preds(y_test_pred)

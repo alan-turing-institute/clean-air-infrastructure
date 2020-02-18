@@ -21,15 +21,22 @@ def main():
     args = parser.parse_args()
     kwargs = vars(args)
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    evaluate_training = True
     model_data = ModelData(**kwargs)
 
     # get the predictions of the model
-    y_pred_fp = os.path.join(args.config_dir, "test_pred.pickle")
-    with open(y_pred_fp, "rb") as handle:
-        y_pred = pickle.load(handle)
+    y_test_pred_fp = os.path.join(args.config_dir, "test_pred.pickle")
+    with open(y_test_pred_fp, "rb") as handle:
+        y_test_pred = pickle.load(handle)
+    if evaluate_training:
+        y_train_pred_fp = os.path.join(args.config_dir, "train_pred.pickle")
+        with open(y_train_pred_fp, "rb") as handle:
+            y_train_pred = pickle.load(handle)
 
     # update the model data object with the predictions
-    model_data.update_test_df_with_preds(y_pred)
+    model_data.update_test_df_with_preds(y_test_pred)
+    if evaluate_training:
+        model_data.update_training_df_with_preds(y_train_pred)
 
     # get the mapbox api key
     mapbox_access_token = open("../../terraform/.secrets/.mapbox_token").read()
@@ -37,12 +44,13 @@ def main():
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods
+        model_data, metric_methods, evaluate_training=evaluate_training
     )
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token
+        model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token,
+        evaluate_training=evaluate_training
     )
     model_data_fit_app.run_server(debug=True)
 
