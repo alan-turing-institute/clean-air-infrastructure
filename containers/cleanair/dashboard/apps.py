@@ -138,7 +138,7 @@ def get_model_data_fit_app(
         ],
     )  # pylint: disable=unused-variable
     def update_ip_timeseries(hover_data, pollutant):
-        return callbacks.interest_point_timeseries_callback(
+        return callbacks.ip_timeseries_callback(
             hover_data, mfc_list[instance_id].point_groupby, pollutant
         )
 

@@ -4,7 +4,7 @@ Function to handle callbacks from apps.
 from . import timeseries
 
 
-def interest_point_timeseries_callback(hover_data, point_groupby, pollutant="NO2"):
+def ip_timeseries_callback(hover_data, point_groupby, pollutant="NO2"):
     """
     When hovering over a point, update the timeseries showing the prediction.
     """
