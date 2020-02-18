@@ -329,21 +329,20 @@ class Model(ABC):
             raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
+        predict_fn = lambda x: self.model.predict_y(x)
 
         for src, x_src in x_test.items():
-            print(src)
-            if src in ignore: continue
-            for pollutant in species:
-                y_mean, y_var = self.batch_predict(x_src, predict_fn)
-                y_dict[src] = {
-                    pollutant: dict(
-                        mean=y_mean,
-                        var=y_var
+            for pollutant in self.tasks:
+                if self.log:
+                    self.logger.info(
+                        "Batch predicting for %s on %s", pollutant, src,
                     )
-                }
+                y_mean, y_var = self.batch_predict(x_src, predict_fn)
+                y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict
 
-    def clean_data(self, x_array, y_array):
+    @staticmethod
+    def clean_data(x_array, y_array):
         """Remove nans and missing data for use in GPflow
 
         args:

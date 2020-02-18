@@ -25,7 +25,7 @@ sys.path.append('../../../libs')
 sys.path.append('..') #for when running on a cluster
 
 import _gprn as gprn
-#from cleanair.models import SVGP_TF1
+#from cleanair.models import SVGP
 
 import pandas as pd
 import json

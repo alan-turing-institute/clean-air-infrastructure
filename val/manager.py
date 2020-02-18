@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
     experiment_class = util.get_experiment_class(args.name)
 
-    models = ['svgp_tf1']
+    models = ['svgp']
 
     if args.setup:
         exp = experiment_class(models=models, **vars(args))

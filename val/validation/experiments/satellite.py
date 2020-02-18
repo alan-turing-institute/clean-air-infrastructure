@@ -29,7 +29,7 @@ class SatelliteExperiment(experiment.Experiment):
         # ToDo: this method should be abstract
         # ToDo: this assumes an SVGP but this will not work in practise
         return {
-            'svgp_tf1' : util.create_params_list(
+            'svgp' : util.create_params_list(
                 lengthscale=[0.1],
                 variance=[0.1],
                 minibatch_size=[100],

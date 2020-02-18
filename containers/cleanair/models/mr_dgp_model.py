@@ -216,8 +216,8 @@ class MR_DGP_MODEL(Model):
         # X = [X_laqn[:, None, :], X_sat]
         # Y = [Y_laqn, Y_sat]
 
-        X_sat, Y_sat = self.clean_data(X_sat, Y_sat)
-        X_laqn, Y_laqn = self.clean_data(X_laqn, Y_laqn)
+        X_sat, Y_sat = Model.clean_data(X_sat, Y_sat)
+        X_laqn, Y_laqn = Model.clean_data(X_laqn, Y_laqn)
 
         X = [X_sat, X_laqn[:, None, :]]
         Y = [Y_sat, Y_laqn]

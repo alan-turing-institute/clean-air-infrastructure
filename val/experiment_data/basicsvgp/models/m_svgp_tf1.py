@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../../../../containers')
 sys.path.append('..') #for when running on a cluster
-from cleanair.models import SVGP_TF1
+from cleanair.models import SVGP
 
 import numpy as np
 import pandas as pd
@@ -41,7 +41,7 @@ def main(data_config, param_config, experiment_config):
 
     param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
 
-    m = SVGP_TF1(model_params=param_config)
+    m = SVGP(model_params=param_config)
 
     m.fit(x_train, y_train, save_model_state=True)
     y_train_pred = m.predict(x_train)
@@ -52,7 +52,7 @@ def main(data_config, param_config, experiment_config):
 
 if __name__ == '__main__':
     #default config
-    model='svgp_tf1'
+    model='svgp'
     data_idx = 0
     param_idx = 0
 
