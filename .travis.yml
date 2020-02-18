@@ -14,4 +14,4 @@ script:
   - black --check */
 
   # Run pylint for stricter error checking
-  - pylint */
+  - pylint --disable=C0330 */
