@@ -14,7 +14,7 @@ import pandas
 from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..decorators import db_query
-from ..loggers import get_logger, green
+from ..loggers import get_logger, green, duration, duration_from_seconds
 from ..mixins import DateRangeMixin, DBQueryMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
@@ -53,9 +53,6 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             "region",
         ]
 
-        # Start with an empty list of detector IDs
-        self.detector_ids = []
-
     def request_site_entries(self):
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:
@@ -72,24 +69,25 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         return detectors
 
     @db_query
-    def get_nscoot_by_day(self, start_date=None, end_date=None, detector_ids=None):
-        """Get the number of scoot readings that are in the database for each day"""
+    def get_existing_scoot_data(self, start_date=None, end_date=None):
+        """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
         with self.dbcnxn.open_session() as session:
             n_readings_q = session.query(
                 func.date_trunc("hour", ScootReading.measurement_start_utc).label(
                     "hour"
                 ),
+                ScootReading.detector_id,
                 func.count(ScootReading.measurement_start_utc).label("n_entries"),
-            ).group_by(func.date_trunc("hour", ScootReading.measurement_start_utc))
+            ).group_by(
+                ScootReading.detector_id,
+                func.date_trunc("hour", ScootReading.measurement_start_utc)
+            )
 
             if start_date and end_date:
                 n_readings_q = n_readings_q.filter(
                     ScootReading.measurement_start_utc >= start_date,
                     ScootReading.measurement_start_utc <= end_date,
                 )
-
-            if detector_ids:
-                n_readings_q = n_readings_q.filter(ScootReading.detector_id.in_(detector_ids))
 
             return n_readings_q
 
@@ -98,10 +96,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         """Get all possible remote file details for the period in question"""
 
         file_list = []
+
         for date in rrule.rrule(
             rrule.HOURLY, dtstart=start_datetime, until=end_datetime
         ):
-
+            # NB. We must explicitly exclude end_datetime
+            if date >= end_datetime:
+                continue
             year, month, day, hour = (
                 str(date.year),
                 str(date.month).zfill(2),
@@ -120,7 +121,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 )
         return file_list
 
-    def validate_remote_data(self, start_datetime, end_datetime):
+    def request_remote_data(self, start_datetime, end_datetime, detector_ids):
         """
         Request all readings between {start_date} and {end_date}.
         Remove readings with unknown detector ID or detector faults.
@@ -135,13 +136,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         # Parse each CSV file into a dataframe and add these to a list
-        n_failed = 0
+        n_failed, n_succeeded = 0, 0
         processed_readings = []
         for filepath, filename in self.get_remote_filenames(
             start_datetime, end_datetime
         ):
             try:
-                self.logger.info("Requesting scoot file %s", filename)
+                self.logger.debug("Requesting scoot file %s", filename)
                 client.download_file(
                     "surface.data.tfl.gov.uk",
                     "{path}/{file}".format(path=filepath, file=filename),
@@ -161,12 +162,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                         "region": lambda x: x.strip(),
                     },
                 )
-                # Remove any sites that are not in our site database
-                scoot_df = scoot_df[scoot_df["detector_id"].isin(self.detector_ids)]
+                # Remove any sites that we do not currently plan to process
+                scoot_df = scoot_df[scoot_df["detector_id"].isin(detector_ids)]
                 # Remove any readings with detector faults
                 scoot_df = scoot_df[~scoot_df["detector_fault"]]
                 # Append to list of readings
                 processed_readings.append(scoot_df)
+                n_succeeded += 1
             except (
                 botocore.exceptions.ClientError,
                 botocore.exceptions.EndpointConnectionError,
@@ -178,15 +180,17 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                     os.remove(filename)
                 self.logger.debug("Loaded readings from %s", green(filename))
 
+        # Log success/failure
         if n_failed > 3:
-            raise Exception("{} expected file could not be downloaded".format(n_failed))
+            raise Exception("{} expected files could not be downloaded".format(n_failed))
+        self.logger.info("Successfully retrieved %i SCOOT files", n_succeeded)
 
         # Combine the readings into a single data frame
         df_combined = pandas.concat(processed_readings, ignore_index=True)
         self.logger.info(
-            "Loaded %s valid readings in %s minutes",
+            "Extracted %s relevant readings in %s",
             green(df_combined.shape[0]),
-            green("{:.2f}".format((time.time() - start_aws) / 60.0)),
+            green(duration(start_aws, time.time())),
         )
         return df_combined
 
@@ -215,12 +219,16 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             )
             return pandas.DataFrame(columns=input_df.columns)
 
-    def aggregate_scoot_data(self, df_processed):
+    def aggregate_scoot_data(self, df_readings):
         """
-        Aggregate scoot data"""
+        Aggregate scoot data by detector ID into hourly chunks
+        """
         # Get the minimum and maximum time in the dataset
-        time_min = datetime_from_unix(df_processed["timestamp"].min())
-        time_max = datetime_from_unix(df_processed["timestamp"].max())
+        try:
+            time_min = datetime_from_unix(df_readings["timestamp"].min())
+            time_max = datetime_from_unix(df_readings["timestamp"].max())
+        except ValueError:
+            return []
 
         # Slice processed data into hourly chunks and aggregate these by detector ID
         for start_time in rrule.rrule(
@@ -234,9 +242,9 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             self.logger.info(
                 "Processing data between %s and %s", green(start_time), green(end_time)
             )
-            df_hourly = df_processed.loc[
-                (df_processed["timestamp"] > start_time.timestamp())
-                & (df_processed["timestamp"] <= end_time.timestamp())
+            df_hourly = df_readings.loc[
+                (df_readings["timestamp"] > start_time.timestamp())
+                & (df_readings["timestamp"] <= end_time.timestamp())
             ].copy()
 
             # Drop unused columns and aggregate
@@ -252,71 +260,75 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
             yield df_aggregated
 
-    def update_remote_tables(self):
+    def update_remote_tables(self, detector_ids=None):
         """Update the database with new Scoot traffic data."""
         self.logger.info("Starting %s readings update...", green("Scoot"))
         start_update = time.time()
+        n_records_inserted = 0
 
-        # Get the list of known detectors
-        self.detector_ids = self.request_site_entries()
-
-        # Load readings from AWS
+        # Use all known detectors if no list is provided
+        if not detector_ids:
+            detector_ids = self.request_site_entries()
         self.logger.info(
             "Requesting readings from %s for %s sites",
             green("TfL AWS storage"),
-            green(len(self.detector_ids)),
+            green(len(detector_ids)),
         )
 
-        n_records = 0
-        # Get a count of records already in the database per hour
-        db_records = self.get_nscoot_by_day(
-            start_date=self.start_datetime, end_date=self.end_datetime, output_type="df"
+        # Processing will take approximately one second for each minute of data to process
+        self.logger.info("Processing will take approximately %s...", duration_from_seconds(
+            (self.end_datetime - self.start_datetime).total_seconds() / 60.)
         )
 
-        self.logger.info(
-            "This will take approximately 1 minute for each hour requested..."
-        )
+        # Get a per-hour summary of records in this range that are already in the database
+        db_records = self.get_existing_scoot_data(start_date=self.start_datetime, end_date=self.end_datetime, output_type="df")
 
-        # Process an hour at a time
+        # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
         for start_datetime in rrule.rrule(
             rrule.HOURLY, dtstart=start_hour, until=self.end_datetime
         ):
             end_datetime = start_datetime + datetime.timedelta(hours=1)
 
-            n_readings = db_records[db_records["hour"] == start_datetime]
-
-            if not n_readings.empty:
+            # Filter out any detectors that have already been processed
+            processed_detectors = db_records[db_records["hour"] == start_datetime]["detector_id"].tolist()
+            unprocessed_detectors = [d for d in detector_ids if d not in processed_detectors]
+            if unprocessed_detectors:
                 self.logger.info(
-                    "%s readings already in database for hour %s. Not requesting from S3 bucket",
-                    green(n_readings["n_entries"].values[0]),
-                    green(start_datetime),
-                )
+                        "%i of the %i known detectors have no readings during %s to %s.",
+                        len(unprocessed_detectors), len(detector_ids), green(start_datetime), green(end_datetime),
+                    )
+            else:
+                # If all detectors have been processed then skip this hour
+                self.logger.info(
+                        "%i detectors have already been processed for hour %s. No data will be requested from S3 bucket",
+                        len(processed_detectors), green(start_datetime),
+                    )
                 continue
 
             # Load all valid remote data into a single dataframe
-            df_processed = self.validate_remote_data(start_datetime, end_datetime)
+            df_readings = self.request_remote_data(start_datetime, end_datetime, unprocessed_detectors)
 
-            for df_aggregated in self.aggregate_scoot_data(df_processed):
-
-                # Add readings to database
-                start_session = time.time()
+            # Aggregate the data and add readings to database
+            for df_aggregated in self.aggregate_scoot_data(df_readings):
+                detectors = df_aggregated["detector_id"].unique()
                 site_records = df_aggregated.to_dict("records")
                 self.logger.info(
                     "Inserting %s per-site records into database",
                     green(len(site_records)),
                 )
 
+                start_session = time.time()
                 with self.dbcnxn.open_session() as session:
                     try:
                         # Commit the records to the database
                         self.commit_records(
                             session,
                             site_records,
-                            on_conflict="ignore",
+                            on_conflict="overwrite",
                             table=ScootReading,
                         )
-                        n_records += len(site_records)
+                        n_records_inserted += len(site_records)
                     except IntegrityError as error:
                         self.logger.error(
                             "Failed to add records to the database: %s", type(error)
@@ -324,14 +336,15 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                         self.logger.error(str(error))
                         session.rollback()
                 self.logger.info(
-                    "Insertion took %s seconds",
-                    green("{:.2f}".format(time.time() - start_session)),
+                    "Insertion took %s",
+                    green(duration(start_session, time.time())),
                 )
 
         # Summarise updates
         self.logger.info(
-            "Committed %s records to table %s in %s minutes",
-            green(n_records),
+            "Committed %s records to table %s in %s",
+            green(n_records_inserted),
             green(ScootReading.__tablename__),
-            green("{:.2f}".format((time.time() - start_update) / 60.0)),
+            green(duration(start_update, time.time())),
         )
+
