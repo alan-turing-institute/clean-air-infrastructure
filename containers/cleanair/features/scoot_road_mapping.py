@@ -34,14 +34,18 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
         pandas.DataFrame
             A dataframe containing [road_toid, scoot_detector_n, distance_m] for each road-sensor association
         """
-        start_time = time.time()
-
         while True:
+            start_time = time.time()
             with self.dbcnxn.open_session() as session:
                 # Get toids for all roads that have already been matched
-                existing_road_toids = session.query(ScootRoadMatch.road_toid).all()
+                existing_road_toids = session.query(ScootRoadMatch.road_toid).distinct().all()
                 n_roads = session.query(OSHighway).count()
-                self.logger.info("%i/%i roads have already been processed. Preparing to process the next %i.", len(existing_road_toids), n_roads, batch_size)
+
+                # Stop here if we have matched all the roads
+                self.logger.info("%i/%i roads have already been processed.", len(existing_road_toids), n_roads)
+                if len(existing_road_toids) >= n_roads:
+                    break
+                self.logger.info("Preparing to process the next %i roads.", batch_size)
 
                 # Start by matching all detectors to the road they are on
                 # NB. as a single road can have multiple detectors: the 12421 detectors represent 8160 distinct roads
@@ -67,7 +71,7 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
                         OSHighway.geom.label("road_geom"),
                     )
                     .outerjoin(ScootDetector, OSHighway.toid == ScootDetector.toid)
-                    .filter(ScootDetector.toid == None)
+                    .filter(ScootDetector.toid.is_(None))
                     .filter(OSHighway.toid.notin_(existing_road_toids))
                     .limit(batch_size)
                     .subquery()
@@ -165,6 +169,6 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
         self.logger.info(
             "Committed %s road matches to table %s in %s",
             green(n_records),
-            green(ScootForecast.__tablename__),
+            green(ScootRoadMatch.__tablename__),
             green(duration(start_time, time.time())),
         )
