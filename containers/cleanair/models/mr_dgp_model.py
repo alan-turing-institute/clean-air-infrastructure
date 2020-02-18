@@ -272,8 +272,8 @@ class MR_DGP_MODEL(Model):
         ys, ys_var = get_sample_mean_var(ys, ys_var)
         return ys, ys_var
 
-    def predict(self, x_test, species=["NO2"]):
-        return self.predict_srcs(x_test, self._predict)
+    def predict(self, x_test, species=["NO2"], ignore=[]):
+        return self.predict_srcs(x_test, self._predict, ignore=ignore)
 
 
 def set_objective(_class, objective_str):

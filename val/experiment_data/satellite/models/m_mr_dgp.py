@@ -100,14 +100,14 @@ def main(data_config, param_config, experiment_config):
     os.makedirs(os.path.dirname(test_pred_fp), exist_ok=True)
     #train_pred = m.predict(train_dict)
     print(test_dict['X'].keys())
+    train_pred = m.predict(train_dict['X'], ignore=['satellite'])
     test_pred = m.predict(test_dict['X'])
     
-
 
     #train_pred = predict(train_dict, lambda x: batch_predict(m, x, 1), 'NO2', ignore='satellite')
     #test_pred = predict(test_dict, lambda x: batch_predict(m, x, 1), 'NO2')
 
-    #pickle.dump(train_pred, open( train_pred_fp, "wb" ) )
+    pickle.dump(train_pred, open( train_pred_fp, "wb" ) )
     pickle.dump(test_pred, open( test_pred_fp, "wb" ) )
 
     pickle.dump(meta, open( meta_fp, "wb" ) )
