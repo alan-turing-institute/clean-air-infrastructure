@@ -120,7 +120,7 @@ class DBWriter(DBInteractor):
         else:
             if on_conflict != "overwrite":
                 self.logger.warning(
-                    "Ignoring conflict instruction '%s', using 'merge' strategy instead",
+                    "Ignoring conflict instruction '%s', using 'overwrite' strategy instead",
                     on_conflict,
                 )
             self.__commit_records_orm(session, records)
