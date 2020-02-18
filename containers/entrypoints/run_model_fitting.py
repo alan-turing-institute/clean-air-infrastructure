@@ -114,6 +114,13 @@ def strtime_offset(strtime, offset_hours):
     return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
 
 
+def write_predictions_to_file(y_pred, results_dir, filename):
+    """Write a prediction dict to pickle."""
+    pred_filepath = os.path.join(results_dir, filename)
+    with open(pred_filepath, "wb") as handle:
+        pickle.dump(y_pred, handle)
+
+
 def get_data_config(kwargs):
     """
     Return a dictionary of model data configs given parser arguments.
@@ -154,7 +161,7 @@ def get_data_config(kwargs):
     return model_config
 
 
-def main():
+def main():     # pylint: disable=R0914
     """
     Run model fitting
     """
@@ -233,18 +240,10 @@ def main():
     # Write the model results to file
     if write_prediction:
         if results_dir is None:
-            test_pred_filepath = os.path.join(kwargs["config_dir"], "test_pred.pickle")
-            train_pred_filepath = os.path.join(
-                kwargs["config_dir"], "train_pred.pickle"
-            )
-        else:
-            test_pred_filepath = os.path.join(results_dir, "test_pred.pickle")
-            train_pred_filepath = os.path.join(results_dir, "train_pred.pickle")
-        with open(test_pred_filepath, "wb") as results_file:
-            pickle.dump(y_test_pred, results_file)
+            results_dir = kwargs["config_dir"]
+        write_predictions_to_file(y_test_pred, results_dir, "test_pickle.pickle")
         if predict_training:
-            with open(train_pred_filepath, "wb") as results_file:
-                pickle.dump(y_train_pred, results_file)
+            write_predictions_to_file(y_train_pred, results_dir, "train_pred.pickle")
 
 
 if __name__ == "__main__":

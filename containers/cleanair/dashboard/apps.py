@@ -137,7 +137,7 @@ def get_model_data_fit_app(
             Input(pollutant_dropdown_id, "value"),
         ],
     )  # pylint: disable=unused-variable
-    def update_interest_points_timeseries(hover_data, pollutant):
+    def update_ip_timeseries(hover_data, pollutant):
         return callbacks.interest_point_timeseries_callback(
             hover_data, mfc_list[instance_id].point_groupby, pollutant
         )
@@ -147,7 +147,7 @@ def get_model_data_fit_app(
         Output(mfc_list[instance_id].interest_points_map_id, "figure"),
         [Input(metric_dropdown_id, "value"), Input(pollutant_dropdown_id, "value"),],
     )  # pylint: disable=unused-variable
-    def update_interest_points_mapbox(metric_key, pollutant):
+    def update_ip_mapbox(metric_key, pollutant):
         return callbacks.interest_point_mapbox_callback(
             interest_points_mapbox,
             mfc_list[instance_id].sensor_scores_df,
@@ -160,7 +160,7 @@ def get_model_data_fit_app(
         Output(mfc_list[instance_id].temporal_metrics_timeseries_id, "figure"),
         [Input(metric_dropdown_id, "value"), Input(pollutant_dropdown_id, "value")],
     )  # pylint: disable=unused-variable
-    def update_temporal_metrics_timeseries(metric_key, pollutant):
+    def update_time_metrics_timeseries(metric_key, pollutant):
         return mfc_list[instance_id].get_temporal_metrics_timeseries(
             metric_key, pollutant
         )
