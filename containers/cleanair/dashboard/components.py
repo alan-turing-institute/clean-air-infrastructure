@@ -28,12 +28,7 @@ class ModelFitComponent:
     """
 
     def __init__(
-        self,
-        instance_id,
-        model_data,
-        sensor_scores_df,
-        temporal_scores_df,
-        **kwargs,
+        self, instance_id, model_data, sensor_scores_df, temporal_scores_df, **kwargs,
     ):
         """
         Initialise with a model data object and the scores for the fit.
@@ -45,19 +40,13 @@ class ModelFitComponent:
         self.evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
         self.evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
         self.interest_points_map_id = pop_kwarg(
-            kwargs,
-            "interest_points_map_id",
-            "interest-points-map"
+            kwargs, "interest_points_map_id", "interest-points-map"
         )
         self.interest_points_timeseries_id = pop_kwarg(
-            kwargs,
-            "interest_points_timeseries_id",
-            "interest-points-timeseries"
+            kwargs, "interest_points_timeseries_id", "interest-points-timeseries"
         )
         self.temporal_metrics_timeseries_id = pop_kwarg(
-            kwargs,
-            "temporal_metrics_timeseries_id",
-            "temporal_metrics_timeseries"
+            kwargs, "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
         )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:

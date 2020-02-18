@@ -11,6 +11,7 @@ from cleanair import metrics
 from cleanair.dashboard import apps
 from cleanair.loggers import get_log_level
 
+
 def main():
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
