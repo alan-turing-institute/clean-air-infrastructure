@@ -70,11 +70,17 @@ class ModelFitParser(CleanAirParser):
             help="Write the predictions to file.",
         )
         self.add_argument(
-                "-y",
-                "--return_y",
-                action="store_true",
-                help="Include pollutant data in the test dataset.",
-            )
+            "-y",
+            "--return_y",
+            action="store_true",
+            help="Include pollutant data in the test dataset.",
+        )
+        self.add_argument(
+            "-t",
+            "--predict_training",
+            action="store_true",
+            help="Predict on the training set.",
+        )
         self.add_argument(
             "--trainend",
             type=str,
@@ -164,6 +170,7 @@ def main():
     read = kwargs.pop("read")
     write_prediction = kwargs.pop("write_prediction")
     results_dir = kwargs.pop("results_dir")
+    predict_training = kwargs.pop("predict_training")
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -208,10 +215,12 @@ def main():
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction
-    y_pred = model_fitter.predict(x_test)
+    y_test_pred = model_fitter.predict(x_test)
+    if predict_training:
+        y_train_pred = model_fitter.predict(x_train)
 
     # Internally update the model results in the ModelData object
-    model_data.update_test_df_with_preds(y_pred)
+    model_data.update_test_df_with_preds(y_test_pred)
 
     # Write the model results to the database
     if update:
@@ -220,11 +229,20 @@ def main():
     # Write the model results to file
     if write_prediction:
         if results_dir is None:
-            filepath = os.path.join(kwargs["config_dir"], "y_pred.pickle")
+            test_pred_filepath = os.path.join(kwargs["config_dir"], "test_pred.pickle")
+            train_pred_filepath = os.path.join(
+                kwargs["config_dir"],
+                "train_pred.pickle"
+            )
         else:
-            filepath = os.path.join(results_dir, "y_pred.pickle")
-        with open(filepath, "wb") as results_file:
-            pickle.dump(y_pred, results_file)
+            test_pred_filepath = os.path.join(results_dir, "test_pred.pickle")
+            train_pred_filepath = os.path.join(results_dir, "train_pred.pickle")
+        with open(test_pred_filepath, "wb") as results_file:
+            pickle.dump(y_test_pred, results_file)
+        if predict_training:
+            with open(train_pred_filepath, "wb") as results_file:
+                pickle.dump(y_train_pred, results_file)
+
 
 if __name__ == "__main__":
     main()

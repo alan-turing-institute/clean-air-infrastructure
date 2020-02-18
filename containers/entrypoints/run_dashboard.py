@@ -24,7 +24,7 @@ def main():
     model_data = ModelData(**kwargs)
 
     # get the predictions of the model
-    y_pred_fp = os.path.join(args.config_dir, "y_pred.pickle")
+    y_pred_fp = os.path.join(args.config_dir, "test_pred.pickle")
     with open(y_pred_fp, "rb") as handle:
         y_pred = pickle.load(handle)
 
