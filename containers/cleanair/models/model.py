@@ -280,7 +280,7 @@ class Model(ABC):
 
         return ys, ys_var
 
-    def predict_srcs(self, x_test, predict_fn, species=['NO2']):
+    def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=[]):
         """
         Predict using the model at the laqn sites for NO2.
 
@@ -303,6 +303,8 @@ class Model(ABC):
         y_dict = dict()
 
         for src, x_src in x_test.items():
+            print(src)
+            if src in ignore: continue
             for pollutant in species:
                 y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {

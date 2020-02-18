@@ -57,36 +57,9 @@ def main(data_config, param_config, experiment_config):
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
-    #print(train_dict['laqn'])
-
-    #===========================Remove NaNs===========================
-    #Remove nans from  LAQN data
-    X_laqn = train_dict['X']['laqn'].copy()
-    Y_laqn = train_dict['Y']['laqn']['NO2'].copy()
-        
-
-    idx = (~np.isnan(Y_laqn[:, 0]))
-    X_laqn = X_laqn[idx, :] 
-    Y_laqn = Y_laqn[idx, :] 
-
-    #===========================Setup SAT Data===========================
-    X_sat = train_dict['X']['satellite'].copy()
-    Y_sat = train_dict['Y']['satellite']['NO2'].copy()
-
-    #===========================Only Lat/Lon/Epochs===========================
-    X_laqn = X_laqn[:, :3]
-    X_sat = X_sat[:, :, :3]
-
-    #===========================Setup Data===========================
-    #X = [X_laqn[:, None, :], X_sat]
-    #Y = [Y_laqn, Y_sat]
-    X = [X_sat, X_laqn[:, None, :]]
-    Y = [Y_sat, Y_laqn]
-
-    #X = [X[1]]
-    #Y = [Y[1]]
 
     #===========================Setup Model===========================
+
     m = MR_DGP_MODEL()
     m.fit(train_dict['X'], train_dict['Y'])
     #===========================Predict and store results===========================

@@ -1,4 +1,11 @@
-"""Run experiment using SVGP"""
+"""Run experiment using MR_GPRN"""
+
+import sys
+sys.path.append('../../../../containers')
+sys.path.append('..') #for when running on a cluster
+from cleanair.models import MR_GPRN_MODEL as MR_GPRN_MODEL
+
+exit()
 
 import logging, os
 import numpy as np
