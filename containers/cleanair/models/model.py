@@ -4,19 +4,47 @@ The interface for London air quality models.
 
 from abc import ABC, abstractmethod
 
+
 class Model(ABC):
     """
     A base class for models.
     All other air quality models should extend this class.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, model_params=None, tasks=None, **kwargs):
+        """
+        Initialise a model with parameters and settings.
+
+        Parameters
+        ___
+
+        model_params : dict, optional
+            Parameters to run the model.
+            You may wish to pass parameters for the optimizer, kernel, etc.
+
+        tasks : list, optional
+            The name of the tasks (pollutants) we are modelling.
+            Default is ['NO2'].
+
+        Other Parameters
+        ___
+
+        log : bool, optional
+            Print logs. Default is True.
+
+        restore : bool, optional
+            Restore the model from a file.
+        """
+        self.model_params = dict() if model_params is None else model_params
+        self.tasks = ["NO2"] if tasks is None else tasks
+        if self.tasks != ["NO2"]:
+            raise NotImplementedError(
+                "Multiple pollutants not supported. Use only NO2."
+            )
         self.model = None
-        self.minimum_param_keys = ['restore']
-        if 'model_params' in kwargs:
-            self.model_params = kwargs['model_params']
-        else:
-            self.model_params = dict(restore=False)
+        self.log = True if "log" not in kwargs else kwargs["log"]
+        self.restore = False if "restore" not in kwargs else kwargs["restore"]
+        self.minimum_param_keys = []
 
     @abstractmethod
     def get_default_model_params(self):
@@ -47,10 +75,14 @@ class Model(ABC):
         """
         # if the set of minimial keys is NOT a subset of the parameters
         if not set(self.minimum_param_keys).issubset(set(self.model_params.keys())):
-            raise KeyError("""Model parameters are not sufficient. \n
+            raise KeyError(
+                """Model parameters are not sufficient. \n
         The minimal set of keys is: {min} \n
         You supplied the following keys: {params}
-        """.format(min=self.minimum_param_keys, params=self.model_params.keys()))
+        """.format(
+                    min=self.minimum_param_keys, params=self.model_params.keys()
+                )
+            )
 
     @abstractmethod
     def fit(self, x_train, y_train, **kwargs):
@@ -92,7 +124,7 @@ class Model(ABC):
         The shapes are given in the table below:
 
         +-------------------+---------+
-        | `x_laqn`          | (NxSxD) |
+        | `x_laqn`          | (NxD) |
         +-------------------+---------+
         | `x_satellite`     | (MxSxD) |
         +-------------------+---------+
@@ -105,10 +137,9 @@ class Model(ABC):
         S is the discretization amount,
         M is the number of satellite observations, and * represents a pollutant name.
         """
-        Model.check_training_set_is_valid(x_train, y_train)
 
     @abstractmethod
-    def predict(self, x_test, **kwargs):
+    def predict(self, x_test):
         """
         Predict using the model.
 
@@ -167,26 +198,26 @@ class Model(ABC):
         ___
 
         KeyError
-            If 'laqn' is not in x_train and y_train.
+            If there are no keys in x_train or y_train.
 
         ValueError
             If the shape of x_train or y_train are incorrect.
         """
-        if 'laqn' not in x_train:
-            raise KeyError("'laqn' must be a key in x_train")
-        if 'laqn' not in y_train:
-            raise KeyError("'laqn' must be a key in y_train")
+        if len(x_train) == 0:
+            raise KeyError("x_train must have at least one data source.")
+        if len(y_train) == 0:
+            raise KeyError("y_train must have at least one data source.")
         # check the shape of numpy arrays
         for source in y_train:
             for pollutant in y_train[source]:
                 # check that each pollutant has the right shape
                 if y_train[source][pollutant].shape[1] != 1:
-                    error_message = 'The shape of {p} numpy array for source {s} must be Nx1. '
-                    error_message += 'The shape you gave was Nx{k}'
+                    error_message = (
+                        "The shape of {p} numpy array for source {s} must be Nx1. "
+                    )
+                    error_message += "The shape you gave was Nx{k}"
                     error_message.format(
-                        p=pollutant,
-                        s=source,
-                        k=y_train[source][pollutant].shape[1]
+                        p=pollutant, s=source, k=y_train[source][pollutant].shape[1]
                     )
                     raise ValueError(error_message)
                 # check that the shape of x_train and y_train is the same
@@ -199,9 +230,16 @@ class Model(ABC):
                             s=source,
                             p=pollutant,
                             x=x_train[source].shape[0],
-                            y=y_train[source][pollutant].shape[0]
+                            y=y_train[source][pollutant].shape[0],
                         )
                     )
+                # check that the shape of the satellite data is correct
+                if source == "satellite" and len(x_train[source].shape) != 3:
+                    error_message = "The shape of the satellite data must be (NxSxD)."
+                    error_message += "The shape you provided was {shp}.".format(
+                        shp=x_train[source].shape
+                    )
+                    raise ValueError(error_message)
 
     @staticmethod
     def check_test_set_is_valid(x_test):
@@ -211,4 +249,4 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError('x_test has no data.')
+                raise ValueError("x_test has no data for {src}.".format(src=source))
