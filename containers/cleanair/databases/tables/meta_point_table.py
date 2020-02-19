@@ -5,6 +5,7 @@ import uuid
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 
 
@@ -49,3 +50,22 @@ class MetaPoint(Base):
         if geometry:
             return MetaPoint(source=source, location=geometry)
         return None
+
+
+class InterestPointBuffers(DeferredReflection, Base):
+    """Table of interest points to use in feature processing"""
+
+    __tablename__ = "interest_point_buffers"
+    __table_args__ = {"schema": "interest_points"}
+
+    # Must define a column as a primary key
+    id = Column(
+        UUID(as_uuid=True), unique=True, nullable=False, primary_key=True
+    )
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<InterestPointBuffers(" + ", ".join(vals)

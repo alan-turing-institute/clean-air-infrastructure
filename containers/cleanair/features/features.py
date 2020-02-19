@@ -10,8 +10,10 @@ from ..databases.tables import (
     IntersectionValue,
     IntersectionValueDynamic,
     MetaPoint,
+    InterestPointBuffers,
     UKMap,
 )
+from ..decorators import db_query
 from ..mixins import DBQueryMixin
 from ..loggers import duration, green, get_logger
 
@@ -55,24 +57,15 @@ class Features(DBWriter, DBQueryMixin):
         """Either returns an sql table instance or a subquery"""
         raise NotImplementedError("Must be implemented by child classes")
 
+    @db_query
     def query_meta_points(self, include_sources=None, with_buffers=False):
         """Query MetaPoints, selecting all matching include_sources"""
-        boundary_geom = self.query_london_boundary()
+
         with self.dbcnxn.open_session() as session:
-            columns = [MetaPoint.id]
-            if with_buffers:
-                columns += [
-                    func.Geometry(
-                        func.ST_Buffer(func.Geography(MetaPoint.location), rad)
-                    ).label(str(rad))
-                    for rad in self.buffer_radii_metres
-                ]
-            _query = session.query(*columns).filter(
-                MetaPoint.location.ST_Within(boundary_geom)
-            )
-            if include_sources:
-                _query = _query.filter(MetaPoint.source.in_(include_sources))
-        return _query
+
+            meta_point_q = session.query(InterestPointBuffers)
+
+        return meta_point_q
 
     def query_features(self, feature_name):
         """Query features selecting all features matching the requirements in self.feature_dict"""
