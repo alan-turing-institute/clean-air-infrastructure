@@ -48,3 +48,6 @@ run_model/data
 
 # Misc
 images/
+
+#Swap files
+*.swp

@@ -161,49 +161,22 @@ class SVGP(Model):
                 )
             )
 
-    def elbo_logger(self, logger_arg):
-        """
-        Log optimisation progress.
-
-        Parameters
-        ___
-
-        logger_arg : unknown
-            Argument passed as a callback from GPFlow optimiser.
-        """
-        if (self.epoch % self.refresh) == 0:
-            session = self.model.enquire_session()
-            objective = self.model.objective.eval(session=session)
-            if self.log:
-                self.logger.info(
-                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
-                    self.epoch,
-                    objective,
-                    logger_arg,
-                )
-        self.epoch += 1
-
     def fit(self, x_train, y_train, **kwargs):
         """
         Fit the SVGP.
-
         Parameters
         ___
-
         x_train : dict
             See `Model.fit` method in the base class for further details.
             NxM numpy array of N observations of M covariates.
             Only the 'laqn' key is used in this fit method, so all observations
             come from this source.
-
         y_train : dict
             Only `y_train['laqn']['NO2']` is used for fitting.
             The size of this array is NX1 with N sensor observations from 'laqn'.
             See `Model.fit` method in the base class for further details.
-
         Other Parameters
         ___
-
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
             Default is False.
@@ -255,59 +228,6 @@ class SVGP(Model):
                         filepath=self.model_params["model_state_fp"]
                     ),
                 )
-
-    def batch_predict(self, x_array):
-        """
-        Split up prediction into indepedent batchs.
-
-        Parameters
-        ___
-
-        x_array : np.array
-            N x D numpy array of locations to predict at.
-
-        Returns
-        ___
-
-        y_mean : np.array
-            N x D numpy array of means.
-
-        y_var : np.array
-            N x D numpy array of variances.
-        """
-        batch_size = self.batch_size
-
-        # Ensure batch is less than the number of test points
-        if x_array.shape[0] < batch_size:
-            batch_size = x_array.shape[0]
-
-        # Split up test points into equal batches
-        num_batches = int(np.ceil(x_array.shape[0] / batch_size))
-
-        ys_arr = []
-        ys_var_arr = []
-        index = 0
-
-        for count in range(num_batches):
-            if count == num_batches - 1:
-                # in last batch just use remaining of test points
-                batch = x_array[index:, :]
-            else:
-                batch = x_array[index : index + batch_size, :]
-
-            index = index + batch_size
-
-            # predict for current batch
-            y_mean, y_var = self.model.predict_y(batch)
-
-            ys_arr.append(y_mean)
-            ys_var_arr.append(y_var)
-
-        y_mean = np.concatenate(ys_arr, axis=0)
-        y_var = np.concatenate(ys_var_arr, axis=0)
-
-        return y_mean, y_var
-
     def predict(self, x_test):
         """
         Predict using the model at the laqn sites for NO2.
@@ -325,27 +245,9 @@ class SVGP(Model):
             See `Model.predict` for further details.
             The shape for each pollutant will be (n, 1).
         """
-        self.check_test_set_is_valid(x_test)
-        y_dict = dict()
-        for src, x_src in x_test.items():
-            for pollutant in self.tasks:
-                if self.log:
-                    self.logger.info(
-                        "Batch predicting for %s on %s", pollutant, src,
-                    )
-                y_mean, y_var = self.batch_predict(x_src)
-                y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
+
+        predict_fn = lambda x: self.model.predict_y(x)
+        y_dict = self.predict_srcs(x_test, predict_fn)
+        
         return y_dict
 
-    def clean_data(self, x_array, y_array):  # pylint: disable=no-self-use
-        """Remove nans and missing data for use in GPflow
-
-        args:
-            x_array: N x D numpy array,
-            y_array: N x 1 numpy array
-        """
-        idx = ~np.isnan(y_array[:, 0])
-        x_array = x_array[idx, :]
-        y_array = y_array[idx, :]
-
-        return x_array, y_array

@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../../../../containers')
 sys.path.append('..') #for when running on a cluster
-from cleanair.models import SVGP_TF1
+from cleanair.models import SVGP
 
 import numpy as np
 import pandas as pd
@@ -66,7 +66,7 @@ def main(data_config, param_config, experiment_config):
     param_config['restore'] = False
     param_config['model_state_fp'] = 'restore/' + os.path.basename(experiment_config['model_state_fp'])
 
-    m = SVGP_TF1()
+    m = SVGP()
 
     m.fit(X, Y, max_iter=param_config['max_iter'], model_params=param_config, refresh=param_config['refresh'])
 
@@ -82,7 +82,7 @@ def main(data_config, param_config, experiment_config):
 
 if __name__ == '__main__':
     #default config
-    model='svgp_tf1'
+    model='svgp'
     data_idx = 0
     param_idx = 0
 

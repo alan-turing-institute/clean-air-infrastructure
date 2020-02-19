@@ -1,4 +1,11 @@
-"""Run experiment using SVGP"""
+"""Run experiment using MR_GPRN"""
+
+import sys
+sys.path.append('../../../../containers')
+sys.path.append('..') #for when running on a cluster
+from cleanair.models import MR_GPRN_MODEL as MR_GPRN_MODEL
+
+exit()
 
 import logging, os
 import numpy as np
@@ -18,7 +25,7 @@ sys.path.append('../../../libs')
 sys.path.append('..') #for when running on a cluster
 
 import _gprn as gprn
-#from cleanair.models import SVGP_TF1
+#from cleanair.models import SVGP
 
 import pandas as pd
 import json
@@ -203,16 +210,16 @@ def main(data_config, param_config, experiment_config):
 
     #===========================Remove NaNs===========================
     #Remove nans from  LAQN data
-    X_laqn = train_dict['laqn']['X'].copy()
-    Y_laqn = train_dict['laqn']['Y']['NO2'][:, None].copy()
+    X_laqn = train_dict['X']['laqn'].copy()
+    Y_laqn = train_dict['Y']['laqn']['NO2'].copy()
 
     idx = (~np.isnan(Y_laqn[:, 0]))
     X_laqn = X_laqn[idx, :] 
     Y_laqn = Y_laqn[idx, :] 
 
     #===========================Setup SAT Data===========================
-    X_sat = train_dict['satellite']['X'].copy()
-    Y_sat = train_dict['satellite']['Y'][:, None].copy()
+    X_sat = train_dict['X']['satellite'].copy()
+    Y_sat = train_dict['Y']['satellite'][:, None].copy()
 
     #===========================Only Lat/Lon/Epochs===========================
     X_laqn = X_laqn[:, :3]

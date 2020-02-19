@@ -60,3 +60,4 @@ class Pearl(Cluster):
         template = template.replace('<LOG_NAME>', log_name)
 
         return template
+

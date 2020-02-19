@@ -11,9 +11,9 @@ class SatelliteExperiment(experiment.Experiment):
     An experiment with Satellite data.
     """
 
-    def __init__(self, experiment_name, models, cluster_name, **kwargs):
+    def __init__(self, name, models, cluster_name, **kwargs):
         models =  list(self.get_default_model_params().keys())
-        super().__init__(experiment_name, models, cluster_name, **kwargs)
+        super().__init__(name, models, cluster_name, **kwargs)
         if 'data_config' not in kwargs:
             self.data_config = self.get_default_data_config()
         if 'model_params' not in kwargs:    # ToDo: remove these two lines
@@ -29,7 +29,7 @@ class SatelliteExperiment(experiment.Experiment):
         # ToDo: this method should be abstract
         # ToDo: this assumes an SVGP but this will not work in practise
         return {
-            'svgp_tf1' : util.create_params_list(
+            'svgp' : util.create_params_list(
                 lengthscale=[0.1],
                 variance=[0.1],
                 minibatch_size=[100],
@@ -71,7 +71,7 @@ class SatelliteExperiment(experiment.Experiment):
     def get_default_data_config(self):
         # create dates for rolling over
         n_rolls = 1
-        train_start = "2020-01-02T00:00:00"
+        train_start = "2020-02-01T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
@@ -81,4 +81,6 @@ class SatelliteExperiment(experiment.Experiment):
             data_config[index]["features"] = ['value_1000_flat']
             data_config[index]['include_satellite'] = True
             data_config[index]['train_satellite_interest_points'] = 'all'
+            data_config[index]['train_sources'] = ['laqn']
+            data_config[index]['pred_sources'] = ['laqn']
         return data_config

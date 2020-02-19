@@ -86,6 +86,6 @@ scp  -i "$SSH_KEY" "$USER@$IP:$BASENAME/$BASENAME.tar" $CLUSTER_FOLDER/"$dt"_res
 tar -xzf $CLUSTER_FOLDER/"$dt"_results/"$BASENAME"_results.tar --directory $CLUSTER_FOLDER/"$dt"_results/
 rm -rf $CLUSTER_FOLDER/"$dt"_results/"$BASENAME"_results.tar
 
-rsync -r cluster/"$dt"_results/results/ experiment_data/"$BASENAME"/results/
-rsync -r cluster/"$dt"_results/models/restore/ experiment_data/"$BASENAME"/models/restore/
+rsync -r experiment_data/cluster/"$dt"_results/results/ experiment_data/"$BASENAME"/results/
+rsync -r experiment_data/cluster/"$dt"_results/models/restore/ experiment_data/"$BASENAME"/models/restore/
 

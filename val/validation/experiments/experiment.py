@@ -220,9 +220,10 @@ class Experiment(ABC):
             cluster_config={},
             experiment_configs=cluster_run_params,
             input_format_fn=input_format_fn,
-            cluster_tmp_fp=self.experiments_directory+'cluster',    # ToDo: end in backslash?
+            cluster_tmp_fp=self.experiments_directory+'cluster',
             experiment_fp=self.experiments_directory,
             home_directory_fp=self.home_directory,
+            relative_fp_flag=True
         )
         cluster.setup()
 

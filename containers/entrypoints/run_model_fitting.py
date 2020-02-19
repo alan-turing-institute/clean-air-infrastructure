@@ -7,7 +7,7 @@ import argparse
 import pickle
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP
+from cleanair.models import ModelData, SVGP, MR_DGP_MODEL
 from cleanair.loggers import get_log_level
 
 
@@ -41,10 +41,11 @@ class ModelFitParser(CleanAirParser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
-            "-results_dir",
+            "-m",
+            "--model",
             type=str,
-            default=None,
-            help="Filepath to the directory of results.",
+            default='svgp',
+            help="Model to run.",
         )
         self.add_argument(
             "-results_dir",
@@ -194,8 +195,20 @@ def main():
         )
 
     # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 100
+
+    models = {
+        'svgp': SVGP,
+        'mr_dgp': MR_DGP_MODEL,
+    }
+
+    model_name = kwargs.pop('model')
+
+    if model_name not in models:
+        raise NotImplementedError('Model {model} has not been implmented'.format(model=kwargs['model']))
+
+    #TODO: setup model params in init
+    model_fitter = models[model_name](batch_size=100)   
+    model_fitter.model_params["maxiter"] = 1
     model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data

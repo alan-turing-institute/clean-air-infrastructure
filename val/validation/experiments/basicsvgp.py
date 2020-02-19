@@ -11,7 +11,7 @@ class BasicSvgpExperiment(basic.BasicExperiment):
         super().__init__(name, models, cluster_name, **kwargs)
 
     def get_default_model_params(self):
-        return {'svgp_tf1' : util.create_params_list(
+        return {'svgp' : util.create_params_list(
             lengthscale=[0.1],
             variance=[0.1],
             minibatch_size=[100],
