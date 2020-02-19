@@ -9,6 +9,8 @@ from .mr_kernel_product import MR_KERNEL_PRODUCT
 from .mr_gaussian import MR_Gaussian
 from .mr_mixing_weights import MR_Mixing_Weights
 
+from .utils import *
+
 
 __all__ = [
     'MR_DGP',
