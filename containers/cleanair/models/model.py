@@ -340,7 +340,6 @@ class Model(ABC):
             raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
-        predict_fn = lambda x: self.model.predict_y(x)
 
         for src, x_src in x_test.items():
             for pollutant in self.tasks:
