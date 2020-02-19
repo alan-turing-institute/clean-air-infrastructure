@@ -58,12 +58,22 @@ class Features(DBWriter, DBQueryMixin):
         raise NotImplementedError("Must be implemented by child classes")
 
     @db_query
-    def query_meta_points(self, include_sources=None, with_buffers=False):
+    def query_meta_points(self, include_sources=None, feature_name=None, feature_table=None):
         """Query MetaPoints, selecting all matching include_sources"""
 
         with self.dbcnxn.open_session() as session:
 
             meta_point_q = session.query(InterestPointBuffers)
+
+            if feature_table:
+                already_processed_sq = session.query(feature_table.point_id, feature_table.feature_name).filter(
+                    feature_table.feature_name == feature_name).subquery()
+
+                meta_point_q = meta_point_q.filter(
+                    ~tuple_(InterestPointBuffers.id, literal(feature_name)).in_(already_processed_sq))
+
+            if include_sources:
+                meta_point_q = meta_point_q.filter(InterestPointBuffers.source.in_(include_sources))
 
         return meta_point_q
 
