@@ -154,6 +154,7 @@ def get_pollutant_dropdown(component_id, species):
         value=species[0],
     )
 
+
 def get_metric_dropdown(component_id, metric_keys):
     """
     Get a dropdown menu with all available metrics.

@@ -130,15 +130,15 @@ class SVGP(Model):
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
-        custom_config.jitter = self.model_params['jitter']
+        custom_config.jitter = self.model_params["jitter"]
         with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
-                variance=self.model_params['variance'],
-                lengthscales=self.model_params['lengthscale'],
+                variance=self.model_params["kernel"]["variance"],
+                lengthscales=self.model_params["kernel"]["lengthscale"],
             ) + gpflow.kernels.Linear(
                 num_input_dimensions,
-                variance=self.model_params['variance'],
+                variance=self.model_params["kernel"]["variance"],
                 ARD=True,
             )
             self.model = gpflow.models.SVGP(

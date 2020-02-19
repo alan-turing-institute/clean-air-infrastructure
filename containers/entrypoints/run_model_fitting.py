@@ -161,7 +161,7 @@ def get_data_config(kwargs):
     return model_config
 
 
-def main():     # pylint: disable=R0914
+def main():  # pylint: disable=R0914
     """
     Run model fitting
     """
@@ -196,7 +196,7 @@ def main():     # pylint: disable=R0914
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 100
+    model_fitter.model_params["maxiter"] = 1000
     model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data
@@ -245,8 +245,8 @@ def main():     # pylint: disable=R0914
         if predict_training:
             write_predictions_to_file(y_train_pred, results_dir, "train_pred.pickle")
 
-
     return model_data
+
 
 if __name__ == "__main__":
     main()

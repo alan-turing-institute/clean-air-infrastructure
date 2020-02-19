@@ -4,6 +4,7 @@ Methods for evaluating a model data fit.
 
 import pandas as pd
 from sklearn import metrics
+from . import precision
 
 
 def pop_kwarg(kwargs, key, default):
@@ -202,6 +203,49 @@ def get_metric_methods(r2_score=True, mae=True, mse=True, **kwargs):
     return metric_methods
 
 
+def get_precision_metrics(ci50=True, ci75=True, ci95=True, **kwargs):
+    """
+    Get a dictionary where the keys are the name of a metric and the values
+    are a function that takes three arrays and computes the metric score.
+
+    Parameters
+    ___
+
+    ci50 : bool, optional
+        Calculate the confidence interval 50% score.
+
+    ci75 : bool, optional
+        Calculate the confidence interval 75% score.
+
+    ci95 : bool, optional
+        Calculate the confidence interval 95% score.
+
+    kwargs : dict, optional
+        More precision metrics.
+
+    Returns
+    ___
+
+    precision_metrics : dict
+        Get the keys and methods for the precision metrics.
+    """
+    # measure each metric and store in precision_methods dictionary
+    precision_methods = {}
+
+    # default metrics
+    if ci95:
+        precision_methods["ci95"] = precision.confidence_interval_95
+    if ci75:
+        precision_methods["ci75"] = precision.confidence_interval_75
+    if ci50:
+        precision_methods["ci50"] = precision.confidence_interval_50
+
+    # custom metrics
+    for key, method in kwargs.items():
+        precision_methods[key] = method
+
+    return precision_methods
+
 def measure_scores_by_hour(
     pred_df, metric_methods, datetime_col="measurement_start_utc", **kwargs
 ):
@@ -257,8 +301,10 @@ def measure_scores_by_hour(
         [
             pd.Series(
                 pred_gb.apply(
-                    lambda x: method(x[test_cols[0]], x[pred_cols[0]])
-                ),  # pylint: disable=cell-var-from-loop
+                    lambda x: method(  # pylint: disable=W0640
+                        x[test_cols[0]], x[pred_cols[0]]  # pylint: disable=W0640
+                    )
+                ),
                 name="{species}_{metric}".format(species=test_cols[0], metric=key),
             )
             for key, method in metric_methods.items()
@@ -327,9 +373,9 @@ def measure_scores_by_sensor(
         for i, pollutant in enumerate(test_cols):
             pred_col = pred_cols[i]
             pollutant_metrics = pred_gb.apply(
-                lambda x: meth(
-                    x[pollutant], x[pred_col]
-                )  # pylint: disable=cell-var-from-loop
+                lambda x: meth(  # pylint: disable=W0640,W0631
+                    x[pollutant], x[pred_col]  # pylint: disable=W0640,W0631
+                )
             )
             pollutant_metrics_series = pd.Series(
                 pollutant_metrics,
@@ -343,15 +389,20 @@ def measure_scores_by_sensor(
                 # get names of columns
                 pred_col = pred_cols[i]
                 var_col = var_cols[i]
-                col_name = '{species}_{metric}'.format(species=pollutant, metric=key)
+                col_name = "{species}_{metric}".format(species=pollutant, metric=key)
                 # run each precision metric
                 pollutant_metrics = pred_gb.apply(
-                    lambda x: meth(x[pollutant], x[pred_col], x[var_col])  # pylint: disable=cell-var-from-loop
+                    lambda x: meth(  # pylint: disable=cell-var-from-loop
+                        x[pollutant],  # pylint: disable=cell-var-from-loop
+                        x[pred_col],  # pylint: disable=cell-var-from-loop
+                        x[var_col],  # pylint: disable=cell-var-from-loop
+                    )
                 )
                 # add the metric to the list of scores
                 pollutant_metrics_series = pd.Series(pollutant_metrics, name=col_name)
                 list_of_series.append(pollutant_metrics_series)
     return pd.concat(list_of_series, axis=1)
+
 
 def concat_static_features(scores_df, pred_df, static_features=None):
     """
