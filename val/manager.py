@@ -49,7 +49,7 @@ def main():
         exp.clean()
 
     if args.get_results:
-        exp = experiment_class(models, **vars(args))
+        exp = experiment_class(models=models, **vars(args))
         exp.get()
 
     if args.validate:
