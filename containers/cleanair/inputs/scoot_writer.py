@@ -192,8 +192,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             return pandas.DataFrame(columns=input_df.columns)
 
     def aggregate_scoot_data(self, df_processed):
-        """
-        Aggregate scoot data"""
+        """Aggregate scoot data"""
         # Get the minimum and maximum time in the dataset
         time_min = datetime_from_unix(df_processed["timestamp"].min())
         time_max = datetime_from_unix(df_processed["timestamp"].max())
@@ -272,9 +271,14 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
             # Load all valid remote data into a single dataframe
             df_processed = self.validate_remote_data(start_datetime, end_datetime)
+            if df_processed.shape[0] < 1:
+                self.logger.warning(
+                    "Skipping hour %s as it has no available data",
+                    green(start_datetime),
+                )
+                continue
 
             for df_aggregated in self.aggregate_scoot_data(df_processed):
-
                 # Add readings to database
                 start_session = time.time()
                 site_records = df_aggregated.to_dict("records")
