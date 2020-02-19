@@ -47,6 +47,7 @@ class MR_DGP_MODEL(Model):
         self.batch_size = batch_size
         self.epoch = 0
         self.refresh = 10
+        self.name='mr_dgp'
 
         #TODO: can we move into parent class?
         # Ensure logging is available
@@ -203,6 +204,7 @@ class MR_DGP_MODEL(Model):
         return m
 
     def fit(self, x_train, y_train, refresh=10, save_model_state=True):
+        print(self.model_params)
 
         X_laqn = x_train["laqn"].copy()
         Y_laqn = y_train["laqn"]["NO2"].copy()
@@ -243,7 +245,7 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
-                "restore/{name}.ckpt".format(name=self.model_params["model_state_fp"]),
+                "{folder}/restore/{name}.ckpt".format(folder=self.model_params["model_state_fp"], name=self.name),
             )
 
         try:
@@ -258,7 +260,7 @@ class MR_DGP_MODEL(Model):
                     # set_objective(AdamOptimizer, 'elbo')
                     # opt.minimize(m, step_callback=logger, maxiter=10)
                 else:
-                    opt.minimize(m, step_callback=self.elbo_logger, maxiter=10000)
+                    opt.minimize(m, step_callback=self.elbo_logger, maxiter=1)
         except KeyboardInterrupt:
             print("Ending early")
 
@@ -266,7 +268,7 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             save_path = saver.save(
                 tf_session,
-                "restore/{name}.ckpt".format(name=self.model_params["model_state_fp"]),
+                "{folder}/restore/{name}.ckpt".format(folder=self.model_params["model_state_fp"], name=self.name),
             )
 
     def _predict(self, x_test):
