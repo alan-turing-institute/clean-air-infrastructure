@@ -1,7 +1,7 @@
 """
 Tables for intersection between datasource and interest points
 """
-from sqlalchemy import Column, ForeignKey, String, Float
+from sqlalchemy import Column, ForeignKey, String, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
@@ -12,7 +12,8 @@ class IntersectionGeom(Base):
     """Intersection between interest points and UKMap as geometries"""
 
     __tablename__ = "intersection_geom"
-    __table_args__ = {"schema": "static_features"}
+    __table_args__ = (Index("id_name_idx", "point_id", "feature_name"),
+                      {"schema": "static_features"})
 
     point_id = Column(
         UUID,
@@ -103,7 +104,8 @@ class IntersectionValue(Base):
     """Intersection between interest points and UKMap as values"""
 
     __tablename__ = "intersection_value"
-    __table_args__ = {"schema": "static_features"}
+    __table_args__ = (Index("id_name_idx", "point_id", "feature_name"),
+                      {"schema": "static_features"})
 
     point_id = Column(
         UUID,
