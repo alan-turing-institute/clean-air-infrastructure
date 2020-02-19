@@ -6,7 +6,7 @@ import dash_core_components as dcc
 import plotly.graph_objects as go
 import plotly.express as px
 from . import timeseries
-from ..metrics.evaluate import pop_kwarg
+from ..metrics import pop_kwarg
 
 METRIC_NAMES = {
     "mae": "Mean absolute error",

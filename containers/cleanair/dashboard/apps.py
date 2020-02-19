@@ -10,7 +10,7 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 from . import components
 from . import callbacks
-from ..metrics.evaluate import pop_kwarg
+from ..metrics import pop_kwarg
 
 
 def get_model_data_fit_app(

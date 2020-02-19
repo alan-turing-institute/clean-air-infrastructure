@@ -43,6 +43,9 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
     Other Parameters
     ___
 
+    precision_methods : dict, optional
+        See `get_precision_methods()`.
+
     evaluate_testing : bool, optional
         If true, this function will evaluate the predictions made
         on the testing set of data.
@@ -59,16 +62,22 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         Columns containing observations during prediction period.
         Default is ["NO2"].
 
+    var_cols : list, optional
+        Columns containing the variance of predictions.
+        Default is ["NO2_var"]
+
     Raises
     ___
 
     ValueError
         If value of kwargs are not valid values.
     """
+    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
     evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
+    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
 
     if len(pred_cols) != len(test_cols):
         raise ValueError("pred_cols and test_cols must be the same length.")
@@ -80,10 +89,12 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         ) = evaluate_spatio_temporal_scores(
             model_data.normalised_training_data_df,
             metric_methods,
+            precision_methods=precision_methods,
             training_set=True,
             testing_set=False,
             pred_cols=pred_cols,
             test_cols=test_cols,
+            var_cols=var_cols,
             **kwargs,
         )
         # return training scores if we are not evaluating testing
@@ -97,10 +108,12 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         ) = evaluate_spatio_temporal_scores(
             model_data.normalised_pred_data_df,
             metric_methods,
+            precision_methods=precision_methods,
             training_set=False,
             testing_set=True,
             pred_cols=pred_cols,
             test_cols=test_cols,
+            var_cols=var_cols,
             **kwargs,
         )
         # return testing scores if we are only evaluating testing
@@ -132,6 +145,7 @@ def evaluate_spatio_temporal_scores(
     """
     Given a prediction dataframe, measure scores over sensors and time.
     """
+    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
     # measure scores by sensor and by hour
@@ -203,7 +217,7 @@ def get_metric_methods(r2_score=True, mae=True, mse=True, **kwargs):
     return metric_methods
 
 
-def get_precision_metrics(ci50=True, ci75=True, ci95=True, **kwargs):
+def get_precision_methods(ci50=True, ci75=True, ci95=True, **kwargs):
     """
     Get a dictionary where the keys are the name of a metric and the values
     are a function that takes three arrays and computes the metric score.
@@ -283,9 +297,16 @@ def measure_scores_by_hour(
 
     test_cols : list, optional
         Names of columns in the dataframe that are the true observations.
+
+    var_cols : list, optional
+        Columns containing the variance of predictions.
+        Default is ["NO2_var"]
     """
+    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
+    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
+    
     # remove nans from rows
     pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
 
@@ -294,6 +315,9 @@ def measure_scores_by_hour(
 
     if len(test_cols) > 1:
         raise NotImplementedError("Can only validate one pollutant.")
+
+    # ToDo: implement precision metrics are make general with sensor methods.
+    print("Precision metrics not implemented.")
 
     # get a series for each metric for all sensors at each hour
     # concat each series into a dataframe
@@ -331,10 +355,6 @@ def measure_scores_by_sensor(
         Keys are name of metric.
         Values are functions that take in two numpy/series and compute the score.
 
-    precision_methods : dict, optional
-        Keys are the name of the metrics.
-        Values are functions that take in three numpy/series and compute a precision score.
-
     groupby_col : str
         Name of the column containing the sensor ids.
 
@@ -347,6 +367,10 @@ def measure_scores_by_sensor(
     Other Parameters
     ___
 
+    precision_methods : dict, optional
+        Keys are the name of the metrics.
+        Values are functions that take in three numpy/series and compute a precision score.
+
     pred_cols : list, optional
         Names of the column that are predictions.
         Length must match `test_cols`.
@@ -357,6 +381,7 @@ def measure_scores_by_sensor(
     var_cols : list, optional
         Names of columns containing the variance of predictions.
     """
+    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
     var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
@@ -383,24 +408,23 @@ def measure_scores_by_sensor(
             )
             list_of_series.append(pollutant_metrics_series)
     # get metrics for precision
-    if not precision_methods is None:
-        for key, meth in precision_methods.items():
-            for i, pollutant in enumerate(test_cols):
-                # get names of columns
-                pred_col = pred_cols[i]
-                var_col = var_cols[i]
-                col_name = "{species}_{metric}".format(species=pollutant, metric=key)
-                # run each precision metric
-                pollutant_metrics = pred_gb.apply(
-                    lambda x: meth(  # pylint: disable=cell-var-from-loop
-                        x[pollutant],  # pylint: disable=cell-var-from-loop
-                        x[pred_col],  # pylint: disable=cell-var-from-loop
-                        x[var_col],  # pylint: disable=cell-var-from-loop
-                    )
+    for key, meth in precision_methods.items():
+        for i, pollutant in enumerate(test_cols):
+            # get names of columns
+            pred_col = pred_cols[i]
+            var_col = var_cols[i]
+            col_name = "{species}_{metric}".format(species=pollutant, metric=key)
+            # run each precision metric
+            pollutant_metrics = pred_gb.apply(
+                lambda x: meth(  # pylint: disable=cell-var-from-loop
+                    x[pollutant],  # pylint: disable=cell-var-from-loop
+                    x[pred_col],  # pylint: disable=cell-var-from-loop
+                    x[var_col],  # pylint: disable=cell-var-from-loop
                 )
-                # add the metric to the list of scores
-                pollutant_metrics_series = pd.Series(pollutant_metrics, name=col_name)
-                list_of_series.append(pollutant_metrics_series)
+            )
+            # add the metric to the list of scores
+            pollutant_metrics_series = pd.Series(pollutant_metrics, name=col_name)
+            list_of_series.append(pollutant_metrics_series)
     return pd.concat(list_of_series, axis=1)
 
 
