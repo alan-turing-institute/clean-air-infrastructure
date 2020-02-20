@@ -21,7 +21,7 @@ class CleanAirParser(argparse.ArgumentParser):
             help="Use your config.json settings in the .secrets directory.",
         )
         self.add_argument(
-            "-g",
+            "-t",
             "--tag",
             type=str,
             default="test",
@@ -61,7 +61,7 @@ class CleanAirParser(argparse.ArgumentParser):
             help="Include pollutant data in the test dataset.",
         )
         self.add_argument(
-            "-t",
+            "-p",
             "--predict_training",
             action="store_true",
             help="Predict on the training set.",
@@ -92,6 +92,7 @@ class CleanAirParser(argparse.ArgumentParser):
             help="The number of hours to predict for",
         )
 
+
     def parse_kwargs(self):
         """
         If the -c flag is passed, then load the config.json file
@@ -99,15 +100,15 @@ class CleanAirParser(argparse.ArgumentParser):
         """
         args = self.parse_args()
         kwargs = vars(args)
-        if args.config:
+        if kwargs.pop("cleanair_config"):
             # load custom config and overwrite arguments passed
             with open(self.config_path, "r") as filepath:
                 config = json.load(filepath)
             for key, value in config.items():
                 if key in kwargs:
                     kwargs[key] = value
-                else:
-                    raise KeyError("{k} not a valid argument.")
+                # else:
+                    # raise KeyError("{k} not a valid argument.".format(k=key))
         if kwargs["results_dir"] == "CONFIG_DIR":
             kwargs["results_dir"] = kwargs["config_dir"]
         return kwargs
@@ -119,3 +120,11 @@ class CleanAirParser(argparse.ArgumentParser):
         kwargs = vars(self.parse_args())
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
+
+def pop_non_model_data_keys(kwargs):
+    """
+    Pop keys/values that model_data does not accept.
+    """
+    return {
+        key: kwargs.pop(key) for key in set(kwargs.keys()) - {"secretfile", "config_dir"}
+    }

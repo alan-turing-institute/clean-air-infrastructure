@@ -69,11 +69,13 @@ def main():
     results_dir = kwargs.pop("results_dir")
     predict_read_local = kwargs.pop("predict_read_local")
 
+    # get the config of data
+    data_config = get_data_config(kwargs)
+
     # Get the model data
     if local_read:
         model_data = ModelData(**kwargs)
     else:
-        data_config = get_data_config(**kwargs)
         model_data = ModelData(config=data_config, **kwargs)
 
     # get the predictions of the model
@@ -87,7 +89,8 @@ def main():
                 y_train_pred = pickle.load(handle)
     else:
         results_df = read_model_results(model_data.config["tag"], model_data.config["pred_start_date"], model_data.config["pred_end_date"], kwargs["secretfile"])
-
+        # ToDo: need to get into a dictionary format
+        raise NotImplementedError("We cannot yet read and validate from a DB")
 
     # update the model data object with the predictions
     model_data.update_test_df_with_preds(y_test_pred)

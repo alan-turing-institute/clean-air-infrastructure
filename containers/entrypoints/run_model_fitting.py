@@ -23,7 +23,7 @@ def write_predictions_to_file(y_pred, results_dir, filename):
     with open(pred_filepath, "wb") as handle:
         pickle.dump(y_pred, handle)
 
-def get_train_test_start_end(**kwargs):
+def get_train_test_start_end(kwargs):
     """
     Given kwargs return dates for training and testing.
     """
@@ -36,12 +36,12 @@ def get_train_test_start_end(**kwargs):
     return train_start, train_end, pred_start, pred_end
 
 
-def get_data_config(**kwargs):
+def get_data_config(kwargs):
     """
     Return a dictionary of model data configs given parser arguments.
     """
     # Get training and pred start and end datetimes
-    train_start, train_end, pred_start, pred_end = get_train_test_start_end(**kwargs)
+    train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
     return_y = kwargs.pop("return_y")
     tag = kwargs.pop("tag")
 
@@ -95,7 +95,7 @@ def main():     # pylint: disable=R0914
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # get the model config from the parser arguments
-    model_config = get_data_config(**kwargs)
+    model_config = get_data_config(kwargs)
 
     if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
         raise NotImplementedError("AQE cannot currently be run. Coming soon")
