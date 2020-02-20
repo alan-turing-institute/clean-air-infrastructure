@@ -164,3 +164,30 @@ class ScootRoadForecast(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<ScootRoadForecast(" + ", ".join(vals)
+
+
+class ScootRoadReading(Base):
+    """Table of SCOOT readings for each road segment"""
+
+    __tablename__ = "scoot_road_reading"
+    __table_args__ = {"schema": "dynamic_features"}
+
+    road_toid = Column(
+        String(),
+        ForeignKey("static_data.oshighway_roadlink.toid"),
+        primary_key=True,
+        nullable=False,
+    )
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    n_vehicles_in_interval = Column(Integer)
+    occupancy_percentage = Column(DOUBLE_PRECISION)
+    congestion_percentage = Column(DOUBLE_PRECISION)
+    saturation_percentage = Column(DOUBLE_PRECISION)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<ScootRoadForecast(" + ", ".join(vals)

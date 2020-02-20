@@ -24,6 +24,7 @@ from .scoot_tables import (
     ScootForecast,
     ScootReading,
     ScootRoadForecast,
+    ScootRoadReading,
     ScootRoadMatch,
 )
 from .street_canyon_tables import StreetCanyon
@@ -49,6 +50,7 @@ __all__ = [
     "SatelliteForecastReading",
     "SatelliteSite",
     "ScootDetector",
+    "ScootRoadReading",
     "ScootForecast",
     "ScootReading",
     "ScootRoadForecast",
