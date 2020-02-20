@@ -103,8 +103,8 @@ class IntersectionGeom(Base):
 class IntersectionValue(Base):
     """Intersection between interest points and UKMap as values"""
 
-    __tablename__ = "intersection_value"
-    __table_args__ = (Index("id_name_idx", "point_id", "feature_name"),
+    __tablename__ = "intersection_value2"
+    __table_args__ = (Index("intersection_value_id_name_idx", "point_id", "feature_name"),
                       {"schema": "static_features"})
 
     point_id = Column(
