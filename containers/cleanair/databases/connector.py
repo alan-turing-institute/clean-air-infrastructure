@@ -107,7 +107,7 @@ class Connector(DBConnectionMixin):
         else:
             try:
                 requests.get(url, timeout=timeout)
-                self.logger.info("Internet connection: %s", green("WORKING"))
+                self.logger.debug("Internet connection: %s", green("WORKING"))
                 self.last_successful_connection = time.time()
             except requests.ConnectionError:
                 self.logger.error("Internet connection: %s", red("NOT WORKING"))
