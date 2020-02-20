@@ -4,6 +4,7 @@ Model fitting
 import os
 import logging
 import pickle
+from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
@@ -108,11 +109,12 @@ def main():  # pylint: disable=R0914
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 100
+    model_fitter.model_params["maxiter"] = 10
     model_fitter.model_params["model_state_fp"] = model_dir
 
     # Get the model data
     if local_read:
+        logging.info("Reading local data")
         model_data = ModelData(**kwargs)
     else:
         model_data = ModelData(config=model_config, **kwargs)
@@ -129,6 +131,8 @@ def main():  # pylint: disable=R0914
     x_test = predict_data_dict["X"]
 
     # Fit the model
+    logging.info("Training the model for %s iterations.", model_fitter.model_params["maxiter"])
+    fit_start_time = datetime.now()
     model_fitter.fit(x_train, y_train)
 
     # Get info about the model fit
@@ -143,10 +147,13 @@ def main():  # pylint: disable=R0914
         y_train_pred = model_fitter.predict(x_train_pred)
 
     # Internally update the model results in the ModelData object
-    model_data.update_test_df_with_preds(y_test_pred)
+    model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
 
     # Write the model results to the database
     if not no_db_write:
+        # ToDo: generalise for multiple pollutants
+        model_data.normalised_pred_data_df["predict_mean"] = model_data.normalised_pred_data_df["NO2_mean"]
+        model_data.normalised_pred_data_df["predict_var"] = model_data.normalised_pred_data_df["NO2_var"]
         model_data.update_remote_tables()
 
     # Write the model results to file

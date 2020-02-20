@@ -916,7 +916,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_df_from_pred_dict(
-        self, data_df, data_dict, pred_dict, sources="all", species="all"
+        self, data_df, data_dict, pred_dict, fit_start_time, sources="all", species="all"
     ):
         """
         Return a new dataframe with columns updated from pred_dict.
@@ -941,9 +941,12 @@ class ModelData(DBWriter, DBQueryMixin):
                     column = np.append(column, pred_dict[source][pollutant][pred_type])
                 predict_df[pollutant + "_" + pred_type] = column
         # add predict_df as new columns to data_df - they should share an index
-        return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+        new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+        new_df["fit_start_time"] = fit_start_time
+        new_df["tag"] = self.config["tag"]
+        return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict):
+    def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
         """
         Update the normalised_pred_data_df with predictions for all pred sources.
 
@@ -955,12 +958,18 @@ class ModelData(DBWriter, DBQueryMixin):
             Second level keys are species (e.g. 'NO2', 'PM10').
             Third level keys are either 'mean' or 'var'.
             Values are numpy arrays of predictions for a source and specie.
+
+        fit_start_time : datetime
+            Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
+            self.normalised_pred_data_df,
+            self.get_pred_data_arrays(),
+            test_pred_dict,
+            fit_start_time,
         )
 
-    def update_training_df_with_preds(self, training_pred_dict):
+    def update_training_df_with_preds(self, training_pred_dict, fit_start_time):
         """
         Updated the normalised_training_data_df with predictions on the training set.
         """
@@ -968,6 +977,7 @@ class ModelData(DBWriter, DBQueryMixin):
             self.normalised_training_data_df,
             self.get_training_data_arrays(),
             training_pred_dict,
+            fit_start_time,
         )
 
     def update_remote_tables(self):
@@ -986,8 +996,9 @@ class ModelData(DBWriter, DBQueryMixin):
             if col not in df_cols:
                 raise AttributeError(
                     """The data frame must contain the following columns: {}.
+                       You passed these columns: {}.
                        Ensure model results have been passed to ModelData.update_model_results_df()""".format(
-                        record_cols
+                        record_cols, list(df_cols.columns)
                     )
                 )
 

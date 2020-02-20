@@ -1,7 +1,6 @@
 """
 Visualise and run metrics for a single model data fit.
 """
-import datetime
 import os
 import pickle
 import logging
@@ -49,11 +48,11 @@ def read_model_results(tag, start_time, end_time, secretfile):
             ModelResult.measurement_start_utc < end_time,
         )
         results_df = pd.read_sql(results_query.statement, session.bind)
-    logging.info("Number of rows returned: {count}".format(count=len(results_df)))
+    logging.info("Number of rows returned: %s", len(results_df))
     return results_df
 
 
-def main():
+def main(): # pylint: disable=too-many-locals
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
@@ -86,18 +85,33 @@ def main():
             y_train_pred_fp = os.path.join(results_dir, "train_pred.pickle")
             with open(y_train_pred_fp, "rb") as handle:
                 y_train_pred = pickle.load(handle)
+        # update the model data object with the predictions
+        model_data.update_test_df_with_preds(y_test_pred)
     else:
+        evaluate_training = False
         results_df = read_model_results(
-            model_data.config["tag"],
+            # model_data.config["tag"],
+            "parser_test",
             model_data.config["pred_start_date"],
             model_data.config["pred_end_date"],
             kwargs["secretfile"],
         )
-        # ToDo: need to get into a dictionary format
-        raise NotImplementedError("We cannot yet read and validate from a DB")
+        model_data.normalised_pred_data_df["measurement_start_utc"] = pd.to_datetime(model_data.normalised_pred_data_df["measurement_start_utc"])
+        # results_df["measurement_start_utc"] = pd.to_datetime(results_df["measurement_start_utc"])
+        model_data.normalised_pred_data_df = pd.merge(
+            model_data.normalised_pred_data_df,
+            results_df,
+            how="inner",
+            on=["point_id", "measurement_start_utc"]
+        )
 
-    # update the model data object with the predictions
-    model_data.update_test_df_with_preds(y_test_pred)
+        # ToDo: change column name in model results table
+        model_data.normalised_pred_data_df["NO2_mean"] = model_data.normalised_pred_data_df["predict_mean"]
+        model_data.normalised_pred_data_df["NO2_var"] = model_data.normalised_pred_data_df["predict_var"]
+        
+        # print(results_df.sample(3))
+        # raise NotImplementedError("We cannot yet read and validate from a DB")
+
     if evaluate_training:
         model_data.update_training_df_with_preds(y_train_pred)
 
