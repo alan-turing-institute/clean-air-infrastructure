@@ -291,12 +291,6 @@ class Features(DBWriter, DBQueryMixin):
                     batch_size=10,
                 )
 
-                print(
-                    select_stmt.statement.compile(
-                        compile_kwargs={"literal_binds": True}
-                    )
-                )
-                quit()
                 if select_stmt:
 
                     with self.dbcnxn.open_session() as session:
