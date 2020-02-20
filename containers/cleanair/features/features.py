@@ -44,8 +44,14 @@ class Features(DBWriter, DBQueryMixin):
     def features(self):
         """A dictionary of features of the kind:
 
-        {"building_height": {"type": "value", "feature_dict": {"calculated_height_of_building": ["*"]},
-                                "aggfunc": max_}
+        {
+            "building_height": {
+                "type": "value",
+                "feature_dict": {
+                    "calculated_height_of_building": ["*"]
+                },
+                "aggfunc": max_
+            }
         }
         """
         raise NotImplementedError("Must be implemented by child classes")
@@ -92,6 +98,7 @@ class Features(DBWriter, DBQueryMixin):
                 columns = columns + [table.measurement_start_utc]
 
             q_source = session.query(*columns)
+
             # Construct filters
             filter_list = []
             if (
@@ -286,14 +293,15 @@ class Features(DBWriter, DBQueryMixin):
         # Return the overall query
         return q_intersections
 
-    def process_value_features(self, feature_name, q_metapoints, q_source):
+    def process_value_features(
+        self, feature_name, q_metapoints, q_source, batch_size=1000
+    ):
         """
         Process value features in batches since some of them are extremely slow
         (and they need to be independentely calculated for each interest point anyway)
         """
-
+        # Filter out any that have already been calculated
         if not self.dynamic:
-            # Filter out any that have already been calculated
             with self.dbcnxn.open_session() as session:
                 sq_intersection_value = session.query(
                     IntersectionValue.point_id, IntersectionValue.feature_name
@@ -306,7 +314,7 @@ class Features(DBWriter, DBQueryMixin):
             q_filtered = q_metapoints
 
         n_interest_points = q_filtered.count()
-        batch_size = 1000
+
         self.logger.info(
             "Preparing to analyse %s interest points in batches of %i...",
             green(n_interest_points),
@@ -314,7 +322,9 @@ class Features(DBWriter, DBQueryMixin):
         )
 
         # Iterate over interest points in batches, yielding the insert statement at each step
-        for idx, _ in enumerate(range(0, n_interest_points, batch_size), start=1):
+        for idx, batch_start in enumerate(
+            range(0, n_interest_points, batch_size), start=1
+        ):
             self.logger.info(
                 "Calculating %s for next %i interest points [batch %i/%i]...",
                 feature_name,
@@ -322,13 +332,23 @@ class Features(DBWriter, DBQueryMixin):
                 idx,
                 round(0.5 + n_interest_points / batch_size),
             )
-            q_batch = q_filtered.slice(0, batch_size)
+            # For dynamic features, we don't filter based on the metapoint already being
+            # in the database (since each metapoint appears once for each time period).
+            # This means that we have to slice starting at `batch_start`
+            if self.dynamic:
+                q_batch = q_filtered.slice(batch_start, batch_start + batch_size)
+            # For static features, we apply a filter so we know that (0, batch_size)
+            # will only contain unprocessed points
+            else:
+                q_batch = q_filtered.slice(0, batch_size)
             select_stmt = self.query_feature_values(
                 feature_name, q_batch, q_source
             ).subquery()
             yield select_stmt
 
-    def process_geom_features(self, feature_name, q_metapoints, q_source):
+    def process_geom_features(
+        self, feature_name, q_metapoints, q_source, batch_size=50
+    ):
         """
         Process geometric features in large batches as none of them are particularly slow at present
         (and they need to be independentely calculated for each interest point anyway)
@@ -351,7 +371,6 @@ class Features(DBWriter, DBQueryMixin):
             [str(i.id) for i in q_filtered.all()],
         )
         n_interest_points = q_filtered.count()
-        batch_size = 50
         self.logger.info(
             "Preparing to analyse %s interest points in batches of %i...",
             green(n_interest_points),
@@ -359,7 +378,9 @@ class Features(DBWriter, DBQueryMixin):
         )
 
         # Iterate over interest points in batches, yielding the insert statement at each step
-        for idx, _ in enumerate(range(0, n_interest_points, batch_size), start=1):
+        for idx, batch_start in enumerate(
+            range(0, n_interest_points, batch_size), start=1
+        ):
             self.logger.info(
                 "Calculating %s for next %i interest points [batch %i/%i]...",
                 feature_name,
@@ -367,7 +388,15 @@ class Features(DBWriter, DBQueryMixin):
                 idx,
                 round(0.5 + n_interest_points / batch_size),
             )
-            q_batch = q_filtered.slice(0, batch_size)
+            # For dynamic features, we don't filter based on the metapoint already being
+            # in the database (since each metapoint appears once for each time period).
+            # This means that we have to slice starting at `batch_start`
+            if self.dynamic:
+                q_batch = q_filtered.slice(batch_start, batch_start + batch_size)
+            # For static features, we apply a filter so we know that (0, batch_size)
+            # will only contain unprocessed points
+            else:
+                q_batch = q_filtered.slice(0, batch_size)
             select_stmt = self.query_feature_geoms(
                 feature_name, q_batch, q_source
             ).subquery()
@@ -427,7 +456,8 @@ class Features(DBWriter, DBQueryMixin):
 
             # Print a final timing message
             self.logger.info(
-                "Finished adding records after %s",
+                "Finished adding %s records after %s",
+                feature_name,
                 green(duration(feature_start, time.time())),
             )
 
