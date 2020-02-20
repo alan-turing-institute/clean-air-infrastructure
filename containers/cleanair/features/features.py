@@ -408,9 +408,14 @@ class Features(DBWriter, DBQueryMixin):
         extract the geometry for that feature in each of the buffer radii
         """
         # Iterate over each of the features and calculate the overlap with the interest points
-        for feature_name in self.features:
+        for idx, feature_name in enumerate(self.features, start=1):
             feature_start = time.time()
-            self.logger.info("Now working on the %s feature", green(feature_name))
+            self.logger.info(
+                "Now working on the %s feature [feature %i/%i]",
+                green(feature_name),
+                idx,
+                len(self.features),
+            )
 
             # Get geometries for this feature
             q_source = self.query_features(feature_name)
@@ -456,7 +461,7 @@ class Features(DBWriter, DBQueryMixin):
 
             # Print a final timing message
             self.logger.info(
-                "Finished adding %s records after %s",
+                "Finished adding records for %s after %s",
                 feature_name,
                 green(duration(feature_start, time.time())),
             )

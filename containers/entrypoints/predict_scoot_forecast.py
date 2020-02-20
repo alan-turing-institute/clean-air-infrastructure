@@ -5,6 +5,8 @@ import logging
 import argparse
 from cleanair.models import TrafficForecast
 from cleanair.loggers import get_log_level
+from cleanair.features import ScootForecastFeatures
+from cleanair.processors import ScootForecastMapper
 
 
 def main():
@@ -30,13 +32,20 @@ def main():
         "-n",
         "--ndays",
         type=int,
-        default=14,
-        help="The number of days to request data for, (default: 14).",
+        default=21,
+        help="The number of days to use for predicting, (default: 21).",
+    )
+    parser.add_argument(
+        "-f",
+        "--forecasthrs",
+        type=int,
+        default=72,
+        help="The number of hours into the future to predict for, (default: 72).",
     )
     parser.add_argument(
         "-d",
         "--detectors",
-        nargs='+',
+        nargs="+",
         default=[],
         help="List of detectors to forecast for, (default: all of them).",
     )
@@ -47,15 +56,29 @@ def main():
     if args.ndays < 1:
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
-    # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
-    detector_ids = kwargs.pop("detectors", None)
+    # Set some parameters using the parsed arguments
+    logging.basicConfig(level=get_log_level(args.verbose))
+    detector_ids = args.detectors if args.detectors else None
+    ndays = int(args.forecasthrs / 24)
 
     # Perform update and notify any exceptions
     try:
-        scoot_forecaster = TrafficForecast(**kwargs)
-        scoot_forecaster.update_remote_tables(detector_ids=detector_ids)
+        # Fit SCOOT readings using Prophet and forecast `args.forecasthrs` into the future
+        scoot_forecaster = TrafficForecast(ndays=args.ndays, end=args.end, forecast_length_hrs=args.forecasthrs, detector_ids=detector_ids, secretfile=args.secretfile)
+        forecast_end_time = scoot_forecaster.forecast_end_time
+        scoot_forecaster.update_remote_tables()
+
+        # Construct SCOOT forecasts for each road using:
+        # - the most recent SCOOT forecasts (from ScootForecast)
+        # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
+        scoot_road_forecasts = ScootForecastMapper(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
+        scoot_road_forecasts.update_remote_tables()
+
+        # Construct SCOOT features around each interest point
+        scoot_feature_extractor = ScootForecastFeatures(
+            ndays=ndays, end=forecast_end_time, secretfile=args.secretfile
+        )
+        scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         print("An uncaught exception occurred:", str(error))
