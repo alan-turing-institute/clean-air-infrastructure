@@ -4,6 +4,7 @@ Parsers for validation that must read model fit data.
 
 from .base_parser import CleanAirParser
 
+
 class ValidationParser(CleanAirParser):
     """
     A parser for validation.

@@ -5,6 +5,7 @@ A base class for cleanair parsers.
 import json
 import argparse
 
+
 class CleanAirParser(argparse.ArgumentParser):
     """
     The base cleanair entrypoint parser.
@@ -92,7 +93,6 @@ class CleanAirParser(argparse.ArgumentParser):
             help="The number of hours to predict for",
         )
 
-
     def parse_kwargs(self):
         """
         If the -c flag is passed, then load the config.json file
@@ -108,7 +108,7 @@ class CleanAirParser(argparse.ArgumentParser):
                 if key in kwargs:
                     kwargs[key] = value
                 # else:
-                    # raise KeyError("{k} not a valid argument.".format(k=key))
+                # raise KeyError("{k} not a valid argument.".format(k=key))
         if kwargs["results_dir"] == "CONFIG_DIR":
             kwargs["results_dir"] = kwargs["config_dir"]
         return kwargs
@@ -121,10 +121,12 @@ class CleanAirParser(argparse.ArgumentParser):
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
 
+
 def pop_non_model_data_keys(kwargs):
     """
     Pop keys/values that model_data does not accept.
     """
     return {
-        key: kwargs.pop(key) for key in set(kwargs.keys()) - {"secretfile", "config_dir"}
+        key: kwargs.pop(key)
+        for key in set(kwargs.keys()) - {"secretfile", "config_dir"}
     }

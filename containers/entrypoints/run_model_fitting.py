@@ -23,6 +23,7 @@ def write_predictions_to_file(y_pred, results_dir, filename):
     with open(pred_filepath, "wb") as handle:
         pickle.dump(y_pred, handle)
 
+
 def get_train_test_start_end(kwargs):
     """
     Given kwargs return dates for training and testing.
@@ -72,7 +73,7 @@ def get_data_config(kwargs):
     return model_config
 
 
-def main():     # pylint: disable=R0914
+def main():  # pylint: disable=R0914
     """
     Run model fitting
     """

@@ -43,9 +43,7 @@ def read_model_results(tag, start_time, end_time, secretfile):
     """
     dbreader = DBReader(secretfile=secretfile)
     with dbreader.dbcnxn.open_session() as session:
-        results_query = session.query(
-            ModelResult
-        ).filter(
+        results_query = session.query(ModelResult).filter(
             ModelResult.tag == tag,
             ModelResult.measurement_start_utc >= start_time,
             ModelResult.measurement_start_utc < end_time,
@@ -53,6 +51,7 @@ def read_model_results(tag, start_time, end_time, secretfile):
         results_df = pd.read_sql(results_query.statement, session.bind)
     logging.info("Number of rows returned: {count}".format(count=len(results_df)))
     return results_df
+
 
 def main():
     """
@@ -88,7 +87,12 @@ def main():
             with open(y_train_pred_fp, "rb") as handle:
                 y_train_pred = pickle.load(handle)
     else:
-        results_df = read_model_results(model_data.config["tag"], model_data.config["pred_start_date"], model_data.config["pred_end_date"], kwargs["secretfile"])
+        results_df = read_model_results(
+            model_data.config["tag"],
+            model_data.config["pred_start_date"],
+            model_data.config["pred_end_date"],
+            kwargs["secretfile"],
+        )
         # ToDo: need to get into a dictionary format
         raise NotImplementedError("We cannot yet read and validate from a DB")
 
