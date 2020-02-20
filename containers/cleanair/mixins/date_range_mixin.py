@@ -2,6 +2,7 @@
 Mixin for classes that need to keep track of date ranges
 """
 import datetime
+import dateutil
 from ..loggers import get_logger, green
 
 
@@ -31,7 +32,13 @@ class DateRangeMixin:
                 ).date()
 
             else:
-                self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
+                if isinstance(end, datetime.date):
+                    self.end_date = end
+                if isinstance(end, datetime.datetime):
+                    self.end_date = end.date()
+                else:
+                    # self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
+                    self.end_date = dateutil.parser.parse(end, dayfirst=True).date()
 
             self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
 
@@ -39,12 +46,6 @@ class DateRangeMixin:
             self.start_datetime, self.end_datetime = self.get_datetimes(
                 self.start_date, self.end_date
             )
-
-        # Log an introductory message
-        self.logger.info("Requesting data between the following time points:")
-        self.logger.info(
-            "... %s and %s", green(self.start_datetime), green(self.end_datetime)
-        )
 
     @staticmethod
     def get_datetimes(start_date, end_date):
