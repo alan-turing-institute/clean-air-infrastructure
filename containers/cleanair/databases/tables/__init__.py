@@ -9,7 +9,7 @@ from .features_tables import (
 from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
-from .meta_point_table import MetaPoint, InterestPointBuffers
+from .meta_point_table import MetaPoint
 from .oshighway_table import OSHighway
 from .rectgrid_table import RectGrid, RectGrid100
 from .scoot_tables import (
@@ -39,7 +39,6 @@ __all__ = [
     "LAQNSite",
     "LondonBoundary",
     "MetaPoint",
-    "InterestPointBuffers",
     "OSHighway",
     "RectGrid",
     "RectGrid100",

@@ -7,9 +7,8 @@ from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (
     IntersectionValue,
-    IntersectionValueDynamic,
-    InterestPointBuffers,
     UKMap,
+    MetaPoint,
 )
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
@@ -58,9 +57,34 @@ class Features(DBWriter, DBQueryMixin):
     ):
         """Query MetaPoints, selecting all matching include_sources"""
 
+        boundary_geom = self.query_london_boundary()
+
         with self.dbcnxn.open_session() as session:
 
-            meta_point_q = session.query(InterestPointBuffers)
+            meta_point_q = session.query(
+                MetaPoint.id,
+                MetaPoint.source,
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 1000)
+                ).label("buff_1000"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 500)
+                ).label("buff_500"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 200)
+                ).label("buff_200"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 100)
+                ).label("buff_100"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 10)
+                ).label("buff_10"),
+            ).filter(MetaPoint.location.ST_Within(boundary_geom))
+
+            if include_sources:
+                meta_point_q = meta_point_q.filter(
+                    MetaPoint.source.in_(include_sources)
+                )
 
             if exclude_processed:
                 already_processed_sq = (
@@ -72,14 +96,9 @@ class Features(DBWriter, DBQueryMixin):
                 )
 
                 meta_point_q = meta_point_q.filter(
-                    ~tuple_(InterestPointBuffers.id, literal(feature_name)).in_(
+                    ~tuple_(MetaPoint.id, literal(feature_name)).in_(
                         already_processed_sq
                     )
-                )
-
-            if include_sources:
-                meta_point_q = meta_point_q.filter(
-                    InterestPointBuffers.source.in_(include_sources)
                 )
 
         return meta_point_q
@@ -293,7 +312,12 @@ class Features(DBWriter, DBQueryMixin):
 
                 if select_stmt:
 
-                    self.logger.debug("%s", select_stmt.statement.compile(compile_kwargs={"literal_binds": True}))
+                    self.logger.debug(
+                        "%s",
+                        select_stmt.statement.compile(
+                            compile_kwargs={"literal_binds": True}
+                        ),
+                    )
 
                     with self.dbcnxn.open_session() as session:
                         self.commit_records(
