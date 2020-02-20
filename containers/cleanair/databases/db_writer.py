@@ -56,7 +56,7 @@ class DBWriter(DBInteractor):
 
         # Define duplicates policy
         if on_conflict == "ignore":
-            self.logger.debug("Add records, ignoring duplicates.")
+            self.logger.debug("Add records, ignoring any that are duplicates.")
             on_duplicate_key_stmt = insert_stmt.on_conflict_do_nothing(
                 index_elements=inspect(table).primary_key
             )
