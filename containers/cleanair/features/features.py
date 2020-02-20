@@ -293,6 +293,8 @@ class Features(DBWriter, DBQueryMixin):
 
                 if select_stmt:
 
+                    self.logger.debug("%s", select_stmt.statement.compile(compile_kwargs={"literal_binds": True}))
+
                     with self.dbcnxn.open_session() as session:
                         self.commit_records(
                             session,
