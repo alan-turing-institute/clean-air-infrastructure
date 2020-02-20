@@ -3,7 +3,6 @@ Module for interacting with tables in the Azure Postgres database
 """
 from .aqe_tables import AQESite, AQEReading
 from .features_tables import (
-    IntersectionGeom,
     IntersectionValue,
     IntersectionValueDynamic,
 )
@@ -34,7 +33,6 @@ __all__ = [
     "AQEReading",
     "AQESite",
     "HexGrid",
-    "IntersectionGeom",
     "IntersectionValue",
     "IntersectionValueDynamic",
     "LAQNReading",

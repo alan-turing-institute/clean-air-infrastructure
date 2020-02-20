@@ -5,7 +5,6 @@ import argparse
 import logging
 from cleanair.loggers import get_log_level
 from cleanair.features import UKMapFeatures
-from cleanair.databases.tables import IntersectionValue
 
 
 def main():
@@ -30,7 +29,7 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn"]
+    kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
 
     # Extract features and notify any exceptions
     try:

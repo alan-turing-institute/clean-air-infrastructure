@@ -6,10 +6,8 @@ from sqlalchemy import func, literal, tuple_, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (
-    IntersectionGeom,
     IntersectionValue,
     IntersectionValueDynamic,
-    MetaPoint,
     InterestPointBuffers,
     UKMap,
 )
@@ -55,7 +53,9 @@ class Features(DBWriter, DBQueryMixin):
         raise NotImplementedError("Must be implemented by child classes")
 
     @db_query
-    def query_meta_points(self, include_sources=None, exclude_processed=True, feature_name=None):
+    def query_meta_points(
+        self, include_sources=None, exclude_processed=True, feature_name=None
+    ):
         """Query MetaPoints, selecting all matching include_sources"""
 
         with self.dbcnxn.open_session() as session:
@@ -63,14 +63,24 @@ class Features(DBWriter, DBQueryMixin):
             meta_point_q = session.query(InterestPointBuffers)
 
             if exclude_processed:
-                already_processed_sq = session.query(IntersectionValue.point_id, IntersectionValue.feature_name).filter(
-                    IntersectionValue.feature_name == feature_name).subquery()
+                already_processed_sq = (
+                    session.query(
+                        IntersectionValue.point_id, IntersectionValue.feature_name
+                    )
+                    .filter(IntersectionValue.feature_name == feature_name)
+                    .subquery()
+                )
 
                 meta_point_q = meta_point_q.filter(
-                    ~tuple_(InterestPointBuffers.id, literal(feature_name)).in_(already_processed_sq))
+                    ~tuple_(InterestPointBuffers.id, literal(feature_name)).in_(
+                        already_processed_sq
+                    )
+                )
 
             if include_sources:
-                meta_point_q = meta_point_q.filter(InterestPointBuffers.source.in_(include_sources))
+                meta_point_q = meta_point_q.filter(
+                    InterestPointBuffers.source.in_(include_sources)
+                )
 
         return meta_point_q
 
@@ -115,81 +125,150 @@ class Features(DBWriter, DBQueryMixin):
         """
 
         # Get geometries for this feature
-        sq_source = self.query_features(feature_name, output_type='subquery')
+        sq_source = self.query_features(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
         cte_buffers = self.query_meta_points(
             include_sources=self.sources, feature_name=feature_name, limit=batch_size
-        ).cte('buffers')
+        ).cte("buffers")
 
         n_interest_points = self.query_meta_points(
-            include_sources=self.sources, feature_name=feature_name, output_type='count'
+            include_sources=self.sources, feature_name=feature_name, output_type="count"
         )
 
         if n_interest_points == 0:
             self.logger.info(
                 "There are 0 interest points left to process for feature %s ...",
-                red(feature_name)
+                red(feature_name),
             )
-            return
+            return None
 
         self.logger.info(
             "Preparing to analyse %s interest points of %s unprocessed...",
             red(batch_size),
             green(n_interest_points),
-
         )
 
-        if feature_type == 'geom':
+        if feature_type == "geom":
             # Use case to avoid calculating intersection if we know
             # the geom is covered by the buffer (see https://postgis.net/2014/03/14/tip_intersection_faster/)
-            value_1000 = agg_func(case([(func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_1000), sq_source.c.geom), ],
-                                       else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_1000)))
-            value_500 = agg_func(case([(func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_500), sq_source.c.geom), ],
-                                      else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_500)))
-            value_200 = agg_func(case([(func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_200), sq_source.c.geom), ],
-                                      else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_200)))
-            value_100 = agg_func(case([(func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_100), sq_source.c.geom), ],
-                                      else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_100)))
-            value_10 = agg_func(case([(func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_10), sq_source.c.geom), ],
-                                     else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_10)))
+            value_1000 = agg_func(
+                case(
+                    [
+                        (
+                            func.ST_CoveredBy(
+                                sq_source.c.geom, cte_buffers.c.buff_1000
+                            ),
+                            sq_source.c.geom,
+                        ),
+                    ],
+                    else_=func.ST_Intersection(
+                        sq_source.c.geom, cte_buffers.c.buff_1000
+                    ),
+                )
+            )
+            value_500 = agg_func(
+                case(
+                    [
+                        (
+                            func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_500),
+                            sq_source.c.geom,
+                        ),
+                    ],
+                    else_=func.ST_Intersection(
+                        sq_source.c.geom, cte_buffers.c.buff_500
+                    ),
+                )
+            )
+            value_200 = agg_func(
+                case(
+                    [
+                        (
+                            func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_200),
+                            sq_source.c.geom,
+                        ),
+                    ],
+                    else_=func.ST_Intersection(
+                        sq_source.c.geom, cte_buffers.c.buff_200
+                    ),
+                )
+            )
+            value_100 = agg_func(
+                case(
+                    [
+                        (
+                            func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_100),
+                            sq_source.c.geom,
+                        ),
+                    ],
+                    else_=func.ST_Intersection(
+                        sq_source.c.geom, cte_buffers.c.buff_100
+                    ),
+                )
+            )
+            value_10 = agg_func(
+                case(
+                    [
+                        (
+                            func.ST_CoveredBy(sq_source.c.geom, cte_buffers.c.buff_10),
+                            sq_source.c.geom,
+                        ),
+                    ],
+                    else_=func.ST_Intersection(sq_source.c.geom, cte_buffers.c.buff_10),
+                )
+            )
 
-        elif feature_type == 'value':
-             # If its a value, there should only be one key
+        elif feature_type == "value":
+            # If its a value, there should only be one key
             value_column = list(self.features[feature_name]["feature_dict"].keys())[0]
             value_1000 = agg_func(getattr(sq_source.c, value_column)).filter(
-                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_1000))
+                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_1000)
+            )
             value_500 = agg_func(getattr(sq_source.c, value_column)).filter(
-                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_500))
+                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_500)
+            )
             value_200 = agg_func(getattr(sq_source.c, value_column)).filter(
-                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_200))
+                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_200)
+            )
             value_100 = agg_func(getattr(sq_source.c, value_column)).filter(
-                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_100))
+                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_100)
+            )
             value_10 = agg_func(getattr(sq_source.c, value_column)).filter(
-                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_10))
+                func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_10)
+            )
 
         else:
             raise TypeError("{} is not a feature type".format(feature_type))
 
         with self.dbcnxn.open_session() as session:
 
-            res = session.query(cte_buffers.c.id,
-                                value_1000.label("value_1000"),
-                                value_500.label("value_500"),
-                                value_200.label("value_200"),
-                                value_100.label("value_100"),
-                                value_10.label("value_10")).join(
-                sq_source, func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_1000)).group_by(cte_buffers.c.id).subquery()
+            res = (
+                session.query(
+                    cte_buffers.c.id,
+                    value_1000.label("value_1000"),
+                    value_500.label("value_500"),
+                    value_200.label("value_200"),
+                    value_100.label("value_100"),
+                    value_10.label("value_10"),
+                )
+                .join(
+                    sq_source,
+                    func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_1000),
+                )
+                .group_by(cte_buffers.c.id)
+                .subquery()
+            )
 
             # Left join with coalesce to make sure we always return a value
-            out = session.query(cte_buffers.c.id,
-                                literal(feature_name).label("feature_name"),
-                                func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
-                                func.coalesce(res.c.value_500, 0.0).label("value_500"),
-                                func.coalesce(res.c.value_200, 0.0).label("value_200"),
-                                func.coalesce(res.c.value_100, 0.0).label("value_100"),
-                                func.coalesce(res.c.value_10, 0.0).label("value_10")
-                                ).join(res, cte_buffers.c.id == res.c.id, isouter=True)
+            out = session.query(
+                cte_buffers.c.id,
+                literal(feature_name).label("feature_name"),
+                func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
+                func.coalesce(res.c.value_500, 0.0).label("value_500"),
+                func.coalesce(res.c.value_200, 0.0).label("value_200"),
+                func.coalesce(res.c.value_100, 0.0).label("value_100"),
+                func.coalesce(res.c.value_10, 0.0).label("value_10"),
+            ).join(res, cte_buffers.c.id == res.c.id, isouter=True)
 
             return out
 
@@ -206,9 +285,17 @@ class Features(DBWriter, DBQueryMixin):
             # Query-and-insert in one statement to reduce local memory overhead and remove database round-trips
             while True:
                 select_stmt = self.process_features(
-                    feature_name, feature_type=self.features[feature_name]["type"], agg_func=self.features[feature_name]["aggfunc"], batch_size=10)
+                    feature_name,
+                    feature_type=self.features[feature_name]["type"],
+                    agg_func=self.features[feature_name]["aggfunc"],
+                    batch_size=10,
+                )
 
-                print(select_stmt.statement.compile(compile_kwargs={"literal_binds": True}))
+                print(
+                    select_stmt.statement.compile(
+                        compile_kwargs={"literal_binds": True}
+                    )
+                )
                 quit()
                 if select_stmt:
 

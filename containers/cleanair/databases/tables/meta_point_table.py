@@ -59,9 +59,7 @@ class InterestPointBuffers(DeferredReflection, Base):
     __table_args__ = {"schema": "interest_points"}
 
     # Must define a column as a primary key
-    id = Column(
-        UUID(as_uuid=True), unique=True, nullable=False, primary_key=True
-    )
+    id = Column(UUID(as_uuid=True), unique=True, nullable=False, primary_key=True)
 
     def __repr__(self):
         vals = [

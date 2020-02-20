@@ -72,7 +72,6 @@ def db_query(query_f):
         if output_type == "sql":
             return output_q.statement.compile(compile_kwargs={"literal_binds": True})
 
-        else:
-            raise ValueError("output_type {} is not valid".format(output_type))
+        raise ValueError("output_type {} is not valid".format(output_type))
 
     return db_query_output
