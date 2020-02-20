@@ -1,228 +1,126 @@
 """
 Scoot feature extraction
 """
-# import time
-# from geoalchemy2.comparator import Comparator
-# import pandas as pd
 from sqlalchemy import func
-# from sqlalchemy.exc import IntegrityError
 from .features import Features
-# from ..databases import DBWriter
-from ..databases.tables import ScootForecast, ScootRoadMatch
-# from ..loggers import duration, get_logger, green
-from ..mixins import DateRangeMixin #, DBQueryMixin
-
-# import datetime
-# from dateutil import rrule
-# from sqlalchemy import asc, func
-# from sqlalchemy.sql import exists
-# from .feature_funcs import sum_, avg_, max_
-# from ..decorators import db_query
-# from ..loggers import green
-#     MetaPoint,
-#     OSHighway,
-#     ScootDetector,
-#     ScootReading,
-#     ScootRoadInverseDistance,
-#     ScootRoadMatch,
-#     ScootRoadReading,
-#     ScootRoadUnmatched,
+from ..databases.tables import OSHighway, ScootRoadForecast, ScootRoadReading
+from ..loggers import get_logger, green
+from ..mixins import DateRangeMixin
 
 
-# ScootForecast
-#     detector_id = Column(
-#         String(9),
-#         ForeignKey("interest_points.scoot_detector.detector_n"),
-#         primary_key=True,
-#         nullable=False,
-#     )
-#     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-#     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-#     n_vehicles_in_interval = Column(Integer)
-#     occupancy_percentage = Column(DOUBLE_PRECISION)
-#     congestion_percentage = Column(DOUBLE_PRECISION)
-#     saturation_percentage = Column(DOUBLE_PRECISION)
+SCOOT_FEATURE_DICT = {
+    "max_n_vehicles": {
+        "type": "value",
+        "feature_dict": {"n_vehicles_in_interval": ["*"]},
+        "aggfunc": func.max,
+    },
+    "avg_n_vehicles": {
+        "type": "value",
+        "feature_dict": {"n_vehicles_in_interval": ["*"]},
+        "aggfunc": func.avg,
+    },
+    "max_occupancy_percentage": {
+        "type": "value",
+        "feature_dict": {"occupancy_percentage": ["*"]},
+        "aggfunc": func.max,
+    },
+    "avg_occupancy_percentage": {
+        "type": "value",
+        "feature_dict": {"occupancy_percentage": ["*"]},
+        "aggfunc": func.avg,
+    },
+    "max_congestion_percentage": {
+        "type": "value",
+        "feature_dict": {"congestion_percentage": ["*"]},
+        "aggfunc": func.max,
+    },
+    "avg_congestion_percentage": {
+        "type": "value",
+        "feature_dict": {"congestion_percentage": ["*"]},
+        "aggfunc": func.avg,
+    },
+    "max_saturation_percentage": {
+        "type": "value",
+        "feature_dict": {"saturation_percentage": ["*"]},
+        "aggfunc": func.max,
+    },
+    "avg_saturation_percentage": {
+        "type": "value",
+        "feature_dict": {"saturation_percentage": ["*"]},
+        "aggfunc": func.avg,
+    },
+}
 
 
-# class ScootRoadMatch(Base):
-#     """Table of all roads and their associated SCOOT sensors"""
-
-#     __tablename__ = "scoot_road_match"
-#     __table_args__ = {"schema": "dynamic_features"}
-
-#     road_toid = Column(
-#         String(),
-#         ForeignKey("static_data.oshighway_roadlink.toid"),
-#         primary_key=True,
-#         nullable=False,
-#     )
-#     detector_n = Column(
-#         String(),
-#         ForeignKey("interest_points.scoot_detector.detector_n"),
-#         primary_key=True,
-#         nullable=False,
-#     )
-#     distance_m = Column(DOUBLE_PRECISION, nullable=False)
-#     weight = Column(DOUBLE_PRECISION, nullable=False)
-
-
-# target
-    # road_toid = Column(
-    #     String(),
-    #     ForeignKey("static_data.oshighway_roadlink.toid"),
-    #     primary_key=True,
-    #     nullable=False,
-    # )
-    # measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    # measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    # n_vehicles_in_interval = Column(Integer)
-    # occupancy_percentage = Column(DOUBLE_PRECISION)
-    # congestion_percentage = Column(DOUBLE_PRECISION)
-    # saturation_percentage = Column(DOUBLE_PRECISION)
-
-
-
-class ScootFeatures(DateRangeMixin, Features):
+class ScootReadingFeatures(DateRangeMixin, Features):
     """Process scoot features"""
-
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(dynamic=True, **kwargs)
 
-    def test(self):
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        # Log an introductory message
+        self.logger.info("Constructing features from SCOOT readings between %s and %s", green(self.start_datetime), green(self.end_datetime))
         with self.dbcnxn.open_session() as session:
-            # q = session.query(
-            #     ScootRoadMatch.road_toid,
-            #     ScootRoadMatch.weight,
-            #     ScootForecast,
-            # ).join(ScootForecast) # , ScootRoadMatch.detector_n == ScootForecast.detector_id)
-
-            # q = session.query(ScootRoadMatch) #.join(ScootForecast, ScootRoadMatch.detector_n == ScootForecast.detector_id)
-            # q = session.query(ScootForecast) #.join(ScootForecast, ScootRoadMatch.detector_n == ScootForecast.detector_id)
-
-            q = session.query(ScootRoadMatch).join(ScootForecast, ScootRoadMatch.detector_n == ScootForecast.detector_id)
-
-            # 600
-            # 17005
-            # => 10203000
-
-            # .join(ScootForecast, ScootRoadMatch.detector == ScootForecast.detector)
-
-            print("query", q.count())
-
-            # print("query", q.count())
-
-            #     .join(OSHighway)
-            #     .filter(
-            #         ScootRoadReading.measurement_start_utc >= self.start_datetime,
-            #         ScootRoadReading.measurement_start_utc < self.end_datetime,
-            #     )
-            #     .subquery()
-            # )
+            self.logger.info("There are %i readings in this time range", session.query(ScootRoadForecast).count())
 
     @property
     def table(self):
-        """Join the geometry column from OSHighway onto the ScootRoadReading table for feature extraction"""
-        return None
-        # with self.dbcnxn.open_session() as session:
-
-        #     return (
-        #         session.query(
-
-        #             ScootRoadMatch
-        #             ScootForecast
-
-
-        #             ScootRoadReading, OSHighway.geom
-        #         )
-        #         .join(OSHighway)
-        #         .filter(
-        #             ScootRoadReading.measurement_start_utc >= self.start_datetime,
-        #             ScootRoadReading.measurement_start_utc < self.end_datetime,
-        #         )
-        #         .subquery()
-        #     )
+        """Join the geometry column from OSHighway onto the ScootRoadForecast table for feature extraction"""
+        with self.dbcnxn.open_session() as session:
+            return (
+                session.query(
+                    ScootRoadReading,
+                    OSHighway.geom,
+                )
+                .join(OSHighway, ScootRoadReading.road_toid == OSHighway.toid)
+                .filter(
+                    ScootRoadReading.measurement_start_utc >= self.start_datetime,
+                    ScootRoadReading.measurement_start_utc < self.end_datetime,
+                )
+                .subquery()
+            )
 
     @property
     def features(self):
-        return {
-            "max_n_vehicles": {
-                "type": "value",
-                "feature_dict": {"n_vehicles_in_interval": ["*"]},
-                "aggfunc": func.max,
-            },
-            "avg_n_vehicles": {
-                "type": "value",
-                "feature_dict": {"n_vehicles_in_interval": ["*"]},
-                "aggfunc": func.avg,
-            },
-            "max_occupancy_percentage": {
-                "type": "value",
-                "feature_dict": {"occupancy_percentage": ["*"]},
-                "aggfunc": func.max,
-            },
-            "avg_occupancy_percentage": {
-                "type": "value",
-                "feature_dict": {"occupancy_percentage": ["*"]},
-                "aggfunc": func.avg,
-            },
-            "max_congestion_percentage": {
-                "type": "value",
-                "feature_dict": {"congestion_percentage": ["*"]},
-                "aggfunc": func.max,
-            },
-            "avg_congestion_percentage": {
-                "type": "value",
-                "feature_dict": {"congestion_percentage": ["*"]},
-                "aggfunc": func.avg,
-            },
-            "max_saturation_percentage": {
-                "type": "value",
-                "feature_dict": {"saturation_percentage": ["*"]},
-                "aggfunc": func.max,
-            },
-            "avg_saturation_percentage": {
-                "type": "value",
-                "feature_dict": {"saturation_percentage": ["*"]},
-                "aggfunc": func.avg,
-            },
-        }
+        return SCOOT_FEATURE_DICT
 
 
+class ScootForecastFeatures(DateRangeMixin, Features):
+    """Process SCOOT forecasts into model features"""
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(dynamic=True, sources=["laqn"], **kwargs)
 
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
-            # "total_occupancy_percentage": {
-            #     "type": "value",
-            #     "feature_dict": {"occupancy_percentage": ["*"]},
-            #     "aggfunc": sum_,
-            # },
-            # "total_flow_count": {
-            #     "type": "value",
-            #     "feature_dict": {"flow_raw_count": ["*"]},
-            #     "aggfunc": sum_,
-            # },
-            # "max_flow_count": {
-            #     "type": "value",
-            #     "feature_dict": {"flow_raw_count": ["*"]},
-            #     "aggfunc": max_,
-            # },
-            # "avg_flow_count": {
-            #     "type": "value",
-            #     "feature_dict": {"flow_raw_count": ["*"]},
-            #     "aggfunc": avg_,
-            # },
-            # "total_occupancy_count": {
-            #     "type": "value",
-            #     "feature_dict": {"occupancy_raw_count": ["*"]},
-            #     "aggfunc": sum_,
-            # },
-            # "max_occupancy_count": {
-            #     "type": "value",
-            #     "feature_dict": {"occupancy_raw_count": ["*"]},
-            #     "aggfunc": max_,
-            # },
-            # "avg_occupancy_count": {
-            #     "type": "value",
-            #     "feature_dict": {"occupancy_raw_count": ["*"]},
-            #     "aggfunc": avg_,
-            # },
+        # Log an introductory message
+        self.logger.info("Constructing features from SCOOT forecasts between %s and %s", green(self.start_datetime), green(self.end_datetime))
+        with self.dbcnxn.open_session() as session:
+            self.logger.info("There are %i forecasts in this time range", session.query(ScootRoadForecast).count())
+
+    @property
+    def table(self):
+        """Join the geometry column from OSHighway onto the ScootRoadForecast table for feature extraction"""
+        with self.dbcnxn.open_session() as session:
+            return (
+                session.query(
+                    ScootRoadForecast,
+                    OSHighway.geom,
+                )
+                .join(OSHighway, ScootRoadForecast.road_toid == OSHighway.toid)
+                .filter(
+                    ScootRoadForecast.measurement_start_utc >= self.start_datetime,
+                    ScootRoadForecast.measurement_start_utc < self.end_datetime,
+                )
+                .subquery()
+            )
+
+    @property
+    def features(self):
+        return SCOOT_FEATURE_DICT

@@ -20,6 +20,10 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
     def match_to_roads(self, batch_size):
         """
         Match all road segments (OSHighway) with a SCOOT sensor (ScootDetector)
