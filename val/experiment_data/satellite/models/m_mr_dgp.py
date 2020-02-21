@@ -59,8 +59,11 @@ def main(data_config, param_config, experiment_config):
 
 
     #===========================Setup Model===========================
+    print(data_config)
+    print(param_config)
+    print(experiment_config)
 
-    m = MR_DGP_MODEL()
+    m = MR_DGP_MODEL(model_config = model_config, experiment_config=experiment_config)
     m.fit(train_dict['X'], train_dict['Y'])
     #===========================Predict and store results===========================
 

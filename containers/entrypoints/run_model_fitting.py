@@ -206,10 +206,21 @@ def main():
     if model_name not in models:
         raise NotImplementedError('Model {model} has not been implmented'.format(model=kwargs['model']))
 
+    #TODO: hardcoded defaults?
+    #Not sure if name should go inside experiment_config or inside the model class
+    #if names here you can run the same model but with different parameters ads the name can change
+    experiment_config = {
+        'name': 'mr_dgp',
+        'model_state_fp':  kwargs["config_dir"]
+    }
+    model_params= {
+        'restore': True,
+        'train':  False
+    }
+
     #TODO: setup model params in init
-    model_fitter = models[model_name](batch_size=100)   
+    model_fitter = models[model_name](batch_size=100, experiment_config=experiment_config, model_params=model_params)   
     model_fitter.model_params["maxiter"] = 1
-    model_fitter.model_params["model_state_fp"] = kwargs["config_dir"]
 
     # Get the model data
     if read:

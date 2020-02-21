@@ -38,6 +38,7 @@ class MR_DGP_MODEL(Model):
     def __init__(
         self,
         model_params=None,
+        experiment_config=None,
         log=True,
         batch_size=100,
         disable_tf_warnings=True,
@@ -47,7 +48,6 @@ class MR_DGP_MODEL(Model):
         self.batch_size = batch_size
         self.epoch = 0
         self.refresh = 10
-        self.name='mr_dgp'
 
         #TODO: can we move into parent class?
         # Ensure logging is available
@@ -66,6 +66,8 @@ class MR_DGP_MODEL(Model):
         else:
             self.model_params = model_params
             super().check_model_params_are_valid()
+
+        self.experiment_config = experiment_config
 
     def get_default_model_params(self):
         """
@@ -204,7 +206,6 @@ class MR_DGP_MODEL(Model):
         return m
 
     def fit(self, x_train, y_train, refresh=10, save_model_state=True):
-        print(self.model_params)
 
         X_laqn = x_train["laqn"].copy()
         Y_laqn = y_train["laqn"]["NO2"].copy()
@@ -245,7 +246,7 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
-                "{folder}/restore/{name}.ckpt".format(folder=self.model_params["model_state_fp"], name=self.name),
+                "{folder}/restore/{name}.ckpt".format(folder=self.experiment_config["model_state_fp"], name=self.experiment_config['name']),
             )
 
         try:
@@ -268,7 +269,7 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             save_path = saver.save(
                 tf_session,
-                "{folder}/restore/{name}.ckpt".format(folder=self.model_params["model_state_fp"], name=self.name),
+                "{folder}/restore/{name}.ckpt".format(folder=self.experiment_config["model_state_fp"], name=self.experiment_config['name']),
             )
 
     def _predict(self, x_test):
