@@ -371,3 +371,11 @@ helm install kubernetes/cleanair
 ```
 
 Now you to the minikube dashboard and you can see everything that was installed.
+
+## How to create a new model
+
+Look at the `model.py`. You will need to extend the `Model` class (or an existing model) using your new model class you are about to create. The `Model` class contains information about the shapes and the expected parameters/returns of functions for a model. We recommend you read this file closely before implementing your model.
+
+The `SVGP` class is an example of a `Model` that uses only laqn data and some features. We recommend you look through this class before implementing your model.
+
+All model parameters should be contained within the `model_params` dictionary.
