@@ -174,4 +174,5 @@ stages:
         chartType: filepath
         chartPath: kubernetes/cleanair
         releaseName: cleanair
+        updatedependency: true
         install: true
