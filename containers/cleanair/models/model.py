@@ -300,6 +300,7 @@ class Model(ABC):
         index = 0
 
         for count in range(num_batches):
+            print(count, ': ', num_batches)
             if count == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_array[index:, :]
@@ -319,7 +320,7 @@ class Model(ABC):
 
         return y_mean, y_var
 
-    def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=[]):
+    def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=None):
         """
         Predict using the model at the laqn sites for NO2.
 
@@ -336,12 +337,18 @@ class Model(ABC):
             See `Model.predict` for further details.
             The shape for each pollutant will be (n, 1).
         """
+        #lint friendly defaults
+        ignore = ignore if ignore is not None else []
+
         if species != ['NO2']:
             raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
 
         for src, x_src in x_test.items():
+            print(src, ignore)
+            if src in ignore: continue
+
             for pollutant in self.tasks:
                 if self.log:
                     self.logger.info(
