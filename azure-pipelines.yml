@@ -54,11 +54,10 @@ stages:
       displayName: 'Build UKMap feature processing image'
 
 
-
     # Build API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion) -f containers/dockerfiles/cleanairapi.Dockerfile containers
-      displayName: 'Build cleanair feature processing image'
+      displayName: 'Build cleanair api image'
     # List available images
     - script: |
         docker images
