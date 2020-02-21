@@ -107,9 +107,22 @@ def main():  # pylint: disable=R0914
             "The only pollutant we can model right now is NO2. Coming soon"
         )
 
+    # model parameters
+    model_params = {
+            "jitter": 1e-5,
+            "likelihood_variance": 0.1,
+            "minibatch_size": 100,
+            "n_inducing_points": 2000,
+            "restore": False,
+            "train": True,
+            "model_state_fp": None,
+            "maxiter": 100,
+            "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
+        }
+
     # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 10
+    model_fitter = SVGP(model_params=model_params, batch_size=1000)  # big batch size for the grid
+    # model_fitter.model_params["maxiter"] = 10
     model_fitter.model_params["model_state_fp"] = model_dir
 
     # Get the model data
