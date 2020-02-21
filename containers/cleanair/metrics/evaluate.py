@@ -2,6 +2,8 @@
 Methods for evaluating a model data fit.
 """
 
+# pylint: disable=W0640
+
 import pandas as pd
 from sklearn import metrics
 
@@ -256,9 +258,7 @@ def measure_scores_by_hour(
     return pd.concat(
         [
             pd.Series(
-                pred_gb.apply(
-                    lambda x: method(x[test_cols[0]], x[pred_cols[0]])
-                ),  # pylint: disable=cell-var-from-loop
+                pred_gb.apply(lambda x: method(x[test_cols[0]], x[pred_cols[0]])),
                 name="{species}_{metric}".format(species=test_cols[0], metric=key),
             )
             for key, method in metric_methods.items()
@@ -317,11 +317,7 @@ def measure_scores_by_sensor(
     for key, meth in metric_methods.items():
         for i, pollutant in enumerate(test_cols):
             pred_col = pred_cols[i]
-            pollutant_metrics = pred_gb.apply(
-                lambda x: meth(
-                    x[pollutant], x[pred_col]
-                )  # pylint: disable=cell-var-from-loop
-            )
+            pollutant_metrics = pred_gb.apply(lambda x: meth(x[pollutant], x[pred_col]))
             pollutant_metrics_series = pd.Series(
                 pollutant_metrics,
                 name="{species}_{metric}".format(species=pollutant, metric=key),

@@ -52,7 +52,7 @@ def read_model_results(tag, start_time, end_time, secretfile):
     return results_df
 
 
-def main(): # pylint: disable=too-many-locals
+def main():  # pylint: disable=too-many-locals
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
@@ -88,35 +88,47 @@ def main(): # pylint: disable=too-many-locals
         # update the model data object with the predictions
         model_data.update_test_df_with_preds(y_test_pred)
     else:
+        # when reading from DB, we assume evaluate_training is false
         evaluate_training = False
+
+        # get the results from the DB
         results_df = read_model_results(
-            # model_data.config["tag"],
-            "parser_test",
+            model_data.config["tag"],
             model_data.config["pred_start_date"],
             model_data.config["pred_end_date"],
             kwargs["secretfile"],
         )
-        model_data.normalised_pred_data_df["measurement_start_utc"] = pd.to_datetime(model_data.normalised_pred_data_df["measurement_start_utc"])
-        # results_df["measurement_start_utc"] = pd.to_datetime(results_df["measurement_start_utc"])
+        # change datetime to be the same format
+        model_data.normalised_pred_data_df["measurement_start_utc"] = pd.to_datetime(
+            model_data.normalised_pred_data_df["measurement_start_utc"]
+        )
+        # merge on point_id and datetime
         model_data.normalised_pred_data_df = pd.merge(
             model_data.normalised_pred_data_df,
             results_df,
             how="inner",
-            on=["point_id", "measurement_start_utc"]
+            on=["point_id", "measurement_start_utc"],
         )
 
         # ToDo: change column name in model results table
-        model_data.normalised_pred_data_df["NO2_mean"] = model_data.normalised_pred_data_df["predict_mean"]
-        model_data.normalised_pred_data_df["NO2_var"] = model_data.normalised_pred_data_df["predict_var"]
-        
-        # print(results_df.sample(3))
-        # raise NotImplementedError("We cannot yet read and validate from a DB")
+        model_data.normalised_pred_data_df[
+            "NO2_mean"
+        ] = model_data.normalised_pred_data_df["predict_mean"]
+        model_data.normalised_pred_data_df[
+            "NO2_var"
+        ] = model_data.normalised_pred_data_df["predict_var"]
 
     if evaluate_training:
         model_data.update_training_df_with_preds(y_train_pred)
 
     # get the mapbox api key
-    mapbox_access_token = open("../../terraform/.secrets/.mapbox_token").read()
+    try:
+        mapbox_access_token = open("../../terraform/.secrets/.mapbox_token").read()
+    except FileNotFoundError:
+        error_message = "Could not find ../../terraform/.secrets/.mapbox_token."
+        error_message += "Have you got a Mapbox token and put it in this file?"
+        error_message += "See the cleanair README for more details."
+        raise FileNotFoundError(error_message)
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()

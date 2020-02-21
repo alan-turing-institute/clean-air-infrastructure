@@ -131,7 +131,9 @@ def main():  # pylint: disable=R0914
     x_test = predict_data_dict["X"]
 
     # Fit the model
-    logging.info("Training the model for %s iterations.", model_fitter.model_params["maxiter"])
+    logging.info(
+        "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
+    )
     fit_start_time = datetime.now()
     model_fitter.fit(x_train, y_train)
 
@@ -152,8 +154,12 @@ def main():  # pylint: disable=R0914
     # Write the model results to the database
     if not no_db_write:
         # ToDo: generalise for multiple pollutants
-        model_data.normalised_pred_data_df["predict_mean"] = model_data.normalised_pred_data_df["NO2_mean"]
-        model_data.normalised_pred_data_df["predict_var"] = model_data.normalised_pred_data_df["NO2_var"]
+        model_data.normalised_pred_data_df[
+            "predict_mean"
+        ] = model_data.normalised_pred_data_df["NO2_mean"]
+        model_data.normalised_pred_data_df[
+            "predict_var"
+        ] = model_data.normalised_pred_data_df["NO2_var"]
         model_data.update_remote_tables()
 
     # Write the model results to file
