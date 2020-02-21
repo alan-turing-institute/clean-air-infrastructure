@@ -7,7 +7,7 @@ import argparse
 import pickle
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP, MR_DGP_MODEL
+from cleanair.models import ModelData, SVGP, MRDGP
 from cleanair.loggers import get_log_level
 
 
@@ -198,7 +198,7 @@ def main():
 
     models = {
         'svgp': SVGP,
-        'mr_dgp': MR_DGP_MODEL,
+        'mr_dgp': MRDGP,
     }
 
     model_name = kwargs.pop('model')
