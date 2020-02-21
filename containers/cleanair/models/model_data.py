@@ -913,10 +913,11 @@ class ModelData(DBWriter, DBQueryMixin):
         data_dict,
         pred_dict,
         fit_start_time,
-        sources="all",
-        species="all",
+        **kwargs,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
+        sources = kwargs["sources"] if "sources" in kwargs else "all"
+        species = kwargs["species"] if "species" in kwargs else "all"
         if sources == "all":
             sources = pred_dict.keys()
         if species == "all":

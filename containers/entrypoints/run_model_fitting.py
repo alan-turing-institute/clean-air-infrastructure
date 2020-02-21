@@ -177,7 +177,7 @@ def main():  # pylint: disable=R0914
 
     # Write the model results to file
     if predict_write:
-        write_predictions_to_file(y_test_pred, results_dir, "test_pickle.pickle")
+        write_predictions_to_file(y_test_pred, results_dir, "test_pred.pickle")
         if predict_training:
             write_predictions_to_file(y_train_pred, results_dir, "train_pred.pickle")
 
