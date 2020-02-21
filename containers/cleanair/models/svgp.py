@@ -81,6 +81,7 @@ class SVGP(Model):
 
         # check model parameters
         if model_params is None:
+            #model parameters for the entry points
             self.model_params = self.get_default_model_params()
         else:
             self.model_params = model_params
