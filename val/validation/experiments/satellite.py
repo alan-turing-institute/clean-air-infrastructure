@@ -82,5 +82,5 @@ class SatelliteExperiment(experiment.Experiment):
             data_config[index]['include_satellite'] = True
             data_config[index]['train_satellite_interest_points'] = 'all'
             data_config[index]['train_sources'] = ['laqn']
-            data_config[index]['pred_sources'] = ['laqn']
+            data_config[index]['pred_sources'] = ['laqn', 'hexgrid']
         return data_config
