@@ -30,7 +30,7 @@ from ..loggers import get_logger
 from .model import Model
 
 
-class MR_DGP_MODEL(Model):
+class MRDGP(Model):
     """
     MR-DGP for air quality.
     """
@@ -49,7 +49,7 @@ class MR_DGP_MODEL(Model):
         self.epoch = 0
         self.refresh = 10
 
-        #TODO: can we move into parent class?
+        # TODO: can we move into parent class?
         # Ensure logging is available
         if log and not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
@@ -84,6 +84,9 @@ class MR_DGP_MODEL(Model):
     def get_kernel_product(
         self, K, active_dims=[0], lengthscales=[1.0], variances=[1.0], name=""
     ):
+        """
+            Returns a product kernel across all input dimensions
+        """
         if not isinstance(K, list):
             K = [K for i in range(len(active_dims))]
 
@@ -112,6 +115,9 @@ class MR_DGP_MODEL(Model):
         return gpflow.kernels.Product(kernels, name=name + "_product")
 
     def get_inducing_points(self, X, num_z=None):
+        """
+            Returns num_z inducing points locations using kmeans
+        """
         if len(X.shape) == 3:
             X = X.reshape([X.shape[0] * X.shape[1], X.shape[2]])
 
@@ -122,6 +128,9 @@ class MR_DGP_MODEL(Model):
         return Z
 
     def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
+        """
+            Construct the DGP multi-res mixture
+        """
         base_kernel_ad = range(dataset[0][0].shape[-1] - 1)
         base_kernel_ls = [0.1 for i in base_kernel_ad]
         base_kernel_v = [1.0 for i in base_kernel_ad]
@@ -156,7 +165,6 @@ class MR_DGP_MODEL(Model):
             variances=dgp_kernel_v,
             name=name_prefix + "MR_SE_DGP_1",
         )
-        # K_dgp_1 = get_kernel_product(MR_SE, active_dims=dgp_kernel_ad, lengthscales=dgp_kernel_ls, variances=dgp_kernel_v, name=name_prefix+'MR_SE_DGP_1')
         K_parent_1 = None
 
         num_z = 300
@@ -195,9 +203,9 @@ class MR_DGP_MODEL(Model):
             kernels=[[K_base_1, K_base_2], [K_dgp_1], [K_parent_1]],
             noise_sigmas=noise_sigmas,
             minibatch_sizes=minibatch_sizes,
-            mixing_weight = MR_DGP_Only(),
+            mixing_weight=MR_DGP_Only(),
             # mixing_weight = MR_Variance_Mixing_1(),
-            #mixing_weight=MR_Base_Only(i=1),
+            # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,
             num_samples=1,
             name=name_prefix + "MRDGP",
@@ -246,7 +254,10 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
-                "{folder}/restore/{name}.ckpt".format(folder=self.experiment_config["model_state_fp"], name=self.experiment_config['name']),
+                "{folder}/restore/{name}.ckpt".format(
+                    folder=self.experiment_config["model_state_fp"],
+                    name=self.experiment_config["name"],
+                ),
             )
 
         try:
@@ -269,7 +280,10 @@ class MR_DGP_MODEL(Model):
             saver = tf.train.Saver()
             save_path = saver.save(
                 tf_session,
-                "{folder}/restore/{name}.ckpt".format(folder=self.experiment_config["model_state_fp"], name=self.experiment_config['name']),
+                "{folder}/restore/{name}.ckpt".format(
+                    folder=self.experiment_config["model_state_fp"],
+                    name=self.experiment_config["name"],
+                ),
             )
 
     def _predict(self, x_test):
@@ -279,8 +293,6 @@ class MR_DGP_MODEL(Model):
 
     def predict(self, x_test, species=["NO2"], ignore=[]):
         return self.predict_srcs(x_test, self._predict, ignore=ignore)
-
-
 
 
 def get_sample_mean_var(ys, vs):
