@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import gpflow
 from gpflow import settings
 
 def reparameterize(mean, var, z, full_cov=False):
