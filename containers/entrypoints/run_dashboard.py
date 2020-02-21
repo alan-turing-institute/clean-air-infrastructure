@@ -5,6 +5,7 @@ import os
 import pickle
 import logging
 import pandas as pd
+from datetime import datetime
 from run_model_fitting import get_data_config
 from cleanair.models import ModelData
 from cleanair import metrics
@@ -86,7 +87,7 @@ def main():  # pylint: disable=too-many-locals
             with open(y_train_pred_fp, "rb") as handle:
                 y_train_pred = pickle.load(handle)
         # update the model data object with the predictions
-        model_data.update_test_df_with_preds(y_test_pred)
+        model_data.update_test_df_with_preds(y_test_pred, datetime.now())
     else:
         # when reading from DB, we assume evaluate_training is false
         evaluate_training = False
@@ -119,7 +120,7 @@ def main():  # pylint: disable=too-many-locals
         ] = model_data.normalised_pred_data_df["predict_var"]
 
     if evaluate_training:
-        model_data.update_training_df_with_preds(y_train_pred)
+        model_data.update_training_df_with_preds(y_train_pred, datetime.now())
 
     # get the mapbox api key
     try:
