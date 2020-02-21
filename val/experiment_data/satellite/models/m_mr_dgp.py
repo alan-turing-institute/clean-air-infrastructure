@@ -2,7 +2,7 @@
 import sys
 sys.path.append('../../../../containers')
 sys.path.append('..') #for when running on a cluster
-from cleanair.models import MR_DGP_MODEL as MR_DGP_MODEL
+from cleanair.models import MRDGP as MR_DGP_MODEL
 
 
 import logging, os
@@ -59,11 +59,15 @@ def main(data_config, param_config, experiment_config):
 
 
     #===========================Setup Model===========================
-    print(data_config)
-    print(param_config)
-    print(experiment_config)
 
-    m = MR_DGP_MODEL(model_config = model_config, experiment_config=experiment_config)
+    param_config['restore'] = False
+    param_config['train'] = True
+    experiment_config['name'] = 'm_mr_dgp_'+experiment_config['results_dir']
+
+    experiment_config['model_state_fp'] = '.'
+
+
+    m = MR_DGP_MODEL(model_params = param_config, experiment_config=experiment_config)
     m.fit(train_dict['X'], train_dict['Y'])
     #===========================Predict and store results===========================
 
@@ -75,7 +79,7 @@ def main(data_config, param_config, experiment_config):
 
     os.makedirs(os.path.dirname(test_pred_fp), exist_ok=True)
     #train_pred = m.predict(train_dict)
-    print(test_dict['X'].keys())
+
     train_pred = m.predict(train_dict['X'], ignore=['satellite'])
     test_pred = m.predict(test_dict['X'])
     
