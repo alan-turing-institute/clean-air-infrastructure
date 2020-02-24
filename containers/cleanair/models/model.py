@@ -12,7 +12,7 @@ class Model(ABC):
     All other air quality models should extend this class.
     """
 
-    def __init__(self, model_params=None, tasks=None, **kwargs):
+    def __init__(self, model_params=None, experiment_config=None, tasks=None, **kwargs):
         """
         Initialise a model with parameters and settings.
 
@@ -22,6 +22,9 @@ class Model(ABC):
         model_params : dict, optional
             Parameters to run the model.
             You may wish to pass parameters for the optimizer, kernel, etc.
+
+        experiment_config: dict, optional
+            Filepaths, modelname and other settings for execution.
 
         tasks : list, optional
             The name of the tasks (pollutants) we are modelling.
@@ -37,6 +40,7 @@ class Model(ABC):
             Restore the model from a file.
         """
         self.model_params = dict() if model_params is None else model_params
+        self.experiment_config = dict(log=True, restore=False, model_state_fp="./") if experiment_config is None else experiment_config
         self.tasks = ["NO2"] if tasks is None else tasks
         if self.tasks != ["NO2"]:
             raise NotImplementedError(
