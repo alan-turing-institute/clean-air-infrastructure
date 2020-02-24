@@ -24,6 +24,13 @@ class CleanAirParser(argparse.ArgumentParser):
             help="Use your config.json settings in the .secrets directory.",
         )
         self.add_argument(
+            "-m",
+            "--model_name",
+            type=str,
+            default="svgp",
+            help="Model to run.",
+        )
+        self.add_argument(
             "-t",
             "--tag",
             type=str,

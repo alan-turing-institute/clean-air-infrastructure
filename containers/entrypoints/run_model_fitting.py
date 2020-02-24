@@ -5,7 +5,7 @@ import os
 import logging
 import pickle
 from datetime import datetime
-from cleanair.models import ModelData, SVGP
+from cleanair.models import ModelData, SVGP, MRDGP
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
 from cleanair.parsers import get_data_config_from_kwargs
@@ -36,6 +36,15 @@ def main():  # pylint: disable=R0914
     results_dir = kwargs.pop("results_dir")
     model_dir = kwargs.pop("model_dir")
     predict_training = kwargs.pop("predict_training")
+    model_name = kwargs.pop('model_name')
+
+    # Experiment config
+    xp_config = dict(
+        name=model_name,
+        restore=False,
+        model_state_fp=model_dir,
+        save_model_state=False,
+    )
 
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
@@ -51,10 +60,27 @@ def main():  # pylint: disable=R0914
             "The only pollutant we can model right now is NO2. Coming soon"
         )
 
-    # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 10
-    model_fitter.model_params["model_state_fp"] = model_dir
+    #initialise the model
+
+    models = {
+        'svgp': SVGP,
+        'mr_dgp': MRDGP,
+    }
+
+    if model_name not in models:
+        raise NotImplementedError('Model {model} has not been implmented'.format(model=model_name))
+
+    #TODO: hardcoded defaults?
+    #Not sure if name should go inside experiment_config or inside the model class
+    #if names here you can run the same model but with different parameters ads the name can change
+    model_params= {
+        'restore': False,
+        'train':  True
+    }
+
+    #TODO: setup model params in init
+    model_fitter = models[model_name](experiment_config=xp_config, batch_size=100)   
+    model_fitter.model_params["maxiter"] = 1
 
     # Get the model data
     if local_read:

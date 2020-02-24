@@ -104,7 +104,11 @@ class ModelData(DBWriter, DBQueryMixin):
             "tag",
         ]
 
-        valid_models = ["svgp"]
+        valid_models = [
+            "mr_gprn",
+            "mr_dgp",
+            "svgp",
+        ]
 
         self.logger.info("Validating config")
 
@@ -992,3 +996,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, upload_records, table=ModelResult)
+
+    def read_results_table(self):
+        """Read results from the DB and update the dataframe."""
+        raise NotImplementedError("Coming soon")
