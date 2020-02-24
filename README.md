@@ -379,3 +379,29 @@ Look at the `model.py`. You will need to extend the `Model` class (or an existin
 The `SVGP` class is an example of a `Model` that uses only laqn data and some features. We recommend you look through this class before implementing your model.
 
 All model parameters should be contained within the `model_params` dictionary.
+
+### Calling the new model from entrypoints
+
+Lets say your model is called `MyModel` in a file `mymodel.py`. Import your model by adding the following line to `cleanair.models.__init__.py`:
+
+```python
+from .mymodel import MyModel
+```
+
+Also add `MyModel` to the list of all models:
+
+```python
+__all__ = ["ModelData", "SVGP", "Model", "MyModel"]
+```
+
+Now go to the `run_model_fitting.py` entrypoint. Import your model at the top of the file:
+
+```python
+from cleanair.models import MyModel
+```
+
+Finally, set the model fitter to be your model:
+
+```python
+model_fitter = MyModel()
+```

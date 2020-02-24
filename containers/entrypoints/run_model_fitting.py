@@ -37,6 +37,14 @@ def main():  # pylint: disable=R0914
     model_dir = kwargs.pop("model_dir")
     predict_training = kwargs.pop("predict_training")
 
+    # Experiment config
+    xp_config = dict(
+        name="svgp",
+        restore=False,
+        model_state_fp=model_dir,
+        save_model_state=False,
+    )
+
     # Set logging verbosity
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
@@ -52,7 +60,7 @@ def main():  # pylint: disable=R0914
         )
 
     # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
+    model_fitter = SVGP(experiment_config=xp_config, batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 10
     model_fitter.model_params["model_state_fp"] = model_dir
 
