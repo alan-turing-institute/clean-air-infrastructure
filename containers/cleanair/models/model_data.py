@@ -908,12 +908,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_df_from_pred_dict(
-        self,
-        data_df,
-        data_dict,
-        pred_dict,
-        fit_start_time,
-        **kwargs,
+        self, data_df, data_dict, pred_dict, fit_start_time, **kwargs,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
         sources = kwargs["sources"] if "sources" in kwargs else "all"

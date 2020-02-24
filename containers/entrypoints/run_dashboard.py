@@ -4,8 +4,8 @@ Visualise and run metrics for a single model data fit.
 import os
 import pickle
 import logging
-import pandas as pd
 from datetime import datetime
+import pandas as pd
 from run_model_fitting import get_data_config
 from cleanair.models import ModelData
 from cleanair import metrics
@@ -111,7 +111,7 @@ def main():  # pylint: disable=too-many-locals
             on=["point_id", "measurement_start_utc"],
         )
 
-        # ToDo: change column name in model results table
+        # see issue 103
         model_data.normalised_pred_data_df[
             "NO2_mean"
         ] = model_data.normalised_pred_data_df["predict_mean"]

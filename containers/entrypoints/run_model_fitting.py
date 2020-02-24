@@ -153,7 +153,7 @@ def main():  # pylint: disable=R0914
 
     # Write the model results to the database
     if not no_db_write:
-        # ToDo: generalise for multiple pollutants
+        # see issue 103: generalise for multiple pollutants
         model_data.normalised_pred_data_df[
             "predict_mean"
         ] = model_data.normalised_pred_data_df["NO2_mean"]
