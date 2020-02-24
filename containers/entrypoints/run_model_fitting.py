@@ -36,10 +36,11 @@ def main():  # pylint: disable=R0914
     results_dir = kwargs.pop("results_dir")
     model_dir = kwargs.pop("model_dir")
     predict_training = kwargs.pop("predict_training")
+    model_name = kwargs.pop('model_name')
 
     # Experiment config
     xp_config = dict(
-        name="svgp",
+        name=model_name,
         restore=False,
         model_state_fp=model_dir,
         save_model_state=False,
@@ -66,10 +67,8 @@ def main():  # pylint: disable=R0914
         'mr_dgp': MR_DGP_MODEL,
     }
 
-    model_name = kwargs.pop('model')
-
     if model_name not in models:
-        raise NotImplementedError('Model {model} has not been implmented'.format(model=kwargs['model']))
+        raise NotImplementedError('Model {model} has not been implmented'.format(model=model_name))
 
     #TODO: setup model params in init
     model_fitter = models[model_name](experiment_config=xp_config, batch_size=100)   
