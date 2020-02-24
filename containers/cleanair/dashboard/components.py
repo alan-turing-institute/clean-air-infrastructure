@@ -15,6 +15,7 @@ METRIC_NAMES = {
     "ci50": "Confidence interval 50%",
     "ci75": "Confidence interval 75%",
     "ci95": "Confidence interval 95%",
+    "pe1": "Probable error (1 std)"
 }
 POLLUTANT_NAMES = dict(
     NO2="Nitrogen Dioxide",

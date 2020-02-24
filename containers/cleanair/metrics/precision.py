@@ -56,9 +56,10 @@ def probable_error(y_test, y_mean, y_var, k=1):
     will be high even if the mean is far from the observed result.
     """
     num_points = y_test.shape[0]
+    y_test, y_mean, y_var = np.array(y_test), np.array(y_mean), np.array(y_var)
     in_range = 0
     for i in range(num_points):
-        if abs(y_test[i] - y_mean[i]) < y_var[i] * k:
+        if abs(y_test[i] - y_mean[i]) < math.sqrt(y_var[i]) * k:
             in_range += 1
     return 100 * in_range / num_points
 
@@ -125,7 +126,7 @@ def confidence_interval(y_test, y_mean, y_var, confidence=0.95):
         lower_bound, upper_bound = norm.interval(confidence, loc=y_mean[i], scale=math.sqrt(y_var[i]))
         if lower_bound < y_test[i] and upper_bound > y_test[i]:
             in_range += 1
-    return in_range / num_points
+    return 100 * in_range / num_points
 
 def confidence_interval_95(y_test, y_mean, y_var):
     """Confidence interval of 95%"""
