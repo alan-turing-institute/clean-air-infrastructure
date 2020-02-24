@@ -3,6 +3,7 @@ The interface for London air quality models.
 """
 
 from abc import ABC, abstractmethod
+import numpy as np
 
 
 class Model(ABC):
@@ -73,16 +74,14 @@ class Model(ABC):
         KeyError
             If the model parameters are not sufficient.
         """
+        min_keys = set(self.minimum_param_keys)
+        actual_keys = set(self.model_params.keys())
+        diff = min_keys - actual_keys
         # if the set of minimial keys is NOT a subset of the parameters
-        if not set(self.minimum_param_keys).issubset(set(self.model_params.keys())):
-            raise KeyError(
-                """Model parameters are not sufficient. \n
-        The minimal set of keys is: {min} \n
-        You supplied the following keys: {params}
-        """.format(
-                    min=self.minimum_param_keys, params=self.model_params.keys()
-                )
-            )
+        if len(diff) > 0:
+            error_message = "Model parameters are not sufficient."
+            error_message += " You must also supply {d}.".format(d=diff)
+            raise KeyError(error_message)
 
     @abstractmethod
     def fit(self, x_train, y_train, **kwargs):
@@ -249,4 +248,119 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError("x_test has no data for {src}.".format(src=source))
+                raise ValueError('x_test has no data for {src}.'.format(src=source))
+
+    def elbo_logger(self, logger_arg):
+        """
+        Log optimisation progress.
+        Parameters
+        ___
+        logger_arg : unknown
+            Argument passed as a callback from GPFlow optimiser.
+        """
+        if (self.epoch % self.refresh) == 0:
+            session = self.model.enquire_session()
+            objective = self.model.objective.eval(session=session)
+            if self.log:
+                self.logger.info(
+                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                    self.epoch,
+                    objective,
+                    logger_arg,
+                )
+        self.epoch += 1
+
+    def batch_predict(self, x_array, predict_fn):
+        """
+        Split up prediction into indepedent batchs.
+        Parameters
+        ___
+        x_array : np.array
+            N x D numpy array of locations to predict at.
+        predict_fn : function
+            model spefic function to predict at.
+        Returns
+        ___
+        y_mean : np.array
+            N x D numpy array of means.
+        y_var : np.array
+            N x D numpy array of variances.
+        """
+        batch_size = self.batch_size
+
+        # Ensure batch is less than the number of test points
+        if x_array.shape[0] < batch_size:
+            batch_size = x_array.shape[0]
+
+        # Split up test points into equal batches
+        num_batches = int(np.ceil(x_array.shape[0] / batch_size))
+
+        ys_arr = []
+        ys_var_arr = []
+        index = 0
+
+        for count in range(num_batches):
+            if count == num_batches - 1:
+                # in last batch just use remaining of test points
+                batch = x_array[index:, :]
+            else:
+                batch = x_array[index : index + batch_size, :]
+
+            index = index + batch_size
+
+            # predict for current batch
+            y_mean, y_var = predict_fn(batch)
+
+            ys_arr.append(y_mean)
+            ys_var_arr.append(y_var)
+
+        y_mean = np.concatenate(ys_arr, axis=0)
+        y_var = np.concatenate(ys_var_arr, axis=0)
+
+        return y_mean, y_var
+
+    def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=[]):
+        """
+        Predict using the model at the laqn sites for NO2.
+
+        Parameters
+        ___
+
+        x_test : dict
+            See `Model.predict` for further details.
+
+        Returns
+        ___
+
+        dict
+            See `Model.predict` for further details.
+            The shape for each pollutant will be (n, 1).
+        """
+        if species != ['NO2']:
+            raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
+        self.check_test_set_is_valid(x_test)
+        y_dict = dict()
+
+        for src, x_src in x_test.items():
+            for pollutant in self.tasks:
+                if self.log:
+                    self.logger.info(
+                        "Batch predicting for %s on %s", pollutant, src,
+                    )
+                y_mean, y_var = self.batch_predict(x_src, predict_fn)
+                y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
+        return y_dict
+
+    @staticmethod
+    def clean_data(x_array, y_array):
+        """Remove nans and missing data for use in GPflow
+
+        args:
+            x_array: N x D numpy array,
+            y_array: N x 1 numpy array
+        """
+        idx = ~np.isnan(y_array[:, 0])
+        x_array = x_array[idx, :]
+        y_array = y_array[idx, :]
+
+        return x_array, y_array
