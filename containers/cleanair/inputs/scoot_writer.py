@@ -321,8 +321,9 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 detectors = df_aggregated["detector_id"].unique()
                 site_records = df_aggregated.to_dict("records")
                 self.logger.info(
-                    "Inserting %s per-site records into database",
+                    "Inserting %s records from %s detectors into database",
                     green(len(site_records)),
+                    green(len(detectors)),
                 )
 
                 start_session = time.time()
