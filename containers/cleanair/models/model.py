@@ -4,6 +4,7 @@ The interface for London air quality models.
 
 from abc import ABC, abstractmethod
 import numpy as np
+from ..metrics.evaluate import pop_kwarg
 
 
 class Model(ABC):
@@ -36,20 +37,33 @@ class Model(ABC):
         log : bool, optional
             Print logs. Default is True.
 
-        restore : bool, optional
-            Restore the model from a file.
+        batch_size : int, optional
+            Default is 100.
+
+        refresh : bool, optional
+            How often to print out the ELBO.
         """
+        # get the parameters for training the model
         self.model_params = dict() if model_params is None else model_params
-        self.experiment_config = dict(log=True, restore=False, model_state_fp="./") if experiment_config is None else experiment_config
+
+        # get filepaths and other configs
+        default_config = dict(name="model", restore=False, model_state_fp="./", save_model_state=False)
+        self.experiment_config = default_config if experiment_config is None else experiment_config
+
+        # get the tasks we will be predicting at
         self.tasks = ["NO2"] if tasks is None else tasks
         if self.tasks != ["NO2"]:
             raise NotImplementedError(
                 "Multiple pollutants not supported. Use only NO2."
             )
+        # other misc arguments
+        self.log = pop_kwarg(kwargs, "log", True)
         self.model = None
-        self.log = True if "log" not in kwargs else kwargs["log"]
-        self.restore = False if "restore" not in kwargs else kwargs["restore"]
         self.minimum_param_keys = []
+        self.epoch = 0
+        self.logger = None
+        self.batch_size = pop_kwarg(kwargs, "batchsize", 100)
+        self.refresh = pop_kwarg(kwargs, "refresh", 10)
 
     @abstractmethod
     def get_default_model_params(self):
@@ -88,7 +102,7 @@ class Model(ABC):
             raise KeyError(error_message)
 
     @abstractmethod
-    def fit(self, x_train, y_train, **kwargs):
+    def fit(self, x_train, y_train):
         """
         Fit the model to some training data.
 
@@ -257,8 +271,10 @@ class Model(ABC):
     def elbo_logger(self, logger_arg):
         """
         Log optimisation progress.
+
         Parameters
         ___
+
         logger_arg : unknown
             Argument passed as a callback from GPFlow optimiser.
         """
@@ -276,17 +292,23 @@ class Model(ABC):
 
     def batch_predict(self, x_array, predict_fn):
         """
-        Split up prediction into indepedent batchs.
+        Split up prediction into indepedent batches.
+
         Parameters
         ___
+
         x_array : np.array
             N x D numpy array of locations to predict at.
+
         predict_fn : function
             model spefic function to predict at.
+
         Returns
         ___
+
         y_mean : np.array
             N x D numpy array of means.
+
         y_var : np.array
             N x D numpy array of variances.
         """
@@ -323,7 +345,7 @@ class Model(ABC):
 
         return y_mean, y_var
 
-    def predict_srcs(self, x_test, predict_fn, species=['NO2'], ignore=[]):
+    def predict_srcs(self, x_test, predict_fn):
         """
         Predict using the model at the laqn sites for NO2.
 
@@ -340,8 +362,6 @@ class Model(ABC):
             See `Model.predict` for further details.
             The shape for each pollutant will be (n, 1).
         """
-        if species != ['NO2']:
-            raise NotImplementedError("Multiple pollutants not supported. Use only NO2.")
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
 
