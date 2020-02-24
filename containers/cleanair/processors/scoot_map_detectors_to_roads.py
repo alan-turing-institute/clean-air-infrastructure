@@ -13,7 +13,7 @@ from ..loggers import duration, get_logger, green
 from ..mixins import DateRangeMixin, DBQueryMixin
 
 
-class ScootRoadMapper(DBWriter, DBQueryMixin):
+class ScootPerRoadDetectors(DBWriter, DBQueryMixin):
     """Map all road segments to their closest SCOOT detectors"""
 
     def __init__(self, **kwargs):
@@ -42,11 +42,17 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
             start_time = time.time()
             with self.dbcnxn.open_session() as session:
                 # Get toids for all roads that have already been matched
-                existing_road_toids = session.query(ScootRoadMatch.road_toid).distinct().all()
+                existing_road_toids = (
+                    session.query(ScootRoadMatch.road_toid).distinct().all()
+                )
                 n_roads = session.query(OSHighway).count()
 
                 # Stop here if we have matched all the roads
-                self.logger.info("%i/%i roads have already been processed.", len(existing_road_toids), n_roads)
+                self.logger.info(
+                    "%i/%i roads have already been processed.",
+                    len(existing_road_toids),
+                    n_roads,
+                )
                 if len(existing_road_toids) >= n_roads:
                     break
                 self.logger.info("Preparing to process the next %i roads.", batch_size)
@@ -82,49 +88,81 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
                 )
 
                 # Get positions of all SCOOT sensors
-                sq_scoot_sensors = session.query(
-                    MetaPoint.location,
-                    ScootDetector.toid.label("scoot_toid"),
-                    ScootDetector.detector_n.label("scoot_detector_n"),
-                ).join(ScootDetector).filter(MetaPoint.source == "scoot").subquery()
+                sq_scoot_sensors = (
+                    session.query(
+                        MetaPoint.location,
+                        ScootDetector.toid.label("scoot_toid"),
+                        ScootDetector.detector_n.label("scoot_detector_n"),
+                    )
+                    .join(ScootDetector)
+                    .filter(MetaPoint.source == "scoot")
+                    .subquery()
+                )
 
                 # Define a lateral query that can get the five closest sensors for a given road segment
-                lateral_top5_by_distance = session.query(
-                    sq_unmatched_roads.c.road_toid.label("lateral_road_toid"),
-                    sq_scoot_sensors.c.scoot_detector_n.label("lateral_scoot_detector_n"),
-                    func.ST_Distance(
-                        func.Geography(func.ST_Centroid(sq_unmatched_roads.c.road_geom)),
-                        func.Geography(sq_scoot_sensors.c.location),
-                    ).label("distance_m"),
-                ).order_by(
-                    # This uses the PostGIS <-> operator which performs an index-based nearest neighbour search
-                    Comparator.distance_centroid(sq_unmatched_roads.c.road_geom, sq_scoot_sensors.c.location)
-                ).limit(5).subquery().lateral()
+                lateral_top5_by_distance = (
+                    session.query(
+                        sq_unmatched_roads.c.road_toid.label("lateral_road_toid"),
+                        sq_scoot_sensors.c.scoot_detector_n.label(
+                            "lateral_scoot_detector_n"
+                        ),
+                        func.ST_Distance(
+                            func.Geography(
+                                func.ST_Centroid(sq_unmatched_roads.c.road_geom)
+                            ),
+                            func.Geography(sq_scoot_sensors.c.location),
+                        ).label("distance_m"),
+                    )
+                    .order_by(
+                        # This uses the PostGIS <-> operator which performs an index-based nearest neighbour search
+                        Comparator.distance_centroid(
+                            sq_unmatched_roads.c.road_geom, sq_scoot_sensors.c.location
+                        )
+                    )
+                    .limit(5)
+                    .subquery()
+                    .lateral()
+                )
 
                 # For roads that do not have sensors on them, construct one row for each of of the five closest sensors
                 q_roads_without_sensors = session.query(
                     sq_unmatched_roads.c.road_toid,
-                    lateral_top5_by_distance.c.lateral_scoot_detector_n.label("scoot_detector_n"),
-                    lateral_top5_by_distance.c.distance_m
+                    lateral_top5_by_distance.c.lateral_scoot_detector_n.label(
+                        "scoot_detector_n"
+                    ),
+                    lateral_top5_by_distance.c.distance_m,
                 )
 
                 # Combine the two road lists and read them into a local dataframe
-                q_combined = session.query(sq_roads_with_sensors).union_all(q_roads_without_sensors)
-                df_matches = pd.read_sql(q_combined.statement, q_combined.session.bind).rename(
+                q_combined = session.query(sq_roads_with_sensors).union_all(
+                    q_roads_without_sensors
+                )
+                df_matches = pd.read_sql(
+                    q_combined.statement, q_combined.session.bind
+                ).rename(
                     columns={
                         "anon_1_scoot_detector_n": "detector_n",
                         "anon_1_road_toid": "road_toid",
-                        "anon_1_distance_m": "distance_m"
+                        "anon_1_distance_m": "distance_m",
                     }
                 )
 
                 # Construct the weight column. The weight for each sensor is d / sum_0^n (d)
-                df_matches["weight"] = df_matches["distance_m"].groupby(df_matches["road_toid"]).transform(lambda x: 1.0 / sum(x))
+                df_matches["weight"] = (
+                    df_matches["distance_m"]
+                    .groupby(df_matches["road_toid"])
+                    .transform(lambda x: 1.0 / sum(x))
+                )
                 df_matches["weight"] = df_matches["distance_m"] * df_matches["weight"]
-                self.logger.info("Generated weights for %s road-sensor associations", green(df_matches.shape[0]))
+                self.logger.info(
+                    "Generated weights for %s road-sensor associations",
+                    green(df_matches.shape[0]),
+                )
 
             self.logger.info(
-                "Constructing matches for a batch of %i roads took %s", batch_size, duration(start_time, time.time())
+                "Constructing matches for a batch of %i roads took %s",
+                batch_size,
+                duration(start_time, time.time()),
             )
             # Yield the dataframe for this batch. When there is no dataframe we break
             if not df_matches.shape[0]:
@@ -162,12 +200,15 @@ class ScootRoadMapper(DBWriter, DBQueryMixin):
                         n_records += len(road_match_records)
                     except IntegrityError as error:
                         self.logger.error(
-                            "Failed to add road matches to the database: %s", type(error)
+                            "Failed to add road matches to the database: %s",
+                            type(error),
                         )
                         self.logger.error(str(error))
                         session.rollback()
 
-                self.logger.info("Insertion took %s", duration(start_session, time.time()))
+                self.logger.info(
+                    "Insertion took %s", duration(start_session, time.time())
+                )
 
         # Summarise updates
         self.logger.info(

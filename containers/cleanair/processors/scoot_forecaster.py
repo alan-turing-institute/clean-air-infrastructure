@@ -10,14 +10,14 @@ from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
 from ..databases.tables import ScootReading, ScootForecast
 from ..decorators import SuppressStdoutStderr
-from ..loggers import duration, get_logger, green
+from ..loggers import duration, duration_from_seconds, get_logger, green
 from ..mixins import DateRangeMixin
 
 # Turn off fbprophet stdout logger
 logging.getLogger("fbprophet").setLevel(logging.ERROR)
 
 
-class TrafficForecast(DateRangeMixin, DBWriter):
+class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
     """Traffic forecasting using FB prophet"""
 
     def __init__(self, forecast_length_hrs=72, detector_ids=None, **kwargs):
@@ -42,7 +42,6 @@ class TrafficForecast(DateRangeMixin, DBWriter):
         self.forecast_end_time = datetime.datetime.now().replace(
             second=0, microsecond=0, minute=0
         ) + datetime.timedelta(hours=self.forecast_length_hrs)
-
 
     def scoot_readings(self):
         """Get SCOOT readings between start and end times"""
@@ -85,6 +84,12 @@ class TrafficForecast(DateRangeMixin, DBWriter):
 
         self.logger.info(
             "Forecasting SCOOT traffic data up until %s...", self.forecast_end_time
+        )
+
+        # Processing will take approximately five seconds for each detector being process
+        self.logger.info(
+            "Forecasting will take approximately %s...",
+            duration_from_seconds(5 * len(training_data)),
         )
 
         # Setup a pool to allow us to process all features in parallel
