@@ -2,6 +2,8 @@
 Metrics to measure the precision of a model.
 """
 
+import math
+import numpy as np
 from scipy.stats import norm
 
 def circular_error_probable(y_test, y_pred, y_var, boundary_percent=0.5):
@@ -117,9 +119,10 @@ def confidence_interval(y_test, y_mean, y_var, confidence=0.95):
         The percentage of true observations.
     """
     num_points = y_test.shape[0]
+    y_test, y_mean, y_var = np.array(y_test), np.array(y_mean), np.array(y_var)
     in_range = 0
     for i in range(num_points):
-        lower_bound, upper_bound = norm.interval(confidence, loc=y_mean[i], scale=y_var[i])
+        lower_bound, upper_bound = norm.interval(confidence, loc=y_mean[i], scale=math.sqrt(y_var[i]))
         if lower_bound < y_test[i] and upper_bound > y_test[i]:
             in_range += 1
     return in_range / num_points

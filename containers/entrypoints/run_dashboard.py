@@ -142,6 +142,8 @@ def main():  # pylint: disable=too-many-locals
         precision_methods=precision_methods,
         evaluate_training=evaluate_training,
     )
+    # ToDo: remove print statement
+    print(sensor_scores_df[["NO2_ci50", "NO2_ci75", "NO2_ci95"]])
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(

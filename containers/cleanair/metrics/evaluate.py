@@ -150,12 +150,13 @@ def evaluate_spatio_temporal_scores(
     precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
+    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
     # measure scores by sensor and by hour
     sensor_scores_df = measure_scores_on_groupby(
-        pred_df, metric_methods, sensor_col, precision_methods=precision_methods,pred_cols=pred_cols, test_cols=test_cols
+        pred_df, metric_methods, sensor_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols, var_cols=var_cols
     )
     temporal_scores_df = measure_scores_on_groupby(
-        pred_df, metric_methods, temporal_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols
+        pred_df, metric_methods, temporal_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols, var_cols=var_cols
     )
 
     # add lat and lon to sensor scores cols
@@ -167,6 +168,9 @@ def evaluate_spatio_temporal_scores(
 
     # meta info for the evaluation
     for key, value in kwargs.items():
+        # Todo: remove print statement
+        print()
+        print(key, value)
         sensor_scores_df[key] = value
         temporal_scores_df[key] = value
 
@@ -261,78 +265,6 @@ def get_precision_methods(ci50=True, ci75=True, ci95=True, **kwargs):
         precision_methods[key] = method
 
     return precision_methods
-
-def measure_scores_by_hour(
-    pred_df, metric_methods, datetime_col="measurement_start_utc", **kwargs
-):
-    """
-    Measure metric scores for each hour of prediction.
-
-    Parameters
-    ___
-
-    pred_df : DataFrame
-        Indexed by datetime. Must have a column of testing data and
-        a column from the predicted air quality at the same points
-        as the testing data.
-
-    metric_methods : dict
-        Keys are name of metric.
-        Values are functions that take in two numpy/series and compute the score.
-
-    datetime_col : str, optional
-        Name of the datetime columns in the dataframe.
-
-    Returns
-    ___
-
-    scores : DataFrame
-        Indexed by datetime.
-        Each column is a metric in metric_methods.
-
-    Other Parameters
-    ___
-
-    pred_cols : list, optional
-        Names of the column that are predictions.
-        Length must match `test_cols`.
-
-    test_cols : list, optional
-        Names of columns in the dataframe that are the true observations.
-
-    var_cols : list, optional
-        Columns containing the variance of predictions.
-        Default is ["NO2_var"]
-    """
-    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
-    pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
-    test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
-    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
-    
-    # remove nans from rows
-    pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
-
-    # group by datetime
-    pred_gb = pred_df.groupby(datetime_col)
-
-    if len(test_cols) > 1:
-        raise NotImplementedError("Can only validate one pollutant.")
-
-    # ToDo: implement precision metrics are make general with sensor methods.
-    print("Precision metrics not implemented.")
-
-    # get a series for each metric for all sensors at each hour
-    # concat each series into a dataframe
-    return pd.concat(
-        [
-            pd.Series(
-                pred_gb.apply(lambda x: method(x[test_cols[0]], x[pred_cols[0]])),
-                name="{species}_{metric}".format(species=test_cols[0], metric=key),
-            )
-            for key, method in metric_methods.items()
-        ],
-        axis=1,
-    )
 
 
 def measure_scores_on_groupby(pred_df, metric_methods, groupby_col, **kwargs):
