@@ -309,6 +309,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             # Load all valid remote data into a single dataframe
             df_readings = self.request_remote_data(start_datetime, end_datetime, unprocessed_detectors)
 
+            if df_readings.shape[0] < 1:
+                self.logger.warning(
+                    "Skipping hour %s as it has no available data",
+                    green(start_datetime),
+                )
+                continue
+
             # Aggregate the data and add readings to database
             for df_aggregated in self.aggregate_scoot_data(df_readings):
                 detectors = df_aggregated["detector_id"].unique()
