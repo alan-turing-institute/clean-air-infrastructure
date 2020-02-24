@@ -5,6 +5,7 @@ The interface for London air quality models.
 from abc import ABC, abstractmethod
 import numpy as np
 from ..metrics.evaluate import pop_kwarg
+from ..loggers import get_logger
 
 
 class Model(ABC):
@@ -61,9 +62,11 @@ class Model(ABC):
         self.model = None
         self.minimum_param_keys = []
         self.epoch = 0
-        self.logger = None
         self.batch_size = pop_kwarg(kwargs, "batchsize", 100)
         self.refresh = pop_kwarg(kwargs, "refresh", 10)
+        # Ensure logging is available
+        if self.log and not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
     @abstractmethod
     def get_default_model_params(self):

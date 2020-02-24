@@ -9,8 +9,6 @@ from gpflow import settings
 from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-
-from ..loggers import get_logger
 from .model import Model
 
 
@@ -51,10 +49,6 @@ class SVGP(Model):
             disable_tf_warnings = True
         else:
             disable_tf_warnings = kwargs["disable_tf_warnings"]
-
-        # Ensure logging is available
-        if self.log and not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
 
         # disable TF warnings
         if disable_tf_warnings:
