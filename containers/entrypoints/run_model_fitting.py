@@ -5,17 +5,10 @@ import os
 import logging
 import pickle
 from datetime import datetime
-from dateutil.parser import isoparse
-from dateutil.relativedelta import relativedelta
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
-
-
-def strtime_offset(strtime, offset_hours):
-    """Give an datetime as an iso string and an offset and return a new time"""
-
-    return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
+from cleanair.parsers import get_data_config_from_kwargs
 
 
 def write_predictions_to_file(y_pred, results_dir, filename):
@@ -23,55 +16,6 @@ def write_predictions_to_file(y_pred, results_dir, filename):
     pred_filepath = os.path.join(results_dir, filename)
     with open(pred_filepath, "wb") as handle:
         pickle.dump(y_pred, handle)
-
-
-def get_train_test_start_end(kwargs):
-    """
-    Given kwargs return dates for training and testing.
-    """
-    train_end = kwargs.pop("trainend")
-    train_n_hours = kwargs.pop("trainhours")
-    pred_start = kwargs.pop("predstart")
-    pred_n_hours = kwargs.pop("predhours")
-    train_start = strtime_offset(train_end, -train_n_hours)
-    pred_end = strtime_offset(pred_start, pred_n_hours)
-    return train_start, train_end, pred_start, pred_end
-
-
-def get_data_config(kwargs):
-    """
-    Return a dictionary of model data configs given parser arguments.
-    """
-    # Get training and pred start and end datetimes
-    train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
-    return_y = kwargs.pop("return_y")
-    tag = kwargs.pop("tag")
-
-    # Model configuration
-    model_config = {
-        "train_start_date": train_start,
-        "train_end_date": train_end,
-        "pred_start_date": pred_start,
-        "pred_end_date": pred_end,
-        "include_satellite": True,
-        "include_prediction_y": return_y,
-        "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
-        "train_interest_points": "all",
-        "train_satellite_interest_points": "all",
-        "pred_interest_points": "all",
-        "species": ["NO2"],
-        "features": [
-            "value_1000_total_a_road_length",
-            "value_500_total_a_road_length",
-            "value_500_total_a_road_primary_length",
-            "value_500_total_b_road_length",
-        ],
-        "norm_by": "laqn",
-        "model_type": "svgp",
-        "tag": tag,
-    }
-    return model_config
 
 
 def main():  # pylint: disable=R0914
@@ -97,7 +41,7 @@ def main():  # pylint: disable=R0914
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # get the model config from the parser arguments
-    model_config = get_data_config(kwargs)
+    model_config = get_data_config_from_kwargs(kwargs)
 
     if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
         raise NotImplementedError("AQE cannot currently be run. Coming soon")

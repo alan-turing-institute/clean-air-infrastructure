@@ -4,6 +4,8 @@ A base class for cleanair parsers.
 
 import json
 import argparse
+from dateutil.parser import isoparse
+from dateutil.relativedelta import relativedelta
 
 
 class CleanAirParser(argparse.ArgumentParser):
@@ -120,6 +122,61 @@ class CleanAirParser(argparse.ArgumentParser):
         kwargs = vars(self.parse_args())
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
+
+
+def strtime_offset(strtime, offset_hours):
+    """Give an datetime as an iso string and an offset and return a new time"""
+
+    return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
+
+
+def get_train_test_start_end(kwargs):
+    """
+    Given kwargs return dates for training and testing.
+    """
+    train_end = kwargs.pop("trainend")
+    train_n_hours = kwargs.pop("trainhours")
+    pred_start = kwargs.pop("predstart")
+    pred_n_hours = kwargs.pop("predhours")
+    train_start = strtime_offset(train_end, -train_n_hours)
+    pred_end = strtime_offset(pred_start, pred_n_hours)
+    return train_start, train_end, pred_start, pred_end
+
+
+def get_data_config_from_kwargs(kwargs):
+    """
+    Return a dictionary of model data configs given parser arguments.
+    """
+    # Get training and pred start and end datetimes
+    train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
+    return_y = kwargs.pop("return_y")
+    tag = kwargs.pop("tag")
+
+    # Model configuration
+    model_config = {
+        "train_start_date": train_start,
+        "train_end_date": train_end,
+        "pred_start_date": pred_start,
+        "pred_end_date": pred_end,
+        "include_satellite": True,
+        "include_prediction_y": return_y,
+        "train_sources": ["laqn"],
+        "pred_sources": ["laqn"],
+        "train_interest_points": "all",
+        "train_satellite_interest_points": "all",
+        "pred_interest_points": "all",
+        "species": ["NO2"],
+        "features": [
+            "value_1000_total_a_road_length",
+            "value_500_total_a_road_length",
+            "value_500_total_a_road_primary_length",
+            "value_500_total_b_road_length",
+        ],
+        "norm_by": "laqn",
+        "model_type": "svgp",
+        "tag": tag,
+    }
+    return model_config
 
 
 def pop_non_model_data_keys(kwargs):

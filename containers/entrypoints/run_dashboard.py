@@ -6,12 +6,12 @@ import pickle
 import logging
 from datetime import datetime
 import pandas as pd
-from run_model_fitting import get_data_config
 from cleanair.models import ModelData
 from cleanair import metrics
 from cleanair.dashboard import apps
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ValidationParser
+from cleanair.parsers import get_data_config_from_kwargs
 from cleanair.databases import DBReader
 from cleanair.databases.tables import ModelResult
 
@@ -67,9 +67,10 @@ def main():  # pylint: disable=too-many-locals
     evaluate_training = kwargs.pop("predict_training")
     results_dir = kwargs.pop("results_dir")
     predict_read_local = kwargs.pop("predict_read_local")
+    secrets_dir = os.path.dirname(kwargs["secretfile"])
 
     # get the config of data
-    data_config = get_data_config(kwargs)
+    data_config = get_data_config_from_kwargs(kwargs)
 
     # Get the model data
     if local_read:
@@ -124,7 +125,8 @@ def main():  # pylint: disable=too-many-locals
 
     # get the mapbox api key
     try:
-        mapbox_access_token = open("../../terraform/.secrets/.mapbox_token").read()
+        mapbox_filepath = os.path.join(secrets_dir, ".mapbox_token")
+        mapbox_access_token = open(mapbox_filepath).read()
     except FileNotFoundError:
         error_message = "Could not find ../../terraform/.secrets/.mapbox_token."
         error_message += "Have you got a Mapbox token and put it in this file?"
