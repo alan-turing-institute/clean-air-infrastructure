@@ -5,7 +5,7 @@ import os
 import logging
 import pickle
 from datetime import datetime
-from cleanair.models import ModelData, SVGP, MR_DGP_MODEL
+from cleanair.models import ModelData, SVGP, MRDGP
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
 from cleanair.parsers import get_data_config_from_kwargs
