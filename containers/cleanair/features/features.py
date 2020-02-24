@@ -504,7 +504,8 @@ class Features(DBWriter, DBQueryMixin):
 
             # Print a final timing message
             self.logger.info(
-                "Finished adding records after %s",
+                "Finished adding records for %s after %s",
+                feature_name,
                 green(duration(feature_start, time.time())),
             )
 
