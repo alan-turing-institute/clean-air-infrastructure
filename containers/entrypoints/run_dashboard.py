@@ -144,6 +144,8 @@ def main():  # pylint: disable=too-many-locals
     )
     # ToDo: remove print statement
     print(sensor_scores_df[["NO2_ci50", "NO2_ci75", "NO2_ci95"]])
+    all_keys = list(metric_methods.keys()) + list(precision_methods.keys())
+    print("all keys:", all_keys)
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
@@ -152,6 +154,7 @@ def main():  # pylint: disable=too-many-locals
         temporal_scores_df,
         mapbox_access_token,
         evaluate_training=evaluate_training,
+        all_metrics=all_keys
     )
     model_data_fit_app.run_server(debug=True)
 

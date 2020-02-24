@@ -12,6 +12,9 @@ METRIC_NAMES = {
     "mae": "Mean absolute error",
     "mse": "Mean squared error",
     "r2_score": "R squared score",
+    "ci50": "Confidence interval 50%",
+    "ci75": "Confidence interval 75%",
+    "ci95": "Confidence interval 95%",
 }
 POLLUTANT_NAMES = dict(
     NO2="Nitrogen Dioxide",
