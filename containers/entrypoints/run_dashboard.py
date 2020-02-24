@@ -137,7 +137,10 @@ def main():  # pylint: disable=too-many-locals
     metric_methods = metrics.get_metric_methods()
     precision_methods = metrics.get_precision_methods()
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods, evaluate_training=evaluate_training
+        model_data,
+        metric_methods,
+        precision_methods=precision_methods,
+        evaluate_training=evaluate_training,
     )
 
     # see the results in dashboard

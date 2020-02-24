@@ -151,11 +151,11 @@ def evaluate_spatio_temporal_scores(
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
     # measure scores by sensor and by hour
-    sensor_scores_df = measure_scores_by_sensor(
-        pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols
+    sensor_scores_df = measure_scores_on_groupby(
+        pred_df, metric_methods, sensor_col, precision_methods=precision_methods,pred_cols=pred_cols, test_cols=test_cols
     )
-    temporal_scores_df = measure_scores_by_hour(
-        pred_df, metric_methods, pred_cols=pred_cols, test_cols=test_cols
+    temporal_scores_df = measure_scores_on_groupby(
+        pred_df, metric_methods, temporal_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols
     )
 
     # add lat and lon to sensor scores cols
@@ -335,19 +335,15 @@ def measure_scores_by_hour(
     )
 
 
-def measure_scores_by_sensor(
-    pred_df, metric_methods, precision_methods=None, groupby_col="point_id", **kwargs,
-):
+def measure_scores_on_groupby(pred_df, metric_methods, groupby_col, **kwargs):
     """
-    Group the pred_df by sensor then measure scores on each sensor.
+    Group the pred_df then measure scores on each sensor.
 
     Parameters
     ___
 
     pred_df : DataFrame
-        Indexed by datetime. Must have a column of testing data and
-        a column from the predicted air quality at the same points
-        as the testing data.
+        Contains predictions and observations.
 
     metric_methods : dict
         Keys are name of metric.
@@ -410,11 +406,7 @@ def measure_scores_by_sensor(
             col_name = "{species}_{metric}".format(species=pollutant, metric=key)
             # run each precision metric
             pollutant_metrics = pred_gb.apply(
-                lambda x: meth(  # pylint: disable=cell-var-from-loop
-                    x[pollutant],  # pylint: disable=cell-var-from-loop
-                    x[pred_col],  # pylint: disable=cell-var-from-loop
-                    x[var_col],  # pylint: disable=cell-var-from-loop
-                )
+                lambda x: meth(x[pollutant], x[pred_col], x[var_col])
             )
             # add the metric to the list of scores
             pollutant_metrics_series = pd.Series(pollutant_metrics, name=col_name)
