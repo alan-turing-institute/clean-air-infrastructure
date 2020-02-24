@@ -2,6 +2,8 @@
 Methods for evaluating a model data fit.
 """
 
+# pylint: disable=W0640
+
 import pandas as pd
 from sklearn import metrics
 
@@ -76,7 +78,7 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         (
             training_sensor_scores_df,
             training_temporal_scores_df,
-        ) = evaluate_sensor_and_temporal_scores(
+        ) = evaluate_spatio_temporal_scores(
             model_data.normalised_training_data_df,
             metric_methods,
             training_set=True,
@@ -93,7 +95,7 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         (
             testing_sensor_scores_df,
             testing_temporal_scores_df,
-        ) = evaluate_sensor_and_temporal_scores(
+        ) = evaluate_spatio_temporal_scores(
             model_data.normalised_pred_data_df,
             metric_methods,
             training_set=False,
@@ -121,7 +123,7 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
     )
 
 
-def evaluate_sensor_and_temporal_scores(
+def evaluate_spatio_temporal_scores(
     pred_df,
     metric_methods,
     sensor_col="point_id",
@@ -142,7 +144,7 @@ def evaluate_sensor_and_temporal_scores(
     )
 
     # add lat and lon to sensor scores cols
-    sensor_scores_df = concat_static_features_with_scores(sensor_scores_df, pred_df)
+    sensor_scores_df = concat_static_features(sensor_scores_df, pred_df)
 
     # make a new column with the index
     sensor_scores_df[sensor_col] = sensor_scores_df.index.copy()
@@ -315,9 +317,7 @@ def measure_scores_by_sensor(
     for key, meth in metric_methods.items():
         for i, pollutant in enumerate(test_cols):
             pred_col = pred_cols[i]
-            pollutant_metrics = pred_gb.apply(
-                lambda x: meth(x[pollutant], x[pred_col])
-            )  # pylint: disable=cell-var-from-loop
+            pollutant_metrics = pred_gb.apply(lambda x: meth(x[pollutant], x[pred_col]))
             pollutant_metrics_series = pd.Series(
                 pollutant_metrics,
                 name="{species}_{metric}".format(species=pollutant, metric=key),
@@ -336,7 +336,7 @@ def measure_scores_by_sensor(
     # )
 
 
-def concat_static_features_with_scores(scores_df, pred_df, static_features=None):
+def concat_static_features(scores_df, pred_df, static_features=None):
     """
     Concatenate the sensor scores dataframe with static features of the sensor.
     """

@@ -260,6 +260,30 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
 ```
 
+## The cleanair parser
+
+A `CleanAirParser` class has been created for interacting with `run_model_fitting.py`. Run the following command to see available options:
+
+```bash
+python run_model_fitting.py -h
+```
+
+By passing no arguments, `run_model_fitting.py` will read data from the DB and write the results to the DB using the default data_config.
+Reading and writing data/results is all made possible through the command line. Different arguments are available for `run_dashboard.py`.
+
+### Parser config
+
+If you frequently run model fitting locally, then you may wish to store some of your common settings into the `parser_config.json` file. For example, if you always want to `return_y` and `predict_training`, then your parser config file would look like:
+
+```json
+{
+    "return_y": true,
+    "predict_training": true 
+}
+```
+
+By passing the `-c` flag, the parser will use the json file to overwrite the default parser values.
+
 ## Running with local database
 
 ### Install postgres and upload static datasets
@@ -290,6 +314,23 @@ CREATE DATABASE cleanair_inputs_db;
 ```
 python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
 ```
+
+## Dashboard
+
+The dashboard lets you see the predictions and validation scores of a model fit on the LAQN sensors. To run the dashboard you must have a [mapbox API key](https://account.mapbox.com/auth/signup/) and sign up to their account.
+
+Once you have the key, use the following command to place the key in the .secrets folder:
+
+```bash
+echo "API_KEY" > terraform/.secrets/.mapbox_token
+```
+
+At the moment you can only run the dashboard locally:
+```bash
+python run_dashboard.py
+```
+
+By default the dashboard will try to load a model fit from the DB, but you can pass command line arguments to load a locally stored model fit.
 
 ## Configure Kubernetes Cluster:
 
@@ -330,3 +371,37 @@ helm install kubernetes/cleanair
 ```
 
 Now you to the minikube dashboard and you can see everything that was installed.
+
+## How to create a new model
+
+Look at the `model.py`. You will need to extend the `Model` class (or an existing model) using your new model class you are about to create. The `Model` class contains information about the shapes and the expected parameters/returns of functions for a model. We recommend you read this file closely before implementing your model.
+
+The `SVGP` class is an example of a `Model` that uses only laqn data and some features. We recommend you look through this class before implementing your model.
+
+All model parameters should be contained within the `model_params` dictionary.
+
+### Calling the new model from entrypoints
+
+Lets say your model is called `MyModel` in a file `mymodel.py`. Import your model by adding the following line to `cleanair.models.__init__.py`:
+
+```python
+from .mymodel import MyModel
+```
+
+Also add `MyModel` to the list of all models:
+
+```python
+__all__ = ["ModelData", "SVGP", "Model", "MyModel"]
+```
+
+Now go to the `run_model_fitting.py` entrypoint. Import your model at the top of the file:
+
+```python
+from cleanair.models import MyModel
+```
+
+Finally, set the model fitter to be your model:
+
+```python
+model_fitter = MyModel()
+```

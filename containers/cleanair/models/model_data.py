@@ -874,7 +874,6 @@ class ModelData(DBWriter, DBQueryMixin):
         all_features = self.__get_model_features(
             train_start_date, pred_end_date, features, sources, point_ids
         )
-
         # Get satellite readings
         sat_train_df = self.get_satellite_readings_training(
             train_start_date, train_end_date, species=species, output_type="df"
@@ -882,31 +881,24 @@ class ModelData(DBWriter, DBQueryMixin):
         sat_pred_df = self.get_satellite_readings_pred(
             pred_start_date, pred_end_date, species=species, output_type="df"
         )
-
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
 
         with self.dbcnxn.open_session() as session:
-
             sat_site_map_q = session.query(SatelliteDiscreteSite)
-
         sat_site_map_df = pd.read_sql(
             sat_site_map_q.statement, sat_site_map_q.session.bind
         )
-
         # Convert uuid to strings to allow merge
         all_features["point_id"] = all_features["point_id"].astype(str)
         sat_site_map_df["point_id"] = sat_site_map_df["point_id"].astype(str)
 
         # Get satellite box id for each feature interest point
         all_features = all_features.merge(sat_site_map_df, how="left", on=["point_id"])
-
         # Get satellite data
         return all_features, satellite_readings
 
     def update_model_results_df(self, predict_data_dict, y_pred, model_fit_info):
-        """
-        Update the model results data frame with model predictions.
-        """
+        """Update the model results data frame with model predictions."""
         # Create new dataframe with predictions
         predict_df = pd.DataFrame(index=predict_data_dict["index"])
         predict_df["predict_mean"] = y_pred[:, 0]
@@ -920,11 +912,11 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_df_from_pred_dict(
-        self, data_df, data_dict, pred_dict, sources="all", species="all"
+        self, data_df, data_dict, pred_dict, fit_start_time, **kwargs,
     ):
-        """
-        Return a new dataframe with columns updated from pred_dict.
-        """
+        """Return a new dataframe with columns updated from pred_dict."""
+        sources = kwargs["sources"] if "sources" in kwargs else "all"
+        species = kwargs["species"] if "species" in kwargs else "all"
         if sources == "all":
             sources = pred_dict.keys()
         if species == "all":
@@ -945,11 +937,13 @@ class ModelData(DBWriter, DBQueryMixin):
                     column = np.append(column, pred_dict[source][pollutant][pred_type])
                 predict_df[pollutant + "_" + pred_type] = column
         # add predict_df as new columns to data_df - they should share an index
-        return pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+        new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+        new_df["fit_start_time"] = fit_start_time
+        new_df["tag"] = self.config["tag"]
+        return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict):
-        """
-        Update the normalised_pred_data_df with predictions for all pred sources.
+    def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
+        """Update the normalised_pred_data_df with predictions for all pred sources.
 
         Parameters
         ___
@@ -959,24 +953,28 @@ class ModelData(DBWriter, DBQueryMixin):
             Second level keys are species (e.g. 'NO2', 'PM10').
             Third level keys are either 'mean' or 'var'.
             Values are numpy arrays of predictions for a source and specie.
+
+        fit_start_time : datetime
+            Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
+            self.normalised_pred_data_df,
+            self.get_pred_data_arrays(),
+            test_pred_dict,
+            fit_start_time,
         )
 
-    def update_training_df_with_preds(self, training_pred_dict):
-        """
-        Updated the normalised_training_data_df with predictions on the training set.
-        """
+    def update_training_df_with_preds(self, training_pred_dict, fit_start_time):
+        """Updated the normalised_training_data_df with predictions on the training set."""
         self.normalised_training_data_df = self.get_df_from_pred_dict(
             self.normalised_training_data_df,
             self.get_training_data_arrays(),
             training_pred_dict,
+            fit_start_time,
         )
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-
         record_cols = [
             "tag",
             "fit_start_time",
@@ -988,15 +986,13 @@ class ModelData(DBWriter, DBQueryMixin):
         df_cols = self.normalised_pred_data_df
         for col in record_cols:
             if col not in df_cols:
-                raise AttributeError(
-                    """The data frame must contain the following columns: {}.
-                       Ensure model results have been passed to ModelData.update_model_results_df()""".format(
-                        record_cols
-                    )
+                msg = "The data frame must contain the following columns: {}."
+                msg += "You passed these columns: {}."
+                msg += (
+                    "Ensure model results have been passed to update_model_results_df()"
                 )
-
+                raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, upload_records, table=ModelResult)

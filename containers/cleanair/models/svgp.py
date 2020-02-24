@@ -9,8 +9,6 @@ from gpflow import settings
 from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-
-from ..loggers import get_logger
 from .model import Model
 
 
@@ -19,7 +17,7 @@ class SVGP(Model):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params=None, tasks=None, **kwargs):
+    def __init__(self, model_params=None, experiment_config=None, tasks=None, **kwargs):
         """
         SVGP.
 
@@ -28,6 +26,9 @@ class SVGP(Model):
 
         model_params : dict, optional
             See `get_default_model_params` for more info.
+
+        experiment_config: dict, optional
+            Filepaths, modelname and other settings for execution.
 
         tasks : list, optional
             See super class.
@@ -38,29 +39,16 @@ class SVGP(Model):
         Other Parameters
         ___
 
-        batch_size : int, optional
-            Default is 100.
-
         disable_tf_warnings : bool, optional
             Don't print out warnings from tensorflow if True.
-
-        refresh : bool, optional
-            How often to print out the ELBO.
         """
-        super().__init__(model_params, tasks, **kwargs)
-        self.batch_size = 100 if "batch_size" not in kwargs else kwargs["batch_size"]
-        self.refresh = 10 if "refresh" not in kwargs else kwargs["refresh"]
-        self.epoch = 0
+        super().__init__(model_params, experiment_config, tasks, **kwargs)
 
         # warnings
         if "disable_tf_warnings" not in kwargs:
             disable_tf_warnings = True
         else:
             disable_tf_warnings = kwargs["disable_tf_warnings"]
-
-        # Ensure logging is available
-        if self.log and not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
 
         # disable TF warnings
         if disable_tf_warnings:
@@ -136,9 +124,7 @@ class SVGP(Model):
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = self.model_params['jitter']
-        with gpflow.settings.temp_settings(
-                custom_config
-        ), gpflow.session_manager.get_session().as_default():
+        with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
                 variance=self.model_params['kernel']['variance'],
@@ -162,7 +148,7 @@ class SVGP(Model):
                 )
             )
 
-    def fit(self, x_train, y_train, **kwargs):
+    def fit(self, x_train, y_train):
         """
         Fit the SVGP.
         Parameters
@@ -178,14 +164,12 @@ class SVGP(Model):
             See `Model.fit` method in the base class for further details.
         Other Parameters
         ___
+        
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
             Default is False.
         """
         self.check_training_set_is_valid(x_train, y_train)
-        save_model_state = (
-            kwargs["save_model_state"] if "save_model_state" in kwargs else False
-        )
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
         x_array = x_train["laqn"].copy()
@@ -204,11 +188,11 @@ class SVGP(Model):
 
         tf_session = self.model.enquire_session()
 
-        if self.model_params["restore"]:
+        if self.experiment_config["restore"]:
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
-                "{filepath}.ckpt".format(filepath=self.model_params["model_state_fp"]),
+                "{filepath}.ckpt".format(filepath=self.experiment_config["model_state_fp"]),
             )
 
         if self.model_params["train"]:
@@ -221,12 +205,12 @@ class SVGP(Model):
             )
 
             # save model state
-            if save_model_state:
+            if self.experiment_config["save_model_state"]:
                 saver = tf.train.Saver()
                 saver.save(
                     tf_session,
                     "{filepath}.ckpt".format(
-                        filepath=self.model_params["model_state_fp"]
+                        filepath=self.experiment_config["model_state_fp"]
                     ),
                 )
     def predict(self, x_test):
