@@ -58,7 +58,7 @@ class Model(ABC):
             Dictionary of parameters.
         """
 
-    def __check_model_params_are_valid(self):
+    def check_model_params_are_valid(self):
         """
         Check the model parameters are valid for the model.
 
