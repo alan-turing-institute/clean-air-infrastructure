@@ -194,7 +194,7 @@ def main():
             "The only pollutant we can model right now is NO2. Coming soon"
         )
 
-    # initialise the model
+    #initialise the model
 
     models = {
         'svgp': SVGP,
@@ -214,8 +214,8 @@ def main():
         'model_state_fp':  kwargs["config_dir"]
     }
     model_params= {
-        'restore': True,
-        'train':  False
+        'restore': False,
+        'train':  True
     }
 
     #TODO: setup model params in init

@@ -92,8 +92,6 @@ def main(data_config, param_config, experiment_config):
 
     pickle.dump(meta, open( meta_fp, "wb" ) )
 
-    print(m)
-
 if __name__ == '__main__':
     #default config
     model='mr_dgp'
