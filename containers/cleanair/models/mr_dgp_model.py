@@ -80,45 +80,45 @@ class MRDGP(Model):
             Dictionary of parameters.
         """
         return {
-            "restore": False, 
-            "train": True, 
+            "restore": False,
+            "train": True,
             "model_state_fp": "",
             "base_laqn": {
                 "kernel": {
                     "name": "MR_SE_LAQN_BASE",
-                    "active_dims": [0, 1, 2], #epoch, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0,1],
-                    "variances": [1.0, 1.0, 1.0]
+                    "active_dims": [0, 1, 2],  # epoch, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0, 1],
+                    "variances": [1.0, 1.0, 1.0],
                 },
                 "inducing_num": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1
+                "noise_sigma": 0.1,
             },
             "base_sat": {
                 "kernel": {
                     "name": "MR_SE_SAT_BASE",
-                    "active_dims": [0, 1, 2], #epoch, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0,1],
-                    "variances": [1.0, 1.0, 1.0]
+                    "active_dims": [0, 1, 2],  # epoch, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0, 1],
+                    "variances": [1.0, 1.0, 1.0],
                 },
                 "inducing_num": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1
+                "noise_sigma": 0.1,
             },
             "dgp_sat": {
-                    "kernel": {
+                "kernel": {
                     "name": "MR_SE_SAT_DGP",
-                    "active_dims": [0, 2, 3], #previous GP, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0,1],
-                    "variances": [1.0, 1.0, 1.0]
+                    "active_dims": [0, 2, 3],  # previous GP, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0, 1],
+                    "variances": [1.0, 1.0, 1.0],
                 },
                 "inducing_num": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1
+                "noise_sigma": 0.1,
             },
             "mixing_weight": "mr_dgp_only",
             "num_samples_between_layers": 1,
-            "num_prediction_samples": 1
+            "num_prediction_samples": 1,
         }
 
     def get_kernel_product(
@@ -127,7 +127,7 @@ class MRDGP(Model):
         """
             Returns a product kernel across all input dimensions
         """
-        #set default arguments for None arguments
+        # set default arguments for None arguments
         active_dims = active_dims if not None else [0]
         lengthscales = lengthscales if not None else [1.0]
         variances = variances if not None else [1.0]
@@ -179,10 +179,10 @@ class MRDGP(Model):
 
         k_base_1 = self.get_kernel_product(
             MR_SE,
-            active_dims=self.model_params['base_laqn']['kernel']['active_dims'],
-            lengthscales=self.model_params['base_laqn']['kernel']['lengthscales'],
-            variances=self.model_params['base_laqn']['kernel']['variances'],
-            name=name_prefix + self.model_params['base_laqn']['kernel']['name']
+            active_dims=self.model_params["base_laqn"]["kernel"]["active_dims"],
+            lengthscales=self.model_params["base_laqn"]["kernel"]["lengthscales"],
+            variances=self.model_params["base_laqn"]["kernel"]["variances"],
+            name=name_prefix + self.model_params["base_laqn"]["kernel"]["name"],
         )
 
         sat_kernel_ad = [0, 1, 2]
@@ -191,10 +191,10 @@ class MRDGP(Model):
 
         k_base_2 = self.get_kernel_product(
             MR_SE,
-            active_dims=self.model_params['base_sat']['kernel']['active_dims'],
-            lengthscales=self.model_params['base_sat']['kernel']['lengthscales'],
-            variances=self.model_params['base_sat']['kernel']['variances'],
-            name=name_prefix + self.model_params['base_sat']['kernel']['name']
+            active_dims=self.model_params["base_sat"]["kernel"]["active_dims"],
+            lengthscales=self.model_params["base_sat"]["kernel"]["lengthscales"],
+            variances=self.model_params["base_sat"]["kernel"]["variances"],
+            name=name_prefix + self.model_params["base_sat"]["kernel"]["name"],
         )
 
         dgp_kernel_ad = [0, 2, 3]
@@ -206,13 +206,13 @@ class MRDGP(Model):
             active_dims=dgp_kernel_ad,
             lengthscales=dgp_kernel_ls,
             variances=dgp_kernel_v,
-            name=name_prefix + self.model_params['dgp_sat']['kernel']['name'],
+            name=name_prefix + self.model_params["dgp_sat"]["kernel"]["name"],
         )
         k_parent_1 = None
 
-        num_z_base_laqn = self.model_params['base_laqn']['inducing_num']
-        num_z_base_sat = self.model_params['base_sat']['inducing_num']
-        num_z_dgp_sat = self.model_params['dgp_sat']['inducing_num']
+        num_z_base_laqn = self.model_params["base_laqn"]["inducing_num"]
+        num_z_base_sat = self.model_params["base_sat"]["inducing_num"]
+        num_z_dgp_sat = self.model_params["dgp_sat"]["inducing_num"]
 
         base_z_inducing_locations = [
             self.get_inducing_points(dataset[0][0], num_z_base_laqn),
@@ -232,26 +232,30 @@ class MRDGP(Model):
             d_2 = data[:, i:]
             return np.concatenate([d_1, col, d_2], axis=1)
 
-        dgp_z_inducing_locations = insert(dgp_z_inducing_locations, np.ones([dgp_z_inducing_locations.shape[0]]), 1)
+        dgp_z_inducing_locations = insert(
+            dgp_z_inducing_locations, np.ones([dgp_z_inducing_locations.shape[0]]), 1
+        )
 
         dgp_z_inducing_locations = [dgp_z_inducing_locations]
         parent_z_inducing_locations = dgp_z_inducing_locations
 
-        inducing_points = [base_z_inducing_locations, dgp_z_inducing_locations, parent_z_inducing_locations]
+        inducing_points = [
+            base_z_inducing_locations,
+            dgp_z_inducing_locations,
+            parent_z_inducing_locations,
+        ]
         noise_sigmas = [
             [
-                self.model_params['base_laqn']['noise_sigma'], 
-                self.model_params['base_sat']['noise_sigma']
-            ], 
-            [
-                self.model_params['dgp_sat']['noise_sigma']
-            ], 
-            [1.0]
+                self.model_params["base_laqn"]["noise_sigma"],
+                self.model_params["base_sat"]["noise_sigma"],
+            ],
+            [self.model_params["dgp_sat"]["noise_sigma"]],
+            [1.0],
         ]
 
         minibatch_sizes = [
-            self.model_params['base_laqn']['minibatch_size'], 
-            self.model_params['base_sat']['minibatch_size'], 
+            self.model_params["base_laqn"]["minibatch_size"],
+            self.model_params["base_sat"]["minibatch_size"],
         ]
 
         model = MR_Mixture(
@@ -264,7 +268,7 @@ class MRDGP(Model):
             # mixing_weight = MR_Variance_Mixing_1(),
             # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,
-            num_samples=self.model_params['num_samples_between_layers'],
+            num_samples=self.model_params["num_samples_between_layers"],
             name=name_prefix + "MRDGP",
         )
 
@@ -323,7 +327,9 @@ class MRDGP(Model):
 
                 if not simple_optimizing_scheme:
                     set_objective(AdamOptimizer, "base_elbo")
-                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=1000)
+                    opt.minimize(
+                        self.model, step_callback=self.elbo_logger, maxiter=1000
+                    )
 
                     # m.disable_base_elbo()
                     # set_objective(AdamOptimizer, 'elbo')
@@ -344,12 +350,14 @@ class MRDGP(Model):
             )
 
     def _predict(self, x_test):
-        ys_mean, ys_var = self.model.predict_y_experts(x_test, 1)
+        ys_mean, ys_var = self.model.predict_y_experts(
+            x_test, self.model_params["num_prediction_samples"]
+        )
         ys_mean, ys_var = get_sample_mean_var(ys_mean, ys_var)
         return ys_mean, ys_var
 
     def predict(self, x_test, species=None, ignore=None):
-        species = species if species is not None else ['NO2']
+        species = species if species is not None else ["NO2"]
         ignore = ignore if ignore is not None else None
 
         return self.predict_srcs(x_test, self._predict, ignore=ignore)
@@ -362,5 +370,8 @@ def get_sample_mean_var(ys_mean, ys_var):
     ys_mean_samples = ys_mean[:, :, 0, :]
     ys_var_samples = ys_var[:, :, 0, :]
     ys_mean = np.mean(ys_mean_samples, axis=0)
-    ys_sig = np.mean(ys_var_samples + ys_mean_samples ** 2, axis=0) - np.mean(ys_mean_samples, axis=0) ** 2
+    ys_sig = (
+        np.mean(ys_var_samples + ys_mean_samples ** 2, axis=0)
+        - np.mean(ys_mean_samples, axis=0) ** 2
+    )
     return ys_mean, ys_sig
