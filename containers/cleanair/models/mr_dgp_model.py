@@ -84,6 +84,7 @@ class MRDGP(Model):
             "base_laqn": {
                 "kernel": {
                     "name": "MR_SE_LAQN_BASE",
+                    "type": "se",
                     "active_dims": [0, 1, 2],  # epoch, lat, lon,
                     "lengthscales": [0.1, 0.1, 0, 1],
                     "variances": [1.0, 1.0, 1.0],
@@ -95,6 +96,7 @@ class MRDGP(Model):
             "base_sat": {
                 "kernel": {
                     "name": "MR_SE_SAT_BASE",
+                    "type": "se",
                     "active_dims": [0, 1, 2],  # epoch, lat, lon,
                     "lengthscales": [0.1, 0.1, 0, 1],
                     "variances": [1.0, 1.0, 1.0],
@@ -104,12 +106,21 @@ class MRDGP(Model):
                 "noise_sigma": 0.1,
             },
             "dgp_sat": {
-                "kernel": {
-                    "name": "MR_SE_SAT_DGP",
-                    "active_dims": [0, 2, 3],  # previous GP, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0, 1],
-                    "variances": [1.0, 1.0, 1.0],
-                },
+                "kernel": [
+                    {
+                        "name": "MR_LINEAR_SAT_DGP",
+                        "type": "linear",
+                        "active_dims": [0],  # previous GP, lat, lon,
+                        "variances": [1.0],
+                    },
+                    {
+                        "name": "MR_SE_SAT_DGP",
+                        "type": "se",
+                        "active_dims": [2, 3],  # previous GP, lat, lon,
+                        "lengthscales": [0.1, 0, 1],
+                        "variances": [1.0, 1.0],
+                    },
+                ],
                 "inducing_num": 300,
                 "minibatch_size": 100,
                 "noise_sigma": 0.1,
@@ -119,39 +130,15 @@ class MRDGP(Model):
             "num_prediction_samples": 1,
         }
 
-
     def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
         """
             Construct the DGP multi-res mixture
         """
 
-        k_base_1 = get_kernel_product(
-            MR_SE,
-            active_dims=self.model_params["base_laqn"]["kernel"]["active_dims"],
-            lengthscales=self.model_params["base_laqn"]["kernel"]["lengthscales"],
-            variances=self.model_params["base_laqn"]["kernel"]["variances"],
-            name=name_prefix + self.model_params["base_laqn"]["kernel"]["name"],
-        )
+        k_base_1 = get_kernel(self.model_params["base_laqn"]["kernel"], "base_laqn")
+        k_base_2 = get_kernel(self.model_params["base_sat"]["kernel"], "base_sat")
+        k_dgp_1 = get_kernel(self.model_params["dgp_sat"]["kernel"], "dgp_sat")
 
-        k_base_2 = get_kernel_product(
-            MR_SE,
-            active_dims=self.model_params["base_sat"]["kernel"]["active_dims"],
-            lengthscales=self.model_params["base_sat"]["kernel"]["lengthscales"],
-            variances=self.model_params["base_sat"]["kernel"]["variances"],
-            name=name_prefix + self.model_params["base_sat"]["kernel"]["name"],
-        )
-
-        dgp_kernel_ad = [0, 2, 3]
-        dgp_kernel_ls = [1.0, 0.1, 0.1, 0.1, 0.1]
-        dgp_kernel_v = [1.0, 1.0, 1.0, 1.0, 0.1]
-
-        k_dgp_1 = get_kernel_product(
-            [MR_Linear, MR_SE, MR_SE],
-            active_dims=dgp_kernel_ad,
-            lengthscales=dgp_kernel_ls,
-            variances=dgp_kernel_v,
-            name=name_prefix + self.model_params["dgp_sat"]["kernel"]["name"],
-        )
         k_parent_1 = None
 
         num_z_base_laqn = self.model_params["base_laqn"]["inducing_num"]
@@ -334,7 +321,7 @@ def get_mixing_weight(name, param=None):
         "base_only": MR_Base_Only,
         "variance_mixed_1": MR_Variance_Mixing_1,
         "variance_mixed": MR_Variance_Mixing,
-        "average": MR_Average_Mixture
+        "average": MR_Average_Mixture,
     }
     if name not in weight_dict.keys():
         raise NotImplementedError(
@@ -346,45 +333,6 @@ def get_mixing_weight(name, param=None):
     else:
         mixing_weight = weight_dict[name]()
     return mixing_weight
-
-
-def get_kernel_product(
-    kernels, active_dims=None, lengthscales=None, variances=None, name=""
-):
-    """
-        Returns a product kernel across all input dimensions
-    """
-    # set default arguments for None arguments
-    active_dims = active_dims if not None else [0]
-    lengthscales = lengthscales if not None else [1.0]
-    variances = variances if not None else [1.0]
-
-    if not isinstance(kernels, list):
-        kernels = [kernels for i in range(len(active_dims))]
-
-    kernels_objs = []
-    for i, kernel in enumerate(kernels):
-        if (lengthscales is None) or (kernel is MR_Linear):
-            kernels_objs.append(
-                kernels[i](
-                    input_dim=1,
-                    variance=variances[i],
-                    active_dims=[active_dims[i]],
-                    name=name + "_{i}".format(i=i),
-                )
-            )
-        else:
-            kernels_objs.append(
-                kernels[i](
-                    input_dim=1,
-                    lengthscales=lengthscales[i],
-                    variance=variances[i],
-                    active_dims=[active_dims[i]],
-                    name=name + "_{i}".format(i=i),
-                )
-            )
-
-    return gpflow.kernels.Product(kernels_objs, name=name + "_product")
 
 def get_inducing_points(X, num_z=None):
     """
@@ -398,3 +346,55 @@ def get_inducing_points(X, num_z=None):
     else:
         z_inducing_locations = kmeans2(X, num_z, minit="points")[0]
     return z_inducing_locations
+
+
+def get_kernel(kernels, base_name):
+    """
+        Returns product of kernels
+    """
+
+    kernel_dict = {"linear": MR_Linear, "se": MR_SE}
+
+    # make sure kernels is a list
+    if not isinstance(kernels, list):
+        kernels = [kernels]
+
+    kernels_objs = []
+
+    for kernel_idx, kernel in enumerate(kernels):
+        kernel_type = kernel["type"]
+        print(kernel_type)
+
+        if kernel_type not in kernel_dict.keys():
+            raise NotImplementedError(
+                "Kernel {kernel} does not exist".format(kernel=kernel_type)
+            )
+
+        for idx, _ in enumerate(kernel["active_dims"]):
+            # kernel name must be unique, so include both active dim idx and kernel idx
+
+            if kernel_type == "linear":
+                # construct linear kernel on current active dim
+                kernel_obj = kernel_dict[kernel_type](
+                    input_dim=1,
+                    variance=kernel["variances"][idx],
+                    active_dims=[kernel["active_dims"][idx]],
+                    name="{kernel}_{kernel_idx}_{idx}".format(
+                        kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
+                    ),
+                )
+            elif kernel_type == "se":
+                # construct se kernel on current active dim
+                kernel_obj = kernel_dict[kernel_type](
+                    input_dim=1,
+                    lengthscales=kernel["lengthscales"][idx],
+                    variance=kernel["variances"][idx],
+                    active_dims=[kernel["active_dims"][idx]],
+                    name="{kernel}_{kernel_idx}_{idx}".format(
+                        kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
+                    ),
+                )
+
+            kernels_objs.append(kernel_obj)
+
+    return gpflow.kernels.Product(kernels_objs, name=base_name + "_product_kernel")
