@@ -7,14 +7,12 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow import settings
 from gpflow.training import AdamOptimizer
 
 from scipy.cluster.vq import kmeans2
 
-from .mr_dgp import MR_DGP
 from .mr_dgp import MR_Mixture
-from .mr_dgp import MR_SE, MR_Linear, MR_KERNEL_PRODUCT
+from .mr_dgp import MR_SE, MR_Linear
 
 from .mr_dgp.mr_mixing_weights import (
     MR_Average_Mixture,
@@ -116,7 +114,7 @@ class MRDGP(Model):
                 "minibatch_size": 100,
                 "noise_sigma": 0.1,
             },
-            "mixing_weight": "mr_dgp_only",
+            "mixing_weight": {"name": "dgp_only", "param": None},
             "num_samples_between_layers": 1,
             "num_prediction_samples": 1,
         }
@@ -184,10 +182,6 @@ class MRDGP(Model):
             variances=self.model_params["base_laqn"]["kernel"]["variances"],
             name=name_prefix + self.model_params["base_laqn"]["kernel"]["name"],
         )
-
-        sat_kernel_ad = [0, 1, 2]
-        sat_kernel_ls = [1.0, 0.1, 0.1, 0.1, 0.1]
-        sat_kernel_v = [1.0, 1.0, 1.0, 1.0, 1.0]
 
         k_base_2 = self.get_kernel_product(
             MR_SE,
@@ -264,7 +258,11 @@ class MRDGP(Model):
             kernels=[[k_base_1, k_base_2], [k_dgp_1], [k_parent_1]],
             noise_sigmas=noise_sigmas,
             minibatch_sizes=minibatch_sizes,
-            mixing_weight=MR_DGP_Only(),
+            # mixing_weight=MR_DGP_Only(),
+            mixing_weight=get_mixing_weight(
+                self.model_params["mixing_weight"]["name"],
+                self.model_params["mixing_weight"]["param"],
+            ),
             # mixing_weight = MR_Variance_Mixing_1(),
             # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,
@@ -365,7 +363,7 @@ class MRDGP(Model):
 
 def get_sample_mean_var(ys_mean, ys_var):
     """
-        The DGP samples the predictive distribution. Return mean and variance of these.
+        Return estimated mean and variance of the predictive distribution from monte carlo samples.
     """
     ys_mean_samples = ys_mean[:, :, 0, :]
     ys_var_samples = ys_var[:, :, 0, :]
@@ -375,3 +373,26 @@ def get_sample_mean_var(ys_mean, ys_var):
         - np.mean(ys_mean_samples, axis=0) ** 2
     )
     return ys_mean, ys_sig
+
+
+def get_mixing_weight(name, param=None):
+    """
+        The mixing weight defines how to the mix the mixture of Gaussians.
+    """
+    weight_dict = {
+        "dgp_only": MR_DGP_Only,
+        "base_only": MR_Base_Only,
+        "variance_mixed_1": MR_Variance_Mixing_1,
+        "variance_mixed": MR_Variance_Mixing,
+        "average": MR_Average_Mixture
+    }
+    if name not in weight_dict.keys():
+        raise NotImplementedError(
+            "Mixing wieght {name} has not been implemented.".format(name=name)
+        )
+
+    if param is not None:
+        mixing_weight = weight_dict[name](i=param)
+    else:
+        mixing_weight = weight_dict[name]()
+    return mixing_weight
