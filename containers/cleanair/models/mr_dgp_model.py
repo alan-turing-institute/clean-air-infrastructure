@@ -79,7 +79,47 @@ class MRDGP(Model):
         dict
             Dictionary of parameters.
         """
-        return {"restore": False, "train": True, "model_state_fp": ""}
+        return {
+            "restore": False, 
+            "train": True, 
+            "model_state_fp": "",
+            "base_laqn": {
+                "kernel": {
+                    "name": "MR_SE_LAQN_BASE",
+                    "active_dims": [0, 1, 2], #epoch, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0,1],
+                    "variances": [1.0, 1.0, 1.0]
+                },
+                "inducing_num": 300,
+                "minibatch_size": 100,
+                "noise_sigma": 0.1
+            },
+            "base_sat": {
+                "kernel": {
+                    "name": "MR_SE_SAT_BASE",
+                    "active_dims": [0, 1, 2], #epoch, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0,1],
+                    "variances": [1.0, 1.0, 1.0]
+                },
+                "inducing_num": 300,
+                "minibatch_size": 100,
+                "noise_sigma": 0.1
+            },
+            "dgp_sat": {
+                    "kernel": {
+                    "name": "MR_SE_SAT_DGP",
+                    "active_dims": [0, 2, 3], #previous GP, lat, lon,
+                    "lengthscales": [0.1, 0.1, 0,1],
+                    "variances": [1.0, 1.0, 1.0]
+                },
+                "inducing_num": 300,
+                "minibatch_size": 100,
+                "noise_sigma": 0.1
+            },
+            "mixing_weight": "mr_dgp_only",
+            "num_samples_between_layers": 1,
+            "num_prediction_samples": 1
+        }
 
     def get_kernel_product(
         self, kernels, active_dims=None, lengthscales=None, variances=None, name=""
@@ -136,16 +176,13 @@ class MRDGP(Model):
         """
             Construct the DGP multi-res mixture
         """
-        base_kernel_ad = range(dataset[0][0].shape[-1] - 1)
-        base_kernel_ls = [0.1 for i in base_kernel_ad]
-        base_kernel_v = [1.0 for i in base_kernel_ad]
 
         k_base_1 = self.get_kernel_product(
             MR_SE,
-            active_dims=base_kernel_ad,
-            lengthscales=base_kernel_ls,
-            variances=base_kernel_v,
-            name=name_prefix + "MR_SE_BASE_1",
+            active_dims=self.model_params['base_laqn']['kernel']['active_dims'],
+            lengthscales=self.model_params['base_laqn']['kernel']['lengthscales'],
+            variances=self.model_params['base_laqn']['kernel']['variances'],
+            name=name_prefix + self.model_params['base_laqn']['kernel']['name']
         )
 
         sat_kernel_ad = [0, 1, 2]
@@ -154,10 +191,10 @@ class MRDGP(Model):
 
         k_base_2 = self.get_kernel_product(
             MR_SE,
-            active_dims=sat_kernel_ad,
-            lengthscales=sat_kernel_ls,
-            variances=sat_kernel_v,
-            name=name_prefix + "MR_SE_BASE_2",
+            active_dims=self.model_params['base_sat']['kernel']['active_dims'],
+            lengthscales=self.model_params['base_sat']['kernel']['lengthscales'],
+            variances=self.model_params['base_sat']['kernel']['variances'],
+            name=name_prefix + self.model_params['base_sat']['kernel']['name']
         )
 
         dgp_kernel_ad = [0, 2, 3]
@@ -169,21 +206,24 @@ class MRDGP(Model):
             active_dims=dgp_kernel_ad,
             lengthscales=dgp_kernel_ls,
             variances=dgp_kernel_v,
-            name=name_prefix + "MR_SE_DGP_1",
+            name=name_prefix + self.model_params['dgp_sat']['kernel']['name'],
         )
         k_parent_1 = None
 
-        num_z = 300
+        num_z_base_laqn = self.model_params['base_laqn']['inducing_num']
+        num_z_base_sat = self.model_params['base_sat']['inducing_num']
+        num_z_dgp_sat = self.model_params['dgp_sat']['inducing_num']
+
         base_z_inducing_locations = [
-            self.get_inducing_points(dataset[0][0], num_z),
-            self.get_inducing_points(dataset[1][0], num_z),
+            self.get_inducing_points(dataset[0][0], num_z_base_laqn),
+            self.get_inducing_points(dataset[1][0], num_z_base_sat),
         ]
 
         sliced_dataset = np.concatenate(
             [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1
         )
         dgp_z_inducing_locations = self.get_inducing_points(
-            np.concatenate([dataset[0][1], sliced_dataset], axis=1), num_z
+            np.concatenate([dataset[0][1], sliced_dataset], axis=1), num_z_dgp_sat
         )
 
         def insert(data, col, i):
@@ -198,8 +238,21 @@ class MRDGP(Model):
         parent_z_inducing_locations = dgp_z_inducing_locations
 
         inducing_points = [base_z_inducing_locations, dgp_z_inducing_locations, parent_z_inducing_locations]
-        noise_sigmas = [[1.0, 1.0], [1.0], [1.0]]
-        minibatch_sizes = [100, 100]
+        noise_sigmas = [
+            [
+                self.model_params['base_laqn']['noise_sigma'], 
+                self.model_params['base_sat']['noise_sigma']
+            ], 
+            [
+                self.model_params['dgp_sat']['noise_sigma']
+            ], 
+            [1.0]
+        ]
+
+        minibatch_sizes = [
+            self.model_params['base_laqn']['minibatch_size'], 
+            self.model_params['base_sat']['minibatch_size'], 
+        ]
 
         model = MR_Mixture(
             datasets=dataset,
@@ -211,7 +264,7 @@ class MRDGP(Model):
             # mixing_weight = MR_Variance_Mixing_1(),
             # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,
-            num_samples=1,
+            num_samples=self.model_params['num_samples_between_layers'],
             name=name_prefix + "MRDGP",
         )
 
