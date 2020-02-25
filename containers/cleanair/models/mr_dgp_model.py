@@ -119,63 +119,13 @@ class MRDGP(Model):
             "num_prediction_samples": 1,
         }
 
-    def get_kernel_product(
-        self, kernels, active_dims=None, lengthscales=None, variances=None, name=""
-    ):
-        """
-            Returns a product kernel across all input dimensions
-        """
-        # set default arguments for None arguments
-        active_dims = active_dims if not None else [0]
-        lengthscales = lengthscales if not None else [1.0]
-        variances = variances if not None else [1.0]
-
-        if not isinstance(kernels, list):
-            kernels = [kernels for i in range(len(active_dims))]
-
-        kernels_objs = []
-        for i, kernel in enumerate(kernels):
-            if (lengthscales is None) or (kernel is MR_Linear):
-                kernels_objs.append(
-                    kernels[i](
-                        input_dim=1,
-                        variance=variances[i],
-                        active_dims=[active_dims[i]],
-                        name=name + "_{i}".format(i=i),
-                    )
-                )
-            else:
-                kernels_objs.append(
-                    kernels[i](
-                        input_dim=1,
-                        lengthscales=lengthscales[i],
-                        variance=variances[i],
-                        active_dims=[active_dims[i]],
-                        name=name + "_{i}".format(i=i),
-                    )
-                )
-
-        return gpflow.kernels.Product(kernels_objs, name=name + "_product")
-
-    def get_inducing_points(self, X, num_z=None):
-        """
-            Returns num_z inducing points locations using kmeans
-        """
-        if len(X.shape) == 3:
-            X = X.reshape([X.shape[0] * X.shape[1], X.shape[2]])
-
-        if num_z is None or num_z > X.shape[0]:
-            z_inducing_locations = X
-        else:
-            z_inducing_locations = kmeans2(X, num_z, minit="points")[0]
-        return z_inducing_locations
 
     def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
         """
             Construct the DGP multi-res mixture
         """
 
-        k_base_1 = self.get_kernel_product(
+        k_base_1 = get_kernel_product(
             MR_SE,
             active_dims=self.model_params["base_laqn"]["kernel"]["active_dims"],
             lengthscales=self.model_params["base_laqn"]["kernel"]["lengthscales"],
@@ -183,7 +133,7 @@ class MRDGP(Model):
             name=name_prefix + self.model_params["base_laqn"]["kernel"]["name"],
         )
 
-        k_base_2 = self.get_kernel_product(
+        k_base_2 = get_kernel_product(
             MR_SE,
             active_dims=self.model_params["base_sat"]["kernel"]["active_dims"],
             lengthscales=self.model_params["base_sat"]["kernel"]["lengthscales"],
@@ -195,7 +145,7 @@ class MRDGP(Model):
         dgp_kernel_ls = [1.0, 0.1, 0.1, 0.1, 0.1]
         dgp_kernel_v = [1.0, 1.0, 1.0, 1.0, 0.1]
 
-        k_dgp_1 = self.get_kernel_product(
+        k_dgp_1 = get_kernel_product(
             [MR_Linear, MR_SE, MR_SE],
             active_dims=dgp_kernel_ad,
             lengthscales=dgp_kernel_ls,
@@ -209,14 +159,14 @@ class MRDGP(Model):
         num_z_dgp_sat = self.model_params["dgp_sat"]["inducing_num"]
 
         base_z_inducing_locations = [
-            self.get_inducing_points(dataset[0][0], num_z_base_laqn),
-            self.get_inducing_points(dataset[1][0], num_z_base_sat),
+            get_inducing_points(dataset[0][0], num_z_base_laqn),
+            get_inducing_points(dataset[1][0], num_z_base_sat),
         ]
 
         sliced_dataset = np.concatenate(
             [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1
         )
-        dgp_z_inducing_locations = self.get_inducing_points(
+        dgp_z_inducing_locations = get_inducing_points(
             np.concatenate([dataset[0][1], sliced_dataset], axis=1), num_z_dgp_sat
         )
 
@@ -396,3 +346,55 @@ def get_mixing_weight(name, param=None):
     else:
         mixing_weight = weight_dict[name]()
     return mixing_weight
+
+
+def get_kernel_product(
+    kernels, active_dims=None, lengthscales=None, variances=None, name=""
+):
+    """
+        Returns a product kernel across all input dimensions
+    """
+    # set default arguments for None arguments
+    active_dims = active_dims if not None else [0]
+    lengthscales = lengthscales if not None else [1.0]
+    variances = variances if not None else [1.0]
+
+    if not isinstance(kernels, list):
+        kernels = [kernels for i in range(len(active_dims))]
+
+    kernels_objs = []
+    for i, kernel in enumerate(kernels):
+        if (lengthscales is None) or (kernel is MR_Linear):
+            kernels_objs.append(
+                kernels[i](
+                    input_dim=1,
+                    variance=variances[i],
+                    active_dims=[active_dims[i]],
+                    name=name + "_{i}".format(i=i),
+                )
+            )
+        else:
+            kernels_objs.append(
+                kernels[i](
+                    input_dim=1,
+                    lengthscales=lengthscales[i],
+                    variance=variances[i],
+                    active_dims=[active_dims[i]],
+                    name=name + "_{i}".format(i=i),
+                )
+            )
+
+    return gpflow.kernels.Product(kernels_objs, name=name + "_product")
+
+def get_inducing_points(X, num_z=None):
+    """
+        Returns num_z inducing points locations using kmeans
+    """
+    if len(X.shape) == 3:
+        X = X.reshape([X.shape[0] * X.shape[1], X.shape[2]])
+
+    if num_z is None or num_z > X.shape[0]:
+        z_inducing_locations = X
+    else:
+        z_inducing_locations = kmeans2(X, num_z, minit="points")[0]
+    return z_inducing_locations
