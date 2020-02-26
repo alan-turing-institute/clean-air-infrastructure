@@ -3,15 +3,14 @@ Model fitting
 """
 import logging
 import argparse
-from cleanair.models import TrafficForecast
 from cleanair.loggers import get_log_level
 from cleanair.features import ScootForecastFeatures
-from cleanair.processors import ScootForecastMapper
+from cleanair.processors import ScootPerDetectorForecaster, ScootPerRoadForecastMapper
 
 
 def main():
     """
-    Predict SCOOT forecast
+    Forecast SCOOT and convert forecasts into features
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Forecast SCOOT readings")
@@ -33,7 +32,7 @@ def main():
         "--ndays",
         type=int,
         default=21,
-        help="The number of days to use for predicting, (default: 21).",
+        help="The number of days from the past to use for predicting, (default: 21).",
     )
     parser.add_argument(
         "-f",
@@ -64,20 +63,18 @@ def main():
     # Perform update and notify any exceptions
     try:
         # Fit SCOOT readings using Prophet and forecast `args.forecasthrs` into the future
-        scoot_forecaster = TrafficForecast(ndays=args.ndays, end=args.end, forecast_length_hrs=args.forecasthrs, detector_ids=detector_ids, secretfile=args.secretfile)
+        scoot_forecaster = ScootPerDetectorForecaster(ndays=args.ndays, end=args.end, forecast_length_hrs=args.forecasthrs, detector_ids=detector_ids, secretfile=args.secretfile)
         forecast_end_time = scoot_forecaster.forecast_end_time
         scoot_forecaster.update_remote_tables()
 
         # Construct SCOOT forecasts for each road using:
         # - the most recent SCOOT forecasts (from ScootForecast)
         # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
-        scoot_road_forecasts = ScootForecastMapper(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
+        scoot_road_forecasts = ScootPerRoadForecastMapper(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
         scoot_road_forecasts.update_remote_tables()
 
-        # Construct SCOOT features around each interest point
-        scoot_feature_extractor = ScootForecastFeatures(
-            ndays=ndays, end=forecast_end_time, secretfile=args.secretfile
-        )
+        # Construct SCOOT features from forecasts around each interest point
+        scoot_feature_extractor = ScootForecastFeatures(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:

@@ -53,81 +53,71 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         start_time = time.time()
 
         with self.dbcnxn.open_session() as session:
-            scoot_road_q = session.query(ScootReading).filter(
+            q_scoot_reading = session.query(ScootReading).filter(
                 ScootReading.measurement_start_utc >= self.start_datetime,
                 ScootReading.measurement_start_utc < self.end_datetime,
             )
             if self.detector_ids:
-                scoot_road_q = scoot_road_q.filter(
+                q_scoot_reading = q_scoot_reading.filter(
                     ScootReading.detector_id.in_(self.detector_ids)
                 )
-            scoot_road_q = scoot_road_q.order_by(
+            q_scoot_reading = q_scoot_reading.order_by(
                 ScootReading.detector_id, ScootReading.measurement_start_utc
             )
-        readings = pd.read_sql(scoot_road_q.statement, scoot_road_q.session.bind)
+        df_scoot_readings = pd.read_sql(q_scoot_reading.statement, q_scoot_reading.session.bind)
         self.logger.info(
             "Retrieved %s SCOOT readings in %s minutes",
-            green(len(readings)),
-            green("{:.2f}".format((time.time() - start_time) / 60.0)),
+            green(len(df_scoot_readings)),
+            green(duration(start_time, time.time())),
         )
-        return readings
+        return df_scoot_readings
 
-    def forecasts(self):
+    def forecasts(self, pool_size=10):
         """Forecast all features at each detector up until `self.forecast_end_time`"""
-        # Get all SCOOT readings within the relevant time period from database and group them by detector ID
-        readings = self.scoot_readings()
-        training_data = dict(tuple(readings.groupby(["detector_id"])))
+        # Get all SCOOT readings within the relevant time period from the database and
+        # group them by detector ID
+        df_scoot_readings = self.scoot_readings()
+        df_per_detector = df_scoot_readings.groupby(["detector_id"])
+        # training_data = dict(tuple(readings.groupby(["detector_id"])))
+        # training_data = tuple(readings.groupby(["detector_id"]))
 
-        if not readings.shape[0]:
+        n_detectors = len(df_per_detector)
+        if not n_detectors:
             self.logger.error("Could not load any readings!")
             return pd.DataFrame([])
 
+        # Processing will take approximately three seconds per detector being processed
         self.logger.info(
-            "Forecasting SCOOT traffic data up until %s...", self.forecast_end_time
+            "Forecasting up until %s will take approximately %s...",
+            self.forecast_end_time,
+            duration_from_seconds(3 * n_detectors),
         )
 
-        # Processing will take approximately five seconds for each detector being process
-        self.logger.info(
-            "Forecasting will take approximately %s...",
-            duration_from_seconds(5 * len(training_data)),
-        )
-
-        # Setup a pool to allow us to process all features in parallel
-        processing_pool = Pool(len(self.features))
-
-        # Iterate over each detector ID and obtain the forecast for it
-        for idx, (detector_id, fit_data) in enumerate(training_data.items(), start=1):
-            start_time = time.time()
-            feature_predictions = []
-
+        # Obtain the forecast for all features at a single detector
+        def forecast_one_detector(input_data, logger, features, forecast_end_time):
             # Construct the time range to predict over. This is functionally identical
             # to `make_future_dataframe` but works even in cases where there is
             # insufficient data for Prophet to run.
-            last_reading_time = max(fit_data["measurement_start_utc"])
+            detector_id, detector_data = input_data
+            last_reading_time = max(detector_data["measurement_start_utc"])
             time_range = pd.DataFrame(
                 {
                     "ds": pd.date_range(
-                        start=last_reading_time, end=self.forecast_end_time, freq="H"
+                        start=last_reading_time, end=forecast_end_time, freq="H"
                     )[1:]
                 }
             )
 
-            # Obtain the forecast for a single feature
-            def forecast_one_feature(
-                feature,
-                _logger,
-                _fit_data,
-                _time_range,
-                _last_reading_time,
-                _detector_id,
-            ):
+            # Obtain the forecast for each feature
+            feature_predictions = []
+            for feature in features:
                 # Set the maximum value for the fit - this requires the use of logistic
                 # regression in the fit itself
                 capacity = (
-                    100 if "percentage" in feature else 10 * max(_fit_data[feature])
+                    100 if "percentage" in feature else 10 * max(detector_data[feature])
                 )
                 # Construct the prophet model using a copy of the fit data
-                prophet_data = _fit_data.rename(
+                prophet_data = detector_data.rename(
                     columns={"measurement_start_utc": "ds", feature: "y"}
                 )
                 prophet_data["cap"] = capacity
@@ -136,15 +126,15 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                     with SuppressStdoutStderr():
                         model = Prophet(growth="logistic").fit(prophet_data)
                     # Predict past and future readings for this feature
-                    _time_range["cap"] = capacity
-                    forecast = model.predict(_time_range)[["ds", "yhat"]]
+                    time_range["cap"] = capacity
+                    forecast = model.predict(time_range)[["ds", "yhat"]]
                 except (ValueError, RuntimeError):
-                    _logger.error(
+                    logger.error(
                         "Prophet prediction failed at '%s' for %s. Using zero instead.",
-                        _detector_id,
+                        detector_id,
                         feature,
                     )
-                    forecast = _time_range.copy()
+                    forecast = time_range.copy()
                     forecast["yhat"] = 0
 
                 # Rename the columns
@@ -154,21 +144,10 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                 )
                 # Keep only future predictions and force all predictions to be positive
                 forecast = forecast[
-                    forecast["measurement_start_utc"] > _last_reading_time
+                    forecast["measurement_start_utc"] > last_reading_time
                 ]
                 forecast[feature].clip(lower=0, inplace=True)
-                # feature_predictions.append(forecast)
-                return forecast
-
-            bound_forecast = partial(
-                forecast_one_feature,
-                _logger=self.logger,
-                _fit_data=fit_data,
-                _time_range=time_range,
-                _last_reading_time=last_reading_time,
-                _detector_id=detector_id,
-            )
-            feature_predictions = processing_pool.map(bound_forecast, self.features)
+                feature_predictions.append(forecast)
 
             # Combine predicted features and add detector ID
             combined_predictions = reduce(
@@ -179,14 +158,39 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             combined_predictions["measurement_end_utc"] = combined_predictions[
                 "measurement_start_utc"
             ] + datetime.timedelta(hours=1)
+            return (detector_id, combined_predictions)
+
+        # Setup a pool to allow us to process multiple detectors in parallel
+        processing_pool = Pool(pool_size)
+
+        # Initialise counters
+        detector_idx = 0
+        start_time = time.time()
+
+        # Bind instance parameters to produce function without external variables
+        bound_forecast = partial(
+            forecast_one_detector,
+            logger=self.logger,
+            features=self.features,
+            forecast_end_time=self.forecast_end_time,
+        )
+
+        # Iterate over each detector ID and obtain the forecast for it
+        # for result in processing_pool.uimap(bound_forecast, training_data.items()):
+        for result in processing_pool.uimap(bound_forecast, df_per_detector):
+            # Log some statistics then yield this forecast
+            detector_idx += 1
+            elapsed_seconds = time.time() - start_time
+            remaining_seconds = elapsed_seconds * (n_detectors / detector_idx - 1)
             self.logger.info(
-                "Finished forecasting detector %s (%i/%i) after %s",
-                detector_id,
-                idx,
-                len(training_data),
-                green(duration(start_time, time.time())),
+                "Finished forecasting detector %s (%i/%i) after %s. Remaining: %s.",
+                result[0],
+                detector_idx,
+                n_detectors,
+                green(duration_from_seconds(elapsed_seconds)),
+                green(duration_from_seconds(remaining_seconds)),
             )
-            yield (detector_id, combined_predictions)
+            yield result
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""

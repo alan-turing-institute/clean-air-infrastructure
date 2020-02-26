@@ -32,18 +32,11 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
         self.table_per_road = table_per_road
 
     def update_remote_tables(self):
-        # Log an introductory message
-        self.logger.info(
-            "Using forecasts between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
-        )
-
         start_session = time.time()
         with self.dbcnxn.open_session() as session:
-            # For each road, combine the per-detector forecasts according to their weight
+            # For each road, combine the per-detector values according to their weight
             self.logger.info(
-                "Combining per-detector forecasts into per-road forecasts..."
+                "Constructing per-road SCOOT values from per-detector values..."
             )
             q_per_road_forecasts = (
                 session.query(
@@ -126,7 +119,10 @@ class ScootPerRoadForecastMapper(ScootPerRoadValueMapperBase):
         )
 
         # Log an introductory message
-        self.logger.info("Constructing features from SCOOT forecasts")
+        self.logger.info("Constructing features from SCOOT forecasts between %s and %s",
+            green(self.start_datetime),
+            green(self.end_datetime),
+        )
 
 
 class ScootPerRoadReadingMapper(ScootPerRoadValueMapperBase):
@@ -139,4 +135,7 @@ class ScootPerRoadReadingMapper(ScootPerRoadValueMapperBase):
         )
 
         # Log an introductory message
-        self.logger.info("Constructing features from SCOOT readings")
+        self.logger.info("Constructing features from SCOOT readings between %s and %s",
+            green(self.start_datetime),
+            green(self.end_datetime),
+        )
