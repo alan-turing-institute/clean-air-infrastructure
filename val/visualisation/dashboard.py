@@ -506,14 +506,12 @@ class ComparePlots(Page):
         self.tplot.plot_cur_epoch(unique_epochs[0])
 
 
-        return
-
 
         #( laqn_predictions, laqn_training_predictions, laqn_testing_predictions,) = self.process_source(self.sensor_layer)
-        #( grid_predictions, grid_training_predictions, grid_testing_predictions,) = self.process_source(self.map_layer)
+        ( grid_predictions, grid_training_predictions, grid_testing_predictions,) = self.process_source(self.map_layer)
 
         # TODO: quick fix until can get geom easily
-        hexgrid_file = pd.read_csv("../visualisation/hexgrid_polygon.csv")
+        hexgrid_file = pd.read_csv("hexgrid/hexgrid_polygon.csv")
         grid_predictions = pd.merge(
             left=grid_predictions,
             right=hexgrid_file,
