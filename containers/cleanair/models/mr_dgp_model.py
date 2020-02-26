@@ -195,11 +195,11 @@ class MRDGP(Model):
             kernels=[[k_base_1, k_base_2], [k_dgp_1], [k_parent_1]],
             noise_sigmas=noise_sigmas,
             minibatch_sizes=minibatch_sizes,
-            # mixing_weight=MR_DGP_Only(),
             mixing_weight=get_mixing_weight(
                 self.model_params["mixing_weight"]["name"],
                 self.model_params["mixing_weight"]["param"],
             ),
+            # mixing_weight=MR_DGP_Only(),
             # mixing_weight = MR_Variance_Mixing_1(),
             # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,

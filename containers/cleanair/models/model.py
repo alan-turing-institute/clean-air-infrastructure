@@ -105,7 +105,7 @@ class Model(ABC):
             raise KeyError(error_message)
 
     @abstractmethod
-    def fit(self, x_train, y_train):
+    def fit(self, x_train, y_train, save_model_state=True):
         """
         Fit the model to some training data.
 
@@ -159,7 +159,7 @@ class Model(ABC):
         """
 
     @abstractmethod
-    def predict(self, x_test):
+    def predict(self, x_test, species=None, ignore=None):
         """
         Predict using the model.
 

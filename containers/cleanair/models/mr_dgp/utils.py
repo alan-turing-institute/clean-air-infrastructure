@@ -3,6 +3,7 @@ import numpy as np
 import gpflow
 from gpflow import settings
 
+
 def reparameterize(mean, var, z, full_cov=False):
     """
     From: https://github.com/ICL-SML/Doubly-Stochastic-DGP/blob/master/doubly_stochastic_dgp/utils.py
@@ -26,14 +27,17 @@ def reparameterize(mean, var, z, full_cov=False):
         return mean + z * (var + settings.jitter) ** 0.5
 
     else:
-        S, N, D = tf.shape(mean)[0], tf.shape(mean)[1], tf.shape(mean)[2] # var is SNND
+        S, N, D = tf.shape(mean)[0], tf.shape(mean)[1], tf.shape(mean)[2]  # var is SNND
         mean = tf.transpose(mean, (0, 2, 1))  # SND -> SDN
         var = tf.transpose(var, (0, 3, 1, 2))  # SNND -> SDNN
-        I = settings.jitter * tf.eye(N, dtype=settings.float_type)[None, None, :, :] # 11NN
+        I = (
+            settings.jitter * tf.eye(N, dtype=settings.float_type)[None, None, :, :]
+        )  # 11NN
         chol = tf.cholesky(var + I)  # SDNN
         z_SDN1 = tf.transpose(z, [0, 2, 1])[:, :, :, None]  # SND->SDN1
         f = mean + tf.matmul(chol, z_SDN1)[:, :, :, 0]  # SDN(1)
-        return tf.transpose(f, (0, 2, 1)) # SND
+        return tf.transpose(f, (0, 2, 1))  # SND
+
 
 def set_objective(_class, objective_str):
     # TODO: should just extend the optimize class at this point
@@ -122,4 +126,3 @@ def set_objective(_class, objective_str):
 
     setattr(_class, "minimize", minimize)
     setattr(_class, "make_optimize_tensor", make_optimize_tensor)
-

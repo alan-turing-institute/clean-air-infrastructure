@@ -8,10 +8,13 @@ from gpflow import transforms
 from gpflow import settings
 from gpflow.params import Parameter, Parameterized
 
+
 class MR_Gaussian(Likelihood):
     def __init__(self, variance=1.0, **kwargs):
         super().__init__(**kwargs)
-        self.variance = Parameter(variance, transform=transforms.positive, dtype=settings.float_type)
+        self.variance = Parameter(
+            variance, transform=transforms.positive, dtype=settings.float_type
+        )
 
     @params_as_tensors
     def logp(self, F, Y):
@@ -41,9 +44,27 @@ class MR_Gaussian(Likelihood):
             Y: N x 1
         """
         S = tf.shape(Fmu)[1]
-        Fmu = tf.Print(Fmu, [S, tf.reduce_any(tf.is_nan(self.variance)), tf.reduce_any(tf.is_nan(tf.reduce_mean(Fmu, axis=1))),tf.reduce_any(tf.is_nan( Y)), tf.reduce_any(tf.is_nan(tf.reduce_sum(Fvar, axis=[1,2])))], 'Fmu')
-        ell =  -0.5 * np.log(2 * np.pi) - 0.5 * tf.log(self.variance) - 0.5 * (tf.square(Y - tf.reduce_mean(Fmu, axis=1)) + (1/(S*S))*tf.reduce_sum(Fvar, axis=[1,2])[:, None]) / self.variance
-        ell = tf.Print(ell, [tf.reduce_any(tf.is_nan(ell))], 've: ell')
-        
-        return ell
+        Fmu = tf.Print(
+            Fmu,
+            [
+                S,
+                tf.reduce_any(tf.is_nan(self.variance)),
+                tf.reduce_any(tf.is_nan(tf.reduce_mean(Fmu, axis=1))),
+                tf.reduce_any(tf.is_nan(Y)),
+                tf.reduce_any(tf.is_nan(tf.reduce_sum(Fvar, axis=[1, 2]))),
+            ],
+            "Fmu",
+        )
+        ell = (
+            -0.5 * np.log(2 * np.pi)
+            - 0.5 * tf.log(self.variance)
+            - 0.5
+            * (
+                tf.square(Y - tf.reduce_mean(Fmu, axis=1))
+                + (1 / (S * S)) * tf.reduce_sum(Fvar, axis=[1, 2])[:, None]
+            )
+            / self.variance
+        )
+        ell = tf.Print(ell, [tf.reduce_any(tf.is_nan(ell))], "ve: ell")
 
+        return ell
