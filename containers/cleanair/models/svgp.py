@@ -49,7 +49,7 @@ class SVGP(Model):
         """
         super().__init__(model_params, tasks, **kwargs)
         self.batch_size = 100 if "batch_size" not in kwargs else kwargs["batch_size"]
-        self.refresh = 10 if "refresh" not in kwargs else kwargs["refresh"]
+        self.refresh = 100 if "refresh" not in kwargs else kwargs["refresh"]
         self.epoch = 0
 
         # warnings
@@ -163,6 +163,12 @@ class SVGP(Model):
             objective = self.model.objective.eval(session=session)
             if self.log:
                 self.logger.info(
+                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                    self.epoch,
+                    objective,
+                    logger_arg,
+                )
+                print(
                     "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
                     self.epoch,
                     objective,

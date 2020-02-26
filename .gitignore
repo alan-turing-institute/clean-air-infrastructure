@@ -24,3 +24,5 @@ python-virtual-environments/
 
 # Misc
 images/
+
+*.pickle

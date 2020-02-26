@@ -7,9 +7,13 @@ import pickle
 from datetime import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from cleanair.models import ModelData, SVGP
+from cleanair.models import ModelData, SVGP,svgp_binnedkernel
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
+import numpy as np
+
+
+import matplotlib.pyplot as plt
 
 
 def strtime_offset(strtime, offset_hours):
@@ -112,26 +116,26 @@ def main():  # pylint: disable=R0914
             "jitter": 1e-5,
             "likelihood_variance": 0.1,
             "minibatch_size": 100,
-            "n_inducing_points": 2000,
+            "n_inducing_points": 200,
             "restore": False,
             "train": True,
             "model_state_fp": None,
-            "maxiter": 100,
-            "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
+            "maxiter": 10000,
+            "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 5,},
         }
-
+    
     # initialise the model
-    model_fitter = SVGP(model_params=model_params, batch_size=1000)  # big batch size for the grid
+    model_fitter = svgp_binnedkernel(model_params=model_params, batch_size=1000)  # big batch size for the grid
     # model_fitter.model_params["maxiter"] = 10
     model_fitter.model_params["model_state_fp"] = model_dir
-
+    
     # Get the model data
     if local_read:
         logging.info("Reading local data")
         model_data = ModelData(**kwargs)
     else:
         model_data = ModelData(config=model_config, **kwargs)
-
+ 
     # write model results to file
     if local_write:
         model_data.save_config_state(kwargs["config_dir"])
@@ -140,8 +144,54 @@ def main():  # pylint: disable=R0914
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
     x_train = training_data_dict["X"]
+
+
+    ind = np.array([1,1,1,1,0,0,1])
+    ind = ind ==1
+    x_train["laqn"] = x_train["laqn"][:, ind]
+    
     y_train = training_data_dict["Y"]
+
     x_test = predict_data_dict["X"]
+    x_test["laqn"] = x_test["laqn"][:, ind]
+    loc = np.unique(x_train['laqn'][:,1])
+
+
+    tmp = [];tmp2 = []
+    for i in range(len(loc)):
+        ind = x_train['laqn'][:,1] == loc[i]
+        x_train['laqn'][ind,3] = 0
+        ind = x_test['laqn'][:,1] == loc[i]
+        x_test['laqn'][ind,3] = 0
+        tmp = x_train['laqn'][ind,0]
+        tmp2 = x_test['laqn'][ind,0]
+
+    x_sate_train = np.ones((48*32,5))
+    x_sate_test = np.ones((48*32,5))
+    y_sate_train = np.ones((48*32,1))
+    y_sate_test = np.ones((48*32,1))
+
+    for i in range(32):
+        ind = model_data.training_satellite_data_x['box_id'] == i  
+        gb = np.mean(model_data.training_satellite_data_x[ind]['lat_norm'])
+        gb2 = np.mean(model_data.training_satellite_data_x[ind]['lon_norm'])
+        x_sate_train[48*(i):48*(i+1),0] = tmp 
+        x_sate_test[48*(i):48*(i+1),0] = tmp2
+        x_sate_train[48*(i):48*(i+1),1] = x_sate_train[48*(i):48*(i+1),1]*gb2
+        x_sate_test[48*(i):48*(i+1),1] = x_sate_train[48*(i):48*(i+1),1]*gb
+        x_sate_train[48*(i):48*(i+1),2] = x_sate_train[48*(i):48*(i+1),2]*gb2
+        x_sate_test[48*(i):48*(i+1),2] = x_sate_train[48*(i):48*(i+1),2]*gb
+
+        ind = model_data.training_satellite_data_y['box_id'] == i
+        gb_obs = model_data.training_satellite_data_y[ind]
+        y_sate_train[48*(i):48*(i+1),0]  = gb_obs['value'][:48]
+        y_sate_test[48*(i):48*(i+1),0] = gb_obs['value'][48:]
+    x_train["laqn"] = np.append(x_train["laqn"],x_sate_train,axis = 0)
+    x_train["laqn"] = np.append(x_train["laqn"],x_sate_test,axis = 0)
+
+    y_train["laqn"]["NO2"] = np.append(y_train["laqn"]["NO2"] ,y_sate_train,axis = 0)
+    y_train["laqn"]["NO2"] = np.append(y_train["laqn"]["NO2"] ,y_sate_test,axis = 0)
+
 
     # Fit the model
     logging.info(
@@ -163,7 +213,7 @@ def main():  # pylint: disable=R0914
 
     # Internally update the model results in the ModelData object
     model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
-
+    print(model_fitter.model)
     # Write the model results to the database
     if not no_db_write:
         # ToDo: generalise for multiple pollutants
