@@ -11,18 +11,6 @@ import gpflow
 from gpflow import settings
 from gpflow.training import AdamOptimizer
 
-from .mr_dgp import MR_DGP
-from .mr_dgp import MR_Mixture
-from .mr_dgp import MR_SE, MR_Linear, MR_KERNEL_PRODUCT
-
-from .mr_dgp.mr_mixing_weights import (
-    MR_Average_Mixture,
-    MR_Base_Only,
-    MR_DGP_Only,
-    MR_Variance_Mixing,
-    MR_Variance_Mixing_1,
-)
-
 from scipy.cluster.vq import kmeans2
 
 from ..loggers import get_logger
