@@ -157,7 +157,7 @@ services:
 
 tls:
     - host: urbanair.turing.ac.uk
-      secretName: urbanairTls
+      secretName: tls-certs
 
 ingressRules:
     - host: urbanair.turing.ac.uk
@@ -165,3 +165,14 @@ ingressRules:
         - path: /
           serviceName: cleanair-api
           servicePort: 80
+
+# Should always be set to staging to check certificates
+letsencryptType: staging
+
+letsencryptIssuer:
+    - name: letsencrypt-staging
+      email: ogiles@turing.ac.uk
+      secretName: tls-certs
+#     - name: letsencrypt-production
+#       email: ogiles@turing.ac.uk
+#       secretName: tls-secret

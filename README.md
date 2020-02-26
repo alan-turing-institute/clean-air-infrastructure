@@ -198,15 +198,49 @@ Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEAN
 3. Set Alias record set to “Yes” and this will bring up some new options.
 4. Make sure the subscription is set to `cleanair`. Under Azure resource select the correct Public IP Address. Click “OK”.
 
-## Configuring certificates for the cleanair API
+## Congigure certificates
+
+https://cert-manager.io/docs/tutorials/acme/ingress/
+## Uninstalling a failed helm install (warning - this will uninstall everything from the cleanair namespace on the cluster)
+
+If the first helm install fails you may need to manually remove certmanager resources from the cluster with
+
 
 ```bash
-helm dep update kubernetes/cleanair
+helm uninstall cleanair --namespace cleanair
 ```
 
 ```bash
-kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.0/deploy/manifests/00-crds.yaml
+kubectl get -n cleanair crd
+kubectl delete -n cert-manager crd --all
+kubectl delete namespaces cleanair
 ```
+
+Cluster roles may not be removed. Remove them with:
+```bash
+kubectl get clusterrole  | grep 'cert-manager'|awk '{print $1}'| xargs kubectl delete clusterrole
+kubectl get role --namespace kube-system  | grep 'cert-manager'|awk '{print $1}'| xargs kubectl delete role --namespace kube-system
+kubectl get clusterrolebindings | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete clusterrolebindings
+kubectl get mutatingwebhookconfigurations | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete mutatingwebhookconfigurations
+kubectl get validatingwebhookconfigurations  | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete validatingwebhookconfigurations
+kubectl get rolebindings --namespace kube-system | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete rolebindings --namespace kube-system
+kubectl get clusterrole  | grep 'nginx'|awk '{print $1}'| xargs kubectl delete clusterrole
+kubectl get clusterrolebindings | grep 'nginx'|awk '{print $1}'|xargs kubectl delete clusterrolebindings
+
+```
+
+If helm wont install the chart after this check all api services are working:
+
+```bash
+kubectl get apiservice
+```
+
+Deleteing the failed api service may resolve this issue:
+
+```bash
+kubectl delete apiservice v1beta1.metrics.k8s.io
+```
+
 
 Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/
 

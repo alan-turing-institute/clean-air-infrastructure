@@ -161,7 +161,7 @@ stages:
       displayName: 'Prepare Helm chart'
     # Install certmanager custom resource definition
     - script: |
-        kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml
+        kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml  --namespace cleanair
         helm dependency update kubernetes/cleanair
       displayName: 'Install cert manager components'
     # Install/upgrade Helm chart
