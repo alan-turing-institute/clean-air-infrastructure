@@ -78,8 +78,6 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         # group them by detector ID
         df_scoot_readings = self.scoot_readings()
         df_per_detector = df_scoot_readings.groupby(["detector_id"])
-        # training_data = dict(tuple(readings.groupby(["detector_id"])))
-        # training_data = tuple(readings.groupby(["detector_id"]))
 
         n_detectors = len(df_per_detector)
         if not n_detectors:
@@ -111,31 +109,34 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             # Obtain the forecast for each feature
             feature_predictions = []
             for feature in features:
+                # Construct the prophet model using a copy of the fit data
+                prophet_data = detector_data.rename(
+                    columns={"measurement_start_utc": "ds", feature: "y"}
+                )
                 # Set the maximum value for the fit - this requires the use of logistic
                 # regression in the fit itself
                 capacity = (
                     100 if "percentage" in feature else 10 * max(detector_data[feature])
                 )
-                # Construct the prophet model using a copy of the fit data
-                prophet_data = detector_data.rename(
-                    columns={"measurement_start_utc": "ds", feature: "y"}
-                )
                 prophet_data["cap"] = capacity
                 try:
-                    # Fit model while suppressing Stan output lines
+                    # Fit model and predict future readings for this feature
+                    # while suppressing Stan and numpy warnings
                     with SuppressStdoutStderr():
                         model = Prophet(growth="logistic").fit(prophet_data)
-                    # Predict past and future readings for this feature
-                    time_range["cap"] = capacity
-                    forecast = model.predict(time_range)[["ds", "yhat"]]
+                        # Make a copy with a 'cap' column included
+                        capped_time_range = time_range.assign(cap=capacity)
+                        forecast = model.predict(capped_time_range)[["ds", "yhat"]]
                 except (ValueError, RuntimeError):
                     logger.error(
                         "Prophet prediction failed at '%s' for %s. Using zero instead.",
                         detector_id,
                         feature,
                     )
-                    forecast = time_range.copy()
-                    forecast["yhat"] = 0
+                    # forecast = time_range.copy()
+                    # forecast["yhat"] = 0
+                    # Make a copy with a 'yhat' column included
+                    forecast = time_range.assign(yhat=0)
 
                 # Rename the columns
                 forecast.rename(
@@ -194,7 +195,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""
-        self.logger.info("Starting %s forecasts update...", green("SCOOT"))
+        self.logger.info("Preparing to forecast SCOOT up until %s", self.forecast_end_time)
         start_time = time.time()
         n_records = 0
 
