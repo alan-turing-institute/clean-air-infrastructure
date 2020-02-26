@@ -209,7 +209,7 @@ class MRDGP(Model):
 
         return model
 
-    def fit(self, x_train, y_train, save_model_state=True):
+    def fit(self, x_train, y_train, mask=None, save_model_state=True):
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
@@ -220,16 +220,20 @@ class MRDGP(Model):
         x_sat = x_train["satellite"].copy()
         y_sat = y_train["satellite"]["NO2"].copy()
 
-        # ===========================Only Lat/Lon/Epochs===========================
-        x_laqn = x_laqn[:, :3]
-        x_sat = x_sat[:, :, :3]
-
         # ===========================Setup Data===========================
         # X = [X_laqn[:, None, :], X_sat]
         # Y = [Y_laqn, Y_sat]
 
         x_sat, y_sat = Model.clean_data(x_sat, y_sat)
         x_laqn, y_laqn = Model.clean_data(x_laqn, y_laqn)
+
+        if mask:
+            #remove any satellite tiles that are not fully in London
+            in_london_index = ~np.all(mask['satellite'], axis=1)
+
+            x_sat = x_sat[in_london_index]
+            y_sat = y_sat[in_london_index]
+
 
         X = [x_sat, x_laqn[:, None, :]]
         Y = [y_sat, y_laqn]

@@ -69,8 +69,13 @@ def main(data_config, param_config, experiment_config):
     experiment_config['model_state_fp'] = '.'
 
 
+    #print(train_dict['X']['satellite'])
+
+
+
     m = MR_DGP_MODEL(model_params=param_config, experiment_config=experiment_config)
     m.fit(train_dict['X'], train_dict['Y'])
+
     #===========================Predict and store results===========================
 
     elbos = []
