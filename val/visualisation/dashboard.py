@@ -286,49 +286,69 @@ class Page:
         df["datetime"] = df["measurement_start_utc"]
         return df
 
-    def process_source(self, src):
+
+    def process_source(self, src, testing_only = False):
         # get src predictions
-        src_training_predictions = self.processed_training_data[
-            self.processed_training_data["source"] == src
-        ]
+        pred = 'NO2'
+
         src_testing_predictions = self.processed_predicting_data[
             self.processed_predicting_data["source"] == src
         ]
 
-        # merge predictions into raw data
-        pred = 'NO2'
-        src_training_predictions["val"] = self.predictions_training[src][pred]['mean']
-        src_training_predictions["var"] = self.predictions_training[src][pred]['var']
 
         src_testing_predictions["val"] = self.predictions_testing[src][pred]['mean']
         src_testing_predictions["var"] = self.predictions_testing[src][pred]["var"]
 
-        src_training_predictions = self.get_correct_column_names(
-            src_training_predictions
-        )
+
         src_testing_predictions = self.get_correct_column_names(src_testing_predictions)
 
-        self.min_datetime = min(
-            min(src_training_predictions["measurement_start_utc"]),
-            min(src_testing_predictions["measurement_start_utc"]),
-        )
-        self.max_datetime = max(
-            max(src_training_predictions["measurement_start_utc"]),
-            max(src_testing_predictions["measurement_start_utc"]),
-        )
+        if not testing_only:
+            src_training_predictions = self.processed_training_data[
+                self.processed_training_data["source"] == src
+            ]
 
-        src_training_predictions["measurement_start_utc"] = pd.to_datetime(
-            src_training_predictions["measurement_start_utc"]
-        )
-        src_testing_predictions["measurement_start_utc"] = pd.to_datetime(
-            src_testing_predictions["measurement_start_utc"]
-        )
+            src_training_predictions["val"] = self.predictions_training[src][pred]['mean']
+            src_training_predictions["var"] = self.predictions_training[src][pred]['var']
 
-        return (
-            pd.concat([src_training_predictions, src_testing_predictions]),
-            src_training_predictions,
-            src_testing_predictions
-        )
+            src_training_predictions = self.get_correct_column_names(
+                src_training_predictions
+            )
+
+            self.min_datetime = min(
+                min(src_training_predictions["measurement_start_utc"]),
+                min(src_testing_predictions["measurement_start_utc"]),
+            )
+            self.max_datetime = max(
+                max(src_training_predictions["measurement_start_utc"]),
+                max(src_testing_predictions["measurement_start_utc"]),
+            )
+
+            src_training_predictions["measurement_start_utc"] = pd.to_datetime(
+                src_training_predictions["measurement_start_utc"]
+            )
+            src_testing_predictions["measurement_start_utc"] = pd.to_datetime(
+                src_testing_predictions["measurement_start_utc"]
+            )
+
+            return (
+                pd.concat([src_training_predictions, src_testing_predictions]),
+                src_training_predictions,
+                src_testing_predictions
+            )
+
+        else:
+            self.min_datetime = min(src_testing_predictions["measurement_start_utc"])
+            self.max_datetime = max(src_testing_predictions["measurement_start_utc"])
+            src_testing_predictions["measurement_start_utc"] = pd.to_datetime(
+                src_testing_predictions["measurement_start_utc"]
+            )
+
+            return (
+                src_testing_predictions,
+                src_testing_predictions,
+                src_testing_predictions
+            )
+
 
 
 class ComparePlots(Page):
@@ -388,12 +408,15 @@ class ComparePlots(Page):
         self.fig.canvas.draw_idle()
 
     def update_slider(
-        self, datetime, epoch, title_text, grid_plot, scatter_plot, timerseries_plot
+        self, datetime, epoch, title_text, grid_plot, hexgrid_plot, scatter_plot, timerseries_plot
     ):
         timerseries_plot.update_cur_epoch(datetime)
 
         if grid_plot is not None:
             grid_plot.update(datetime)
+
+        if hexgrid_plot is not None:
+            hexgrid_plot.update(datetime)
 
         scatter_plot.update(datetime)
 
@@ -493,22 +516,12 @@ class ComparePlots(Page):
         )
         self.val_grid_plot.plot(self.min_datetime)
 
-        self.slider_plot = ST_SliderPlot(
-            self.fig,
-            self.slider_lhs,
-            unique_epochs,
-            lambda x, y: self.update_slider(
-                x, y, self.text_lhs, self.val_grid_plot, self.splot, self.tplot
-            ),
-        )
-        self.slider_plot.setup(unique_epochs[0])
 
-        self.tplot.plot_cur_epoch(unique_epochs[0])
 
 
 
         #( laqn_predictions, laqn_training_predictions, laqn_testing_predictions,) = self.process_source(self.sensor_layer)
-        ( grid_predictions, grid_training_predictions, grid_testing_predictions,) = self.process_source(self.map_layer)
+        ( grid_predictions, grid_training_predictions, grid_testing_predictions,) = self.process_source(self.map_layer, testing_only=True)
 
         # TODO: quick fix until can get geom easily
         hexgrid_file = pd.read_csv("hexgrid/hexgrid_polygon.csv")
@@ -525,7 +538,7 @@ class ComparePlots(Page):
 
 
 
-        self.val_grid_plot = ST_GridPlot(
+        self.hex_grid_plot = ST_GridPlot(
             columns,
             "pred",
             self.fig,
@@ -536,8 +549,20 @@ class ComparePlots(Page):
             label="NO2",
             geopandas_flag=True,
         )
-        self.val_grid_plot.setup()
-        self.val_grid_plot.plot(self.min_datetime)
+        self.hex_grid_plot.setup()
+        self.hex_grid_plot.plot(self.min_datetime)
+
+        self.slider_plot = ST_SliderPlot(
+            self.fig,
+            self.slider_lhs,
+            unique_epochs,
+            lambda x, y: self.update_slider(
+                x, y, self.text_lhs, self.val_grid_plot, self.hex_grid_plot, self.splot, self.tplot
+            ),
+        )
+        self.slider_plot.setup(unique_epochs[0])
+
+        self.tplot.plot_cur_epoch(unique_epochs[0])
 
     def update_dropdowns(self, master, experiment_name, tkvars, dropdowns):
         experiment_config = self.get_experiment_config(experiment_name)
