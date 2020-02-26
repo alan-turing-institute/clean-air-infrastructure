@@ -157,7 +157,7 @@ services:
 
 tls:
     - host: urbanair.turing.ac.uk
-      secretName: tls-certs
+      secretName: cleanair-certs
 
 ingressRules:
     - host: urbanair.turing.ac.uk
@@ -166,13 +166,15 @@ ingressRules:
           serviceName: cleanair-api
           servicePort: 80
 
-# Should always be set to staging to check certificates
-letsencryptType: staging
+# Should always be set to staging to check certificates. Once configured correctly change to prod
+letsencryptType: prod
 
 letsencryptIssuer:
     - name: letsencrypt-staging
       email: ogiles@turing.ac.uk
-      secretName: tls-certs
-#     - name: letsencrypt-production
-#       email: ogiles@turing.ac.uk
-#       secretName: tls-secret
+      server: https://acme-staging-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-staging
+    - name: letsencrypt-prod
+      email: ogiles@turing.ac.uk
+      server: https://acme-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-prod

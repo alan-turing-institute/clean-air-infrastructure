@@ -10,7 +10,7 @@ metadata:
 spec:
   acme:
     # The ACME server URL
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: {{ $issuer.server }}
     # Email address used for ACME registration
     email:  {{ $issuer.email }}
     # Name of a secret used to store the ACME account private key
