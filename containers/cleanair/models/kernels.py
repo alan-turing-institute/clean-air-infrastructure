@@ -135,6 +135,7 @@ class binned_kernel(gpflow.kernels.Kernel):
 class binned_kernel_nonstationary(gpflow.kernels.Kernel):
     def __init__(self, input_dim, active_dims, index_dim,variance= 10.0, lengthscales=[1,1]):
         gpflow.kernels.Kernel.__init__(self, input_dim=input_dim, active_dims=active_dims)
+        
         self.variance = gpflow.Param(variance, transform=gpflow.transforms.positive, dtype = 'float64')
         self.Lon = 0.74
         self.Lat = 1.64
