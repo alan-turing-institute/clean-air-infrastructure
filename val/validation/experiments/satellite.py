@@ -6,6 +6,7 @@ from abc import abstractmethod
 from . import experiment
 from .. import util
 
+
 class SatelliteExperiment(experiment.Experiment):
     """
     An experiment with Satellite data.
@@ -27,7 +28,20 @@ class SatelliteExperiment(experiment.Experiment):
         Get model parameters for an experiment on satellite data.
         """
         # ToDo: this method should be abstract
-        # ToDo: this assumes an SVGP but this will not work in practise
+        dgp_default = get_dgp_default_config()
+        dgp_default['id'] = 0
+
+        dgp_default_se = dgp_default.copy()
+        dgp_default_se['id'] = 0
+        dgp_default_se['dgp_sat']['kernel'] = [{
+            "name": "MR_SE_SAT_DGP",
+            "type": "se",
+            "active_dims": [0, 2, 3],  # previous GP, lat, lon,
+            "lengthscales": [0.1, 0.1, 0, 1],
+            "variances": [1.0, 1.0, 1.0],
+        }]
+
+
         return {
             'svgp' : util.create_params_list(
                 lengthscale=[0.1],
@@ -51,17 +65,9 @@ class SatelliteExperiment(experiment.Experiment):
                 restore=[False],
                 laqn_id=[0]
             ),
-            'mr_dgp' : util.create_params_list(
-                lengthscale=[0.1],
-                variance=[0.1],
-                minibatch_size=[100],
-                n_inducing_points=[200],
-                max_iter=[100],
-                refresh=[10],
-                train=[True],
-                restore=[False],
-                laqn_id=[0]
-            ),
+            'mr_dgp' : [
+                dgp_default
+            ],
         }
 
     def get_default_experiment_df(self):
@@ -84,3 +90,58 @@ class SatelliteExperiment(experiment.Experiment):
             data_config[index]['train_sources'] = ['laqn']
             data_config[index]['pred_sources'] = ['laqn', 'hexgrid']
         return data_config
+
+
+def get_dgp_default_config():
+    return {
+        "restore": False,
+        "train": True,
+        "model_state_fp": "",
+        "base_laqn": {
+            "kernel": {
+                "name": "MR_SE_LAQN_BASE",
+                "type": "se",
+                "active_dims": [0, 1, 2],  # epoch, lat, lon,
+                "lengthscales": [0.1, 0.1, 0, 1],
+                "variances": [1.0, 1.0, 1.0],
+            },
+            "inducing_num": 300,
+            "minibatch_size": 100,
+            "noise_sigma": 0.1,
+        },
+        "base_sat": {
+            "kernel": {
+                "name": "MR_SE_SAT_BASE",
+                "type": "se",
+                "active_dims": [0, 1, 2],  # epoch, lat, lon,
+                "lengthscales": [0.1, 0.1, 0, 1],
+                "variances": [1.0, 1.0, 1.0],
+            },
+            "inducing_num": 300,
+            "minibatch_size": 100,
+            "noise_sigma": 0.1,
+        },
+        "dgp_sat": {
+            "kernel": [
+                {
+                    "name": "MR_LINEAR_SAT_DGP",
+                    "type": "linear",
+                    "active_dims": [0],  # previous GP, lat, lon,
+                    "variances": [1.0],
+                },
+                {
+                    "name": "MR_SE_SAT_DGP",
+                    "type": "se",
+                    "active_dims": [2, 3],  # previous GP, lat, lon,
+                    "lengthscales": [0.1, 0, 1],
+                    "variances": [1.0, 1.0],
+                },
+            ],
+            "inducing_num": 300,
+            "minibatch_size": 100,
+            "noise_sigma": 0.1,
+        },
+        "mixing_weight": {"name": "dgp_only", "param": None},
+        "num_samples_between_layers": 1,
+        "num_prediction_samples": 1,
+    }

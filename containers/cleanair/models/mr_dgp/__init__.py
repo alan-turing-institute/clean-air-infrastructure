@@ -1,4 +1,4 @@
-from .mr_dgp import MRDGP
+from .mr_dgp import MR_DGP
 from .mr_mixture import MR_Mixture
 from .mr_svgp import MR_SVGP
 from .mr_se import MR_SE
@@ -13,7 +13,7 @@ from .utils import *
 
 
 __all__ = [
-    "MRDGP",
+    "MR_DGP",
     "MR_Mixture",
     "MR_SVGP",
     "MR_SE",

@@ -39,14 +39,21 @@ class MR_Mixture(Model):
             parent_mixtures: an array of parent mixture models
         """
 
+        #setup gpflow model first
+        Model.__init__(self, **kwargs)
+        print('first')
+
         #lint friendly defaults
-        self.datasets = [] if datasets is None else datasets
+        print(datasets is None)
+        self.datasets = 2
+        print(self.datasets)
+        self.datasets = [] if (datasets is None) else datasets
+        print('2nd')
         self.inducing_locations = [] if inducing_locations is None else inducing_locations
         self.noise_sigmas = [] if noise_sigmas is None else noise_sigmas
         minibatch_sizes = [] if minibatch_sizes is None else minibatch_sizes
 
-        #setup gpflow model
-        Model.__init__(self, **kwargs)
+
 
         #setup Mixture model
         self.dataset_sizes = []
