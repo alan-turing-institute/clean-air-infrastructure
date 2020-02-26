@@ -260,6 +260,13 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
 ```
 
+**Jupyter Lab**
+```bash
+docker build -t cleanairdocker.azurecr.io/jl -f containers/dockerfiles/run_lab.Dockerfile containers
+docker run -p 8888:8888 -v /$CLEANAIR_REPO/cleanair-air-infrastructure/containers/labs/:/app/labs/ -e JUPYTER_ENABLE_LAB=yes cleanairdocker.azurecr.io/jl
+```
+<!-- docker run -v /<repo-dir>/cleanair-air-infrastructure/containers/labs/:/app/labs/ -d -p 8888:8888 cleanairdocker.azurecr.io/jl -->
+
 ## The cleanair parser
 
 A `CleanAirParser` class has been created for interacting with `run_model_fitting.py`. Run the following command to see available options:

@@ -52,6 +52,9 @@ class ModelFitComponent:
         self.temporal_metrics_timeseries_id = pop_kwarg(
             kwargs, "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
         )
+        self.features_scatter_id = pop_kwarg(
+            kwargs, "features_scatter_id", "features_scatter"
+        )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
             # append train and test dfs then group by point id
@@ -129,6 +132,34 @@ class ModelFitComponent:
             ),
         )
 
+    def get_features_scatter(self, metric_key, pollutant, x_feature, y_feature):
+        """
+        Get a scatter of sensor scores with two features on the X and Y axis.
+        """
+        col = pollutant + "_" + metric_key
+        name = METRIC_NAMES[metric_key]
+        return dict(
+            data=[
+                dict(
+                    x=self.point_groupby[x_feature].mean(),
+                    y=self.point_groupby[y_feature].mean(),
+                    # x = self.sensor_scores_df[x_feature],
+                    # y = self.sensor_scores_df[y_feature],
+                    mode="markers",
+                    marker=dict(
+                        color=self.sensor_scores_df[col],
+                        size=[20 for i in self.sensor_scores_df["point_id"]],
+                        colorscale='Viridis',
+                        showscale=True,
+                    ),
+                    hover_name=self.sensor_scores_df["point_id"],
+                    name=name,
+                ),
+            ],
+            layout=dict(
+                title="{xl} vs {yl}".format(xl=x_feature, yl=y_feature)
+            )
+        )
 
 def get_model_data_fit_intro():
     """

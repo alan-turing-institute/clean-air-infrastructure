@@ -75,10 +75,13 @@ def get_model_data_fit_app(
     default_metric_key = "r2_score"
     default_pollutant = "NO2"
     default_point_id = sensor_scores_df.iloc[0]["point_id"]
+    default_x_feature = "value_1000_total_b_road_length"
+    default_y_feature = "value_100_total_a_road_primary_length"
 
     # create the base layout
     external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
-    app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+    # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+    app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
     # store ids of figures and graphs
     pollutant_dropdown_id = "pollutant-dropdown"
@@ -90,45 +93,81 @@ def get_model_data_fit_app(
         default_metric_key, default_pollutant
     )
 
+    # ToDo: remove print statement
+    print("sensor df columns:", list(sensor_scores_df.columns))
+
     # create the layout for a single model data fit
-    app.layout = html.Div(
-        className="row",
-        children=[
+    top_container = dbc.Container(
+        [
             # text introduction
-            components.get_model_data_fit_intro(),
+            dbc.Col(
+                components.get_model_data_fit_intro(),
+                md=12,
+            ),
             dbc.Row(
                 [
                     dbc.Col(
                         components.get_pollutant_dropdown(
                             pollutant_dropdown_id, model_data.config["species"]
                         ),
-                        width=6,
+                        md=3,
                     ),
                     dbc.Col(
                         components.get_metric_dropdown(metric_dropdown_id, all_metrics),
-                        width=6,
+                        md=3,
                     ),
                 ]
             ),
-            # map of sensors and their scores
-            dcc.Graph(
-                id=mfc_list[instance_id].interest_points_map_id,
-                figure=mfc_list[instance_id].get_interest_points_map(
-                    default_metric_key, default_pollutant
-                ),
-                hoverData={"points": [{"hovertext": default_point_id}]},
-            ),
-            mfc_list[instance_id].get_interest_points_timeseries(
-                default_point_id, default_pollutant
-            ),
-            dcc.Graph(
+            dbc.Row([
+                # map of sensors and their scores
+                dbc.Col(dcc.Graph(
+                    id=mfc_list[instance_id].interest_points_map_id,
+                    figure=mfc_list[instance_id].get_interest_points_map(
+                        default_metric_key, default_pollutant
+                    ),
+                    hoverData={"points": [{"hovertext": default_point_id}]},
+                ), md=6),
+                # timeseries of the sensor that the mouse is hovering over
+                dbc.Col(mfc_list[instance_id].get_interest_points_timeseries(
+                    default_point_id, default_pollutant
+                ), md=6),
+            ]),
+        ]
+    )
+    middle_container = dbc.Container(
+        [
+            # scatter showing the scores of sensors with features on the x/y axis
+            dbc.Col(dcc.Graph(
+                id=mfc_list[instance_id].features_scatter_id,
+                figure=mfc_list[instance_id].get_features_scatter(
+                    default_metric_key, default_pollutant, default_x_feature, default_y_feature
+                )
+            )),
+            # timeseries of the scores for all sensors over time
+            dbc.Col(dcc.Graph(
                 id=mfc_list[instance_id].temporal_metrics_timeseries_id,
                 figure=mfc_list[instance_id].get_temporal_metrics_timeseries(
                     default_metric_key, default_pollutant
                 ),
-            ),
-        ],
+            )),
+        ]
     )
+    bottom_container = dbc.Container([
+        dbc.Row([
+            dbc.Col(html.H6("Hello, world!"), width=3),
+            dbc.Col(html.H1("Hello, world!"), width=3),
+            dbc.Col(html.H6("Hello, world!"), width=3),
+            dbc.Col(html.H1("Hello, world!"), width=3),
+            dbc.Col(html.H6("Hello, world!"), width=7),
+            dbc.Col(html.H6("Hello, world!"), width=5),
+        ]),
+        dbc.Row([
+            dbc.Col(html.H1("Hello, world!"), width=3),
+            dbc.Col(html.H1("Hello, world!"), width=3),
+        ])
+    ])
+    app.layout = html.Div([bottom_container, top_container, middle_container])
+
     # update the timeseries of a sensor when it is hovered over
     @app.callback(
         Output(mfc_list[instance_id].interest_points_timeseries_id, "figure"),

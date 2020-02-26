@@ -68,6 +68,10 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
         Columns containing the variance of predictions.
         Default is ["NO2_var"]
 
+    features : list, optional
+        Names of columns that contain features we want to visualise.
+        Default is ["lat", "lon"].
+
     Raises
     ___
 
@@ -147,10 +151,13 @@ def evaluate_spatio_temporal_scores(
     """
     Given a prediction dataframe, measure scores over sensors and time.
     """
+    # get keyword arguments
     precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
     pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
     test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
     var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
+    features = pop_kwarg(kwargs, "features", [])
+
     # measure scores by sensor and by hour
     sensor_scores_df = measure_scores_on_groupby(
         pred_df, metric_methods, sensor_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols, var_cols=var_cols
@@ -160,7 +167,7 @@ def evaluate_spatio_temporal_scores(
     )
 
     # add lat and lon to sensor scores cols
-    sensor_scores_df = concat_static_features(sensor_scores_df, pred_df)
+    sensor_scores_df = concat_features(sensor_scores_df, pred_df, features)
 
     # make a new column with the index
     sensor_scores_df[sensor_col] = sensor_scores_df.index.copy()
@@ -346,16 +353,16 @@ def measure_scores_on_groupby(pred_df, metric_methods, groupby_col, **kwargs):
     return pd.concat(list_of_series, axis=1)
 
 
-def concat_static_features(scores_df, pred_df, static_features=None):
+def concat_features(scores_df, pred_df, features):
     """
     Concatenate the sensor scores dataframe with static features of the sensor.
     """
-    if static_features is None:
-        static_features = ["lat", "lon"]
     point_df = pd.DataFrame(index=list(scores_df.index))
-    for feature in static_features:
+    all_columns = features + ["lat", "lon"]
+    for feature in all_columns:
         feature_list = []
         for pid in point_df.index:
+            # ToDo: take mean of features column
             value = pred_df[pred_df["point_id"] == pid].iloc[0][feature]
             feature_list.append(value)
         point_df[feature] = pd.Series(feature_list, index=point_df.index)
