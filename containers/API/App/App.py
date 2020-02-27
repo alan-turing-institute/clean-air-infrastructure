@@ -76,9 +76,9 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/points")
-class Points(Resource):
-    "Points resource"
+@api.resource("/box")
+class Box(Resource):
+    "Box resource"
 
     @use_args(
         {
@@ -101,28 +101,6 @@ class Points(Resource):
             args["ymax"],
             output_type="query",
         )
-
-        return results.dump(all_points)
-
-
-@api.resource("/allpoints")
-class AllPoints(Resource):
-    "Points resource"
-
-    @use_args(
-        {
-            "xmin": fields.Float(),
-            "ymin": fields.Float(),
-            "xmax": fields.Float(),
-            "ymax": fields.Float(),
-        }
-    )
-    def get(self, args):
-        """CleanAir API Points request
-           Get entire forecast for all points"""
-        session = db_session()
-
-        all_points = get_all_forecasts(session)
 
         return results.dump(all_points)
 
