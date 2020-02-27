@@ -178,3 +178,5 @@ letsencryptIssuer:
       email: ogiles@turing.ac.uk
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
+
+whitelistSourceRange: 193.60.220.240/32
