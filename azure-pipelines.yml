@@ -52,8 +52,6 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
       displayName: 'Build UKMap feature processing image'
-
-
     # Build API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion) -f containers/dockerfiles/cleanairapi.Dockerfile containers
@@ -125,6 +123,10 @@ stages:
       displayName: 'List installed versions'
     # Add secrets to Kubernetes
     - script: |
+        # Check whether we need to create a new namespace
+        if [ "$(kubectl get namespace $(NAMESPACE) 2> /dev/null | grep $(NAMESPACE))" == "" ]; then
+        kubectl create namespace $(NAMESPACE)
+        fi
         echo "Adding secrets to Kubernetes"
         if [ "$(kubectl get secret regcred --namespace cleanair 2> /dev/null | grep regcred)" == "" ]; then
           kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(CONTAINER-REGISTRY-LOGIN-SERVER) --docker-username=$(CONTAINER-REGISTRY-ADMIN-USERNAME) --docker-password=$(CONTAINER-REGISTRY-ADMIN-PASSWORD)
@@ -152,10 +154,6 @@ stages:
       displayName: 'Add secrets to Kubernetes'
     # Prepare Helm chart
     - script: |
-        # Check whether we need to create a new namespace
-        if [ "$(kubectl get namespace $(NAMESPACE) 2> /dev/null | grep $(NAMESPACE))" == "" ]; then
-          kubectl create namespace $(NAMESPACE)
-        fi
         echo "Setting image tag to $(Build.SourceVersion)"
         sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
       displayName: 'Prepare Helm chart'
