@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 03b621834eab39a412cba187068d0eb2ff7b97ee
+imageTag: 3ba0958ba5176fdf89eb384f3793306e45cf7ad5
 
 jobs:
   - name: satellite
