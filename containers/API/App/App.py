@@ -18,7 +18,9 @@ ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -92,7 +94,12 @@ class Points(Resource):
         session = db_session()
 
         all_points = get_all_forecasts(
-            session, args["xmin"], args["ymin"], args["xmax"], args["ymax"]
+            session,
+            args["xmin"],
+            args["ymin"],
+            args["xmax"],
+            args["ymax"],
+            output_type="query",
         )
 
         return results.dump(all_points)
