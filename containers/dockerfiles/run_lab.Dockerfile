@@ -31,8 +31,10 @@ COPY labs /app/labs
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Add the jupyter lab extension for dash
-RUN jupyter labextension install jupyterlab-dash
-RUN jupyter labextension install jupyterlab-plotly
+RUN jupyter labextension install jupyterlab-dash --no-build
+RUN jupyter labextension install jupyterlab-plotly --no-build
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
+RUN jupyter labextension install plotlywidget
 
 # install cleanair
 # RUN pip install -e /app/
