@@ -6,12 +6,12 @@ from sqlalchemy import func
 
 def sum_area(geom):
     """Function to calculate the total area of a geometry"""
-    return func.coalesce(func.sum(func.ST_Area(func.Geography(geom))), 0.0)
+    return func.sum(func.ST_Area(func.Geography(geom)))
 
 
 def sum_length(geom):
     """Function to calculate the total length of linestring geometries"""
-    return func.coalesce(func.sum(func.ST_Length(func.Geography(geom))), 0)
+    return func.sum(func.ST_Length(func.Geography(geom)))
 
 
 def sum_(x):
