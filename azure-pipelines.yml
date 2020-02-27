@@ -40,10 +40,14 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot-roadmap:$(Build.SourceVersion) -f containers/dockerfiles/construct_scoot_roadmaps.Dockerfile containers
       displayName: 'Build SCOOT road mapping image'
-    # Build SCOOT forecasts
+    # Build SCOOT forecast features
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecast:$(Build.SourceVersion) -f containers/dockerfiles/predict_scoot_forecast.Dockerfile containers
-      displayName: 'Build SCOOT forecast image'
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecastfeatures:$(Build.SourceVersion) -f containers/dockerfiles/features_scoot_forecasts.Dockerfile containers
+      displayName: 'Build SCOOT forecast features image'
+    # Build SCOOT reading features
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootreadingfeatures:$(Build.SourceVersion) -f containers/dockerfiles/features_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT reading features image'
     # Build satellite
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion) -f containers/dockerfiles/add_satellite_readings.Dockerfile containers

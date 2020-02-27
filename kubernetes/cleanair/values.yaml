@@ -127,9 +127,23 @@ cronjobs:
       secret:
         secretName: secrets
 
-  - name: scootforecast
+  - name: scootforecastfeatures
     image:
-      repository: cleanairdocker.azurecr.io/scootforecast
+      repository: cleanairdocker.azurecr.io/scootforecastfeatures
+      imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
+  - name: scootreadingfeatures
+    image:
+      repository: cleanairdocker.azurecr.io/scootreadingfeatures
       imagePullPolicy: Always
     schedule: "5 * * * *"
     failedJobsHistoryLimit: 1
