@@ -2,20 +2,20 @@
 # Variables to be passed into the templates.
 imageTag: 3ba0958ba5176fdf89eb384f3793306e45cf7ad5
 
-jobs:
-  - name: satellite
-    image:
-      repository: cleanairdocker.azurecr.io/satellite
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    args: ['-n', 30]
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+# jobs:
+#   - name: satellite
+#     image:
+#       repository: cleanairdocker.azurecr.io/satellite
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     args: ['-n', 30]
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 #   - name: ukmap
 #     image:
