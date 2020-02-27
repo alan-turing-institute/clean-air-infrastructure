@@ -30,3 +30,12 @@ maintainers:
     email: jrobinson@turing.ac.uk
   - name: Oscar Giles
     email: ogiles@turing.ac.uk
+
+dependencies:
+  # https://github.com/helm/charts/tree/master/stable/nginx-ingress
+  - name: nginx-ingress
+    version: "1.30.0"
+    repository: "https://kubernetes-charts.storage.googleapis.com"
+  - name: cert-manager
+    version: "v0.13.0"
+    repository: "https://charts.jetstack.io"
