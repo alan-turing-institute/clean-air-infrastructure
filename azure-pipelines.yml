@@ -172,7 +172,7 @@ stages:
         kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
         namespace: $(NAMESPACE)
         command: upgrade
-        arguments: --cleanup-on-fail --set nginx-ingress.controller.service.externalTrafficPolicy=Local --timeout 1800
+        arguments: --cleanup-on-fail --set nginx-ingress.controller.service.externalTrafficPolicy=Local --timeout 1800s
         chartType: filepath
         chartPath: kubernetes/cleanair
         releaseName: cleanair
