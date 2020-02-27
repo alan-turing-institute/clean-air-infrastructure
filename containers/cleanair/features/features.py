@@ -307,7 +307,7 @@ class Features(DBWriter, DBQueryMixin):
                     feature_name,
                     feature_type=self.features[feature_name]["type"],
                     agg_func=self.features[feature_name]["aggfunc"],
-                    batch_size=10,
+                    batch_size=100,
                 )
 
                 if select_stmt:
