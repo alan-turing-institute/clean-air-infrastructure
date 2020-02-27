@@ -1,74 +1,74 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: be268870c1c9da26b98a6fac0964df0ed67a80df
+imageTag: 3ba0958ba5176fdf89eb384f3793306e45cf7ad5
 
-jobs:
-  - name: satellite
-    image:
-      repository: cleanairdocker.azurecr.io/satellite
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    args: ['-n', 30]
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+# jobs:
+#   - name: satellite
+#     image:
+#       repository: cleanairdocker.azurecr.io/satellite
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     args: ['-n', 30]
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: ukmap
-    image:
-      repository: cleanairdocker.azurecr.io/ukmap
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 10
-    successfulJobsHistoryLimit: 1
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: ukmap
+#     image:
+#       repository: cleanairdocker.azurecr.io/ukmap
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: streetcanyon
-    image:
-      repository: cleanairdocker.azurecr.io/streetcanyon
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 10
-    successfulJobsHistoryLimit: 1
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: streetcanyon
+#     image:
+#       repository: cleanairdocker.azurecr.io/streetcanyon
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: oshighway
-    image:
-      repository: cleanairdocker.azurecr.io/oshighway
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 10
-    successfulJobsHistoryLimit: 1
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: oshighway
+#     image:
+#       repository: cleanairdocker.azurecr.io/oshighway
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: scoot-backdate
-    image:
-      repository: cleanairdocker.azurecr.io/scoot
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    args: ['-n', 30]
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: scoot-backdate
+#     image:
+#       repository: cleanairdocker.azurecr.io/scoot
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     args: ['-n', 30]
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 cronjobs:
   - name: laqn
@@ -134,7 +134,7 @@ deployments:
         repository: cleanairdocker.azurecr.io/cleanairapi
         imagePullPolicy: Always
       ports:
-        containerPort: 80
+        containerPort: 8080
       restartPolicy: Always
       volumeMounts:
       - name: secrets
@@ -147,4 +147,36 @@ deployments:
 
 services:
     - name: cleanair-api
-      type: LoadBalancer
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+        - name: https
+          port: 443
+          targetPort: 8080
+
+tls:
+    - host: urbanair.turing.ac.uk
+      secretName: cleanair-certs
+
+ingressRules:
+    - host: urbanair.turing.ac.uk
+      paths:
+        - path: /
+          serviceName: cleanair-api
+          servicePort: 80
+
+# Should always be set to staging to check certificates. Once configured correctly change to prod
+letsencryptType: prod
+
+letsencryptIssuer:
+    - name: letsencrypt-staging
+      email: ogiles@turing.ac.uk
+      server: https://acme-staging-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-staging
+    - name: letsencrypt-prod
+      email: ogiles@turing.ac.uk
+      server: https://acme-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-prod
+
+whitelistSourceRange: 193.60.220.240/32
