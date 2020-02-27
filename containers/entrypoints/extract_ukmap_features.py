@@ -29,12 +29,11 @@ def main():
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
     # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn", "satellite", "grid_100"]
+    kwargs["sources"] = ["aqe", "laqn", "satellite", "hex_grid"]
 
     # Extract features and notify any exceptions
     try:
         static_feature_extractor = UKMapFeatures(**kwargs)
-        # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 
     except Exception as error:
