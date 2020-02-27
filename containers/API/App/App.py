@@ -1,6 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask
+from flask import Flask, Response
 from flask_restful import Resource, Api
 from flask_marshmallow import Marshmallow
 from cleanair.mixins import DBConnectionMixin
@@ -18,9 +18,7 @@ ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin(
-    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
-)
+DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -58,10 +56,26 @@ class Welcome(Resource):
 
     def get(self):
         """CleanAir API welcome message"""
-        return "Welcome to the CleanAir API developed by the Alan Turing Institute"
+        resp = Response(
+            """
+<html>
+    <head>
+        <title>UrbanAir - The Alan Turing Institute</title>
+    </head>
+    <body>
+        <h1>UrbanAir API</h1>
+        <p>Welcome to the UrbanAir API developed by the Alan Turing Institute.</p>
+        <p>The API provides 48 hour forecasts of air polution over London, UK</p>
+
+    </body>
+</html>""",
+            mimetype="text/html",
+        )
+        return resp
+        # return "Welcome to the UrbanAir API developed by the Alan Turing Institute.\nHi"
 
 
-@api.resource("/point")
+@api.resource("/api/point")
 class Point(Resource):
     "Point resource"
 
@@ -76,7 +90,7 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/box")
+@api.resource("/api/box")
 class Box(Resource):
     "Box resource"
 
