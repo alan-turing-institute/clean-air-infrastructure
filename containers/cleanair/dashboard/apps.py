@@ -110,11 +110,11 @@ def get_model_data_fit_app(
                         components.get_pollutant_dropdown(
                             pollutant_dropdown_id, model_data.config["species"]
                         ),
-                        md=3,
+                        md=6,
                     ),
                     dbc.Col(
                         components.get_metric_dropdown(metric_dropdown_id, all_metrics),
-                        md=3,
+                        md=6,
                     ),
                 ]
             ),
@@ -158,21 +158,7 @@ def get_model_data_fit_app(
             )),
         ]
     )
-    bottom_container = dbc.Container([
-        dbc.Row([
-            dbc.Col(html.H6("Hello, world!"), width=3),
-            dbc.Col(html.H1("Hello, world!"), width=3),
-            dbc.Col(html.H6("Hello, world!"), width=3),
-            dbc.Col(html.H1("Hello, world!"), width=3),
-            dbc.Col(html.H6("Hello, world!"), width=7),
-            dbc.Col(html.H6("Hello, world!"), width=5),
-        ]),
-        dbc.Row([
-            dbc.Col(html.H1("Hello, world!"), width=3),
-            dbc.Col(html.H1("Hello, world!"), width=3),
-        ])
-    ])
-    app.layout = html.Div([bottom_container, top_container, middle_container])
+    app.layout = html.Div([top_container, middle_container])
 
     # update the timeseries of a sensor when it is hovered over
     @app.callback(

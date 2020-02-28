@@ -68,6 +68,7 @@ def main():  # pylint: disable=too-many-locals
     results_dir = kwargs.pop("results_dir")
     predict_read_local = kwargs.pop("predict_read_local")
     secrets_dir = os.path.dirname(kwargs["secretfile"])
+    model_name = kwargs.pop("model_name")
 
     # get the config of data
     data_config = get_data_config_from_kwargs(kwargs)
