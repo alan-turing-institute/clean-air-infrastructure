@@ -80,7 +80,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 func.count(ScootReading.measurement_start_utc).label("n_entries"),
             ).group_by(
                 ScootReading.detector_id,
-                func.date_trunc("hour", ScootReading.measurement_start_utc)
+                func.date_trunc("hour", ScootReading.measurement_start_utc),
             )
 
             if start_date and end_date:
@@ -182,7 +182,9 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
         # Log success/failure
         if n_failed > 3:
-            raise Exception("{} expected files could not be downloaded".format(n_failed))
+            raise Exception(
+                "{} expected files could not be downloaded".format(n_failed)
+            )
         self.logger.info("Successfully retrieved %i SCOOT files", n_succeeded)
 
         # Combine the readings into a single data frame
@@ -276,12 +278,17 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         # Processing will take approximately one second for each minute of data to process
-        self.logger.info("Processing will take approximately %s...", duration_from_seconds(
-            (self.end_datetime - self.start_datetime).total_seconds() / 60.)
+        self.logger.info(
+            "Processing will take approximately %s...",
+            duration_from_seconds(
+                (self.end_datetime - self.start_datetime).total_seconds() / 60.0
+            ),
         )
 
         # Get a per-hour summary of records in this range that are already in the database
-        db_records = self.get_existing_scoot_data(start_date=self.start_datetime, end_date=self.end_datetime, output_type="df")
+        db_records = self.get_existing_scoot_data(
+            start_date=self.start_datetime, end_date=self.end_datetime, output_type="df"
+        )
 
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
@@ -291,23 +298,33 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             end_datetime = start_datetime + datetime.timedelta(hours=1)
 
             # Filter out any detectors that have already been processed
-            processed_detectors = db_records[db_records["hour"] == start_datetime]["detector_id"].tolist()
-            unprocessed_detectors = [d for d in detector_ids if d not in processed_detectors]
+            processed_detectors = db_records[db_records["hour"] == start_datetime][
+                "detector_id"
+            ].tolist()
+            unprocessed_detectors = [
+                d for d in detector_ids if d not in processed_detectors
+            ]
             if unprocessed_detectors:
                 self.logger.info(
-                        "%i of the %i known detectors have no readings during %s to %s.",
-                        len(unprocessed_detectors), len(detector_ids), green(start_datetime), green(end_datetime),
-                    )
+                    "%i of the %i known detectors have no readings during %s to %s.",
+                    len(unprocessed_detectors),
+                    len(detector_ids),
+                    green(start_datetime),
+                    green(end_datetime),
+                )
             else:
                 # If all detectors have been processed then skip this hour
                 self.logger.info(
-                        "%i detectors have already been processed for hour %s. No data will be requested from S3 bucket",
-                        len(processed_detectors), green(start_datetime),
-                    )
+                    "%i detectors have already been processed for hour %s. No data will be requested from S3 bucket",
+                    len(processed_detectors),
+                    green(start_datetime),
+                )
                 continue
 
             # Load all valid remote data into a single dataframe
-            df_readings = self.request_remote_data(start_datetime, end_datetime, unprocessed_detectors)
+            df_readings = self.request_remote_data(
+                start_datetime, end_datetime, unprocessed_detectors
+            )
 
             if df_readings.shape[0] < 1:
                 self.logger.warning(
@@ -344,8 +361,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                         self.logger.error(str(error))
                         session.rollback()
                 self.logger.info(
-                    "Insertion took %s",
-                    green(duration(start_session, time.time())),
+                    "Insertion took %s", green(duration(start_session, time.time())),
                 )
 
         # Summarise updates
@@ -355,4 +371,3 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             green(ScootReading.__tablename__),
             green(duration(start_update, time.time())),
         )
-

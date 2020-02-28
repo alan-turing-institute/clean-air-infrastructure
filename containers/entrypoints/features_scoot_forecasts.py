@@ -63,18 +63,28 @@ def main():
     # Perform update and notify any exceptions
     try:
         # Fit SCOOT readings using Prophet and forecast `args.forecasthrs` into the future
-        scoot_forecaster = ScootPerDetectorForecaster(ndays=args.ndays, end=args.end, forecast_length_hrs=args.forecasthrs, detector_ids=detector_ids, secretfile=args.secretfile)
+        scoot_forecaster = ScootPerDetectorForecaster(
+            ndays=args.ndays,
+            end=args.end,
+            forecast_length_hrs=args.forecasthrs,
+            detector_ids=detector_ids,
+            secretfile=args.secretfile,
+        )
         forecast_end_time = scoot_forecaster.forecast_end_time
         scoot_forecaster.update_remote_tables()
 
         # Construct SCOOT forecasts for each road using:
         # - the most recent SCOOT forecasts (from ScootForecast)
         # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
-        scoot_road_forecasts = ScootPerRoadForecastMapper(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
+        scoot_road_forecasts = ScootPerRoadForecastMapper(
+            ndays=ndays, end=forecast_end_time, secretfile=args.secretfile
+        )
         scoot_road_forecasts.update_remote_tables()
 
         # Construct SCOOT features from forecasts around each interest point
-        scoot_feature_extractor = ScootForecastFeatures(ndays=ndays, end=forecast_end_time, secretfile=args.secretfile)
+        scoot_feature_extractor = ScootForecastFeatures(
+            ndays=ndays, end=forecast_end_time, secretfile=args.secretfile
+        )
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:

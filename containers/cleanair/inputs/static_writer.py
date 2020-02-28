@@ -395,7 +395,9 @@ class StaticWriter(DBWriter):
                     self.schema_table
                 ),
                 # Add the osgb prefix to the toid column
-                """UPDATE {0} SET toid = CONCAT('osgb', toid);""".format(self.schema_table),
+                """UPDATE {0} SET toid = CONCAT('osgb', toid);""".format(
+                    self.schema_table
+                ),
                 # Move geometry data to interest_points table - note that some detectors share a location
                 """INSERT INTO interest_points.meta_point(source, location, id)
                        SELECT DISTINCT on (geom) 'scoot', geom, uuid_generate_v4()

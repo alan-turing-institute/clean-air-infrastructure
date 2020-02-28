@@ -93,6 +93,7 @@ class ScootForecast(Base):
             ]
         )
 
+
 class ScootDetector(DeferredReflection, Base):
     """Table of Scoot detectors"""
 

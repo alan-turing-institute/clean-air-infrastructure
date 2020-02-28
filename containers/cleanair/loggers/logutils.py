@@ -2,6 +2,7 @@
 Useful logging utilities
 """
 
+
 def duration_from_seconds(seconds):
     """Get a human-readable duration from a number of seconds"""
     days, seconds = divmod(seconds, 86400)

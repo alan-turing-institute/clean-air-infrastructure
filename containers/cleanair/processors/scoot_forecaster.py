@@ -64,7 +64,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             q_scoot_reading = q_scoot_reading.order_by(
                 ScootReading.detector_id, ScootReading.measurement_start_utc
             )
-        df_scoot_readings = pd.read_sql(q_scoot_reading.statement, q_scoot_reading.session.bind)
+        df_scoot_readings = pd.read_sql(
+            q_scoot_reading.statement, q_scoot_reading.session.bind
+        )
         self.logger.info(
             "Retrieved %s SCOOT readings in %s minutes",
             green(len(df_scoot_readings)),
@@ -195,7 +197,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""
-        self.logger.info("Preparing to forecast SCOOT up until %s", self.forecast_end_time)
+        self.logger.info(
+            "Preparing to forecast SCOOT up until %s", self.forecast_end_time
+        )
         start_time = time.time()
         n_records = 0
 
