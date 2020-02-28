@@ -70,34 +70,27 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
         session: A session object
         bounding_box: A tuple of (lat_min, lon_min, lat_max, lon_max)"""
 
-    interest_point_q = session.query(
-        func.ST_X(MetaPoint.location).label("lon"),
-        func.ST_Y(MetaPoint.location).label("lat"),
-        MetaPoint.id,
-    ).filter(MetaPoint.source == "grid_100")
-
-    if lon_min and lat_min and lon_max and lat_max:
-        interest_point_q = interest_point_q.filter(
-            func.ST_Intersects(
+    ids_cte = (
+        session.query(MetaPoint.id, MetaPoint.location)
+        .filter(
+            MetaPoint.source.in_(["grid_100",]),
+            func.ST_Within(
                 MetaPoint.location,
                 func.ST_MakeEnvelope(lon_min, lat_min, lon_max, lat_max, 4326),
-            )
+            ),
         )
+        .cte("ids")
+    )
 
-    interest_point_sq = interest_point_q.subquery()
-
-    latest_model_result_sq = session.query(
-        func.max(ModelResult.fit_start_time).label("latest_forecast")
-    ).subquery()
-
-    return (
+    results_q = (
         session.query(
-            interest_point_sq.c.lon,
-            interest_point_sq.c.lat,
+            func.ST_X(ids_cte.c.location).label("lon"),
+            func.ST_Y(ids_cte.c.location).label("lat"),
             ModelResult.measurement_start_utc,
             ModelResult.predict_mean,
             ModelResult.predict_var,
         )
-        .join(ModelResult)
-        .filter(ModelResult.fit_start_time == latest_model_result_sq.c.latest_forecast)
+        .join(ModelResult, ids_cte.c.id == ModelResult.point_id, isouter=True)
+        .filter(ModelResult.tag == "test_grid")
     )
+    return results_q

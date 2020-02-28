@@ -146,6 +146,16 @@ terraform apply
 to set up the Clean Air infrastructure on `Azure` using `Terraform`. You should be able to see this on the `Azure` portal.
 
 
+
+## Creating A Record for cleanair API (DO THIS BEFORE RUNNING AZURE PIPELINES)
+Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEANAIR_KUBERNETES_CLUSTER`). Navigate to the DNS Zone on the Azure portal and copy the four nameservers in the “NS” record. Send the nameserver to Turing IT Services. Ask them to add the subdomain’s DNS record as an NS record for `urbanair` in the `turing.ac.uk` DNS zone record.
+
+1. When viewing the DNS zone on the Azure Portal, click `+ Record set`
+2. In the Name field, enter `urbanair`.
+3. Set Alias record set to “Yes” and this will bring up some new options.
+4. We can now set up Azure pipelines. Once the cleanair api has been deployed on kubernetes you can update the alias record to point to the ip address of the cleanair-api on the cluster.
+
+
 # Initialising the input databases
 Terraform will now have created a number of databases. We need to add the datasets to the database.
 This is done using Docker images from the Azure container registry.
@@ -170,6 +180,7 @@ To run the next steps we need to ensure that this pipeline runs a build in order
 Either push to the GitHub repository, or rerun the last build by going to [the Azure pipeline page](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build) and clicking `Run pipeline` on the right-hand context menu.
 This will build all of the Docker images and add them to the registry.
 
+Now go to Azure and update the A-record to point to the ip address of the cleanair-api on the cluster.
 
 ## Add static datasets
 Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
@@ -189,6 +200,54 @@ The process takes approximately 1hr (most of this is for the UKMap data) and you
 ## Adding live datasets
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
 These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
+
+
+## Configure certificates
+
+https://cert-manager.io/docs/tutorials/acme/ingress/
+
+## Uninstalling a failed helm install (warning - this will uninstall everything from the cleanair namespace on the cluster)
+
+If the first helm install fails you may need to manually remove certmanager resources from the cluster with
+
+
+```bash
+helm uninstall cleanair --namespace cleanair
+```
+
+```bash
+kubectl get -n cleanair crd
+kubectl delete -n cert-manager crd --all
+kubectl delete namespaces cleanair
+```
+
+Cluster roles may not be removed. Remove them with:
+```bash
+kubectl get clusterrole  | grep 'cert-manager'|awk '{print $1}'| xargs kubectl delete clusterrole
+kubectl get role --namespace kube-system  | grep 'cert-manager'|awk '{print $1}'| xargs kubectl delete role --namespace kube-system
+kubectl get clusterrolebindings | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete clusterrolebindings
+kubectl get mutatingwebhookconfigurations | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete mutatingwebhookconfigurations
+kubectl get validatingwebhookconfigurations  | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete validatingwebhookconfigurations
+kubectl get rolebindings --namespace kube-system | grep 'cert-manager'|awk '{print $1}'|xargs kubectl delete rolebindings --namespace kube-system
+kubectl get clusterrole  | grep 'nginx'|awk '{print $1}'| xargs kubectl delete clusterrole
+kubectl get clusterrolebindings | grep 'nginx'|awk '{print $1}'|xargs kubectl delete clusterrolebindings
+
+```
+
+If helm wont install the chart after this check all api services are working:
+
+```bash
+kubectl get apiservice
+```
+
+Deleteing the failed api service may resolve this issue:
+
+```bash
+kubectl delete apiservice v1beta1.metrics.k8s.io
+```
+
+
+Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/
 
 <!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 

@@ -1,109 +1,20 @@
 """
 Tables for intersection between datasource and interest points
 """
-from sqlalchemy import Column, ForeignKey, String, Float
+from sqlalchemy import Column, ForeignKey, String, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
-from geoalchemy2 import Geometry
 from ..base import Base
-
-
-class IntersectionGeom(Base):
-    """Intersection between interest points and UKMap as geometries"""
-
-    __tablename__ = "intersection_geom"
-    __table_args__ = {"schema": "static_features"}
-
-    point_id = Column(
-        UUID,
-        ForeignKey("interest_points.meta_point.id"),
-        primary_key=True,
-        nullable=False,
-    )
-    feature_name = Column(String(50), primary_key=True, nullable=False)
-    geom_1000 = Column(
-        Geometry(
-            geometry_type="GEOMETRYCOLLECTION",
-            srid=4326,
-            dimension=2,
-            spatial_index=True,
-        ),
-        nullable=True,
-    )
-    geom_500 = Column(
-        Geometry(
-            geometry_type="GEOMETRYCOLLECTION",
-            srid=4326,
-            dimension=2,
-            spatial_index=True,
-        ),
-        nullable=True,
-    )
-    geom_200 = Column(
-        Geometry(
-            geometry_type="GEOMETRYCOLLECTION",
-            srid=4326,
-            dimension=2,
-            spatial_index=True,
-        ),
-        nullable=True,
-    )
-    geom_100 = Column(
-        Geometry(
-            geometry_type="GEOMETRYCOLLECTION",
-            srid=4326,
-            dimension=2,
-            spatial_index=True,
-        ),
-        nullable=True,
-    )
-    geom_10 = Column(
-        Geometry(
-            geometry_type="GEOMETRYCOLLECTION",
-            srid=4326,
-            dimension=2,
-            spatial_index=True,
-        ),
-        nullable=True,
-    )
-
-    # Create IntersectionGeom.point with no reverse relationship
-    point = relationship("MetaPoint")
-
-    def __repr__(self):
-        return "<IntersectionGeom(" + ", ".join(
-            [
-                "point_id='{}'".format(self.point_id),
-                "feature_name='{}'".format(self.feature_name),
-                "geom_1000='{}'".format(self.geom_1000),
-                "geom_500='{}'".format(self.geom_500),
-                "geom_200='{}'".format(self.geom_200),
-                "geom_100='{}'".format(self.geom_100),
-                "geom_10='{}'".format(self.geom_10),
-            ]
-        )
-
-    @staticmethod
-    def build_entry(feature_name, reading_tuple):
-        """
-        Create a IntersectionGeom entry and return it
-        """
-        return IntersectionGeom(
-            point_id=str(reading_tuple[0]),
-            feature_name=feature_name,
-            geom_1000=reading_tuple[1],
-            geom_500=reading_tuple[2],
-            geom_200=reading_tuple[3],
-            geom_100=reading_tuple[4],
-            geom_10=reading_tuple[5],
-        )
 
 
 class IntersectionValue(Base):
     """Intersection between interest points and UKMap as values"""
 
     __tablename__ = "intersection_value"
-    __table_args__ = {"schema": "static_features"}
+    __table_args__ = (
+        Index("intersection_value_id_name_idx", "point_id", "feature_name"),
+        {"schema": "static_features"},
+    )
 
     point_id = Column(
         UUID,

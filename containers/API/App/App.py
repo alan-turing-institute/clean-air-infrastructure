@@ -1,6 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask
+from flask import Flask, Response
 from flask_restful import Resource, Api
 from flask_marshmallow import Marshmallow
 from cleanair.mixins import DBConnectionMixin
@@ -56,10 +56,25 @@ class Welcome(Resource):
 
     def get(self):
         """CleanAir API welcome message"""
-        return "Welcome to the CleanAir API developed by the Alan Turing Institute"
+        resp = Response(
+            """
+<html>
+    <head>
+        <title>UrbanAir - The Alan Turing Institute</title>
+    </head>
+    <body>
+        <h1>UrbanAir API</h1>
+        <p>Welcome to the UrbanAir API developed by the Alan Turing Institute.</p>
+        <p>The API provides 48 hour forecasts of air polution over London, UK</p>
+
+    </body>
+</html>""",
+            mimetype="text/html",
+        )
+        return resp
 
 
-@api.resource("/point")
+@api.resource("/api/point")
 class Point(Resource):
     "Point resource"
 
@@ -74,9 +89,9 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/points")
-class Points(Resource):
-    "Points resource"
+@api.resource("/api/box")
+class Box(Resource):
+    "Box resource"
 
     @use_args(
         {
@@ -92,30 +107,13 @@ class Points(Resource):
         session = db_session()
 
         all_points = get_all_forecasts(
-            session, args["xmin"], args["ymin"], args["xmax"], args["ymax"]
+            session,
+            args["xmin"],
+            args["ymin"],
+            args["xmax"],
+            args["ymax"],
+            output_type="query",
         )
-
-        return results.dump(all_points)
-
-
-@api.resource("/allpoints")
-class AllPoints(Resource):
-    "Points resource"
-
-    @use_args(
-        {
-            "xmin": fields.Float(),
-            "ymin": fields.Float(),
-            "xmax": fields.Float(),
-            "ymax": fields.Float(),
-        }
-    )
-    def get(self, args):
-        """CleanAir API Points request
-           Get entire forecast for all points"""
-        session = db_session()
-
-        all_points = get_all_forecasts(session)
 
         return results.dump(all_points)
 
