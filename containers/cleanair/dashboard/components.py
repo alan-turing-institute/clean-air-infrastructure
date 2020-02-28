@@ -3,7 +3,6 @@ Meta components that make up the dashboard.
 """
 
 import dash_core_components as dcc
-import plotly.graph_objects as go
 import plotly.express as px
 from . import timeseries
 from ..metrics import pop_kwarg
@@ -95,19 +94,16 @@ class ModelFitComponent:
         """
         Get a map with interest points plotted.
         """
-        return dcc.Graph(
-            id=self.interest_points_timeseries_id,
-            figure=go.Figure(
-                data=[
-                    timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id), col=pollutant
-                    ),
-                    timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id), col=pollutant + "_mean"
-                    ),
-                ],
-                layout=dict(title="Prediction for point {id}".format(id=point_id)),
-            ),
+        return dict(
+            data=[
+                timeseries.get_pollutant_point_trace(
+                    self.point_groupby.get_group(point_id), col=pollutant
+                ),
+                timeseries.get_pollutant_point_trace(
+                    self.point_groupby.get_group(point_id), col=pollutant + "_mean"
+                ),
+            ],
+            layout=dict(title="Prediction for point {id}".format(id=point_id)),
         )
 
     def get_temporal_metrics_timeseries(self, metric_key, pollutant):

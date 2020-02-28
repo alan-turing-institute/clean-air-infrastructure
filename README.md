@@ -261,14 +261,19 @@ docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model
 ```
 
 **Jupyter Lab**
+
+Before running the below commands, make sure to set filepaths for `$CLEANAIR_REPO` and `$CLEANAIR_DATA`.
+
 ```bash
 docker build -t cleanairdocker.azurecr.io/jl -f containers/dockerfiles/run_lab.Dockerfile containers
-docker run -p 8888:8888 -v $CLEANAIR_REPO/containers/labs/:/app/labs/ -v $CLEANAIR_REPO/terraform/.secrets:/.secrets/ -e JUPYTER_ENABLE_LAB=yes -e GRANT_SUDO=yes cleanairdocker.azurecr.io/jl
-```
-
-You may also want to add a volume with your experiment data and results in by adding another `-v` flag to the above command:
-```bash
--v $CLEANAIR_DATA:/app/data
+docker run -p 8888:8888 \
+-v $CLEANAIR_REPO/containers/labs/:/app/labs/ \
+-v $CLEANAIR_REPO/containers/cleanair/:/app/cleanair/ \
+-v $CLEANAIR_REPO/terraform/.secrets:/.secrets/ \
+-v $CLEANAIR_DATA:/app/data \
+-e JUPYTER_ENABLE_LAB=yes \
+-e GRANT_SUDO=yes \
+cleanairdocker.azurecr.io/jl
 ```
 
 ## The cleanair parser

@@ -37,6 +37,8 @@ RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build
 RUN jupyter labextension install plotlywidget
 
 # install cleanair
-# RUN pip install -e /app/
+WORKDIR /
+RUN pip install -e app
+WORKDIR /app
 
 CMD ["start-notebook.sh", "--port", "8888"]

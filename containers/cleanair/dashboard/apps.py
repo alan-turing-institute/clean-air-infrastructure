@@ -79,7 +79,7 @@ def get_model_data_fit_app(
     default_y_feature = "value_100_total_a_road_primary_length"
 
     # create the base layout
-    external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
+    # external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
     # app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
     app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -128,9 +128,15 @@ def get_model_data_fit_app(
                     hoverData={"points": [{"hovertext": default_point_id}]},
                 ), md=6),
                 # timeseries of the sensor that the mouse is hovering over
-                dbc.Col(mfc_list[instance_id].get_interest_points_timeseries(
-                    default_point_id, default_pollutant
-                ), md=6),
+                dbc.Col(
+                    dcc.Graph(
+                        id=mfc_list[instance_id].interest_points_timeseries_id,
+                        figure=mfc_list[instance_id].get_interest_points_timeseries(
+                            default_point_id, default_pollutant
+                        )
+                    ),
+                    md=6,
+                )
             ]),
         ]
     )
