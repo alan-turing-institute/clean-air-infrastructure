@@ -74,7 +74,7 @@ class Welcome(Resource):
         return resp
 
 
-@api.resource("/point")
+@api.resource("/api/point/")
 class Point(Resource):
     "Point resource"
 
@@ -89,7 +89,7 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/box")
+@api.resource("/api/box/")
 class Box(Resource):
     "Box resource"
 
