@@ -135,9 +135,20 @@ def main():  # pylint: disable=too-many-locals
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
-    sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods, evaluate_training=evaluate_training
+    precision_methods = metrics.get_precision_methods(
+        pe1=metrics.probable_error
     )
+    sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
+        model_data,
+        metric_methods,
+        precision_methods=precision_methods,
+        evaluate_training=evaluate_training,
+    )
+    # ToDo: remove print statement
+    print("Pred df columns:", list(model_data.normalised_pred_data_df.columns))
+    print(sensor_scores_df[["NO2_ci50", "NO2_ci75", "NO2_ci95"]])
+    all_keys = list(metric_methods.keys()) + list(precision_methods.keys())
+    print("all keys:", all_keys)
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
@@ -146,6 +157,7 @@ def main():  # pylint: disable=too-many-locals
         temporal_scores_df,
         mapbox_access_token,
         evaluate_training=evaluate_training,
+        all_metrics=all_keys,
     )
     model_data_fit_app.run_server(debug=True)
 

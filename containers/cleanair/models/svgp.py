@@ -127,11 +127,11 @@ class SVGP(Model):
         with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
-                variance=self.model_params['kernel']['variance'],
-                lengthscales=self.model_params['kernel']['lengthscale'],
+                variance=self.model_params["kernel"]["variance"],
+                lengthscales=self.model_params["kernel"]["lengthscale"],
             ) + gpflow.kernels.Linear(
                 num_input_dimensions,
-                variance=self.model_params['kernel']['variance'],
+                variance=self.model_params["kernel"]["variance"],
                 ARD=True,
             )
             self.model = gpflow.models.SVGP(
@@ -142,7 +142,7 @@ class SVGP(Model):
                     variance=self.model_params["likelihood_variance"]
                 ),
                 inducing_locations,
-                minibatch_size=self.model_params['minibatch_size'],
+                minibatch_size=self.model_params["minibatch_size"],
                 mean_function=gpflow.mean_functions.Linear(
                     A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
                 )
