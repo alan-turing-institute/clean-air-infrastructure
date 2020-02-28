@@ -20,7 +20,7 @@ from ..mixins import DateRangeMixin
 class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
     """Extrapolate SCOOT values onto roads"""
 
-    def __init__(self, table_per_detector, table_per_road, **kwargs):
+    def __init__(self, table_per_detector, table_per_road, value_type, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -30,13 +30,24 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
 
         self.table_per_detector = table_per_detector
         self.table_per_road = table_per_road
+        self.value_type = value_type
+
+        # Log an introductory message
+        self.logger.info(
+            "Constructing features from SCOOT %s between %s and %s",
+            self.value_type,
+            green(self.start_datetime),
+            green(self.end_datetime),
+        )
 
     def update_remote_tables(self):
         start_session = time.time()
         with self.dbcnxn.open_session() as session:
             # For each road, combine the per-detector values according to their weight
             self.logger.info(
-                "Constructing per-road SCOOT values from per-detector values..."
+                "Constructing per-road SCOOT %s from per-detector %s...",
+                self.value_type,
+                self.value_type,
             )
             q_per_road_forecasts = (
                 session.query(
@@ -89,7 +100,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             )
 
             # ... and write back to the forecasts table
-            table = ScootRoadForecast.__table__
+            table = self.table_per_road.__table__
             column_names = table.columns.keys()
             insert_stmt = insert(ScootRoadForecast).from_select(
                 names=column_names, select=q_per_road_forecasts
@@ -101,7 +112,9 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             # Commit this to the database
             result = session.execute(on_duplicate_key_stmt)
             self.logger.info(
-                "Preparing to insert/update %i per-road forecasts", result.rowcount
+                "Preparing to insert/update %i per-road %s",
+                result.rowcount,
+                self.value_type,
             )
             session.commit()
             self.logger.info(
@@ -115,13 +128,10 @@ class ScootPerRoadForecastMapper(ScootPerRoadValueMapperBase):
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(
-            table_per_detector=ScootForecast, table_per_road=ScootRoadForecast, **kwargs
-        )
-
-        # Log an introductory message
-        self.logger.info("Constructing features from SCOOT forecasts between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
+            table_per_detector=ScootForecast,
+            table_per_road=ScootRoadForecast,
+            value_type="forecasts",
+            **kwargs
         )
 
 
@@ -131,11 +141,8 @@ class ScootPerRoadReadingMapper(ScootPerRoadValueMapperBase):
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(
-            table_per_detector=ScootReading, table_per_road=ScootRoadReading, **kwargs
-        )
-
-        # Log an introductory message
-        self.logger.info("Constructing features from SCOOT readings between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
+            table_per_detector=ScootReading,
+            table_per_road=ScootRoadReading,
+            value_type="readings",
+            **kwargs
         )
