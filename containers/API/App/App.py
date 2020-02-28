@@ -18,7 +18,9 @@ ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -74,7 +76,7 @@ class Welcome(Resource):
         return resp
 
 
-@api.resource("/api/point")
+@api.resource("/point")
 class Point(Resource):
     "Point resource"
 
@@ -89,7 +91,7 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/api/box")
+@api.resource("/box")
 class Box(Resource):
     "Box resource"
 
