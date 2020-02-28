@@ -153,6 +153,7 @@ class MRDGP(Model):
         sliced_dataset = np.concatenate(
             [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1
         )
+
         dgp_z_inducing_locations = get_inducing_points(
             np.concatenate([dataset[0][1], sliced_dataset], axis=1), num_z_dgp_sat
         )
@@ -175,6 +176,7 @@ class MRDGP(Model):
             dgp_z_inducing_locations,
             parent_z_inducing_locations,
         ]
+
         noise_sigmas = [
             [
                 self.model_params["base_laqn"]["noise_sigma"],
@@ -206,7 +208,7 @@ class MRDGP(Model):
             num_samples=self.model_params["num_samples_between_layers"],
             name=name_prefix + "MRDGP",
         )
-
+        
         return model
 
     def fit(self, x_train, y_train, mask=None, save_model_state=True):
@@ -233,6 +235,12 @@ class MRDGP(Model):
 
             x_sat = x_sat[in_london_index]
             y_sat = y_sat[in_london_index]
+        
+        if True:
+            #replace nans in x_sat with zeros
+            nan_idx = np.isnan(x_sat)
+            x_sat[nan_idx] = 0.0
+            print(x_sat.shape)
 
 
         X = [x_sat, x_laqn[:, None, :]]

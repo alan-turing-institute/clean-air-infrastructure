@@ -11,10 +11,12 @@ from .svgp import SVGP
 from .mr_dgp_model import MRDGP
 from .mr_gprn_model import MR_GPRN_MODEL
 from .mr_dgp import MR_DGP
+from .binned_svgp import SVGP_BINNED
 
 ALL_ARR = [
     "MRDGP",
     "MR_GPRN_MODEL",
+    "SVGP_BINNED",
     'MR_DGP',
     "SVGP",
     "Model",

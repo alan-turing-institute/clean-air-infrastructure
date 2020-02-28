@@ -47,7 +47,7 @@ class DashBoard:
             Redraw dashboard with the passed page name
         """
 
-        pages = {"default": ComparePlots}
+        pages = {"default": CompareFeatures}
 
         self.page = pages[name](self)
         self.create_layout()
@@ -161,6 +161,11 @@ class Page:
             return pickle.load(handle)
 
     def load_satellite_data(self, experiment_name, model, data_idx, param_idx):
+        """
+            load satellite input training data
+        """
+
+        #load raw satellite X
         self.processed_satellite_data = pd.read_csv(
             self.dashboard.experiments_root
             + "{name}/data/data{data_idx}/normalised_satellite_data_x.csv".format(
@@ -170,6 +175,9 @@ class Page:
                 low_memory=False,
             )
         )
+
+
+        #load raw satellite Y
         self.processed_satellite_data_values = pd.read_csv(
             self.dashboard.experiments_root
             + "{name}/data/data{data_idx}/normalised_satellite_data_y.csv".format(
@@ -180,14 +188,12 @@ class Page:
             )
         )
 
+
+        #create satellite tile geometry
         self.sat_locations = pd.read_csv('satellite_site.csv')
         self.sat_locations["src_geom"] = self.sat_locations["geom"]
         self.sat_locations["geom"] = self.sat_locations["src_geom"].apply(wkt.loads)
         self.sat_locations = gpd.GeoDataFrame(self.sat_locations, geometry="geom")
-
-        print(self.sat_locations)
-        print(self.processed_satellite_data_values)
-        print(self.processed_satellite_data.columns)
 
     def load_raw_data(self, experiment_name, model, data_idx, param_idx):
         self.processed_training_data = pd.read_csv(
@@ -205,6 +211,24 @@ class Page:
                 name=experiment_name, data_idx=data_idx, low_memory=False
             )
         )
+
+    def load_training_data(self, experiment_name, model, data_idx, param_idx):
+        self.training_data = self.load_pickle(
+            self.dashboard.experiments_root
+            + "{name}/data/data{data_idx}/train.pickle".format(
+                name=experiment_name,
+                data_idx=data_idx,
+            )
+        )
+
+        self.testing_data = self.load_pickle(
+            self.dashboard.experiments_root
+            + "{name}/data/data{data_idx}/test.pickle".format(
+                name=experiment_name,
+                data_idx=data_idx,
+            )
+        )
+
 
     def load_results(self, experiment_name, model, data_idx, param_idx):
         self.predictions_testing = self.load_pickle(
@@ -251,6 +275,7 @@ class Page:
 
             self.load_raw_data(experiment_name, model, data_idx, param_idx)
             self.load_results(experiment_name, model, data_idx, param_idx)
+            self.load_training_data(experiment_name, model, data_idx, param_idx)
 
             return True
         except Exception as e:
@@ -349,17 +374,17 @@ class Page:
                 src_testing_predictions
             )
 
-
-
-class ComparePlots(Page):
+class CompareFeatures(Page):
     """
-        Compare two experiments side by side
+        Visualise input features
     """
 
     def __init__(self, dashboard):
         Page.__init__(self, dashboard)
         self.map_layer = "hexgrid"
         self.sensor_layer = "laqn"
+
+
 
     def draw(self, fig, layout):
         self.layout = layout
@@ -378,6 +403,412 @@ class ComparePlots(Page):
         self.slider_lhs = self.fig.add_subplot(self.layout[6][0])
         # self.slider_lhs.subplots_adjust(wspace=0.1)
         # self.slider_rhs = self.fig.add_subplot(self.layout[3][1])
+
+        if False:
+            #default experiment
+            self.update_experiment_data(
+                'satellite',
+                'mr_dgp',
+                '0',
+                '0',
+            )
+
+    def create_dropdown(self, master, choices, default=None):
+        tkvar1 = tk.StringVar(master)
+        choices1 = choices
+        if default:
+            tkvar1.set(default)  # set the default option
+        else:
+            tkvar1.set(choices[0])  # set the default option
+
+        popupMenu1 = tk.OptionMenu(master, tkvar1, *choices1)
+        popupMenu1.config(width=10, height=2)
+        popupMenu1.pack(in_=master, side=tk.LEFT)
+        return tkvar1, popupMenu1
+
+    def update_sat_timeseries(self, _id, scatter_plot, timeseries_plot):
+        sat_obs = self.sat_obs[self.sat_obs['box_id'] == _id]
+        if self.sat_splot is not  None:
+            self.sat_splot.remove()
+
+        self.sat_splot = self.timeseries_lhs.scatter(sat_obs['measurement_start_utc'], sat_obs['value'], color='black', marker='x')
+
+        self.fig.canvas.draw_idle()
+
+    def update_timeseries(self, _id, scatter_plot, timeseries_plot):
+
+        scatter_plot.update_active(_id)
+        timeseries_plot.update(_id)
+        self.fig.canvas.draw_idle()
+
+    def update_slider(
+        self, datetime, epoch, title_text, grid_plot, hexgrid_plot, scatter_plot, timerseries_plot
+    ):
+        timerseries_plot.update_cur_epoch(datetime)
+
+        if grid_plot is not None:
+            grid_plot.update(datetime)
+
+        if hexgrid_plot is not None:
+            hexgrid_plot.update(datetime)
+
+        scatter_plot.update(datetime)
+
+        title_text.set_text(datetime)
+
+    def update_experiment_data(self, experiment_name, model, data_id, param_id, val=None):
+        val = 'val' if val is None else val
+
+        self.clean()
+
+        loaded_flag = self.load_experiment_data(experiment_name, model, data_id, param_id)
+        if loaded_flag is False:
+            print("Could not load: ", experiment_name, model, data_id, param_id)
+            return
+
+        columns = {
+            "id": "point_id",
+            "pred": val,
+            "sat_obs": "value",
+            "var": "var",
+            "observed": "NO2",
+            "x": "lon",
+            "y": "lat",
+            "datetime": "measurement_start_utc",
+            "epoch": "measurement_start_utc",
+        }
+
+        training_keys = self.predictions_training.keys()
+        testing_keys = self.predictions_testing.keys()
+
+
+
+        if 'hexgrid' in training_keys:
+            pass
+
+        scatter_id = 'laqn'
+
+        (sensor_predictions, sensor_training_predictions, sensor_testing_predictions) = self.process_source(self.sensor_layer)
+
+
+        self.splot = ST_ScatterPlot(
+            columns, self.fig, self.map_lhs, None, sensor_predictions
+        )
+        self.tplot = ST_TimeSeriesPlot(
+            columns,
+            self.fig,
+            self.timeseries_lhs,
+            sensor_training_predictions,
+            sensor_testing_predictions,
+        )
+
+        self.splot.setup(
+            callback=lambda x: self.update_timeseries(x, self.splot, self.tplot)
+        )
+        self.splot.plot(self.min_datetime)
+
+        self.tplot.setup()
+        self.tplot.plot(self.splot.cur_id)
+
+
+        unique_epochs = pd.unique(sensor_predictions["epoch"])
+
+        self.text_lhs = self.title_lhs.text(
+            0.5,
+            0.95,
+            self.min_datetime,
+            transform=self.title_lhs.transAxes,
+            fontsize=14,
+            horizontalalignment="center",
+            verticalalignment="top",
+        )
+
+        self.sat_splot = None
+        sat_obs = pd.merge(
+            left = self.processed_satellite_data_values,
+            right = self.sat_locations,
+            how = 'left',
+            left_on="box_id",
+            right_on="box_id"
+        )
+        sat_obs[columns['epoch']] = pd.to_datetime(sat_obs[columns['epoch']])
+        self.sat_obs = sat_obs
+
+
+        columns_sat = columns.copy()
+        columns_sat['id'] = 'box_id'
+        self.val_grid_plot = ST_GridPlot(
+            columns_sat,
+            "sat_obs",
+            self.fig,
+            self.map_lhs,
+            sat_obs,
+            cax_on_right=False,
+            norm_on_training=True,
+            label="NO2",
+            geopandas_flag=True,
+        )
+
+        self.val_grid_plot.setup(
+            callback=lambda x: self.update_sat_timeseries(x, self.splot, self.tplot)
+        )
+        self.val_grid_plot.plot(self.min_datetime)
+
+
+
+
+
+        #( laqn_predictions, laqn_training_predictions, laqn_testing_predictions,) = self.process_source(self.sensor_layer)
+        ( grid_predictions, grid_training_predictions, grid_testing_predictions,) = self.process_source(self.map_layer, testing_only=True)
+
+        # TODO: quick fix until can get geom easily
+        hexgrid_file = pd.read_csv("hexgrid/hexgrid_polygon.csv")
+        grid_predictions = pd.merge(
+            left=grid_predictions,
+            right=hexgrid_file,
+            how="left",
+            left_on="point_id",
+            right_on="point_id",
+        )
+        grid_predictions["src_geom"] = grid_predictions["geom"]
+        grid_predictions["geom"] = grid_predictions["src_geom"].apply(wkt.loads)
+        grid_predictions = gpd.GeoDataFrame(grid_predictions, geometry="geom")
+
+
+
+        print(grid_predictions.columns)
+        self.hex_grid_plot = ST_GridPlot(
+            columns,
+            "pred",
+            self.fig,
+            self.map_lhs,
+            grid_predictions,
+            cax_on_right=False,
+            norm_on_training=False,
+            label="NO2",
+            geopandas_flag=True,
+        )
+        self.hex_grid_plot.setup()
+        self.hex_grid_plot.plot(self.min_datetime)
+
+        self.slider_plot = ST_SliderPlot(
+            self.fig,
+            self.slider_lhs,
+            unique_epochs,
+            lambda x, y: self.update_slider(
+                x, y, self.text_lhs, self.val_grid_plot, self.hex_grid_plot, self.splot, self.tplot
+            ),
+        )
+        self.slider_plot.setup(unique_epochs[0])
+
+        self.tplot.plot_cur_epoch(unique_epochs[0])
+
+
+
+    def update_dropdowns(self, master, experiment_name, tkvars, dropdowns):
+        experiment_config = self.get_experiment_config(experiment_name)
+        experiment_models = pd.unique(experiment_config["model_name"])
+        experiment_param_ids = pd.unique(experiment_config["param_id"])
+        experiment_data_ids = pd.unique(experiment_config["data_id"])
+
+        loaded_flag = self.load_experiment_data(experiment_name, experiment_models[0], experiment_data_ids[0], experiment_param_ids[0])
+        features = self.processed_training_data.columns
+
+        def update_dropdown(tkvar, dropdown, choices):
+            menu = dropdown["menu"]
+            menu.delete(0, "end")
+            tkvar.set(choices[0])
+            for string in choices:
+                menu.add_command(
+                    label=string, command=lambda value=string: tkvar.set(value)
+                )
+
+        update_dropdown(tkvars[1], dropdowns[1], experiment_models)
+        update_dropdown(tkvars[2], dropdowns[2], experiment_param_ids)
+        update_dropdown(tkvars[3], dropdowns[3], experiment_data_ids)
+        update_dropdown(tkvars[4], dropdowns[4], features)
+
+        self.update_experiment_data(
+            experiment_name,
+            experiment_models[0],
+            experiment_data_ids[0],
+            experiment_param_ids[0],
+            features[0]
+        )
+
+    def dropdowns_on_change(self, master, tkvars, dropdowns):
+        experiment_name = tkvars[0].get()
+        experiment_model = tkvars[1].get()
+        experiment_data_id = tkvars[2].get()
+        experiment_param_id = tkvars[3].get()
+        experiment_feature = tkvars[4].get()
+        self.update_experiment_data(
+            experiment_name, experiment_model, experiment_data_id, experiment_param_id, experiment_feature
+        )
+
+    def draw_topbar(self, dashboard, topbar):
+        """
+            Draw Tkinter topbar.
+        """
+
+        print(self.get_experiment_names())
+
+        self.topbar_frame_lhs = tk.Frame(topbar)
+        self.topbar_frame_lhs.place(x=0, y=0)
+
+        self.topbar_frame_rhs = tk.Frame(topbar)
+        self.topbar_frame_rhs.place(relx=0.5, y=0)
+
+        experiment_names = self.get_experiment_names()
+
+        # TODO: flag if no experiments
+        default = experiment_names[0]
+
+        experiment_config = self.get_experiment_config(default)
+
+        experiment_models = pd.unique(experiment_config["model_name"])
+        experiment_param_ids = pd.unique(experiment_config["param_id"])
+        experiment_data_ids = pd.unique(experiment_config["data_id"])
+
+
+        loaded_flag = self.load_experiment_data(experiment_names[0], experiment_models[0], experiment_data_ids[0], experiment_param_ids[0])
+
+        features = self.processed_training_data.columns
+
+        self.update_experiment_data(
+            experiment_names[0],
+            experiment_models[0],
+            experiment_data_ids[0],
+            experiment_param_ids[0],
+            features[0]
+        )
+
+        # TODO: compress duplicate code?
+
+        tkvar_exp_lhs, topbar_exp_lhs = self.create_dropdown(
+            master=self.topbar_frame_lhs, choices=experiment_names, default=default
+        )
+        tkvar_model_lhs, topbar_model_lhs = self.create_dropdown(
+            master=self.topbar_frame_lhs, choices=experiment_models
+        )
+        tkvar_params_lhs, topbar_params_lhs = self.create_dropdown(
+            master=self.topbar_frame_lhs, choices=experiment_param_ids
+        )
+        tkvar_data_lhs, topbar_data_lhs = self.create_dropdown(
+            master=self.topbar_frame_lhs, choices=experiment_data_ids
+        )
+
+        tkvar_features_lhs, topbar_features_lhs = self.create_dropdown(
+            master=self.topbar_frame_lhs, choices=features
+        )
+
+        tkvar_exp_rhs, topbar_exp_rhs = self.create_dropdown(
+            master=self.topbar_frame_rhs, choices=experiment_names, default=default
+        )
+        tkvar_model_rhs, topbar_model_rhs = self.create_dropdown(
+            master=self.topbar_frame_rhs, choices=experiment_models
+        )
+        tkvar_params_rhs, topbar_params_rhs = self.create_dropdown(
+            master=self.topbar_frame_rhs, choices=experiment_param_ids
+        )
+        tkvar_data_rhs, topbar_data_rhs = self.create_dropdown(
+            master=self.topbar_frame_rhs, choices=experiment_data_ids
+        )
+
+        tkvar_exp_lhs.trace(
+            "w",
+            lambda *args: self.update_dropdowns(
+                self.topbar_frame_lhs,
+                tkvar_exp_lhs.get(),
+                [tkvar_exp_lhs, tkvar_model_lhs, tkvar_params_lhs, tkvar_data_lhs, tkvar_features_lhs],
+                [topbar_exp_lhs, topbar_model_lhs, topbar_params_lhs, topbar_data_lhs, topbar_features_lhs],
+            ),
+        )
+
+        tkvar_model_lhs.trace(
+            "w",
+            lambda *args: self.dropdowns_on_change(
+                self.topbar_frame_lhs,
+                [tkvar_exp_lhs, tkvar_model_lhs, tkvar_params_lhs, tkvar_data_lhs, tkvar_features_lhs],
+                [topbar_exp_lhs, topbar_model_lhs, topbar_params_lhs, topbar_data_lhs, topbar_features_lhs],
+            ),
+        )
+
+        tkvar_features_lhs.trace(
+            "w",
+            lambda *args: self.dropdowns_on_change(
+                self.topbar_frame_lhs,
+                [tkvar_exp_lhs, tkvar_model_lhs, tkvar_params_lhs, tkvar_data_lhs, tkvar_features_lhs],
+                [topbar_exp_lhs, topbar_model_lhs, topbar_params_lhs, topbar_data_lhs, topbar_features_lhs],
+            ),
+        )
+
+        tkvar_exp_rhs.trace(
+            "w",
+            lambda *args: self.update_dropdowns(
+                self.topbar_frame_rhs,
+                tkvar_exp_rhs.get(),
+                [tkvar_exp_rhs, tkvar_model_rhs, tkvar_params_rhs, tkvar_data_rhs],
+                [topbar_exp_rhs, topbar_model_rhs, topbar_params_rhs, topbar_data_rhs],
+            ),
+        )
+
+    def clean(self):
+        self.map_lhs.clear()
+        self.timeseries_lhs.clear()
+        self.slider_lhs.clear()
+        if hasattr(self, 'hex_grid_plot'):
+            del self.hex_grid_plot
+
+    def get_layout(self):
+        """
+            Return 2 columns and two rows
+        """
+        return {
+            "n_rows": 7,
+            "n_cols": 2,
+            "width_ratios": [0.5, 0.5],
+            "height_ratios": [0.05, 0.05, 0.50, 0.05, 0.3 - 0.05, 0.06, 0.04],
+        }
+
+class ComparePlots(Page):
+    """
+        Compare two experiments side by side
+    """
+
+    def __init__(self, dashboard):
+        Page.__init__(self, dashboard)
+        self.map_layer = "hexgrid"
+        self.sensor_layer = "laqn"
+
+
+
+    def draw(self, fig, layout):
+        self.layout = layout
+        self.fig = fig
+
+        self.title_lhs = self.fig.add_subplot(self.layout[1][0], frameon=False)
+        self.title_lhs.axis("off")
+        # place a text box in upper left in axes coords
+
+        self.map_lhs = self.fig.add_subplot(self.layout[2][0])
+        # self.map_rhs = self.fig.add_subplot(self.layout[1][1])
+
+        self.timeseries_lhs = self.fig.add_subplot(self.layout[4][0])
+        # self.timeseries_rhs = self.fig.add_subplot(self.layout[2][1])
+
+        self.slider_lhs = self.fig.add_subplot(self.layout[6][0])
+        # self.slider_lhs.subplots_adjust(wspace=0.1)
+        # self.slider_rhs = self.fig.add_subplot(self.layout[3][1])
+
+        if False:
+            #default experiment
+            self.update_experiment_data(
+                'satellite',
+                'mr_dgp',
+                '0',
+                '0',
+            )
 
     def create_dropdown(self, master, choices, default=None):
         tkvar1 = tk.StringVar(master)
@@ -538,6 +969,7 @@ class ComparePlots(Page):
 
 
 
+        print(grid_predictions.columns)
         self.hex_grid_plot = ST_GridPlot(
             columns,
             "pred",
@@ -563,6 +995,8 @@ class ComparePlots(Page):
         self.slider_plot.setup(unique_epochs[0])
 
         self.tplot.plot_cur_epoch(unique_epochs[0])
+
+
 
     def update_dropdowns(self, master, experiment_name, tkvars, dropdowns):
         experiment_config = self.get_experiment_config(experiment_name)
@@ -1021,6 +1455,7 @@ class ST_GridPlot(object):
             df = df.sort_values(self.columns["id"])
 
             self.cur_df = df
+            print(df[self.columns[self.col]])
             self.grid_plot.set_array(df[self.columns[self.col]])
         else:
             s, z_train = self.get_data(epoch)

@@ -59,7 +59,6 @@ def main(data_config, param_config, experiment_config):
 
     print(param_config)
 
-
     #===========================Setup Model===========================
 
     param_config['restore'] = False
@@ -68,10 +67,7 @@ def main(data_config, param_config, experiment_config):
 
     experiment_config['model_state_fp'] = '.'
 
-
     #print(train_dict['X']['satellite'])
-
-
 
     m = MR_DGP_MODEL(model_params=param_config, experiment_config=experiment_config)
     m.fit(train_dict['X'], train_dict['Y'])
@@ -89,7 +85,6 @@ def main(data_config, param_config, experiment_config):
 
     train_pred = m.predict(train_dict['X'], ignore=['satellite'])
     test_pred = m.predict(test_dict['X'])
-    
 
     #train_pred = predict(train_dict, lambda x: batch_predict(m, x, 1), 'NO2', ignore='satellite')
     #test_pred = predict(test_dict, lambda x: batch_predict(m, x, 1), 'NO2')

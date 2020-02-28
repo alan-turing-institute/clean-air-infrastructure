@@ -32,13 +32,13 @@ class SatelliteExperiment(experiment.Experiment):
         dgp_default['id'] = 0
 
         dgp_default_se = dgp_default.copy()
-        dgp_default_se['id'] = 0
+        dgp_default_se['id'] = 1
         dgp_default_se['dgp_sat']['kernel'] = [{
             "name": "MR_SE_SAT_DGP",
             "type": "se",
-            "active_dims": [0, 2, 3],  # previous GP, lat, lon,
-            "lengthscales": [0.1, 0.1, 0, 1],
-            "variances": [1.0, 1.0, 1.0],
+            "active_dims": [0],  # previous GP, lat, lon, value_1000_flat
+            "lengthscales": [0.1],
+            "variances": [1.0],
         }]
 
 
@@ -84,11 +84,11 @@ class SatelliteExperiment(experiment.Experiment):
         data_dir = '{dir}{name}/data/'.format(dir=self.experiments_directory, name=self.name)
         data_config = util.create_data_list(rolls, data_dir)
         for index in range(len(data_config)):
-            data_config[index]["features"] = ['value_1000_flat']
+            data_config[index]["features"] = 'all'
             data_config[index]['include_satellite'] = True
             data_config[index]['train_satellite_interest_points'] = 'all'
             data_config[index]['train_sources'] = ['laqn']
-            data_config[index]['pred_sources'] = ['laqn', 'hexgrid']
+            data_config[index]['pred_sources'] = ['laqn', 'hexgrid', 'grid_100']
         return data_config
 
 
@@ -101,9 +101,9 @@ def get_dgp_default_config():
             "kernel": {
                 "name": "MR_SE_LAQN_BASE",
                 "type": "se",
-                "active_dims": [0, 1, 2],  # epoch, lat, lon,
-                "lengthscales": [0.1, 0.1, 0, 1],
-                "variances": [1.0, 1.0, 1.0],
+                "active_dims": [0, 1, 2, 3],  # epoch, lat, lon, value_1000_flat
+                "lengthscales": [0.1, 0.1, 0.1, 0.1],
+                "variances": [1.0, 1.0, 1.0, 1.0],
             },
             "inducing_num": 300,
             "minibatch_size": 100,
@@ -113,8 +113,8 @@ def get_dgp_default_config():
             "kernel": {
                 "name": "MR_SE_SAT_BASE",
                 "type": "se",
-                "active_dims": [0, 1, 2],  # epoch, lat, lon,
-                "lengthscales": [0.1, 0.1, 0, 1],
+                "active_dims": [0, 1, 2],  # epoch, lat, lon
+                "lengthscales": [0.1, 0.1, 0.1],
                 "variances": [1.0, 1.0, 1.0],
             },
             "inducing_num": 300,
@@ -126,15 +126,15 @@ def get_dgp_default_config():
                 {
                     "name": "MR_LINEAR_SAT_DGP",
                     "type": "linear",
-                    "active_dims": [0],  # previous GP, lat, lon,
+                    "active_dims": [0],  # previous GP
                     "variances": [1.0],
                 },
                 {
                     "name": "MR_SE_SAT_DGP",
                     "type": "se",
-                    "active_dims": [2, 3],  # previous GP, lat, lon,
-                    "lengthscales": [0.1, 0, 1],
-                    "variances": [1.0, 1.0],
+                    "active_dims": [2, 3, 4],  # lat, lon, value_1000_flat
+                    "lengthscales": [0.1, 0.1, 0.1],
+                    "variances": [1.0, 1.0, 0.1],
                 },
             ],
             "inducing_num": 300,
