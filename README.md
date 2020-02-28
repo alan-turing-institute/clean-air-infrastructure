@@ -271,6 +271,7 @@ docker run -p 8888:8888 \
 -v $CLEANAIR_REPO/containers/cleanair/:/app/cleanair/ \
 -v $CLEANAIR_REPO/terraform/.secrets:/.secrets/ \
 -v $CLEANAIR_DATA:/app/data \
+-v $CLEANAIR_REPO/containers/entrypoints/:/app/entrypoints/ \
 -e JUPYTER_ENABLE_LAB=yes \
 -e GRANT_SUDO=yes \
 cleanairdocker.azurecr.io/jl
