@@ -179,4 +179,4 @@ letsencryptIssuer:
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
 
-whitelistSourceRange: 193.60.220.240/32
+whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32
