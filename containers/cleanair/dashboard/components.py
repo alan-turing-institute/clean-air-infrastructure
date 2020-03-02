@@ -14,7 +14,7 @@ METRIC_NAMES = {
     "ci50": "Confidence interval 50%",
     "ci75": "Confidence interval 75%",
     "ci95": "Confidence interval 95%",
-    "pe1": "Probable error (1 std)"
+    "pe1": "Probable error (1 std)",
 }
 POLLUTANT_NAMES = dict(
     NO2="Nitrogen Dioxide",
@@ -145,17 +145,16 @@ class ModelFitComponent:
                     marker=dict(
                         color=self.sensor_scores_df[col],
                         size=[20 for i in self.sensor_scores_df["point_id"]],
-                        colorscale='Viridis',
+                        colorscale="Viridis",
                         showscale=True,
                     ),
                     hover_name=self.sensor_scores_df["point_id"],
                     name=name,
                 ),
             ],
-            layout=dict(
-                title="{xl} vs {yl}".format(xl=x_feature, yl=y_feature)
-            )
+            layout=dict(title="{xl} vs {yl}".format(xl=x_feature, yl=y_feature)),
         )
+
 
 def get_model_data_fit_intro():
     """
@@ -170,6 +169,7 @@ def get_model_data_fit_intro():
     """
     return dcc.Markdown(introduction)
 
+
 def get_pollutant_dropdown(component_id, species):
     """
     Get a dropdown menu with all possible pollutants inside.
@@ -183,6 +183,7 @@ def get_pollutant_dropdown(component_id, species):
         ],
         value=species[0],
     )
+
 
 def get_metric_dropdown(component_id, metric_keys):
     """

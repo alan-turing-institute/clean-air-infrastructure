@@ -39,10 +39,7 @@ def main():  # pylint: disable=R0914
 
     # Experiment config
     xp_config = dict(
-        name="svgp",
-        restore=False,
-        model_state_fp=model_dir,
-        save_model_state=False,
+        name="svgp", restore=False, model_state_fp=model_dir, save_model_state=False,
     )
 
     # Set logging verbosity
@@ -60,7 +57,9 @@ def main():  # pylint: disable=R0914
         )
 
     # initialise the model
-    model_fitter = SVGP(experiment_config=xp_config, batch_size=1000)  # big batch size for the grid
+    model_fitter = SVGP(
+        experiment_config=xp_config, batch_size=1000
+    )  # big batch size for the grid
     model_fitter.model_params["maxiter"] = 10
     model_fitter.model_params["model_state_fp"] = model_dir
 

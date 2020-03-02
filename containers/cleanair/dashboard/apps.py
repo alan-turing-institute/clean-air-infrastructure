@@ -100,10 +100,7 @@ def get_model_data_fit_app(
     top_container = dbc.Container(
         [
             # text introduction
-            dbc.Col(
-                components.get_model_data_fit_intro(),
-                md=12,
-            ),
+            dbc.Col(components.get_model_data_fit_intro(), md=12,),
             dbc.Row(
                 [
                     dbc.Col(
@@ -118,44 +115,56 @@ def get_model_data_fit_app(
                     ),
                 ]
             ),
-            dbc.Row([
-                # map of sensors and their scores
-                dbc.Col(dcc.Graph(
-                    id=mfc_list[instance_id].interest_points_map_id,
-                    figure=mfc_list[instance_id].get_interest_points_map(
-                        default_metric_key, default_pollutant
+            dbc.Row(
+                [
+                    # map of sensors and their scores
+                    dbc.Col(
+                        dcc.Graph(
+                            id=mfc_list[instance_id].interest_points_map_id,
+                            figure=mfc_list[instance_id].get_interest_points_map(
+                                default_metric_key, default_pollutant
+                            ),
+                            hoverData={"points": [{"hovertext": default_point_id}]},
+                        ),
+                        md=6,
                     ),
-                    hoverData={"points": [{"hovertext": default_point_id}]},
-                ), md=6),
-                # timeseries of the sensor that the mouse is hovering over
-                dbc.Col(
-                    dcc.Graph(
-                        id=mfc_list[instance_id].interest_points_timeseries_id,
-                        figure=mfc_list[instance_id].get_interest_points_timeseries(
-                            default_point_id, default_pollutant
-                        )
+                    # timeseries of the sensor that the mouse is hovering over
+                    dbc.Col(
+                        dcc.Graph(
+                            id=mfc_list[instance_id].interest_points_timeseries_id,
+                            figure=mfc_list[instance_id].get_interest_points_timeseries(
+                                default_point_id, default_pollutant
+                            ),
+                        ),
+                        md=6,
                     ),
-                    md=6,
-                )
-            ]),
+                ]
+            ),
         ]
     )
     middle_container = dbc.Container(
         [
             # scatter showing the scores of sensors with features on the x/y axis
-            dbc.Col(dcc.Graph(
-                id=mfc_list[instance_id].features_scatter_id,
-                figure=mfc_list[instance_id].get_features_scatter(
-                    default_metric_key, default_pollutant, default_x_feature, default_y_feature
+            dbc.Col(
+                dcc.Graph(
+                    id=mfc_list[instance_id].features_scatter_id,
+                    figure=mfc_list[instance_id].get_features_scatter(
+                        default_metric_key,
+                        default_pollutant,
+                        default_x_feature,
+                        default_y_feature,
+                    ),
                 )
-            )),
+            ),
             # timeseries of the scores for all sensors over time
-            dbc.Col(dcc.Graph(
-                id=mfc_list[instance_id].temporal_metrics_timeseries_id,
-                figure=mfc_list[instance_id].get_temporal_metrics_timeseries(
-                    default_metric_key, default_pollutant
-                ),
-            )),
+            dbc.Col(
+                dcc.Graph(
+                    id=mfc_list[instance_id].temporal_metrics_timeseries_id,
+                    figure=mfc_list[instance_id].get_temporal_metrics_timeseries(
+                        default_metric_key, default_pollutant
+                    ),
+                )
+            ),
         ]
     )
     app.layout = html.Div([top_container, middle_container])

@@ -48,8 +48,12 @@ class Model(ABC):
         self.model_params = dict() if model_params is None else model_params
 
         # get filepaths and other configs
-        default_config = dict(name="model", restore=False, model_state_fp="./", save_model_state=False)
-        self.experiment_config = default_config if experiment_config is None else experiment_config
+        default_config = dict(
+            name="model", restore=False, model_state_fp="./", save_model_state=False
+        )
+        self.experiment_config = (
+            default_config if experiment_config is None else experiment_config
+        )
 
         # get the tasks we will be predicting at
         self.tasks = ["NO2"] if tasks is None else tasks
@@ -269,7 +273,7 @@ class Model(ABC):
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
-                raise ValueError('x_test has no data for {src}.'.format(src=source))
+                raise ValueError("x_test has no data for {src}.".format(src=source))
 
     def elbo_logger(self, logger_arg):
         """

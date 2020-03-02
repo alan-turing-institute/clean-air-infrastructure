@@ -93,11 +93,7 @@ class SVGP(Model):
             "train": True,
             "model_state_fp": None,
             "maxiter": 100,
-            "kernel": {
-                "name": "mat32+linear",
-                "variance": 0.1,
-                "lengthscale": 0.1,
-            }
+            "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
         }
 
     def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
@@ -122,7 +118,7 @@ class SVGP(Model):
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
-        custom_config.jitter = self.model_params['jitter']
+        custom_config.jitter = self.model_params["jitter"]
         with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.Matern32(
                 num_input_dimensions,
@@ -144,7 +140,7 @@ class SVGP(Model):
                 minibatch_size=self.model_params["minibatch_size"],
                 mean_function=gpflow.mean_functions.Linear(
                     A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
-                )
+                ),
             )
 
     def fit(self, x_train, y_train):
@@ -195,7 +191,9 @@ class SVGP(Model):
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
-                "{filepath}.ckpt".format(filepath=self.experiment_config["model_state_fp"]),
+                "{filepath}.ckpt".format(
+                    filepath=self.experiment_config["model_state_fp"]
+                ),
             )
 
         if self.model_params["train"]:
@@ -216,6 +214,7 @@ class SVGP(Model):
                         filepath=self.experiment_config["model_state_fp"]
                     ),
                 )
+
     def predict(self, x_test):
         """
         Predict using the model at the laqn sites for NO2.
@@ -236,6 +235,5 @@ class SVGP(Model):
 
         predict_fn = lambda x: self.model.predict_y(x)
         y_dict = self.predict_srcs(x_test, predict_fn)
-        
-        return y_dict
 
+        return y_dict
