@@ -170,7 +170,6 @@ def get_model_data_fit_intro():
     """
     return dcc.Markdown(introduction)
 
-
 def get_pollutant_dropdown(component_id, species):
     """
     Get a dropdown menu with all possible pollutants inside.
@@ -184,7 +183,6 @@ def get_pollutant_dropdown(component_id, species):
         ],
         value=species[0],
     )
-
 
 def get_metric_dropdown(component_id, metric_keys):
     """
