@@ -160,10 +160,22 @@ def evaluate_spatio_temporal_scores(
 
     # measure scores by sensor and by hour
     sensor_scores_df = measure_scores_on_groupby(
-        pred_df, metric_methods, sensor_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols, var_cols=var_cols
+        pred_df,
+        metric_methods,
+        sensor_col,
+        precision_methods=precision_methods,
+        pred_cols=pred_cols,
+        test_cols=test_cols,
+        var_cols=var_cols,
     )
     temporal_scores_df = measure_scores_on_groupby(
-        pred_df, metric_methods, temporal_col, precision_methods=precision_methods, pred_cols=pred_cols, test_cols=test_cols, var_cols=var_cols
+        pred_df,
+        metric_methods,
+        temporal_col,
+        precision_methods=precision_methods,
+        pred_cols=pred_cols,
+        test_cols=test_cols,
+        var_cols=var_cols,
     )
 
     # add lat and lon to sensor scores cols

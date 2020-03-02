@@ -6,6 +6,7 @@ import math
 import numpy as np
 from scipy.stats import norm
 
+
 def circular_error_probable(y_test, y_pred, y_var, boundary_percent=0.5):
     """
     The radius of the circle, centered on the mean, whose boundary is expected
@@ -63,6 +64,7 @@ def probable_error(y_test, y_mean, y_var, k=1):
             in_range += 1
     return 100 * in_range / num_points
 
+
 def line_error_probable(y_test, y_mean, y_var, boundary_percent=0.5):
     """
     The distance of line, centered on the mean, for which 50 percent
@@ -94,6 +96,7 @@ def line_error_probable(y_test, y_mean, y_var, boundary_percent=0.5):
     """
     raise NotImplementedError()
 
+
 def confidence_interval(y_test, y_mean, y_var, confidence=0.95):
     """
     The percentage of observations that lie within the confidence interval.
@@ -123,19 +126,24 @@ def confidence_interval(y_test, y_mean, y_var, confidence=0.95):
     y_test, y_mean, y_var = np.array(y_test), np.array(y_mean), np.array(y_var)
     in_range = 0
     for i in range(num_points):
-        lower_bound, upper_bound = norm.interval(confidence, loc=y_mean[i], scale=math.sqrt(y_var[i]))
+        lower_bound, upper_bound = norm.interval(
+            confidence, loc=y_mean[i], scale=math.sqrt(y_var[i])
+        )
         if lower_bound < y_test[i] and upper_bound > y_test[i]:
             in_range += 1
     return 100 * in_range / num_points
+
 
 def confidence_interval_95(y_test, y_mean, y_var):
     """Confidence interval of 95%"""
     return confidence_interval(y_test, y_mean, y_var, confidence=0.95)
 
+
 def confidence_interval_75(y_test, y_mean, y_var):
     """Confidence interval of 75%"""
     return confidence_interval(y_test, y_mean, y_var, confidence=0.75)
 
+
 def confidence_interval_50(y_test, y_mean, y_var):
     """Confidence interval of 50%"""
-    return confidence_interval(y_test, y_mean, y_var, confidence=0.50)  
+    return confidence_interval(y_test, y_mean, y_var, confidence=0.50)

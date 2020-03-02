@@ -40,10 +40,7 @@ def main():  # pylint: disable=R0914
 
     # Experiment config
     xp_config = dict(
-        name=model_name,
-        restore=False,
-        model_state_fp=model_dir,
-        save_model_state=False,
+        name="svgp", restore=False, model_state_fp=model_dir, save_model_state=False,
     )
 
     # Set logging verbosity
@@ -73,14 +70,9 @@ def main():  # pylint: disable=R0914
     #TODO: hardcoded defaults?
     #Not sure if name should go inside experiment_config or inside the model class
     #if names here you can run the same model but with different parameters ads the name can change
-    model_params= {
-        'restore': False,
-        'train':  True
-    }
-
-    #TODO: setup model params in init
     model_fitter = models[model_name](experiment_config=xp_config, batch_size=100)   
-    model_fitter.model_params["maxiter"] = 1
+    model_fitter.model_params["maxiter"] = 10
+
 
     # Get the model data
     if local_read:
