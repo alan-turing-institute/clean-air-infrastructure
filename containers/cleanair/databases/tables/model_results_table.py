@@ -12,8 +12,8 @@ class ModelResult(Base):
     __tablename__ = "model_results"
     __table_args__ = {"schema": "model_results"}
 
-    tag = Column(String(32), nullable=False)
-    fit_start_time = Column(TIMESTAMP, primary_key=True, nullable=False)
+    tag = Column(String(32), nullable=False, index=True)
+    fit_start_time = Column(TIMESTAMP, primary_key=True, nullable=False, index=True)
     point_id = Column(
         UUID,
         ForeignKey("interest_points.meta_point.id"),
