@@ -12,6 +12,7 @@ class TestExperiment(Experiment):
     
     def __init__(self, **kwargs):
         # create one quick to run instance
+        
         instance = Instance(model_name="svgp")
-        data = dict(instance.model_data.id)
+        data = instance.instance_id
         super().__init__(**kwargs)

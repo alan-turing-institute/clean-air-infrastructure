@@ -2,6 +2,8 @@
 The interface for London air quality models.
 """
 
+import json
+import hashlib
 from abc import ABC, abstractmethod
 import numpy as np
 from ..metrics.evaluate import pop_kwarg
