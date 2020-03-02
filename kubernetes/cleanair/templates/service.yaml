@@ -17,9 +17,11 @@ spec:
   selector:
     app: "{{ $release_name }}-{{ $service.name }}"
   ports:
-    - name: http
-      port: 80
-      targetPort: 80
+    {{- range $port := $service.ports}}
+    - name: {{ $port.name }}
+      port: {{ $port.port }}
+      targetPort: {{ $port.targetPort }}
+    {{- end }}
   selector:
     app: "{{ $release_name }}-{{ $service.name }}"
 
