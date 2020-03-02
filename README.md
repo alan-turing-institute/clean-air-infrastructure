@@ -328,7 +328,7 @@ docker build -t cleanairdocker.azurecr.io/jl -f containers/dockerfiles/run_lab.D
 docker run -p 8888:8888 \
 -v $CLEANAIR_REPO/containers/labs/:/app/labs/ \
 -v $CLEANAIR_REPO/containers/cleanair/:/app/cleanair/ \
--v $CLEANAIR_REPO/terraform/.secrets:/.secrets/ \
+-v $CLEANAIR_REPO/terraform/.secrets:/terraform/.secrets/ \
 -v $CLEANAIR_DATA:/app/data \
 -v $CLEANAIR_REPO/containers/entrypoints/:/app/entrypoints/ \
 -e JUPYTER_ENABLE_LAB=yes \
