@@ -76,6 +76,8 @@ def main():  # pylint: disable=too-many-locals
     if local_read:
         model_data = ModelData(**kwargs)
     else:
+        # must return y to compare fit against actual
+        data_config["include_prediction_y"] = True
         model_data = ModelData(config=data_config, **kwargs)
 
     # get the predictions of the model
