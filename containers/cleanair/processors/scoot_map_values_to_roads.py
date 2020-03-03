@@ -102,7 +102,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             # ... and write back to the forecasts table
             table = self.table_per_road.__table__
             column_names = table.columns.keys()
-            insert_stmt = insert(ScootRoadForecast).from_select(
+            insert_stmt = insert(self.table_per_road).from_select(
                 names=column_names, select=q_per_road_forecasts
             )
             update_dict = {c.name: c for c in insert_stmt.excluded if not c.primary_key}
