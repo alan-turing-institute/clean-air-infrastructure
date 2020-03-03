@@ -52,16 +52,17 @@ class Instance():
         'mr_dgp': MRDGP,
     }
 
+    DEFAULT_MODEL_NAME = "svgp"
+
     DIGEST_SIZE = 20
 
     def __init__(self, **kwargs):
-        self.model_name = kwargs["model_name"]
+        # get the name of the model to run
+        self.model_name = kwargs["model_name"] if "model_name" in kwargs else self.__class__.DEFAULT_MODEL_NAME
 
-        # set attributes
-        attrs = ["parser_config", "model_data", "model_name", "model", "param_id", "data_id", "hash", "tag", "cluster_id"]
-        for key in attrs:
-            if key in kwargs:
-                setattr(self, key, kwargs[key])
+        # not a valid model
+        if self.model_name not in self.__class__.MODELS:
+            raise KeyError("{name} is not a valid model.".format(name=self.model_name))
 
         # set parameter id
         if "param_id" in kwargs:
@@ -80,14 +81,10 @@ class Instance():
             self.data_id = self.hash_data(self.__class__.DEFAULT_DATA_CONFIG)
 
         # set cluster id
-        self.cluster_id = kwargs["cluster_id"] if "cluster_id" in kwargs else "unassigned" 
+        self.cluster_id = kwargs["cluster_id"] if "cluster_id" in kwargs else "unassigned"
 
         # passing a tag
         self.tag = kwargs["tag"] if "tag" in kwargs else "unassigned"
-
-        # creating the instance id
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
         # creating the github hash
         self.hash = git.Repo(search_parent_directories=True).head.object.hexsha
@@ -122,38 +119,83 @@ class Instance():
         return sha_fn.hexdigest()
 
 class RunnableInstance(Instance):
+
+    DEFAULT_EXPERIMENT_CONFIG = {
+        "model_name": "svgp",
+        "results_dir": "./",
+        "model_dir": "./",
+        "config_dir": "./",
+        "local_read": False,
+        "local_write": False,
+        "predict_training": False,
+        "predict_write": False,
+        "no_db_write": False,
+        "restore": False,
+        "save_model_state": False,
+    }
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # passing a model
-        if not hasattr(self, "model") and not hasattr(self, "model_name"):
-            raise AttributeError("Must pass a model or model_name to Instance.")
+        # get experiment config (filepaths, write/read locally or DB, etc.)
+        self.experiment_config = kwargs["experiment_config"] if "experiment_config" in kwargs else self.__class__.DEFAULT_EXPERIMENT_CONFIG
 
-        if hasattr("model_name") and not hasattr(self, "model"):
-            # not a valid model
-            if getattr(self, "model_name") not in Instance.MODELS:
-                raise KeyError("{name} is not a valid model.".format(name=getattr(self, "model_name")))
-            # check if model params has been passed
-            if "model_params" in kwargs:
-                self.model = self.__class__.MODELS[getattr(self, "model_name")](
-                    model_params=kwargs["model_params"]
-                )
-            # if no params, try and read params from the db using param_id
-            else:
-                raise NotImplementedError("Cannot yet read params from DB.")
-        
-        elif hasattr(self, "model") and not hasattr(self, "model_name"):
+        # passing a model
+        if "model" in kwargs:
+            self.model = kwargs["model"]
             self.model_name = self.model.experiment_config["model_name"]
 
-        # load the model data object
-        if not hasattr(self, "model_data"):
+        # check if model params has been passed
+        elif "model_params" in kwargs:
+            # check for experiment config
+            self.model = self.__class__.MODELS[self.model_name](
+                model_params=kwargs["model_params"]
+            )
+        # if no params, try and read params from the db using param_id
+        elif "param_id" in kwargs:
+            raise NotImplementedError("Cannot yet read params from DB using 'param_id'.")
+
+        # use default model params
+        else:
+            self.model = self.__class__.MODELS[self.model_name](
+                model_params=self.__class__.DEFAULT_MODEL_PARAMS,
+                experiment_config=self.experiment_config
+            )
+
+        # get model data from data id
+        if "data_id" in kwargs:
+            raise NotImplementedError("Cannot read data config from DB using data_id.")
+
+        # get default model data
+        elif "model_data" not in kwargs and "data_config" not in kwargs:
             data_config = self.__class__.DEFAULT_DATA_CONFIG
             data_config["tag"] = self.tag
             data_config["model_type"] = self.model_name
-            self.model_data = ModelData(data_config=data_config)
 
+        # get model data from passed data config
+        elif "model_data" not in kwargs and "data_config" in kwargs:
+            data_config = kwargs["data_config"]
 
+        # load model data object from kwargs
+        if "model_data" in kwargs:
+            self.model_data = kwargs["model_data"]
+        # read from local directory
+        elif "local_read" in self.experiment_config and self.experiment_config["local_read"]:
+            self.model_data = ModelData(
+                config_dir=self.experiment_config["config_dir"],
+                secretfile=self.experiment_config["secretfile"],
+            )
+        # read using data config from DB
+        else:
+            self.model_data = ModelData(
+                config=data_config,
+                secretfile=self.experiment_config["secretfile"],
+            )
+
+        # reset the ids
+        self.data_id = self.hash_data(self.model_data.config)
+        self.param_id = self.hash_params(self.model.model_params)
+        self.instance_id = self.hash_instance()
 
 class WritableInstance(Instance, DBWriter):
     """

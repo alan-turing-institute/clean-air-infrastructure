@@ -9,7 +9,7 @@ from cleanair.models import ModelData, SVGP, MRDGP
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
 from cleanair.parsers import get_data_config_from_kwargs
-
+from cleanair.experiment import ProductionInstance
 
 def write_predictions_to_file(y_pred, results_dir, filename):
     """Write a prediction dict to pickle."""
@@ -40,7 +40,7 @@ def main():  # pylint: disable=R0914
 
     # Experiment config
     xp_config = dict(
-        name="svgp", restore=False, model_state_fp=model_dir, save_model_state=False,
+        name=model_name, restore=False, model_state_fp=model_dir, save_model_state=False,
     )
 
     # Set logging verbosity
@@ -66,6 +66,12 @@ def main():  # pylint: disable=R0914
 
     if model_name not in models:
         raise NotImplementedError('Model {model} has not been implmented'.format(model=model_name))
+
+    instance = ProductionInstance(
+        model_name=model_name,
+        experiment_config=xp_config,
+        data_config
+    )
 
     #TODO: hardcoded defaults?
     #Not sure if name should go inside experiment_config or inside the model class
