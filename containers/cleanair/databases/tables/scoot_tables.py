@@ -112,7 +112,7 @@ class ScootRoadMatch(Base):
     """Table of all roads and their associated SCOOT sensors"""
 
     __tablename__ = "scoot_road_match"
-    __table_args__ = {"schema": "dynamic_features"}
+    __table_args__ = {"schema": "processed_data"}
 
     road_toid = Column(
         String(),
@@ -144,7 +144,7 @@ class ScootRoadForecast(Base):
     """Table of SCOOT forecasts for each road segment"""
 
     __tablename__ = "scoot_road_forecast"
-    __table_args__ = {"schema": "dynamic_features"}
+    __table_args__ = {"schema": "processed_data"}
 
     road_toid = Column(
         String(),
@@ -171,7 +171,7 @@ class ScootRoadReading(Base):
     """Table of SCOOT readings for each road segment"""
 
     __tablename__ = "scoot_road_reading"
-    __table_args__ = {"schema": "dynamic_features"}
+    __table_args__ = {"schema": "processed_data"}
 
     road_toid = Column(
         String(),
