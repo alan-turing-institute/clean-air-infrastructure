@@ -57,8 +57,6 @@ class Instance():
 
     DEFAULT_MODEL_NAME = "svgp"
 
-    DIGEST_SIZE = 20
-
     def __init__(self, **kwargs):
         # get the name of the model to run
         self.model_name = kwargs["model_name"] if "model_name" in kwargs else self.__class__.DEFAULT_MODEL_NAME
@@ -111,8 +109,7 @@ class Instance():
     @staticmethod
     def hash_fn(hash_string):
         sha_fn = hashlib.sha256()
-        sha_fn.digest_size = Instance.DIGEST_SIZE
-        sha_fn.update(hash_string)
+        sha_fn.update(bytearray(hash_string, "utf-8"))
         return sha_fn.hexdigest()
 
 class RunnableInstance(Instance):
@@ -228,6 +225,8 @@ class RunnableInstance(Instance):
         # Internally update the model results in the ModelData object
         self.model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
 
+        print("Y pred:", y_test_pred)
+
         # Write the model results to the database
         if not self.experiment_config["no_db_write"]:
             # see issue 103: generalise for multiple pollutants
@@ -312,26 +311,17 @@ class LaqnTestInstance(RunnableInstance):
 
     def __init__(self, **kwargs):
         """
-        Setup a quick test instance.
-
-        Parameters
-        ___
-
-        secretfile : str
-            Filepath to the secretfile.
-
-        config_dir : str, optional
-            Filepath to the directory of data.
+        Spin up a quick test instance that reads from the DB ready to run a simple GP.
         """
         # Get the model data
         super().__init__(
-            model_data=ModelData(config=LaqnTestInstance.DEFAULT_DATA_CONFIG, **kwargs),
+            model_data=ModelData(config=self.__class__.DEFAULT_DATA_CONFIG, **kwargs),
             model_name="svgp",
             tag="test",
             model=SVGP(
-                model_params=LaqnTestInstance.DEFAULT_MODEL_PARAMS,
+                model_params=self.__class__.DEFAULT_MODEL_PARAMS,
                 tasks=self.model_data.config["species"],
             ),
             cluster_id="laptop",
-            **kwargs,
+            experiment_config=self.__class__.DEFAULT_EXPERIMENT_CONFIG
         )

@@ -2,8 +2,7 @@
 The interface for London air quality models.
 """
 
-import json
-import hashlib
+import logging
 from abc import ABC, abstractmethod
 import numpy as np
 from ..metrics.evaluate import pop_kwarg
@@ -334,8 +333,10 @@ class Model(ABC):
         ys_var_arr = []
         index = 0
 
+        logging.info("Start batch prediction.")
         for count in range(num_batches):
-            print(count, ': ', num_batches)
+            if count % 10 == 0:
+                logging.info(count, 'out of', num_batches, 'batches')
             if count == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_array[index:, :]
