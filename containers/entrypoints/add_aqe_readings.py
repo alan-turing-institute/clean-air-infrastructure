@@ -2,9 +2,8 @@
 Update AQE database
 """
 import argparse
-import logging
 from cleanair.inputs import AQEWriter
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 
 
 def main():
@@ -41,17 +40,16 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    default_logger = initialise_logging(args.verbose)
 
     # Perform update and notify any exceptions
     try:
-        aqe_writer = AQEWriter(**kwargs)
+        aqe_writer = AQEWriter(end=args.end, ndays=args.ndays, secretfile=args.secretfile)
 
         # Update the AQE tables on the database
         aqe_writer.update_remote_tables()
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred:", str(error))
         raise
 
 

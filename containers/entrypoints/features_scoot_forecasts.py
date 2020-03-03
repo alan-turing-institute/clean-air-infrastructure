@@ -1,9 +1,8 @@
 """
 Model fitting
 """
-import logging
 import argparse
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.features import ScootForecastFeatures
 from cleanair.processors import ScootPerDetectorForecaster, ScootPerRoadForecastMapper
 
@@ -56,7 +55,7 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set some parameters using the parsed arguments
-    logging.basicConfig(level=get_log_level(args.verbose))
+    default_logger = initialise_logging(args.verbose)
     detector_ids = args.detectors if args.detectors else None
     ndays = int(args.forecasthrs / 24)
 
@@ -88,7 +87,7 @@ def main():
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred:", str(error))
         raise
 
 

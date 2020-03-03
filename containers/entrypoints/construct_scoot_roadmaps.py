@@ -2,8 +2,7 @@
 SCOOT road-sensor association
 """
 import argparse
-import logging
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.features import ScootRoadMapper
 
 
@@ -25,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     # Set logging verbosity
-    logging.basicConfig(level=get_log_level(args.verbose))
+    default_logger = initialise_logging(args.verbose)
 
     # Extract features and notify any exceptions
     try:
@@ -37,7 +36,7 @@ def main():
         road_mapper.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred:", str(error))
         raise
 
 

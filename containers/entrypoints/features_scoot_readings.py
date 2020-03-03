@@ -1,9 +1,9 @@
 """
 Model fitting
 """
-import logging
+# import logging
 import argparse
-from cleanair.loggers import get_log_level
+from cleanair.loggers import get_logger, initialise_logging
 from cleanair.features import ScootReadingFeatures
 from cleanair.processors import ScootPerRoadReadingMapper
 
@@ -49,17 +49,23 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set some parameters using the parsed arguments
-    logging.basicConfig(level=get_log_level(args.verbose))
+    default_logger = initialise_logging(args.verbose)
+
+    default_logger.warning("warning")
+    default_logger.error("error")
+    default_logger.info("info")
+    default_logger.debug("debug")
+    raise ValueError
 
     # Perform update and notify any exceptions
     try:
-        # Construct SCOOT readings for each road using:
-        # - the relevant SCOOT readings (from ScootWriter)
-        # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
-        scoot_road_readings = ScootPerRoadReadingMapper(
-            ndays=args.ndays, end=args.end, secretfile=args.secretfile
-        )
-        scoot_road_readings.update_remote_tables()
+        # # Construct SCOOT readings for each road using:
+        # # - the relevant SCOOT readings (from ScootWriter)
+        # # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
+        # scoot_road_readings = ScootPerRoadReadingMapper(
+        #     ndays=args.ndays, end=args.end, secretfile=args.secretfile
+        # )
+        # scoot_road_readings.update_remote_tables()
 
         # Construct SCOOT features from readings around each interest point
         scoot_feature_extractor = ScootReadingFeatures(
@@ -68,7 +74,7 @@ def main():
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred:", str(error))
         raise
 
 

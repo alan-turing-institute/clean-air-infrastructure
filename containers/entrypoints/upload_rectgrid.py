@@ -2,9 +2,8 @@
 Upload static datasets
 """
 import argparse
-import logging
 from cleanair.inputs import RectGridWriter
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 
 
 def main():
@@ -25,18 +24,17 @@ def main():
     args = parser.parse_args()
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    default_logger = initialise_logging(args.verbose)
 
     # Perform update and notify any exceptions
     try:
-        rectgrid_writer = RectGridWriter(**kwargs)
+        rectgrid_writer = RectGridWriter(secretfile=args.secretfile)
 
         # Upload the rectangular grid table to the database if it is not present
         rectgrid_writer.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred:", str(error))
         raise
 
 

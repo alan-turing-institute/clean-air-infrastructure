@@ -60,7 +60,7 @@ def main():  # pylint: disable=too-many-locals
     # get a model data object from the config_dir
     parser = ValidationParser(description="Dashboard")
     kwargs = parser.parse_kwargs()
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    initialise_logging(kwargs.pop("verbose", 0))
 
     # pop kwargs
     local_read = kwargs.pop("local_read")

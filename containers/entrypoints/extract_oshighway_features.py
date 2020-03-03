@@ -2,8 +2,7 @@
 OSHighway feature extraction
 """
 import argparse
-import logging
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.features import OSHighwayFeatures
 
 
@@ -19,21 +18,23 @@ def main():
         default="db_secrets.json",
         help="File with connection secrets.",
     )
+    parser.add_argument(
+        "--sources",
+        nargs="+",
+        default=["aqe", "laqn", "satellite", "hexgrid"],
+        help="List of sources to process, (default: 'aqe', 'laqn', 'satellite', 'hexgrid').",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
     args = parser.parse_args()
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
-
-    # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn", "satellite", "hexgrid"]
+    default_logger = initialise_logging(args.verbose)
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = OSHighwayFeatures(**kwargs)
+        static_feature_extractor = OSHighwayFeatures(secretfile=args.secretfile, sources=args.sources)
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 
