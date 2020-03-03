@@ -1,12 +1,12 @@
 """
 Street Canyon feature extraction
 """
-from .features import Features
+from .feature_extractor import FeatureExtractor
 from .feature_funcs import min_, avg_, max_
 from ..databases.tables import StreetCanyon
 
 
-class StreetCanyonFeatures(Features):
+class StreetCanyonFeatures(FeatureExtractor):
     """Extract features for StreetCanyon"""
 
     @property
