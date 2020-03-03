@@ -11,12 +11,6 @@ from cleanair.parsers import ModelFitParser
 from cleanair.parsers import get_data_config_from_kwargs
 from cleanair.experiment import ProductionInstance
 
-def write_predictions_to_file(y_pred, results_dir, filename):
-    """Write a prediction dict to pickle."""
-    pred_filepath = os.path.join(results_dir, filename)
-    with open(pred_filepath, "wb") as handle:
-        pickle.dump(y_pred, handle)
-
 
 def main():  # pylint: disable=R0914
     """
