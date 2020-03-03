@@ -95,12 +95,6 @@ class Instance():
         # get the instance id
         self.instance_id = self.hash_instance()
 
-    def update_table(self):
-        """
-        Update the instance table and (if necessary) data and model tables.
-        """
-        raise NotImplementedError()
-
     def hash_instance(self):
         hash_string = self.model_name + str(self.param_id) + self.tag
         hash_string += str(self.data_id) + str(self.cluster_id)
@@ -227,7 +221,7 @@ class RunnableInstance(Instance):
         y_test_pred = self.model.predict(x_test)
         if self.experiment_config["predict_training"]:
             x_train_pred = x_train.copy()
-            if "satellite" in x_train:
+            if "satellite" in x_train:  # don't predict at satellite
                 x_train_pred.pop("satellite")
             y_train_pred = self.model.predict(x_train_pred)
 
@@ -264,7 +258,14 @@ class WritableInstance(Instance, DBWriter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-class ProductionInstance(WritableInstance, RunnableInstance):
+
+    def update_table(self):
+        """
+        Update the instance table and (if necessary) data and model tables.
+        """
+        raise NotImplementedError()
+
+class ProductionInstance(RunnableInstance):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         

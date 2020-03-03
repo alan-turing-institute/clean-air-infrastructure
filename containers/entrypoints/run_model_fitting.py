@@ -22,6 +22,23 @@ def main():  # pylint: disable=R0914
     # Parse and interpret arguments
     kwargs = parser.parse_kwargs()
 
+    # Read the data config
+    data_config = get_data_config_from_kwargs(kwargs)
+
+    # get big dictionary of experiment config
+    xp_config = kwargs.copy()
+    xp_config.update(dict(
+        restore=False, model_state_fp=xp_config["model_dir"], save_model_state=False
+    ))
+    # create a production instance from data and experiment configs
+    instance = ProductionInstance(
+        model_name=kwargs["model_name"],
+        experiment_config=xp_config,
+        data_config=data_config,
+    )
+
+    exit()
+
     # Update database/write to file
     no_db_write = kwargs.pop("no_db_write")
     local_write = kwargs.pop("local_write")
@@ -60,12 +77,6 @@ def main():  # pylint: disable=R0914
 
     if model_name not in models:
         raise NotImplementedError('Model {model} has not been implmented'.format(model=model_name))
-
-    instance = ProductionInstance(
-        model_name=model_name,
-        experiment_config=xp_config,
-        data_config
-    )
 
     #TODO: hardcoded defaults?
     #Not sure if name should go inside experiment_config or inside the model class
