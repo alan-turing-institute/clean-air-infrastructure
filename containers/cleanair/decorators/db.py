@@ -1,6 +1,5 @@
 """DB decorators"""
 import functools
-import logging
 import pandas as pd
 
 
