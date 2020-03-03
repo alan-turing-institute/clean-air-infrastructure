@@ -6,8 +6,8 @@ from sqlalchemy import func, literal, tuple_, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (
-    IntersectionValue,
-    FeatureDynamicValue,
+    StaticFeature,
+    DynamicFeature,
     UKMap,
     MetaPoint,
 )
@@ -96,9 +96,9 @@ class Features(DBWriter, DBQueryMixin):
             if exclude_processed:
                 already_processed_sq = (
                     session.query(
-                        IntersectionValue.point_id, IntersectionValue.feature_name
+                        StaticFeature.point_id, StaticFeature.feature_name
                     )
-                    .filter(IntersectionValue.feature_name == feature_name)
+                    .filter(StaticFeature.feature_name == feature_name)
                     .subquery()
                 )
 
@@ -336,7 +336,7 @@ class Features(DBWriter, DBQueryMixin):
                         self.commit_records(
                             session,
                             select_stmt.subquery(),
-                            table=IntersectionValue,
+                            table=StaticFeature,
                             on_conflict="ignore",
                         )
                 else:

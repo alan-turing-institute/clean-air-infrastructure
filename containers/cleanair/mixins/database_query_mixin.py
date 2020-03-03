@@ -9,8 +9,8 @@ from ..decorators import db_query
 from ..databases.tables import (
     AQEReading,
     AQESite,
-    IntersectionValue,
-    FeatureDynamicValue,
+    StaticFeature,
+    DynamicFeature,
     LAQNReading,
     LAQNSite,
     LondonBoundary,
@@ -47,8 +47,8 @@ class DBQueryMixin:
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(IntersectionValue.feature_name).distinct(
-                IntersectionValue.feature_name
+            feature_types_q = session.query(StaticFeature.feature_name).distinct(
+                StaticFeature.feature_name
             )
 
             return feature_types_q
@@ -63,15 +63,15 @@ class DBQueryMixin:
 
             available_dynamic_sq = (
                 session.query(
-                    FeatureDynamicValue.feature_name,
-                    func.min(FeatureDynamicValue.measurement_start_utc).label(
+                    DynamicFeature.feature_name,
+                    func.min(DynamicFeature.measurement_start_utc).label(
                         "min_date"
                     ),
-                    func.max(FeatureDynamicValue.measurement_start_utc).label(
+                    func.max(DynamicFeature.measurement_start_utc).label(
                         "max_date"
                     ),
                 )
-                .group_by(FeatureDynamicValue.feature_name)
+                .group_by(DynamicFeature.feature_name)
                 .subquery()
             )
 
