@@ -3,7 +3,7 @@ Construct SCOOT road-sensor association
 """
 import argparse
 from cleanair.loggers import initialise_logging
-from cleanair.features import ScootRoadMapper
+from cleanair.processors import ScootPerRoadDetectors
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        road_mapper = ScootRoadMapper(secretfile=args.secretfile)
+        road_mapper = ScootPerRoadDetectors(secretfile=args.secretfile)
 
         # Match all road segments to their closest SCOOT detector(s)
         # - if the segment has detectors on it then match to them
@@ -38,7 +38,7 @@ def main():
         road_mapper.update_remote_tables()
 
     except Exception as error:
-        default_logger.error("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

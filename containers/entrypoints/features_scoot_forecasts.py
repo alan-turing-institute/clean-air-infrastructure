@@ -87,7 +87,7 @@ def main():
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        default_logger.error("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

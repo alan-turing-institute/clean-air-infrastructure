@@ -5,12 +5,11 @@ import time
 from geoalchemy2.comparator import Comparator
 import pandas as pd
 from sqlalchemy import func
-from sqlalchemy import and_, not_, or_
 from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, ScootDetector, OSHighway, ScootRoadMatch
 from ..loggers import duration, get_logger, green
-from ..mixins import DateRangeMixin, DBQueryMixin
+from ..mixins import DBQueryMixin
 
 
 class ScootPerRoadDetectors(DBWriter, DBQueryMixin):

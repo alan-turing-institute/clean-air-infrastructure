@@ -2,7 +2,7 @@
 Run feature processing using SCOOT readings
 """
 import argparse
-from cleanair.loggers import get_logger, initialise_logging
+from cleanair.loggers import initialise_logging
 from cleanair.features import ScootReadingFeatures
 from cleanair.processors import ScootPerRoadReadingMapper
 
@@ -60,7 +60,7 @@ def main():
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        default_logger.error("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

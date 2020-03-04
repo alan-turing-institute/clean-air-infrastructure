@@ -40,7 +40,7 @@ def main():
         "--interestpoints",
         dest="define_interest_points",
         action="store_true",
-        help="""The first time satellite data is inserted into the database, this flag must be set to insert the interest points""",
+        help="Insert the interest points as well as the satellite data itself",
     )
     parser.add_argument(
         "-a",
@@ -89,7 +89,7 @@ def main():
         # Update the Scoot readings table on the database
         satellite_writer.update_remote_tables()
     except Exception as error:
-        default_logger.error("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

@@ -1,9 +1,8 @@
 """
 Feature extraction Base  class
 """
-import math
 import time
-from sqlalchemy import func, literal, tuple_, or_, case
+from sqlalchemy import func, literal, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (
@@ -20,7 +19,7 @@ from ..loggers import duration, green, get_logger, duration_from_seconds
 class FeatureExtractor(DBWriter, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, dynamic=False, sources=[], **kwargs):
+    def __init__(self, dynamic=False, sources=None, **kwargs):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -34,7 +33,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             self.logger = get_logger(__name__)
 
         self.dynamic = dynamic
-        self.sources = sources
+        self.sources = sources if sources else []
         if self.dynamic:
             self.output_table = DynamicFeature
         else:

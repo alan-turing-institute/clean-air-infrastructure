@@ -16,7 +16,6 @@ from ..databases.tables import (
     LondonBoundary,
     MetaPoint,
     SatelliteForecastReading,
-    ScootReading,
 )
 from ..loggers import get_logger
 

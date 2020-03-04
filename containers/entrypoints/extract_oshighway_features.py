@@ -41,7 +41,7 @@ def main():
         static_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        print("An uncaught exception occurred: %s", str(error))
         raise
 
 

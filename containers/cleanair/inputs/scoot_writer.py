@@ -25,13 +25,15 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
 
-    def __init__(self, aws_key_id, aws_key, **kwargs):
+    def __init__(self, aws_key_id, aws_key, detector_ids=None, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
+
+        self.detector_ids = detector_ids
 
         # Set up AWS access keys
         self.access_key_id = aws_key_id
@@ -230,7 +232,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             time_min = datetime_from_unix(df_readings["timestamp"].min())
             time_max = datetime_from_unix(df_readings["timestamp"].max())
         except ValueError:
-            return []
+            return
 
         # Slice processed data into hourly chunks and aggregate these by detector ID
         for start_time in rrule.rrule(
@@ -262,19 +264,19 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
             yield df_aggregated
 
-    def update_remote_tables(self, detector_ids=None):
+    def update_remote_tables(self):
         """Update the database with new Scoot traffic data."""
         self.logger.info("Starting %s readings update...", green("Scoot"))
         start_update = time.time()
         n_records_inserted = 0
 
         # Use all known detectors if no list is provided
-        if not detector_ids:
-            detector_ids = self.request_site_entries()
+        if not self.detector_ids:
+            self.detector_ids = self.request_site_entries()
         self.logger.info(
             "Requesting readings from %s for %s sites",
             green("TfL AWS storage"),
-            green(len(detector_ids)),
+            green(len(self.detector_ids)),
         )
 
         # Processing will take approximately one second for each minute of data to process
@@ -302,13 +304,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 "detector_id"
             ].tolist()
             unprocessed_detectors = [
-                d for d in detector_ids if d not in processed_detectors
+                d for d in self.detector_ids if d not in processed_detectors
             ]
             if unprocessed_detectors:
                 self.logger.info(
                     "%i of the %i known detectors have no readings during %s to %s.",
                     len(unprocessed_detectors),
-                    len(detector_ids),
+                    len(self.detector_ids),
                     green(start_datetime),
                     green(end_datetime),
                 )

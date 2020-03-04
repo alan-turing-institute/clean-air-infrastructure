@@ -3,7 +3,7 @@ Mixin for classes that need to keep track of date ranges
 """
 import datetime
 import dateutil
-from ..loggers import get_logger, green
+from ..loggers import get_logger
 
 
 class DateRangeMixin:

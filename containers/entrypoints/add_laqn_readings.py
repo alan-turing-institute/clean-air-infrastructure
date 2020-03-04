@@ -51,7 +51,7 @@ def main():
         # Update the LAQN tables on the database
         laqn_writer.update_remote_tables()
     except Exception as error:
-        default_logger.info("An uncaught exception occurred:", str(error))
+        default_logger.info("An uncaught exception occurred: %s", str(error))
         raise
 
 

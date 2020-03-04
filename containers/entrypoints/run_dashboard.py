@@ -1,22 +1,20 @@
 """
 Visualise and run metrics for a single model data fit.
 """
+from datetime import datetime
 import os
 import pickle
-import logging
-from datetime import datetime
 import pandas as pd
-from cleanair.models import ModelData
 from cleanair import metrics
 from cleanair.dashboard import apps
-from cleanair.loggers import get_log_level
-from cleanair.parsers import ValidationParser
-from cleanair.parsers import get_data_config_from_kwargs
 from cleanair.databases import DBReader
 from cleanair.databases.tables import ModelResult
+from cleanair.loggers import initialise_logging
+from cleanair.models import ModelData
+from cleanair.parsers import get_data_config_from_kwargs, ValidationParser
 
 
-def read_model_results(tag, start_time, end_time, secretfile):
+def read_model_results(tag, start_time, end_time, secretfile, logger=None):
     """
     Read results from the database.
 
@@ -49,7 +47,8 @@ def read_model_results(tag, start_time, end_time, secretfile):
             ModelResult.measurement_start_utc < end_time,
         )
         results_df = pd.read_sql(results_query.statement, session.bind)
-    logging.info("Number of rows returned: %s", len(results_df))
+    if logger:
+        logger.info("Number of rows returned: %s", len(results_df))
     return results_df
 
 
@@ -60,7 +59,7 @@ def main():  # pylint: disable=too-many-locals
     # get a model data object from the config_dir
     parser = ValidationParser(description="Dashboard")
     kwargs = parser.parse_kwargs()
-    initialise_logging(kwargs.pop("verbose", 0))
+    logger = initialise_logging(kwargs.pop("verbose", 0))
 
     # pop kwargs
     local_read = kwargs.pop("local_read")
@@ -99,6 +98,7 @@ def main():  # pylint: disable=too-many-locals
             model_data.config["pred_start_date"],
             model_data.config["pred_end_date"],
             kwargs["secretfile"],
+            logger,
         )
         # change datetime to be the same format
         model_data.normalised_pred_data_df["measurement_start_utc"] = pd.to_datetime(
