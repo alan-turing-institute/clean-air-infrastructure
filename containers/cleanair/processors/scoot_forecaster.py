@@ -208,7 +208,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             forecast_records = forecast_df.to_dict("records")
             if len(forecast_records) > 0:
                 self.logger.info(
-                    "Preparing to insert %s hourly forecasts for %s into database",
+                    "Preparing to insert %s hourly forecasts for %s into ScootForecast table",
                     green(len(forecast_records)),
                     detector_id,
                 )
