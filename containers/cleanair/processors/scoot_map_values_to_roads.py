@@ -45,7 +45,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
             # For each road, combine the per-detector values according to their weight
             self.logger.info(
-                "Constructing per-road SCOOT %s from per-detector %s...",
+                "Constructing per-road SCOOT %s from per-detector %s. This may take a couple of hours...",
                 self.value_type,
                 self.value_type,
             )
