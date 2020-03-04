@@ -1,5 +1,5 @@
 """
-UKMap Feature extraction
+Run feature processing using StreetCanyon data
 """
 import argparse
 from cleanair.loggers import initialise_logging
@@ -8,10 +8,10 @@ from cleanair.features import StreetCanyonFeatures
 
 def main():
     """
-    Extract static features
+    Extract static StreetCanyon features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract static UKMap features")
+    parser = argparse.ArgumentParser(description="Extract static StreetCanyon features")
     parser.add_argument(
         "-s",
         "--secretfile",

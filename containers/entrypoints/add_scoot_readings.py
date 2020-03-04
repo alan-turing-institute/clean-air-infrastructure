@@ -1,5 +1,5 @@
 """
-Update SCOOT database and run feature processing
+Add SCOOT readings to database
 """
 import argparse
 import json
@@ -9,9 +9,11 @@ from cleanair.loggers import initialise_logging
 
 
 def main():
-    """Update the scoot database"""
+    """
+    Update SCOOT table
+    """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get Scoot traffic data")
+    parser = argparse.ArgumentParser(description="Get SCOOT traffic data")
     parser.add_argument(
         "-e",
         "--end",

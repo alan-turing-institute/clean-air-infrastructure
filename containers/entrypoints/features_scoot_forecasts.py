@@ -1,5 +1,5 @@
 """
-Model fitting
+Run feature processing using SCOOT forecasts
 """
 import argparse
 from cleanair.loggers import initialise_logging

@@ -1,5 +1,5 @@
 """
-Update AQE database
+Add AQE readings to database
 """
 import argparse
 from cleanair.inputs import AQEWriter
@@ -8,10 +8,10 @@ from cleanair.loggers import initialise_logging
 
 def main():
     """
-    Update aqe database
+    Update AQE table
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get LAQN sensor data")
+    parser = argparse.ArgumentParser(description="Get AQE sensor data")
     parser.add_argument(
         "-e",
         "--end",

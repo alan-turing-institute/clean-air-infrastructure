@@ -1,5 +1,5 @@
 """
-Update LAQN database
+Add LAQN readings to database
 """
 import argparse
 from cleanair.inputs import LAQNWriter
@@ -8,7 +8,7 @@ from cleanair.loggers import initialise_logging
 
 def main():
     """
-    Update laqn database
+    Update LAQN table
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get LAQN sensor data")

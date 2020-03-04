@@ -1,5 +1,5 @@
 """
-OSHighway feature extraction
+Run feature processing using OSHighway data
 """
 import argparse
 from cleanair.loggers import initialise_logging
@@ -8,10 +8,10 @@ from cleanair.features import OSHighwayFeatures
 
 def main():
     """
-    Extract static features
+    Extract static OSHighway features
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract static OS highway features")
+    parser = argparse.ArgumentParser(description="Extract static OSHighway features")
     parser.add_argument(
         "-s",
         "--secretfile",

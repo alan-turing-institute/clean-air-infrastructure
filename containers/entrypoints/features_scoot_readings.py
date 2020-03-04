@@ -1,7 +1,6 @@
 """
-Model fitting
+Run feature processing using SCOOT readings
 """
-# import logging
 import argparse
 from cleanair.loggers import get_logger, initialise_logging
 from cleanair.features import ScootReadingFeatures
@@ -34,13 +33,6 @@ def main():
         default=14,
         help="The number of days into the past to calculate features for.",
     )
-    parser.add_argument(
-        "-d",
-        "--detectors",
-        nargs="+",
-        default=[],
-        help="List of detectors to forecast for, (default: all of them).",
-    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
@@ -50,12 +42,6 @@ def main():
 
     # Set some parameters using the parsed arguments
     default_logger = initialise_logging(args.verbose)
-
-    default_logger.warning("warning")
-    default_logger.error("error")
-    default_logger.info("info")
-    default_logger.debug("debug")
-    raise ValueError
 
     # Perform update and notify any exceptions
     try:

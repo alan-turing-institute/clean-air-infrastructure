@@ -1,5 +1,5 @@
 """
-UKMap Feature extraction
+Run feature processing using UKMap data
 """
 import argparse
 from cleanair.loggers import initialise_logging
@@ -8,7 +8,7 @@ from cleanair.features import UKMapFeatures
 
 def main():
     """
-    Extract static features
+    Extract static UKMap features
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Extract static UKMap features")

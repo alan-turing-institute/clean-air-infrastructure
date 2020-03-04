@@ -1,5 +1,5 @@
 """
-SCOOT road-sensor association
+Construct SCOOT road-sensor association
 """
 import argparse
 from cleanair.loggers import initialise_logging
@@ -8,10 +8,10 @@ from cleanair.features import ScootRoadMapper
 
 def main():
     """
-    Extract scoot features
+    Construct maps between roads and SCOOT detectors
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract scoot features")
+    parser = argparse.ArgumentParser(description="Construct maps between roads and SCOOT detectors")
     parser.add_argument(
         "-s",
         "--secretfile",

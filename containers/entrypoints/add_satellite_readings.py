@@ -1,5 +1,5 @@
 """
-Update SCOOT database
+Add satellite readings to database
 """
 import argparse
 import json
@@ -9,9 +9,11 @@ from cleanair.loggers import initialise_logging
 
 
 def main():
-    """Update the scoot database"""
+    """
+    Update satellite table
+    """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get Satellite data")
+    parser = argparse.ArgumentParser(description="Get satellite data")
     parser.add_argument(
         "-k",
         "--copernicus-key",
@@ -38,8 +40,7 @@ def main():
         "--interestpoints",
         dest="define_interest_points",
         action="store_true",
-        help="""The first time satellite data is inserted into the database,
-                        this flag must be set to insert the interest points""",
+        help="""The first time satellite data is inserted into the database, this flag must be set to insert the interest points""",
     )
     parser.add_argument(
         "-a",
