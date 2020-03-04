@@ -73,7 +73,6 @@ class MR_Mixture(Model):
         self.elbo = 0.0
 
         # gpflow models are Parameterized objects
-        print(parent_mixtures)
         self.parent_mixtures = (
             ParamList(parent_mixtures) if parent_mixtures is not None else None
         )
@@ -177,9 +176,7 @@ class MR_Mixture(Model):
         )  # num_samples x N x S x D
 
         # append input space to output of previous GP
-        samples = tf.Print(
-            samples, [tf.shape(samples), tf.shape(_x)], "s, _x: ", summarize=100
-        )
+
         _x = tf.concat([samples, _x], axis=3)  # num_samples x N x S x (D+1)
 
         shp = tf.shape(_x)
@@ -236,7 +233,7 @@ class MR_Mixture(Model):
 
             #if interested in predicting y get q(y|x_i) of the base gp
             if predict_y:
-                base_mu, base_sig = self.base_gps[i].likelihood.predict_mean_and_var(mu, sig)
+                base_mu, base_sig = self.base_gps[i].likelihood.predict_mean_and_var(base_mu, base_sig)
 
             base_mu_arr.append(base_mu)
             base_sig_arr.append(base_sig)
@@ -284,13 +281,6 @@ class MR_Mixture(Model):
             mu = tf.boolean_mask(mask=mask, tensor=mu, axis=1)
             sig = tf.boolean_mask(mask=mask, tensor=sig, axis=1)
 
-            y = tf.Print(
-                y,
-                [tf.shape(mask), tf.shape(y), tf.shape(_y), mask, y],
-                "y masked:",
-                summarize=100,
-            )
-
         shp = tf.shape(mu)
 
         mu = tf.reshape(mu, [shp[0] * shp[1], shp[2], 1])  # num_samples*N x S x 1
@@ -305,20 +295,9 @@ class MR_Mixture(Model):
         shp = tf.shape(y_i)
         y_i = tf.reshape(y_i, [shp[0] * shp[1], shp[2]])  # (num_samples*N) x  1
 
-        sig = tf.Print(
-            sig, [self.num_samples, tf.shape(y_i)], "y_i_shp: ", summarize=100
-        )
-        sig = tf.Print(sig, [tf.shape(mu)], "mu_sig: ", summarize=100)
-        sig = tf.Print(sig, [tf.shape(sig)], "sig_sig: ", summarize=100)
-
         ell = gp.expected_log_likelihood(y_i, mu, sig)
-        # ell = tf.Print(ell, [tf.shape(ell)], 'ell: ', summarize=100)
 
         ell = tf.reshape(ell, [shp[0], shp[1]])  # num_samples x N
-        # ell = tf.Print(ell, [ell], '-- ell', summarize=100)
-        # ell = tf.Print(ell, [mu], '-- mu', summarize=100)
-        # ell = tf.Print(ell, [sig], '-- sig', summarize=100)
-        # ell = tf.Print(ell, [y_i], '-- y_i', summarize=100)
 
         # TODO: double check this is the right way round
         # ell = tf.reduce_mean(tf.reduce_sum(ell, axis=1), axis=0)
@@ -344,7 +323,6 @@ class MR_Mixture(Model):
         base_mu, base_sig, dgp_mu, dgp_sig, parent_mu, parent_sig = self.propogate(
             num_samples=self.num_samples
         )
-        print(parent_mu)
 
         y_0 = getattr(self, "y_{i}".format(i=0))
         mask_0 = None
@@ -355,6 +333,7 @@ class MR_Mixture(Model):
             x_i = getattr(self, "x_{i}".format(i=i))
             y_i = getattr(self, "y_{i}".format(i=i))
             mask_i = None
+
             if self.masks:
                 mask_i = getattr(self, "mask_{i}".format(i=i))
 
@@ -363,13 +342,11 @@ class MR_Mixture(Model):
             scale = self.dataset_sizes[i] / tf.shape(y_i)[0]
 
             ell = scale * self.base_gps[i].expected_log_likelihood(y_i, mu, sig)
-            ell = tf.Print(ell, [tf.shape(sig)], "sig: ")
-            ell = tf.Print(ell, [tf.shape(mu)], "mu: ")
-            ell = tf.Print(ell, [tf.shape(y_i)], "y_i: ")
 
             kl = self.base_gps[i].kl_term()
 
-            ell = tf.Print(ell, [tf.reduce_sum(ell)], "base ell {i}: ".format(i=i))
+            ell = tf.Print(ell, [tf.reduce_sum(ell)], 'base ell {i}: '.format(i=i))
+
 
             base_ell_arr.append(tf.reduce_sum(ell))
             base_kl_arr.append(tf.reduce_sum(kl))
@@ -381,9 +358,6 @@ class MR_Mixture(Model):
                 dgp_kl_arr.append(tf.reduce_sum(kl))
 
                 mu, sig = dgp_mu[i - 1], dgp_sig[i - 1]
-                mu = tf.Print(mu, [y_0], "y_0", summarize=100)
-
-                # mu = tf.Print(mu, [mu, sig, y_0, mask_i], 'mask_', summarize=100)
 
                 _ell = self.sampled_ell(y_0, mu, sig, self.deep_gps[i - 1], mask_i)
                 scale = (
@@ -391,7 +365,7 @@ class MR_Mixture(Model):
                 )  # trained onto the first dataset
                 ell = scale * _ell
 
-                ell = tf.Print(ell, [scale, mu, sig, _ell, ell], "dgp ell")
+                ell = tf.Print(ell, [tf.reduce_sum(ell)], 'dgp ell: '.format(i=i))
 
                 dgp_ell_arr.append(ell)
 
@@ -648,12 +622,6 @@ class MR_Mixture(Model):
         dgp_mu = dgp_mu + parent_mu
         dgp_sig = dgp_sig + parent_sig
 
-        base_mu = tf.Print(
-            base_mu, [num_samples, tf.shape(base_mu)], "base_mu: ", summarize=10
-        )
-        base_mu = tf.Print(
-            base_mu, [num_samples, tf.shape(dgp_mu)], "dgp_mu: ", summarize=10
-        )
 
         mu, sig = self.mixing_weight.predict(
             base_mu, base_sig, dgp_mu, dgp_sig, num_samples=num_samples

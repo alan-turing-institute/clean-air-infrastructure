@@ -30,6 +30,8 @@ import os
 import glob
 import pickle
 
+import json
+
 
 def load(fp):
     with open(fp, 'rb') as handle:
@@ -40,6 +42,7 @@ def save(fp, obj):
         pickle.dump(obj, handle)
 
 def main(data_config, param_config, experiment_config):
+    print(param_config)
     #===========================Load Data===========================
     #TODO: fix files paths in experiments
     dirname = os.path.dirname
@@ -57,7 +60,23 @@ def main(data_config, param_config, experiment_config):
     train_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=train_fp))
     test_dict = load('../data/{data_dir}/{file}'.format(data_dir=data_dir, file=test_fp))
 
-    print(param_config)
+    with open('../data/{data_dir}/config.json'.format(data_dir=data_dir)) as json_file:
+        config_dict = json.load(json_file)
+
+    #===========================Select correct features===========================
+    features = [0, 1, 2, config_dict['x_names'].index('value_100_flat')]
+    for src in train_dict['X'].keys():
+        if len(train_dict['X'][src].shape) == 2:
+            train_dict['X'][src] =  train_dict['X'][src][:, features]
+        else:
+            train_dict['X'][src] =  train_dict['X'][src][:, :, features]
+
+    for src in test_dict['X'].keys():
+        if len(test_dict['X'][src].shape) == 2:
+            test_dict['X'][src] =  test_dict['X'][src][:, features]
+        else:
+            test_dict['X'][src] =  test_dict['X'][src][:, :, features]
+
 
     #===========================Setup Model===========================
 
@@ -69,7 +88,7 @@ def main(data_config, param_config, experiment_config):
 
     #print(train_dict['X']['satellite'])
 
-    m = MR_DGP_MODEL(model_params=param_config, experiment_config=experiment_config)
+    m = MR_DGP_MODEL(model_params=param_config, experiment_config=experiment_config, mask=False)
     m.fit(train_dict['X'], train_dict['Y'])
 
     #===========================Predict and store results===========================

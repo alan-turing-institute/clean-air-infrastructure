@@ -44,17 +44,6 @@ class MR_Gaussian(Likelihood):
             Y: N x 1
         """
         S = tf.shape(Fmu)[1]
-        Fmu = tf.Print(
-            Fmu,
-            [
-                S,
-                tf.reduce_any(tf.is_nan(self.variance)),
-                tf.reduce_any(tf.is_nan(tf.reduce_mean(Fmu, axis=1))),
-                tf.reduce_any(tf.is_nan(Y)),
-                tf.reduce_any(tf.is_nan(tf.reduce_sum(Fvar, axis=[1, 2]))),
-            ],
-            "Fmu",
-        )
         ell = (
             -0.5 * np.log(2 * np.pi)
             - 0.5 * tf.log(self.variance)
@@ -65,6 +54,5 @@ class MR_Gaussian(Likelihood):
             )
             / self.variance
         )
-        ell = tf.Print(ell, [tf.reduce_any(tf.is_nan(ell))], "ve: ell")
 
         return ell

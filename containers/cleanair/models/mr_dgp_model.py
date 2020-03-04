@@ -151,7 +151,7 @@ class MRDGP(Model):
         ]
 
         sliced_dataset = np.concatenate(
-            [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in [1, 2]], axis=1
+            [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in list(range(1,dataset[0][0].shape[-1]))], axis=1
         )
 
         dgp_z_inducing_locations = get_inducing_points(
@@ -270,19 +270,21 @@ class MRDGP(Model):
         try:
             if self.model_params["train"]:
                 opt = AdamOptimizer(0.1)
-                simple_optimizing_scheme = False
+                simple_optimizing_scheme = True
 
                 if not simple_optimizing_scheme:
                     set_objective(AdamOptimizer, "base_elbo")
+
                     opt.minimize(
-                        self.model, step_callback=self.elbo_logger, maxiter=1000
+                        self.model, step_callback=self.elbo_logger, maxiter=10000
                     )
 
                     # m.disable_base_elbo()
                     # set_objective(AdamOptimizer, 'elbo')
                     # opt.minimize(m, step_callback=logger, maxiter=10)
                 else:
-                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=1)
+                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=10000)
+
         except KeyboardInterrupt:
             print("Ending early")
 

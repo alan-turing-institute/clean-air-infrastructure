@@ -104,9 +104,9 @@ def get_dgp_default_config():
             "kernel": {
                 "name": "MR_SE_LAQN_BASE",
                 "type": "se",
-                "active_dims": [0, 1, 2],  # epoch, lat, lon
-                "lengthscales": [0.1, 0.1, 0.1],
-                "variances": [1.0, 1.0, 1.0],
+                "active_dims": [0, 1, 2, 3],  # epoch, lat, lon, feature
+                "lengthscales": [0.1, 0.1, 0.1, 0.1],
+                "variances": [1.0, 1.0, 1.0, 1.0],
             },
             "inducing_num": 300,
             "minibatch_size": 100,
@@ -135,9 +135,9 @@ def get_dgp_default_config():
                 {
                     "name": "MR_SE_SAT_DGP",
                     "type": "se",
-                    "active_dims": [2, 3],  # lat, lon
-                    "lengthscales": [0.1, 0.1],
-                    "variances": [1.0, 1.0],
+                    "active_dims": [2, 3, 4],  # lat, lon, feature
+                    "lengthscales": [0.1, 0.1, 0.1],
+                    "variances": [1.0, 1.0, 1.0],
                 },
             ],
             "inducing_num": 300,
