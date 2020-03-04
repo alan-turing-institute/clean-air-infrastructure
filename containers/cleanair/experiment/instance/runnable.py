@@ -63,7 +63,6 @@ class RunnableInstance(Instance):
         elif "model_data" not in kwargs and "data_config" not in kwargs:
             data_config = self.__class__.DEFAULT_DATA_CONFIG
             data_config["tag"] = self.tag
-            data_config["model_type"] = self.model_name
 
         # get passed data config
         elif "model_data" not in kwargs and "data_config" in kwargs:

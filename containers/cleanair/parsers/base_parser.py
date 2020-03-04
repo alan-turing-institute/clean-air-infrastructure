@@ -180,7 +180,6 @@ def get_data_config_from_kwargs(kwargs):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp",
         "tag": tag,
     }
     return model_config

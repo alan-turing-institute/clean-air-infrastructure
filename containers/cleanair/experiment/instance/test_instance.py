@@ -27,7 +27,6 @@ class LaqnTestInstance(RunnableInstance):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp",
         "tag": "test",
     }
 
@@ -48,8 +47,11 @@ class LaqnTestInstance(RunnableInstance):
         """
         Spin up a quick test instance that reads from the DB ready to run a simple GP.
         """
-        model_data = ModelData(config=self.__class__.DEFAULT_DATA_CONFIG, **kwargs)
         xp_config = self.__class__.DEFAULT_EXPERIMENT_CONFIG
+        model_data = ModelData(
+            config=self.__class__.DEFAULT_DATA_CONFIG,
+            secretfile=xp_config["secretfile"],
+        )
         super().__init__(
             model_data=model_data,
             model_name="svgp",

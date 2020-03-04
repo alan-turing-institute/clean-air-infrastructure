@@ -14,11 +14,14 @@ class ProductionInstance(RunnableInstance):
         "include_satellite": True,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
-        "pred_sources": ["laqn", "grid100"],
+        # ToDo: add grid to pred sources
+        # "pred_sources": ["laqn", "grid100"],
+        "pred_sources": ["laqn"],
         "train_interest_points": "all",
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
+        # ToDo: add dynamic features
         "features": [
             "value_1000_total_a_road_length",
             "value_500_total_a_road_length",
@@ -26,10 +29,30 @@ class ProductionInstance(RunnableInstance):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "mr_dgp",
         "tag": "production",
     }
-    def __init__(self, **kwargs):
 
+    DEFAULT_EXPERIMENT_CONFIG = {
+        "model_name": "mr_dgp",
+        "secretfile": "../../terraform/.secrets/db_secrets.json",
+        "results_dir": "./",
+        "model_dir": "./",
+        "config_dir": "./",
+        "local_read": False,
+        "local_write": False,
+        "predict_training": False,
+        "predict_write": False,
+        "no_db_write": False,
+        "restore": False,
+        "save_model_state": False,
+    }
+
+    DEFAULT_MODEL_PARAMS = {"restore": False, "train": True, "model_state_fp": "", "maxiter": 10}
+
+    DEFAULT_MODEL_NAME = "mr_dgp"
+
+    def __init__(self, **kwargs):
+        if "tag" in kwargs and kwargs["tag"] != "production":
+            raise AttributeError("The tag must be 'production' when running a production instance.")
         super().__init__(**kwargs)
         

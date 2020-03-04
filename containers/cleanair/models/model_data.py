@@ -100,14 +100,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "species",
             "features",
             "norm_by",
-            "model_type",
             "tag",
-        ]
-
-        valid_models = [
-            "mr_gprn",
-            "mr_dgp",
-            "svgp",
         ]
 
         self.logger.info("Validating config")
@@ -154,14 +147,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "Checking requested sources for prediction are availble in database"
         )
         self.__check_sources_available(pred_sources)
-
-        # Check model type is valid
-        if config["model_type"] not in valid_models:
-            raise AttributeError(
-                "{} is not a valid model type. Use one of the following: {}".format(
-                    config["model_type"], valid_models
-                )
-            )
 
         # Check interest points are valid
         train_interest_points = config["train_interest_points"]

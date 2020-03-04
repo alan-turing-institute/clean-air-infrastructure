@@ -21,23 +21,26 @@ def main():
     # Set logging
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-    # Read the data config
+    # Read the data config from kwargs
     data_config = get_data_config_from_kwargs(kwargs)
+    tag = data_config["tag"]
 
     # get big dictionary of experiment config
     xp_config = kwargs.copy()
     xp_config.update(dict(
         restore=False, model_state_fp=xp_config["model_dir"], save_model_state=False
     ))
+    # possible instances given the tag
+    tagged_instances = dict(
+        production=ProductionInstance,
+        test=LaqnTestInstance,
+    )
     # create a production instance from data and experiment configs
-    instance = ProductionInstance(
+    instance = tagged_instances[tag](
         model_name=kwargs["model_name"],
         experiment_config=xp_config,
         data_config=data_config,
     )
-    # create a simple laqn test instance with an SVGP
-    # instance = LaqnTestInstance(secretfile=kwargs["secretfile"])
-
     # get instance Ids
     logging.info("Instance id: %s", instance.instance_id)
     logging.info("Model param id: %s", instance.param_id)

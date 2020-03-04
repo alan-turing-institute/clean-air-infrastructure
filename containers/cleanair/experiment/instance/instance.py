@@ -32,7 +32,6 @@ class Instance():
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "model_type": "svgp",
         "tag": "production",
     }
     DEFAULT_MODEL_PARAMS = {
