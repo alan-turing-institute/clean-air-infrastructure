@@ -300,6 +300,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         function to extract a value for each buffer size.
         """
         batch_size = 1000
+        update_start = time.time()
 
         # Iterate over each of the features and calculate the overlap with the interest points
         n_features = len(self.features)
@@ -357,25 +358,27 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
 
                 # Log timing statistics
                 elapsed_seconds = time.time() - feature_start
+                remaining_seconds = elapsed_seconds * (
+                    n_batches / idx_batch - 1
+                )
                 self.logger.info(
-                    "Finished inserting feature records for %s [batch %i/%i] after %s.",
+                    "Inserted '%s' records [batch %i/%i] after %s (%s remaining)",
                     feature_name,
                     idx_batch,
                     n_batches,
                     green(duration_from_seconds(elapsed_seconds)),
-                )
-                remaining_seconds = (
-                    elapsed_seconds
-                    * (n_batches / idx_batch - 1)
-                    * (n_features / idx_feature - 1)
-                )
-                self.logger.info(
-                    "Estimated remaining: %s.",
                     green(duration_from_seconds(remaining_seconds)),
                 )
-            # Print a final timing message
+
+            # Print a timing message at the end of each feature
             self.logger.info(
-                "Finished adding records for %s after %s",
+                "Finished adding records for '%s' after %s",
                 feature_name,
                 green(duration(feature_start, time.time())),
             )
+
+        # Print a final timing message
+        self.logger.info(
+            "Finished adding records after %s",
+            green(duration(update_start, time.time())),
+        )
