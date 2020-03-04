@@ -137,6 +137,7 @@ class RunnableInstance(Instance):
         # passing a model
         if "model" in kwargs:
             self.model = kwargs["model"]
+            print(self.model.experiment_config)
             self.model_name = self.model.experiment_config["model_name"]
 
   
@@ -157,17 +158,16 @@ class RunnableInstance(Instance):
                 experiment_config=self.experiment_config
             )
 
-        # get model data from data id
+        # get data_config from data id
         if "data_id" in kwargs:
             raise NotImplementedError("Cannot read data config from DB using data_id.")
-
-        # get default model data
+        # get default data config
         elif "model_data" not in kwargs and "data_config" not in kwargs:
             data_config = self.__class__.DEFAULT_DATA_CONFIG
             data_config["tag"] = self.tag
             data_config["model_type"] = self.model_name
 
-        # get model data from passed data config
+        # get passed data config
         elif "model_data" not in kwargs and "data_config" in kwargs:
             data_config = kwargs["data_config"]
 
@@ -180,7 +180,7 @@ class RunnableInstance(Instance):
                 config_dir=self.experiment_config["config_dir"],
                 secretfile=self.experiment_config["secretfile"],
             )
-        # read using data config from DB
+        # read modeldata using data config
         else:
             self.model_data = ModelData(
                 config=data_config,
@@ -298,6 +298,7 @@ class LaqnTestInstance(RunnableInstance):
     }
 
     DEFAULT_MODEL_PARAMS = {
+        "model_name": "svgp",
         "jitter": 1e-5,
         "likelihood_variance": 0.1,
         "minibatch_size": 100,
@@ -313,15 +314,17 @@ class LaqnTestInstance(RunnableInstance):
         """
         Spin up a quick test instance that reads from the DB ready to run a simple GP.
         """
-        # Get the model data
+        model_data = ModelData(config=self.__class__.DEFAULT_DATA_CONFIG, **kwargs)
+        xp_config = self.__class__.DEFAULT_EXPERIMENT_CONFIG
         super().__init__(
-            model_data=ModelData(config=self.__class__.DEFAULT_DATA_CONFIG, **kwargs),
+            model_data=model_data,
             model_name="svgp",
             tag="test",
             model=SVGP(
                 model_params=self.__class__.DEFAULT_MODEL_PARAMS,
-                tasks=self.model_data.config["species"],
+                experiment_config=xp_config,
+                tasks=["NO2"],
             ),
             cluster_id="laptop",
-            experiment_config=self.__class__.DEFAULT_EXPERIMENT_CONFIG
+            experiment_config=xp_config
         )
