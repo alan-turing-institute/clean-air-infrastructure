@@ -12,6 +12,7 @@ class StaticFeature(Base):
 
     __tablename__ = "static_feature"
     __table_args__ = (
+        Index("static_feature_id_idx", "point_id"),
         Index("static_feature_id_name_idx", "point_id", "feature_name"),
         {"schema": "model_features"},
     )
@@ -66,6 +67,7 @@ class DynamicFeature(Base):
 
     __tablename__ = "dynamic_feature"
     __table_args__ = (
+        Index("dynamic_feature_id_idx", "point_id"),
         Index("dynamic_feature_id_time_name_idx", "point_id", "measurement_start_utc", "feature_name"),
         {"schema": "model_features"}
     )
