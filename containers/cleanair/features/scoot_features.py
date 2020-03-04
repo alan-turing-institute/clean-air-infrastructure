@@ -2,16 +2,16 @@
 Scoot feature extraction
 """
 from sqlalchemy import func
-from .features import Features
+from .feature_extractor import FeatureExtractor
 from ..databases.tables import OSHighway, ScootRoadForecast, ScootRoadReading
 from ..loggers import get_logger, green
 from ..mixins import DateRangeMixin
 
 
-class ScootFeaturesBase(DateRangeMixin, Features):
+class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
     """Process SCOOT values into model features"""
 
-    def __init__(self, table_class, **kwargs):
+    def __init__(self, table_class, value_type, **kwargs):
         # Initialise parent classes
         super().__init__(dynamic=True, **kwargs)
 
@@ -20,10 +20,28 @@ class ScootFeaturesBase(DateRangeMixin, Features):
             self.logger = get_logger(__name__)
 
         self.table_class = table_class
+        self.value_type = value_type
+
+        # Log an introductory message
+        self.logger.info(
+            "Constructing features from per-road SCOOT %s between %s and %s",
+            self.value_type,
+            green(self.start_datetime),
+            green(self.end_datetime),
+        )
+        with self.dbcnxn.open_session() as session:
+            self.logger.info(
+                "There are %i per-road SCOOT %s in this time range",
+                session.query(self.table_class).filter(
+                    self.table_class.measurement_start_utc >= self.start_datetime,
+                    self.table_class.measurement_start_utc < self.end_datetime,
+                ).count(),
+                self.value_type,
+            )
 
     @property
     def table(self):
-        """Join the geometry column from OSHighway onto the ScootRoadForecast table for feature extraction"""
+        """Join the geometry column from OSHighway onto the relevant SCOOT table for feature extraction"""
         with self.dbcnxn.open_session() as session:
             return (
                 session.query(self.table_class, OSHighway.geom,)
@@ -86,19 +104,7 @@ class ScootReadingFeatures(ScootFeaturesBase):
 
     def __init__(self, **kwargs):
         # Initialise parent classes
-        super().__init__(table_class=ScootRoadReading, **kwargs)
-
-        # Log an introductory message
-        self.logger.info(
-            "Constructing features from SCOOT readings between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
-        )
-        with self.dbcnxn.open_session() as session:
-            self.logger.info(
-                "There are %i readings in this time range",
-                session.query(self.table_class).count(),
-            )
+        super().__init__(table_class=ScootRoadReading, value_type="readings", sources=["aqe", "laqn"], **kwargs)
 
 
 class ScootForecastFeatures(ScootFeaturesBase):
@@ -106,16 +112,4 @@ class ScootForecastFeatures(ScootFeaturesBase):
 
     def __init__(self, **kwargs):
         # Initialise parent classes
-        super().__init__(table_class=ScootRoadForecast, **kwargs)
-
-        # Log an introductory message
-        self.logger.info(
-            "Constructing features from SCOOT forecasts between %s and %s",
-            green(self.start_datetime),
-            green(self.end_datetime),
-        )
-        with self.dbcnxn.open_session() as session:
-            self.logger.info(
-                "There are %i forecasts in this time range",
-                session.query(self.table_class).count(),
-            )
+        super().__init__(table_class=ScootRoadForecast, value_type="forecasts", sources=["satellite", "hexgrid"], **kwargs)
