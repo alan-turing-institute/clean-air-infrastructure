@@ -30,12 +30,20 @@ def main():
         restore=False, model_state_fp=xp_config["model_dir"], save_model_state=False
     ))
     # create a production instance from data and experiment configs
-    # instance = ProductionInstance(
-    #     model_name=kwargs["model_name"],
-    #     experiment_config=xp_config,
-    #     data_config=data_config,
-    # )
-    instance = LaqnTestInstance(secretfile=kwargs["secretfile"])
+    instance = ProductionInstance(
+        model_name=kwargs["model_name"],
+        experiment_config=xp_config,
+        data_config=data_config,
+    )
+    # create a simple laqn test instance with an SVGP
+    # instance = LaqnTestInstance(secretfile=kwargs["secretfile"])
+
+    # get instance Ids
+    logging.info("Instance id: %s", instance.instance_id)
+    logging.info("Model param id: %s", instance.param_id)
+    logging.info("Data id: %s", instance.data_id)
+    logging.info("Github hash: %s", instance.hash)
+
     # run the instance
     instance.run()
 
