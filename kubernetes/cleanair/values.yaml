@@ -56,9 +56,9 @@ jobs:
       secret:
         secretName: secrets
 
-  - name: scoot-roadmap
+  - name: scootroadmap
     image:
-      repository: cleanairdocker.azurecr.io/scoot-roadmap
+      repository: cleanairdocker.azurecr.io/scootroadmap
       imagePullPolicy: Always
     schedule: "5 * * * *"
     failedJobsHistoryLimit: 1

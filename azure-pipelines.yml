@@ -38,7 +38,7 @@ stages:
       displayName: 'Build SCOOT data collection image'
     # Build SCOOT road maps
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot-roadmap:$(Build.SourceVersion) -f containers/dockerfiles/construct_scoot_roadmaps.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootroadmap:$(Build.SourceVersion) -f containers/dockerfiles/construct_scoot_roadmaps.Dockerfile containers
       displayName: 'Build SCOOT road mapping image'
     # Build SCOOT forecast features
     - script: |
@@ -79,14 +79,16 @@ stages:
     # Push Docker images to ACR
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecast:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecastfeatures:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootreadingfeatures:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootroadmap:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
