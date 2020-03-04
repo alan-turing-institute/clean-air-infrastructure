@@ -16,32 +16,32 @@ class StreetCanyonFeatures(FeatureExtractor):
     @property
     def features(self):
         return {
-            "min_ratio_avg": {
+            "min_canyon_ratio": {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": min_,
             },
-            "avg_ratio_avg": {
+            "avg_canyon_ratio": {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": avg_,
             },
-            "max_ratio_avg": {
+            "max_canyon_ratio": {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": max_,
             },
-            "min_min_width": {
+            "min_canyon_narrowest": {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": min_,
             },
-            "avg_min_width": {
+            "avg_canyon_narrowest": {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": avg_,
             },
-            "max_min_width": {
+            "max_canyon_narrowest": {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": max_,
