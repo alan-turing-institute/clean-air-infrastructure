@@ -6,6 +6,8 @@ from abc import abstractmethod
 from . import experiment
 from .. import util
 
+import copy
+
 
 class SatelliteExperiment(experiment.Experiment):
     """
@@ -31,7 +33,7 @@ class SatelliteExperiment(experiment.Experiment):
         dgp_default = get_dgp_default_config()
         dgp_default['id'] = 0
 
-        dgp_default_se = dgp_default.copy()
+        dgp_default_se = copy.deepcopy(dgp_default)
         dgp_default_se['id'] = 1
         dgp_default_se['dgp_sat']['kernel'] = [{
             "name": "MR_SE_SAT_DGP",
@@ -40,6 +42,7 @@ class SatelliteExperiment(experiment.Experiment):
             "lengthscales": [0.1],
             "variances": [1.0],
         }]
+
 
 
         return {
@@ -88,7 +91,7 @@ class SatelliteExperiment(experiment.Experiment):
             data_config[index]['include_satellite'] = True
             data_config[index]['train_satellite_interest_points'] = 'all'
             data_config[index]['train_sources'] = ['laqn']
-            data_config[index]['pred_sources'] = ['laqn', 'hexgrid', 'grid_100']
+            data_config[index]['pred_sources'] = ['laqn', 'hexgrid']
         return data_config
 
 
@@ -101,9 +104,9 @@ def get_dgp_default_config():
             "kernel": {
                 "name": "MR_SE_LAQN_BASE",
                 "type": "se",
-                "active_dims": [0, 1, 2, 3],  # epoch, lat, lon, value_1000_flat
-                "lengthscales": [0.1, 0.1, 0.1, 0.1],
-                "variances": [1.0, 1.0, 1.0, 1.0],
+                "active_dims": [0, 1, 2],  # epoch, lat, lon
+                "lengthscales": [0.1, 0.1, 0.1],
+                "variances": [1.0, 1.0, 1.0],
             },
             "inducing_num": 300,
             "minibatch_size": 100,
@@ -132,9 +135,9 @@ def get_dgp_default_config():
                 {
                     "name": "MR_SE_SAT_DGP",
                     "type": "se",
-                    "active_dims": [2, 3, 4],  # lat, lon, value_1000_flat
-                    "lengthscales": [0.1, 0.1, 0.1],
-                    "variances": [1.0, 1.0, 0.1],
+                    "active_dims": [2, 3],  # lat, lon
+                    "lengthscales": [0.1, 0.1],
+                    "variances": [1.0, 1.0],
                 },
             ],
             "inducing_num": 300,
@@ -143,5 +146,5 @@ def get_dgp_default_config():
         },
         "mixing_weight": {"name": "dgp_only", "param": None},
         "num_samples_between_layers": 1,
-        "num_prediction_samples": 1,
+        "num_prediction_samples": 10,
     }
