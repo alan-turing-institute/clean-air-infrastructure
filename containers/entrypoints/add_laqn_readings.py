@@ -44,7 +44,9 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        laqn_writer = LAQNWriter(end=args.end, ndays=args.ndays, secretfile=args.secretfile)
+        laqn_writer = LAQNWriter(
+            end=args.end, ndays=args.ndays, secretfile=args.secretfile
+        )
 
         # Update the LAQN tables on the database
         laqn_writer.update_remote_tables()

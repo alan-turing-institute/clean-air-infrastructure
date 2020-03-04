@@ -78,7 +78,13 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine copernicus_key")
 
-        satellite_writer = SatelliteWriter(copernicus_key=args.copernicus_key, end=args.end, ndays=args.ndays, secretfile=args.secretfile, archive=args.archive)
+        satellite_writer = SatelliteWriter(
+            copernicus_key=args.copernicus_key,
+            end=args.end,
+            ndays=args.ndays,
+            secretfile=args.secretfile,
+            archive=args.archive,
+        )
 
         # Update the Scoot readings table on the database
         satellite_writer.update_remote_tables()

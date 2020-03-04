@@ -34,7 +34,9 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = UKMapFeatures(secretfile=args.secretfile, sources=args.sources)
+        static_feature_extractor = UKMapFeatures(
+            secretfile=args.secretfile, sources=args.sources
+        )
         static_feature_extractor.update_remote_tables()
 
     except Exception as error:

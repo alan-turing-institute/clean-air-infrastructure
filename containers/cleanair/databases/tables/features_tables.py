@@ -68,8 +68,13 @@ class DynamicFeature(Base):
     __tablename__ = "dynamic_feature"
     __table_args__ = (
         Index("dynamic_feature_id_idx", "point_id"),
-        Index("dynamic_feature_id_time_name_idx", "point_id", "measurement_start_utc", "feature_name"),
-        {"schema": "model_features"}
+        Index(
+            "dynamic_feature_id_time_name_idx",
+            "point_id",
+            "measurement_start_utc",
+            "feature_name",
+        ),
+        {"schema": "model_features"},
     )
 
     point_id = Column(

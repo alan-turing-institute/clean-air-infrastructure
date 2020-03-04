@@ -44,7 +44,9 @@ def main():
 
     # Perform update and notify any exceptions
     try:
-        aqe_writer = AQEWriter(end=args.end, ndays=args.ndays, secretfile=args.secretfile)
+        aqe_writer = AQEWriter(
+            end=args.end, ndays=args.ndays, secretfile=args.secretfile
+        )
 
         # Update the AQE tables on the database
         aqe_writer.update_remote_tables()

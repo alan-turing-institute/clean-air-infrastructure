@@ -34,7 +34,9 @@ def main():
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = StreetCanyonFeatures(secretfile=args.secretfile, sources=args.sources)
+        static_feature_extractor = StreetCanyonFeatures(
+            secretfile=args.secretfile, sources=args.sources
+        )
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 

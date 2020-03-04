@@ -64,12 +64,8 @@ class DBQueryMixin:
             available_dynamic_sq = (
                 session.query(
                     DynamicFeature.feature_name,
-                    func.min(DynamicFeature.measurement_start_utc).label(
-                        "min_date"
-                    ),
-                    func.max(DynamicFeature.measurement_start_utc).label(
-                        "max_date"
-                    ),
+                    func.min(DynamicFeature.measurement_start_utc).label("min_date"),
+                    func.max(DynamicFeature.measurement_start_utc).label("max_date"),
                 )
                 .group_by(DynamicFeature.feature_name)
                 .subquery()

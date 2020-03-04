@@ -32,10 +32,12 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
         with self.dbcnxn.open_session() as session:
             self.logger.info(
                 "There are %i per-road SCOOT %s in this time range",
-                session.query(self.table_class).filter(
+                session.query(self.table_class)
+                .filter(
                     self.table_class.measurement_start_utc >= self.start_datetime,
                     self.table_class.measurement_start_utc < self.end_datetime,
-                ).count(),
+                )
+                .count(),
                 self.value_type,
             )
 
@@ -104,7 +106,12 @@ class ScootReadingFeatures(ScootFeaturesBase):
 
     def __init__(self, **kwargs):
         # Initialise parent classes
-        super().__init__(table_class=ScootRoadReading, value_type="readings", sources=["aqe", "laqn"], **kwargs)
+        super().__init__(
+            table_class=ScootRoadReading,
+            value_type="readings",
+            sources=["aqe", "laqn"],
+            **kwargs
+        )
 
 
 class ScootForecastFeatures(ScootFeaturesBase):
@@ -112,4 +119,9 @@ class ScootForecastFeatures(ScootFeaturesBase):
 
     def __init__(self, **kwargs):
         # Initialise parent classes
-        super().__init__(table_class=ScootRoadForecast, value_type="forecasts", sources=["satellite", "hexgrid"], **kwargs)
+        super().__init__(
+            table_class=ScootRoadForecast,
+            value_type="forecasts",
+            sources=["satellite", "hexgrid"],
+            **kwargs
+        )

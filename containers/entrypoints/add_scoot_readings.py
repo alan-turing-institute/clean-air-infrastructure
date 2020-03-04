@@ -73,7 +73,13 @@ def main():
                 )
 
         # Update the Scoot readings table on the database
-        scoot_writer = ScootWriter(end=args.end, aws_key_id=args.aws_key_id, aws_key=args.aws_key, ndays=args.ndays, secretfile=args.secretfile)
+        scoot_writer = ScootWriter(
+            end=args.end,
+            aws_key_id=args.aws_key_id,
+            aws_key=args.aws_key,
+            ndays=args.ndays,
+            secretfile=args.secretfile,
+        )
         scoot_writer.update_remote_tables()
 
     except Exception as error:

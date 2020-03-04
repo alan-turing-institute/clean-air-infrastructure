@@ -11,7 +11,9 @@ def main():
     Construct maps between roads and SCOOT detectors
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Construct maps between roads and SCOOT detectors")
+    parser = argparse.ArgumentParser(
+        description="Construct maps between roads and SCOOT detectors"
+    )
     parser.add_argument(
         "-s",
         "--secretfile",
