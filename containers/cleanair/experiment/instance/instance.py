@@ -141,8 +141,8 @@ class Instance():
         self.instance_id = None     # this will update in setter
 
     def __hash__(self):
-        hash_string = self.model_name + str(self.param_id) + self.tag
-        hash_string += str(self.data_id) + str(self.cluster_id) + utcstr_from_datetime(self.fit_start_time)
+        hash_string = self.model_name + str(self.param_id) 
+        hash_string += self.git_hash + str(self.data_id)
         return Instance.hash_fn(hash_string)
 
     @staticmethod

@@ -36,7 +36,17 @@ class ProductionInstance(RunnableInstance):
         "tag": "production",
     }
 
-    DEFAULT_MODEL_PARAMS = {"restore": False, "train": True, "model_state_fp": "", "maxiter": 10}
+    DEFAULT_MODEL_PARAMS = {
+        "jitter": 1e-5,
+        "likelihood_variance": 0.1,
+        "minibatch_size": 100,
+        "n_inducing_points": 2000,
+        "restore": False,
+        "train": True,
+        "model_state_fp": None,
+        "maxiter": 100,
+        "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
+    }
 
     def __init__(self, data_config=None, experiment_config=None, model_params=None, **kwargs):
         # ToDo: check that version is master and tag is production
