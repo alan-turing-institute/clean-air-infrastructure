@@ -7,11 +7,14 @@ import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
-
 class CleanAirParser(argparse.ArgumentParser):
     """
     The base cleanair entrypoint parser.
     """
+
+    MODEL_ARGS = ["restore", "model_state_fp", "save_model_state"]
+    EXPERIMENT_ARGS = ["secretfile"]
+    DATA_ARGS = []
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
         super().__init__(**kwargs)
@@ -102,13 +105,11 @@ class CleanAirParser(argparse.ArgumentParser):
             help="The number of hours to predict for",
         )
 
-    def parse_kwargs(self):
-        """
-        If the -c flag is passed, then load the config.json file
-        and overwrite any fields that are passed in kwargs.
-        """
-        args = self.parse_args()
+    def parse_all(self):
+        args = super().parse_args()
         kwargs = vars(args)
+
+        # get kwargs from json file
         if kwargs.pop("cleanair_config"):
             # load custom config and overwrite arguments passed
             with open(self.config_path, "r") as filepath:
@@ -116,8 +117,49 @@ class CleanAirParser(argparse.ArgumentParser):
             for key, value in config.items():
                 if key in kwargs:
                     kwargs[key] = value
-                # else:
-                # raise KeyError("{k} not a valid argument.".format(k=key))
+
+        # get misc kwargs
+        misc = dict(
+            tag=kwargs.pop("tag"),
+            verbose=kwargs.pop("verbose"),
+            model_name=kwargs.pop("model_name"),
+        )
+
+        # get model params
+        model_params = {
+            key: kwargs.pop(key) for key in kwargs if key in self.__class__.MODEL_ARGS
+        }
+        # get data params
+                # Get training and pred start and end datetimes
+        train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
+        return_y = kwargs.pop("return_y")
+        data_config = {
+            "train_start_date": train_start,
+            "train_end_date": train_end,
+            "pred_start_date": pred_start,
+            "pred_end_date": pred_end,
+            "include_prediction_y": return_y,
+            "tag": misc.get("tag"),
+        }
+        # the rest are experiment config
+        return misc, data_config, kwargs, model_params
+
+    def get_model_config(self):
+        args = self.parse_args()
+        kwargs = vars(args)
+        return {
+            key: kwargs.pop(key) for key in kwargs if key in self.__class__.MODEL_ARGS
+        }
+
+    def get_experiment_config(self):
+        """
+        If the -c flag is passed, then load the config.json file
+        and overwrite any fields that are passed in kwargs.
+        """
+        args = self.parse_args()
+        kwargs = vars(args)
+
+
         if kwargs["results_dir"] == "CONFIG_DIR":
             kwargs["results_dir"] = kwargs["config_dir"]
         return kwargs
@@ -157,7 +199,7 @@ def get_data_config_from_kwargs(kwargs):
     # Get training and pred start and end datetimes
     train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
     return_y = kwargs.pop("return_y")
-    tag = kwargs.pop("tag")
+    tag = kwargs["tag"]
 
     # Model configuration
     model_config = {

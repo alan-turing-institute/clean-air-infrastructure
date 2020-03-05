@@ -4,8 +4,7 @@ Model fitting
 import logging
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
-from cleanair.parsers import get_data_config_from_kwargs
-from cleanair.experiment import ProductionInstance, LaqnTestInstance
+from cleanair.experiment import ProductionInstance
 
 
 def main():
@@ -14,38 +13,33 @@ def main():
     """
     # Read command line arguments
     parser = ModelFitParser(description="Run model fitting")
+    kwargs, data_args, xp_config, model_args = parser.parse_all()
 
-    # Parse and interpret arguments
-    kwargs = parser.parse_kwargs()
-
-    # Set logging
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
 
-    # Read the data config from kwargs
-    data_config = get_data_config_from_kwargs(kwargs)
-    tag = data_config["tag"]
+    # update data config with parsed arguments
+    data_config = ProductionInstance.DEFAULT_DATA_CONFIG
+    data_config.update(data_args)
 
-    # get big dictionary of experiment config
-    xp_config = kwargs.copy()
-    xp_config.update(dict(
-        restore=False, model_state_fp=xp_config["model_dir"], save_model_state=False
-    ))
-    # possible instances given the tag
-    tagged_instances = dict(
-        production=ProductionInstance,
-        test=LaqnTestInstance,
-    )
-    # create a production instance from data and experiment configs
-    instance = tagged_instances[tag](
-        model_name=kwargs["model_name"],
-        experiment_config=xp_config,
+    # update mode parameters with parsed args
+    model_params = ProductionInstance.DEFAULT_MODEL_PARAMS
+    model_params.update(model_args)
+
+    # create the instance
+    instance = ProductionInstance(
         data_config=data_config,
+        experiment_config=xp_config,
+        model_params=model_params,
+        **kwargs
     )
+    # setup, fit, predict, and update
+    instance.run()
+
     # get instance Ids
     logging.info("Instance id: %s", instance.instance_id)
     logging.info("Model param id: %s", instance.param_id)
     logging.info("Data id: %s", instance.data_id)
-    logging.info("Github hash: %s", instance.hash)
+    logging.info("Github hash: %s", instance.git_hash)
 
     # run the instance
     instance.run()

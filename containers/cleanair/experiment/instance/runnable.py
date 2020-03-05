@@ -2,7 +2,9 @@
 An instance that can be executed using the run() method.
 """
 
+from abc import ABC, abstractmethod
 import os
+import json
 import pickle
 import logging
 from datetime import datetime
@@ -10,38 +12,86 @@ from .instance import Instance
 from ...models import ModelData
 
 
-class RunnableInstance(Instance):
-
-    DEFAULT_EXPERIMENT_CONFIG = {
-        "model_name": "svgp",
-        "results_dir": "./",
-        "model_dir": "./",
-        "config_dir": "./",
-        "local_read": False,
-        "local_write": False,
-        "predict_training": False,
-        "predict_write": False,
-        "no_db_write": False,
-        "restore": False,
-        "save_model_state": False,
-    }
+class RunnableInstance(Instance, ABC):
     
     def __init__(self, **kwargs):
+        """
+        A runnable instance is determined by its data, model and experiment settings.
+
+        Parameters
+        ___
+
+        data_config : dict, optional
+            Settings for data.
+
+        experiment_config : dict, optional
+            Settings that do not affect the model outcome, e.g. filepaths.
+
+        model_params : dict, optional
+            The parameters to run the model with.
+
+        Other Parameters
+        ___
+
+        kwargs : dict, optional
+            See `Instance`.
+        """
         super().__init__(**kwargs)
 
+        xp_config = kwargs.get("experiment_config", None)
+        model_params = kwargs.get("model_params", None)
+        data_config = kwargs.get("data_config", None)
+
         # get experiment config (filepaths, write/read locally or DB, etc.)
-        self.experiment_config = kwargs["experiment_config"] if "experiment_config" in kwargs else self.__class__.DEFAULT_EXPERIMENT_CONFIG
+        if xp_config:
+            self.experiment_config = xp_config
+        else:
+            raise AttributeError("You must pass an experiment config.")
 
-        # passing a model
-        if "model" in kwargs:
-            self.model = kwargs["model"]
-            print(self.model.experiment_config)
-            self.model_name = self.model.experiment_config["model_name"]
-
-  
         # check if model params has been passed
-        elif "model_params" in kwargs:
-            # check for experiment config
+        if model_params:
+            self.model_params = model_params
+        else:
+            self.model_params = self.__load_model_params()
+        
+        # get data config dict
+        if data_config:
+            self.data_config = data_config
+        elif self._data_id:     # check if data id has been passed
+            raise NotImplementedError("Coming soon: Cannot yet read data id from DB.")
+        else:
+            raise NotImplementedError("You must pass either a data_config or data_id.")
+        
+        # make model and data
+        self.model = None
+        self.model_data = None
+
+    @property
+    def model_params(self):
+        return self._model_params
+
+    @model_params.setter
+    def model_params(self, value):
+        self._model_params = value
+        # update param id
+        hash_string = json.dumps(value)
+        self.param_id = Instance.hash_fn(hash_string)
+
+    @property
+    def data_config(self):
+        return self._data_config
+    
+    @data_config.setter
+    def data_config(self, value):
+        self._data_config = value
+        hash_string = json.dumps(value)
+        self.data_id = Instance.hash_fn(hash_string)
+
+    """
+
+
+
+        elif kwargs[""]
             self.model = self.__class__.MODELS[self.model_name](
                 model_params=kwargs["model_params"]
             )
@@ -88,7 +138,57 @@ class RunnableInstance(Instance):
         self.data_id = self.hash_data(self.model_data.config)
         self.param_id = self.hash_params(self.model.model_params)
         self.instance_id = self.hash_instance()
+    """
 
+    def load_model_params(self, **kwargs):
+        """
+        Load model parameters from DB or use defaults.
+        """
+        if kwargs.get("param_id"):
+            raise NotImplementedError("Cannot yet load from DB.")
+
+    @abstractmethod
+    def setup_model(self):
+        """
+        From the model name and params, set up a model.
+        """
+
+    @abstractmethod
+    def setup_data(self):
+        """
+        From the data and experiment config, setup a model data object.
+        """
+
+    @abstractmethod
+    def run_model_fitting(self):
+        """
+        Train the model on data.
+        """
+
+    @abstractmethod
+    def run_prediction(self):
+        """
+        Predict on the test set using a trained model.
+        """
+
+    @abstractmethod
+    def update_results(self):
+        """
+        From the predictions, update a DB or file with the results.
+        """
+
+    def run(self):
+        """
+        Setup, train, predict and update all in one step.
+        """
+        self.setup_model()
+        self.setup_data()
+        self.run_model_fitting()
+        self.run_prediction()
+        self.update_results()
+    
+
+    @abstractmethod
     def run(self):
         """
         Run the instance: train and predict a model.

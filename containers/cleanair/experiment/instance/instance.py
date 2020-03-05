@@ -1,104 +1,148 @@
 """
 Instances of models and data.
 """
-import json
 import hashlib
 import git
 from ...models import SVGP, MRDGP
-from ...databases import DBWriter
+from ...timestamps import utcstr_from_datetime
 
 class Instance():
     """
     An instance is one model trained and fitted on some data.
     """
 
-    DEFAULT_DATA_CONFIG = {
-        "train_start_date": "2020-01-29T00:00:00",
-        "train_end_date": "2020-01-30T00:00:00",
-        "pred_start_date": "2020-01-30T00:00:00",
-        "pred_end_date": "2020-01-31T00:00:00",
-        "include_satellite": True,
-        "include_prediction_y": False,
-        "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
-        "train_interest_points": "all",
-        "train_satellite_interest_points": "all",
-        "pred_interest_points": "all",
-        "species": ["NO2"],
-        "features": [
-            "value_1000_total_a_road_length",
-            "value_500_total_a_road_length",
-            "value_500_total_a_road_primary_length",
-            "value_500_total_b_road_length",
-        ],
-        "norm_by": "laqn",
-        "tag": "production",
-    }
-    DEFAULT_MODEL_PARAMS = {
-        "jitter": 1e-5,
-        "likelihood_variance": 0.1,
-        "minibatch_size": 100,
-        "n_inducing_points": 200,
-        "restore": False,
-        "train": True,
-        "model_state_fp": None,
-        "maxiter": 100,
-        "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
-    }
     MODELS = {
         'svgp': SVGP,
         'mr_dgp': MRDGP,
     }
 
-    DEFAULT_MODEL_NAME = "svgp"
-
     def __init__(self, **kwargs):
-        # get the name of the model to run
-        self.model_name = kwargs["model_name"] if "model_name" in kwargs else self.__class__.DEFAULT_MODEL_NAME
+        """
 
-        # not a valid model
-        if self.model_name not in self.__class__.MODELS:
-            raise KeyError("{name} is not a valid model.".format(name=self.model_name))
+        Parameters
+        ___
 
-        # set parameter id
-        if "param_id" in kwargs:
-            self.param_id = kwargs["param_id"]
-        elif "model_params" in kwargs:
-            self.param_id = self.hash_params(kwargs["model_params"])
+        model_name : str, optional
+            Name of the model for this instance.
+
+        param_id : str, optional
+            Uniquely identifies a parameter setting of the model.
+            See `Instance.hash_param()`.
+
+        data_id : str, optional
+            Uniquely identifies a data configuration.
+            See `Instance.hash_data()`.
+
+        cluster_id : str, optional
+            The id of the machine used to run the model.
+
+        tag : str, optional
+            Name of the instance type, e.g. 'production', 'test', 'validation'.
+
+        hash : str, optional
+            Git hash of the code version.
+
+        fit_start_time : str, optional
+            Datetime when the model started fitting.
+
+        instance_id : str, optional
+            Uniquely identifies this instance.
+            See `Instance.hash_instance()`.
+
+        Other Parameters
+        ___
+
+        kwargs : dict, optional
+            Further arguments to pass, e.g. model_params, data_config.
+
+        """
+        self._model_name = kwargs.get("model_name", None)
+        self._param_id = kwargs.get("param_id", None)
+        self._data_id = kwargs.get("data_id", None)
+        self._cluster_id = kwargs.get("cluster_id", None)
+        self._tag = kwargs.get("tag", None)
+        self._git_hash = kwargs.get("git_hash", git.Repo(search_parent_directories=True).head.object.hexsha)
+        self._instance_id = kwargs.get("instance_id", self.__hash__())
+        self._fit_start_time = kwargs.get("fit_start_time", None)
+
+    @property
+    def model_name(self):
+        return self._model_name
+
+    @model_name.setter
+    def model_name(self, value):
+        self._model_name = value
+        self.instance_id = None     # this will update in setter
+
+    @property
+    def param_id(self):
+        return self._param_id
+
+    @param_id.setter
+    def param_id(self, value):
+        self._param_id = value
+        self.instance_id = None     # this will update in setter
+
+    @property
+    def data_id(self):
+        return self._data_id
+
+    @data_id.setter
+    def data_id(self, value):
+        self._data_id = value
+        self.instance_id = None     # this will update in setter
+
+    @property
+    def instance_id(self):
+        return self._instance_id
+
+    @instance_id.setter
+    def instance_id(self, value):
+        hash_value = self.__hash__()
+        if not value or value == hash_value:
+            self._instance_id = hash_value
         else:
-            self.param_id = self.hash_params(self.__class__.DEFAULT_MODEL_PARAMS)
+            raise ValueError("The instance id you passed does not match the hash of the instance.")
 
-        # set data id
-        if "data_id" in kwargs:
-            self.data_id = kwargs["data_id"]
-        elif "data_config" in kwargs:
-            self.data_id = self.hash_data(kwargs["data_config"])
-        else:
-            self.data_id = self.hash_data(self.__class__.DEFAULT_DATA_CONFIG)
+    @property
+    def git_hash(self):
+        return self._git_hash
 
-        # set cluster id
-        self.cluster_id = kwargs["cluster_id"] if "cluster_id" in kwargs else "unassigned"
+    @git_hash.setter
+    def git_hash(self, value):
+        self._git_hash = value
+        self.instance_id = None     # this will update in setter
 
-        # passing a tag
-        self.tag = kwargs["tag"] if "tag" in kwargs else "unassigned"
+    @property
+    def tag(self):
+        return self._tag
 
-        # creating the github hash
-        self.hash = git.Repo(search_parent_directories=True).head.object.hexsha
+    @tag.setter
+    def tag(self, value):
+        self._tag = value
+        self.instance_id = None     # this will update in setter
 
-        # get the instance id
-        self.instance_id = self.hash_instance()
+    @property
+    def cluster_id(self):
+        return self._cluster_id
 
-    def hash_instance(self):
+    @cluster_id.setter
+    def cluster_id(self, value):
+        self._cluster_id = value
+        self.instance_id = None     # this will update in setter
+
+    @property
+    def fit_start_time(self):
+        return self._fit_start_time
+
+    @fit_start_time.setter
+    def fit_start_time(self, value):
+        self._fit_start_time = value
+        self.instance_id = None     # this will update in setter
+
+    def __hash__(self):
         hash_string = self.model_name + str(self.param_id) + self.tag
-        hash_string += str(self.data_id) + str(self.cluster_id)
-        return Instance.hash_fn(hash_string)
-
-    def hash_params(self, model_params):
-        hash_string = json.dumps(model_params)
-        return Instance.hash_fn(hash_string)
-
-    def hash_data(self, data_config):
-        hash_string = json.dumps(data_config)
+        hash_string += str(self.data_id) + str(self.cluster_id) + utcstr_from_datetime(self.fit_start_time)
         return Instance.hash_fn(hash_string)
 
     @staticmethod
@@ -106,22 +150,3 @@ class Instance():
         sha_fn = hashlib.sha256()
         sha_fn.update(bytearray(hash_string, "utf-8"))
         return sha_fn.hexdigest()
-
-
-
-class WritableInstance(Instance, DBWriter):
-    """
-    Adds functionality for reading and writing to the DB.
-    """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-    def update_table(self):
-        """
-        Update the instance table and (if necessary) data and model tables.
-        """
-        raise NotImplementedError()
-
-
-
