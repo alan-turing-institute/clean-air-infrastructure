@@ -19,7 +19,7 @@ from ..loggers import duration, green, get_logger, duration_from_seconds
 class FeatureExtractor(DBWriter, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, dynamic=False, sources=None, **kwargs):
+    def __init__(self, dynamic=False, batch_size=1000, sources=None, **kwargs):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -34,6 +34,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
 
         self.dynamic = dynamic
         self.sources = sources if sources else []
+        self.batch_size = batch_size
         if self.dynamic:
             self.output_table = DynamicFeature
         else:
@@ -298,7 +299,6 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         that feature in each of the buffer radii then apply the appropriate aggregation
         function to extract a value for each buffer size.
         """
-        batch_size = 1000
         update_start = time.time()
 
         # Iterate over each of the features and calculate the overlap with the interest points
@@ -324,18 +324,19 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 "Determining how many records will need to be inserted..."
             )
             n_records = q_select_and_insert.count()
-            n_batches = round(0.5 + n_records / batch_size)
+            n_batches = round(0.5 + n_records / self.batch_size)
 
             # Slice the main query into batches, inserting each one in turn
             self.logger.info(
                 "Preparing to insert %s feature records in batches of %i...",
                 green(n_records),
-                batch_size,
+                self.batch_size,
             )
+            insert_start = time.time()
             for idx_batch, batch_start in enumerate(
-                range(0, n_records, batch_size), start=1
+                range(0, n_records, self.batch_size), start=1
             ):
-                batch_stop = min(batch_start + batch_size, n_records)
+                batch_stop = min(batch_start + self.batch_size, n_records)
                 self.logger.info(
                     "Inserting %i feature records for %s [batch %i/%i]...",
                     batch_stop - batch_start,
@@ -345,8 +346,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 )
                 q_batch_insert = q_select_and_insert.slice(batch_start, batch_stop)
 
-                # Query-and-insert in one statement to reduce local memory overhead and
-                # remove database round-trips
+                # Insert from the query to reduce local memory and database round-trips
                 with self.dbcnxn.open_session() as session:
                     self.commit_records(
                         session,
@@ -356,10 +356,10 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                     )
 
                 # Log timing statistics
-                elapsed_seconds = time.time() - feature_start
+                elapsed_seconds = time.time() - insert_start
                 remaining_seconds = elapsed_seconds * (n_batches / idx_batch - 1)
                 self.logger.info(
-                    "Inserted '%s' records [batch %i/%i] after %s (%s remaining)",
+                    "Inserted feature records for '%s' [batch %i/%i] after %s (%s remaining)",
                     feature_name,
                     idx_batch,
                     n_batches,
