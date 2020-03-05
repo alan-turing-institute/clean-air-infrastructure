@@ -36,6 +36,18 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
       displayName: 'Build SCOOT data collection image'
+    # Build SCOOT road maps
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootroadmap:$(Build.SourceVersion) -f containers/dockerfiles/construct_scoot_roadmaps.Dockerfile containers
+      displayName: 'Build SCOOT road mapping image'
+    # Build SCOOT forecast features
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecastfeatures:$(Build.SourceVersion) -f containers/dockerfiles/features_scoot_forecasts.Dockerfile containers
+      displayName: 'Build SCOOT forecast features image'
+    # Build SCOOT reading features
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootreadingfeatures:$(Build.SourceVersion) -f containers/dockerfiles/features_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT reading features image'
     # Build satellite
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion) -f containers/dockerfiles/add_satellite_readings.Dockerfile containers
@@ -67,13 +79,16 @@ stages:
     # Push Docker images to ACR
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootforecastfeatures:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootreadingfeatures:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scootroadmap:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes

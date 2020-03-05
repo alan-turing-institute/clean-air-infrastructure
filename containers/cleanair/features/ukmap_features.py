@@ -1,12 +1,12 @@
 """
 UKMAP feature extraction
 """
-from .features import Features
+from .feature_extractor import FeatureExtractor
 from .feature_funcs import sum_area, max_
 from ..databases.tables import UKMap
 
 
-class UKMapFeatures(Features):
+class UKMapFeatures(FeatureExtractor):
     """Extract features for UKMap"""
 
     @property

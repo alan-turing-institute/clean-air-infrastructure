@@ -1,18 +1,19 @@
 """
-Update SCOOT database
+Add satellite readings to database
 """
 import argparse
 import json
-import logging
 import os
 from cleanair.inputs import SatelliteWriter
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 
 
 def main():
-    """Update the scoot database"""
+    """
+    Update satellite table
+    """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get Satellite data")
+    parser = argparse.ArgumentParser(description="Get satellite data")
     parser.add_argument(
         "-k",
         "--copernicus-key",
@@ -39,8 +40,7 @@ def main():
         "--interestpoints",
         dest="define_interest_points",
         action="store_true",
-        help="""The first time satellite data is inserted into the database,
-                        this flag must be set to insert the interest points""",
+        help="Insert the interest points as well as the satellite data itself",
     )
     parser.add_argument(
         "-a",
@@ -63,8 +63,7 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    default_logger = initialise_logging(args.verbose)
 
     # Perform update and notify any exceptions
     try:
@@ -79,12 +78,18 @@ def main():
             except json.decoder.JSONDecodeError:
                 raise argparse.ArgumentTypeError("Could not determine copernicus_key")
 
-        satellite_writer = SatelliteWriter(**kwargs)
+        satellite_writer = SatelliteWriter(
+            copernicus_key=args.copernicus_key,
+            end=args.end,
+            ndays=args.ndays,
+            secretfile=args.secretfile,
+            archive=args.archive,
+        )
 
         # Update the Scoot readings table on the database
         satellite_writer.update_remote_tables()
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

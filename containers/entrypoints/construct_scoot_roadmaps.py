@@ -1,17 +1,19 @@
 """
-Upload static datasets
+Construct SCOOT road-sensor association
 """
 import argparse
-from cleanair.inputs import RectGridWriter
 from cleanair.loggers import initialise_logging
+from cleanair.processors import ScootPerRoadDetectors
 
 
 def main():
     """
-    Upload square grid data
+    Construct maps between roads and SCOOT detectors
     """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Insert static datasets")
+    parser = argparse.ArgumentParser(
+        description="Construct maps between roads and SCOOT detectors"
+    )
     parser.add_argument(
         "-s",
         "--secretfile",
@@ -26,12 +28,14 @@ def main():
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
-    # Perform update and notify any exceptions
+    # Extract features and notify any exceptions
     try:
-        rectgrid_writer = RectGridWriter(secretfile=args.secretfile)
+        road_mapper = ScootPerRoadDetectors(secretfile=args.secretfile)
 
-        # Upload the rectangular grid table to the database if it is not present
-        rectgrid_writer.update_remote_tables()
+        # Match all road segments to their closest SCOOT detector(s)
+        # - if the segment has detectors on it then match to them
+        # - otherwise match to the five closest detectors
+        road_mapper.update_remote_tables()
 
     except Exception as error:
         default_logger.error("An uncaught exception occurred: %s", str(error))
