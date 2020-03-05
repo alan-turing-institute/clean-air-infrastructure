@@ -7,9 +7,11 @@ SCHEMA_NAMES = [
     "dynamic_data",
     "dynamic_features",
     "interest_points",
+    "model_features",
+    "model_results",
+    "processed_data",
     "static_data",
     "static_features",
-    "model_results",
 ]
 EVENTS = [
     event.listen(

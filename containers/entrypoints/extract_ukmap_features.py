@@ -1,15 +1,14 @@
 """
-UKMap Feature extraction
+Run feature processing using UKMap data
 """
 import argparse
-import logging
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.features import UKMapFeatures
 
 
 def main():
     """
-    Extract static features
+    Extract static UKMap features
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Extract static UKMap features")
@@ -19,25 +18,29 @@ def main():
         default="db_secrets.json",
         help="File with connection secrets.",
     )
+    parser.add_argument(
+        "--sources",
+        nargs="+",
+        default=["aqe", "laqn", "satellite", "hexgrid"],
+        help="List of sources to process, (default: 'aqe', 'laqn', 'satellite', 'hexgrid').",
+    )
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
     args = parser.parse_args()
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
-
-    # List which sources to process
-    kwargs["sources"] = ["aqe", "laqn", "satellite", "hexgrid"]
+    default_logger = initialise_logging(args.verbose)
 
     # Extract features and notify any exceptions
     try:
-        static_feature_extractor = UKMapFeatures(**kwargs)
+        static_feature_extractor = UKMapFeatures(
+            secretfile=args.secretfile, sources=args.sources
+        )
         static_feature_extractor.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

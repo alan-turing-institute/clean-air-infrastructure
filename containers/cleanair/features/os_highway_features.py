@@ -1,12 +1,12 @@
 """
 OS Highway feature extraction
 """
-from .features import Features
+from .feature_extractor import FeatureExtractor
 from .feature_funcs import sum_length
 from ..databases.tables import OSHighway
 
 
-class OSHighwayFeatures(Features):
+class OSHighwayFeatures(FeatureExtractor):
     """Extract features for OSHighways"""
 
     @property

@@ -185,7 +185,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
 
             # Commit the records to the database
             self.commit_records(
-                session, site_records, table=AQEReading, on_conflict_do_nothing=True
+                session, site_records, on_conflict="ignore", table=AQEReading
             )
 
             # Commit changes

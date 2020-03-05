@@ -18,6 +18,7 @@ class DBConnectionMixin:
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
+        # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
         self.connection_dict = {
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
