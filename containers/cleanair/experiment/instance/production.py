@@ -13,7 +13,9 @@ class ProductionInstance(RunnableInstance):
         "train_end_date": "2020-01-30T00:00:00",
         "pred_start_date": "2020-01-30T00:00:00",
         "pred_end_date": "2020-01-31T00:00:00",
-        "include_satellite": True,
+        # ToDo: add satellite
+        # "include_satellite": True,
+        "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
         # ToDo: add grid to pred sources
@@ -42,31 +44,3 @@ class ProductionInstance(RunnableInstance):
             raise AttributeError("The tag must be 'production' when running a production instance. Change to a different instance if not running production code.")
 
         super().__init__(data_config=data_config, experiment_config=experiment_config, model_params=model_params, **kwargs)
-
-    def setup_model(self):
-        self.model = self.__class__.MODELS[self.model_name](
-            experiment_config=self.experiment_config,
-            model_params=self.model_params,
-        )
-
-    def setup_data(self):
-        self.model_data = ModelData(
-            config=self.data_config,
-            secretfile=self.experiment_config["secretfile"],
-        )
-
-    def run_model_fitting(self):
-        training_data_dict = self.model_data.get_training_data_arrays(dropna=False)
-        x_train = training_data_dict["X"]
-        y_train = training_data_dict["Y"]
-
-        self.fit_start_time = datetime.now()
-        self.model.fit(x_train, y_train)
-
-    def run_prediction(self):
-        predict_data_dict = self.model_data.get_pred_data_arrays(dropna=False)
-        x_test = predict_data_dict["X"]
-        return self.model.predict(x_test)
-
-    def update_results(self, y_pred):
-        self.model_data.update_test_df_with_preds(y_pred, self.fit_start_time)

@@ -62,8 +62,8 @@ class Instance():
         self._cluster_id = kwargs.get("cluster_id", None)
         self._tag = kwargs.get("tag", None)
         self._git_hash = kwargs.get("git_hash", git.Repo(search_parent_directories=True).head.object.hexsha)
-        self._instance_id = kwargs.get("instance_id", self.__hash__())
         self._fit_start_time = kwargs.get("fit_start_time", None)
+        self._instance_id = kwargs.get("instance_id", self.__hash__())
 
     @property
     def model_name(self):
