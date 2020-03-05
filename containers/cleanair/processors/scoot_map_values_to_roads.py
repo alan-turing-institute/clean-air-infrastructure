@@ -3,8 +3,6 @@ Scoot value extrapolations
 """
 import time
 from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.inspection import inspect
 from ..databases import DBWriter
 from ..databases.tables import (
     ScootReading,
@@ -41,11 +39,11 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
         )
 
     def update_remote_tables(self):
-        start_session = time.time()
+        session_start = time.time()
         with self.dbcnxn.open_session() as session:
             # For each road, combine the per-detector values according to their weight
             self.logger.info(
-                "Constructing per-road SCOOT %s from per-detector %s. This may take a couple of hours...",
+                "Constructing per-road SCOOT %s from per-detector %s...",
                 self.value_type,
                 self.value_type,
             )
@@ -99,26 +97,33 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 )
             )
 
-            # ... and write back to the forecasts table
-            table = self.table_per_road.__table__
-            column_names = table.columns.keys()
-            insert_stmt = insert(self.table_per_road).from_select(
-                names=column_names, select=q_per_road_forecasts
+            # Estimate how many records will be updated
+            n_roads = session.query(ScootRoadMatch.road_toid).distinct().count()
+            n_hours = int(
+                (self.end_datetime - self.start_datetime).total_seconds() / 3600
             )
-            update_dict = {c.name: c for c in insert_stmt.excluded if not c.primary_key}
-            on_duplicate_key_stmt = insert_stmt.on_conflict_do_update(
-                index_elements=inspect(table).primary_key, set_=update_dict
-            )
-            # Commit this to the database
-            result = session.execute(on_duplicate_key_stmt)
+            n_records = n_roads * n_hours
             self.logger.info(
-                "Preparing to insert/update %i per-road %s",
-                result.rowcount,
+                "Preparing to insert/update approximately %s per-road %s...",
+                green(n_records),
                 self.value_type,
             )
-            session.commit()
+
+            # Insert from the query to reduce memory usage and database round-trips
+            # NB. we must overwrite here, as we may be replacing forecasts with readings
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(
+                    session,
+                    q_per_road_forecasts.subquery(),
+                    table=self.table_per_road,
+                    on_conflict="overwrite",
+                )
+
+            # Print a final timing message
             self.logger.info(
-                "Insertion took %s", green(duration(start_session, time.time())),
+                "Insertion of per-road %s took %s",
+                self.value_type,
+                green(duration(session_start, time.time())),
             )
 
 

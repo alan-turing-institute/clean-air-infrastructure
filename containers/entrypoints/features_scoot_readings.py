@@ -30,7 +30,7 @@ def main():
         "-n",
         "--ndays",
         type=int,
-        default=14,
+        default=7,
         help="The number of days into the past to calculate features for.",
     )
     parser.add_argument("-v", "--verbose", action="count", default=0)
