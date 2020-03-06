@@ -136,6 +136,13 @@ cronjobs:
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
+    resources:
+        requests:
+          memory: "2Gi"
+          cpu: "4"
+        limits:
+          memory: "4Gi"
+          cpu: "8"
     volumes:
     - name: secrets
       secret:
@@ -150,6 +157,11 @@ cronjobs:
     successfulJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
+    resources:
+        requests:
+          memory: "2Gi"
+        limits:
+          memory: "4Gi"
     volumes:
     - name: secrets
       secret:
