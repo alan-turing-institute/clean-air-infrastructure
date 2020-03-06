@@ -30,7 +30,7 @@ def main():
         "-n",
         "--ndays",
         type=int,
-        default=21,
+        default=14,
         help="The number of days from the past to use for predicting, (default: 21).",
     )
     parser.add_argument(
