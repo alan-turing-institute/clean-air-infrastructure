@@ -12,9 +12,10 @@ class CleanAirParser(argparse.ArgumentParser):
     The base cleanair entrypoint parser.
     """
 
-    MODEL_ARGS = ["restore", "model_state_fp", "save_model_state"]
-    EXPERIMENT_ARGS = ["secretfile"]
-    DATA_ARGS = []
+    MODEL_ARGS = []
+    EXPERIMENT_ARGS = ["local_read", "config_dir"]
+    DATA_ARGS = ["trainend", "trainhours", "predstart", "predhours", "predict_training", "include_prediction_y"]
+    MISC_ARGS = ["secretfile", "tag", "model_name", "verbose"]
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
         super().__init__(**kwargs)
@@ -59,17 +60,10 @@ class CleanAirParser(argparse.ArgumentParser):
             action="store_true",
             help="Read local training/test data from config_dir.",
         )
-        self.add_argument(
-            "-r",
-            "--results_dir",
-            type=str,
-            default="CONFIG_DIR",
-            help="Filepath to the directory of results.",
-        )
         # optional params
         self.add_argument(
             "-y",
-            "--return_y",
+            "--include_prediction_y",
             action="store_true",
             help="Include pollutant data in the test dataset.",
         )
@@ -119,20 +113,16 @@ class CleanAirParser(argparse.ArgumentParser):
                     kwargs[key] = value
 
         # get misc kwargs
-        misc = dict(
-            tag=kwargs.pop("tag"),
-            verbose=kwargs.pop("verbose"),
-            model_name=kwargs.pop("model_name"),
-        )
+        misc = {key: kwargs.pop(key) for key in self.__class__.MISC_ARGS}
 
         # get model params
         model_params = {
-            key: kwargs.pop(key) for key in kwargs if key in self.__class__.MODEL_ARGS
+            key: kwargs.pop(key) for key in self.__class__.MODEL_ARGS
         }
         # get data params
                 # Get training and pred start and end datetimes
         train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
-        return_y = kwargs.pop("return_y")
+        return_y = kwargs.pop("include_prediction_y", False)
         data_config = {
             "train_start_date": train_start,
             "train_end_date": train_end,
@@ -143,26 +133,6 @@ class CleanAirParser(argparse.ArgumentParser):
         }
         # the rest are experiment config
         return misc, data_config, kwargs, model_params
-
-    def get_model_config(self):
-        args = self.parse_args()
-        kwargs = vars(args)
-        return {
-            key: kwargs.pop(key) for key in kwargs if key in self.__class__.MODEL_ARGS
-        }
-
-    def get_experiment_config(self):
-        """
-        If the -c flag is passed, then load the config.json file
-        and overwrite any fields that are passed in kwargs.
-        """
-        args = self.parse_args()
-        kwargs = vars(args)
-
-
-        if kwargs["results_dir"] == "CONFIG_DIR":
-            kwargs["results_dir"] = kwargs["config_dir"]
-        return kwargs
 
     def save_config(self):
         """
@@ -190,48 +160,3 @@ def get_train_test_start_end(kwargs):
     train_start = strtime_offset(train_end, -train_n_hours)
     pred_end = strtime_offset(pred_start, pred_n_hours)
     return train_start, train_end, pred_start, pred_end
-
-
-def get_data_config_from_kwargs(kwargs):
-    """
-    Return a dictionary of model data configs given parser arguments.
-    """
-    # Get training and pred start and end datetimes
-    train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
-    return_y = kwargs.pop("return_y")
-    tag = kwargs["tag"]
-
-    # Model configuration
-    model_config = {
-        "train_start_date": train_start,
-        "train_end_date": train_end,
-        "pred_start_date": pred_start,
-        "pred_end_date": pred_end,
-        "include_satellite": True,
-        "include_prediction_y": return_y,
-        "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
-        "train_interest_points": "all",
-        "train_satellite_interest_points": "all",
-        "pred_interest_points": "all",
-        "species": ["NO2"],
-        "features": [
-            "value_1000_total_a_road_length",
-            "value_500_total_a_road_length",
-            "value_500_total_a_road_primary_length",
-            "value_500_total_b_road_length",
-        ],
-        "norm_by": "laqn",
-        "tag": tag,
-    }
-    return model_config
-
-
-def pop_non_model_data_keys(kwargs):
-    """
-    Pop keys/values that model_data does not accept.
-    """
-    return {
-        key: kwargs.pop(key)
-        for key in set(kwargs.keys()) - {"secretfile", "config_dir"}
-    }

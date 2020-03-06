@@ -6,7 +6,6 @@ from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
 from cleanair.experiment import ProductionInstance
 
-
 def main():
     """
     Run model fitting

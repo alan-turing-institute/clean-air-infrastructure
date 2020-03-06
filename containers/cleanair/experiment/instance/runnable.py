@@ -2,16 +2,38 @@
 An instance that can be executed using the run() method.
 """
 
+import logging
 import os
 import json
 import pickle
-import logging
 from datetime import datetime
 from .instance import Instance
 from ...models import ModelData
 
-
 class RunnableInstance(Instance):
+
+    DEFAULT_DATA_CONFIG = {
+        "train_start_date": "2020-01-29T00:00:00",
+        "train_end_date": "2020-01-30T00:00:00",
+        "pred_start_date": "2020-01-30T00:00:00",
+        "pred_end_date": "2020-01-31T00:00:00",
+        "include_satellite": False,
+        "include_prediction_y": False,
+        "train_sources": ["laqn"],
+        "pred_sources": ["laqn"],
+        "train_interest_points": "all",
+        "train_satellite_interest_points": "all",
+        "pred_interest_points": "all",
+        "species": ["NO2"],
+        "features": [
+            "value_1000_total_a_road_length",
+            "value_500_total_a_road_length",
+            "value_500_total_a_road_primary_length",
+            "value_500_total_b_road_length",
+        ],
+        "norm_by": "laqn",
+        "tag": "validation",
+    }
     
     def __init__(self, **kwargs):
         """
@@ -47,15 +69,19 @@ class RunnableInstance(Instance):
         else:
             raise AttributeError("You must pass an experiment config.")
 
+        logging.debug("Experiment config: %s", json.dumps(self.experiment_config, indent=4))
+
         # check if model params has been passed
         if model_params:
-            self.model_params = model_params
+            self._model_params = model_params
+            self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
             raise NotImplementedError("Cannot yet load parameters from DB.")
         
         # get data config dict
         if data_config:
-            self.data_config = data_config
+            self._data_config = data_config
+            self.data_id = RunnableInstance.__hash_dict(data_config)
         elif kwargs.get("data_id"):     # check if data id has been passed
             raise NotImplementedError("Cannot yet read data id from DB.")
         else:
@@ -73,8 +99,7 @@ class RunnableInstance(Instance):
     def model_params(self, value):
         self._model_params = value
         # update param id
-        hash_string = json.dumps(value)
-        self.param_id = Instance.hash_fn(hash_string)
+        self.param_id = RunnableInstance.__hash_dict(value)
 
     @property
     def data_config(self):
@@ -83,9 +108,12 @@ class RunnableInstance(Instance):
     @data_config.setter
     def data_config(self, value):
         self._data_config = value
-        hash_string = json.dumps(value)
-        self.data_id = Instance.hash_fn(hash_string)
+        self.data_id = RunnableInstance.__hash_dict(value)
 
+    @staticmethod
+    def __hash_dict(value):
+        hash_string = json.dumps(value)
+        return Instance.hash_fn(hash_string)
 
     def load_model_params(self, **kwargs):
         """
@@ -120,7 +148,6 @@ class RunnableInstance(Instance):
         y_train = training_data_dict["Y"]
 
         self.fit_start_time = datetime.now()
-
         logging.info(
             "Training the model for %s iterations.", self.model_params["maxiter"]
         )

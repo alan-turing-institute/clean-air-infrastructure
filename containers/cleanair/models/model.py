@@ -6,7 +6,6 @@ import logging
 from abc import ABC, abstractmethod
 import numpy as np
 from ..metrics.evaluate import pop_kwarg
-from ..loggers import get_logger
 
 
 class Model(ABC):
@@ -69,9 +68,6 @@ class Model(ABC):
         self.epoch = 0
         self.batch_size = pop_kwarg(kwargs, "batchsize", 100)
         self.refresh = pop_kwarg(kwargs, "refresh", 10)
-        # Ensure logging is available
-        if self.log and not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
 
     @abstractmethod
     def get_default_model_params(self):
@@ -290,11 +286,10 @@ class Model(ABC):
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)
             if self.log:
-                self.logger.info(
-                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
-                    self.epoch,
-                    objective,
-                    logger_arg,
+                logging.debug(
+                    "Model fitting. Iteration: %s, ELBO: %s",
+                    str(self.epoch),
+                    str(objective),
                 )
         self.epoch += 1
 
@@ -336,7 +331,7 @@ class Model(ABC):
         logging.info("Start batch prediction.")
         for count in range(num_batches):
             if count % 10 == 0:
-                logging.info(count, 'out of', num_batches, 'batches')
+                logging.debug("%s out of %s batches", count, num_batches)
             if count == num_batches - 1:
                 # in last batch just use remaining of test points
                 batch = x_array[index:, :]
@@ -380,14 +375,12 @@ class Model(ABC):
         y_dict = dict()
 
         for src, x_src in x_test.items():
-            print(src, ignore)
             if src in ignore: continue
 
             for pollutant in self.tasks:
-                if self.log:
-                    self.logger.info(
-                        "Batch predicting for %s on %s", pollutant, src,
-                    )
+                logging.debug(
+                    "Batch predicting for %s on %s", pollutant, src
+                )
                 y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict

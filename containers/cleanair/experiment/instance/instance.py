@@ -4,7 +4,6 @@ Instances of models and data.
 import hashlib
 import git
 from ...models import SVGP, MRDGP
-from ...timestamps import utcstr_from_datetime
 
 class Instance():
     """

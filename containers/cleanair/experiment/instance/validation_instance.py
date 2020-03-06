@@ -2,10 +2,11 @@
 Instance for validation that allows more flexibility such as reading/writing from files.
 """
 
+import logging
 import os
 import pickle
-import logging
 from .runnable import RunnableInstance
+from ...models import ModelData
 
 class ValidationInstance(RunnableInstance):
 
@@ -24,6 +25,23 @@ class ValidationInstance(RunnableInstance):
         "save_model_state": False,
     }
 
+    DEFAULT_MODEL_PARAMS = {
+        "jitter": 1e-5,
+        "likelihood_variance": 0.1,
+        "minibatch_size": 100,
+        "n_inducing_points": 200,
+        "restore": False,
+        "train": True,
+        "model_state_fp": None,
+        "maxiter": 1,
+        "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
+    }
+
+    DEFAULT_DATA_CONFIG = dict(
+        RunnableInstance.DEFAULT_DATA_CONFIG.copy(),    # use super class dict
+        include_prediction_y=True,                      # update
+    )
+
     def __init__(self, **kwargs):
         self.y_test_pred = None
         self.y_train_pred = None
@@ -34,33 +52,57 @@ class ValidationInstance(RunnableInstance):
         # update with passed config
         experiment_config.update(kwargs.pop("experiment_config", {}))
 
+        # get model params
+        model_params = kwargs.pop("model_params", {})
+        if not model_params:
+            model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
+
+        # get default data config
+        data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
+        data_config.update(kwargs.pop("data_config", {}))
+
         # pass to super constructor
-        super().__init__(experiment_config=experiment_config, **kwargs)
+        super().__init__(
+            experiment_config=experiment_config,
+            model_params=model_params,
+            data_config=data_config,
+            **kwargs
+        )
 
     def setup_model(self):
+        logging.info("Setting up model.")
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()
 
     def setup_data(self):
         if self.experiment_config["local_read"]:
-            raise NotImplementedError("Cannot yet load data from files.")
-        super().setup_data()
+            logging.info("Reading from local file.")
+            self.model_data = ModelData(
+                config_dir=self.experiment_config["config_dir"],
+                secretfile=self.experiment_config["secretfile"],
+            )
+        else:
+            super().setup_data()
         # save input data to file
         if self.experiment_config["local_write"]:
             self.model_data.save_config_state(self.experiment_config["config_dir"])
 
     def save_results(self):
         if self.experiment_config["predict_write"]:
+            logging.info("Writing predictions to file.")
             self.write_predictions_to_file(self.y_test_pred, "test_pred.pickle")
             if self.experiment_config["predict_training"]:
                 self.write_predictions_to_file(self.y_train_pred, "train_pred.pickle")
         elif not self.experiment_config["no_db_write"]:
+            # ToDo: remove exception
+            raise Exception("Do not write to DB.")
             super().save_results()
         else:
             logging.warning("Did not write predictions.")
 
     def run_prediction(self):
+        logging.info("Starting prediction.")
         y_test_pred = super().run_prediction()
 
         if self.experiment_config["predict_training"]:

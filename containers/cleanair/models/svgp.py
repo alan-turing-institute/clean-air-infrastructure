@@ -52,9 +52,10 @@ class SVGP(Model):
 
         # disable TF warnings
         if disable_tf_warnings:
-            logging.disable(logging.WARNING)
+            # raise NotImplementedError("This will turn off all logging - need to fix.")
+            # logging.disable(logging.WARNING)
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-            tf.logging.set_verbosity(tf.logging.ERROR)
+            tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
         self.minimum_param_keys = [
             "likelihood_variance",
