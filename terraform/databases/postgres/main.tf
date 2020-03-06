@@ -8,6 +8,14 @@ resource "random_string" "db_admin_password" {
   length  = 20
   special = true
 }
+# :: database reader password
+resource "random_string" "db_reader_password" {
+  keepers = {
+    resource_group = "${var.resource_group}"
+  }
+  length  = 20
+  special = true
+}
 
 # Key vault secrets
 # -----------------
@@ -41,11 +49,30 @@ resource "azurerm_key_vault_secret" "db_admin_username" {
     segment     = "Databases / Postgres"
   }
 }
-
 # :: store the database admin password in the keyvault
 resource "azurerm_key_vault_secret" "db_admin_password" {
   name         = "${var.db_name}-db-admin-password"
   value        = "${random_string.db_admin_password.result}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+# :: store the database admin name in the keyvault
+resource "azurerm_key_vault_secret" "db_reader_username" {
+  name         = "${var.db_name}-db-reader-username"
+  value        = "atireader"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+# :: store the database reader password in the keyvault
+resource "azurerm_key_vault_secret" "db_reader_password" {
+  name         = "${var.db_name}-db-reader-password"
+  value        = "${random_string.db_reader_password.result}"
   key_vault_id = "${var.key_vault_id}"
   tags = {
     environment = "Terraform Clean Air"
@@ -95,6 +122,29 @@ resource "azurerm_postgresql_database" "this" {
   server_name         = "${azurerm_postgresql_server.this.name}"
   charset             = "UTF8"
   collation           = "English_United States.1252"
+}
+
+# Setup PostgreSQL provider once database is provisioned
+provider "postgresql" {
+  host             = "${azurerm_postgresql_server.this.fqdn}"
+  port             = 5432
+  database         = "${azurerm_key_vault_secret.db_name.value}"
+  username         = "${azurerm_key_vault_secret.db_admin_username.value}"
+  password         = "${azurerm_key_vault_secret.db_admin_password.value}"
+  sslmode          = "require"
+  expected_version = "11.0"
+}
+
+# Create App User
+resource "postgresql_role" "reader" {
+    name                = "${azurerm_key_vault_secret.db_reader_username.value}"
+    superuser           = false
+    create_database     = false
+    create_role         = false
+    login               = true
+    password            = "${azurerm_key_vault_secret.db_reader_password.value}"
+    encrypted_password  = true
+    depends_on          = [azurerm_postgresql_database.this]
 }
 
 # :: create firewall rules
