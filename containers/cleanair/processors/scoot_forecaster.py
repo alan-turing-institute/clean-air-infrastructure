@@ -135,8 +135,6 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                         detector_id,
                         feature,
                     )
-                    # forecast = time_range.copy()
-                    # forecast["yhat"] = 0
                     # Make a copy with a 'yhat' column included
                     forecast = time_range.assign(yhat=0)
 
