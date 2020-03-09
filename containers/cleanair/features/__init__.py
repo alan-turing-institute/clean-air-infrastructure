@@ -2,13 +2,14 @@
 Module for feature extraction
 """
 from .os_highway_features import OSHighwayFeatures
-from .ukmap_features import UKMapFeatures
-from .scoot_features import ScootFeatures
+from .scoot_features import ScootForecastFeatures, ScootReadingFeatures
 from .streetcanyon_features import StreetCanyonFeatures
+from .ukmap_features import UKMapFeatures
 
 __all__ = [
     "OSHighwayFeatures",
-    "UKMapFeatures",
+    "ScootForecastFeatures",
+    "ScootReadingFeatures",
     "StreetCanyonFeatures",
-    "ScootFeatures",
+    "UKMapFeatures",
 ]

@@ -1,18 +1,19 @@
 """
-Update SCOOT database and run feature processing
+Add SCOOT readings to database
 """
 import argparse
 import json
-import logging
 import os
 from cleanair.inputs import ScootWriter
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 
 
 def main():
-    """Update the scoot database"""
+    """
+    Update SCOOT table
+    """
     # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get Scoot traffic data")
+    parser = argparse.ArgumentParser(description="Get SCOOT traffic data")
     parser.add_argument(
         "-e",
         "--end",
@@ -55,8 +56,7 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    default_logger = initialise_logging(args.verbose)
 
     # Perform update and notify any exceptions
     try:
@@ -73,11 +73,17 @@ def main():
                 )
 
         # Update the Scoot readings table on the database
-        scoot_writer = ScootWriter(**kwargs)
+        scoot_writer = ScootWriter(
+            end=args.end,
+            aws_key_id=args.aws_key_id,
+            aws_key=args.aws_key,
+            ndays=args.ndays,
+            secretfile=args.secretfile,
+        )
         scoot_writer.update_remote_tables()
 
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.error("An uncaught exception occurred: %s", str(error))
         raise
 
 

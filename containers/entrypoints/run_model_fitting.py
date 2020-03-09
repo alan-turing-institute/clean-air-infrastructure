@@ -2,11 +2,10 @@
 Model fitting
 """
 import os
-import logging
 import pickle
 from datetime import datetime
 from cleanair.models import ModelData, SVGP
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.parsers import ModelFitParser
 from cleanair.parsers import get_data_config_from_kwargs
 
@@ -38,7 +37,7 @@ def main():  # pylint: disable=R0914
     predict_training = kwargs.pop("predict_training")
 
     # Set logging verbosity
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    logger = initialise_logging(kwargs.pop("verbose", 0))
 
     # get the model config from the parser arguments
     model_config = get_data_config_from_kwargs(kwargs)
@@ -58,7 +57,7 @@ def main():  # pylint: disable=R0914
 
     # Get the model data
     if local_read:
-        logging.info("Reading local data")
+        logger.info("Reading local data")
         model_data = ModelData(**kwargs)
     else:
         model_data = ModelData(config=model_config, **kwargs)
@@ -75,7 +74,7 @@ def main():  # pylint: disable=R0914
     x_test = predict_data_dict["X"]
 
     # Fit the model
-    logging.info(
+    logger.info(
         "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
     )
     fit_start_time = datetime.now()

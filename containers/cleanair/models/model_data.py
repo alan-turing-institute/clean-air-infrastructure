@@ -10,8 +10,8 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 from ..databases.tables import (
-    IntersectionValue,
-    IntersectionValueDynamic,
+    StaticFeature,
+    DynamicFeature,
     ModelResult,
     SatelliteDiscreteSite,
 )
@@ -650,7 +650,7 @@ class ModelData(DBWriter, DBQueryMixin):
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
+            # Inner join the MetaPoint and StaticFeature(Dynamic) data
             df_joined = interest_point_df.join(features_df, how="left")
             return df_joined.reset_index()
 
@@ -660,7 +660,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """Read static features from the database."""
 
         return self.__select_features(
-            IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
+            DynamicFeature, features, sources, point_ids, start_date, end_date
         )
 
     def __select_static_features(self, features, sources, point_ids):
@@ -670,7 +670,7 @@ class ModelData(DBWriter, DBQueryMixin):
             source: A list of sources(e.g. 'laqn', 'aqe') to include. Default will include all sources
             point_ids: A list if interest point ids. Default to all ids"""
 
-        return self.__select_features(IntersectionValue, features, sources, point_ids)
+        return self.__select_features(StaticFeature, features, sources, point_ids)
 
     @staticmethod
     def __expand_time(start_date, end_date, feature_df):
@@ -991,4 +991,6 @@ class ModelData(DBWriter, DBQueryMixin):
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
         self.logger.info("Inserting %s records into the database", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ModelResult)
+            self.commit_records(
+                session, upload_records, table=ModelResult, on_conflict="overwrite"
+            )

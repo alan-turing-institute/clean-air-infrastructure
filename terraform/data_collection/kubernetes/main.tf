@@ -33,10 +33,10 @@ resource "azurerm_kubernetes_cluster" "this" {
   default_node_pool {
     name                = "default"
     enable_auto_scaling = true
-    max_count           = 3
+    max_count           = 6
     min_count           = 1
     node_count          = 1
-    vm_size             = "Standard_D2_v2"
+    vm_size             = "Standard_B8ms"
     os_disk_size_gb     = 30
   }
 

@@ -1,15 +1,14 @@
 """
-Update LAQN database
+Add LAQN readings to database
 """
 import argparse
-import logging
 from cleanair.inputs import LAQNWriter
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 
 
 def main():
     """
-    Update laqn database
+    Update LAQN table
     """
     # Read command line arguments
     parser = argparse.ArgumentParser(description="Get LAQN sensor data")
@@ -41,17 +40,18 @@ def main():
         raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
 
     # Set logging verbosity
-    kwargs = vars(args)
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    default_logger = initialise_logging(args.verbose)
 
     # Perform update and notify any exceptions
     try:
-        laqn_writer = LAQNWriter(**vars(args))
+        laqn_writer = LAQNWriter(
+            end=args.end, ndays=args.ndays, secretfile=args.secretfile
+        )
 
         # Update the LAQN tables on the database
         laqn_writer.update_remote_tables()
     except Exception as error:
-        print("An uncaught exception occurred:", str(error))
+        default_logger.info("An uncaught exception occurred: %s", str(error))
         raise
 
 

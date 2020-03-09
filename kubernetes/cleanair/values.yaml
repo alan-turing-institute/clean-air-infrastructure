@@ -56,6 +56,20 @@ jobs:
       secret:
         secretName: secrets
 
+  - name: scootroadmap
+    image:
+      repository: cleanairdocker.azurecr.io/scootroadmap
+      imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
   - name: scoot-backdate
     image:
       repository: cleanairdocker.azurecr.io/scoot
@@ -108,6 +122,46 @@ cronjobs:
     successfulJobsHistoryLimit: 10
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
+  - name: scootforecastfeatures
+    image:
+      repository: cleanairdocker.azurecr.io/scootforecastfeatures
+      imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    resources:
+        requests:
+          memory: "2Gi"
+          cpu: "4"
+        limits:
+          memory: "4Gi"
+          cpu: "8"
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
+  - name: scootreadingfeatures
+    image:
+      repository: cleanairdocker.azurecr.io/scootreadingfeatures
+      imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    resources:
+        requests:
+          memory: "2Gi"
+        limits:
+          memory: "4Gi"
     volumes:
     - name: secrets
       secret:

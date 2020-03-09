@@ -1,11 +1,10 @@
 """API database queries"""
-import logging
 from sqlalchemy import func
-from cleanair.loggers import get_log_level
+from cleanair.loggers import initialise_logging
 from cleanair.decorators import db_query
 from cleanair.databases.tables import ModelResult, MetaPoint
 
-logging.basicConfig(level=get_log_level(0))
+initialise_logging(verbosity=0)
 
 
 @db_query
