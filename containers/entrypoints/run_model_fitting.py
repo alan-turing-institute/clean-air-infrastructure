@@ -20,7 +20,7 @@ def main():
     data_config = ProductionInstance.DEFAULT_DATA_CONFIG
     data_config.update(data_args)
 
-    # update mode parameters with parsed args
+    # update model parameters with parsed args
     model_params = ProductionInstance.DEFAULT_MODEL_PARAMS
     model_params.update(model_args)
 

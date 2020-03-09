@@ -10,20 +10,19 @@ from ...models import ModelData
 
 class ValidationInstance(RunnableInstance):
 
-    DEFAULT_EXPERIMENT_CONFIG = {
-        "model_name": "mr_dgp",
-        "secretfile": "../../terraform/.secrets/db_secrets.json",
-        "results_dir": "./",
-        "model_dir": "./",
-        "config_dir": "./",
-        "local_read": False,
-        "local_write": False,
-        "predict_training": False,
-        "predict_write": False,
-        "no_db_write": False,
-        "restore": False,
-        "save_model_state": False,
-    }
+    DEFAULT_EXPERIMENT_CONFIG = dict(
+        RunnableInstance.DEFAULT_EXPERIMENT_CONFIG.copy(),
+        results_dir="./",
+        model_dir="./",
+        config_dir="./",
+        local_read=False,
+        local_write=False,
+        predict_training=False,
+        predict_write=False,
+        no_db_write=False,
+        restore=False,
+        save_model_state=False,
+    )
 
     DEFAULT_MODEL_PARAMS = {
         "jitter": 1e-5,
@@ -46,28 +45,8 @@ class ValidationInstance(RunnableInstance):
         self.y_test_pred = None
         self.y_train_pred = None
 
-        # get default experiment config
-        experiment_config = self.__class__.DEFAULT_EXPERIMENT_CONFIG.copy()
-
-        # update with passed config
-        experiment_config.update(kwargs.pop("experiment_config", {}))
-
-        # get model params
-        model_params = kwargs.pop("model_params", {})
-        if not model_params:
-            model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
-
-        # get default data config
-        data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
-        data_config.update(kwargs.pop("data_config", {}))
-
         # pass to super constructor
-        super().__init__(
-            experiment_config=experiment_config,
-            model_params=model_params,
-            data_config=data_config,
-            **kwargs
-        )
+        super().__init__(**kwargs)
 
     def setup_model(self):
         logging.info("Setting up model.")

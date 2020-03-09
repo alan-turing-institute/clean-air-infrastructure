@@ -6,6 +6,7 @@ import json
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+from ..experiment import RunnableInstance
 
 class CleanAirParser(argparse.ArgumentParser):
     """
@@ -13,9 +14,9 @@ class CleanAirParser(argparse.ArgumentParser):
     """
 
     MODEL_ARGS = []
-    EXPERIMENT_ARGS = ["local_read", "config_dir"]
+    EXPERIMENT_ARGS = ["local_read", "config_dir", "secretfile"]
     DATA_ARGS = ["trainend", "trainhours", "predstart", "predhours", "predict_training", "include_prediction_y"]
-    MISC_ARGS = ["secretfile", "tag", "model_name", "verbose"]
+    MISC_ARGS = ["model_name", "tag", "verbose"]
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
         super().__init__(**kwargs)
@@ -31,7 +32,7 @@ class CleanAirParser(argparse.ArgumentParser):
             "-m",
             "--model_name",
             type=str,
-            default="svgp",
+            default=RunnableInstance.DEFAULT_MODEL_PARAMS["model_name"],
             help="Model to run.",
         )
         self.add_argument(
@@ -44,13 +45,13 @@ class CleanAirParser(argparse.ArgumentParser):
         self.add_argument(
             "-s",
             "--secretfile",
-            default="../../terraform/.secrets/db_secrets.json",
+            default=RunnableInstance.DEFAULT_EXPERIMENT_CONFIG["secretfile"],
             help="File with connection secrets.",
         )
         self.add_argument(
             "-d",
             "--config_dir",
-            default="./",
+            default=RunnableInstance.DEFAULT_EXPERIMENT_CONFIG["config_dir"],
             help="Filepath to directory to store model and data.",
         )
         self.add_argument("-v", "--verbose", action="count", default=0)
@@ -77,7 +78,7 @@ class CleanAirParser(argparse.ArgumentParser):
         self.add_argument(
             "--trainend",
             type=str,
-            default="2020-01-30T00:00:00",
+            default=RunnableInstance.DEFAULT_DATA_CONFIG["train_end_date"],
             help="The last datetime (YYYY-MM-DD HH:MM:SS) to get model data for training.",
         )
         self.add_argument(
@@ -89,7 +90,7 @@ class CleanAirParser(argparse.ArgumentParser):
         self.add_argument(
             "--predstart",
             type=str,
-            default="2020-01-30T00:00:00",
+            default=RunnableInstance.DEFAULT_DATA_CONFIG["pred_start_date"],
             help="The first datetime (YYYY-MM-DD HH:MM:SS) to get model data for prediction.",
         )
         self.add_argument(

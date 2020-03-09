@@ -52,8 +52,6 @@ class SVGP(Model):
 
         # disable TF warnings
         if disable_tf_warnings:
-            # raise NotImplementedError("This will turn off all logging - need to fix.")
-            # logging.disable(logging.WARNING)
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
             tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -61,9 +59,7 @@ class SVGP(Model):
             "likelihood_variance",
             "minibatch_size",
             "n_inducing_points",
-            "train",
             "jitter",
-            "model_state_fp",
             "maxiter",
             "kernel",
         ]
@@ -91,9 +87,6 @@ class SVGP(Model):
             "likelihood_variance": 0.1,
             "minibatch_size": 100,
             "n_inducing_points": 2000,
-            "restore": False,
-            "train": True,
-            "model_state_fp": None,
             "maxiter": 100,
             "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
         }
@@ -194,7 +187,7 @@ class SVGP(Model):
                 ),
             )
 
-        if self.model_params["train"]:
+        if self.experiment_config["train"]:
             # optimize and setup elbo logging
             opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
             opt.minimize(

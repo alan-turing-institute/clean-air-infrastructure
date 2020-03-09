@@ -48,12 +48,10 @@ class Model(ABC):
         self.model_params = dict() if model_params is None else model_params
 
         # get filepaths and other configs
-        default_config = dict(
-            name="model", restore=False, model_state_fp="./", save_model_state=False
+        self.experiment_config = dict(
+            name="model", restore=False, model_state_fp="./", save_model_state=False, train=True,
         )
-        self.experiment_config = (
-            default_config if experiment_config is None else experiment_config
-        )
+        self.experiment_config.update(experiment_config)
 
         # get the tasks we will be predicting at
         self.tasks = ["NO2"] if tasks is None else tasks
@@ -62,12 +60,12 @@ class Model(ABC):
                 "Multiple pollutants not supported. Use only NO2."
             )
         # other misc arguments
-        self.log = pop_kwarg(kwargs, "log", True)
+        self.log = kwargs.pop("log", False)
         self.model = None
         self.minimum_param_keys = []
         self.epoch = 0
-        self.batch_size = pop_kwarg(kwargs, "batchsize", 100)
-        self.refresh = pop_kwarg(kwargs, "refresh", 10)
+        self.batch_size = kwargs.pop("batchsize", 100)
+        self.refresh = kwargs.pop("refresh", 10)
 
     @abstractmethod
     def get_default_model_params(self):

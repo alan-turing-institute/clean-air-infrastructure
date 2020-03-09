@@ -11,6 +11,9 @@ from .instance import Instance
 from ...models import ModelData
 
 class RunnableInstance(Instance):
+    """
+    A runnable instance loads data, fits a model, predicts, then saves the results.
+    """
 
     DEFAULT_DATA_CONFIG = {
         "train_start_date": "2020-01-29T00:00:00",
@@ -32,8 +35,17 @@ class RunnableInstance(Instance):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "tag": "validation",
+        "tag": "test",
     }
+
+    DEFAULT_EXPERIMENT_CONFIG = dict(
+        secretfile="../../terraform/.secrets/db_secrets.json",
+        config_dir="./",
+    )
+
+    DEFAULT_MODEL_PARAMS = dict(
+        model_name="mr_dgp",
+    )
     
     def __init__(self, **kwargs):
         """
@@ -59,15 +71,13 @@ class RunnableInstance(Instance):
         """
         super().__init__(**kwargs)
 
-        xp_config = kwargs.get("experiment_config", None)
-        model_params = kwargs.get("model_params", None)
-        data_config = kwargs.get("data_config", None)
+        xp_config = kwargs.get("experiment_config", {})
+        model_params = kwargs.get("model_params", {})
+        data_config = kwargs.get("data_config", {})
 
         # get experiment config (filepaths, write/read locally or DB, etc.)
-        if xp_config:
-            self.experiment_config = xp_config
-        else:
-            raise AttributeError("You must pass an experiment config.")
+        self.experiment_config = self.__class__.DEFAULT_EXPERIMENT_CONFIG.copy()
+        self.experiment_config.update(xp_config)
 
         logging.debug("Experiment config: %s", json.dumps(self.experiment_config, indent=4))
 
@@ -77,15 +87,17 @@ class RunnableInstance(Instance):
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
             raise NotImplementedError("Cannot yet load parameters from DB.")
+        else:
+            self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
+            self.param_id = self.__hash_dict(self._model_params)
         
         # get data config dict
-        if data_config:
-            self._data_config = data_config
-            self.data_id = RunnableInstance.__hash_dict(data_config)
-        elif kwargs.get("data_id"):     # check if data id has been passed
+        if kwargs.get("data_id"):     # check if data id has been passed
             raise NotImplementedError("Cannot yet read data id from DB.")
         else:
-            raise NotImplementedError("You must pass either a data_config or data_id.")
+            self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
+            self._data_config.update(data_config)
+            self.data_id = RunnableInstance.__hash_dict(data_config)
         
         # make model and data
         self.model = None

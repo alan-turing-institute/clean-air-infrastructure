@@ -10,8 +10,7 @@ class ValidationParser(CleanAirParser):
     A parser for validation.
     """
 
-    MODEL_ARGS = CleanAirParser.MODEL_ARGS + ["restore", "save_model_state"]
-    EXPERIMENT_ARGS = CleanAirParser.EXPERIMENT_ARGS + ["predict_read_local", "local_write", "no_db_write", "predict_write", "model_dir", "results_dir"]
+    EXPERIMENT_ARGS = CleanAirParser.EXPERIMENT_ARGS + ["predict_read_local", "local_write", "no_db_write", "predict_write", "model_dir", "results_dir", "restore", "save_model_state"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
