@@ -29,17 +29,17 @@ class ValidationInstance(RunnableInstance):
         "likelihood_variance": 0.1,
         "minibatch_size": 100,
         "n_inducing_points": 200,
-        "restore": False,
-        "train": True,
-        "model_state_fp": None,
         "maxiter": 1,
         "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
     }
 
     DEFAULT_DATA_CONFIG = dict(
         RunnableInstance.DEFAULT_DATA_CONFIG.copy(),    # use super class dict
-        include_prediction_y=True,                      # update
+        include_prediction_y=True,
+        include_satellite=True,
     )
+
+    # DEFAULT_MODEL_NAME = "svgp"
 
     def __init__(self, **kwargs):
         self.y_test_pred = None
@@ -49,7 +49,6 @@ class ValidationInstance(RunnableInstance):
         super().__init__(**kwargs)
 
     def setup_model(self):
-        logging.info("Setting up model.")
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()

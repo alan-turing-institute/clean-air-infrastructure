@@ -4,8 +4,11 @@ Instances of models and data.
 import hashlib
 import git
 from ...models import SVGP, MRDGP
+from ...databases import DBWriter
+from ...mixins import DBQueryMixin
+from ...databases.tables import InstanceTable
 
-class Instance():
+class Instance(DBWriter, DBQueryMixin):
     """
     An instance is one model trained and fitted on some data.
     """
@@ -46,7 +49,7 @@ class Instance():
 
         instance_id : str, optional
             Uniquely identifies this instance.
-            See `Instance.hash_instance()`.
+            See `Instance.__hash__()`.
 
         Other Parameters
         ___
@@ -149,3 +152,23 @@ class Instance():
         sha_fn = hashlib.sha256()
         sha_fn.update(bytearray(hash_string, "utf-8"))
         return sha_fn.hexdigest()
+
+    def update_remote_tables(self):
+        """
+        Update the instance and model results tables.
+        """
+        # add a row to the instance table
+        instance_dict = dict(
+            instance_id=[self.instance_id],
+            param_id=[self.param_id],
+            data_id=[self.data_id],
+            cluster_id=[self.cluster_id],
+            fit_start_time=[self.fit_start_time],
+            tag=[self.tag],
+            git_hash=[self.git_hash],
+            model_name=[self.model_name],
+        )
+        self.logger.info("Inserting 1 record into the instance table.")
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, instance_dict, table=InstanceTable)
+        

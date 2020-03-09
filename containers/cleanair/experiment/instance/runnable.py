@@ -38,15 +38,26 @@ class RunnableInstance(Instance):
         "tag": "test",
     }
 
+    DEFAULT_MODEL_PARAMS = {
+        "jitter": 1e-5,
+        "likelihood_variance": 0.1,
+        "minibatch_size": 100,
+        "n_inducing_points": 200,    
+        "maxiter": 100,
+        "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
+    }
+
     DEFAULT_EXPERIMENT_CONFIG = dict(
         secretfile="../../terraform/.secrets/db_secrets.json",
         config_dir="./",
     )
 
     DEFAULT_MODEL_PARAMS = dict(
-        model_name="mr_dgp",
+        save_model_state=False,
     )
-    
+
+    DEFAULT_MODEL_NAME = "svgp"
+   
     def __init__(self, **kwargs):
         """
         A runnable instance is determined by its data, model and experiment settings.
@@ -69,7 +80,8 @@ class RunnableInstance(Instance):
         kwargs : dict, optional
             See `Instance`.
         """
-        super().__init__(**kwargs)
+        model_name = kwargs.pop("model_name", self.__class__.DEFAULT_MODEL_NAME)
+        super().__init__(model_name=model_name, **kwargs)
 
         xp_config = kwargs.get("experiment_config", {})
         model_params = kwargs.get("model_params", {})
@@ -102,6 +114,10 @@ class RunnableInstance(Instance):
         # make model and data
         self.model = None
         self.model_data = None
+        logging.info("Model name is %s", self.model_name)
+        logging.info("Param id is %s", self.param_id)
+        logging.info("Data id is %s", self.data_id)
+        logging.info("Instance id is %s", self.instance_id)
 
     @property
     def model_params(self):
@@ -136,6 +152,7 @@ class RunnableInstance(Instance):
         """
         From the model name and params, set up a model.
         """
+        logging.info("Setting up model.")
         self.model = self.__class__.MODELS[self.model_name](
             experiment_config=self.experiment_config,
             model_params=self.model_params,
@@ -146,6 +163,7 @@ class RunnableInstance(Instance):
         """
         From the data and experiment config, setup a model data object.
         """
+        logging.info("Loading input data from database.")
         self.model_data = ModelData(
             config=self.data_config,
             secretfile=self.experiment_config["secretfile"],
@@ -180,7 +198,7 @@ class RunnableInstance(Instance):
 
     def update_results(self, y_pred):
         """
-        From the predictions, update a DB or file with the results.
+        Update the model data object with results.
         """
         self.model_data.update_test_df_with_preds(y_pred, self.fit_start_time)
 
@@ -188,6 +206,7 @@ class RunnableInstance(Instance):
         """
         Upload instance, params and results to the database.
         """
+        logging.info("Writing predictions to the database.")
         self.model_data.normalised_pred_data_df[
             "predict_mean"
         ] = self.model_data.normalised_pred_data_df["NO2_mean"]
@@ -206,3 +225,12 @@ class RunnableInstance(Instance):
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
+
+    def update_remote_tables(self):
+        super().update_remote_tables()
+        # ToDo: add a row to the data table
+
+        # ToDo: add a row to the model table
+
+        # add results to the results table
+        self.model_data.update_remote_tables()

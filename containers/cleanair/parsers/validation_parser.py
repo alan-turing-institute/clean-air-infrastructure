@@ -3,6 +3,7 @@ Parsers for validation that must read model fit data.
 """
 
 from .base_parser import CleanAirParser
+from ..experiment import ValidationInstance
 
 
 class ValidationParser(CleanAirParser):
@@ -14,6 +15,7 @@ class ValidationParser(CleanAirParser):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.set_defaults(model_name=ValidationInstance.DEFAULT_MODEL_NAME)
         self.add_argument(
             "-predict_read_local",
             action="store_true",

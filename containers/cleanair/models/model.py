@@ -51,6 +51,7 @@ class Model(ABC):
         self.experiment_config = dict(
             name="model", restore=False, model_state_fp="./", save_model_state=False, train=True,
         )
+        experiment_config = experiment_config if experiment_config else {}
         self.experiment_config.update(experiment_config)
 
         # get the tasks we will be predicting at

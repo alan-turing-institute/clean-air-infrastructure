@@ -32,7 +32,7 @@ class CleanAirParser(argparse.ArgumentParser):
             "-m",
             "--model_name",
             type=str,
-            default=RunnableInstance.DEFAULT_MODEL_PARAMS["model_name"],
+            default=RunnableInstance.DEFAULT_MODEL_NAME,
             help="Model to run.",
         )
         self.add_argument(

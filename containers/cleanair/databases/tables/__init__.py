@@ -22,6 +22,7 @@ from .scoot_tables import (
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon
 from .model_results_table import ModelResult
+from .instance_table import InstanceTable
 from .satellite_tables import (
     SatelliteSite,
     SatelliteDiscreteSite,
@@ -35,6 +36,7 @@ __all__ = [
     "HexGrid",
     "IntersectionValue",
     "IntersectionValueDynamic",
+    "InstanceTable",
     "LAQNReading",
     "LAQNSite",
     "LondonBoundary",

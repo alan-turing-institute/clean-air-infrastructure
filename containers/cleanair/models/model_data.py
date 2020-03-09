@@ -78,7 +78,7 @@ class ModelData(DBWriter, DBQueryMixin):
             if self.config["tag"] == "validation":
                 self.config["include_prediction_y"] = True
                 self.training_dict = self.get_training_data_arrays()
-                self.test_dict = self.get_pred_data_arrays()
+                self.test_dict = self.get_pred_data_arrays(return_y=True)
 
         else:
             self.restore_config_state(config_dir)
