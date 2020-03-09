@@ -61,6 +61,11 @@ class Results(ma.Schema):
 results = Results(many=True)
 
 
+# @app.route('/api/test/<int:task_id>', methods=['GET'])
+# def get_tasks(task_id):
+#     return jsonify(task_id)
+
+
 @api.resource("/")
 class Welcome(Resource):
     """Welcome resource"""
@@ -116,7 +121,7 @@ class Box(Resource):
         """CleanAir API Points request
            Get forecast for all points within a bounding box"""
         session = db_session()
-        print(args)
+        print("The args are: {}".format(args))
         return 'hi'
         # all_points = get_all_forecasts(
         #     session,
