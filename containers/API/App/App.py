@@ -8,9 +8,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
-from webargs import fields
-from webargs.flaskparser import use_args
 from .queries import get_point_forecast, get_all_forecasts
+from webargs import fields, validate
+from webargs.flaskparser import use_args, use_kwargs, parser, abort
+
+
+# This error handler is necessary for usage with Flask-RESTful
+@parser.error_handler
+def handle_request_parsing_error(err, req, schema,  error_status_code, error_headers):
+    """webargs error handler that uses Flask-RESTful's abort function to return
+    a JSON error response to the client.
+    """
+    abort(error_status_code, errors=err.messages)
+
 
 # Initialise application
 app = Flask(__name__)
@@ -18,7 +28,8 @@ ma = Marshmallow(app)
 api = Api(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json")
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -74,7 +85,7 @@ class Welcome(Resource):
         return resp
 
 
-@api.resource("/api/point/")
+@api.resource("/api/point")
 class Point(Resource):
     "Point resource"
 
@@ -89,33 +100,34 @@ class Point(Resource):
         return results.dump(points_forecast)
 
 
-@api.resource("/api/box/")
+@api.resource("/api/box")
 class Box(Resource):
     "Box resource"
 
     @use_args(
         {
-            "xmin": fields.Float(required=True),
-            "ymin": fields.Float(required=True),
-            "xmax": fields.Float(required=True),
-            "ymax": fields.Float(required=True),
+            "xmin": fields.Float(required=False),
+            "ymin": fields.Float(required=False),
+            "xmax": fields.Float(required=False),
+            "ymax": fields.Float(required=False),
         }
     )
     def get(self, args):
         """CleanAir API Points request
            Get forecast for all points within a bounding box"""
         session = db_session()
+        print(args)
+        return 'hi'
+        # all_points = get_all_forecasts(
+        #     session,
+        #     args["xmin"],
+        #     args["ymin"],
+        #     args["xmax"],
+        #     args["ymax"],
+        #     output_type="query",
+        # )
 
-        all_points = get_all_forecasts(
-            session,
-            args["xmin"],
-            args["ymin"],
-            args["xmax"],
-            args["ymax"],
-            output_type="query",
-        )
-
-        return results.dump(all_points)
+        # return results.dump(all_points)
 
 
 if __name__ == "__main__":
