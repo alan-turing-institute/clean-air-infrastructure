@@ -33,7 +33,7 @@ setuptools.setup(
         'uuid==1.30',
       ],
     extras_require={
-        'traffic': ['fbprophet==0.4', 'pathos==0.2.5', 'pystan==2.19.1.1'],
+        'traffic': ['pystan==2.19.1.1', 'fbprophet==0.4', 'pathos==0.2.5'],
         'models': ['gpflow==1.5.1', 'tensorflow==1.15.0', 'scikit-learn==0.22.1'],
         'dashboard': ['dash-bootstrap-components==0.8.2', 'dash==1.8.0',]
     },
