@@ -53,11 +53,18 @@ def main():
         )
         scoot_road_readings.update_remote_tables()
 
-        # Construct SCOOT features from readings around each interest point
-        scoot_feature_extractor = ScootReadingFeatures(
-            ndays=args.ndays, end=args.end, secretfile=args.secretfile
+        # # Construct SCOOT features from readings around each interest point
+        # scoot_feature_extractor = ScootReadingFeatures(
+        #     ndays=args.ndays, end=args.end, secretfile=args.secretfile
+        # )
+
+        quit()
+        print(
+            scoot_feature_extractor.get_dynamic_processed(
+                "max_n_vehicles", output_type="query"
+            ).statement
         )
-        scoot_feature_extractor.update_remote_tables()
+        # scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         default_logger.error("An uncaught exception occurred: %s", str(error))

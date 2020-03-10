@@ -114,7 +114,7 @@ class DBWriter(DBInteractor):
         """
         if on_conflict not in ["overwrite", "ignore"]:
             raise ValueError(
-                "Only 'merge' or 'ignore' are valid arguments for 'on_conflict'"
+                "Only 'overwrite' or 'ignore' are valid arguments for 'on_conflict'"
             )
 
         if table:

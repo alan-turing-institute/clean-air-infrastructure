@@ -30,30 +30,32 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
             green(self.start_datetime),
             green(self.end_datetime),
         )
-        with self.dbcnxn.open_session() as session:
-            self.logger.info(
-                "There are %i per-road SCOOT %s in this time range",
-                session.query(self.table_class)
-                .filter(
-                    self.table_class.measurement_start_utc >= self.start_datetime,
-                    self.table_class.measurement_start_utc < self.end_datetime,
-                )
-                .count(),
-                self.value_type,
-            )
+        # with self.dbcnxn.open_session() as session:
+        #     self.logger.info(
+        #         "There are %i per-road SCOOT %s in this time range",
+        #         session.query(self.table_class)
+        #         .filter(
+        #             self.table_class.measurement_start_utc >= self.start_datetime,
+        #             self.table_class.measurement_start_utc < self.end_datetime,
+        #         )
+        #         .count(),
+        #         self.value_type,
+        #     )
 
     @property
     def table(self):
         """Join the geometry column from OSHighway onto the relevant SCOOT table for feature extraction"""
         with self.dbcnxn.open_session() as session:
-            return (
-                session.query(self.table_class, OSHighway.geom,)
-                .join(OSHighway, self.table_class.road_toid == OSHighway.toid)
-                .filter(
-                    self.table_class.measurement_start_utc >= self.start_datetime,
-                    self.table_class.measurement_start_utc < self.end_datetime,
+            return session.query(
+                (
+                    session.query(self.table_class, OSHighway.geom,)
+                    .join(OSHighway, self.table_class.road_toid == OSHighway.toid)
+                    .filter(
+                        self.table_class.measurement_start_utc >= self.start_datetime,
+                        self.table_class.measurement_start_utc < self.end_datetime,
+                    )
+                    .cte("scoot_table")
                 )
-                .subquery()
             )
 
     @property

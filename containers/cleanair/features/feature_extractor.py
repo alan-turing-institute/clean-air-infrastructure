@@ -2,7 +2,7 @@
 Feature extraction Base  class
 """
 import time
-from sqlalchemy import func, literal, or_, case
+from sqlalchemy import func, literal, or_, case, tuple_
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from ..databases import DBWriter
 from ..databases.tables import (
@@ -97,7 +97,44 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         return q_source
 
     @db_query
-    def query_meta_points(self):
+    def get_static_processed(self, feature_name):
+        """Return the features which have already been processed for a given feature name
+        
+        args:
+            feature_name: string
+                Name of the feature to check for
+        """
+
+        with self.dbcnxn.open_session() as session:
+            already_processed_q = session.query(
+                StaticFeature.point_id, StaticFeature.feature_name
+            ).filter(StaticFeature.feature_name == feature_name)
+
+            return already_processed_q
+
+    @db_query
+    def get_dynamic_processed(self, feature_name):
+        """Return the features which have already been processed for a given feature name between 
+        a start_datetime and end_datetime
+        
+        args:
+            feature_name: string
+                Name of the feature to check for
+        """
+
+        with self.dbcnxn.open_session() as session:
+            already_processed_q = session.query(
+                DynamicFeature.point_id, DynamicFeature.feature_name
+            ).filter(
+                DynamicFeature.feature_name == feature_name,
+                DynamicFeature.measurement_start_utc >= self.start_datetime,
+                DynamicFeature.measurement_start_utc < self.end_datetime,
+            )
+
+            return already_processed_q
+
+    @db_query
+    def query_meta_points(self, feature_name, exclude_processed=True):
         """
         Query MetaPoints, selecting all matching sources. We do not filter these in
         order to ensure that repeated calls will return the same set of points.
@@ -133,10 +170,20 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 )
                 q_meta_point = q_meta_point.filter(MetaPoint.source.in_(self.sources))
 
+            if exclude_processed:
+
+                preprocessed = self.get_static_processed(feature_name=feature_name).cte(
+                    "processed"
+                )
+
+                q_meta_point = q_meta_point.filter(
+                    ~tuple_(MetaPoint.id, literal(feature_name)).in_(preprocessed)
+                )
+
         return q_meta_point
 
     @db_query
-    def query_features(self, feature_name, feature_type, agg_func):
+    def query_features(self, feature_name, feature_type, agg_func, batch_size=1):
         """
         For a given features, produce a query containing the full feature processing stage.
 
@@ -149,21 +196,33 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         """
 
         # Get input geometries for this feature
-        self.logger.debug(
-            "There are %s input geometries to consider",
-            self.query_input_geometries(feature_name).count(),
-        )
+        # self.logger.debug(
+        #     "There are %s input geometries to consider",
+        #     self.query_input_geometries(feature_name).count(),
+        # )
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
-        cte_buffers = self.query_meta_points().cte("buffers")
-        self.logger.debug(
-            "There are %s interest points to consider", self.query_meta_points().count()
+        cte_buffers = self.query_meta_points(
+            feature_name=feature_name, limit=batch_size
+        ).cte("buffers")
+
+        n_interest_points = self.query_meta_points(
+            feature_name=feature_name, output_type="count"
         )
+
+        if n_interest_points == 0:
+            self.logger.info(
+                "There are 0 interest points left to process for feature %s ...",
+                feature_name,
+            )
+            return None
 
         # Output about next batch to be processed
         self.logger.info(
-            "Preparing to analyse interest points for feature %s", green(feature_name),
+            "Preparing to analyse %s interest points of %s unprocessed...",
+            green(batch_size),
+            green(n_interest_points),
         )
 
         if feature_type == "geom":
@@ -273,25 +332,35 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             if self.dynamic:
                 group_by_columns.append(sq_source.c.measurement_start_utc)
 
-            # Do a spatial outer-join between the q_source and q_meta_point on
-            # intersections, which means that we only join if the geometries intersect.
-            # Use coalesce to make sure we return 0 if there is no value
-            return (
+            res = (
                 session.query(
                     *group_by_columns,
-                    literal(feature_name).label("feature_name"),
-                    func.coalesce(value_1000, 0.0).label("value_1000"),
-                    func.coalesce(value_500, 0.0).label("value_500"),
-                    func.coalesce(value_200, 0.0).label("value_200"),
-                    func.coalesce(value_100, 0.0).label("value_100"),
-                    func.coalesce(value_10, 0.0).label("value_10"),
+                    value_1000.label("value_1000"),
+                    value_500.label("value_500"),
+                    value_200.label("value_200"),
+                    value_100.label("value_100"),
+                    value_10.label("value_10"),
                 )
                 .join(
                     sq_source,
                     func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_geom_1000),
                 )
                 .group_by(*group_by_columns)
+                .subquery()
             )
+
+            # Left join with coalesce to make sure we always return a value
+            out = session.query(
+                *group_by_columns,
+                literal(feature_name).label("feature_name"),
+                func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
+                func.coalesce(res.c.value_500, 0.0).label("value_500"),
+                func.coalesce(res.c.value_200, 0.0).label("value_200"),
+                func.coalesce(res.c.value_100, 0.0).label("value_100"),
+                func.coalesce(res.c.value_10, 0.0).label("value_10"),
+            ).join(res, cte_buffers.c.id == res.c.id, isouter=True)
+
+            return out
 
     def update_remote_tables(self):
         """
@@ -312,67 +381,46 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 n_features,
             )
 
-            # Create full select-and-insert query
-            q_select_and_insert = self.query_features(
-                feature_name,
-                feature_type=self.features[feature_name]["type"],
-                agg_func=self.features[feature_name]["aggfunc"],
-            )
+            while True:
 
-            # Count how many records will be inserted here
-            self.logger.debug(
-                "Determining how many records will need to be inserted..."
-            )
-            n_records = q_select_and_insert.count()
-            n_batches = round(0.5 + n_records / self.batch_size)
-
-            # Slice the main query into batches, inserting each one in turn
-            self.logger.info(
-                "Preparing to insert %s feature records in batches of %i...",
-                green(n_records),
-                self.batch_size,
-            )
-            insert_start = time.time()
-            for idx_batch, batch_start in enumerate(
-                range(0, n_records, self.batch_size), start=1
-            ):
-                batch_stop = min(batch_start + self.batch_size, n_records)
-                self.logger.info(
-                    "Inserting %i feature records for %s [batch %i/%i]...",
-                    batch_stop - batch_start,
+                # Create full select-and-insert query
+                q_select_and_insert = self.query_features(
                     feature_name,
-                    idx_batch,
-                    n_batches,
-                )
-                q_batch_insert = q_select_and_insert.slice(batch_start, batch_stop)
-
-                # Insert from the query to reduce local memory and database round-trips
-                with self.dbcnxn.open_session() as session:
-                    self.commit_records(
-                        session,
-                        q_batch_insert.subquery(),
-                        table=self.output_table,
-                        on_conflict="ignore",
-                    )
-
-                # Log timing statistics
-                elapsed_seconds = time.time() - insert_start
-                remaining_seconds = elapsed_seconds * (n_batches / idx_batch - 1)
-                self.logger.info(
-                    "Inserted feature records for '%s' [batch %i/%i] after %s (%s remaining)",
-                    feature_name,
-                    idx_batch,
-                    n_batches,
-                    green(duration_from_seconds(elapsed_seconds)),
-                    green(duration_from_seconds(remaining_seconds)),
+                    feature_type=self.features[feature_name]["type"],
+                    agg_func=self.features[feature_name]["aggfunc"],
+                    batch_size=self.batch_size,
+                    output_type="query",
                 )
 
-            # Print a timing message at the end of each feature
-            self.logger.info(
-                "Finished adding records for '%s' after %s",
-                feature_name,
-                green(duration(feature_start, time.time())),
-            )
+                if q_select_and_insert:
+                    with self.dbcnxn.open_session() as session:
+                        self.commit_records(
+                            session,
+                            q_select_and_insert.subquery(),
+                            on_conflict="ignore",
+                            table=self.output_table,
+                        )
+                else:
+                    break
+
+                # # Log timing statistics
+                # elapsed_seconds = time.time() - insert_start
+                # remaining_seconds = elapsed_seconds * (n_batches / idx_batch - 1)
+                # self.logger.info(
+                #     "Inserted feature records for '%s' [batch %i/%i] after %s (%s remaining)",
+                #     feature_name,
+                #     idx_batch,
+                #     n_batches,
+                #     green(duration_from_seconds(elapsed_seconds)),
+                #     green(duration_from_seconds(remaining_seconds)),
+                # )
+
+                # Print a timing message at the end of each feature
+                self.logger.info(
+                    "Finished adding records for '%s' after %s",
+                    feature_name,
+                    green(duration(feature_start, time.time())),
+                )
 
         # Print a final timing message
         self.logger.info(

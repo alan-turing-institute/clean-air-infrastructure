@@ -21,7 +21,7 @@ def main():
     parser.add_argument(
         "--sources",
         nargs="+",
-        default=["aqe", "laqn", "satellite", "hexgrid"],
+        default=["aqe", "laqn", "satellite", "hexgrid", "grid_100"],
         help="List of sources to process, (default: 'aqe', 'laqn', 'satellite', 'hexgrid').",
     )
     parser.add_argument("-v", "--verbose", action="count", default=0)
@@ -37,6 +37,13 @@ def main():
         static_feature_extractor = StreetCanyonFeatures(
             secretfile=args.secretfile, sources=args.sources
         )
+
+        # # print(static_feature_extractor.get_static_processed("flat", output_type="sql"))
+        # print(
+        #     static_feature_extractor.query_meta_points(
+        #         "flat", limit=10, output_type="sql"
+        #     )
+        # )
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 
