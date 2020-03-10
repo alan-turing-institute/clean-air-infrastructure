@@ -1,6 +1,4 @@
-flask-restful
 flask
-flask-marshmallow
+flask - marshmallow
 webargs
 uwsgi
-supervisor

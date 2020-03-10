@@ -1,7 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask, Response
-from flask_restful import Resource, Api
+from flask import Flask, Response, jsonify
 from flask_marshmallow import Marshmallow
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
@@ -13,29 +12,31 @@ from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
 
 
-# This error handler is necessary for usage with Flask-RESTful
-@parser.error_handler
-def handle_request_parsing_error(err, req, schema,  error_status_code, error_headers):
-    """webargs error handler that uses Flask-RESTful's abort function to return
-    a JSON error response to the client.
-    """
-    abort(error_status_code, errors=err.messages)
-
-
 # Initialise application
 app = Flask(__name__)
 ma = Marshmallow(app)
-api = Api(app)
 
 # Configure session
 DB_CONNECTION_INFO = DBConnectionMixin(
-    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json")
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
 DeferredReflection.prepare(engine)
 Base.query = db_session.query_property()
+
+# # Return validation errors as JSON
+# @app.errorhandler(422)
+# @app.errorhandler(400)
+# def handle_error(err):
+#     headers = err.data.get("headers", None)
+#     messages = err.data.get("messages", ["Invalid request."])
+#     if headers:
+#         return jsonify({"errors": messages}), err.code, headers
+#     else:
+#         return jsonify({"errors": messages}), err.code
 
 
 # Ensure sessions are closed by flask
@@ -61,19 +62,10 @@ class Results(ma.Schema):
 results = Results(many=True)
 
 
-# @app.route('/api/test/<int:task_id>', methods=['GET'])
-# def get_tasks(task_id):
-#     return jsonify(task_id)
-
-
-@api.resource("/")
-class Welcome(Resource):
-    """Welcome resource"""
-
-    def get(self):
-        """CleanAir API welcome message"""
-        resp = Response(
-            """
+@app.route("/", methods=["GET"])
+def index():
+    resp = Response(
+        """
 <html>
     <head>
         <title>UrbanAir - The Alan Turing Institute</title>
@@ -85,54 +77,56 @@ class Welcome(Resource):
 
     </body>
 </html>""",
-            mimetype="text/html",
-        )
-        return resp
-
-
-@api.resource("/api/point")
-class Point(Resource):
-    "Point resource"
-
-    @use_args({"lat": fields.Float(required=True), "lon": fields.Float(required=True)})
-    def get(self, args):
-        """CleanAir API Point request"""
-        session = db_session()
-        points_forecast = get_point_forecast(
-            session, args["lon"], args["lat"], output_type="query"
-        )
-
-        return results.dump(points_forecast)
-
-
-@api.resource("/api/box")
-class Box(Resource):
-    "Box resource"
-
-    @use_args(
-        {
-            "xmin": fields.Float(required=False),
-            "ymin": fields.Float(required=False),
-            "xmax": fields.Float(required=False),
-            "ymax": fields.Float(required=False),
-        }
+        mimetype="text/html",
     )
-    def get(self, args):
-        """CleanAir API Points request
-           Get forecast for all points within a bounding box"""
-        session = db_session()
-        print("The args are: {}".format(args))
-        return 'hi'
-        # all_points = get_all_forecasts(
-        #     session,
-        #     args["xmin"],
-        #     args["ymin"],
-        #     args["xmax"],
-        #     args["ymax"],
-        #     output_type="query",
-        # )
+    return resp
 
-        # return results.dump(all_points)
+
+@app.route("/api/v1/point")
+@use_args({"lat": fields.Float(required=True), "lon": fields.Float(required=True)})
+def point(args):
+    """CleanAir API Point request
+    
+    Example:
+    To request data at the Turing institute
+    pip install httpie
+    http --download GET :5000/api/v1/point lat=51.5309 lon=-0.1267
+    """
+    session = db_session()
+    points_forecast = get_point_forecast(
+        session, args["lon"], args["lat"], output_type="query"
+    )
+    return jsonify(results.dump(points_forecast))
+
+
+@app.route("/api/v1/box", methods=["GET"])
+@use_args(
+    {
+        "xmin": fields.Float(required=False),
+        "ymin": fields.Float(required=False),
+        "xmax": fields.Float(required=False),
+        "ymax": fields.Float(required=False),
+    }
+)
+def box(args):
+    """CleanAir API Point request
+    
+    Example:
+    To request forecast at all points within a bounding box over city hall
+    pip install httpie
+    http  --download GET :5000/api/v1/box xmin=-0.10653288909912088 ymin=51.49361775468337
+    """
+    session = db_session()
+    all_points = get_all_forecasts(
+        session,
+        args["xmin"],
+        args["ymin"],
+        args["xmax"],
+        args["ymax"],
+        output_type="query",
+    )
+
+    return jsonify(results.dump(all_points))
 
 
 if __name__ == "__main__":
