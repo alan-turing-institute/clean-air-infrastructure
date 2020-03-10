@@ -2,6 +2,7 @@ language: python
 
 install:
   - pip install -r containers/requirements.txt
+  - pip install 'containers/cleanair[models,traffic,dashboard]'
 
 script:
   # # Run all pytest unit tests
