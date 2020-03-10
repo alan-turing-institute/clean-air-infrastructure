@@ -6,9 +6,14 @@ import json
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+from ..mixins import (
+    SecretFileParserMixin,
+    SourcesMixin,
+    VerbosityMixin,
+)
 
 
-class CleanAirParser(argparse.ArgumentParser):
+class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser):
     """
     The base cleanair entrypoint parser.
     """
@@ -31,18 +36,11 @@ class CleanAirParser(argparse.ArgumentParser):
             help="Tag to identify the model fit.",
         )
         self.add_argument(
-            "-s",
-            "--secretfile",
-            default="../../terraform/.secrets/db_secrets.json",
-            help="File with connection secrets.",
-        )
-        self.add_argument(
             "-d",
             "--config_dir",
             default="./",
             help="Filepath to directory to store model and data.",
         )
-        self.add_argument("-v", "--verbose", action="count", default=0)
         # whether to read and write from the database or locally
         self.add_argument(
             "-local_read",
@@ -109,8 +107,6 @@ class CleanAirParser(argparse.ArgumentParser):
             for key, value in config.items():
                 if key in kwargs:
                     kwargs[key] = value
-                # else:
-                # raise KeyError("{k} not a valid argument.".format(k=key))
         if kwargs["results_dir"] == "CONFIG_DIR":
             kwargs["results_dir"] = kwargs["config_dir"]
         return kwargs
@@ -122,6 +118,65 @@ class CleanAirParser(argparse.ArgumentParser):
         kwargs = vars(self.parse_args())
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
+
+class ValidationParser(ModelParser):
+    """
+    A parser for validation.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-predict_read_local",
+            action="store_true",
+            help="Read predictions from a local file.",
+        )
+
+class ModelFitParser(ModelParser):
+    """
+    A parser for the model fitting entrypoint.
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Should be able to:
+            - read training/test data from DB (default)
+            - read training/test data from directory
+            - write training/test data to directory
+            - write result to DB (default)
+            - turn off writing to DB (overwrite default)
+            - write results to file
+        """
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--local-write",
+            action="store_true",
+            help="Write training/test data to config_dir.",
+        )
+        self.add_argument(
+            "--no-db-write",
+            action="store_true",
+            help="Do not write result to database.",
+        )
+        self.add_argument(
+            "--predict-write",
+            action="store_true",
+            help="Write a prediction to the results_dir.",
+        )
+        self.add_argument(
+            "--model-dir",
+            type=str,
+            default="CONFIG_DIR",
+            help="Filepath to the directory where the model is (re-)stored.",
+        )
+
+    def parse_kwargs(self):
+        kwargs = super().parse_kwargs()
+        if kwargs["model_dir"] == "CONFIG_DIR":
+            kwargs["model_dir"] = kwargs["model_dir"]
+        return kwargs
+
+
 
 
 def strtime_offset(strtime, offset_hours):

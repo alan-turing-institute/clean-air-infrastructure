@@ -1,38 +1,22 @@
 """
 Run feature processing using StreetCanyon data
 """
-import argparse
 from cleanair.loggers import initialise_logging
 from cleanair.features import StreetCanyonFeatures
+from cleanair.parsers import StreetCanyonFeatureArgumentParser
 
 
 def main():
     """
     Extract static StreetCanyon features
     """
-    # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract static StreetCanyon features")
-    parser.add_argument(
-        "-s",
-        "--secretfile",
-        default="db_secrets.json",
-        help="File with connection secrets.",
-    )
-    parser.add_argument(
-        "--sources",
-        nargs="+",
-        default=["aqe", "laqn", "satellite", "hexgrid"],
-        help="List of sources to process, (default: 'aqe', 'laqn', 'satellite', 'hexgrid').",
-    )
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-
-    # Parse and interpret arguments
-    args = parser.parse_args()
+    # Parse and interpret command line arguments
+    args = StreetCanyonFeatureArgumentParser(description="Extract static OSHighway features", sources=["aqe", "laqn", "satellite", "hexgrid"]).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
-    # Extract features and notify any exceptions
+    # Update StreetCanyon features on the database, logging any unhandled exceptions
     try:
         static_feature_extractor = StreetCanyonFeatures(
             secretfile=args.secretfile, sources=args.sources

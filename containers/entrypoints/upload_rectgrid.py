@@ -1,36 +1,24 @@
 """
 Upload static datasets
 """
-import argparse
 from cleanair.inputs import RectGridWriter
 from cleanair.loggers import initialise_logging
+from cleanair.parsers import StaticDatasetArgumentParser
 
 
 def main():
     """
-    Upload square grid data
+    Upload rectangular grid data
     """
-    # Read command line arguments
-    parser = argparse.ArgumentParser(description="Insert static datasets")
-    parser.add_argument(
-        "-s",
-        "--secretfile",
-        default="db_secrets.json",
-        help="File with connection secrets.",
-    )
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-
-    # Parse and interpret arguments
-    args = parser.parse_args()
+    # Parse and interpret command line arguments
+    args = StaticDatasetArgumentParser(description="Upload rectangular grid data").parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
-    # Perform update and notify any exceptions
+    # Update rectangular grid data to the database, logging any unhandled exceptions
     try:
         rectgrid_writer = RectGridWriter(secretfile=args.secretfile)
-
-        # Upload the rectangular grid table to the database if it is not present
         rectgrid_writer.update_remote_tables()
 
     except Exception as error:

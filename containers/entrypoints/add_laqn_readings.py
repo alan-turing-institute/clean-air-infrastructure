@@ -1,54 +1,24 @@
 """
 Add LAQN readings to database
 """
-import argparse
 from cleanair.inputs import LAQNWriter
 from cleanair.loggers import initialise_logging
+from cleanair.parsers import LAQNReadingArgumentParser
 
 
 def main():
     """
     Update LAQN table
     """
-    # Read command line arguments
-    parser = argparse.ArgumentParser(description="Get LAQN sensor data")
-    parser.add_argument(
-        "-e",
-        "--end",
-        type=str,
-        default="yesterday",
-        help="The last date (YYYY-MM-DD) to get data for.",
-    )
-    parser.add_argument(
-        "-n",
-        "--ndays",
-        type=int,
-        default=2,
-        help="The number of days to request data for.",
-    )
-    parser.add_argument(
-        "-s",
-        "--secretfile",
-        default="db_secrets.json",
-        help="File with connection secrets.",
-    )
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-
-    # Parse and interpret arguments
-    args = parser.parse_args()
-    if args.ndays < 1:
-        raise argparse.ArgumentTypeError("Argument --ndays must be greater than 0")
+    # Parse and interpret command line arguments
+    args = LAQNReadingArgumentParser(description="Get LAQN sensor data").parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
-    # Perform update and notify any exceptions
+    # Update the LAQN tables on the database, logging any unhandled exceptions
     try:
-        laqn_writer = LAQNWriter(
-            end=args.end, ndays=args.ndays, secretfile=args.secretfile
-        )
-
-        # Update the LAQN tables on the database
+        laqn_writer = LAQNWriter(end=args.end, nhours=args.nhours, secretfile=args.secretfile)
         laqn_writer.update_remote_tables()
     except Exception as error:
         default_logger.info("An uncaught exception occurred: %s", str(error))
