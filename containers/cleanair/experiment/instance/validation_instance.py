@@ -74,7 +74,6 @@ class ValidationInstance(RunnableInstance):
                 self.write_predictions_to_file(self.y_train_pred, "train_pred.pickle")
         elif not self.experiment_config["no_db_write"]:
             # ToDo: remove exception
-            raise Exception("Do not write to DB.")
             super().save_results()
         else:
             logging.warning("Did not write predictions.")

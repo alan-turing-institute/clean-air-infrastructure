@@ -16,7 +16,7 @@ class CleanAirParser(argparse.ArgumentParser):
     MODEL_ARGS = []
     EXPERIMENT_ARGS = ["local_read", "config_dir", "secretfile"]
     DATA_ARGS = ["trainend", "trainhours", "predstart", "predhours", "predict_training", "include_prediction_y"]
-    MISC_ARGS = ["model_name", "tag", "verbose"]
+    MISC_ARGS = ["model_name", "tag", "verbose", "cluster_id"]
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
         super().__init__(**kwargs)
@@ -41,6 +41,12 @@ class CleanAirParser(argparse.ArgumentParser):
             type=str,
             default="test",
             help="Tag to identify the model fit.",
+        )
+        self.add_argument(
+            "-cluster_id",
+            type=str,
+            default="azure",
+            help="Name of machine/cluster the model is run on.",
         )
         self.add_argument(
             "-s",

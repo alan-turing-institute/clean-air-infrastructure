@@ -1,6 +1,7 @@
 """
 Instances of models and data.
 """
+import logging
 import hashlib
 import git
 from ...models import SVGP, MRDGP
@@ -51,6 +52,9 @@ class Instance(DBWriter, DBQueryMixin):
             Uniquely identifies this instance.
             See `Instance.__hash__()`.
 
+        secretfile : str, optional
+            Path to secretfile.
+
         Other Parameters
         ___
 
@@ -58,6 +62,7 @@ class Instance(DBWriter, DBQueryMixin):
             Further arguments to pass, e.g. model_params, data_config.
 
         """
+        super().__init__(secretfile=kwargs.pop("secretfile", "../../terraform/.secrets/db_secrets.json"))
         self._model_name = kwargs.get("model_name", None)
         self._param_id = kwargs.get("param_id", None)
         self._data_id = kwargs.get("data_id", None)
@@ -153,22 +158,25 @@ class Instance(DBWriter, DBQueryMixin):
         sha_fn.update(bytearray(hash_string, "utf-8"))
         return sha_fn.hexdigest()
 
+    def to_dict(self):
+        return dict(
+            instance_id=self.instance_id,
+            param_id=self.param_id,
+            data_id=self.data_id,
+            cluster_id=self.cluster_id,
+            fit_start_time=self.fit_start_time,
+            tag=self.tag,
+            git_hash=self.git_hash,
+            model_name=self.model_name,
+        )
+
     def update_remote_tables(self):
         """
         Update the instance and model results tables.
         """
         # add a row to the instance table
-        instance_dict = dict(
-            instance_id=[self.instance_id],
-            param_id=[self.param_id],
-            data_id=[self.data_id],
-            cluster_id=[self.cluster_id],
-            fit_start_time=[self.fit_start_time],
-            tag=[self.tag],
-            git_hash=[self.git_hash],
-            model_name=[self.model_name],
-        )
-        self.logger.info("Inserting 1 record into the instance table.")
+        records = [self.to_dict()]
+        logging.info("Inserting 1 record into the instance table.")
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, instance_dict, table=InstanceTable)
+            self.commit_records(session, records, table=InstanceTable)
         

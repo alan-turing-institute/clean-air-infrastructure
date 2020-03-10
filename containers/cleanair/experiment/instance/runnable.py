@@ -4,6 +4,7 @@ An instance that can be executed using the run() method.
 
 import logging
 import os
+import tensorflow as tf
 import json
 import pickle
 from datetime import datetime
@@ -118,6 +119,7 @@ class RunnableInstance(Instance):
         logging.info("Param id is %s", self.param_id)
         logging.info("Data id is %s", self.data_id)
         logging.info("Instance id is %s", self.instance_id)
+        logging.info("Cluster id is %s", self.cluster_id)
 
     @property
     def model_params(self):
@@ -213,7 +215,7 @@ class RunnableInstance(Instance):
         self.model_data.normalised_pred_data_df[
             "predict_var"
         ] = self.model_data.normalised_pred_data_df["NO2_var"]
-        self.model_data.update_remote_tables()
+        self.update_remote_tables()
 
     def run(self):
         """

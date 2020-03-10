@@ -271,13 +271,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 index_col=0,
             )
 
-        if self.config["tag"] == "validation":
-            # load train and test dicts from pickle
-            with open(os.path.join(dir_path, "train.pickle"), "rb") as handle:
-                self.training_dict = pickle.load(handle)
-            with open(os.path.join(dir_path, "test.pickle"), "rb") as handle:
-                self.test_dict = pickle.load(handle)
-
     @property
     def x_names_norm(self):
         """Get the normalised x names"""
