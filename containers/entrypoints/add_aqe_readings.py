@@ -5,6 +5,7 @@ import argparse
 from cleanair.inputs import AQEWriter
 from cleanair.loggers import initialise_logging
 
+
 def main():
     """
     Update AQE table
