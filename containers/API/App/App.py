@@ -17,9 +17,7 @@ app = Flask(__name__)
 ma = Marshmallow(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin(
-    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
-)
+DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -27,16 +25,16 @@ db_session = scoped_session(
 DeferredReflection.prepare(engine)
 Base.query = db_session.query_property()
 
-# # Return validation errors as JSON
-# @app.errorhandler(422)
-# @app.errorhandler(400)
-# def handle_error(err):
-#     headers = err.data.get("headers", None)
-#     messages = err.data.get("messages", ["Invalid request."])
-#     if headers:
-#         return jsonify({"errors": messages}), err.code, headers
-#     else:
-#         return jsonify({"errors": messages}), err.code
+# Return validation errors as JSON
+@app.errorhandler(422)
+@app.errorhandler(400)
+def handle_error(err):
+    headers = err.data.get("headers", None)
+    messages = err.data.get("messages", ["Invalid request."])
+    if headers:
+        return jsonify({"errors": messages}), err.code, headers
+    else:
+        return jsonify({"errors": messages}), err.code
 
 
 # Ensure sessions are closed by flask
@@ -83,14 +81,19 @@ def index():
 
 
 @app.route("/api/v1/point")
-@use_args({"lat": fields.Float(required=True), "lon": fields.Float(required=True)})
+@use_args(
+    {"lat": fields.Float(required=True), "lon": fields.Float(required=True)},
+    location="query",
+)
 def point(args):
     """CleanAir API Point request
     
     Example:
     To request data at the Turing institute
     pip install httpie
-    http --download GET :5000/api/v1/point lat=51.5309 lon=-0.1267
+    http --download GET :5000/api/v1/point lat==51.5309 lon==-0.1267
+    or with curl:
+    curl 'localhost:5000/api/v1/point?lat=51.5309&lon=-0.1267'
     """
     session = db_session()
     points_forecast = get_point_forecast(
@@ -102,11 +105,12 @@ def point(args):
 @app.route("/api/v1/box", methods=["GET"])
 @use_args(
     {
-        "xmin": fields.Float(required=False),
-        "ymin": fields.Float(required=False),
-        "xmax": fields.Float(required=False),
-        "ymax": fields.Float(required=False),
-    }
+        "lonmin": fields.Float(required=True),
+        "lonmax": fields.Float(required=True),
+        "latmin": fields.Float(required=True),
+        "latmax": fields.Float(required=True),
+    },
+    location="query",
 )
 def box(args):
     """CleanAir API Point request
@@ -114,15 +118,17 @@ def box(args):
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http  --download GET :5000/api/v1/box xmin=-0.10653288909912088 ymin=51.49361775468337
+    http  --download GET :5000/api/v1/box lonmin==-0.10653288909912088 latmin==51.49361775468337 lonmax==-0.050657110900877635 latmax==51.515949509214245
+    or with curl:
+    curl 'localhost:5000/api/v1/box?xmin=-0.10653288909912088&ymin=51.49361775468337&xmax=-0.050657110900877635&ymax=51.515949509214245'
     """
     session = db_session()
     all_points = get_all_forecasts(
         session,
-        args["xmin"],
-        args["ymin"],
-        args["xmax"],
-        args["ymax"],
+        args["lonmin"],
+        args["latmin"],
+        args["lonmax"],
+        args["latmax"],
         output_type="query",
     )
 

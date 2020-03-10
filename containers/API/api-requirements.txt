@@ -1,4 +1,4 @@
 flask
-flask - marshmallow
+flask-marshmallow
 webargs
 uwsgi
