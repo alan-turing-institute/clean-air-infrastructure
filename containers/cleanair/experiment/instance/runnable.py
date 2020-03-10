@@ -3,13 +3,12 @@ An instance that can be executed using the run() method.
 """
 
 import logging
-import os
-import tensorflow as tf
 import json
-import pickle
 from datetime import datetime
 from .instance import Instance
 from ...models import ModelData
+from ...databases.tables import ModelTable, DataConfig
+
 
 class RunnableInstance(Instance):
     """
@@ -161,6 +160,18 @@ class RunnableInstance(Instance):
             tasks=self.data_config["species"],
         )
 
+    def update_model_table(self):
+        """Upload params to the model table."""
+        # save model to database
+        records = [dict(
+            model_name=self.model_name,
+            param_id=self.param_id,
+            model_param=self.model_params,
+        )]
+        logging.info("Inserting 1 row into the model table.")
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, records, table=ModelTable)
+
     def setup_data(self):
         """
         From the data and experiment config, setup a model data object.
@@ -170,6 +181,16 @@ class RunnableInstance(Instance):
             config=self.data_config,
             secretfile=self.experiment_config["secretfile"],
         )
+
+    def update_data_config_table(self):
+        """Upload the data configuration to the DB."""
+        logging.info("Inserting 1 row into data config table.")
+        records = [dict(
+            data_id=self.data_id,
+            data_config=self.data_config,
+        )]
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, records, table=DataConfig)
 
     def run_model_fitting(self):
         """
@@ -209,30 +230,20 @@ class RunnableInstance(Instance):
         Upload instance, params and results to the database.
         """
         logging.info("Writing predictions to the database.")
-        self.model_data.normalised_pred_data_df[
-            "predict_mean"
-        ] = self.model_data.normalised_pred_data_df["NO2_mean"]
-        self.model_data.normalised_pred_data_df[
-            "predict_var"
-        ] = self.model_data.normalised_pred_data_df["NO2_var"]
-        self.update_remote_tables()
+
+        # add results to the results table
+        self.model_data.update_remote_tables(self.instance_id)
 
     def run(self):
         """
         Setup, train, predict and update all in one step.
         """
         self.setup_model()
+        self.update_model_table()
         self.setup_data()
+        self.update_data_config_table()
+        self.update_remote_tables()
         self.run_model_fitting()
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
-
-    def update_remote_tables(self):
-        super().update_remote_tables()
-        # ToDo: add a row to the data table
-
-        # ToDo: add a row to the model table
-
-        # add results to the results table
-        self.model_data.update_remote_tables()

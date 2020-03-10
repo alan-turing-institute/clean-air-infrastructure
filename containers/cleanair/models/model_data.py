@@ -12,7 +12,7 @@ from dateutil.parser import isoparse
 from ..databases.tables import (
     IntersectionValue,
     IntersectionValueDynamic,
-    ModelResult,
+    ResultTable,
     SatelliteDiscreteSite,
 )
 from ..databases import DBWriter
@@ -951,17 +951,18 @@ class ModelData(DBWriter, DBQueryMixin):
             fit_start_time,
         )
 
-    def update_remote_tables(self):
+    def update_remote_tables(self, instance_id):
         """Update the model results table with the model results"""
+        # ToDo: generalise for multiple pollutants
         record_cols = [
-            "tag",
-            "fit_start_time",
+            "instance_id",
             "point_id",
             "measurement_start_utc",
-            "predict_mean",
-            "predict_var",
+            "NO2_mean",
+            "NO2_var",
         ]
         df_cols = self.normalised_pred_data_df
+        df_cols["instance_id"] = instance_id
         for col in record_cols:
             if col not in df_cols:
                 msg = "The data frame must contain the following columns: {}."
@@ -970,10 +971,10 @@ class ModelData(DBWriter, DBQueryMixin):
                     "Ensure model results have been passed to update_model_results_df()"
                 )
                 raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
-        upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-        self.logger.info("Inserting %s records into the database", len(upload_records))
+        upload_records = df_cols[record_cols].to_dict("records")
+        self.logger.info("Inserting %s records into the result table.", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ModelResult)
+            self.commit_records(session, upload_records, table=ResultTable)
 
     def read_results_table(self):
         """Read results from the DB and update the dataframe."""

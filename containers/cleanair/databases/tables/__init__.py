@@ -21,8 +21,11 @@ from .scoot_tables import (
 )
 from .ukmap_tables import UKMap
 from .street_canyon_tables import StreetCanyon
+from .data_config_table import DataConfig
+from .model_table import ModelTable
 from .model_results_table import ModelResult
 from .instance_table import InstanceTable
+from .result_table import ResultTable
 from .satellite_tables import (
     SatelliteSite,
     SatelliteDiscreteSite,
@@ -33,6 +36,7 @@ from .satellite_tables import (
 __all__ = [
     "AQEReading",
     "AQESite",
+    "DataConfig",
     "HexGrid",
     "IntersectionValue",
     "IntersectionValueDynamic",
@@ -41,9 +45,11 @@ __all__ = [
     "LAQNSite",
     "LondonBoundary",
     "MetaPoint",
+    "ModelTable",
     "OSHighway",
     "RectGrid",
     "RectGrid100",
+    "ResultTable",
     "SatelliteSite",
     "SatelliteDiscreteSite",
     "SatelliteForecastReading",
