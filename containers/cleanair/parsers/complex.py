@@ -1,4 +1,7 @@
-"""Argument parsing for SCOOT readings"""
+"""
+Complex per-entrypoint argument parsers
+"""
+# pylint: disable=too-many-ancestors
 from argparse import ArgumentParser, ArgumentTypeError
 import json
 import os
@@ -102,7 +105,7 @@ class ScootForecastFeatureArgumentParser(
     SourcesMixin,
     VerbosityMixin,
     ArgumentParser,
-):  # pylint: disable=too-many-ancestors
+):
     """Argument parsing for converting SCOOT forecasts into model features"""
 
     def __init__(self, **kwargs):

@@ -1,6 +1,7 @@
 """
 Simple per-entrypoint argument parsers
 """
+# pylint: disable=too-many-ancestors
 from argparse import ArgumentParser
 from ..mixins import (
     SecretFileParserMixin,
@@ -34,7 +35,7 @@ class ScootReadingFeatureArgumentParser(
     SourcesMixin,
     VerbosityMixin,
     ArgumentParser,
-):  # pylint: disable=too-many-ancestors
+):
     """Argument parsing for converting SCOOT readings into model features"""
 
 
