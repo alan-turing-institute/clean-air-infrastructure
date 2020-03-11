@@ -8,7 +8,6 @@ import pandas as pd
 import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
-from dateutil.parser import isoparse
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -678,8 +677,8 @@ class ModelData(DBWriter, DBQueryMixin):
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date(inclusive) and end_date
         """
-        start_date = isoparse(start_date).date()
-        end_date = isoparse(end_date).date()
+        start_date = start_date.date()
+        end_date = end_date.date()
 
         ids = feature_df["point_id"].to_numpy()
         times = rrule.rrule(
@@ -709,13 +708,10 @@ class ModelData(DBWriter, DBQueryMixin):
             end_date,
         )
 
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
-
         sensor_dfs = []
         if "laqn" in sources:
             laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
@@ -725,7 +721,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if "aqe" in sources:
             aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
@@ -783,11 +779,10 @@ class ModelData(DBWriter, DBQueryMixin):
         features = self.config["feature_names"]
 
         self.logger.info(
-            "Getting training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
+            "Loading training data for species: %s from sources: %s", species, sources,
+        )
+        self.logger.info(
+            "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date

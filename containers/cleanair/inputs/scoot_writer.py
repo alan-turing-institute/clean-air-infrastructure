@@ -266,7 +266,12 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the database with new Scoot traffic data."""
-        self.logger.info("Starting %s readings update...", green("Scoot"))
+        self.logger.info(
+            "Starting %s readings update using data from %s to %s...",
+            green("Scoot"),
+            self.start_datetime,
+            self.end_datetime,
+        )
         start_update = time.time()
         n_records_inserted = 0
 

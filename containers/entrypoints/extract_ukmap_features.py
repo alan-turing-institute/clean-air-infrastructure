@@ -1,38 +1,25 @@
 """
 Run feature processing using UKMap data
 """
-import argparse
 from cleanair.loggers import initialise_logging
 from cleanair.features import UKMapFeatures
+from cleanair.parsers import UKMapFeatureArgumentParser
 
 
 def main():
     """
     Extract static UKMap features
     """
-    # Read command line arguments
-    parser = argparse.ArgumentParser(description="Extract static UKMap features")
-    parser.add_argument(
-        "-s",
-        "--secretfile",
-        default="db_secrets.json",
-        help="File with connection secrets.",
-    )
-    parser.add_argument(
-        "--sources",
-        nargs="+",
-        default=["aqe", "laqn", "satellite", "hexgrid"],
-        help="List of sources to process, (default: 'aqe', 'laqn', 'satellite', 'hexgrid').",
-    )
-    parser.add_argument("-v", "--verbose", action="count", default=0)
-
-    # Parse and interpret arguments
-    args = parser.parse_args()
+    # Parse and interpret command line arguments
+    args = UKMapFeatureArgumentParser(
+        description="Extract static UKMap features",
+        sources=["aqe", "laqn", "satellite", "hexgrid"],
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
-    # Extract features and notify any exceptions
+    # Update UKMap features on the database, logging any unhandled exceptions
     try:
         static_feature_extractor = UKMapFeatures(
             secretfile=args.secretfile, sources=args.sources

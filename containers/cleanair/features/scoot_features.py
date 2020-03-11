@@ -110,7 +110,7 @@ class ScootReadingFeatures(ScootFeaturesBase):
         super().__init__(
             table_class=ScootRoadReading,
             value_type="readings",
-            sources=["aqe", "laqn"],
+            # sources=["aqe", "laqn"],
             **kwargs
         )
 
@@ -123,6 +123,6 @@ class ScootForecastFeatures(ScootFeaturesBase):
         super().__init__(
             table_class=ScootRoadForecast,
             value_type="forecasts",
-            sources=["satellite", "hexgrid"],
+            # sources=["satellite", "hexgrid"],
             **kwargs
         )

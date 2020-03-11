@@ -15,7 +15,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/construct_scoot_roadmaps.py /app
+COPY entrypoints/input_aqe_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "construct_scoot_roadmaps.py"]
+ENTRYPOINT ["python", "input_aqe_readings.py"]
