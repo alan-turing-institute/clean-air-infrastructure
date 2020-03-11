@@ -20,9 +20,6 @@ class Features(DBWriter, DBQueryMixin):
 
     def __init__(self, **kwargs):
         """Base class for extracting features.
-        args:
-            dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
-                     Time must always be named measurement_start_utc
         """
 
         self.sources = kwargs.pop("sources", [])
@@ -33,8 +30,6 @@ class Features(DBWriter, DBQueryMixin):
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-
-        self.dynamic = False
 
     @property
     def features(self):
@@ -118,8 +113,6 @@ class Features(DBWriter, DBQueryMixin):
                 getattr(table, feature)
                 for feature in self.features[feature_name]["feature_dict"].keys()
             ]
-            if self.dynamic:
-                columns = columns + [table.measurement_start_utc]
 
             q_source = session.query(*columns)
             # Construct filters

@@ -76,9 +76,6 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 getattr(table, feature)
                 for feature in self.features[feature_name]["feature_dict"].keys()
             ]
-            if self.dynamic:
-                columns = columns + [table.measurement_start_utc]
-
             q_source = session.query(*columns)
 
             # Construct filters
@@ -203,14 +200,13 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
-        if self.dynamic:
-            cte_buffers = self.query_meta_points(
-                feature_name=feature_name, exclude_processed=False, limit=batch_size
-            ).cte("buffers")
-        else:
-            cte_buffers = self.query_meta_points(
-                feature_name=feature_name, exclude_processed=False, limit=batch_size
-            ).cte("buffers")
+        cte_buffers = self.query_meta_points(
+            feature_name=feature_name, exclude_processed=True, limit=batch_size
+        ).cte("buffers")
+
+        # print(sq_source.statement.compile(compile_kwargs={"literal_binds": True}))
+        # print(cte_buffers.statement.compile(compile_kwargs={"literal_binds": True}))
+        # quit()
 
         n_interest_points = self.query_meta_points(
             feature_name=feature_name, output_type="count"
@@ -229,8 +225,6 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             green(batch_size),
             green(n_interest_points),
         )
-
-        quit()
 
         if feature_type == "geom":
             # Use case to avoid calculating intersections if we know the geom is covered
@@ -400,6 +394,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 )
 
                 if q_select_and_insert:
+                    self.logger.info("Commiting to database")
                     with self.dbcnxn.open_session() as session:
                         self.commit_records(
                             session,

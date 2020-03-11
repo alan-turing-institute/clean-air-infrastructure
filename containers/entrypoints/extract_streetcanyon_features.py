@@ -35,15 +35,9 @@ def main():
     # Extract features and notify any exceptions
     try:
         static_feature_extractor = StreetCanyonFeatures(
-            secretfile=args.secretfile, sources=args.sources
+            batch_size=1000, secretfile=args.secretfile, sources=args.sources
         )
 
-        # # print(static_feature_extractor.get_static_processed("flat", output_type="sql"))
-        # print(
-        #     static_feature_extractor.query_meta_points(
-        #         "flat", limit=10, output_type="sql"
-        #     )
-        # )
         # Extract static features into the appropriate tables on the database
         static_feature_extractor.update_remote_tables()
 
