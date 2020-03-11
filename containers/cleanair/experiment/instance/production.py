@@ -15,12 +15,14 @@ class ProductionInstance(RunnableInstance):
     )
 
     DEFAULT_MODEL_PARAMS = dict()   # ToDo: add default model params for DeepGp
+
+    DEFAULT_EXPERIMENT_CONFIG = RunnableInstance.DEFAULT_EXPERIMENT_CONFIG
     
     DEFAULT_MODEL_NAME = "mr_dgp"
 
-    def __init__(self, data_config=None, experiment_config=None, model_params=None, **kwargs):
+    def __init__(self, **kwargs):
         # ToDo: check that version is master and tag is production
         if "tag" in kwargs and kwargs["tag"] != "production":
             raise AttributeError("The tag must be 'production' when running a production instance. Change to a different instance if not running production code.")
 
-        super().__init__(data_config=data_config, experiment_config=experiment_config, model_params=model_params, **kwargs)
+        super().__init__(**kwargs)

@@ -2,6 +2,13 @@
 Model fitting
 """
 import logging
+import os
+import tensorflow as tf
+
+# stop tf warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 from cleanair.loggers import get_log_level
 from cleanair.parsers import ModelFitParser
 from cleanair.experiment import ProductionInstance
@@ -32,15 +39,6 @@ def main():
         **kwargs
     )
     # setup, fit, predict, and update
-    instance.run()
-
-    # get instance Ids
-    logging.info("Instance id: %s", instance.instance_id)
-    logging.info("Model param id: %s", instance.param_id)
-    logging.info("Data id: %s", instance.data_id)
-    logging.info("Github hash: %s", instance.git_hash)
-
-    # run the instance
     instance.run()
 
 if __name__ == "__main__":

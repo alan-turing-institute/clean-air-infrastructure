@@ -167,6 +167,10 @@ class SVGP(Model):
 
         x_array, y_array = self.clean_data(x_array, y_array)
 
+        logging.info(
+            "Training the model for %s iterations.", self.model_params["maxiter"]
+        )
+
         # setup inducing points
         z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
             0

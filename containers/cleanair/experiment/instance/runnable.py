@@ -201,9 +201,6 @@ class RunnableInstance(Instance):
         y_train = training_data_dict["Y"]
 
         self.fit_start_time = datetime.now()
-        logging.info(
-            "Training the model for %s iterations.", self.model_params["maxiter"]
-        )
         logging.info("Training started.")
         self.model.fit(x_train, y_train)
         logging.info("Training ended.")
