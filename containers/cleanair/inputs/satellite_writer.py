@@ -38,19 +38,25 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
          06:30 UTC for 0-48 hours.
          08:30 UTC for 49-72 hours.
     """
+    discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
+    half_gridsize = 0.05  # size of half the grid in lat/lon
+    periods = ["0H24H", "25H48H", "49H72H"]  # time periods of interest
+    species = ["NO2", "PM25", "PM10", "O3"]  # species to get data for
 
     def __init__(
         self,
         copernicus_key,
-        define_interest_points=False,
         use_archive_data=False,
         **kwargs
     ):
         # Initialise parent classes
         super().__init__(**kwargs)
+
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
+
+        # Set
         self.access_key = copernicus_key
         self.use_archive_data = use_archive_data
         self.sat_bounding_box = [
@@ -59,11 +65,6 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             -0.51037511051915,
             0.334015522513336,
         ]
-        self.discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
-        self.half_gridsize = 0.05
-        self.define_interest_points = define_interest_points
-        self.periods = ["0H24H", "25H48H", "49H72H"]
-        self.species = ["NO2", "PM25", "PM10", "O3"]  # Species to get data for
 
     @staticmethod
     @robust_api
@@ -348,6 +349,5 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
-        if self.define_interest_points:
-            self.update_interest_points()
+        self.update_interest_points()
         self.update_reading_table()
