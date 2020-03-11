@@ -2,89 +2,6 @@
 # Variables to be passed into the templates.
 imageTag: 3ba0958ba5176fdf89eb384f3793306e45cf7ad5
 
-<<<<<<< HEAD
-jobs:
-  - name: satellite-backdate
-    image:
-      repository: cleanairdocker.azurecr.io/satellite
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 0
-    successfulJobsHistoryLimit: 0
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    args: ['-n', 30]
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: ukmap
-    image:
-      repository: cleanairdocker.azurecr.io/ukmap
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 0
-    successfulJobsHistoryLimit: 0
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: streetcanyon
-    image:
-      repository: cleanairdocker.azurecr.io/streetcanyon
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 0
-    successfulJobsHistoryLimit: 0
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: oshighway
-    image:
-      repository: cleanairdocker.azurecr.io/oshighway
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 0
-    successfulJobsHistoryLimit: 0
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: scootroadmap
-    image:
-      repository: cleanairdocker.azurecr.io/scootroadmap
-      imagePullPolicy: Always
-    schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: scoot-backdate
-    image:
-      repository: cleanairdocker.azurecr.io/scoot
-      imagePullPolicy: Always
-    failedJobsHistoryLimit: 0
-    successfulJobsHistoryLimit: 0
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    args: ['-n', 30]
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-=======
 # jobs:
 #   - name: satellite-backdate
 #     image:
@@ -166,7 +83,7 @@ jobs:
 #     - name: secrets
 #       secret:
 #         secretName: secrets
->>>>>>> master
+
 
 cronjobs:
   - name: laqn
@@ -317,4 +234,4 @@ letsencryptIssuer:
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
 
-whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32
+whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32, 195.99.240.222/32, 82.69.108.113/32
