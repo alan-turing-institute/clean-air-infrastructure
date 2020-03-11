@@ -1,11 +1,12 @@
 """
 Module for cleanair parsers.
 """
-from .model import ModelFitParser, ValidationParser, get_data_config_from_kwargs
 from .complex import (
+    ModelFitParser,
+    ModelValidationParser,
     SatelliteArgumentParser,
+    ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
-    ScootRoadmapArgumentParser,
 )
 from .simple import (
     AQEReadingArgumentParser,
@@ -20,9 +21,9 @@ from .simple import (
 
 __all__ = [
     "AQEReadingArgumentParser",
-    "get_data_config_from_kwargs",
     "LAQNReadingArgumentParser",
     "ModelFitParser",
+    "ModelValidationParser",
     "OsHighwayFeatureArgumentParser",
     "SatelliteArgumentParser",
     "ScootForecastFeatureArgumentParser",
@@ -32,5 +33,4 @@ __all__ = [
     "StaticDatasetArgumentParser",
     "StreetCanyonFeatureArgumentParser",
     "UKMapFeatureArgumentParser",
-    "ValidationParser",
 ]

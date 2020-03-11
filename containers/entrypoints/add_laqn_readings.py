@@ -18,7 +18,9 @@ def main():
 
     # Update the LAQN tables on the database, logging any unhandled exceptions
     try:
-        laqn_writer = LAQNWriter(end=args.end, nhours=args.nhours, secretfile=args.secretfile)
+        laqn_writer = LAQNWriter(
+            end=args.end, nhours=args.nhours, secretfile=args.secretfile
+        )
         laqn_writer.update_remote_tables()
     except Exception as error:
         default_logger.info("An uncaught exception occurred: %s", str(error))

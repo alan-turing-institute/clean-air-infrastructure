@@ -11,7 +11,10 @@ def main():
     Extract static OSHighway features
     """
     # Parse and interpret command line arguments
-    args = OsHighwayFeatureArgumentParser(description="Extract static OSHighway features", sources=["aqe", "laqn", "satellite", "hexgrid"]).parse_args()
+    args = OsHighwayFeatureArgumentParser(
+        description="Extract static OSHighway features",
+        sources=["aqe", "laqn", "satellite", "hexgrid"],
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

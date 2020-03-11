@@ -11,7 +11,9 @@ def main():
     Upload rectangular grid data
     """
     # Parse and interpret command line arguments
-    args = StaticDatasetArgumentParser(description="Upload rectangular grid data").parse_args()
+    args = StaticDatasetArgumentParser(
+        description="Upload rectangular grid data"
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

@@ -15,7 +15,8 @@ class SatelliteSite(Base):
 
     box_id = Column(INTEGER, nullable=False, primary_key=True, autoincrement=True)
     location = Column(
-        Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True), primary_key=True
+        Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True),
+        primary_key=True,
     )
     geom = Column(
         Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True)
@@ -49,6 +50,7 @@ class SatelliteSite(Base):
     @staticmethod
     def build_entry(lat, lon, half_gridsize, **kwargs):
         """Create a SatelliteSite entry and return it"""
+        del kwargs
         return SatelliteSite(
             location=SatelliteSite.build_location_ewkt(lat, lon),
             geom=SatelliteSite.build_box_ewkt(lat, lon, half_gridsize),

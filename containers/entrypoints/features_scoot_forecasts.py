@@ -12,7 +12,11 @@ def main():
     Forecast SCOOT and convert forecasts into features
     """
     # Parse and interpret command line arguments
-    args = ScootForecastFeatureArgumentParser(description="Forecast SCOOT and extract model features", nhours=336, sources=["satellite", "hexgrid"]).parse_args()
+    args = ScootForecastFeatureArgumentParser(
+        description="Forecast SCOOT and extract model features",
+        nhours=336,
+        sources=["satellite", "hexgrid"],
+    ).parse_args()
 
     # Set some parameters using the parsed arguments
     default_logger = initialise_logging(args.verbose)
@@ -41,7 +45,10 @@ def main():
 
         # Construct SCOOT features from forecasts around each interest point
         scoot_feature_extractor = ScootForecastFeatures(
-            nhours=args.forecasthrs, end=forecast_end_time, secretfile=args.secretfile, sources=args.sources
+            nhours=args.forecasthrs,
+            end=forecast_end_time,
+            secretfile=args.secretfile,
+            sources=args.sources,
         )
         scoot_feature_extractor.update_remote_tables()
 

@@ -2,8 +2,8 @@
 Mixin for classes that need to keep track of date ranges
 """
 from datetime import date, datetime, timedelta
-import dateutil
 from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class DateRangeMixin:
@@ -33,12 +33,7 @@ class DateRangeMixin:
                 date.today() - timedelta(days=1), datetime.min.time()
             )
         else:
-            if isinstance(end, date):
-                self.end_datetime = datetime.combine(end, datetime.min.time())
-            if isinstance(end, datetime):
-                self.end_datetime = end
-            else:
-                self.end_datetime = dateutil.parser.parse(end, dayfirst=True)
+            self.end_datetime = as_datetime(end)
 
         # Construct the start datetime using nhours
         self.start_datetime = self.end_datetime - timedelta(hours=nhours)

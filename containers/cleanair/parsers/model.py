@@ -1,21 +1,16 @@
 """
 A base class for cleanair parsers.
 """
-
 import json
 import argparse
-from dateutil.parser import isoparse
-from dateutil.relativedelta import relativedelta
-from ..mixins import (
-    SecretFileParserMixin,
-    SourcesMixin,
-    VerbosityMixin,
-)
+import datetime
+from ..mixins import SecretFileParserMixin, VerbosityMixin
+from ..timestamps import as_datetime
 
 
-class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser):
+class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser):
     """
-    The base cleanair entrypoint parser.
+    Parser for CleanAir model entrypoints.
     """
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
@@ -26,6 +21,7 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
             "-c",
             "--cleanair_config",
             action="store_true",
+            default=False,
             help="Use your config.json settings in the .secrets directory.",
         )
         self.add_argument(
@@ -43,13 +39,14 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
         )
         # whether to read and write from the database or locally
         self.add_argument(
-            "-local_read",
+            "--local-read",
             action="store_true",
+            default=False,
             help="Read local training/test data from config_dir.",
         )
         self.add_argument(
             "-r",
-            "--results_dir",
+            "--results-dir",
             type=str,
             default="CONFIG_DIR",
             help="Filepath to the directory of results.",
@@ -57,14 +54,16 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
         # optional params
         self.add_argument(
             "-y",
-            "--return_y",
+            "--return-y",
             action="store_true",
+            default=False,
             help="Include pollutant data in the test dataset.",
         )
         self.add_argument(
             "-p",
-            "--predict_training",
+            "--predict-training",
             action="store_true",
+            default=False,
             help="Predict on the training set.",
         )
         # datetimes for training and prediction
@@ -93,6 +92,13 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
             help="The number of hours to predict for",
         )
 
+        self.train_end_date = None
+        self.train_start_date = None
+        self.pred_start_date = None
+        self.pred_end_date = None
+        self.include_prediction_y = None
+        self.tag = None
+
     def parse_kwargs(self):
         """
         If the -c flag is passed, then load the config.json file
@@ -100,6 +106,21 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
         """
         args = self.parse_args()
         kwargs = vars(args)
+
+        # Remove any arguments which are needed for the data config
+        self.include_prediction_y = kwargs.pop("return_y")
+        self.tag = kwargs.pop("tag")
+
+        # Convert timestamps into start and end datetimes
+        self.train_end_date = as_datetime(kwargs.pop("trainend"))
+        self.train_start_date = self.train_end_date - datetime.timedelta(
+            hours=kwargs.pop("trainhours")
+        )
+        self.pred_start_date = as_datetime(kwargs.pop("predstart"))
+        self.pred_end_date = self.pred_start_date + datetime.timedelta(
+            hours=kwargs.pop("predhours")
+        )
+
         if kwargs.pop("cleanair_config"):
             # load custom config and overwrite arguments passed
             with open(self.config_path, "r") as filepath:
@@ -111,6 +132,39 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
             kwargs["results_dir"] = kwargs["config_dir"]
         return kwargs
 
+    def generate_data_config(self):
+        """
+        Return a dictionary of model data configs
+        """
+        # Ensure that timestamp arguments have been processed
+        if not self.train_start_date:
+            self.parse_kwargs()
+
+        # Generate and return the config dictionary
+        return {
+            "train_start_date": self.train_start_date,
+            "train_end_date": self.train_end_date,
+            "pred_start_date": self.pred_start_date,
+            "pred_end_date": self.pred_end_date,
+            "include_satellite": True,
+            "include_prediction_y": self.include_prediction_y,
+            "train_sources": ["laqn"],
+            "pred_sources": ["laqn"],
+            "train_interest_points": "all",
+            "train_satellite_interest_points": "all",
+            "pred_interest_points": "all",
+            "species": ["NO2"],
+            "features": [
+                "value_1000_total_a_road_length",
+                "value_500_total_a_road_length",
+                "value_500_total_a_road_primary_length",
+                "value_500_total_b_road_length",
+            ],
+            "norm_by": "laqn",
+            "model_type": "svgp",
+            "tag": self.tag,
+        }
+
     def save_config(self):
         """
         Save the key and values of the parser to a json file.
@@ -118,127 +172,3 @@ class ModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser
         kwargs = vars(self.parse_args())
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
-
-class ValidationParser(ModelParser):
-    """
-    A parser for validation.
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "-predict_read_local",
-            action="store_true",
-            help="Read predictions from a local file.",
-        )
-
-class ModelFitParser(ModelParser):
-    """
-    A parser for the model fitting entrypoint.
-    """
-
-    def __init__(self, **kwargs):
-        """
-        Should be able to:
-            - read training/test data from DB (default)
-            - read training/test data from directory
-            - write training/test data to directory
-            - write result to DB (default)
-            - turn off writing to DB (overwrite default)
-            - write results to file
-        """
-        super().__init__(**kwargs)
-        self.add_argument(
-            "--local-write",
-            action="store_true",
-            help="Write training/test data to config_dir.",
-        )
-        self.add_argument(
-            "--no-db-write",
-            action="store_true",
-            help="Do not write result to database.",
-        )
-        self.add_argument(
-            "--predict-write",
-            action="store_true",
-            help="Write a prediction to the results_dir.",
-        )
-        self.add_argument(
-            "--model-dir",
-            type=str,
-            default="CONFIG_DIR",
-            help="Filepath to the directory where the model is (re-)stored.",
-        )
-
-    def parse_kwargs(self):
-        kwargs = super().parse_kwargs()
-        if kwargs["model_dir"] == "CONFIG_DIR":
-            kwargs["model_dir"] = kwargs["model_dir"]
-        return kwargs
-
-
-
-
-def strtime_offset(strtime, offset_hours):
-    """Give an datetime as an iso string and an offset and return a new time"""
-
-    return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
-
-
-def get_train_test_start_end(kwargs):
-    """
-    Given kwargs return dates for training and testing.
-    """
-    train_end = kwargs.pop("trainend")
-    train_n_hours = kwargs.pop("trainhours")
-    pred_start = kwargs.pop("predstart")
-    pred_n_hours = kwargs.pop("predhours")
-    train_start = strtime_offset(train_end, -train_n_hours)
-    pred_end = strtime_offset(pred_start, pred_n_hours)
-    return train_start, train_end, pred_start, pred_end
-
-
-def get_data_config_from_kwargs(kwargs):
-    """
-    Return a dictionary of model data configs given parser arguments.
-    """
-    # Get training and pred start and end datetimes
-    train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
-    return_y = kwargs.pop("return_y")
-    tag = kwargs.pop("tag")
-
-    # Model configuration
-    model_config = {
-        "train_start_date": train_start,
-        "train_end_date": train_end,
-        "pred_start_date": pred_start,
-        "pred_end_date": pred_end,
-        "include_satellite": True,
-        "include_prediction_y": return_y,
-        "train_sources": ["laqn"],
-        "pred_sources": ["laqn"],
-        "train_interest_points": "all",
-        "train_satellite_interest_points": "all",
-        "pred_interest_points": "all",
-        "species": ["NO2"],
-        "features": [
-            "value_1000_total_a_road_length",
-            "value_500_total_a_road_length",
-            "value_500_total_a_road_primary_length",
-            "value_500_total_b_road_length",
-        ],
-        "norm_by": "laqn",
-        "model_type": "svgp",
-        "tag": tag,
-    }
-    return model_config
-
-
-def pop_non_model_data_keys(kwargs):
-    """
-    Pop keys/values that model_data does not accept.
-    """
-    return {
-        key: kwargs.pop(key)
-        for key in set(kwargs.keys()) - {"secretfile", "config_dir"}
-    }

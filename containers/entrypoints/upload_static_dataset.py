@@ -11,7 +11,9 @@ def main():
     Upload static datasets
     """
     # Parse and interpret command line arguments
-    args = StaticDatasetArgumentParser(description="Upload a static dataset").parse_args()
+    args = StaticDatasetArgumentParser(
+        description="Upload a static dataset"
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

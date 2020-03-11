@@ -11,7 +11,10 @@ def main():
     Extract static StreetCanyon features
     """
     # Parse and interpret command line arguments
-    args = StreetCanyonFeatureArgumentParser(description="Extract static OSHighway features", sources=["aqe", "laqn", "satellite", "hexgrid"]).parse_args()
+    args = StreetCanyonFeatureArgumentParser(
+        description="Extract static OSHighway features",
+        sources=["aqe", "laqn", "satellite", "hexgrid"],
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

@@ -11,7 +11,10 @@ def main():
     Extract static UKMap features
     """
     # Parse and interpret command line arguments
-    args = UKMapFeatureArgumentParser(description="Extract static UKMap features", sources=["aqe", "laqn", "satellite", "hexgrid"]).parse_args()
+    args = UKMapFeatureArgumentParser(
+        description="Extract static UKMap features",
+        sources=["aqe", "laqn", "satellite", "hexgrid"],
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

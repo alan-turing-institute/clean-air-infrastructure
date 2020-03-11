@@ -11,7 +11,9 @@ def main():
     Construct maps between roads and SCOOT detectors
     """
     # Parse and interpret command line arguments
-    args = ScootRoadmapArgumentParser(description="Construct maps between roads and SCOOT detectors").parse_args()
+    args = ScootRoadmapArgumentParser(
+        description="Construct maps between roads and SCOOT detectors"
+    ).parse_args()
 
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)

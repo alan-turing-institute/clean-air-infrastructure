@@ -12,7 +12,10 @@ def main():
     Convert SCOOT readings into features
     """
     # Parse and interpret command line arguments
-    args = ScootReadingFeatureArgumentParser(description="Extract model features from SCOOT readings", sources=["satellite", "hexgrid"]).parse_args()
+    args = ScootReadingFeatureArgumentParser(
+        description="Extract model features from SCOOT readings",
+        sources=["satellite", "hexgrid"],
+    ).parse_args()
 
     # Set some parameters using the parsed arguments
     default_logger = initialise_logging(args.verbose)
