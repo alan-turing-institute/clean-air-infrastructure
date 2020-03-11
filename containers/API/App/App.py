@@ -120,7 +120,7 @@ def box(args):
     pip install httpie
     http  --download GET :5000/api/v1/box lonmin==-0.10653288909912088 latmin==51.49361775468337 lonmax==-0.050657110900877635 latmax==51.515949509214245
     or with curl:
-    curl 'localhost:5000/api/v1/box?xmin=-0.10653288909912088&ymin=51.49361775468337&xmax=-0.050657110900877635&ymax=51.515949509214245'
+    curl 'localhost:5000/api/v1/box?lonmin=-0.10653288909912088&latmin=51.49361775468337&lonmax=-0.050657110900877635&ylatmax=51.515949509214245'
     """
     session = db_session()
     all_points = get_all_forecasts(
