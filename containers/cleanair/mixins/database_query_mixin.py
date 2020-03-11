@@ -12,7 +12,7 @@ from ..databases.tables import (
     LAQNSite,
     LondonBoundary,
     MetaPoint,
-    SatelliteForecastReading,
+    SatelliteForecast,
 )
 from ..loggers import get_logger
 from ..timestamps import as_datetime
@@ -229,12 +229,12 @@ class DBQueryMixin:
 
         with self.dbcnxn.open_session() as session:
 
-            sat_q = session.query(SatelliteForecastReading).filter(
-                SatelliteForecastReading.measurement_start_utc >= start_date,
-                SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.measurement_start_utc)
-                == func.date(SatelliteForecastReading.reference_start_utc),
-                SatelliteForecastReading.species_code.in_(species),
+            sat_q = session.query(SatelliteForecast).filter(
+                SatelliteForecast.measurement_start_utc >= start_date,
+                SatelliteForecast.measurement_start_utc < end_date,
+                func.date(SatelliteForecast.measurement_start_utc)
+                == func.date(SatelliteForecast.reference_start_utc),
+                SatelliteForecast.species_code.in_(species),
             )
 
             return sat_q
@@ -259,10 +259,10 @@ class DBQueryMixin:
             )
 
         with self.dbcnxn.open_session() as session:
-            return session.query(SatelliteForecastReading).filter(
-                SatelliteForecastReading.measurement_start_utc >= start_date,
-                SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.reference_start_utc)
+            return session.query(SatelliteForecast).filter(
+                SatelliteForecast.measurement_start_utc >= start_date,
+                SatelliteForecast.measurement_start_utc < end_date,
+                func.date(SatelliteForecast.reference_start_utc)
                 == as_datetime(start_date).date().isoformat(),
-                SatelliteForecastReading.species_code.in_(species),
+                SatelliteForecast.species_code.in_(species),
             )

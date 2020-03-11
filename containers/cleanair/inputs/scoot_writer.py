@@ -74,18 +74,22 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
     def get_existing_scoot_data(self):
         """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
         with self.dbcnxn.open_session() as session:
-            q_scoot_readings = session.query(
-                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
-                    "hour"
-                ),
-                ScootReading.detector_id,
-                func.count(ScootReading.measurement_start_utc).label("n_entries"),
-            ).group_by(
-                ScootReading.detector_id,
-                func.date_trunc("hour", ScootReading.measurement_start_utc),
-            ).filter(
-                ScootReading.measurement_start_utc >= self.start_datetime,
-                ScootReading.measurement_start_utc <= self.end_datetime,
+            q_scoot_readings = (
+                session.query(
+                    func.date_trunc("hour", ScootReading.measurement_start_utc).label(
+                        "hour"
+                    ),
+                    ScootReading.detector_id,
+                    func.count(ScootReading.measurement_start_utc).label("n_entries"),
+                )
+                .group_by(
+                    ScootReading.detector_id,
+                    func.date_trunc("hour", ScootReading.measurement_start_utc),
+                )
+                .filter(
+                    ScootReading.measurement_start_utc >= self.start_datetime,
+                    ScootReading.measurement_start_utc <= self.end_datetime,
+                )
             )
         return q_scoot_readings
 

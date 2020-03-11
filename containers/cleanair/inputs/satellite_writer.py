@@ -1,30 +1,29 @@
 """
 Satellite
 """
-import uuid
-import tempfile
 import datetime
-from datetime import date
-import requests
+import tempfile
 from dateutil import rrule
+import numpy as np
+import pandas as pd
 
 try:
     import pygrib
 except ImportError:
-    print("pygrib was not imported")
-import numpy as np
-import pandas as pd
+    pass
+import requests
 from sqlalchemy import func
-from ..mixins import DateRangeMixin
 from ..decorators import robust_api
 from ..databases import DBWriter
 from ..databases.tables import (
     MetaPoint,
-    SatelliteSite,
-    SatelliteDiscreteSite,
-    SatelliteForecastReading,
+    SatelliteBox,
+    SatelliteGrid,
+    SatelliteForecast,
 )
 from ..loggers import get_logger, green
+from ..mixins import DateRangeMixin
+from ..timestamps import to_nearest_hour
 
 
 class SatelliteWriter(DateRangeMixin, DBWriter):
@@ -38,17 +37,18 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
          06:30 UTC for 0-48 hours.
          08:30 UTC for 49-72 hours.
     """
-    discretise_size = 10  # square(self.discretise_size) is the number of discrete points per satelite square
-    half_gridsize = 0.05  # size of half the grid in lat/lon
+
+    # To get a square(ish) grid we note that a degree of longitude is cos(latitude)
+    # times a degree of latitude. For London this means that a degree of latitude is
+    # about 1.5 times larger than one of longitude. We therefore use 1.5 times as many
+    # latitude points as longitude
+    half_grid = 0.05  # size of half the grid in lat/lon
+    n_points_lat = 12  # number of discrete latitude points per satellite box
+    n_points_lon = 8  # number of discrete longitude points per satellite box
     periods = ["0H24H", "25H48H", "49H72H"]  # time periods of interest
     species = ["NO2", "PM25", "PM10", "O3"]  # species to get data for
 
-    def __init__(
-        self,
-        copernicus_key,
-        use_archive_data=False,
-        **kwargs
-    ):
+    def __init__(self, copernicus_key, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -58,13 +58,35 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         # Set
         self.access_key = copernicus_key
-        self.use_archive_data = use_archive_data
         self.sat_bounding_box = [
             51.2867601564841,
             51.6918741102915,
             -0.51037511051915,
             0.334015522513336,
         ]
+
+    def build_satellite_grid(self, satellite_boxes_df):
+        """Build a dataframe of satellite grid points given a dataframe of satellite boxes"""
+        grid_dfs = []
+        for row in satellite_boxes_df.itertuples():
+            # Start half-a-unit in from the edge of the box, so that we are one unit
+            # away from the grid point in the adjacent box
+            lat_space = np.linspace(
+                row.lat - self.half_grid + (self.half_grid / self.n_points_lat),
+                row.lat + self.half_grid - (self.half_grid / self.n_points_lat),
+                self.n_points_lat,
+            )
+            lon_space = np.linspace(
+                row.lon - self.half_grid + (self.half_grid / self.n_points_lon),
+                row.lon + self.half_grid - (self.half_grid / self.n_points_lon),
+                self.n_points_lon,
+            )
+            # Convert the linear-spaces into a grid
+            grid = np.array([[lat, lon] for lon in lon_space for lat in lat_space])
+            grid_dfs.append(pd.DataFrame({"lat": grid[:, 0], "lon": grid[:, 1]}))
+            grid_dfs[-1]["box_id"] = row.box_id
+
+        return pd.concat(grid_dfs, ignore_index=True)
 
     @staticmethod
     @robust_api
@@ -76,14 +98,14 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
     def request_satellite_data(self, start_date, period, pollutant):
         """
-        Request satellite data. Will make multiple attempts to read data and then raise and exception if it fails
+        Request satellite data. Will make multiple attempts to read data and raise an
+        exception if it fails
+
         args:
             start_date: Date to collect data from
-            period: The time periods to request data for (Either 0H24H, 25H48H, 49H72H)
-            pollutant: 'NO2', 'NO', 'PM10'
-            type: Either 'archieve' or 'forecast
+            period: The time periods to request data for: 0H24H, 25H48H, 49H72H
+            pollutant: 'NO2', 'PM25', 'PM10', 'O3'
         """
-
         call_type = "FORECAST"
         time_required = period
         level = "SURFACE"
@@ -174,14 +196,14 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         """Update the satellite reading table"""
 
         with self.dbcnxn.open_session() as session:
-            satellite_site_q = session.query(
-                SatelliteSite.box_id,
-                func.ST_X(SatelliteSite.location).label("lon"),
-                func.ST_Y(SatelliteSite.location).label("lat"),
+            q_satellite_box = session.query(
+                SatelliteBox.id.label("box_id"),
+                func.ST_X(SatelliteBox.centroid).label("lon"),
+                func.ST_Y(SatelliteBox.centroid).label("lat"),
             )
 
         satellite_site_df = pd.read_sql(
-            satellite_site_q.statement, satellite_site_q.session.bind
+            q_satellite_box.statement, q_satellite_box.session.bind
         )
 
         with self.dbcnxn.open_session() as session:
@@ -190,7 +212,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             ):
 
                 self.logger.info(
-                    "Requesting 72 hours of satellite forecast data for reference date %s for species %s",
+                    "Requesting 72 hours of satellite forecast data on %s for species %s",
                     green(start_date.date()),
                     green(self.species),
                 )
@@ -213,139 +235,122 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                         grib_data_df = self.grib_to_df(grib_bytes, period, species)
                         all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
 
-                # Join grib data
-                grib_data_joined = all_grib_df.merge(
-                    satellite_site_df, how="left", on=["lon", "lat"]
+                # Join grib data and convert into a list of forecasts
+                reading_entries = (
+                    all_grib_df
+                    .merge(satellite_site_df, how="left", on=["lon", "lat"])
+                    .apply(
+                        lambda data: SatelliteForecast(
+                            measurement_start_utc=to_nearest_hour(data["date"]),
+                            measurement_end_utc=to_nearest_hour(data["date"])
+                            + datetime.timedelta(hours=1),
+                            species_code=data["species"],
+                            box_id=str(data["box_id"]),
+                            value=data["val"],
+                        ),
+                        axis=1,
+                    )
+                    .tolist()
                 )
 
-                reading_entries = grib_data_joined.apply(
-                    lambda x, rd=reference_date: SatelliteForecastReading(
-                        reference_start_utc=rd,
-                        measurement_start_utc=x["date"],
-                        species_code=x["species"],
-                        box_id=x["box_id"],
-                        value=x["val"],
-                    ),
-                    axis=1,
-                ).tolist()
-
+                # Commit forecasts to the database
+                self.logger.info(
+                    "Adding forecasts to database table %s",
+                    green(SatelliteForecast.__tablename__),
+                )
                 self.commit_records(
                     session,
                     reading_entries,
-                    on_conflict="ignore",
-                    table=SatelliteForecastReading,
+                    on_conflict="overwrite",
+                    table=SatelliteForecast,
                 )
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
+        self.logger.info("Starting satellite site list update...")
 
-        self.logger.info("Inserting interest points into database")
-
-        peroid = "0H24H"
-        # Request satellite data for an arbitary day
+        # Request satellite data from today for an arbitary pollutant and convert to a dataframe
+        period = "0H24H"
         grib_bytes = self.request_satellite_data(
-            date.today().strftime("%Y-%m-%d"), period=peroid, pollutant="NO2"
+            datetime.date.today().strftime("%Y-%m-%d"),
+            period=period,
+            pollutant=self.species[0],
         )
+        grib_data_df = self.grib_to_df(grib_bytes, period, self.species[0])
 
-        # Convert to dataframe
-        grib_data_df = self.grib_to_df(grib_bytes, peroid, "NO2")
-
-        # Get interest points
-        sat_interest_points = grib_data_df.groupby(["lat", "lon"]).first().reset_index()
-        if sat_interest_points.shape[0] != 32:
-            raise IOError(
-                "Satellite download did not return data for 32 interest points exactly."
-            )
-
-        # Create satellite_site entries (centers of the satellite readings)
-        sat_interest_points["location"] = sat_interest_points.apply(
-            lambda x: SatelliteSite.build_location_ewkt(x["lat"], x["lon"]), axis=1
-        )
-
-        sat_interest_points["geom"] = sat_interest_points.apply(
-            lambda x: SatelliteSite.build_box_ewkt(
-                x["lat"], x["lon"], self.half_gridsize
-            ),
-            axis=1,
-        )
-
-        sat_interest_points["box_id"] = list(range(sat_interest_points.shape[0]))
-
-        sat_interest_points_entries = sat_interest_points.apply(
-            lambda x: SatelliteSite(
-                box_id=x["box_id"], location=x["location"], geom=x["geom"]
-            ),
-            axis=1,
-        ).tolist()
-
-        # Calculate discrete points and insert into SatelliteDiscreteSite and MetaPoint
-        grid_maps = map(
-            self.get_grid_in_region,
-            sat_interest_points["lat"].to_numpy(),
-            sat_interest_points["lon"].to_numpy(),
-            sat_interest_points["box_id"].to_numpy(),
-        )
-
-        disrete_points_df = pd.concat(list(grid_maps))
-        disrete_points_df["geometry"] = disrete_points_df.apply(
-            lambda x: MetaPoint.build_ewkt(x["lat"], x["lon"]), axis=1
-        )
-
-        disrete_points_df["point_id"] = [
-            uuid.uuid4() for i in range(disrete_points_df.shape[0])
-        ]
-
-        disrete_points_df["metapoint"] = disrete_points_df.apply(
-            lambda x: MetaPoint(
-                source="satellite", id=x["point_id"], location=x["geometry"]
-            ),
-            axis=1,
-        )
-
-        meta_entries = disrete_points_df["metapoint"].tolist()
-
-        sat_discrete_entries = disrete_points_df.apply(
-            lambda x: SatelliteDiscreteSite(point_id=x["point_id"], box_id=x["box_id"]),
-            axis=1,
-        ).tolist()
-
-        # Commit to database
+        # Construct a SatelliteBox for each box, a SatelliteGrid for each
+        # discretised location inside the box and a MetaPoint for each
+        # SatelliteGrid. Merge each of these into the database.
         with self.dbcnxn.open_session() as session:
-            self.logger.info("Insert satellite meta points")
-            self.commit_records(
-                session, meta_entries, on_conflict="overwrite", table=MetaPoint
+            # Get the lat/lon for each of the box centres
+            satellite_boxes_df = grib_data_df[["lat", "lon"]].drop_duplicates()
+            if satellite_boxes_df.shape[0] != 32:
+                raise IOError(
+                    "Satellite download did not return precisely 32 interest points."
+                )
+
+            # Merge satellite boxes into the SatelliteBox table and track their box_id
+            self.logger.info(
+                "Merging %i satellite boxes into SatelliteBox table",
+                satellite_boxes_df.shape[0],
             )
-            self.logger.info("Insert satellite sites")
-            self.commit_records(
-                session, sat_interest_points_entries, on_conflict="overwrite"
+            satellite_boxes = [
+                session.merge(site)
+                for site in satellite_boxes_df.apply(
+                    lambda box: SatelliteBox.build_entry(
+                        box["lat"], box["lon"], self.half_grid
+                    ),
+                    axis=1,
+                )
+            ]
+            session.flush()
+            satellite_boxes_df["box_id"] = [str(box.id) for box in satellite_boxes]
+
+            # Construct the satellite grid
+            satellite_grid_points_df = self.build_satellite_grid(satellite_boxes_df)
+
+            # Merge satellite discrete sites into the MetaPoint table and track their point_id
+            self.logger.info(
+                "Merging %i satellite discrete sites into MetaPoint table",
+                satellite_grid_points_df.shape[0],
             )
-            self.logger.info("Insert satellite discrete entries")
-            self.commit_records(
-                session,
-                sat_discrete_entries,
-                on_conflict="overwrite",
-                table=SatelliteDiscreteSite,
+            satellite_grid_points = [
+                session.merge(site)
+                for site in satellite_grid_points_df.apply(
+                    lambda site: MetaPoint.build_entry(
+                        "satellite", latitude=site["lat"], longitude=site["lon"]
+                    ),
+                    axis=1,
+                )
+            ]
+            session.flush()
+            satellite_grid_points_df["point_id"] = [
+                str(point.id) for point in satellite_grid_points
+            ]
+
+            # Now we can merge this combined point_id and box_id data into the SatelliteGrid table
+            self.logger.info(
+                "Merging %i satellite discrete sites into SatelliteGrid table",
+                satellite_grid_points_df.shape[0],
             )
+            satellite_discrete_sites = [
+                session.merge(site)
+                for site in satellite_grid_points_df.apply(
+                    lambda site: SatelliteGrid.build_entry(
+                        point_id=site["point_id"], box_id=site["box_id"]
+                    ),
+                    axis=1,
+                )
+            ]
 
-    def get_grid_in_region(self, lat, lon, box_id):
-        """Get a grid of lat lon coordinates which descretise a satellite grid"""
-
-        lat_space = np.linspace(
-            lat - self.half_gridsize + 0.0001,
-            lat + self.half_gridsize - 0.0001,
-            self.discretise_size,
-        )
-        lon_space = np.linspace(
-            lon - self.half_gridsize + 0.0001,
-            lon + self.half_gridsize - 0.0001,
-            self.discretise_size,
-        )
-
-        grid = np.array([[a, b] for b in lon_space for a in lat_space])
-        grid_df = pd.DataFrame({"lat": grid[:, 0], "lon": grid[:, 1]})
-        grid_df["box_id"] = box_id
-
-        return grid_df
+            # Update the sites table and commit any changes
+            self.logger.info(
+                "Committing changes to database tables %s, %s and %s",
+                green(MetaPoint.__tablename__),
+                green(SatelliteBox.__tablename__),
+                green(SatelliteGrid.__tablename__),
+            )
+            session.commit()
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

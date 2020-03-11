@@ -8,6 +8,7 @@ from .converters import (
     unix_from_str,
     utcstr_from_datetime,
     utcstr_from_unix,
+    to_nearest_hour,
 )
 
 __all__ = [
@@ -17,4 +18,5 @@ __all__ = [
     "unix_from_str",
     "utcstr_from_datetime",
     "utcstr_from_unix",
+    "to_nearest_hour",
 ]
