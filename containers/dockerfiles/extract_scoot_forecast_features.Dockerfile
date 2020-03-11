@@ -15,7 +15,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/run_dashboard.py /app
+COPY entrypoints/extract_scoot_forecast_features.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "run_dashboard.py"]
+ENTRYPOINT ["python", "extract_scoot_forecast_features.py"]

@@ -102,7 +102,7 @@ class ScootForecastFeatureArgumentParser(
     SourcesMixin,
     VerbosityMixin,
     ArgumentParser,
-): # pylint: disable=too-many-ancestors
+):  # pylint: disable=too-many-ancestors
     """Argument parsing for converting SCOOT forecasts into model features"""
 
     def __init__(self, **kwargs):
@@ -121,6 +121,7 @@ class ScootForecastFeatureArgumentParser(
             default=[],
             help="List of SCOOT detectors to forecast for, (default: all of them).",
         )
+
 
 class ModelValidationParser(BaseModelParser):
     """

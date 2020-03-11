@@ -15,7 +15,7 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/run_model_fitting.py /app
+COPY entrypoints/input_laqn_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "run_model_fitting.py"]
+ENTRYPOINT ["python", "input_laqn_readings.py"]

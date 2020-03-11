@@ -16,7 +16,7 @@ RUN apt-get update
 RUN apt-get -y install cmake build-essential
 
 RUN apt-get -y install gfortran
-RUN wget --output-document eccodes-2.13.0-Source.tar.gz https://confluence.ecmwf.int/download/attachments/45757960/eccodes-2.13.0-Source.tar.gz?api=v2 
+RUN wget --output-document eccodes-2.13.0-Source.tar.gz https://confluence.ecmwf.int/download/attachments/45757960/eccodes-2.13.0-Source.tar.gz?api=v2
 RUN ls
 RUN tar -xzf eccodes-2.13.0-Source.tar.gz
 RUN ls eccodes-2.13.0-Source.tar.gz
@@ -35,7 +35,7 @@ RUN pip install pygrib
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/add_satellite_readings.py /app
+COPY entrypoints/input_satellite_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "add_satellite_readings.py"]
+ENTRYPOINT ["python", "input_satellite_readings.py"]

@@ -34,7 +34,7 @@ class ScootReadingFeatureArgumentParser(
     SourcesMixin,
     VerbosityMixin,
     ArgumentParser,
-):
+):  # pylint: disable=too-many-ancestors
     """Argument parsing for converting SCOOT readings into model features"""
 
 
