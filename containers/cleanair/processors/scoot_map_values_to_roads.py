@@ -51,7 +51,6 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 session.query(
                     ScootRoadMatch.road_toid,
                     self.table_per_detector.measurement_start_utc,
-                    self.table_per_detector.measurement_end_utc,
                     (
                         func.sum(
                             self.table_per_detector.n_vehicles_in_interval
@@ -88,12 +87,12 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 .filter(
                     self.table_per_detector.measurement_start_utc
                     >= self.start_datetime,
-                    self.table_per_detector.measurement_end_utc < self.end_datetime,
+                    self.table_per_detector.measurement_start_utc < self.end_datetime,
                 )
                 .group_by(
                     ScootRoadMatch.road_toid,
                     self.table_per_detector.measurement_start_utc,
-                    self.table_per_detector.measurement_end_utc,
+                    self.table_per_detector.measurement_start_utc,
                 )
             )
 

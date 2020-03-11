@@ -48,23 +48,25 @@ def main():
         # Construct SCOOT readings for each road using:
         # - the relevant SCOOT readings (from ScootWriter)
         # - the static association between roads and SCOOT sensors (from ScootRoadMatch)
-        scoot_road_readings = ScootPerRoadReadingMapper(
-            ndays=args.ndays, end=args.end, secretfile=args.secretfile
-        )
-        scoot_road_readings.update_remote_tables()
-
-        # # Construct SCOOT features from readings around each interest point
-        # scoot_feature_extractor = ScootReadingFeatures(
+        # scoot_road_readings = ScootPerRoadReadingMapper(
         #     ndays=args.ndays, end=args.end, secretfile=args.secretfile
         # )
+        # scoot_road_readings.update_remote_tables()
 
-        quit()
-        print(
-            scoot_feature_extractor.get_dynamic_processed(
-                "max_n_vehicles", output_type="query"
-            ).statement
+        # Construct SCOOT features from readings around each interest point
+        scoot_feature_extractor = ScootReadingFeatures(
+            ndays=args.ndays, end=args.end, secretfile=args.secretfile
         )
-        # scoot_feature_extractor.update_remote_tables()
+
+        # quit()
+        # print(
+        #     scoot_feature_extractor.get_dynamic_processed(
+        #         "max_n_vehicles", output_type="query"
+        #     ).statement
+        # )
+
+        # print(scoot_feature_extractor.table.statement)
+        scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:
         default_logger.error("An uncaught exception occurred: %s", str(error))

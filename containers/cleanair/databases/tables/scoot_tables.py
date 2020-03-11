@@ -19,9 +19,10 @@ class ScootReading(Base):
         ForeignKey("interest_points.scoot_detector.detector_n"),
         primary_key=True,
         nullable=False,
+        index=True,
     )  # DETSCN
     measurement_start_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False
+        TIMESTAMP, primary_key=True, nullable=False, index=True
     )  # TIMESTAMP
     measurement_end_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False
@@ -183,7 +184,6 @@ class ScootRoadReading(Base):
     measurement_start_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )
-    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)

@@ -44,19 +44,7 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
 
     @property
     def table(self):
-        """Join the geometry column from OSHighway onto the relevant SCOOT table for feature extraction"""
-        with self.dbcnxn.open_session() as session:
-            return session.query(
-                (
-                    session.query(self.table_class, OSHighway.geom,)
-                    .join(OSHighway, self.table_class.road_toid == OSHighway.toid)
-                    .filter(
-                        self.table_class.measurement_start_utc >= self.start_datetime,
-                        self.table_class.measurement_start_utc < self.end_datetime,
-                    )
-                    .cte("scoot_table")
-                )
-            )
+        return OSHighway
 
     @property
     def features(self):

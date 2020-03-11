@@ -19,7 +19,7 @@ from ..loggers import duration, green, get_logger, duration_from_seconds
 class FeatureExtractor(DBWriter, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, dynamic=False, batch_size=1000, sources=None, **kwargs):
+    def __init__(self, dynamic=False, batch_size=10, sources=None, **kwargs):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -203,9 +203,14 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
-        cte_buffers = self.query_meta_points(
-            feature_name=feature_name, limit=batch_size
-        ).cte("buffers")
+        if self.dynamic:
+            cte_buffers = self.query_meta_points(
+                feature_name=feature_name, exclude_processed=False, limit=batch_size
+            ).cte("buffers")
+        else:
+            cte_buffers = self.query_meta_points(
+                feature_name=feature_name, exclude_processed=False, limit=batch_size
+            ).cte("buffers")
 
         n_interest_points = self.query_meta_points(
             feature_name=feature_name, output_type="count"
@@ -224,6 +229,8 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             green(batch_size),
             green(n_interest_points),
         )
+
+        quit()
 
         if feature_type == "geom":
             # Use case to avoid calculating intersections if we know the geom is covered
