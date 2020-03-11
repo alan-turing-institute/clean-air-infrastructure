@@ -14,7 +14,7 @@ def main():
     # Parse and interpret command line arguments
     args = ScootForecastFeatureArgumentParser(
         description="Forecast SCOOT and extract model features",
-        nhours=336,
+        nhours=336,  # this is two weeks
         sources=["satellite", "hexgrid"],
     ).parse_args()
 
