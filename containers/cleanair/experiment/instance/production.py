@@ -16,7 +16,7 @@ class ProductionInstance(RunnableInstance):
 
     DEFAULT_MODEL_PARAMS = dict()   # ToDo: add default model params for DeepGp
 
-    DEFAULT_EXPERIMENT_CONFIG = RunnableInstance.DEFAULT_EXPERIMENT_CONFIG
+    DEFAULT_EXPERIMENT_CONFIG = RunnableInstance.DEFAULT_EXPERIMENT_CONFIG.copy()
     
     DEFAULT_MODEL_NAME = "mr_dgp"
 

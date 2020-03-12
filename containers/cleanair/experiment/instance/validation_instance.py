@@ -98,3 +98,14 @@ class ValidationInstance(RunnableInstance):
         pred_filepath = os.path.join(self.experiment_config["results_dir"], filename)
         with open(pred_filepath, "wb") as handle:
             pickle.dump(y_pred, handle)
+
+    @classmethod
+    def instance_from_id(cls, instance_id, experiment_config):
+        """
+        Given an id, return an initialised runnable instance.
+        """
+        # return instance from file
+        if experiment_config["local_read"]:
+            return None
+        # return instance from DB
+        return super().__class__.instance_from_id()

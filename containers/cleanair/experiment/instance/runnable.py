@@ -5,9 +5,10 @@ An instance that can be executed using the run() method.
 import logging
 import json
 from datetime import datetime
+import pandas as pd
 from .instance import Instance
 from ...models import ModelData
-from ...databases.tables import ModelTable, DataConfig
+from ...databases.tables import ModelTable, DataConfig, InstanceTable
 
 
 class RunnableInstance(Instance):
@@ -83,6 +84,7 @@ class RunnableInstance(Instance):
         model_name = kwargs.pop("model_name", self.__class__.DEFAULT_MODEL_NAME)
         super().__init__(model_name=model_name, **kwargs)
 
+        # these three dict define an instance
         xp_config = kwargs.get("experiment_config", {})
         model_params = kwargs.get("model_params", {})
         data_config = kwargs.get("data_config", {})
@@ -244,3 +246,45 @@ class RunnableInstance(Instance):
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
+
+    @classmethod
+    def instance_from_id(cls, instance_id, experiment_config):
+        """
+        Given an id, return an initialised runnable instance.
+        """
+        instance = cls(
+            instance_id=instance_id,
+            experiment_config=experiment_config,
+        )
+        with instance.dbcnxn().open_session() as session:
+            # get the row that maches the instance id
+            instance_query = session.query(InstanceTable).filter(
+                InstanceTable.instance_id == instance_id
+            )
+            instance_df = pd.read_sql(instance_query.statement, instance_query.session.bind)
+            assert len(instance_df) == 1    # exactly one row returned from query
+            instance_dict = instance_df.iloc[0].to_dict()
+
+            # load data config using the data id
+            data_config_query = session.query(DataConfig).filter(
+                DataConfig.data_id == instance_dict["data_id"]
+            )
+            data_row = data_config_query.fetch_one()
+            instance.data_config = data_row[2]
+
+            # laod the model parameters using the param_id and model_name
+            model_param_query = session.query(ModelTable).filter(
+                ModelTable.model_name == instance_dict["model_name"] and ModelTable.param_id == instance_dict["param_id"]
+            )
+            model_row = model_param_query.fetch_one()
+            instance.model_params = model_row[3]
+
+        instance.model_name = instance_dict["model_name"]
+        instance.cluster_id = instance_dict["cluster_id"]
+        instance.tag = instance_dict["tag"]
+        instance.git_hash = instance_dict["git_hash"]
+        instance.fit_start_time = instance_dict["fit_start_time"]
+
+        # return the created instance
+        return instance
+

@@ -42,7 +42,7 @@ class Instance(DBWriter, DBQueryMixin):
         tag : str, optional
             Name of the instance type, e.g. 'production', 'test', 'validation'.
 
-        hash : str, optional
+        git_hash : str, optional
             Git hash of the code version.
 
         fit_start_time : str, optional
