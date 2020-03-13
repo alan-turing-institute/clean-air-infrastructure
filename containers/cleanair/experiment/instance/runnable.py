@@ -8,7 +8,7 @@ from datetime import datetime
 import pandas as pd
 from .instance import Instance
 from ...models import ModelData
-from ...databases.tables import ModelTable, DataConfig, InstanceTable
+from ...databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
 
 
 class RunnableInstance(Instance):
@@ -174,7 +174,7 @@ class RunnableInstance(Instance):
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, records, table=ModelTable)
 
-    def setup_data(self):
+    def load_data(self):
         """
         From the data and experiment config, setup a model data object.
         """
@@ -233,13 +233,27 @@ class RunnableInstance(Instance):
         # add results to the results table
         self.model_data.update_remote_tables(self.instance_id)
 
+    def load_results(self):
+        """
+        Load results from the results table that match the instance id.
+        """
+        with self.dbcnxn.open_session() as session:
+            # get all rows that match the instance id
+            results_query = session.query(ResultTable).filter(
+                ResultTable.instance_id == self.instance_id
+            )
+            results_df = pd.read_sql(results_query.statement, results_query.session.bind)
+        logging.info("Loaded %s rows from the results table.", len(results_df))
+        return results_df
+
+
     def run(self):
         """
         Setup, train, predict and update all in one step.
         """
         self.setup_model()
         self.update_model_table()
-        self.setup_data()
+        self.load_data()
         self.update_data_config_table()
         self.run_model_fitting()
         self.update_remote_tables()
@@ -248,15 +262,16 @@ class RunnableInstance(Instance):
         self.save_results()
 
     @classmethod
-    def instance_from_id(cls, instance_id, experiment_config):
+    def instance_from_id(cls, instance_id, experiment_config, **kwargs):
         """
         Given an id, return an initialised runnable instance.
         """
         instance = cls(
             instance_id=instance_id,
             experiment_config=experiment_config,
+            **kwargs,
         )
-        with instance.dbcnxn().open_session() as session:
+        with instance.dbcnxn.open_session() as session:
             # get the row that maches the instance id
             instance_query = session.query(InstanceTable).filter(
                 InstanceTable.instance_id == instance_id
@@ -266,18 +281,22 @@ class RunnableInstance(Instance):
             instance_dict = instance_df.iloc[0].to_dict()
 
             # load data config using the data id
+            logging.info("Load data config from database.")
             data_config_query = session.query(DataConfig).filter(
                 DataConfig.data_id == instance_dict["data_id"]
             )
-            data_row = data_config_query.fetch_one()
-            instance.data_config = data_row[2]
+            data_row = data_config_query.one()
+            instance.data_config = data_row.data_config
 
             # laod the model parameters using the param_id and model_name
+            logging.info("Load model params from database")
             model_param_query = session.query(ModelTable).filter(
-                ModelTable.model_name == instance_dict["model_name"] and ModelTable.param_id == instance_dict["param_id"]
+                ModelTable.model_name == instance_dict["model_name"]
+            ).filter(
+                ModelTable.param_id == instance_dict["param_id"]
             )
-            model_row = model_param_query.fetch_one()
-            instance.model_params = model_row[3]
+            model_row = model_param_query.one()
+            instance.model_params = model_row.model_param
 
         instance.model_name = instance_dict["model_name"]
         instance.cluster_id = instance_dict["cluster_id"]

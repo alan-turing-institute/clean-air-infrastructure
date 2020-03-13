@@ -2,6 +2,7 @@
 Visualise and run metrics for a single model data fit.
 """
 import os
+import json
 import pickle
 import logging
 from datetime import datetime
@@ -10,8 +11,8 @@ from cleanair.models import ModelData
 from cleanair import metrics
 from cleanair.dashboard import apps
 from cleanair.loggers import get_log_level
-from cleanair.parsers import ValidationParser
-from cleanair.parsers import get_data_config_from_kwargs
+from cleanair.experiment import ProductionInstance, ValidationInstance
+from cleanair.parsers import DashboardParser
 from cleanair.databases import DBReader
 from cleanair.databases.tables import ModelResult
 
@@ -105,30 +106,39 @@ def main():  # pylint: disable=too-many-locals
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
-    # get a model data object from the config_dir
-    parser = ValidationParser(description="Dashboard")
-    kwargs = parser.parse_kwargs()
+    evaluate_training = False   # ToDo: extend dashboard for training set.
+
+    # parse command line arguments
+    parser = DashboardParser(description="Dashboard")
+    kwargs, data_args, xp_config, model_args = parser.parse_all()
     logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+    secrets_dir = os.path.dirname(xp_config["secretfile"])
 
-    # pop kwargs
-    evaluate_training = kwargs.pop("predict_training")
-    secrets_dir = os.path.dirname(kwargs["secretfile"])
-
-    model_data_kwargs = dict(
-        secretfile=kwargs.pop("secretfile"),
-        config_dir=kwargs.pop("config_dir"),
+    # all possible instances
+    tag_to_instance = dict(
+        production=ProductionInstance,
+        validation=ValidationInstance,
     )
+    # the instance class from a tag
+    instance_class = tag_to_instance[kwargs.get("tag")]
 
-    # get the config of data
-    data_config = get_data_config_from_kwargs(kwargs)
+    # get experiment config
+    experiment_config = instance_class.DEFAULT_EXPERIMENT_CONFIG
+    experiment_config.update(xp_config)
 
-    # Get the model data
-    if kwargs["local_read"]:
-        model_data = ModelData(**model_data_kwargs)
-    else:
-        model_data = ModelData(config=data_config, **model_data_kwargs)
+    # load the instance
+    instance = instance_class.instance_from_id(kwargs.pop("instance_id"), experiment_config, **kwargs)
 
-    get_model_data_results(model_data, evaluate_training=evaluate_training, **kwargs)
+    # get the data and the results
+    print(json.dumps(instance.data_config, indent=4))
+    instance.load_data()
+    results_df = instance.load_results()
+    instance.model_data.normalised_pred_data_df = pd.merge(
+        instance.model_data.normalised_pred_data_df,
+        results_df,
+        how="inner",
+        on=["point_id", "measurement_start_utc"],
+    )
 
     # get the mapbox api key
     try:
@@ -144,14 +154,14 @@ def main():  # pylint: disable=too-many-locals
     metric_methods = metrics.get_metric_methods()
     precision_methods = metrics.get_precision_methods(pe1=metrics.probable_error)
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data,
+        instance.model_data,
         metric_methods,
         precision_methods=precision_methods,
         evaluate_training=evaluate_training,
     )
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data,
+        instance.model_data,
         sensor_scores_df,
         temporal_scores_df,
         mapbox_access_token,

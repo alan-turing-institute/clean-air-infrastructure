@@ -4,6 +4,7 @@ Instance for validation that allows more flexibility such as reading/writing fro
 
 import logging
 import os
+import json
 import pickle
 from .runnable import RunnableInstance
 from ...models import ModelData
@@ -52,8 +53,13 @@ class ValidationInstance(RunnableInstance):
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()
+        if self.experiment_config["local_write"]:
+            model_params_fp = os.path.join(self.experiment_config["model_dir"], "model_params.json")
+            logging.info("Writing model parameters to json file.")
+            with open(model_params_fp, "w") as json_file:
+                json.dump(self.model_params, model_params_fp)
 
-    def setup_data(self):
+    def load_data(self):
         if self.experiment_config["local_read"]:
             logging.info("Reading from local file.")
             self.model_data = ModelData(
@@ -61,8 +67,8 @@ class ValidationInstance(RunnableInstance):
                 secretfile=self.experiment_config["secretfile"],
             )
         else:
-            super().setup_data()
-        # save input data to file
+            super().load_data()
+        # save input data and model params to file
         if self.experiment_config["local_write"]:
             self.model_data.save_config_state(self.experiment_config["config_dir"])
 
@@ -100,12 +106,44 @@ class ValidationInstance(RunnableInstance):
             pickle.dump(y_pred, handle)
 
     @classmethod
-    def instance_from_id(cls, instance_id, experiment_config):
+    def instance_from_id(cls, instance_id, experiment_config, **kwargs):
         """
         Given an id, return an initialised runnable instance.
+
+        Parameters
+        ___
+
+        instance_id : str
+            Unique id for the instance that is used to load the instance.
+
+        experiment_config : dict
+            How the instance will be loaded, e.g. from file? from DB?.
+
+        Other Parameters
+        ___
+
+        kwargs : dict, optional
+            See __init__.
+            If loading instance from file then should pass through cluster_id,
+            git_hash, fit_start_time and tag.
         """
         # return instance from file
         if experiment_config["local_read"]:
-            return None
+            instance = cls(
+                instance_id=instance_id,
+                experiment_config=experiment_config,
+                **kwargs,
+            )
+            # load the data config from file
+            data_config_fp = os.path.join(experiment_config["config_dir"], "config.json")
+            with open(data_config_fp, "r") as json_file:
+                instance.data_config = json.load(json_file)
+
+            # get model parameters from file
+            model_params_fp = os.path.join(experiment_config["model_dir"], "model_params.json")
+            with open(model_params_fp, "r") as json_file:
+                instance.model_params = json.load(json_file)
+
+            return instance
         # return instance from DB
-        return super().__class__.instance_from_id()
+        return RunnableInstance.instance_from_id(instance_id, experiment_config)
