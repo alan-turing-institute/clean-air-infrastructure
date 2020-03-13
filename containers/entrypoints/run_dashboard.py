@@ -49,49 +49,25 @@ def read_model_results(tag, start_time, end_time, secretfile):
             ModelResult.measurement_start_utc < end_time,
         )
         results_df = pd.read_sql(results_query.statement, session.bind)
-    logging.info("Number of rows returned: %s", len(results_df))
+    logging.info("Model results returned %s rows.", len(results_df))
     return results_df
 
 
-def main():  # pylint: disable=too-many-locals
-    """
-    Run the model fitting entrypoint and show the scores in a plotly dashboard.
-    """
-    # get a model data object from the config_dir
-    parser = ValidationParser(description="Dashboard")
-    kwargs = parser.parse_kwargs()
-    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
-
-    # pop kwargs
-    local_read = kwargs.pop("local_read")
-    evaluate_training = kwargs.pop("predict_training")
-    results_dir = kwargs.pop("results_dir")
-    predict_read_local = kwargs.pop("predict_read_local")
-    secrets_dir = os.path.dirname(kwargs["secretfile"])
-
-    # get the config of data
-    data_config = get_data_config_from_kwargs(kwargs)
-
-    # Get the model data
-    if local_read:
-        model_data = ModelData(**kwargs)
-    else:
-        model_data = ModelData(config=data_config, **kwargs)
-
+def get_model_data_results(model_data, **kwargs):
     # get the predictions of the model
-    if predict_read_local:
-        y_test_pred_fp = os.path.join(results_dir, "test_pred.pickle")
+    if kwargs["predict_read_local"]:
+        y_test_pred_fp = os.path.join(kwargs["results_dir"], "test_pred.pickle")
         with open(y_test_pred_fp, "rb") as handle:
             y_test_pred = pickle.load(handle)
-        if evaluate_training:
-            y_train_pred_fp = os.path.join(results_dir, "train_pred.pickle")
+        if kwargs["evaluate_training"]:
+            y_train_pred_fp = os.path.join(kwargs["results_dir"], "train_pred.pickle")
             with open(y_train_pred_fp, "rb") as handle:
                 y_train_pred = pickle.load(handle)
         # update the model data object with the predictions
         model_data.update_test_df_with_preds(y_test_pred, datetime.now())
     else:
         # when reading from DB, we assume evaluate_training is false
-        evaluate_training = False
+        kwargs["evaluate_training"] = False
 
         # get the results from the DB
         results_df = read_model_results(
@@ -120,8 +96,39 @@ def main():  # pylint: disable=too-many-locals
             "NO2_var"
         ] = model_data.normalised_pred_data_df["predict_var"]
 
-    if evaluate_training:
+    if kwargs["evaluate_training"]:
         model_data.update_training_df_with_preds(y_train_pred, datetime.now())
+
+    return model_data
+
+def main():  # pylint: disable=too-many-locals
+    """
+    Run the model fitting entrypoint and show the scores in a plotly dashboard.
+    """
+    # get a model data object from the config_dir
+    parser = ValidationParser(description="Dashboard")
+    kwargs = parser.parse_kwargs()
+    logging.basicConfig(level=get_log_level(kwargs.pop("verbose", 0)))
+
+    # pop kwargs
+    evaluate_training = kwargs.pop("predict_training")
+    secrets_dir = os.path.dirname(kwargs["secretfile"])
+
+    model_data_kwargs = dict(
+        secretfile=kwargs.pop("secretfile"),
+        config_dir=kwargs.pop("config_dir"),
+    )
+
+    # get the config of data
+    data_config = get_data_config_from_kwargs(kwargs)
+
+    # Get the model data
+    if kwargs["local_read"]:
+        model_data = ModelData(**model_data_kwargs)
+    else:
+        model_data = ModelData(config=data_config, **model_data_kwargs)
+
+    get_model_data_results(model_data, evaluate_training=evaluate_training, **kwargs)
 
     # get the mapbox api key
     try:
@@ -135,10 +142,13 @@ def main():  # pylint: disable=too-many-locals
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
+    precision_methods = metrics.get_precision_methods(pe1=metrics.probable_error)
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods, evaluate_training=evaluate_training
+        model_data,
+        metric_methods,
+        precision_methods=precision_methods,
+        evaluate_training=evaluate_training,
     )
-
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
         model_data,
@@ -146,6 +156,7 @@ def main():  # pylint: disable=too-many-locals
         temporal_scores_df,
         mapbox_access_token,
         evaluate_training=evaluate_training,
+        all_metrics=list(metric_methods.keys()) + list(precision_methods.keys()),
     )
     model_data_fit_app.run_server(debug=True)
 

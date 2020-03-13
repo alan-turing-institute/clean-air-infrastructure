@@ -288,7 +288,7 @@ class MRDGP(Model):
         except KeyboardInterrupt:
             print("Ending early")
 
-        if save_model_state:
+        if self.experiment_config["save_model_state"]:
             saver = tf.train.Saver()
             saver.save(
                 tf_session,

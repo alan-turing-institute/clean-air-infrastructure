@@ -46,6 +46,9 @@ run_model/data
 # Python package
 *.egg-info
 
+# Jupyter notebooks/lab
+.ipynb_checkpoints
+
 # Misc
 images/
 

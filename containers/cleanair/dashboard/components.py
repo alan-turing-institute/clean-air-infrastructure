@@ -3,15 +3,18 @@ Meta components that make up the dashboard.
 """
 
 import dash_core_components as dcc
-import plotly.graph_objects as go
 import plotly.express as px
 from . import timeseries
-from ..metrics.evaluate import pop_kwarg
+from ..metrics import pop_kwarg
 
 METRIC_NAMES = {
     "mae": "Mean absolute error",
     "mse": "Mean squared error",
     "r2_score": "R squared score",
+    "ci50": "Confidence interval 50%",
+    "ci75": "Confidence interval 75%",
+    "ci95": "Confidence interval 95%",
+    "pe1": "Probable error (1 std)",
 }
 POLLUTANT_NAMES = dict(
     NO2="Nitrogen Dioxide",
@@ -47,6 +50,9 @@ class ModelFitComponent:
         )
         self.temporal_metrics_timeseries_id = pop_kwarg(
             kwargs, "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
+        )
+        self.features_scatter_id = pop_kwarg(
+            kwargs, "features_scatter_id", "features_scatter"
         )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
@@ -88,19 +94,16 @@ class ModelFitComponent:
         """
         Get a map with interest points plotted.
         """
-        return dcc.Graph(
-            id=self.interest_points_timeseries_id,
-            figure=go.Figure(
-                data=[
-                    timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id), col=pollutant
-                    ),
-                    timeseries.get_pollutant_point_trace(
-                        self.point_groupby.get_group(point_id), col=pollutant + "_mean"
-                    ),
-                ],
-                layout=dict(title="Prediction for point {id}".format(id=point_id)),
-            ),
+        return dict(
+            data=[
+                timeseries.get_pollutant_point_trace(
+                    self.point_groupby.get_group(point_id), col=pollutant
+                ),
+                timeseries.get_pollutant_point_trace(
+                    self.point_groupby.get_group(point_id), col=pollutant + "_mean"
+                ),
+            ],
+            layout=dict(title="Prediction for point {id}".format(id=point_id)),
         )
 
     def get_temporal_metrics_timeseries(self, metric_key, pollutant):
@@ -123,6 +126,33 @@ class ModelFitComponent:
                     mtc=METRIC_NAMES[metric_key]
                 )
             ),
+        )
+
+    def get_features_scatter(self, metric_key, pollutant, x_feature, y_feature):
+        """
+        Get a scatter of sensor scores with two features on the X and Y axis.
+        """
+        col = pollutant + "_" + metric_key
+        name = METRIC_NAMES[metric_key]
+        return dict(
+            data=[
+                dict(
+                    x=self.point_groupby[x_feature].mean(),
+                    y=self.point_groupby[y_feature].mean(),
+                    # x = self.sensor_scores_df[x_feature],
+                    # y = self.sensor_scores_df[y_feature],
+                    mode="markers",
+                    marker=dict(
+                        color=self.sensor_scores_df[col],
+                        size=[20 for i in self.sensor_scores_df["point_id"]],
+                        colorscale="Viridis",
+                        showscale=True,
+                    ),
+                    hover_name=self.sensor_scores_df["point_id"],
+                    name=name,
+                ),
+            ],
+            layout=dict(title="{xl} vs {yl}".format(xl=x_feature, yl=y_feature)),
         )
 
 
