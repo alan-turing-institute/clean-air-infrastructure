@@ -80,7 +80,7 @@ class SatelliteExperiment(experiment.Experiment):
     def get_default_data_config(self):
         # create dates for rolling over
         n_rolls = 1
-        train_start = "2020-02-01T00:00:00"
+        train_start = "2020-03-03T00:00:00"
         train_n_hours = 48
         pred_n_hours = 24
         rolls = util.create_rolls(train_start, train_n_hours, pred_n_hours, n_rolls)
@@ -104,7 +104,7 @@ def get_dgp_default_config():
             "kernel": {
                 "name": "MR_SE_LAQN_BASE",
                 "type": "se",
-                "active_dims": [0, 1, 2, 3],  # epoch, lat, lon, feature
+                "active_dims": [0, 1, 2, 3],  # epoch, lat, lon, feature1, feature2
                 "lengthscales": [0.1, 0.1, 0.1, 0.1],
                 "variances": [1.0, 1.0, 1.0, 1.0],
             },

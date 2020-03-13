@@ -42,7 +42,7 @@ def save(fp, obj):
         pickle.dump(obj, handle)
 
 def main(data_config, param_config, experiment_config):
-    print(param_config)
+    print(json.dumps(param_config, indent=4))
     #===========================Load Data===========================
     #TODO: fix files paths in experiments
     dirname = os.path.dirname
@@ -65,6 +65,7 @@ def main(data_config, param_config, experiment_config):
 
     #===========================Select correct features===========================
     features = [0, 1, 2, config_dict['x_names'].index('value_100_flat')]
+
     for src in train_dict['X'].keys():
         if len(train_dict['X'][src].shape) == 2:
             train_dict['X'][src] =  train_dict['X'][src][:, features]
@@ -82,6 +83,7 @@ def main(data_config, param_config, experiment_config):
 
     param_config['restore'] = False
     param_config['train'] = True
+
     experiment_config['name'] = 'm_mr_dgp_'+experiment_config['results_dir']
 
     experiment_config['model_state_fp'] = '.'
