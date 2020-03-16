@@ -6,7 +6,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 import json
 import os
 from .model import BaseModelParser
-from ..experiment import ValidationInstance, ProductionInstance
+from ..instance import ValidationInstance, ProductionInstance
 from ..mixins import (
     SecretFileParserMixin,
     DurationParserMixin,

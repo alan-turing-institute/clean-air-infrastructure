@@ -4,7 +4,7 @@ A base class for cleanair parsers.
 import json
 import argparse
 import datetime
-from ..experiment import RunnableInstance
+from ..instance import RunnableInstance
 from ..mixins import SecretFileParserMixin, VerbosityMixin
 from ..timestamps import as_datetime
 
