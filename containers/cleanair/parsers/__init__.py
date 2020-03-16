@@ -17,7 +17,7 @@ from .simple import (
     ScootRoadmapArgumentParser,
     StaticDatasetArgumentParser,
     StreetCanyonFeatureArgumentParser,
-    UKMapFeatureArgumentParser,
+    UKMapFeatureArgumentParser
 )
 
 __all__ = [

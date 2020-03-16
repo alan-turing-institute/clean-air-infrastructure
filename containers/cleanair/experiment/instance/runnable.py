@@ -172,7 +172,7 @@ class RunnableInstance(Instance):
         )]
         logging.info("Inserting 1 row into the model table.")
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, table=ModelTable)
+            self.commit_records(session, records, table=ModelTable, on_conflict="ignore")
 
     def load_data(self):
         """
@@ -192,7 +192,7 @@ class RunnableInstance(Instance):
             data_config=self.data_config,
         )]
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, table=DataConfig)
+            self.commit_records(session, records, table=DataConfig, on_conflict="ignore")
 
     def run_model_fitting(self):
         """

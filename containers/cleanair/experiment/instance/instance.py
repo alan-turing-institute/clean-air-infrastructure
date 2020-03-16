@@ -178,5 +178,5 @@ class Instance(DBWriter, DBQueryMixin):
         records = [self.to_dict()]
         logging.info("Inserting 1 record into the instance table.")
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, table=InstanceTable)
+            self.commit_records(session, records, table=InstanceTable, on_conflict="ignore")
         

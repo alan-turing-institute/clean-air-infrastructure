@@ -3,10 +3,10 @@ A base class for cleanair parsers.
 """
 import json
 import argparse
-from dateutil.parser import isoparse
-from dateutil.relativedelta import relativedelta
+import datetime
 from ..experiment import RunnableInstance
 from ..mixins import SecretFileParserMixin, VerbosityMixin
+from ..timestamps import as_datetime
 
 
 class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser):
@@ -17,7 +17,6 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
     MODEL_ARGS = []
     EXPERIMENT_ARGS = ["local_read", "config_dir", "secretfile"]
     DATA_ARGS = ["trainend", "trainhours", "predstart", "predhours", "predict_training", "include_prediction_y"]
-    MISC_ARGS = ["model_name", "tag", "verbose", "cluster_id"]
 
     def __init__(self, config_path="../../terraform/.secrets/config.json", **kwargs):
         super().__init__(**kwargs)
@@ -104,6 +103,9 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             help="The number of hours to predict for",
         )
 
+        self.data_args = dict()
+        self.experiment_args = dict()
+        self.model_args = dict()
 
     def parse_all(self):
         """
@@ -121,27 +123,33 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
                 if key in kwargs:
                     kwargs[key] = value
 
-        # get misc kwargs
-        misc = {key: kwargs.pop(key) for key in self.__class__.MISC_ARGS}
-
         # get model params
-        model_params = {
+        self.model_args = {
             key: kwargs.pop(key) for key in self.__class__.MODEL_ARGS
         }
         # get data params
-                # Get training and pred start and end datetimes
-        train_start, train_end, pred_start, pred_end = get_train_test_start_end(kwargs)
-        return_y = kwargs.pop("include_prediction_y", False)
-        data_config = {
-            "train_start_date": train_start,
-            "train_end_date": train_end,
-            "pred_start_date": pred_start,
-            "pred_end_date": pred_end,
-            "include_prediction_y": return_y,
-            "tag": misc.get("tag"),
+        train_end_date = as_datetime(kwargs.pop("trainend"))
+        train_start_date = train_end_date - datetime.timedelta(
+            hours=kwargs.pop("trainhours")
+        )
+        pred_start_date = as_datetime(kwargs.pop("predstart"))
+        pred_end_date = pred_start_date + datetime.timedelta(
+            hours=kwargs.pop("predhours")
+        )
+        include_prediction_y = kwargs.pop("include_prediction_y", False)
+        self.data_args = {
+            "train_start_date": train_start_date,
+            "train_end_date": train_end_date,
+            "pred_start_date": pred_start_date,
+            "pred_end_date": pred_end_date,
+            "include_prediction_y": include_prediction_y,
+            "tag": kwargs.get("tag"),
         }
-        # the rest are experiment config
-        return misc, data_config, kwargs, model_params
+        # get experiment params
+        self.experiment_args = {
+            key: kwargs.pop(key) for key in self.__class__.EXPERIMENT_ARGS
+        }
+        return kwargs
 
     def save_config(self):
         """
@@ -150,22 +158,3 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
         kwargs = vars(self.parse_args())
         with open(self.config_path, "w") as filepath:
             json.dump(kwargs, filepath)
-
-
-def strtime_offset(strtime, offset_hours):
-    """Give an datetime as an iso string and an offset and return a new time"""
-
-    return (isoparse(strtime) + relativedelta(hours=offset_hours)).isoformat()
-
-
-def get_train_test_start_end(kwargs):
-    """
-    Given kwargs return dates for training and testing.
-    """
-    train_end = kwargs.pop("trainend")
-    train_n_hours = kwargs.pop("trainhours")
-    pred_start = kwargs.pop("predstart")
-    pred_n_hours = kwargs.pop("predhours")
-    train_start = strtime_offset(train_end, -train_n_hours)
-    pred_end = strtime_offset(pred_start, pred_n_hours)
-    return train_start, train_end, pred_start, pred_end
