@@ -3,6 +3,7 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
+import logging
 import pickle
 import pandas as pd
 import numpy as np
@@ -32,7 +33,15 @@ class ModelData(DBWriter, DBQueryMixin):
         """
 
         # Initialise parent classes
-        super().__init__(**kwargs)
+        try:
+            super().__init__(**kwargs)
+        except FileNotFoundError:
+            if not config_dir:
+                error_message = "Secrets file at %s not found. Have you mounted the directory?"
+                error_message.format(kwargs.get("secretfile"))
+                raise FileNotFoundError(error_message)
+            warning_message = "%s not found. Have you mounted the directory?"
+            logging.warning("Secretfile not found, but you have passed the config_dir so we will proceed assuming you do not require the DB.")
 
         # Ensure logging is available
         if not hasattr(self, "logger"):

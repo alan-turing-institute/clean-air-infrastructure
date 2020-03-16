@@ -62,7 +62,12 @@ class Instance(DBWriter, DBQueryMixin):
             Further arguments to pass, e.g. model_params, data_config.
 
         """
-        super().__init__(secretfile=kwargs.pop("secretfile", "../../terraform/.secrets/db_secrets.json"))
+        # if the database is not available try and use local files
+        try:
+            super().__init__(secretfile=kwargs.pop("secretfile", "../../terraform/.secrets/db_secrets.json"))
+        except FileNotFoundError:
+            logging.warning("db_secrets.json not found. Instance will not be able to read or write from the DB so you must have all data files stored locally.")
+
         self._model_name = kwargs.get("model_name", None)
         self._param_id = kwargs.get("param_id", None)
         self._data_id = kwargs.get("data_id", None)

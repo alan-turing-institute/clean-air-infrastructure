@@ -82,7 +82,6 @@ class RunnableInstance(Instance):
             See `Instance`.
         """
         model_name = kwargs.pop("model_name", self.__class__.DEFAULT_MODEL_NAME)
-        super().__init__(model_name=model_name, **kwargs)
 
         # these three dict define an instance
         xp_config = kwargs.get("experiment_config", {})
@@ -94,6 +93,12 @@ class RunnableInstance(Instance):
         self.experiment_config.update(xp_config)
 
         logging.debug("Experiment config: %s", json.dumps(self.experiment_config, indent=4))
+
+        super().__init__(
+            model_name=model_name,
+            secretfile=self.experiment_config["secretfile"],
+            **kwargs
+        )
 
         # check if model params has been passed
         if model_params:
@@ -261,11 +266,23 @@ class RunnableInstance(Instance):
         Setup, train, predict and update all in one step.
         """
         self.setup_model()
-        self.update_model_table()
+        if hasattr(self, "dbcnxn") and self.tag != "production":
+            self.update_model_table()
+        else:
+            logging.warning("Not writing to model table.")
+
         self.load_data()
-        self.update_data_config_table()
+        if hasattr(self, "dbcnxn") and self.tag != "production":
+            self.update_data_config_table()
+        else:
+            logging.warning("Not writing to data config table.")
+
         self.run_model_fitting()
-        self.update_remote_tables()
+
+        if hasattr(self, "dbcnxn") and self.tag != "production":
+            self.update_remote_tables()
+        else:
+            logging.warning("Not writing instance to table.")
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
