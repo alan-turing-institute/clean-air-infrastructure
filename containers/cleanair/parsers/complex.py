@@ -187,13 +187,13 @@ class ModelValidationParser(BaseModelParser):
         )
 
     def parse_all(self):
-        kwargs, data_args, xp_config, model_args = super().parse_all()
-        if xp_config["results_dir"] == "CONFIG_DIR":
-            xp_config["results_dir"] = xp_config["config_dir"]
-        if xp_config["model_dir"] == "CONFIG_DIR":
-            xp_config["model_dir"] = xp_config["config_dir"]
-        model_args["model_state_fp"] = xp_config["model_dir"]
-        return kwargs, data_args, xp_config, model_args
+        kwargs = super().parse_all()
+        if self.experiment_args["results_dir"] == "CONFIG_DIR":
+            self.experiment_args["results_dir"] = self.experiment_args["config_dir"]
+        if self.experiment_args["model_dir"] == "CONFIG_DIR":
+            self.experiment_args["model_dir"] = self.experiment_args["config_dir"]
+        self.model_args["model_state_fp"] = self.experiment_args["model_dir"]
+        return kwargs
 
 
 class ProductionParser(BaseModelParser):
@@ -213,8 +213,6 @@ class DashboardParser(ModelValidationParser):
     """
     A parser for the dashboard.
     """
-
-    MISC_ARGS = ModelValidationParser.MISC_ARGS + ["instance_id"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

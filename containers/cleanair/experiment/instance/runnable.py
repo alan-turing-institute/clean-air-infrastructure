@@ -111,7 +111,7 @@ class RunnableInstance(Instance):
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
-            self.data_id = RunnableInstance.__hash_dict(data_config)
+            self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
         
         # make model and data
         self.model = None
@@ -139,12 +139,21 @@ class RunnableInstance(Instance):
     @data_config.setter
     def data_config(self, value):
         self._data_config = value
-        self.data_id = RunnableInstance.__hash_dict(value)
+        self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
 
     @staticmethod
     def __hash_dict(value):
         hash_string = json.dumps(value)
         return Instance.hash_fn(hash_string)
+
+    def convert_dates_to_str(self, datetime_format="%Y-%m-%d %H:%M:%S"):
+        return dict(
+            self.data_config,
+            train_start_date=self.data_config["train_start_date"].strftime(datetime_format),
+            train_end_date=self.data_config["train_end_date"].strftime(datetime_format),
+            pred_start_date=self.data_config["pred_start_date"].strftime(datetime_format),
+            pred_end_date=self.data_config["pred_end_date"].strftime(datetime_format),
+        )
 
     def load_model_params(self, **kwargs):
         """

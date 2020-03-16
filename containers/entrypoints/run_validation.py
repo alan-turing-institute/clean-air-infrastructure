@@ -10,12 +10,12 @@ from cleanair.parsers import ModelValidationParser
 def main():
     parser = ModelValidationParser(description="Run validation")
 
-    kwargs, data_args, xp_config, model_args = parser.parse_all()
+    kwargs = parser.parse_all()
 
     model_params = ValidationInstance.DEFAULT_MODEL_PARAMS
-    model_params.update(model_args)
+    model_params.update(parser.model_args)
 
-    instance = ValidationInstance(data_config=data_args, experiment_config=xp_config, model_params=model_params, **kwargs)
+    instance = ValidationInstance(data_config=parser.data_args, experiment_config=parser.experiment_args, model_params=model_params, **kwargs)
 
     instance.run()
 
