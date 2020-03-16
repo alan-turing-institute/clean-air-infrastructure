@@ -9,8 +9,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
-from ..loggers import get_logger, green, red
 from .base import Base
+from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
 
 
@@ -46,18 +46,17 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
-            # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
-
-            self.__engine = create_engine(self.connection_string, pool_pre_ping=True,)
-            self.__sessionfactory = sessionmaker(bind=self.__engine)
+            self.__engine = create_engine(self.connection_string, pool_pre_ping=True)
         # Return the class-level engine
         return self.__engine
 
     @property
     def sessionfactory(self):
         """Access the class-level sqlalchemy sessionfactory"""
+        # Initialise the class-level sessionfactory if it does not already exist
         if not self.__sessionfactory:
-            _ = self.engine
+            self.__sessionfactory = sessionmaker(bind=self.engine)
+        # Return the class-level sessionfactory
         return self.__sessionfactory
 
     def ensure_schema(self, schema_name):
@@ -108,7 +107,7 @@ class Connector(DBConnectionMixin):
         else:
             try:
                 requests.get(url, timeout=timeout)
-                self.logger.info("Internet connection: %s", green("WORKING"))
+                self.logger.debug("Internet connection: %s", green("WORKING"))
                 self.last_successful_connection = time.time()
             except requests.ConnectionError:
                 self.logger.error("Internet connection: %s", red("NOT WORKING"))

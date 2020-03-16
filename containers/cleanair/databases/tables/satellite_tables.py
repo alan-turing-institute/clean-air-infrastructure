@@ -8,14 +8,15 @@ from ..base import Base
 
 
 class SatelliteSite(Base):
-    """Locations of the descritised satellite locations"""
+    """Locations of the discretised satellite locations"""
 
     __tablename__ = "satellite_site"
     __table_args__ = {"schema": "interest_points"}
 
-    box_id = Column(INTEGER, nullable=False, primary_key=True)
+    box_id = Column(INTEGER, nullable=False, primary_key=True, autoincrement=True)
     location = Column(
-        Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True)
+        Geometry(geometry_type="POINT", srid=4326, dimension=2, spatial_index=True),
+        primary_key=True,
     )
     geom = Column(
         Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True)
@@ -34,20 +35,26 @@ class SatelliteSite(Base):
         return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
     @staticmethod
-    def build_box_ewkt(latitude, longitude, buff_size):
-        """Create an EWKT geometry string from latitude and longitude and buff_size"""
-
+    def build_box_ewkt(latitude, longitude, half_gridsize):
+        """Create an EWKT geometry string from latitude and longitude and half_gridsize"""
         corners = [
-            [latitude - buff_size, longitude - buff_size],
-            [latitude - buff_size, longitude + buff_size],
-            [latitude + buff_size, longitude + buff_size],
-            [latitude + buff_size, longitude - buff_size],
-            [latitude - buff_size, longitude - buff_size],
+            [latitude - half_gridsize, longitude - half_gridsize],
+            [latitude - half_gridsize, longitude + half_gridsize],
+            [latitude + half_gridsize, longitude + half_gridsize],
+            [latitude + half_gridsize, longitude - half_gridsize],
+            [latitude - half_gridsize, longitude - half_gridsize],
         ]
-
         coord_strings = "".join(["{} {},".format(i[1], i[0]) for i in corners])[:-1]
-
         return "SRID=4326;POLYGON(({}))".format(coord_strings)
+
+    @staticmethod
+    def build_entry(lat, lon, half_gridsize, **kwargs):
+        """Create a SatelliteSite entry and return it"""
+        del kwargs
+        return SatelliteSite(
+            location=SatelliteSite.build_location_ewkt(lat, lon),
+            geom=SatelliteSite.build_box_ewkt(lat, lon, half_gridsize),
+        )
 
 
 class SatelliteDiscreteSite(Base):
@@ -57,12 +64,11 @@ class SatelliteDiscreteSite(Base):
     __table_args__ = {"schema": "interest_points"}
 
     point_id = Column(
-        UUID(as_uuid=True),
+        UUID,
         ForeignKey("interest_points.meta_point.id"),
         nullable=False,
         primary_key=True,
     )
-    # point_id = Column(UUID(as_uuid=True), nullable=False, primary_key=True)
     box_id = Column(
         INTEGER,
         ForeignKey("interest_points.satellite_site.box_id"),

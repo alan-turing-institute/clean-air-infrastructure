@@ -11,12 +11,18 @@ except:
     USE_COLORS_FLAG=False
 
 
-def get_log_level(verbosity):
+def initialise_logging(verbosity):
     """
-    Get numeric log level given a known verbosity
-    Default level is INFO [20], but add one level for each -v given at the command line
+    Initialise logging for this process
     """
-    return max(20 - 10 * verbosity, 10)
+    # Remove any existing handlers
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    # Get numeric log level given a known verbosity
+    # Default level is INFO [20], but add one level for each -v given at the command line
+    log_level = max(20 - 10 * verbosity, 10)
+    logging.basicConfig(level=log_level)
+    return get_logger("default")
 
 
 def get_logger(name):

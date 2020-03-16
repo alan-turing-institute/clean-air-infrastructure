@@ -81,7 +81,7 @@ class RectGridWriter(DBWriter):
                 MetaPoint.build_entry("rectgrid", geometry=g["point_id"])
                 for g in grid_cells
             ]
-            self.commit_records(session, meta_points)
+            self.commit_records(session, meta_points, on_conflict="overwrite")
             for grid_cell, meta_point in zip(grid_cells, meta_points):
                 grid_cell[
                     "point_id"
@@ -98,4 +98,4 @@ class RectGridWriter(DBWriter):
                 len(grid_records),
                 green("rectgrid"),
             )
-            self.commit_records(session, grid_records)
+            self.commit_records(session, grid_records, on_conflict="overwrite")

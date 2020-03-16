@@ -8,10 +8,9 @@ import pandas as pd
 import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
-from dateutil.parser import isoparse
 from ..databases.tables import (
-    IntersectionValue,
-    IntersectionValueDynamic,
+    StaticFeature,
+    DynamicFeature,
     ResultTable,
     SatelliteDiscreteSite,
 )
@@ -632,7 +631,7 @@ class ModelData(DBWriter, DBQueryMixin):
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
+            # Inner join the MetaPoint and StaticFeature(Dynamic) data
             df_joined = interest_point_df.join(features_df, how="left")
             return df_joined.reset_index()
 
@@ -642,7 +641,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """Read static features from the database."""
 
         return self.__select_features(
-            IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
+            DynamicFeature, features, sources, point_ids, start_date, end_date
         )
 
     def __select_static_features(self, features, sources, point_ids):
@@ -652,7 +651,7 @@ class ModelData(DBWriter, DBQueryMixin):
             source: A list of sources(e.g. 'laqn', 'aqe') to include. Default will include all sources
             point_ids: A list if interest point ids. Default to all ids"""
 
-        return self.__select_features(IntersectionValue, features, sources, point_ids)
+        return self.__select_features(StaticFeature, features, sources, point_ids)
 
     @staticmethod
     def __expand_time(start_date, end_date, feature_df):
@@ -660,8 +659,8 @@ class ModelData(DBWriter, DBQueryMixin):
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date(inclusive) and end_date
         """
-        start_date = isoparse(start_date).date()
-        end_date = isoparse(end_date).date()
+        start_date = start_date.date()
+        end_date = end_date.date()
 
         ids = feature_df["point_id"].to_numpy()
         times = rrule.rrule(
@@ -691,13 +690,10 @@ class ModelData(DBWriter, DBQueryMixin):
             end_date,
         )
 
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
-
         sensor_dfs = []
         if "laqn" in sources:
             laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
@@ -707,7 +703,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if "aqe" in sources:
             aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
@@ -765,11 +761,10 @@ class ModelData(DBWriter, DBQueryMixin):
         features = self.config["feature_names"]
 
         self.logger.info(
-            "Getting training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
+            "Loading training data for species: %s from sources: %s", species, sources,
+        )
+        self.logger.info(
+            "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
@@ -974,8 +969,4 @@ class ModelData(DBWriter, DBQueryMixin):
         upload_records = df_cols[record_cols].to_dict("records")
         self.logger.info("Inserting %s records into the result table.", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ResultTable)
-
-    def read_results_table(self):
-        """Read results from the DB and update the dataframe."""
-        raise NotImplementedError("Coming soon")
+            self.commit_records(session, upload_records, table=ResultTable, on_conflict="ignore")

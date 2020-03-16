@@ -1,16 +1,17 @@
 """
 A base class for cleanair parsers.
 """
-
 import json
 import argparse
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from ..experiment import RunnableInstance
+from ..mixins import SecretFileParserMixin, VerbosityMixin
 
-class CleanAirParser(argparse.ArgumentParser):
+
+class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentParser):
     """
-    The base cleanair entrypoint parser.
+    Parser for CleanAir model entrypoints.
     """
 
     MODEL_ARGS = []
@@ -26,6 +27,7 @@ class CleanAirParser(argparse.ArgumentParser):
             "-c",
             "--cleanair_config",
             action="store_true",
+            default=False,
             help="Use your config.json settings in the .secrets directory.",
         )
         self.add_argument(
@@ -49,22 +51,16 @@ class CleanAirParser(argparse.ArgumentParser):
             help="Name of machine/cluster the model is run on.",
         )
         self.add_argument(
-            "-s",
-            "--secretfile",
-            default=RunnableInstance.DEFAULT_EXPERIMENT_CONFIG["secretfile"],
-            help="File with connection secrets.",
-        )
-        self.add_argument(
             "-d",
             "--config_dir",
             default=RunnableInstance.DEFAULT_EXPERIMENT_CONFIG["config_dir"],
             help="Filepath to directory to store model and data.",
         )
-        self.add_argument("-v", "--verbose", action="count", default=0)
         # whether to read and write from the database or locally
         self.add_argument(
-            "-local_read",
+            "--local-read",
             action="store_true",
+            default=False,
             help="Read local training/test data from config_dir.",
         )
         # optional params
@@ -72,12 +68,14 @@ class CleanAirParser(argparse.ArgumentParser):
             "-y",
             "--include_prediction_y",
             action="store_true",
+            default=False,
             help="Include pollutant data in the test dataset.",
         )
         self.add_argument(
             "-p",
-            "--predict_training",
+            "--predict-training",
             action="store_true",
+            default=False,
             help="Predict on the training set.",
         )
         # datetimes for training and prediction
@@ -106,11 +104,15 @@ class CleanAirParser(argparse.ArgumentParser):
             help="The number of hours to predict for",
         )
 
+
     def parse_all(self):
-        args = super().parse_args()
+        """
+        If the -c flag is passed, then load the config.json file
+        and overwrite any fields that are passed in kwargs.
+        """
+        args = self.parse_args()
         kwargs = vars(args)
 
-        # get kwargs from json file
         if kwargs.pop("cleanair_config"):
             # load custom config and overwrite arguments passed
             with open(self.config_path, "r") as filepath:

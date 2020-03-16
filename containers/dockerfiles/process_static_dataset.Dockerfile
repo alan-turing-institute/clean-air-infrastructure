@@ -25,7 +25,7 @@ RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
 COPY cleanair /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/upload_static_dataset.py /app
+COPY entrypoints/process_static_dataset.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python3", "upload_static_dataset.py"]
+ENTRYPOINT ["python3", "process_static_dataset.py"]

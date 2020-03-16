@@ -3,9 +3,8 @@ Useful logging utilities
 """
 
 
-def duration(start_time, end_time):
-    """Get a human-readable duration from a start and end time in seconds"""
-    seconds = int(end_time - start_time)
+def duration_from_seconds(seconds):
+    """Get a human-readable duration from a number of seconds"""
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
@@ -16,3 +15,9 @@ def duration(start_time, end_time):
     if minutes > 0:
         return "%dm%ds" % (minutes, seconds)
     return "%ds" % (seconds,)
+
+
+def duration(start_time, end_time):
+    """Get a human-readable duration from a start and end time in seconds"""
+    seconds = int(end_time - start_time)
+    return duration_from_seconds(seconds)

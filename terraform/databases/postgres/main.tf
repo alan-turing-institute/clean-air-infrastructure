@@ -82,6 +82,10 @@ resource "azurerm_postgresql_server" "this" {
     environment = "Terraform Clean Air"
     segment     = "Databases / Postgres"
   }
+
+  lifecycle {
+    ignore_changes = [storage_profile[0].storage_mb]
+  }
 }
 
 # :: create the database
