@@ -198,7 +198,7 @@ class RunnableInstance(Instance):
         logging.info("Inserting 1 row into data config table.")
         records = [dict(
             data_id=self.data_id,
-            data_config=self.data_config,
+            data_config=self.convert_dates_to_str(),
         )]
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, records, table=DataConfig, on_conflict="ignore")

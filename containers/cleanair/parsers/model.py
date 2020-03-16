@@ -62,7 +62,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             default=False,
             help="Read local training/test data from config_dir.",
         )
-        # optional params
+        # optional params for data
         self.add_argument(
             "-y",
             "--include_prediction_y",
