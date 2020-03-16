@@ -121,6 +121,7 @@ class RunnableInstance(Instance):
         # make model and data
         self.model = None
         self.model_data = None
+        logging.info("Tag is %s", self.tag)
         logging.info("Model name is %s", self.model_name)
         logging.info("Param id is %s", self.param_id)
         logging.info("Data id is %s", self.data_id)
