@@ -7,7 +7,7 @@ import os
 import json
 import pickle
 from .runnable import RunnableInstance
-from ...models import ModelData
+from ..models import ModelData
 
 class ValidationInstance(RunnableInstance):
 
@@ -40,7 +40,7 @@ class ValidationInstance(RunnableInstance):
         include_satellite=True,
     )
 
-    # DEFAULT_MODEL_NAME = "svgp"
+    DEFAULT_MODEL_NAME = "svgp"
 
     def __init__(self, **kwargs):
         self.y_test_pred = None

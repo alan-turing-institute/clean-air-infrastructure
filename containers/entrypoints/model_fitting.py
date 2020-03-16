@@ -10,7 +10,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from cleanair.parsers import ProductionParser
-from cleanair.experiment import ProductionInstance
+from cleanair.instance import ProductionInstance
 
 def main():
     """
@@ -32,7 +32,7 @@ def main():
     model_params.update(parser.model_args)
 
     # ToDo: remove hard-coded model parameters
-    from cleanair.experiment import ValidationInstance
+    from cleanair.instance import ValidationInstance
     model_params = ValidationInstance.DEFAULT_MODEL_PARAMS
 
     # create the instance

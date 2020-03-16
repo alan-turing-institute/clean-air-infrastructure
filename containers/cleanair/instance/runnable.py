@@ -7,8 +7,8 @@ import json
 from datetime import datetime
 import pandas as pd
 from .instance import Instance
-from ...models import ModelData
-from ...databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
+from ..models import ModelData
+from ..databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
 
 
 class RunnableInstance(Instance):

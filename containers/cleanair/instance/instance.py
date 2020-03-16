@@ -4,10 +4,10 @@ Instances of models and data.
 import logging
 import hashlib
 import git
-from ...models import SVGP, MRDGP
-from ...databases import DBWriter
-from ...mixins import DBQueryMixin
-from ...databases.tables import InstanceTable
+from ..models import SVGP, MRDGP
+from ..databases import DBWriter
+from ..mixins import DBQueryMixin
+from ..databases.tables import InstanceTable
 
 class Instance(DBWriter, DBQueryMixin):
     """
