@@ -1,13 +1,14 @@
 
 import os
-import tensorflow as tf
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import logging
+import tensorflow as tf
 from cleanair.instance import ValidationInstance, LaqnTestInstance
 from cleanair.parsers import ModelValidationParser
 
 def main():
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    
     parser = ModelValidationParser(description="Run validation")
 
     kwargs = parser.parse_all()
@@ -18,6 +19,10 @@ def main():
         validation=ValidationInstance,
     )
     instance_cls = instance_classes[kwargs.get("tag")]
+
+    # ToDo: remove hard-coded satellite setting
+    logging.warning("Turing off satellite data until it is fixed.")
+    parser.data_args["include_satellite"] = False
 
     # setup model parameters
     model_params = instance_cls.DEFAULT_MODEL_PARAMS

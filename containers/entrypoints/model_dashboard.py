@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 from cleanair import metrics
 from cleanair.dashboard import apps
-from cleanair.experiment import ProductionInstance, ValidationInstance
+from cleanair.instance import ProductionInstance, ValidationInstance
 from cleanair.parsers import DashboardParser
 
 
@@ -19,7 +19,8 @@ def main():  # pylint: disable=too-many-locals
 
     # parse command line arguments
     parser = DashboardParser(description="Dashboard")
-    kwargs, data_args, xp_config, model_args = parser.parse_all()
+    kwargs = parser.parse_all()
+    xp_config = parser.experiment_args
     secrets_dir = os.path.dirname(xp_config["secretfile"])
 
     # all possible instances
@@ -35,11 +36,14 @@ def main():  # pylint: disable=too-many-locals
     experiment_config.update(xp_config)
 
     # load the instance
-    instance = instance_class.instance_from_id(kwargs.pop("instance_id"), experiment_config, **kwargs)
+    instance_id = kwargs.pop("instance_id")
+    instance = instance_class.instance_from_id(instance_id, experiment_config, **kwargs)
+    assert instance.instance_id == instance_id
 
     # get the data and the results
-    print(json.dumps(instance.data_config, indent=4))
+    print(json.dumps(instance.convert_dates_to_str(), indent=4))
     instance.load_data()
+    assert instance.instance_id == instance_id
     results_df = instance.load_results()
     instance.model_data.normalised_pred_data_df = pd.merge(
         instance.model_data.normalised_pred_data_df,

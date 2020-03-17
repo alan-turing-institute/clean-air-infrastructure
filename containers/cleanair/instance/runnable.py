@@ -9,6 +9,9 @@ import pandas as pd
 from .instance import Instance
 from ..models import ModelData
 from ..databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
+from ..mixins import DBQueryMixin
+from ..databases import DBReader
+from ..timestamps import as_datetime
 
 
 class RunnableInstance(Instance):
@@ -116,6 +119,7 @@ class RunnableInstance(Instance):
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
+            self._data_config = self.convert_str_to_dates()
             self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
         
         # make model and data
@@ -145,6 +149,7 @@ class RunnableInstance(Instance):
     @data_config.setter
     def data_config(self, value):
         self._data_config = value
+        self._data_config = self.convert_str_to_dates()
         self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
 
     @staticmethod
@@ -159,6 +164,15 @@ class RunnableInstance(Instance):
             train_end_date=self.data_config["train_end_date"].strftime(datetime_format),
             pred_start_date=self.data_config["pred_start_date"].strftime(datetime_format),
             pred_end_date=self.data_config["pred_end_date"].strftime(datetime_format),
+        )
+
+    def convert_str_to_dates(self):
+        return dict(
+            self._data_config,
+            train_start_date=as_datetime(self._data_config["train_start_date"]),
+            train_end_date=as_datetime(self._data_config["train_end_date"]),
+            pred_start_date=as_datetime(self._data_config["pred_start_date"]),
+            pred_end_date=as_datetime(self._data_config["pred_end_date"]),
         )
 
     def load_model_params(self, **kwargs):
@@ -293,12 +307,16 @@ class RunnableInstance(Instance):
         """
         Given an id, return an initialised runnable instance.
         """
-        instance = cls(
-            instance_id=instance_id,
-            experiment_config=experiment_config,
-            **kwargs,
+        # instance = cls(
+        #     instance_id=instance_id,
+        #     experiment_config=experiment_config,
+        #     **kwargs,
+        # )
+        # with instance.dbcnxn.open_session() as session:
+        instance_query = InstanceQuery(
+            secretfile=experiment_config["secretfile"],
         )
-        with instance.dbcnxn.open_session() as session:
+        with instance_query.dbcnxn.open_session() as session:
             # get the row that maches the instance id
             instance_query = session.query(InstanceTable).filter(
                 InstanceTable.instance_id == instance_id
@@ -313,7 +331,7 @@ class RunnableInstance(Instance):
                 DataConfig.data_id == instance_dict["data_id"]
             )
             data_row = data_config_query.one()
-            instance.data_config = data_row.data_config
+            data_config = data_row.data_config
 
             # laod the model parameters using the param_id and model_name
             logging.info("Load model params from database")
@@ -323,14 +341,35 @@ class RunnableInstance(Instance):
                 ModelTable.param_id == instance_dict["param_id"]
             )
             model_row = model_param_query.one()
-            instance.model_params = model_row.model_param
+            model_params = model_row.model_param
 
-        instance.model_name = instance_dict["model_name"]
-        instance.cluster_id = instance_dict["cluster_id"]
-        instance.tag = instance_dict["tag"]
-        instance.git_hash = instance_dict["git_hash"]
-        instance.fit_start_time = instance_dict["fit_start_time"]
+        instance = cls(
+            instance_id=instance_id,
+            experiment_config=experiment_config,
+            data_config=data_config,
+            model_params=model_params,
+            git_hash=instance_dict["git_hash"],
+            tag=instance_dict["tag"],
+            fit_start_time=instance_dict["fit_start_time"],
+            cluster_id=instance_dict["cluster_id"],
+            model_name=instance_dict["model_name"],
+            **kwargs,
+        )
+        assert instance_dict["data_id"] == instance.data_id
+        assert instance_dict["param_id"] == instance.param_id
+        assert instance == instance.instance_id
+        # instance.model_name = instance_dict["model_name"]
+        # instance.cluster_id = instance_dict["cluster_id"]
+        # instance.tag = instance_dict["tag"]
+        # instance.git_hash = instance_dict["git_hash"]
+        # instance.fit_start_time = instance_dict["fit_start_time"]
 
         # return the created instance
         return instance
+
+class InstanceQuery(DBReader):
+    """
+    A class for querying the instance table and its sister tables.
+    """
+
 
