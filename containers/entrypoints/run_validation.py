@@ -4,11 +4,10 @@ import logging
 import tensorflow as tf
 from cleanair.instance import ValidationInstance, LaqnTestInstance
 from cleanair.parsers import ModelValidationParser
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def main():
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-    
     parser = ModelValidationParser(description="Run validation")
 
     kwargs = parser.parse_all()
@@ -31,6 +30,8 @@ def main():
     instance = instance_cls(data_config=parser.data_args, experiment_config=parser.experiment_args, model_params=model_params, **kwargs)
 
     instance.run()
+
+    logging.info("Instance id is %s - use this id to read results from DB.", instance.instance_id)
 
 if __name__ == "__main__":
     main()

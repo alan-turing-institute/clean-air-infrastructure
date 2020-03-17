@@ -9,7 +9,8 @@ class DataConfig(Base):
     __table_args__ = {"schema": "model_results"}
     
     data_id = Column(String(64), primary_key=True, nullable=False)
-    data_config = Column(JSONB, nullable=False, index=True)
+    # we might be able to build an index on certain keys, but not the whole column :(
+    data_config = Column(JSONB, nullable=False, index=False)
 
     def __repr__(self):
         vals = [

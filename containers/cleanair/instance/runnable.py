@@ -157,7 +157,7 @@ class RunnableInstance(Instance):
         hash_string = json.dumps(value)
         return Instance.hash_fn(hash_string)
 
-    def convert_dates_to_str(self, datetime_format="%Y-%m-%d %H:%M:%S"):
+    def convert_dates_to_str(self, datetime_format="%Y-%m-%dT%H:%M:%S"):
         return dict(
             self.data_config,
             train_start_date=self.data_config["train_start_date"].strftime(datetime_format),
@@ -209,7 +209,7 @@ class RunnableInstance(Instance):
         """
         logging.info("Loading input data from database.")
         self.model_data = ModelData(
-            config=self.data_config,
+            config=self.data_config.copy(), # really important to copy
             secretfile=self.experiment_config["secretfile"],
         )
 
@@ -355,7 +355,19 @@ class RunnableInstance(Instance):
             model_name=instance_dict["model_name"],
             **kwargs,
         )
-        assert instance_dict["data_id"] == instance.data_id
+        try:
+            assert instance_dict["data_id"] == instance.data_id
+        except AssertionError:
+            error_message = "Data id and hashed data config do not match. "
+            error_message += "Data id from DB is {did} . "
+            error_message += "Hashed data config from DB is {hash} . "
+            error_message += "Data config is: {conf}"
+            error_message = error_message.format(
+                did=instance_dict["data_id"],
+                hash=instance.data_id,
+                conf=json.dumps(instance.convert_dates_to_str(), indent=4),
+            )
+            raise ValueError(error_message)
         assert instance_dict["param_id"] == instance.param_id
         assert instance == instance.instance_id
         # instance.model_name = instance_dict["model_name"]

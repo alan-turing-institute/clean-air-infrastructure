@@ -2,13 +2,6 @@
 Model fitting
 """
 import logging
-import os
-import tensorflow as tf
-
-# stop tf warnings
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
 from cleanair.parsers import ProductionParser
 from cleanair.instance import ProductionInstance
 

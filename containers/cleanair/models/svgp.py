@@ -4,11 +4,13 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 import logging
 import os
 import numpy as np
+import tensorflow as tf
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow
 from gpflow import settings
 from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
-import tensorflow as tf
 from .model import Model
 
 
