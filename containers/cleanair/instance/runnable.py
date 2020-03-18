@@ -342,6 +342,7 @@ class RunnableInstance(Instance):
             model_row = model_param_query.one()
             model_params = model_row.model_param
         # create a new instance with all the loaded parameters
+        assert "git_hash" in instance_dict
         instance = cls(
             instance_id=instance_id,
             experiment_config=experiment_config,
@@ -392,4 +393,16 @@ class InstanceQuery(DBReader):
     A class for querying the instance table and its sister tables.
     """
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
+    def get_all_instances(self):
+        """
+        Get all instances from the instance table.
+        """
+        with self.dbcnxn.open_session() as session:
+            instance_query = session.query(InstanceTable)
+            instance_df = pd.read_sql(
+                instance_query.statement, instance_query.session.bind
+            )
+            return instance_df
