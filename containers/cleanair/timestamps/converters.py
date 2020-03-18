@@ -12,7 +12,7 @@ def as_datetime(maybe_dt):
         return maybe_dt
     if isinstance(maybe_dt, datetime.date):
         return datetime.datetime.combine(maybe_dt, datetime.datetime.min.time())
-    return parser.parse(maybe_dt, dayfirst=True)
+    return parser.parse(maybe_dt, dayfirst=False)
 
 
 def safe_strptime(naive_string, format_str):

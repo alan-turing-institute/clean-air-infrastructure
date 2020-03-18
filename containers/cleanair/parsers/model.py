@@ -128,6 +128,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             key: kwargs.pop(key) for key in self.__class__.MODEL_ARGS
         }
         # get data params
+        datetime_format = "%Y-%m-%dT%H:%M:%S"
         train_end_date = as_datetime(kwargs.pop("trainend"))
         train_start_date = train_end_date - datetime.timedelta(
             hours=kwargs.pop("trainhours")

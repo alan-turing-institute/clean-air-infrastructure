@@ -208,17 +208,22 @@ class RunnableInstance(Instance):
         From the data and experiment config, setup a model data object.
         """
         logging.info("Loading input data from database.")
+        assert self.data_config["train_interest_points"] == "all"
         self.model_data = ModelData(
             config=self.data_config.copy(), # really important to copy
             secretfile=self.experiment_config["secretfile"],
         )
+        assert self.data_config["train_interest_points"] == "all"
 
     def update_data_config_table(self):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
+        assert self.data_config["train_interest_points"] == "all"
+        data_config = self.convert_dates_to_str()
+        assert data_config["train_interest_points"] == "all"
         records = [dict(
             data_id=self.data_id,
-            data_config=self.convert_dates_to_str(),
+            data_config=data_config,
         )]
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, records, table=DataConfig, on_conflict="ignore")
@@ -307,12 +312,6 @@ class RunnableInstance(Instance):
         """
         Given an id, return an initialised runnable instance.
         """
-        # instance = cls(
-        #     instance_id=instance_id,
-        #     experiment_config=experiment_config,
-        #     **kwargs,
-        # )
-        # with instance.dbcnxn.open_session() as session:
         instance_query = InstanceQuery(
             secretfile=experiment_config["secretfile"],
         )
@@ -342,7 +341,7 @@ class RunnableInstance(Instance):
             )
             model_row = model_param_query.one()
             model_params = model_row.model_param
-
+        # create a new instance with all the loaded parameters
         instance = cls(
             instance_id=instance_id,
             experiment_config=experiment_config,
@@ -355,6 +354,7 @@ class RunnableInstance(Instance):
             model_name=instance_dict["model_name"],
             **kwargs,
         )
+        # check that the data id is the same has the hashed data config
         try:
             assert instance_dict["data_id"] == instance.data_id
         except AssertionError:
@@ -368,14 +368,13 @@ class RunnableInstance(Instance):
                 conf=json.dumps(instance.convert_dates_to_str(), indent=4),
             )
             raise ValueError(error_message)
-        assert instance_dict["param_id"] == instance.param_id
-        assert instance == instance.instance_id
-        # instance.model_name = instance_dict["model_name"]
-        # instance.cluster_id = instance_dict["cluster_id"]
-        # instance.tag = instance_dict["tag"]
-        # instance.git_hash = instance_dict["git_hash"]
-        # instance.fit_start_time = instance_dict["fit_start_time"]
 
+        # check the param id is the same as the hashed model_params
+        assert instance_dict["param_id"] == instance.param_id
+
+        # check the instance id of the Instance object is the same as the original passed instance id
+        assert instance == instance.instance_id
+        
         # return the created instance
         return instance
 
