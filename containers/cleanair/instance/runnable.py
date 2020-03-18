@@ -370,10 +370,19 @@ class RunnableInstance(Instance):
             raise ValueError(error_message)
 
         # check the param id is the same as the hashed model_params
-        assert instance_dict["param_id"] == instance.param_id
+        try:
+            assert instance_dict["param_id"] == instance.param_id
+        except AssertionError:
+            error_message = "Param id and hashed model params do not match."
+            logging.error(error_message)
+            instance.param_id = instance_dict["param_id"]
 
         # check the instance id of the Instance object is the same as the original passed instance id
-        assert instance == instance.instance_id
+        try:
+            assert instance_id == instance.instance_id
+        except AssertionError:
+            error_message = "Id of created instance and passed instance id do not match."
+            logging.error(error_message)
         
         # return the created instance
         return instance

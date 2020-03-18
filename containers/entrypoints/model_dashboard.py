@@ -38,12 +38,10 @@ def main():  # pylint: disable=too-many-locals
     # load the instance
     instance_id = kwargs.pop("instance_id")
     instance = instance_class.instance_from_id(instance_id, experiment_config, **kwargs)
-    assert instance.instance_id == instance_id
 
     # get the data and the results
     print(json.dumps(instance.convert_dates_to_str(), indent=4))
     instance.load_data()
-    assert instance.instance_id == instance_id
     results_df = instance.load_results()
     instance.model_data.normalised_pred_data_df = pd.merge(
         instance.model_data.normalised_pred_data_df,
