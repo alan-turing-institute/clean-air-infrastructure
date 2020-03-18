@@ -3,16 +3,16 @@ Vizualise available sensor data for a model fit
 """
 import json
 import os
+import logging
 import pickle
 import pandas as pd
 import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
-from dateutil.parser import isoparse
 from ..databases.tables import (
-    IntersectionValue,
-    IntersectionValueDynamic,
-    ModelResult,
+    StaticFeature,
+    DynamicFeature,
+    ResultTable,
     SatelliteDiscreteSite,
 )
 from ..databases import DBWriter
@@ -33,7 +33,15 @@ class ModelData(DBWriter, DBQueryMixin):
         """
 
         # Initialise parent classes
-        super().__init__(**kwargs)
+        try:
+            super().__init__(**kwargs)
+        except FileNotFoundError:
+            if not config_dir:
+                error_message = "Secrets file at %s not found. Have you mounted the directory?"
+                error_message.format(kwargs.get("secretfile"))
+                raise FileNotFoundError(error_message)
+            warning_message = "%s not found. Have you mounted the directory?"
+            logging.warning("Secretfile not found, but you have passed the config_dir so we will proceed assuming you do not require the DB.")
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -78,7 +86,7 @@ class ModelData(DBWriter, DBQueryMixin):
             if self.config["tag"] == "validation":
                 self.config["include_prediction_y"] = True
                 self.training_dict = self.get_training_data_arrays()
-                self.test_dict = self.get_pred_data_arrays()
+                self.test_dict = self.get_pred_data_arrays(return_y=True)
 
         else:
             self.restore_config_state(config_dir)
@@ -100,14 +108,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "species",
             "features",
             "norm_by",
-            "model_type",
             "tag",
-        ]
-
-        valid_models = [
-            "mr_gprn",
-            "mr_dgp",
-            "svgp",
         ]
 
         self.logger.info("Validating config")
@@ -154,14 +155,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "Checking requested sources for prediction are availble in database"
         )
         self.__check_sources_available(pred_sources)
-
-        # Check model type is valid
-        if config["model_type"] not in valid_models:
-            raise AttributeError(
-                "{} is not a valid model type. Use one of the following: {}".format(
-                    config["model_type"], valid_models
-                )
-            )
 
         # Check interest points are valid
         train_interest_points = config["train_interest_points"]
@@ -285,13 +278,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 os.path.join(os.path.join(dir_path, "normalised_satellite_data_y.csv")),
                 index_col=0,
             )
-
-        if self.config["tag"] == "validation":
-            # load train and test dicts from pickle
-            with open(os.path.join(dir_path, "train.pickle"), "rb") as handle:
-                self.training_dict = pickle.load(handle)
-            with open(os.path.join(dir_path, "test.pickle"), "rb") as handle:
-                self.test_dict = pickle.load(handle)
 
     @property
     def x_names_norm(self):
@@ -654,7 +640,7 @@ class ModelData(DBWriter, DBQueryMixin):
             features_df.index = features_df.index.astype(str)
             interest_point_df.index = interest_point_df.index.astype(str)
 
-            # Inner join the MetaPoint and IntersectionValue(Dynamic) data
+            # Inner join the MetaPoint and StaticFeature(Dynamic) data
             df_joined = interest_point_df.join(features_df, how="left")
             return df_joined.reset_index()
 
@@ -664,7 +650,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """Read static features from the database."""
 
         return self.__select_features(
-            IntersectionValueDynamic, features, sources, point_ids, start_date, end_date
+            DynamicFeature, features, sources, point_ids, start_date, end_date
         )
 
     def __select_static_features(self, features, sources, point_ids):
@@ -674,7 +660,7 @@ class ModelData(DBWriter, DBQueryMixin):
             source: A list of sources(e.g. 'laqn', 'aqe') to include. Default will include all sources
             point_ids: A list if interest point ids. Default to all ids"""
 
-        return self.__select_features(IntersectionValue, features, sources, point_ids)
+        return self.__select_features(StaticFeature, features, sources, point_ids)
 
     @staticmethod
     def __expand_time(start_date, end_date, feature_df):
@@ -682,8 +668,8 @@ class ModelData(DBWriter, DBQueryMixin):
         Returns a new dataframe with static features merged with
         hourly timestamps between start_date(inclusive) and end_date
         """
-        start_date = isoparse(start_date).date()
-        end_date = isoparse(end_date).date()
+        start_date = start_date.date()
+        end_date = end_date.date()
 
         ids = feature_df["point_id"].to_numpy()
         times = rrule.rrule(
@@ -713,13 +699,10 @@ class ModelData(DBWriter, DBQueryMixin):
             end_date,
         )
 
-        start_date_ = isoparse(start_date)
-        end_date_ = isoparse(end_date)
-
         sensor_dfs = []
         if "laqn" in sources:
             laqn_sensor_data = self.get_laqn_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(laqn_sensor_data)
             if laqn_sensor_data.shape[0] == 0:
@@ -729,7 +712,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         if "aqe" in sources:
             aqe_sensor_data = self.get_aqe_readings(
-                start_date_, end_date_, output_type="df"
+                start_date, end_date, output_type="df"
             )
             sensor_dfs.append(aqe_sensor_data)
             if aqe_sensor_data.shape[0] == 0:
@@ -787,11 +770,10 @@ class ModelData(DBWriter, DBQueryMixin):
         features = self.config["feature_names"]
 
         self.logger.info(
-            "Getting training data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
+            "Loading training data for species: %s from sources: %s", species, sources,
+        )
+        self.logger.info(
+            "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
@@ -973,17 +955,18 @@ class ModelData(DBWriter, DBQueryMixin):
             fit_start_time,
         )
 
-    def update_remote_tables(self):
+    def update_remote_tables(self, instance_id):
         """Update the model results table with the model results"""
+        # ToDo: generalise for multiple pollutants
         record_cols = [
-            "tag",
-            "fit_start_time",
+            "instance_id",
             "point_id",
             "measurement_start_utc",
-            "predict_mean",
-            "predict_var",
+            "NO2_mean",
+            "NO2_var",
         ]
         df_cols = self.normalised_pred_data_df
+        df_cols["instance_id"] = instance_id
         for col in record_cols:
             if col not in df_cols:
                 msg = "The data frame must contain the following columns: {}."
@@ -992,11 +975,7 @@ class ModelData(DBWriter, DBQueryMixin):
                     "Ensure model results have been passed to update_model_results_df()"
                 )
                 raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
-        upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-        self.logger.info("Inserting %s records into the database", len(upload_records))
+        upload_records = df_cols[record_cols].to_dict("records")
+        self.logger.info("Inserting %s records into the result table.", len(upload_records))
         with self.dbcnxn.open_session() as session:
-            self.commit_records(session, upload_records, table=ModelResult)
-
-    def read_results_table(self):
-        """Read results from the DB and update the dataframe."""
-        raise NotImplementedError("Coming soon")
+            self.commit_records(session, upload_records, table=ResultTable, on_conflict="ignore")

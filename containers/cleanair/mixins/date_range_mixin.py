@@ -1,14 +1,15 @@
 """
 Mixin for classes that need to keep track of date ranges
 """
-import datetime
-from ..loggers import get_logger, green
+from datetime import date, datetime, timedelta
+from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class DateRangeMixin:
     """Manage data ranges"""
 
-    def __init__(self, end, ndays, **kwargs):
+    def __init__(self, end, nhours, **kwargs):
         # Pass unused arguments onwards
         super().__init__(**kwargs)
 
@@ -16,43 +17,27 @@ class DateRangeMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        # Set the date range
+        # Convert end argument into a datetime
         if end == "now":
-            self.end_datetime = (
-                datetime.datetime.now() - datetime.timedelta(hours=1)
-            ).replace(microsecond=0, second=0, minute=0)
-            self.start_datetime = self.end_datetime - datetime.timedelta(days=(ndays))
-        else:
-            if end == "today":
-                self.end_date = datetime.datetime.today().date()
-            elif end == "yesterday":
-                self.end_date = (
-                    datetime.datetime.today() - datetime.timedelta(days=1)
-                ).date()
-
-            else:
-                self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
-
-            self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
-
-            # Set the time range
-            self.start_datetime, self.end_datetime = self.get_datetimes(
-                self.start_date, self.end_date
+            self.end_datetime = datetime.now().replace(
+                microsecond=0, second=0, minute=0
             )
+        if end == "lasthour":
+            self.end_datetime = (datetime.now() - timedelta(hours=1)).replace(
+                microsecond=0, second=0, minute=0
+            )
+        elif end == "today":
+            self.end_datetime = datetime.combine(date.today(), datetime.min.time())
+        elif end == "yesterday":
+            self.end_datetime = datetime.combine(
+                date.today() - timedelta(days=1), datetime.min.time()
+            )
+        else:
+            self.end_datetime = as_datetime(end)
 
-        # Log an introductory message
-        self.logger.info("Requesting data between the following time points:")
-        self.logger.info(
-            "... %s and %s", green(self.start_datetime), green(self.end_datetime)
-        )
+        # Construct the start datetime using nhours
+        self.start_datetime = self.end_datetime - timedelta(hours=nhours)
 
-    @staticmethod
-    def get_datetimes(start_date, end_date):
-        """Get min and max datetimes between start_date and end_date"""
-
-        start_datetime = datetime.datetime.combine(
-            start_date, datetime.datetime.min.time()
-        )
-        end_datetime = datetime.datetime.combine(end_date, datetime.datetime.max.time())
-
-        return start_datetime, end_datetime
+        # Construct start and end dates, which might be useful
+        self.start_date = self.start_datetime.date()
+        self.end_date = self.end_datetime.date()

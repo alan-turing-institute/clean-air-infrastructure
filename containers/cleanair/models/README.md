@@ -15,7 +15,6 @@ Example config:
     "species": ["NO2"],
     "features": "all",
     "norm_by": "laqn",
-    "model_type": "svgp",
     "tag": "production",
 }
 ```

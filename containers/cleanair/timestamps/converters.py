@@ -2,7 +2,17 @@
 Timestamp conversion functions
 """
 import datetime
+from dateutil import parser
 import pytz
+
+
+def as_datetime(maybe_dt):
+    """Convert an input that might be a datetime into a datetime"""
+    if isinstance(maybe_dt, datetime.datetime):
+        return maybe_dt
+    if isinstance(maybe_dt, datetime.date):
+        return datetime.datetime.combine(maybe_dt, datetime.datetime.min.time())
+    return parser.parse(maybe_dt, dayfirst=False)
 
 
 def safe_strptime(naive_string, format_str):

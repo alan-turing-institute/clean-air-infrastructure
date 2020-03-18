@@ -24,38 +24,43 @@ stages:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
-    # Build AQE
+    # Inputs
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion) -f containers/dockerfiles/add_aqe_readings.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion) -f containers/dockerfiles/input_aqe_readings.Dockerfile containers
       displayName: 'Build AQE data collection image'
-    # Build LAQN
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion) -f containers/dockerfiles/add_laqn_readings.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion) -f containers/dockerfiles/input_laqn_readings.Dockerfile containers
       displayName: 'Build LAQN data collection image'
-    # Build SCOOT
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion) -f containers/dockerfiles/add_scoot_readings.Dockerfile containers
-      displayName: 'Build SCOOT data collection image'
-    # Build satellite
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion) -f containers/dockerfiles/add_satellite_readings.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion) -f containers/dockerfiles/input_satellite_readings.Dockerfile containers
       displayName: 'Build satellite data collection image'
-    # Build OSHighway
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion) -f containers/dockerfiles/input_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT data collection image'
+    # Processing
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion) -f containers/dockerfiles/process_scoot_roadmaps.Dockerfile containers
+      displayName: 'Build SCOOT road mapping image'
+    # Feature extraction
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
       displayName: 'Build OSHighway feature processing image'
-    # Build Street Canyon
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion) -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_forecast_features.Dockerfile containers
+      displayName: 'Build SCOOT forecast feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_reading_features.Dockerfile containers
+      displayName: 'Build SCOOT reading feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion) -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
       displayName: 'Build street canyon feature processing image'
-    # Build UKMap
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
       displayName: 'Build UKMap feature processing image'
-    # Build API
+    # Output API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion) -f containers/dockerfiles/cleanairapi.Dockerfile containers
-      displayName: 'Build cleanair api image'
+      displayName: 'Build cleanair API image'
     # List available images
     - script: |
         docker images
@@ -66,14 +71,17 @@ stages:
       displayName: 'Login to ACR'
     # Push Docker images to ACR
     - script: |
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/aqe:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/laqn:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/scoot:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/oshighway:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/streetcanyon:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/ukmap:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/satellite:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
