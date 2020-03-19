@@ -105,11 +105,15 @@ class RunnableInstance(Instance):
 
         # check if model params has been passed
         if model_params:
+            # ToDo: remove info
+            logging.info("Model params case 1 in runnable init")
             self._model_params = model_params
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
+            logging.info("Model params case 2 in runnable init")
             raise NotImplementedError("Cannot yet load parameters from DB.")
         else:
+            logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
             self.param_id = self.__hash_dict(self._model_params)
         
@@ -148,7 +152,8 @@ class RunnableInstance(Instance):
 
     @staticmethod
     def __hash_dict(value):
-        hash_string = json.dumps(value)
+        # it is ESSENTIAL to sort by keys when creating hashes!
+        hash_string = json.dumps(value, sort_keys=True)
         return Instance.hash_fn(hash_string)
 
     def convert_dates_to_str(self, datetime_format="%Y-%m-%dT%H:%M:%S"):
@@ -184,8 +189,6 @@ class RunnableInstance(Instance):
             model_params=self.model_params.copy(),
             tasks=self.data_config["species"],
         )
-        # ToDo: remove assert statement, it should not be necessary
-        assert self.param_id == self.__hash_dict(self.model_params)
 
     def update_model_table(self):
         """Upload params to the model table."""
@@ -382,17 +385,15 @@ class RunnableInstance(Instance):
             raise ValueError(error_message.format(
                 pid=instance_dict["param_id"],
                 hash=instance.param_id,
-                params=instance.model_params,
+                params=json.dumps(instance.model_params, indent=4),
             ))
-            logging.error(error_message)
-            instance.param_id = instance_dict["param_id"]
 
         # check the instance id of the Instance object is the same as the original passed instance id
         try:
             assert instance_id == instance.instance_id
         except AssertionError:
             error_message = "Id of created instance and passed instance id do not match."
-            logging.error(error_message)
+            raise ValueError(error_message)
         
         # return the created instance
         return instance
