@@ -129,7 +129,12 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
 
     def update_reading_table(self, usecore=True):
         """Update the readings table with new sensor readings."""
-        self.logger.info("Starting %s readings update...", green("LAQN"))
+        self.logger.info(
+            "Starting %s readings update using data from %s to %s...",
+            green("LAQN"),
+            self.start_datetime,
+            self.end_datetime,
+        )
 
         # Open a DB session
         with self.dbcnxn.open_session() as session:
@@ -154,7 +159,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
         with self.dbcnxn.open_session() as session:
             # Commit the records to the database
             self.commit_records(
-                session, site_records, table=LAQNReading, on_conflict_do_nothing=True
+                session, site_records, on_conflict="ignore", table=LAQNReading
             )
 
             # Commit changes

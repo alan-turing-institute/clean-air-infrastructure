@@ -1,24 +1,21 @@
 """
 Mixin for useful database queries
 """
-
-from dateutil.parser import isoparse
-from sqlalchemy import func
-from sqlalchemy import null, literal, and_
+from sqlalchemy import and_, func, literal, null
 from ..decorators import db_query
 from ..databases.tables import (
-    LondonBoundary,
-    IntersectionValue,
-    IntersectionValueDynamic,
-    MetaPoint,
-    AQESite,
-    LAQNSite,
-    LAQNReading,
     AQEReading,
-    ScootReading,
+    AQESite,
+    StaticFeature,
+    DynamicFeature,
+    LAQNReading,
+    LAQNSite,
+    LondonBoundary,
+    MetaPoint,
     SatelliteForecastReading,
 )
 from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class DBQueryMixin:
@@ -41,34 +38,14 @@ class DBQueryMixin:
         return hull
 
     @db_query
-    def get_nscoot_by_day(self, start_date=None, end_date=None):
-        """Get the number of scoot readings that are in the database for each day"""
-
-        with self.dbcnxn.open_session() as session:
-            n_readings_q = session.query(
-                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
-                    "hour"
-                ),
-                func.count(ScootReading.measurement_start_utc).label("n_entries"),
-            ).group_by(func.date_trunc("hour", ScootReading.measurement_start_utc))
-
-            if start_date and end_date:
-                n_readings_q = n_readings_q.filter(
-                    ScootReading.measurement_start_utc >= start_date,
-                    ScootReading.measurement_start_utc <= end_date,
-                )
-
-            return n_readings_q
-
-    @db_query
     def get_available_static_features(self):
         """Return available static features from the CleanAir database
         """
 
         with self.dbcnxn.open_session() as session:
 
-            feature_types_q = session.query(IntersectionValue.feature_name).distinct(
-                IntersectionValue.feature_name
+            feature_types_q = session.query(StaticFeature.feature_name).distinct(
+                StaticFeature.feature_name
             )
 
             return feature_types_q
@@ -83,15 +60,11 @@ class DBQueryMixin:
 
             available_dynamic_sq = (
                 session.query(
-                    IntersectionValueDynamic.feature_name,
-                    func.min(IntersectionValueDynamic.measurement_start_utc).label(
-                        "min_date"
-                    ),
-                    func.max(IntersectionValueDynamic.measurement_start_utc).label(
-                        "max_date"
-                    ),
+                    DynamicFeature.feature_name,
+                    func.min(DynamicFeature.measurement_start_utc).label("min_date"),
+                    func.max(DynamicFeature.measurement_start_utc).label("max_date"),
                 )
-                .group_by(IntersectionValueDynamic.feature_name)
+                .group_by(DynamicFeature.feature_name)
                 .subquery()
             )
 
@@ -274,7 +247,11 @@ class DBQueryMixin:
         """
 
         if (
-            int((isoparse(end_date) - isoparse(start_date)).total_seconds() // 60 // 60)
+            int(
+                (as_datetime(end_date) - as_datetime(start_date)).total_seconds()
+                // 60
+                // 60
+            )
             > 72
         ):
             raise ValueError(
@@ -282,13 +259,10 @@ class DBQueryMixin:
             )
 
         with self.dbcnxn.open_session() as session:
-
-            sat_q = session.query(SatelliteForecastReading).filter(
+            return session.query(SatelliteForecastReading).filter(
                 SatelliteForecastReading.measurement_start_utc >= start_date,
                 SatelliteForecastReading.measurement_start_utc < end_date,
                 func.date(SatelliteForecastReading.reference_start_utc)
-                == isoparse(start_date).date().isoformat(),
+                == as_datetime(start_date).date().isoformat(),
                 SatelliteForecastReading.species_code.in_(species),
             )
-
-            return sat_q

@@ -5,6 +5,8 @@ import logging
 import os
 import numpy as np
 import tensorflow as tf
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 import gpflow
 from gpflow.training import AdamOptimizer
@@ -42,7 +44,7 @@ class MRDGP(Model):
         disable_tf_warnings=True,
         **kwargs
     ):
-        super().__init__(**kwargs)
+        super().__init__(model_params=model_params, experiment_config=experiment_config, **kwargs)
         self.batch_size = batch_size
         self.epoch = 0
         self.refresh = 10
@@ -54,18 +56,8 @@ class MRDGP(Model):
 
         # disable TF warnings
         if disable_tf_warnings:
-            logging.disable(logging.WARNING)
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
             tf.logging.set_verbosity(tf.logging.ERROR)
-
-        # check model parameters
-        if model_params is None:
-            self.model_params = self.get_default_model_params()
-        else:
-            self.model_params = model_params
-            super().check_model_params_are_valid()
-
-        self.experiment_config = experiment_config
 
     def get_default_model_params(self):
         """
@@ -257,7 +249,7 @@ class MRDGP(Model):
         tf_session = self.model.enquire_session()
 
         # ===========================Train===========================
-        if self.model_params["restore"]:
+        if self.experiment_config["restore"]:
             saver = tf.train.Saver()
             saver.restore(
                 tf_session,
@@ -268,7 +260,7 @@ class MRDGP(Model):
             )
 
         try:
-            if self.model_params["train"]:
+            if self.experiment_config["train"]:
                 opt = AdamOptimizer(0.1)
                 simple_optimizing_scheme = True
 

@@ -4,11 +4,13 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 import logging
 import os
 import numpy as np
+import tensorflow as tf
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow
 from gpflow import settings
 from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
-import tensorflow as tf
 from .model import Model
 
 
@@ -52,17 +54,14 @@ class SVGP(Model):
 
         # disable TF warnings
         if disable_tf_warnings:
-            logging.disable(logging.WARNING)
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-            tf.logging.set_verbosity(tf.logging.ERROR)
+            tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
         self.minimum_param_keys = [
             "likelihood_variance",
             "minibatch_size",
             "n_inducing_points",
-            "train",
             "jitter",
-            "model_state_fp",
             "maxiter",
             "kernel",
         ]
@@ -90,9 +89,6 @@ class SVGP(Model):
             "likelihood_variance": 0.1,
             "minibatch_size": 100,
             "n_inducing_points": 2000,
-            "restore": False,
-            "train": True,
-            "model_state_fp": None,
             "maxiter": 100,
             "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
         }
@@ -173,6 +169,10 @@ class SVGP(Model):
 
         x_array, y_array = self.clean_data(x_array, y_array)
 
+        logging.info(
+            "Training the model for %s iterations.", self.model_params["maxiter"]
+        )
+
         # setup inducing points
         z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
             0
@@ -193,7 +193,7 @@ class SVGP(Model):
                 ),
             )
 
-        if self.model_params["train"]:
+        if self.experiment_config["train"]:
             # optimize and setup elbo logging
             opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
             opt.minimize(

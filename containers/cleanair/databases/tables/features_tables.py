@@ -7,13 +7,14 @@ from sqlalchemy.orm import relationship
 from ..base import Base
 
 
-class IntersectionValue(Base):
-    """Intersection between interest points and UKMap as values"""
+class StaticFeature(Base):
+    """Any model features that are static (and therefore do not need a start-time column)"""
 
-    __tablename__ = "intersection_value"
+    __tablename__ = "static_feature"
     __table_args__ = (
-        Index("intersection_value_id_name_idx", "point_id", "feature_name"),
-        {"schema": "static_features"},
+        Index("static_feature_id_idx", "point_id"),
+        Index("static_feature_id_name_idx", "point_id", "feature_name"),
+        {"schema": "model_features"},
     )
 
     point_id = Column(
@@ -29,11 +30,11 @@ class IntersectionValue(Base):
     value_100 = Column(Float, nullable=False)
     value_10 = Column(Float, nullable=False)
 
-    # Create IntersectionValue.point with no reverse relationship
+    # Create StaticFeature.point with no reverse relationship
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        return "<IntersectionValue(" + ", ".join(
+        return "<StaticFeature(" + ", ".join(
             [
                 "point_id='{}'".format(self.point_id),
                 "feature_name='{}'".format(self.feature_name),
@@ -48,9 +49,9 @@ class IntersectionValue(Base):
     @staticmethod
     def build_entry(feature_name, reading_tuple):
         """
-        Create a IntersectionValue entry and return it
+        Create a StaticFeature entry and return it
         """
-        return IntersectionValue(
+        return StaticFeature(
             point_id=str(reading_tuple[0]),
             feature_name=feature_name,
             value_1000=reading_tuple[1],
@@ -61,11 +62,20 @@ class IntersectionValue(Base):
         )
 
 
-class IntersectionValueDynamic(Base):
-    """Intersection between interest points and UKMap as values"""
+class DynamicFeature(Base):
+    """Any model features that vary over time (and therefore need a start-time column)"""
 
-    __tablename__ = "intersection_value_dynamic"
-    __table_args__ = {"schema": "dynamic_features"}
+    __tablename__ = "dynamic_feature"
+    __table_args__ = (
+        Index("dynamic_feature_id_idx", "point_id"),
+        Index(
+            "dynamic_feature_id_time_name_idx",
+            "point_id",
+            "measurement_start_utc",
+            "feature_name",
+        ),
+        {"schema": "model_features"},
+    )
 
     point_id = Column(
         UUID,
@@ -73,15 +83,15 @@ class IntersectionValueDynamic(Base):
         primary_key=True,
         nullable=False,
     )
-    feature_name = Column(String(50), primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    feature_name = Column(String(50), primary_key=True, nullable=False)
     value_1000 = Column(Float, nullable=False)
     value_500 = Column(Float, nullable=False)
     value_200 = Column(Float, nullable=False)
     value_100 = Column(Float, nullable=False)
     value_10 = Column(Float, nullable=False)
 
-    # Create IntersectionValue.point with no reverse relationship
+    # Create DynamicFeature.point with no reverse relationship
     point = relationship("MetaPoint")
 
     def __repr__(self):
@@ -89,19 +99,20 @@ class IntersectionValueDynamic(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<IntersectionValueDynamic(" + ", ".join(vals)
+        return "<DynamicFeature(" + ", ".join(vals)
 
     @staticmethod
     def build_entry(feature_name, reading_tuple):
         """
-        Create a IntersectionValue entry and return it
+        Create a DynamicFeature entry and return it
         """
-        return IntersectionValue(
+        return DynamicFeature(
             point_id=str(reading_tuple[0]),
+            measurement_start_utc=str(reading_tuple[1]),
             feature_name=feature_name,
-            value_1000=reading_tuple[1],
-            value_500=reading_tuple[2],
-            value_200=reading_tuple[3],
-            value_100=reading_tuple[4],
-            value_10=reading_tuple[5],
+            value_1000=reading_tuple[2],
+            value_500=reading_tuple[3],
+            value_200=reading_tuple[4],
+            value_100=reading_tuple[5],
+            value_10=reading_tuple[6],
         )
