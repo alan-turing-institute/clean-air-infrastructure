@@ -1,4 +1,6 @@
-
+"""
+Run models with a validation instance.
+"""
 import os
 import logging
 import tensorflow as tf
@@ -8,6 +10,9 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 def main():
+    """
+    Get the model and config from a parser then run the model and write the results.
+    """
     parser = ModelValidationParser(description="Run validation")
 
     kwargs = parser.parse_all()
@@ -24,6 +29,7 @@ def main():
     parser.data_args["include_satellite"] = True
 
     # setup model parameters
+<<<<<<< HEAD
     model_params = instance_cls.DEFAULT_MODEL_PARAMS
     
     model_params = {
@@ -35,13 +41,14 @@ def main():
         "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
     }
 
+=======
+    model_params = instance_cls.DEFAULT_MODEL_PARAMS.copy()
+>>>>>>> 182_dev
     model_params.update(parser.model_args)
 
     instance = instance_cls(data_config=parser.data_args, experiment_config=parser.experiment_args, model_params=model_params, **kwargs)
 
     instance.run()
-
-    logging.info("Instance id is %s - use this id to read results from DB.", instance.instance_id)
 
 if __name__ == "__main__":
     main()

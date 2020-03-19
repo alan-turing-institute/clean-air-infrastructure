@@ -192,7 +192,7 @@ class ModelValidationParser(BaseModelParser):
             self.experiment_args["results_dir"] = self.experiment_args["config_dir"]
         if self.experiment_args["model_dir"] == "CONFIG_DIR":
             self.experiment_args["model_dir"] = self.experiment_args["config_dir"]
-        self.model_args["model_state_fp"] = self.experiment_args["model_dir"]
+        # self.model_args["model_state_fp"] = self.experiment_args["model_dir"]
         return kwargs
 
 
