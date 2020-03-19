@@ -54,3 +54,5 @@ images/
 
 #Swap files
 *.swp
+
+*.pickle

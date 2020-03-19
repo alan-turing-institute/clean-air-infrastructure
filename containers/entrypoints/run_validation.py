@@ -29,7 +29,6 @@ def main():
     parser.data_args["include_satellite"] = True
 
     # setup model parameters
-<<<<<<< HEAD
     model_params = instance_cls.DEFAULT_MODEL_PARAMS
     
     model_params = {
@@ -41,9 +40,6 @@ def main():
         "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
     }
 
-=======
-    model_params = instance_cls.DEFAULT_MODEL_PARAMS.copy()
->>>>>>> 182_dev
     model_params.update(parser.model_args)
 
     instance = instance_cls(data_config=parser.data_args, experiment_config=parser.experiment_args, model_params=model_params, **kwargs)
