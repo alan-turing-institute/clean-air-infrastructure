@@ -66,6 +66,7 @@ def main():
         # )
 
         # print(scoot_feature_extractor.table.statement)
+
         scoot_feature_extractor.update_remote_tables()
 
     except Exception as error:

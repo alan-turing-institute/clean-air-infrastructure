@@ -10,10 +10,10 @@ from ..base import Base
 class StaticFeature(Base):
     """Any model features that are static (and therefore do not need a start-time column)"""
 
-    __tablename__ = "static_feature"
+    __tablename__ = "static_feature2"
     __table_args__ = (
-        Index("static_feature_id_idx", "point_id"),
-        Index("static_feature_id_name_idx", "point_id", "feature_name"),
+        Index("static_feature_id_idx2", "point_id"),
+        Index("static_feature_id_name_idx2", "point_id", "feature_name"),
         {"schema": "model_features"},
     )
 
@@ -65,11 +65,11 @@ class StaticFeature(Base):
 class DynamicFeature(Base):
     """Any model features that vary over time (and therefore need a start-time column)"""
 
-    __tablename__ = "dynamic_feature"
+    __tablename__ = "dynamic_feature2"
     __table_args__ = (
-        Index("dynamic_feature_id_idx", "point_id"),
+        Index("dynamic_feature_id_idx2", "point_id"),
         Index(
-            "dynamic_feature_id_time_name_idx",
+            "dynamic_feature_id_time_name_idx2",
             "point_id",
             "measurement_start_utc",
             "feature_name",
