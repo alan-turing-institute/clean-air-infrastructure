@@ -176,8 +176,37 @@ class RunnableInstance(Instance):
 
     def load_model_params(self, **kwargs):
         """
-        Load model parameters from DB or use defaults.
+        Loads the model params from the DB.
+
+        Parameters
+        ___
+
+        model_name : str
+            Name of the model.
+
+        param_id : str
+            Hashed id of model_params.
+
+        Returns
+        ___
+
+        model_params : dict
+            Dictionary of model parameters.
         """
+        if "model_name" not in kwargs:
+            raise KeyError("You must pass model_name to get model_params from DB.")
+        if "param_id" not in kwargs:
+            raise KeyError("You must pass param_id to get model_params from DB.")
+
+        with self.dbcnxn.open_session() as session:
+            logging.info("Load model params from database")
+            model_param_query = session.query(ModelTable).filter(
+                ModelTable.model_name == kwargs.pop("model_name")
+            ).filter(
+                ModelTable.param_id == kwargs.pop("param_id")
+            )
+            model_row = model_param_query.one()
+            return model_row.model_param
 
     def setup_model(self):
         """
@@ -266,10 +295,12 @@ class RunnableInstance(Instance):
         # add results to the results table
         self.model_data.update_remote_tables(self.instance_id)
 
-    def load_results(self):
+    def load_results(self, training_set=False, test_set=True):
         """
-        Load results from the results table that match the instance id.
+        Load results from the results table that match the instance id and update model data.
         """
+        if training_set:
+            raise NotImplementedError("Cannot yet load results for the training set.")
         with self.dbcnxn.open_session() as session:
             # get all rows that match the instance id
             results_query = session.query(ResultTable).filter(
@@ -277,7 +308,16 @@ class RunnableInstance(Instance):
             )
             results_df = pd.read_sql(results_query.statement, results_query.session.bind)
         logging.info("Loaded %s rows from the results table.", len(results_df))
-        return results_df
+        if test_set:
+            self.model_data.normalised_pred_data_df = pd.merge(
+                self.model_data.normalised_pred_data_df,
+                results_df,
+                how="inner",
+                on=["point_id", "measurement_start_utc"],
+            )
+            return results_df
+        logging.warning("No testing set data returned.")
+        return pd.DataFrame()
 
 
     def run(self):
@@ -337,15 +377,11 @@ class RunnableInstance(Instance):
             data_row = data_config_query.one()
             data_config = data_row.data_config
 
-            # laod the model parameters using the param_id and model_name
-            logging.info("Load model params from database")
-            model_param_query = session.query(ModelTable).filter(
-                ModelTable.model_name == instance_dict["model_name"]
-            ).filter(
-                ModelTable.param_id == instance_dict["param_id"]
-            )
-            model_row = model_param_query.one()
-            model_params = model_row.model_param
+        # laod the model parameters using the param_id and model_name
+        model_params = instance_query.load_model_params(
+            instance_dict["model_name"],
+            instance_dict["param_id"],
+        )
         # create a new instance with all the loaded parameters
         instance = cls(
             instance_id=instance_id,
@@ -402,5 +438,3 @@ class InstanceQuery(DBReader):
     """
     A class for querying the instance table and its sister tables.
     """
-
-

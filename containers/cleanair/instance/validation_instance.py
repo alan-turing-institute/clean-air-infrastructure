@@ -53,11 +53,11 @@ class ValidationInstance(RunnableInstance):
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()
-        if self.experiment_config["local_write"]:
+        if self.experiment_config["write_model_params"]:
             model_params_fp = os.path.join(self.experiment_config["model_dir"], "model_params.json")
             logging.info("Writing model parameters to json file.")
             with open(model_params_fp, "w") as json_file:
-                json.dump(self.model_params, model_params_fp)
+                json.dump(self.model_params, json_file)
 
     def load_data(self):
         if self.experiment_config["local_read"]:
@@ -104,6 +104,73 @@ class ValidationInstance(RunnableInstance):
         pred_filepath = os.path.join(self.experiment_config["results_dir"], filename)
         with open(pred_filepath, "wb") as handle:
             pickle.dump(y_pred, handle)
+
+    def __get_results_df(self):
+        """
+        Get a subset of normalised_pred_data_df with the predictions in.
+        """
+        record_cols = [
+            "instance_id",
+            "point_id",
+            "measurement_start_utc",
+            "NO2_mean",
+            "NO2_var",
+        ]
+        return self.model_data.normalised_pred_data_df[record_cols]
+
+    def load_results(self, training_set=False, test_set=True):
+        """
+        Load the predictions, either from a file or from the DB.
+
+        Parameters
+        ___
+
+        filename : str
+            E.g. test_pred.pickle, train_pred.pickle.
+            Not the full filepath! The filepath is given by experiment_config.
+        """
+        if training_set:
+            raise NotImplementedError("Cannot yet load results for the training set.")
+
+        if test_set and self.experiment_config["predict_read_local"]:
+            # load the prediction pickle files and return a results df
+            filepath = os.path.join(self.experiment_config["results_dir"], "test_pred.pickle")
+            with open(filepath, "rb") as handle:
+                y_pred = pickle.load(handle)
+            self.update_results(y_pred)
+            return self.__get_results_df()
+        # else read the results from the DB using super class.
+        return super().load_results(training_set=training_set, test_set=test_set)
+
+    def load_model_params(self, **kwargs):
+        """
+        Loads the model params from the DB or from a file
+        (if read_model_params is True in experiment_config).
+
+        Parameters
+        ___
+
+        model_name : str, optional
+            Name of the model. Must be supplied if reading from DB.
+
+        param_id : str, optional
+            Hashed id of model_params. Must be supplied if reading from DB.
+
+        filename : str, optional
+            Name of the json file containing model params.
+
+        Returns
+        ___
+
+        model_params : dict
+            Dictionary of model parameters.
+        """
+        if self.experiment_config["read_model_params"]:
+            filename = kwargs.pop("filename", "model_params.json")
+            filepath = os.path.join(self.experiment_config["model_dir"], filename)
+            with open(filepath, "w") as json_file:
+                return json.load(json_file)
+        return super().load_model_params(**kwargs)
 
     @classmethod
     def instance_from_id(cls, instance_id, experiment_config, **kwargs):
