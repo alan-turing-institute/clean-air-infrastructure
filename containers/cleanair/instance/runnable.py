@@ -125,12 +125,6 @@ class RunnableInstance(Instance):
         # make model and data
         self.model = None
         self.model_data = None
-        logging.info("Tag is %s", self.tag)
-        logging.info("Model name is %s", self.model_name)
-        logging.info("Param id is %s", self.param_id)
-        logging.info("Data id is %s", self.data_id)
-        logging.info("Instance id is %s", self.instance_id)
-        logging.info("Cluster id is %s", self.cluster_id)
 
     @property
     def model_params(self):
@@ -187,9 +181,11 @@ class RunnableInstance(Instance):
         logging.info("Setting up model.")
         self.model = self.__class__.MODELS[self.model_name](
             experiment_config=self.experiment_config,
-            model_params=self.model_params,
+            model_params=self.model_params.copy(),
             tasks=self.data_config["species"],
         )
+        # ToDo: remove assert statement, it should not be necessary
+        assert self.param_id == self.__hash_dict(self.model_params)
 
     def update_model_table(self):
         """Upload params to the model table."""
@@ -306,6 +302,12 @@ class RunnableInstance(Instance):
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
+        logging.info("Tag is %s", self.tag)
+        logging.info("Model name is %s", self.model_name)
+        logging.info("Param id is %s", self.param_id)
+        logging.info("Data id is %s", self.data_id)
+        logging.info("Instance id is %s", self.instance_id)
+        logging.info("Cluster id is %s", self.cluster_id)
 
     @classmethod
     def instance_from_id(cls, instance_id, experiment_config, **kwargs):
@@ -374,6 +376,14 @@ class RunnableInstance(Instance):
             assert instance_dict["param_id"] == instance.param_id
         except AssertionError:
             error_message = "Param id and hashed model params do not match."
+            error_message += " Param id is {pid}"
+            error_message += " Hashed model params from DB is {hash}."
+            error_message += " Model params are {params}"
+            raise ValueError(error_message.format(
+                pid=instance_dict["param_id"],
+                hash=instance.param_id,
+                params=instance.model_params,
+            ))
             logging.error(error_message)
             instance.param_id = instance_dict["param_id"]
 
