@@ -4,7 +4,7 @@ Instances of models and data.
 import logging
 import hashlib
 import git
-from ..models import SVGP, MRDGP
+from ..models import SVGP, MRDGP,svgp_binnedkernel
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..databases.tables import InstanceTable
@@ -17,6 +17,7 @@ class Instance(DBWriter, DBQueryMixin):
     MODELS = {
         'svgp': SVGP,
         'mr_dgp': MRDGP,
+        'binned_kernel_st':svgp_binnedkernel,
     }
 
     def __init__(self, **kwargs):

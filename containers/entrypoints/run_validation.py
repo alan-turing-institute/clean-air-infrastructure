@@ -21,10 +21,20 @@ def main():
 
     # ToDo: remove hard-coded satellite setting
     logging.warning("Turing off satellite data until it is fixed.")
-    parser.data_args["include_satellite"] = False
+    parser.data_args["include_satellite"] = True
 
     # setup model parameters
     model_params = instance_cls.DEFAULT_MODEL_PARAMS
+    
+    model_params = {
+        "jitter": 1e-5,
+        "likelihood_variance": 0.1,
+        "minibatch_size": 100,
+        "n_inducing_points": 200,
+        "maxiter": 1000,
+        "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
+    }
+
     model_params.update(parser.model_args)
 
     instance = instance_cls(data_config=parser.data_args, experiment_config=parser.experiment_args, model_params=model_params, **kwargs)
