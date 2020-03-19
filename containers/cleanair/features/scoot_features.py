@@ -14,7 +14,7 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
     def __init__(self, table_class, value_type, **kwargs):
         # Initialise parent classes
         # Use a large batch size as there are around 1 million records to insert
-        super().__init__(dynamic=True, batch_size=10, **kwargs)
+        super().__init__(dynamic=True, batch_size=100, **kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):

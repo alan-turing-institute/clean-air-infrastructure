@@ -37,15 +37,39 @@ class DateRangeMixin:
                 if isinstance(end, datetime.datetime):
                     self.end_date = end.date()
                 else:
-                    # self.end_date = datetime.datetime.strptime(end, r"%Y-%m-%d").date()
-                    self.end_date = dateutil.parser.parse(end, dayfirst=True).date()
 
-            self.start_date = self.end_date - datetime.timedelta(days=(ndays - 1))
+                    end_date = dateutil.parser.parse(end, dayfirst=False)
 
-            # Set the time range
-            self.start_datetime, self.end_datetime = self.get_datetimes(
-                self.start_date, self.end_date
-            )
+                    if not self.is_date(end_date):
+                        # If end_date has a time other than T00:00:00
+                        self.end_datetime = end_date
+                        self.end_date = end_date.date()
+                        self.start_datetime = self.end_datetime - datetime.timedelta(
+                            days=(ndays - 1)
+                        )
+                        self.start_date = self.end_date - datetime.timedelta(
+                            days=(ndays - 1)
+                        )
+                    else:
+                        # If end_date has a time of T00:00:00
+                        self.end_date = end_date.date()
+                        self.start_date = end_date - datetime.timedelta(
+                            days=(ndays - 1)
+                        )
+                        self.start_datetime, self.end_datetime = self.get_datetimes(
+                            self.start_date, self.end_date
+                        )
+
+    @staticmethod
+    def is_date(datetime_):
+        "Check if self.end_date is on the hour (a date) or a datetime"
+
+        is_zero_hour_min = (
+            datetime.datetime.combine(datetime_.date(), datetime.datetime.min.time())
+            == datetime_
+        )
+
+        return is_zero_hour_min
 
     @staticmethod
     def get_datetimes(start_date, end_date):
