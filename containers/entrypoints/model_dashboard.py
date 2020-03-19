@@ -40,7 +40,6 @@ def main():  # pylint: disable=too-many-locals
     instance = instance_class.instance_from_id(instance_id, experiment_config, **kwargs)
 
     # get the data and the results
-    print(json.dumps(instance.convert_dates_to_str(), indent=4))
     instance.load_data()
     results_df = instance.load_results()
     instance.model_data.normalised_pred_data_df = pd.merge(

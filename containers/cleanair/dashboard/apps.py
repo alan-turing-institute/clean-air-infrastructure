@@ -92,9 +92,6 @@ def get_model_data_fit_app(
         default_metric_key, default_pollutant
     )
 
-    # ToDo: remove print statement
-    print("sensor df columns:", list(sensor_scores_df.columns))
-
     # create the layout for a single model data fit
     top_container = dbc.Container(
         [

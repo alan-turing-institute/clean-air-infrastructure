@@ -105,11 +105,15 @@ class RunnableInstance(Instance):
 
         # check if model params has been passed
         if model_params:
+            # ToDo: remove info
+            logging.info("Model params case 1 in runnable init")
             self._model_params = model_params
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
+            logging.info("Model params case 2 in runnable init")
             raise NotImplementedError("Cannot yet load parameters from DB.")
         else:
+            logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
             self.param_id = self.__hash_dict(self._model_params)
         
@@ -125,12 +129,6 @@ class RunnableInstance(Instance):
         # make model and data
         self.model = None
         self.model_data = None
-        logging.info("Tag is %s", self.tag)
-        logging.info("Model name is %s", self.model_name)
-        logging.info("Param id is %s", self.param_id)
-        logging.info("Data id is %s", self.data_id)
-        logging.info("Instance id is %s", self.instance_id)
-        logging.info("Cluster id is %s", self.cluster_id)
 
     @property
     def model_params(self):
@@ -154,7 +152,8 @@ class RunnableInstance(Instance):
 
     @staticmethod
     def __hash_dict(value):
-        hash_string = json.dumps(value)
+        # it is ESSENTIAL to sort by keys when creating hashes!
+        hash_string = json.dumps(value, sort_keys=True)
         return Instance.hash_fn(hash_string)
 
     def convert_dates_to_str(self, datetime_format="%Y-%m-%dT%H:%M:%S"):
@@ -187,7 +186,7 @@ class RunnableInstance(Instance):
         logging.info("Setting up model.")
         self.model = self.__class__.MODELS[self.model_name](
             experiment_config=self.experiment_config,
-            model_params=self.model_params,
+            model_params=self.model_params.copy(),
             tasks=self.data_config["species"],
         )
 
@@ -306,6 +305,12 @@ class RunnableInstance(Instance):
         y_pred = self.run_prediction()
         self.update_results(y_pred)
         self.save_results()
+        logging.info("Tag is %s", self.tag)
+        logging.info("Model name is %s", self.model_name)
+        logging.info("Param id is %s", self.param_id)
+        logging.info("Data id is %s", self.data_id)
+        logging.info("Instance id is %s", self.instance_id)
+        logging.info("Cluster id is %s", self.cluster_id)
 
     @classmethod
     def instance_from_id(cls, instance_id, experiment_config, **kwargs):
@@ -375,15 +380,21 @@ class RunnableInstance(Instance):
             assert instance_dict["param_id"] == instance.param_id
         except AssertionError:
             error_message = "Param id and hashed model params do not match."
-            logging.error(error_message)
-            instance.param_id = instance_dict["param_id"]
+            error_message += " Param id is {pid}"
+            error_message += " Hashed model params from DB is {hash}."
+            error_message += " Model params are {params}"
+            raise ValueError(error_message.format(
+                pid=instance_dict["param_id"],
+                hash=instance.param_id,
+                params=json.dumps(instance.model_params, indent=4),
+            ))
 
         # check the instance id of the Instance object is the same as the original passed instance id
         try:
             assert instance_id == instance.instance_id
         except AssertionError:
             error_message = "Id of created instance and passed instance id do not match."
-            logging.error(error_message)
+            raise ValueError(error_message)
         
         # return the created instance
         return instance
