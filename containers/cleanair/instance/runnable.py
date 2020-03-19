@@ -105,15 +105,11 @@ class RunnableInstance(Instance):
 
         # check if model params has been passed
         if model_params:
-            # ToDo: remove info
-            logging.info("Model params case 1 in runnable init")
             self._model_params = model_params
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
-            logging.info("Model params case 2 in runnable init")
             raise NotImplementedError("Cannot yet load parameters from DB.")
         else:
-            logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
             self.param_id = self.__hash_dict(self._model_params)
         
