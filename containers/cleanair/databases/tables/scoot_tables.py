@@ -174,16 +174,8 @@ class ScootRoadReading(Base):
     __tablename__ = "scoot_road_reading2"
     __table_args__ = {"schema": "processed_data"}
 
-    road_toid = Column(
-        String(),
-        ForeignKey("static_data.oshighway_roadlink.toid"),
-        primary_key=True,
-        nullable=False,
-        index=True,
-    )
-    measurement_start_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False, index=True
-    )
+    road_toid = Column(String(), primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)

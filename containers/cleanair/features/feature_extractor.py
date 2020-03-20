@@ -549,18 +549,6 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 else:
                     break
 
-                # # Log timing statistics
-                # elapsed_seconds = time.time() - insert_start
-                # remaining_seconds = elapsed_seconds * (n_batches / idx_batch - 1)
-                # self.logger.info(
-                #     "Inserted feature records for '%s' [batch %i/%i] after %s (%s remaining)",
-                #     feature_name,
-                #     idx_batch,
-                #     n_batches,
-                #     green(duration_from_seconds(elapsed_seconds)),
-                #     green(duration_from_seconds(remaining_seconds)),
-                # )
-
                 # Print a timing message at the end of each feature
                 self.logger.info(
                     "Finished adding records for '%s' after %s",

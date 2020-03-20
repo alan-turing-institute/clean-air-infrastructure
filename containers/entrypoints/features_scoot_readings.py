@@ -33,6 +33,7 @@ def main():
         default=2,
         help="The number of days into the past to calculate features for.",
     )
+
     parser.add_argument("-v", "--verbose", action="count", default=0)
 
     # Parse and interpret arguments
@@ -55,7 +56,7 @@ def main():
 
         # Construct SCOOT features from readings around each interest point
         scoot_feature_extractor = ScootReadingFeatures(
-            ndays=args.ndays, end=args.end, secretfile=args.secretfile
+            batch_size=1000, ndays=args.ndays, end=args.end, secretfile=args.secretfile,
         )
         scoot_feature_extractor.update_remote_tables()
 

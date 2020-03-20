@@ -11,10 +11,10 @@ from ..mixins import DateRangeMixin
 class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
     """Process SCOOT values into model features"""
 
-    def __init__(self, table_class, value_type, **kwargs):
+    def __init__(self, table_class, value_type, batch_size, **kwargs):
         # Initialise parent classes
         # Use a large batch size as there are around 1 million records to insert
-        super().__init__(dynamic=True, batch_size=100, **kwargs)
+        super().__init__(dynamic=True, batch_size=batch_size, **kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -96,12 +96,13 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
 class ScootReadingFeatures(ScootFeaturesBase):
     """Process SCOOT readings into model features"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, batch_size, **kwargs):
         # Initialise parent classes
         super().__init__(
             table_class=ScootRoadReading,
             value_type="readings",
-            sources=["aqe", "laqn"],
+            sources=["aqe", "laqn", "satellite"],
+            batch_size=batch_size,
             **kwargs
         )
 
