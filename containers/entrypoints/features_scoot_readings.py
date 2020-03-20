@@ -51,8 +51,8 @@ def main():
         scoot_road_readings = ScootPerRoadReadingMapper(
             ndays=args.ndays, end=args.end, secretfile=args.secretfile
         )
-        print(scoot_road_readings.update_remote_tables(output_type="sql"))
-        quit()
+        scoot_road_readings.update_remote_tables()
+
         # Construct SCOOT features from readings around each interest point
         scoot_feature_extractor = ScootReadingFeatures(
             ndays=args.ndays, end=args.end, secretfile=args.secretfile
