@@ -93,7 +93,7 @@ class ValidationInstance(RunnableInstance):
 
     def run_prediction(self):
         logging.info("Starting prediction.")
-        y_test_pred = super().run_prediction()
+        self.y_test_pred = super().run_prediction()
 
         if self.experiment_config["predict_training"]:
             training_data_dict = self.model_data.get_training_data_arrays(dropna=False)
@@ -104,7 +104,7 @@ class ValidationInstance(RunnableInstance):
             self.y_train_pred = self.model.predict(x_train_pred)
             raise NotImplementedError("Not sure how to get the training data back again?")
 
-        return y_test_pred
+        return self.y_test_pred
 
     def write_predictions_to_file(self, y_pred, filename):
         """Write a prediction dict to pickle."""
@@ -141,7 +141,9 @@ class ValidationInstance(RunnableInstance):
 
         if test_set and self.experiment_config["predict_read_local"]:
             # load the prediction pickle files and return a results df
+            logging.info("Reading results from a local file.")
             filepath = os.path.join(self.experiment_config["results_dir"], "test_pred.pickle")
+            print(filepath)
             with open(filepath, "rb") as handle:
                 y_pred = pickle.load(handle)
             self.update_results(y_pred)
@@ -160,6 +162,7 @@ class ValidationInstance(RunnableInstance):
             Name of the json file containing model params.
         """
         if self.experiment_config["write_model_params"]:
+            logging.info("Writing model parameters to a json file.")
             filename = kwargs.pop("filename", "model_params.json")
             filepath = os.path.join(self.experiment_config["model_dir"], filename)
             with open(filepath, "w") as json_file:
@@ -185,6 +188,7 @@ class ValidationInstance(RunnableInstance):
             Dictionary of model parameters.
         """
         if self.experiment_config["read_model_params"]:
+            logging.info("Reading model parameters from a local file.")
             filename = kwargs.pop("filename", "model_params.json")
             filepath = os.path.join(self.experiment_config["model_dir"], filename)
             with open(filepath, "r") as json_file:
@@ -202,9 +206,10 @@ class ValidationInstance(RunnableInstance):
             Dictionary of data settings.
         """
         if self.experiment_config["local_read"]:
+            "Reading data config from local file."
             filepath = os.path.join(
                 self.experiment_config["config_dir"], "config.json"
             )
             with open(filepath, "r") as json_file:
-                return json.load(json_file)
+                return ModelData.convert_str_to_dates(json.load(json_file))
         return super().load_data_config()

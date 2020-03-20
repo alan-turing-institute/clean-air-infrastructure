@@ -286,7 +286,7 @@ class ModelData(DBWriter, DBQueryMixin):
             )
 
     @staticmethod
-    def convert_dates_to_str(data_config, datetime_format="%Y-%m-%dT%H:%M:%S"):
+    def convert_dates_to_str(data_config, datetime_format="%Y-%m-%d %H:%M:%S"):
         return dict(
             data_config,
             train_start_date=data_config["train_start_date"].strftime(datetime_format),

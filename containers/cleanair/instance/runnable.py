@@ -9,7 +9,6 @@ import pandas as pd
 from .instance import Instance
 from ..models import ModelData
 from ..databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
-from ..mixins import DBQueryMixin
 from ..databases import DBReader
 
 
@@ -120,7 +119,12 @@ class RunnableInstance(Instance):
         # get data config dict
         if kwargs.get("data_id"):     # check if data id has been passed
             self.data_id = kwargs.get("data_id")
+            data_id = self.data_id
             self.data_config = self.load_data_config()
+            self.data_id = RunnableInstance.__hash_dict(
+                ModelData.convert_dates_to_str(self.data_config)
+            )
+            assert self.data_id == data_id
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
@@ -237,7 +241,7 @@ class RunnableInstance(Instance):
                 DataConfig.data_id == self.data_id
             )
             data_row = data_config_query.one()
-            return data_row.data_config
+            return ModelData.convert_str_to_dates(data_row.data_config)
 
     def save_data(self):
         """
@@ -247,7 +251,8 @@ class RunnableInstance(Instance):
     def update_data_config_table(self):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
-        data_config = ModelData.convert_dates_to_str(self._data_config)
+        data_config = ModelData.convert_dates_to_str(self.data_config)
+        assert isinstance(data_config["pred_interest_points"], list)
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,
@@ -370,7 +375,7 @@ class RunnableInstance(Instance):
         instance = cls(
             experiment_config=experiment_config,
             **instance_dict,
-            **kwargs,
+            # **kwargs,
         )
         # check that the data id is the same has the hashed data config
         try:
@@ -383,7 +388,7 @@ class RunnableInstance(Instance):
             error_message = error_message.format(
                 did=instance_dict["data_id"],
                 hash=instance.data_id,
-                conf=json.dumps(instance.convert_dates_to_str(), indent=4),
+                conf=json.dumps(ModelData.convert_dates_to_str(instance.data_config), indent=4),
             )
             raise ValueError(error_message)
 
