@@ -18,6 +18,7 @@ from ..databases.tables import (
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -248,7 +249,12 @@ class ModelData(DBWriter, DBQueryMixin):
             )
 
         with open(os.path.join(dir_path, "config.json"), "w") as config_f:
-            json.dump(self.config, config_f, sort_keys=True, indent=4)
+            json.dump(
+                ModelData.convert_dates_to_str(self.config),
+                config_f,
+                sort_keys=True,
+                indent=4
+            )
 
         self.logger.info("State files saved to %s", dir_path)
 
@@ -258,7 +264,7 @@ class ModelData(DBWriter, DBQueryMixin):
             raise IOError("{} does not exist".format(dir_path))
 
         with open(os.path.join(dir_path, "config.json"), "r") as config_f:
-            self.config = json.load(config_f)
+            self.config = ModelData.convert_str_to_dates(json.load(config_f))
 
         self.normalised_training_data_df = pd.read_csv(
             os.path.join(os.path.join(dir_path, "normalised_training_data.csv")),
@@ -278,6 +284,26 @@ class ModelData(DBWriter, DBQueryMixin):
                 os.path.join(os.path.join(dir_path, "normalised_satellite_data_y.csv")),
                 index_col=0,
             )
+
+    @staticmethod
+    def convert_dates_to_str(data_config, datetime_format="%Y-%m-%dT%H:%M:%S"):
+        return dict(
+            data_config,
+            train_start_date=data_config["train_start_date"].strftime(datetime_format),
+            train_end_date=data_config["train_end_date"].strftime(datetime_format),
+            pred_start_date=data_config["pred_start_date"].strftime(datetime_format),
+            pred_end_date=data_config["pred_end_date"].strftime(datetime_format),
+        )
+
+    @staticmethod
+    def convert_str_to_dates(data_config):
+        return dict(
+            data_config,
+            train_start_date=as_datetime(data_config["train_start_date"]),
+            train_end_date=as_datetime(data_config["train_end_date"]),
+            pred_start_date=as_datetime(data_config["pred_start_date"]),
+            pred_end_date=as_datetime(data_config["pred_end_date"]),
+        )
 
     @property
     def x_names_norm(self):

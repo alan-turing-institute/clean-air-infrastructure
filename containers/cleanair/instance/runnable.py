@@ -11,7 +11,6 @@ from ..models import ModelData
 from ..databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
 from ..mixins import DBQueryMixin
 from ..databases import DBReader
-from ..timestamps import as_datetime
 
 
 class RunnableInstance(Instance):
@@ -125,9 +124,11 @@ class RunnableInstance(Instance):
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
-            self._data_config = self.convert_str_to_dates()
-            self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
-        
+            self._data_config = ModelData.convert_str_to_dates(self._data_config)
+            self.data_id = RunnableInstance.__hash_dict(
+                ModelData.convert_dates_to_str(self._data_config)
+            )
+
         # make model and data
         self.model = None
         self.model_data = None
@@ -149,8 +150,10 @@ class RunnableInstance(Instance):
     @data_config.setter
     def data_config(self, value):
         self._data_config = value
-        self._data_config = self.convert_str_to_dates()
-        self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
+        self._data_config = ModelData.convert_str_to_dates(self._data_config)
+        self.data_id = RunnableInstance.__hash_dict(
+            ModelData.convert_dates_to_str(self._data_config)
+        )
 
     @staticmethod
     def __hash_dict(value):
@@ -158,23 +161,7 @@ class RunnableInstance(Instance):
         hash_string = json.dumps(value, sort_keys=True)
         return Instance.hash_fn(hash_string)
 
-    def convert_dates_to_str(self, datetime_format="%Y-%m-%dT%H:%M:%S"):
-        return dict(
-            self.data_config,
-            train_start_date=self.data_config["train_start_date"].strftime(datetime_format),
-            train_end_date=self.data_config["train_end_date"].strftime(datetime_format),
-            pred_start_date=self.data_config["pred_start_date"].strftime(datetime_format),
-            pred_end_date=self.data_config["pred_end_date"].strftime(datetime_format),
-        )
 
-    def convert_str_to_dates(self):
-        return dict(
-            self._data_config,
-            train_start_date=as_datetime(self._data_config["train_start_date"]),
-            train_end_date=as_datetime(self._data_config["train_end_date"]),
-            pred_start_date=as_datetime(self._data_config["pred_start_date"]),
-            pred_end_date=as_datetime(self._data_config["pred_end_date"]),
-        )
 
     def load_model_params(self, **kwargs):
         """
@@ -260,7 +247,7 @@ class RunnableInstance(Instance):
     def update_data_config_table(self):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
-        data_config = self.convert_dates_to_str()
+        data_config = ModelData.convert_dates_to_str(self._data_config)
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,
