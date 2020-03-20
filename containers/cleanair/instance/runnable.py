@@ -111,7 +111,8 @@ class RunnableInstance(Instance):
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
             logging.info("Model params case 2 in runnable init")
-            raise NotImplementedError("Cannot yet load parameters from DB.")
+            self.param_id = kwargs.get("param_id")
+            self.model_params = self.load_model_params()
         else:
             logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
@@ -119,7 +120,8 @@ class RunnableInstance(Instance):
         
         # get data config dict
         if kwargs.get("data_id"):     # check if data id has been passed
-            raise NotImplementedError("Cannot yet read data id from DB.")
+            self.data_id = kwargs.get("data_id")
+            self.data_config = self.load_data_config()
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
@@ -178,32 +180,23 @@ class RunnableInstance(Instance):
         """
         Loads the model params from the DB.
 
-        Parameters
-        ___
-
-        model_name : str
-            Name of the model.
-
-        param_id : str
-            Hashed id of model_params.
-
         Returns
         ___
 
         model_params : dict
             Dictionary of model parameters.
         """
-        if "model_name" not in kwargs:
-            raise KeyError("You must pass model_name to get model_params from DB.")
-        if "param_id" not in kwargs:
-            raise KeyError("You must pass param_id to get model_params from DB.")
+        if not hasattr(self, "model_name") and not self.model_name:
+            raise AttributeError("model_name attribute must be set to load model params from DB")
+        if not hasattr(self, "param_id") and not self.param_id:
+            raise AttributeError("param_id attribute must be set to load model_params from DB.")
 
         with self.dbcnxn.open_session() as session:
             logging.info("Load model params from database")
             model_param_query = session.query(ModelTable).filter(
-                ModelTable.model_name == kwargs.pop("model_name")
+                ModelTable.model_name == self.model_name
             ).filter(
-                ModelTable.param_id == kwargs.pop("param_id")
+                ModelTable.param_id == self.param_id
             )
             model_row = model_param_query.one()
             return model_row.model_param
@@ -219,7 +212,7 @@ class RunnableInstance(Instance):
             tasks=self.data_config["species"],
         )
 
-    def update_model_table(self):
+    def save_model_params(self, **kwargs):
         """Upload params to the model table."""
         # save model to database
         records = [dict(
@@ -236,19 +229,38 @@ class RunnableInstance(Instance):
         From the data and experiment config, setup a model data object.
         """
         logging.info("Loading input data from database.")
-        assert self.data_config["train_interest_points"] == "all"
         self.model_data = ModelData(
-            config=self.data_config.copy(), # really important to copy
+            config=self.data_config.copy(),
             secretfile=self.experiment_config["secretfile"],
         )
-        assert self.data_config["train_interest_points"] == "all"
+        self.data_config = self.model_data.config    # note this will change data_config
+
+    def load_data_config(self):
+        """
+        Get the data config from a data id by loading from DB.
+        """
+
+        if not hasattr(self, "data_id") or not self.data_id:
+            raise AttributeError("Instance must have data_id attribute set.")
+
+        with self.dbcnxn.open_session() as session:
+            # load data config using the data id
+            logging.info("Load data config from database.")
+            data_config_query = session.query(DataConfig).filter(
+                DataConfig.data_id == self.data_id
+            )
+            data_row = data_config_query.one()
+            return data_row.data_config
+
+    def save_data(self):
+        """
+        Save data to local file (only implemented in ValidationInstance).
+        """
 
     def update_data_config_table(self):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
-        assert self.data_config["train_interest_points"] == "all"
         data_config = self.convert_dates_to_str()
-        assert data_config["train_interest_points"] == "all"
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,
@@ -325,12 +337,10 @@ class RunnableInstance(Instance):
         Setup, train, predict and update all in one step.
         """
         self.setup_model()
-        if hasattr(self, "dbcnxn") and self.tag != "production":
-            self.update_model_table()
-        else:
-            logging.warning("Not writing to model table.")
+        self.save_model_params(filename="model_params.json")
 
         self.load_data()
+        self.save_data()
         if hasattr(self, "dbcnxn") and self.tag != "production":
             self.update_data_config_table()
         else:
@@ -369,30 +379,10 @@ class RunnableInstance(Instance):
             assert len(instance_df) == 1    # exactly one row returned from query
             instance_dict = instance_df.iloc[0].to_dict()
 
-            # load data config using the data id
-            logging.info("Load data config from database.")
-            data_config_query = session.query(DataConfig).filter(
-                DataConfig.data_id == instance_dict["data_id"]
-            )
-            data_row = data_config_query.one()
-            data_config = data_row.data_config
-
-        # laod the model parameters using the param_id and model_name
-        model_params = instance_query.load_model_params(
-            instance_dict["model_name"],
-            instance_dict["param_id"],
-        )
         # create a new instance with all the loaded parameters
         instance = cls(
-            instance_id=instance_id,
             experiment_config=experiment_config,
-            data_config=data_config,
-            model_params=model_params,
-            git_hash=instance_dict["git_hash"],
-            tag=instance_dict["tag"],
-            fit_start_time=instance_dict["fit_start_time"],
-            cluster_id=instance_dict["cluster_id"],
-            model_name=instance_dict["model_name"],
+            **instance_dict,
             **kwargs,
         )
         # check that the data id is the same has the hashed data config

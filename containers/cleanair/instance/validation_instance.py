@@ -72,6 +72,13 @@ class ValidationInstance(RunnableInstance):
         if self.experiment_config["local_write"]:
             self.model_data.save_config_state(self.experiment_config["config_dir"])
 
+    def save_data(self):
+        """
+        Save data to a local file.
+        """
+        if self.experiment_config["local_write"]:
+            self.model_data.save_config_state(self.experiment_config["config_dir"])
+
     def save_results(self):
         if self.experiment_config["predict_write"]:
             logging.info("Writing predictions to file.")
@@ -142,6 +149,24 @@ class ValidationInstance(RunnableInstance):
         # else read the results from the DB using super class.
         return super().load_results(training_set=training_set, test_set=test_set)
 
+    def save_model_params(self, **kwargs):
+        """
+        Save model parameters to file or DB.
+
+        Parameters
+        ___
+
+        filename : str, optional
+            Name of the json file containing model params.
+        """
+        if self.experiment_config["write_model_params"]:
+            filename = kwargs.pop("filename", "model_params.json")
+            filepath = os.path.join(self.experiment_config["model_dir"], filename)
+            with open(filepath, "w") as json_file:
+                json.dump(self.model_params, json_file)
+        if hasattr(self, "dbcnxn") and not self.experiment_config["no_db_write"]:
+            super().save_model_params(**kwargs)
+
     def load_model_params(self, **kwargs):
         """
         Loads the model params from the DB or from a file
@@ -149,12 +174,6 @@ class ValidationInstance(RunnableInstance):
 
         Parameters
         ___
-
-        model_name : str, optional
-            Name of the model. Must be supplied if reading from DB.
-
-        param_id : str, optional
-            Hashed id of model_params. Must be supplied if reading from DB.
 
         filename : str, optional
             Name of the json file containing model params.
@@ -168,49 +187,24 @@ class ValidationInstance(RunnableInstance):
         if self.experiment_config["read_model_params"]:
             filename = kwargs.pop("filename", "model_params.json")
             filepath = os.path.join(self.experiment_config["model_dir"], filename)
-            with open(filepath, "w") as json_file:
+            with open(filepath, "r") as json_file:
                 return json.load(json_file)
         return super().load_model_params(**kwargs)
 
-    @classmethod
-    def instance_from_id(cls, instance_id, experiment_config, **kwargs):
+    def load_data_config(self):
         """
-        Given an id, return an initialised runnable instance.
+        Load the data config from file or from DB.
 
-        Parameters
+        Returns
         ___
 
-        instance_id : str
-            Unique id for the instance that is used to load the instance.
-
-        experiment_config : dict
-            How the instance will be loaded, e.g. from file? from DB?.
-
-        Other Parameters
-        ___
-
-        kwargs : dict, optional
-            See __init__.
-            If loading instance from file then should pass through cluster_id,
-            git_hash, fit_start_time and tag.
+        data_config : dict
+            Dictionary of data settings.
         """
-        # return instance from file
-        if experiment_config["local_read"]:
-            instance = cls(
-                instance_id=instance_id,
-                experiment_config=experiment_config,
-                **kwargs,
+        if self.experiment_config["local_read"]:
+            filepath = os.path.join(
+                self.experiment_config["config_dir"], "config.json"
             )
-            # load the data config from file
-            data_config_fp = os.path.join(experiment_config["config_dir"], "config.json")
-            with open(data_config_fp, "r") as json_file:
-                instance.data_config = json.load(json_file)
-
-            # get model parameters from file
-            model_params_fp = os.path.join(experiment_config["model_dir"], "model_params.json")
-            with open(model_params_fp, "r") as json_file:
-                instance.model_params = json.load(json_file)
-
-            return instance
-        # return instance from DB
-        return RunnableInstance.instance_from_id(instance_id, experiment_config)
+            with open(filepath, "r") as json_file:
+                return json.load(json_file)
+        return super().load_data_config()
