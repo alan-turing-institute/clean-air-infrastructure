@@ -18,10 +18,10 @@ class RunnableInstance(Instance):
     """
 
     DEFAULT_DATA_CONFIG = {
-        "train_start_date": "2020-01-29T00:00:00",
-        "train_end_date": "2020-01-30T00:00:00",
-        "pred_start_date": "2020-01-30T00:00:00",
-        "pred_end_date": "2020-01-31T00:00:00",
+        "train_start_date": "2020-01-29 00:00:00",
+        "train_end_date": "2020-01-30 00:00:00",
+        "pred_start_date": "2020-01-30 00:00:00",
+        "pred_end_date": "2020-01-31 00:00:00",
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
@@ -37,7 +37,6 @@ class RunnableInstance(Instance):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "tag": "test",
     }
 
     DEFAULT_MODEL_PARAMS = {
@@ -124,7 +123,6 @@ class RunnableInstance(Instance):
             self.data_id = RunnableInstance.__hash_dict(
                 ModelData.convert_dates_to_str(self.data_config)
             )
-            assert self.data_id == data_id
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)

@@ -84,11 +84,6 @@ class ModelData(DBWriter, DBQueryMixin):
                     ["box_id", "measurement_start_utc"]
                 )
 
-            if self.config["tag"] == "validation":
-                self.config["include_prediction_y"] = True
-                self.training_dict = self.get_training_data_arrays()
-                self.test_dict = self.get_pred_data_arrays(return_y=True)
-
         else:
             self.restore_config_state(config_dir)
 
@@ -109,7 +104,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "species",
             "features",
             "norm_by",
-            "tag",
         ]
 
         self.logger.info("Validating config")
@@ -912,7 +906,6 @@ class ModelData(DBWriter, DBQueryMixin):
         predict_df["predict_mean"] = y_pred[:, 0]
         predict_df["predict_var"] = y_pred[:, 1]
         predict_df["fit_start_time"] = model_fit_info["fit_start_time"]
-        predict_df["tag"] = self.config["tag"]
 
         # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat(
@@ -947,7 +940,6 @@ class ModelData(DBWriter, DBQueryMixin):
         # add predict_df as new columns to data_df - they should share an index
         new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
         new_df["fit_start_time"] = fit_start_time
-        new_df["tag"] = self.config["tag"]
         return new_df
 
     def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
