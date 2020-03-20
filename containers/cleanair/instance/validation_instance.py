@@ -123,7 +123,9 @@ class ValidationInstance(RunnableInstance):
             "NO2_mean",
             "NO2_var",
         ]
-        return self.model_data.normalised_pred_data_df[record_cols]
+        results_df = self.model_data.normalised_pred_data_df
+        results_df["instance_id"] = self.instance_id
+        return results_df[record_cols]
 
     def load_results(self, training_set=False, test_set=True):
         """
