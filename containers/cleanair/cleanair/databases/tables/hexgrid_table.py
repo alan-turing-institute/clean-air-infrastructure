@@ -16,4 +16,4 @@ class HexGrid(DeferredReflection, Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<HexGrid(" + ", ".join(vals)
+        return "<HexGrid(" + ", ".join(vals) + ")>"

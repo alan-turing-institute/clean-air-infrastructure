@@ -16,4 +16,4 @@ class LondonBoundary(DeferredReflection, Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<LondonBoundary(" + ", ".join(vals)
+        return "<LondonBoundary(" + ", ".join(vals) + ")>"

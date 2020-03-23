@@ -1,3 +1,13 @@
+# # Use an Ubuntu image with GDAL
+# FROM osgeo/gdal:ubuntu-full-latest
+
+# # Install psql, python and pip
+# ENV DEBIAN_FRONTEND=noninteractive
+# RUN apt-get update && apt-get install -y \
+#     postgresql \
+#     python3 \
+#     python3-pip
+
 # Use an official Python runtime as a parent image
 FROM python:3.7
 
@@ -11,7 +21,7 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/add_laqn_readings.py /app
+COPY entrypoints/process_rectgrid.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "add_laqn_readings.py"]
+ENTRYPOINT ["python3", "process_rectgrid.py"]

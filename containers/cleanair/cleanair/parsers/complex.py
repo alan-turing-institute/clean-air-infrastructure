@@ -28,13 +28,6 @@ class SatelliteArgumentParser(
             default="",
             help="copernicus key for accessing satellite data.",
         )
-        self.add_argument(
-            "-a",
-            "--archive",
-            dest="use_archive_data",
-            action="store_true",
-            help="""Use archive data rather than forecast data""",
-        )
 
     def parse_args(self, args=None, namespace=None):
         """

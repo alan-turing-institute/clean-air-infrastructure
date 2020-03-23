@@ -68,8 +68,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             q_scoot_reading.statement, q_scoot_reading.session.bind
         )
         self.logger.info(
-            "Retrieved %s SCOOT readings in %s minutes",
+            "Retrieved %s SCOOT readings from %i detectors in %s",
             green(len(df_scoot_readings)),
+            len(self.detector_ids),
             green(duration(start_time, time.time())),
         )
         return df_scoot_readings

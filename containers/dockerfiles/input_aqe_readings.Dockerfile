@@ -8,10 +8,10 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[dashboard]'
+RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/run_dashboard.py /app
+COPY entrypoints/input_aqe_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "run_dashboard.py"]
+ENTRYPOINT ["python", "input_aqe_readings.py"]

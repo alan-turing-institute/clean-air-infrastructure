@@ -1,10 +1,7 @@
 """
 Mixin for useful database queries
 """
-
-from dateutil.parser import isoparse
-from sqlalchemy import func
-from sqlalchemy import null, literal, and_
+from sqlalchemy import and_, func, literal, null
 from ..decorators import db_query
 from ..databases.tables import (
     AQEReading,
@@ -15,9 +12,10 @@ from ..databases.tables import (
     LAQNSite,
     LondonBoundary,
     MetaPoint,
-    SatelliteForecastReading,
+    SatelliteForecast,
 )
 from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class DBQueryMixin:
@@ -231,12 +229,12 @@ class DBQueryMixin:
 
         with self.dbcnxn.open_session() as session:
 
-            sat_q = session.query(SatelliteForecastReading).filter(
-                SatelliteForecastReading.measurement_start_utc >= start_date,
-                SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.measurement_start_utc)
-                == func.date(SatelliteForecastReading.reference_start_utc),
-                SatelliteForecastReading.species_code.in_(species),
+            sat_q = session.query(SatelliteForecast).filter(
+                SatelliteForecast.measurement_start_utc >= start_date,
+                SatelliteForecast.measurement_start_utc < end_date,
+                func.date(SatelliteForecast.measurement_start_utc)
+                == func.date(SatelliteForecast.reference_start_utc),
+                SatelliteForecast.species_code.in_(species),
             )
 
             return sat_q
@@ -249,7 +247,11 @@ class DBQueryMixin:
         """
 
         if (
-            int((isoparse(end_date) - isoparse(start_date)).total_seconds() // 60 // 60)
+            int(
+                (as_datetime(end_date) - as_datetime(start_date)).total_seconds()
+                // 60
+                // 60
+            )
             > 72
         ):
             raise ValueError(
@@ -257,13 +259,10 @@ class DBQueryMixin:
             )
 
         with self.dbcnxn.open_session() as session:
-
-            sat_q = session.query(SatelliteForecastReading).filter(
-                SatelliteForecastReading.measurement_start_utc >= start_date,
-                SatelliteForecastReading.measurement_start_utc < end_date,
-                func.date(SatelliteForecastReading.reference_start_utc)
-                == isoparse(start_date).date().isoformat(),
-                SatelliteForecastReading.species_code.in_(species),
+            return session.query(SatelliteForecast).filter(
+                SatelliteForecast.measurement_start_utc >= start_date,
+                SatelliteForecast.measurement_start_utc < end_date,
+                func.date(SatelliteForecast.reference_start_utc)
+                == as_datetime(start_date).date().isoformat(),
+                SatelliteForecast.species_code.in_(species),
             )
-
-            return sat_q

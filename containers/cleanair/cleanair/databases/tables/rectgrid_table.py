@@ -26,13 +26,17 @@ class RectGrid(Base):
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        return "<RectGrid(" + ", ".join(
-            [
-                "column_id='{}'".format(self.column_id),
-                "row_id='{}'".format(self.row_id),
-                "point_id='{}'".format(self.point_id),
-                "geom='{}'".format(self.geom),
-            ]
+        return (
+            "<RectGrid("
+            + ", ".join(
+                [
+                    "column_id='{}'".format(self.column_id),
+                    "row_id='{}'".format(self.row_id),
+                    "point_id='{}'".format(self.point_id),
+                    "geom='{}'".format(self.geom),
+                ]
+            )
+            + ")>"
         )
 
     @staticmethod
@@ -57,4 +61,4 @@ class RectGrid100(DeferredReflection, Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<RectGrid100(" + ", ".join(vals)
+        return "<RectGrid100(" + ", ".join(vals) + ")>"

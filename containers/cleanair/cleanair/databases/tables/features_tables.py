@@ -34,16 +34,20 @@ class StaticFeature(Base):
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        return "<StaticFeature(" + ", ".join(
-            [
-                "point_id='{}'".format(self.point_id),
-                "feature_name='{}'".format(self.feature_name),
-                "value_1000='{}'".format(self.value_1000),
-                "value_500='{}'".format(self.value_500),
-                "value_200='{}'".format(self.value_200),
-                "value_100='{}'".format(self.value_100),
-                "value_10='{}'".format(self.value_10),
-            ]
+        return (
+            "<StaticFeature("
+            + ", ".join(
+                [
+                    "point_id='{}'".format(self.point_id),
+                    "feature_name='{}'".format(self.feature_name),
+                    "value_1000='{}'".format(self.value_1000),
+                    "value_500='{}'".format(self.value_500),
+                    "value_200='{}'".format(self.value_200),
+                    "value_100='{}'".format(self.value_100),
+                    "value_10='{}'".format(self.value_10),
+                ]
+            )
+            + ")>"
         )
 
     @staticmethod
@@ -99,7 +103,7 @@ class DynamicFeature(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<DynamicFeature(" + ", ".join(vals)
+        return "<DynamicFeature(" + ", ".join(vals) + ")>"
 
     @staticmethod
     def build_entry(feature_name, reading_tuple):

@@ -8,10 +8,10 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair' 
+RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/features_scoot_readings.py /app
+COPY entrypoints/input_laqn_readings.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "features_scoot_readings.py"]
+ENTRYPOINT ["python", "input_laqn_readings.py"]
