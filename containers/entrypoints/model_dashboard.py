@@ -1,7 +1,7 @@
 """
 Visualise and run metrics for a single model data fit.
 """
-from datetime import datetime
+import datetime
 import os
 import pickle
 import pandas as pd
@@ -11,7 +11,7 @@ from cleanair.databases import DBReader
 from cleanair.databases.tables import ModelResult
 from cleanair.loggers import initialise_logging
 from cleanair.models import ModelData
-from cleanair.parsers import get_data_config_from_kwargs, ValidationParser
+from cleanair.parsers import ModelValidationParser
 
 
 def read_model_results(tag, start_time, end_time, secretfile, logger=None):
@@ -56,26 +56,23 @@ def main():  # pylint: disable=too-many-locals
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
-    # get a model data object from the config_dir
-    parser = ValidationParser(description="Dashboard")
+    # Parse and interpret command line arguments
+    parser = ModelValidationParser(description="Dashboard")
     kwargs = parser.parse_kwargs()
-    logger = initialise_logging(kwargs.pop("verbose", 0))
 
-    # pop kwargs
+    # Extract arguments that should not be passed onwards
+    logger = initialise_logging(kwargs.pop("verbose", 0))
     local_read = kwargs.pop("local_read")
     evaluate_training = kwargs.pop("predict_training")
     results_dir = kwargs.pop("results_dir")
     predict_read_local = kwargs.pop("predict_read_local")
     secrets_dir = os.path.dirname(kwargs["secretfile"])
 
-    # get the config of data
-    data_config = get_data_config_from_kwargs(kwargs)
-
     # Get the model data
     if local_read:
         model_data = ModelData(**kwargs)
     else:
-        model_data = ModelData(config=data_config, **kwargs)
+        model_data = ModelData(config=parser.generate_data_config(), **kwargs)
 
     # get the predictions of the model
     if predict_read_local:
@@ -87,7 +84,7 @@ def main():  # pylint: disable=too-many-locals
             with open(y_train_pred_fp, "rb") as handle:
                 y_train_pred = pickle.load(handle)
         # update the model data object with the predictions
-        model_data.update_test_df_with_preds(y_test_pred, datetime.now())
+        model_data.update_test_df_with_preds(y_test_pred, datetime.datetime.now())
     else:
         # when reading from DB, we assume evaluate_training is false
         evaluate_training = False
@@ -121,7 +118,7 @@ def main():  # pylint: disable=too-many-locals
         ] = model_data.normalised_pred_data_df["predict_var"]
 
     if evaluate_training:
-        model_data.update_training_df_with_preds(y_train_pred, datetime.now())
+        model_data.update_training_df_with_preds(y_train_pred, datetime.datetime.now())
 
     # get the mapbox api key
     try:

@@ -8,10 +8,10 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[models]'
+RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/run_model_fitting.py /app
+COPY entrypoints/process_scoot_roadmaps.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "run_model_fitting.py"]
+ENTRYPOINT ["python", "process_scoot_roadmaps.py"]

@@ -1,13 +1,12 @@
 """
 Model fitting
 """
+import datetime
 import os
 import pickle
-from datetime import datetime
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import initialise_logging
 from cleanair.parsers import ModelFitParser
-from cleanair.parsers import get_data_config_from_kwargs
 
 
 def write_predictions_to_file(y_pred, results_dir, filename):
@@ -21,13 +20,12 @@ def main():  # pylint: disable=R0914
     """
     Run model fitting
     """
-    # Read command line arguments
+    # Parse and interpret command line arguments
     parser = ModelFitParser(description="Run model fitting")
-
-    # Parse and interpret arguments
     kwargs = parser.parse_kwargs()
 
-    # Update database/write to file
+    # Extract arguments that should not be passed onwards
+    logger = initialise_logging(kwargs.pop("verbose", 0))
     no_db_write = kwargs.pop("no_db_write")
     local_write = kwargs.pop("local_write")
     local_read = kwargs.pop("local_read")
@@ -36,11 +34,8 @@ def main():  # pylint: disable=R0914
     model_dir = kwargs.pop("model_dir")
     predict_training = kwargs.pop("predict_training")
 
-    # Set logging verbosity
-    logger = initialise_logging(kwargs.pop("verbose", 0))
-
     # get the model config from the parser arguments
-    model_config = get_data_config_from_kwargs(kwargs)
+    model_config = parser.generate_data_config()
 
     if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
         raise NotImplementedError("AQE cannot currently be run. Coming soon")
@@ -77,7 +72,7 @@ def main():  # pylint: disable=R0914
     logger.info(
         "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
     )
-    fit_start_time = datetime.now()
+    fit_start_time = datetime.datetime.now()
     model_fitter.fit(x_train, y_train)
 
     # Get info about the model fit
