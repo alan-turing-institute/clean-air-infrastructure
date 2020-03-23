@@ -520,9 +520,10 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                         feature_dict=self.features[feature_name]["feature_dict"],
                         agg_func=self.features[feature_name]["aggfunc"],
                         batch_size=self.batch_size,
-                        output_type="query",
+                        output_type="sql",
                     )
-
+                    print(q_select_and_insert)
+                    quit()
                 else:
                     # Create full select-and-insert query
                     q_select_and_insert = self.query_features(
