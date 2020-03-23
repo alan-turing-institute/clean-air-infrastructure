@@ -237,8 +237,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
                 # Join grib data and convert into a list of forecasts
                 reading_entries = (
-                    all_grib_df
-                    .merge(satellite_site_df, how="left", on=["lon", "lat"])
+                    all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
                     .apply(
                         lambda data, rd=reference_date: SatelliteForecast(
                             reference_start_utc=rd,
