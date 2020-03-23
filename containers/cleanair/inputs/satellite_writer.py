@@ -240,7 +240,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
                     all_grib_df
                     .merge(satellite_site_df, how="left", on=["lon", "lat"])
                     .apply(
-                        lambda data: SatelliteForecast(
+                        lambda data, rd=reference_date: SatelliteForecast(
+                            reference_start_utc=rd,
                             measurement_start_utc=to_nearest_hour(data["date"]),
                             measurement_end_utc=to_nearest_hour(data["date"])
                             + datetime.timedelta(hours=1),

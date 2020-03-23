@@ -100,6 +100,7 @@ class SatelliteForecast(Base):
     __tablename__ = "satellite_forecast"
     __table_args__ = {"schema": "dynamic_data"}
 
+    reference_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     box_id = Column(
