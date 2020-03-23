@@ -86,7 +86,7 @@ imageTag: 3ba0958ba5176fdf89eb384f3793306e45cf7ad5
 
 
 cronjobs:
-  - name: input_aqe
+  - name: input-aqe
     image:
       repository: cleanairdocker.azurecr.io/input_aqe
       imagePullPolicy: Always
@@ -100,7 +100,7 @@ cronjobs:
       secret:
         secretName: secrets
 
-  - name: input_laqn
+  - name: input-laqn
     image:
       repository: cleanairdocker.azurecr.io/input_laqn
       imagePullPolicy: Always
@@ -114,7 +114,7 @@ cronjobs:
       secret:
         secretName: secrets
 
-  - name: input_satellite
+  - name: input-satellite
     image:
       repository: cleanairdocker.azurecr.io/input_satellite
       imagePullPolicy: Always
@@ -128,7 +128,7 @@ cronjobs:
       secret:
         secretName: secrets
 
-  - name: input_scoot
+  - name: input-scoot
     image:
       repository: cleanairdocker.azurecr.io/input_scoot
       imagePullPolicy: Always
