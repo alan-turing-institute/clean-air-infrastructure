@@ -174,6 +174,20 @@ class svgp_binnedkernel(Model):
 
         x_sat = np.mean(x_sat,axis = 1)
         x_sat[:,3:] = 1 
+ 
+        # setup inducing points
+        inducing_baseline = np.int(self.model_params["n_inducing_points"]*x_array.shape[0]/(x_array.shape[0]+x_sat.shape[0]))
+        z_r = kmeans2(x_array, inducing_baseline, minit="points")[
+            0
+        ]
+        inducing_sat = self.model_params["n_inducing_points"]- inducing_baseline
+        z_r2= kmeans2(x_sat, inducing_sat, minit="points")[
+            0
+        ]
+        z_r[:,3] = 0
+        z_r2[:,3] = 1
+
+        z_r = np.append(z_r,z_r2,axis =0)
         
         x_array = np.append(x_array,x_sat,axis = 0)
         y_array = np.append(y_array,y_sat,axis = 0)
@@ -184,11 +198,6 @@ class svgp_binnedkernel(Model):
         logging.info(
             "Training the model for %s iterations.", self.model_params["maxiter"]
         )
-
-        # setup inducing points
-        z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
-            0
-        ]
 
         # setup SVGP model
         self.setup_model(x_array, y_array, z_r, x_array.shape[1])
