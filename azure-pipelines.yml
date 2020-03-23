@@ -118,7 +118,7 @@ stages:
     - task: HelmInstaller@1
       displayName: 'Install latest Helm version'
       inputs:
-        helmVersionToInstall: latest
+        helmVersionToInstall: 3.1.2
     # List installed versions
     - script: |
         echo "Kubernetes version on the cluster is ${KUBERNETES_VERSION}"
