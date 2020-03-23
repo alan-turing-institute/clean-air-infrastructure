@@ -103,23 +103,18 @@ class RunnableInstance(Instance):
 
         # check if model params has been passed
         if model_params:
-            # ToDo: remove info
-            logging.info("Model params case 1 in runnable init")
             self._model_params = model_params
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
-            logging.info("Model params case 2 in runnable init")
             self.param_id = kwargs.get("param_id")
             self.model_params = self.load_model_params()
         else:
-            logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
             self.param_id = self.__hash_dict(self._model_params)
         
         # get data config dict
         if kwargs.get("data_id"):     # check if data id has been passed
             self.data_id = kwargs.get("data_id")
-            data_id = self.data_id
             self.data_config = self.load_data_config()
             self.data_id = RunnableInstance.__hash_dict(
                 ModelData.convert_dates_to_str(self.data_config)
@@ -260,7 +255,11 @@ class RunnableInstance(Instance):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
         data_config = ModelData.convert_dates_to_str(self.data_config)
-        assert isinstance(data_config["pred_interest_points"], list)
+
+        try:
+            assert isinstance(data_config["pred_interest_points"], list)
+        except AssertionError:
+            logging.warning("pred_interest_points in data config of model data is not a list.")
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,
@@ -380,6 +379,7 @@ class RunnableInstance(Instance):
             instance_dict = instance_df.iloc[0].to_dict()
 
         # create a new instance with all the loaded parameters
+        assert "git_hash" in instance_dict
         instance = cls(
             experiment_config=experiment_config,
             **instance_dict,
@@ -428,3 +428,17 @@ class InstanceQuery(DBReader):
     """
     A class for querying the instance table and its sister tables.
     """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def get_all_instances(self):
+        """
+        Get all instances from the instance table.
+        """
+        with self.dbcnxn.open_session() as session:
+            instance_query = session.query(InstanceTable)
+            instance_df = pd.read_sql(
+                instance_query.statement, instance_query.session.bind
+            )
+            return instance_df

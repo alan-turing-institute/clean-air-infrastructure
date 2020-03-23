@@ -187,9 +187,6 @@ def evaluate_spatio_temporal_scores(
 
     # meta info for the evaluation
     for key, value in kwargs.items():
-        # Todo: remove print statement
-        print()
-        print(key, value)
         sensor_scores_df[key] = value
         temporal_scores_df[key] = value
 
