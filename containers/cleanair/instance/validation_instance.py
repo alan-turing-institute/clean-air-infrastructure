@@ -50,6 +50,9 @@ class ValidationInstance(RunnableInstance):
         super().__init__(**kwargs)
 
     def setup_model(self):
+        """
+        Restore a model from file, write model params to a file and create a model.
+        """
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()
@@ -60,6 +63,9 @@ class ValidationInstance(RunnableInstance):
                 json.dump(self.model_params, json_file)
 
     def load_data(self):
+        """
+        Read the train and test data from a local file or the DB.
+        """
         if self.experiment_config["local_read"]:
             logging.info("Reading from local file.")
             self.model_data = ModelData(
@@ -80,18 +86,40 @@ class ValidationInstance(RunnableInstance):
             self.model_data.save_config_state(self.experiment_config["config_dir"])
 
     def save_results(self):
+        """
+        Write results to file and/or the DB.
+        """
+        written = False
+
         if self.experiment_config["predict_write"]:
             logging.info("Writing predictions to file.")
             self.write_predictions_to_file(self.y_test_pred, "test_pred.pickle")
             if self.experiment_config["predict_training"]:
                 self.write_predictions_to_file(self.y_train_pred, "train_pred.pickle")
-        elif not self.experiment_config["no_db_write"]:
-            # ToDo: remove exception
+            written = True
+
+        if not self.experiment_config["no_db_write"]:
             super().save_results()
-        else:
+            written = True
+
+        if not written:
             logging.warning("Did not write predictions.")
 
     def run_prediction(self):
+        """
+        Predict on the test (and training) set.
+
+        Returns
+        ___
+
+        y_test_pred : dict
+            A dictionary containing the model predictions.
+
+        Notes
+        ___
+
+        The `y_test_pred` and optionally `y_train_pred` attributes will be set.
+        """
         logging.info("Starting prediction.")
         self.y_test_pred = super().run_prediction()
 
