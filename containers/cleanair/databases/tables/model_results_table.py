@@ -29,4 +29,4 @@ class ModelResult(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<ModelResults(" + ", ".join(vals)
+        return "<ModelResults(" + ", ".join(vals) + ")>"

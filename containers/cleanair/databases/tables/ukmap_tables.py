@@ -16,4 +16,4 @@ class UKMap(DeferredReflection, Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<UKMap(" + ", ".join(vals)
+        return "<UKMap(" + ", ".join(vals) + ")>"

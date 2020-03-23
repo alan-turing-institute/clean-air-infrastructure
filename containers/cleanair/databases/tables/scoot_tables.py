@@ -164,7 +164,7 @@ class ScootRoadForecast(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<ScootRoadForecast(" + ", ".join(vals)
+        return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
 
 
 class ScootRoadReading(Base):
@@ -191,4 +191,4 @@ class ScootRoadReading(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<ScootRoadForecast(" + ", ".join(vals)
+        return "<ScootRoadForecast(" + ", ".join(vals) + ")>"

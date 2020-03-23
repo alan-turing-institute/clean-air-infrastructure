@@ -26,14 +26,18 @@ class LAQNSite(Base):
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        return "<LAQNSite(" + ", ".join(
-            [
-                "site_code='{}'".format(self.site_code),
-                "point_id='{}'".format(self.point_id),
-                "site_type='{}'".format(self.site_type),
-                "date_opened='{}'".format(self.date_opened),
-                "date_closed='{}'".format(self.date_closed),
-            ]
+        return (
+            "<LAQNSite("
+            + ", ".join(
+                [
+                    "site_code='{}'".format(self.site_code),
+                    "point_id='{}'".format(self.point_id),
+                    "site_type='{}'".format(self.site_type),
+                    "date_opened='{}'".format(self.date_opened),
+                    "date_closed='{}'".format(self.date_closed),
+                ]
+            )
+            + ")>"
         )
 
     @staticmethod
@@ -72,14 +76,18 @@ class LAQNReading(Base):
     value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
-        return "<LAQNReading(" + ", ".join(
-            [
-                "site_code='{}'".format(self.site_code),
-                "species_code='{}'".format(self.species_code),
-                "measurement_start_utc='{}'".format(self.measurement_start_utc),
-                "measurement_end_utc='{}'".format(self.measurement_end_utc),
-                "value='{}'".format(self.value),
-            ]
+        return (
+            "<LAQNReading("
+            + ", ".join(
+                [
+                    "site_code='{}'".format(self.site_code),
+                    "species_code='{}'".format(self.species_code),
+                    "measurement_start_utc='{}'".format(self.measurement_start_utc),
+                    "measurement_end_utc='{}'".format(self.measurement_end_utc),
+                    "value='{}'".format(self.value),
+                ]
+            )
+            + ")>"
         )
 
     @staticmethod
