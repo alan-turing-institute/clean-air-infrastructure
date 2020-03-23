@@ -4,7 +4,6 @@ Vizualise available sensor data for a model fit
 import json
 import os
 import logging
-import pickle
 import pandas as pd
 import numpy as np
 from dateutil import rrule

@@ -74,7 +74,20 @@ class Instance(DBWriter, DBQueryMixin):
         self._data_id = kwargs.get("data_id", None)
         self._cluster_id = kwargs.get("cluster_id", None)
         self._tag = kwargs.get("tag", None)
-        self._git_hash = kwargs.get("git_hash", git.Repo(search_parent_directories=True).head.object.hexsha)
+
+        if "git_hash" in kwargs:
+            # get git hash from parameter
+            self._git_hash = kwargs.get("git_hash")
+        else:
+            try:
+                # get the hash of the git repository
+                self._git_hash = git.Repo(search_parent_directories=True).head.object.hexsha
+            except git.InvalidGitRepositoryError as error:
+                # catch exception and set to empty string
+                logging.error("Could not find a git repository in the parent directory. Setting git_hash to empty string.")
+                logging.error(error.__traceback__)
+                self._git_hash = ""
+
         self._fit_start_time = kwargs.get("fit_start_time", None)
         self._instance_id = kwargs.get("instance_id", self.__hash__())
 
