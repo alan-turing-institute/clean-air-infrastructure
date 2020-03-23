@@ -102,14 +102,14 @@ class SatelliteForecast(Base):
 
     reference_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, nullable=False)
+    species_code = Column(String(4), primary_key=True, nullable=False)
     box_id = Column(
         UUID,
         ForeignKey("interest_points.satellite_box.id"),
         primary_key=True,
         nullable=False,
     )
-    species_code = Column(String(4), primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
