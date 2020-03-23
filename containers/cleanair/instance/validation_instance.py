@@ -145,7 +145,6 @@ class ValidationInstance(RunnableInstance):
             # load the prediction pickle files and return a results df
             logging.info("Reading results from a local file.")
             filepath = os.path.join(self.experiment_config["results_dir"], "test_pred.pickle")
-            print(filepath)
             with open(filepath, "rb") as handle:
                 y_pred = pickle.load(handle)
             self.update_results(y_pred)

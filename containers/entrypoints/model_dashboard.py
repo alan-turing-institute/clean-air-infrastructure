@@ -40,7 +40,10 @@ def main():  # pylint: disable=too-many-locals
     instance = instance_class.instance_from_id(instance_id, experiment_config, **kwargs)
 
     # get the data and the results
+    data_id = instance.data_id
     instance.load_data()
+    assert instance.data_id == data_id
+    assert instance.instance_id == instance_id
     results_df = instance.load_results()
 
     # get the mapbox api key

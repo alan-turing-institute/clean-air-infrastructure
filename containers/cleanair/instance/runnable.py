@@ -5,6 +5,7 @@ An instance that can be executed using the run() method.
 import logging
 import json
 from datetime import datetime
+from jsondiff import diff
 import pandas as pd
 from .instance import Instance
 from ..models import ModelData
@@ -160,7 +161,11 @@ class RunnableInstance(Instance):
     @staticmethod
     def __hash_dict(value):
         # it is ESSENTIAL to sort by keys when creating hashes!
-        hash_string = json.dumps(value, sort_keys=True)
+        sorted_values = value.copy()
+        for key in sorted_values:
+            if isinstance(sorted_values[key], list):
+                sorted_values[key].sort()
+        hash_string = json.dumps(sorted_values, sort_keys=True)
         return Instance.hash_fn(hash_string)
 
 
@@ -222,6 +227,11 @@ class RunnableInstance(Instance):
             config=self.data_config.copy(),
             secretfile=self.experiment_config["secretfile"],
         )
+        # check the different between the two sets
+        change = diff(self.data_config, self.model_data.config)
+        if not change:
+            logging.warning("After loading from model data, the difference between data configs is %s", change)
+
         self.data_config = self.model_data.config    # note this will change data_config
 
     def load_data_config(self):
