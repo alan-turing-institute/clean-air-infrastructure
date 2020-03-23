@@ -5,7 +5,7 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Copy the API into the container
-COPY API /var/www/html/my_app
+COPY cleanair-api /var/www/html/my_app
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r var/www/html/my_app/api-requirements.txt
