@@ -125,7 +125,6 @@ stages:
         echo "Kubectl details:"
         kubectl version
         echo "Helm details:"
-        helm version
         echo "Helm $(NAMESPACE) namespace:"
         helm list --namespace $(NAMESPACE)
       displayName: 'List installed versions'
