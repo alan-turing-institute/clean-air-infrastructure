@@ -19,10 +19,10 @@ class RunnableInstance(Instance):
     """
 
     DEFAULT_DATA_CONFIG = {
-        "train_start_date": "2020-01-29 00:00:00",
-        "train_end_date": "2020-01-30 00:00:00",
-        "pred_start_date": "2020-01-30 00:00:00",
-        "pred_end_date": "2020-01-31 00:00:00",
+        "train_start_date": "2020-01-29T00:00:00",
+        "train_end_date": "2020-01-30T00:00:00",
+        "pred_start_date": "2020-01-30T00:00:00",
+        "pred_end_date": "2020-01-31T00:00:00",
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
