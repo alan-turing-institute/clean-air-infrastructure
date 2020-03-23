@@ -132,7 +132,7 @@ class ModelValidationParser(BaseModelParser):
     A parser for validation.
     """
 
-    EXPERIMENT_ARGS = BaseModelParser.EXPERIMENT_ARGS + ["predict_read_local", "local_write", "no_db_write", "predict_write", "model_dir", "results_dir", "restore", "save_model_state"]
+    EXPERIMENT_ARGS = BaseModelParser.EXPERIMENT_ARGS + ["predict_read_local", "local_write", "no_db_write", "predict_write", "model_dir", "results_dir", "restore", "save_model_state", "write_model_params", "read_model_params"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -156,6 +156,16 @@ class ModelValidationParser(BaseModelParser):
             "-save_model_state",
             action="store_true",
             help="Save the model.",
+        )
+        self.add_argument(
+            "-write_model_params",
+            action="store_true",
+            help="Save the model parameters to a json file.",
+        )
+        self.add_argument(
+            "-read_model_params",
+            action="store_true",
+            help="Read the model params from a json file.",
         )
         self.add_argument(
             "-local_write",

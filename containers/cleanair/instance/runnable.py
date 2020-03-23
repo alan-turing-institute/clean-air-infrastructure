@@ -5,13 +5,12 @@ An instance that can be executed using the run() method.
 import logging
 import json
 from datetime import datetime
+from jsondiff import diff
 import pandas as pd
 from .instance import Instance
 from ..models import ModelData
 from ..databases.tables import ModelTable, DataConfig, InstanceTable, ResultTable
-from ..mixins import DBQueryMixin
 from ..databases import DBReader
-from ..timestamps import as_datetime
 
 
 class RunnableInstance(Instance):
@@ -20,10 +19,10 @@ class RunnableInstance(Instance):
     """
 
     DEFAULT_DATA_CONFIG = {
-        "train_start_date": "2020-01-29T00:00:00",
-        "train_end_date": "2020-01-30T00:00:00",
-        "pred_start_date": "2020-01-30T00:00:00",
-        "pred_end_date": "2020-01-31T00:00:00",
+        "train_start_date": "2020-01-29 00:00:00",
+        "train_end_date": "2020-01-30 00:00:00",
+        "pred_start_date": "2020-01-30 00:00:00",
+        "pred_end_date": "2020-01-31 00:00:00",
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
@@ -39,7 +38,6 @@ class RunnableInstance(Instance):
             "value_500_total_b_road_length",
         ],
         "norm_by": "laqn",
-        "tag": "test",
     }
 
     DEFAULT_MODEL_PARAMS = {
@@ -111,7 +109,8 @@ class RunnableInstance(Instance):
             self.param_id = RunnableInstance.__hash_dict(model_params)
         elif kwargs.get("param_id"):
             logging.info("Model params case 2 in runnable init")
-            raise NotImplementedError("Cannot yet load parameters from DB.")
+            self.param_id = kwargs.get("param_id")
+            self.model_params = self.load_model_params()
         else:
             logging.info("Model params case 3 in runnable init")
             self._model_params = self.__class__.DEFAULT_MODEL_PARAMS.copy()
@@ -119,13 +118,20 @@ class RunnableInstance(Instance):
         
         # get data config dict
         if kwargs.get("data_id"):     # check if data id has been passed
-            raise NotImplementedError("Cannot yet read data id from DB.")
+            self.data_id = kwargs.get("data_id")
+            data_id = self.data_id
+            self.data_config = self.load_data_config()
+            self.data_id = RunnableInstance.__hash_dict(
+                ModelData.convert_dates_to_str(self.data_config)
+            )
         else:
             self._data_config = self.__class__.DEFAULT_DATA_CONFIG.copy()
             self._data_config.update(data_config)
-            self._data_config = self.convert_str_to_dates()
-            self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
-        
+            self._data_config = ModelData.convert_str_to_dates(self._data_config)
+            self.data_id = RunnableInstance.__hash_dict(
+                ModelData.convert_dates_to_str(self._data_config)
+            )
+
         # make model and data
         self.model = None
         self.model_data = None
@@ -147,37 +153,47 @@ class RunnableInstance(Instance):
     @data_config.setter
     def data_config(self, value):
         self._data_config = value
-        self._data_config = self.convert_str_to_dates()
-        self.data_id = RunnableInstance.__hash_dict(self.convert_dates_to_str())
+        self._data_config = ModelData.convert_str_to_dates(self._data_config)
+        self.data_id = RunnableInstance.__hash_dict(
+            ModelData.convert_dates_to_str(self._data_config)
+        )
 
     @staticmethod
     def __hash_dict(value):
         # it is ESSENTIAL to sort by keys when creating hashes!
-        hash_string = json.dumps(value, sort_keys=True)
+        sorted_values = value.copy()
+        for key in sorted_values:
+            if isinstance(sorted_values[key], list):
+                sorted_values[key].sort()
+        hash_string = json.dumps(sorted_values, sort_keys=True)
         return Instance.hash_fn(hash_string)
 
-    def convert_dates_to_str(self, datetime_format="%Y-%m-%dT%H:%M:%S"):
-        return dict(
-            self.data_config,
-            train_start_date=self.data_config["train_start_date"].strftime(datetime_format),
-            train_end_date=self.data_config["train_end_date"].strftime(datetime_format),
-            pred_start_date=self.data_config["pred_start_date"].strftime(datetime_format),
-            pred_end_date=self.data_config["pred_end_date"].strftime(datetime_format),
-        )
 
-    def convert_str_to_dates(self):
-        return dict(
-            self._data_config,
-            train_start_date=as_datetime(self._data_config["train_start_date"]),
-            train_end_date=as_datetime(self._data_config["train_end_date"]),
-            pred_start_date=as_datetime(self._data_config["pred_start_date"]),
-            pred_end_date=as_datetime(self._data_config["pred_end_date"]),
-        )
 
     def load_model_params(self, **kwargs):
         """
-        Load model parameters from DB or use defaults.
+        Loads the model params from the DB.
+
+        Returns
+        ___
+
+        model_params : dict
+            Dictionary of model parameters.
         """
+        if not hasattr(self, "model_name") and not self.model_name:
+            raise AttributeError("model_name attribute must be set to load model params from DB")
+        if not hasattr(self, "param_id") and not self.param_id:
+            raise AttributeError("param_id attribute must be set to load model_params from DB.")
+
+        with self.dbcnxn.open_session() as session:
+            logging.info("Load model params from database")
+            model_param_query = session.query(ModelTable).filter(
+                ModelTable.model_name == self.model_name
+            ).filter(
+                ModelTable.param_id == self.param_id
+            )
+            model_row = model_param_query.one()
+            return model_row.model_param
 
     def setup_model(self):
         """
@@ -190,7 +206,7 @@ class RunnableInstance(Instance):
             tasks=self.data_config["species"],
         )
 
-    def update_model_table(self):
+    def save_model_params(self, **kwargs):
         """Upload params to the model table."""
         # save model to database
         records = [dict(
@@ -207,19 +223,44 @@ class RunnableInstance(Instance):
         From the data and experiment config, setup a model data object.
         """
         logging.info("Loading input data from database.")
-        assert self.data_config["train_interest_points"] == "all"
         self.model_data = ModelData(
-            config=self.data_config.copy(), # really important to copy
+            config=self.data_config.copy(),
             secretfile=self.experiment_config["secretfile"],
         )
-        assert self.data_config["train_interest_points"] == "all"
+        # check the different between the two sets
+        change = diff(self.data_config, self.model_data.config)
+        if not change:
+            logging.warning("After loading from model data, the difference between data configs is %s", change)
+
+        self.data_config = self.model_data.config    # note this will change data_config
+
+    def load_data_config(self):
+        """
+        Get the data config from a data id by loading from DB.
+        """
+
+        if not hasattr(self, "data_id") or not self.data_id:
+            raise AttributeError("Instance must have data_id attribute set.")
+
+        with self.dbcnxn.open_session() as session:
+            # load data config using the data id
+            logging.info("Load data config from database.")
+            data_config_query = session.query(DataConfig).filter(
+                DataConfig.data_id == self.data_id
+            )
+            data_row = data_config_query.one()
+            return ModelData.convert_str_to_dates(data_row.data_config)
+
+    def save_data(self):
+        """
+        Save data to local file (only implemented in ValidationInstance).
+        """
 
     def update_data_config_table(self):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
-        assert self.data_config["train_interest_points"] == "all"
-        data_config = self.convert_dates_to_str()
-        assert data_config["train_interest_points"] == "all"
+        data_config = ModelData.convert_dates_to_str(self.data_config)
+        assert isinstance(data_config["pred_interest_points"], list)
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,
@@ -266,10 +307,12 @@ class RunnableInstance(Instance):
         # add results to the results table
         self.model_data.update_remote_tables(self.instance_id)
 
-    def load_results(self):
+    def load_results(self, training_set=False, test_set=True):
         """
-        Load results from the results table that match the instance id.
+        Load results from the results table that match the instance id and update model data.
         """
+        if training_set:
+            raise NotImplementedError("Cannot yet load results for the training set.")
         with self.dbcnxn.open_session() as session:
             # get all rows that match the instance id
             results_query = session.query(ResultTable).filter(
@@ -277,7 +320,16 @@ class RunnableInstance(Instance):
             )
             results_df = pd.read_sql(results_query.statement, results_query.session.bind)
         logging.info("Loaded %s rows from the results table.", len(results_df))
-        return results_df
+        if test_set:
+            self.model_data.normalised_pred_data_df = pd.merge(
+                self.model_data.normalised_pred_data_df,
+                results_df,
+                how="inner",
+                on=["point_id", "measurement_start_utc"],
+            )
+            return results_df
+        logging.warning("No testing set data returned.")
+        return pd.DataFrame()
 
 
     def run(self):
@@ -285,12 +337,10 @@ class RunnableInstance(Instance):
         Setup, train, predict and update all in one step.
         """
         self.setup_model()
-        if hasattr(self, "dbcnxn") and self.tag != "production":
-            self.update_model_table()
-        else:
-            logging.warning("Not writing to model table.")
+        self.save_model_params(filename="model_params.json")
 
         self.load_data()
+        self.save_data()
         if hasattr(self, "dbcnxn") and self.tag != "production":
             self.update_data_config_table()
         else:
@@ -329,35 +379,11 @@ class RunnableInstance(Instance):
             assert len(instance_df) == 1    # exactly one row returned from query
             instance_dict = instance_df.iloc[0].to_dict()
 
-            # load data config using the data id
-            logging.info("Load data config from database.")
-            data_config_query = session.query(DataConfig).filter(
-                DataConfig.data_id == instance_dict["data_id"]
-            )
-            data_row = data_config_query.one()
-            data_config = data_row.data_config
-
-            # laod the model parameters using the param_id and model_name
-            logging.info("Load model params from database")
-            model_param_query = session.query(ModelTable).filter(
-                ModelTable.model_name == instance_dict["model_name"]
-            ).filter(
-                ModelTable.param_id == instance_dict["param_id"]
-            )
-            model_row = model_param_query.one()
-            model_params = model_row.model_param
         # create a new instance with all the loaded parameters
         instance = cls(
-            instance_id=instance_id,
             experiment_config=experiment_config,
-            data_config=data_config,
-            model_params=model_params,
-            git_hash=instance_dict["git_hash"],
-            tag=instance_dict["tag"],
-            fit_start_time=instance_dict["fit_start_time"],
-            cluster_id=instance_dict["cluster_id"],
-            model_name=instance_dict["model_name"],
-            **kwargs,
+            **instance_dict,
+            # **kwargs,
         )
         # check that the data id is the same has the hashed data config
         try:
@@ -370,7 +396,7 @@ class RunnableInstance(Instance):
             error_message = error_message.format(
                 did=instance_dict["data_id"],
                 hash=instance.data_id,
-                conf=json.dumps(instance.convert_dates_to_str(), indent=4),
+                conf=json.dumps(ModelData.convert_dates_to_str(instance.data_config), indent=4),
             )
             raise ValueError(error_message)
 
@@ -402,5 +428,3 @@ class InstanceQuery(DBReader):
     """
     A class for querying the instance table and its sister tables.
     """
-
-
