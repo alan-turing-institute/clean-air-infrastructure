@@ -197,9 +197,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                         ~tuple_(MetaPoint.id, literal(feature_name)).in_(preprocessed)
                     )
                 else:
-                    preprocessed = self.get_dynamic_processed(
-                        feature_name=feature_name
-                    ).cte("processed")
+                    preprocessed = self.get_dynamic_processed(feature_name=feature_name)
 
                     q_meta_point = q_meta_point.filter(
                         ~tuple_(MetaPoint.id).in_(preprocessed)
@@ -222,7 +220,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         ).cte("buffers")
 
         n_interest_points = self.query_meta_points(
-            feature_name=feature_name, output_type="count"
+            feature_name=feature_name, exclude_processed=True, output_type="count",
         )
 
         if n_interest_points == 0:
@@ -241,6 +239,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
 
         with self.dbcnxn.open_session() as session:
 
+            # Intersect the buffers with roads
             buff_table_intersection_sq = (
                 session.query(
                     cte_buffers.c.id,
@@ -264,6 +263,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 .subquery()
             )
 
+            # Join the scoot_road_map+data and aggregate over buffers
             res = (
                 session.query(
                     buff_table_intersection_sq.c.id,
@@ -303,6 +303,12 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 .join(
                     self.table_class,
                     buff_table_intersection_sq.c.toid == self.table_class.road_toid,
+                )
+                .filter(
+                    self.table_class.measurement_start_utc
+                    >= self.start_datetime.isoformat(),
+                    self.table_class.measurement_start_utc
+                    < self.end_datetime.isoformat(),
                 )
                 .group_by(
                     buff_table_intersection_sq.c.id,
@@ -520,10 +526,9 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                         feature_dict=self.features[feature_name]["feature_dict"],
                         agg_func=self.features[feature_name]["aggfunc"],
                         batch_size=self.batch_size,
-                        output_type="sql",
+                        output_type="query",
                     )
-                    print(q_select_and_insert)
-                    quit()
+
                 else:
                     # Create full select-and-insert query
                     q_select_and_insert = self.query_features(
@@ -543,6 +548,8 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                             on_conflict="ignore",
                             table=self.output_table,
                         )
+
+                    quit()
                 else:
                     break
 
