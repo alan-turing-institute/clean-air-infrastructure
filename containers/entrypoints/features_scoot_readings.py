@@ -56,7 +56,7 @@ def main():
 
         # Construct SCOOT features from readings around each interest point
         scoot_feature_extractor = ScootReadingFeatures(
-            batch_size=1000, ndays=args.ndays, end=args.end, secretfile=args.secretfile,
+            batch_size=100, ndays=args.ndays, end=args.end, secretfile=args.secretfile,
         )
         scoot_feature_extractor.update_remote_tables()
 

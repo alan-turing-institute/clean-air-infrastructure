@@ -175,7 +175,9 @@ class ScootRoadReading(Base):
     __table_args__ = {"schema": "processed_data"}
 
     road_toid = Column(String(), primary_key=True, nullable=False)
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
+    )
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)

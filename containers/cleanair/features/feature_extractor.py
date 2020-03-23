@@ -245,10 +245,6 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 session.query(
                     cte_buffers.c.id,
                     self.table.toid,
-                    cte_buffers.c.source,
-                    func.ST_Intersects(
-                        cte_buffers.c.buff_geom_1000, self.table.geom
-                    ).label("Intersects_1000"),
                     func.ST_Intersects(
                         cte_buffers.c.buff_geom_500, self.table.geom
                     ).label("Intersects_500"),
@@ -276,7 +272,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                     func.coalesce(
                         agg_func(
                             getattr(self.table_class, list(feature_dict.keys())[0])
-                        ).filter(buff_table_intersection_sq.c.Intersects_1000),
+                        ),
                         0.0,
                     ).label("value_1000"),
                     func.coalesce(
