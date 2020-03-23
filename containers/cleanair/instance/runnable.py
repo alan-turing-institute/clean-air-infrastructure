@@ -115,7 +115,6 @@ class RunnableInstance(Instance):
         # get data config dict
         if kwargs.get("data_id"):     # check if data id has been passed
             self.data_id = kwargs.get("data_id")
-            data_id = self.data_id
             self.data_config = self.load_data_config()
             self.data_id = RunnableInstance.__hash_dict(
                 ModelData.convert_dates_to_str(self.data_config)
@@ -256,7 +255,11 @@ class RunnableInstance(Instance):
         """Upload the data configuration to the DB."""
         logging.info("Inserting 1 row into data config table.")
         data_config = ModelData.convert_dates_to_str(self.data_config)
-        assert isinstance(data_config["pred_interest_points"], list)
+
+        try:
+            assert isinstance(data_config["pred_interest_points"], list)
+        except AssertionError:
+            logging.warning("pred_interest_points in data config of model data is not a list.")
         records = [dict(
             data_id=self.data_id,
             data_config=data_config,

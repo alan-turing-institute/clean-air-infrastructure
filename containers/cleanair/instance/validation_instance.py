@@ -23,6 +23,8 @@ class ValidationInstance(RunnableInstance):
         no_db_write=False,
         restore=False,
         save_model_state=False,
+        write_model_params=False,
+        read_model_params=False,
     )
 
     DEFAULT_MODEL_PARAMS = {
