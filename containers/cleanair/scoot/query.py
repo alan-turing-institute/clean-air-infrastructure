@@ -33,7 +33,7 @@ class ScootQuery(DBReader):
     def groupby_sensor_df(self):
         query = """
             select 
-                boundary.geom,
+                ST_AsText(boundary.geom),
                 boundary.name,
                 measurement_start_utc,
                 n_vehicles_in_interval,
