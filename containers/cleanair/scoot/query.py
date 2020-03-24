@@ -126,17 +126,9 @@ class ScootQuery(DBReader):
         """
         Return data for the road network.
         """
-        # query = "SELECT * FROM static_data.oshighway_roadlink "
-        # if only_major_roads:
-        #     query += "WHERE road_classification = 'A Road' OR road_classification = 'B Road'"
-        # query += ";"
 
         if only_central_boroughs:
             raise NotImplementedError("Coming soon: return roads only for central boroughs.")
-        # with self.dbcnxn.open_session() as session:
-        #     df = pd.read_sql(query, session.bind)
-        #     return df
-
 
         with self.dbcnxn.open_session() as session:
             query = session.query(OSHighway)
