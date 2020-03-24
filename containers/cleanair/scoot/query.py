@@ -1,12 +1,12 @@
 from ..databases import DBReader
-import pandas
+import pandas as pd
 
 class ScootQuery(DBReader):
     """
     Queries to run on the SCOOT DB.
     """
     
-    def groupby_datetime_df(self, start_datetime="2020-02-23 00:00:00", end_datetime="2020-02-23 12:00:00"):
+    def groupby_datetime_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """
         Group by hour and return the average or sum of the column for that hour.
         """
@@ -25,7 +25,6 @@ class ScootQuery(DBReader):
             group by measurement_start_utc, measurement_end_utc
             order by measurement_start_utc;
         """.format(start=start_datetime, end=end_datetime)
-        print(query)
     
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
@@ -54,7 +53,7 @@ class ScootQuery(DBReader):
         """
         pass
         
-    def get_all_readings(self, start_datetime="2020-02-23 00:00:00", end_datetime="2020-02-23 12:00:00"):
+    def get_all_readings(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """
         Get every reading for every SCOOT detector + the lat and lon of the sensor.
         """
@@ -73,3 +72,34 @@ class ScootQuery(DBReader):
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
+
+    def get_readings_for_hour(self, hour):
+        """
+        Get the data for every scoot sensor for the given hour.
+        """
+        query = """
+            SELECT detector_id, ST_X(interest_points.meta_point."location") as "lon",
+                ST_Y(interest_points.meta_point."location") as "lat",
+                measurement_start_utc, measurement_end_utc,
+                n_vehicles_in_interval, occupancy_percentage,
+                congestion_percentage, saturation_percentage as "saturation"
+            FROM dynamic_data.scoot_reading 
+            JOIN interest_points.scoot_detector on detector_id = interest_points.scoot_detector.detector_n 
+            JOIN interest_points.meta_point on id = interest_points.scoot_detector.point_id
+            WHERE measurement_start_utc = '{hour}';
+        """.format(hour=hour)
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
+
+    def get_random_detectors(self, n):
+        """
+        Get n random scoot detectors.
+        """
+        raise NotImplementedError()
+
+    def get_readings_for_subset(self, subset, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
+        """
+        Get all readings for the subset of scoot sensors between the two datetimes.
+        """
+        raise NotImplementedError()
