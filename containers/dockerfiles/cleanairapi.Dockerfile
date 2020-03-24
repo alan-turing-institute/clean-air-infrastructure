@@ -12,5 +12,4 @@ RUN pip install --trusted-host pypi.python.org -r var/www/html/my_app/api-requir
 
 WORKDIR /var/www/html/my_app
 
-### Run on Nginx
 ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/var/www/html/my_app/app_uwsgi.ini"]
