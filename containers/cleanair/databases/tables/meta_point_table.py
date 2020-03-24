@@ -24,12 +24,16 @@ class MetaPoint(Base):
     )  # pylint: disable=invalid-name
 
     def __repr__(self):
-        return "<MetaPoint(" + ", ".join(
-            [
-                "id='{}'".format(self.id),
-                "source='{}'".format(self.source),
-                "location='{}'".format(self.location),
-            ]
+        return (
+            "<MetaPoint("
+            + ", ".join(
+                [
+                    "id='{}'".format(self.id),
+                    "source='{}'".format(self.source),
+                    "location='{}'".format(self.location),
+                ]
+            )
+            + ")>"
         )
 
     @staticmethod

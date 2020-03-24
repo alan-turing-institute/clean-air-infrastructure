@@ -71,27 +71,27 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         return detectors
 
     @db_query
-    def get_existing_scoot_data(self, start_date=None, end_date=None):
+    def get_existing_scoot_data(self):
         """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
         with self.dbcnxn.open_session() as session:
-            n_readings_q = session.query(
-                func.date_trunc("hour", ScootReading.measurement_start_utc).label(
-                    "hour"
-                ),
-                ScootReading.detector_id,
-                func.count(ScootReading.measurement_start_utc).label("n_entries"),
-            ).group_by(
-                ScootReading.detector_id,
-                func.date_trunc("hour", ScootReading.measurement_start_utc),
-            )
-
-            if start_date and end_date:
-                n_readings_q = n_readings_q.filter(
-                    ScootReading.measurement_start_utc >= start_date,
-                    ScootReading.measurement_start_utc <= end_date,
+            q_scoot_readings = (
+                session.query(
+                    func.date_trunc("hour", ScootReading.measurement_start_utc).label(
+                        "hour"
+                    ),
+                    ScootReading.detector_id,
+                    func.count(ScootReading.measurement_start_utc).label("n_entries"),
                 )
-
-            return n_readings_q
+                .group_by(
+                    ScootReading.detector_id,
+                    func.date_trunc("hour", ScootReading.measurement_start_utc),
+                )
+                .filter(
+                    ScootReading.measurement_start_utc >= self.start_datetime,
+                    ScootReading.measurement_start_utc <= self.end_datetime,
+                )
+            )
+        return q_scoot_readings
 
     @staticmethod
     def get_remote_filenames(start_datetime, end_datetime):
@@ -293,9 +293,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         # Get a per-hour summary of records in this range that are already in the database
-        db_records = self.get_existing_scoot_data(
-            start_date=self.start_datetime, end_date=self.end_datetime, output_type="df"
-        )
+        db_records = self.get_existing_scoot_data(output_type="df")
 
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)

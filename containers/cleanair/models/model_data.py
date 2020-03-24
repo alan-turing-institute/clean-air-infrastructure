@@ -12,7 +12,7 @@ from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
     ModelResult,
-    SatelliteDiscreteSite,
+    SatelliteGrid,
 )
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
@@ -875,7 +875,7 @@ class ModelData(DBWriter, DBQueryMixin):
         satellite_readings = pd.concat([sat_train_df, sat_pred_df], axis=0)
 
         with self.dbcnxn.open_session() as session:
-            sat_site_map_q = session.query(SatelliteDiscreteSite)
+            sat_site_map_q = session.query(SatelliteGrid)
         sat_site_map_df = pd.read_sql(
             sat_site_map_q.statement, sat_site_map_q.session.bind
         )

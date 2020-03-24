@@ -11,9 +11,9 @@ from .model_results_table import ModelResult
 from .oshighway_table import OSHighway
 from .rectgrid_table import RectGrid, RectGrid100
 from .satellite_tables import (
-    SatelliteSite,
-    SatelliteDiscreteSite,
-    SatelliteForecastReading,
+    SatelliteBox,
+    SatelliteGrid,
+    SatelliteForecast,
 )
 from .scoot_tables import (
     ScootDetector,
@@ -40,9 +40,9 @@ __all__ = [
     "OSHighway",
     "RectGrid",
     "RectGrid100",
-    "SatelliteDiscreteSite",
-    "SatelliteForecastReading",
-    "SatelliteSite",
+    "SatelliteGrid",
+    "SatelliteForecast",
+    "SatelliteBox",
     "ScootDetector",
     "ScootForecast",
     "ScootReading",
