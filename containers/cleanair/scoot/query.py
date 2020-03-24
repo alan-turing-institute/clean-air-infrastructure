@@ -30,7 +30,7 @@ class ScootQuery(DBReader):
             df = pd.read_sql(query, session.bind)
             return df
       
-    def groupby_sensor_df(self):
+    def groupby_sensor_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         query = """
             select 
                 ST_AsText(boundary.geom),
@@ -51,7 +51,7 @@ class ScootQuery(DBReader):
                         FROM dynamic_data.scoot_reading 
                         join interest_points.scoot_detector on detector_id = interest_points.scoot_detector.detector_n 
                         join interest_points.meta_point on id = interest_points.scoot_detector.point_id
-                        where measurement_start_utc >= '2020-02-23' AND measurement_start_utc < '2020-02-25' and interest_points.meta_point."source" = 'scoot'
+                        where measurement_start_utc >= '{start}' AND measurement_start_utc < '{end}' and interest_points.meta_point."source" = 'scoot'
                     )
                     select name, measurement_start_utc, avg(n_vehicles_in_interval) as n_vehicles_in_interval,
                         avg(occupancy_percentage) as avg_occupancy_percentage,
@@ -65,7 +65,7 @@ class ScootQuery(DBReader):
             where
                 boundary.name=scoot.name;
 
-        """
+        """.format(start=start_datetime, end=end_datetime)
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
@@ -119,4 +119,7 @@ class ScootQuery(DBReader):
         """
         Get all readings for the subset of scoot sensors between the two datetimes.
         """
+        raise NotImplementedError()
+
+    def get_road_network(self, only_central_boroughs=True, only_major_roads=True):
         raise NotImplementedError()
