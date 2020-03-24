@@ -103,3 +103,6 @@ class ScootQuery(DBReader):
         Get all readings for the subset of scoot sensors between the two datetimes.
         """
         raise NotImplementedError()
+
+    def get_road_network(self, only_central_boroughs=True, only_major_roads=True):
+        raise NotImplementedError()
