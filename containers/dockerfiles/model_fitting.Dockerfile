@@ -8,7 +8,7 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[dashboard]'
+RUN pip install '/app/cleanair[models]'
 
 # Copy the run script into the container
 COPY entrypoints/model_fitting.py /app

@@ -7,17 +7,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
-from .queries import get_point_forecast, get_all_forecasts
+from .queries import get_point_forecast, get_all_forecasts, get_scoot_with_location
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
-
+import csv
 
 # Initialise application
 app = Flask(__name__)
 ma = Marshmallow(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -58,6 +60,25 @@ class Results(ma.Schema):
 
 
 results = Results(many=True)
+
+
+class ScootResults(ma.Schema):
+    """Mapping for API query results"""
+
+    class Meta:
+        fields = [
+            "detector_id",
+            "lon",
+            "lat",
+            "measurement_start_utc",
+            "measurement_end_utc",
+            "n_vehicles_in_interval" "occupancy_percentage",
+            "congestion_percentage",
+            "saturation",
+        ]
+
+
+scoot_results = ScootResults(many=True)
 
 
 @app.route("/", methods=["GET"])
@@ -133,6 +154,43 @@ def box(args):
     )
 
     return jsonify(results.dump(all_points))
+
+
+@app.route("/api/v1/scoot", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(required=True),
+        "endtime": fields.String(required=False),
+    },
+    location="query",
+)
+def scoot(args):
+    """Get scoot data with lat and lon between start_time and end_time
+    
+    Example:
+    To request forecast at all points within a bounding box over city hall
+    pip install httpie
+    http  GET :5000/api/v1/scoot starttime='2020-03-01' endtime='2020-03-02'
+    """
+
+    session = db_session()
+
+    starttime = args["starttime"]
+    if "endtime" in args:
+        endtime = args["endtime"]
+    else:
+        endtime = None
+
+    scoot_data = get_scoot_with_location(
+        session, args["starttime"], end_time=endtime, output_type="query"
+    )
+
+    outfile = open("scoot_data.csv", "wb")
+    csv_out = csv.writer(fh)
+    outcsv.writerow(scoot_data.keys())
+    outcsv.writerows(scoot_data.all())
+
+    return jsonify(scoot_results.dump(scoot_data))
 
 
 if __name__ == "__main__":
