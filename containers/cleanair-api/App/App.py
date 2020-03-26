@@ -11,6 +11,7 @@ from .queries import get_point_forecast, get_all_forecasts, get_scoot_with_locat
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
 import io, csv
+import datetime
 
 # Initialise application
 app = Flask(__name__)
@@ -165,12 +166,16 @@ def box(args):
     location="query",
 )
 def scoot(args):
-    """Get scoot data with lat and lon between start_time and end_time
+    """Get scoot data with lat and lon between start_time and end_time.
+
+    Streams the results from the database and uses yeild_per to avoid loading all data into memory
     
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http  GET :5000/api/v1/scoot starttime='2020-03-01' endtime='2020-03-02'
+    http --download GET :5000/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
+    
+    wget -O scoot.csv '0.0.0.0:5000/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
     """
 
     session = db_session()
@@ -185,47 +190,55 @@ def scoot(args):
         session, args["starttime"], end_time=endtime, output_type="query"
     )
 
-    headers = [
-        "detector_id",
-        "lon",
-        "lat",
-        "measurement_start_utc",
-        "measurement_end_utc",
-        "n_vehicles_in_interval",
-        "occupancy_percentage",
-        "congestion_percentage",
-        "saturation",
-    ]
-
-    rows = []
-    for scoot_entry in scoot_data.all():
-        rows.append(
-            {
-                "detector_id": scoot_entry.detector_id,
-                "lon": scoot_entry.lon,
-                "lat": scoot_entry.lat,
-                "measurement_start_utc": scoot_entry.measurement_start_utc.isoformat(),
-                "measurement_end_utc": scoot_entry.measurement_end_utc.isoformat(),
-                "n_vehicles_in_interval": scoot_entry.n_vehicles_in_interval,
-                "occupancy_percentage": scoot_entry.occupancy_percentage,
-                "congestion_percentage": scoot_entry.congestion_percentage,
-                "saturation": scoot_entry.saturation,
-            }
+    def generate():
+        count = 0
+        headers = (
+            ",".join(
+                [
+                    "detector_id",
+                    "lon",
+                    "lat",
+                    "measurement_start_utc",
+                    "measurement_end_utc",
+                    "n_vehicles_in_interval",
+                    "occupancy_percentage",
+                    "congestion_percentage",
+                    "saturation",
+                ]
+            )
+            + "\n"
         )
 
-    proxy = io.StringIO()
-    writer = csv.DictWriter(proxy, headers, dialect="excel")
-    writer.writeheader()
-    for row in rows:
+        for i, row in enumerate(scoot_data.yield_per(1000).enable_eagerloads(False)):
+            if i == 0:
+                yield headers.encode("utf-8")
 
-        writer.writerow(row)
+            str_row = []
+            for r in row:
+                if isinstance(r, str):
+                    str_row.append(r)
+                elif isinstance(r, datetime.datetime):
+                    str_row.append(r.isoformat())
+                else:
+                    str_row.append(str(r))
 
-    mem = io.BytesIO()
-    mem.write(proxy.getvalue().encode("utf-8"))
-    mem.seek(0)
-    proxy.close()
+            csv = ",".join(str_row) + "\n"
+            yield csv.encode("utf-8")
 
-    return send_file(mem, attachment_filename="scoot_data.csv", as_attachment=True,)
+    response = Response(generate(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+
+    return response
+
+
+@app.route("/stream")
+def streamed_response():
+    def generate():
+        yield "Hello "
+        yield request.args["name"]
+        yield "!"
+
+    return Response(stream_with_context(generate()))
 
 
 if __name__ == "__main__":
