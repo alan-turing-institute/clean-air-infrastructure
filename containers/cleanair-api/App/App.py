@@ -10,7 +10,6 @@ from cleanair.databases.base import Base
 from .queries import get_point_forecast, get_all_forecasts, get_scoot_with_location
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
-import io, csv
 import datetime
 
 # Initialise application
