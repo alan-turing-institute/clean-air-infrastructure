@@ -24,3 +24,10 @@ python-virtual-environments/
 
 # Misc
 images/
+*.csv
+*.png
+*.pickle
+*-checkpoint.ipynb
+val/
+*.mp4
+*.cfg

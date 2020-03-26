@@ -37,7 +37,8 @@ class ScootQuery(DBReader):
                 ST_AsText(boundary.geom),
                 boundary.name,
                 measurement_start_utc,
-                n_vehicles_in_interval,
+                avg_n_vehicles_in_interval,
+                total_n_vehicles_in_interval,
                 avg_occupancy_percentage,
                 avg_congestion_percentage,
                 avg_saturation
@@ -54,7 +55,9 @@ class ScootQuery(DBReader):
                         join interest_points.meta_point on id = interest_points.scoot_detector.point_id
                         where measurement_start_utc >= '{start}' AND measurement_start_utc < '{end}' and interest_points.meta_point."source" = 'scoot'
                     )
-                    select name, measurement_start_utc, avg(n_vehicles_in_interval) as n_vehicles_in_interval,
+                    select name, measurement_start_utc,
+                        sum(n_vehicles_in_interval) as total_n_vehicles_in_interval,
+                        avg(n_vehicles_in_interval) as avg_n_vehicles_in_interval,
                         avg(occupancy_percentage) as avg_occupancy_percentage,
                         avg(congestion_percentage) as avg_congestion_percentage,
                         avg(saturation) as avg_saturation
@@ -67,6 +70,67 @@ class ScootQuery(DBReader):
                 boundary.name=scoot.name;
 
         """.format(start=start_datetime, end=end_datetime)
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
+
+    def detector_borough_join_query(self):
+        return  """
+            SELECT 
+                scoot.detector_n as detector_id,
+                static_data.london_boundary.name,
+                ST_X(interest_points.meta_point."location") as "lon",
+                ST_Y(interest_points.meta_point."location") as "lat",
+                interest_points.meta_point.location as location,
+                ST_ASTEXT(static_data.london_boundary.geom) AS geom
+            from
+                static_data.london_boundary,
+                interest_points.scoot_detector as scoot
+            JOIN
+                interest_points.meta_point ON interest_points.meta_point.id = scoot.point_id
+            where
+                ST_Intersects(static_data.london_boundary.geom, interest_points.meta_point.location)
+            """
+
+    def detector_borough_join_df(self):
+        """
+        Get a dataframe of detector ids and the borough they lie in.
+        """
+        query = self.detector_borough_join_query()
+        query += ";"
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
+
+    def agg_borough_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00", return_sql=False):
+        inner_query = self.detector_borough_join_query()
+        query = """
+            SELECT
+                measurement_start_utc,
+                measurement_end_utc,
+                name,
+                SUM(n_vehicles_in_interval) AS sum_n_vehicles_in_interval,
+                AVG(n_vehicles_in_interval) AS avg_n_vehicles_in_interval,
+                AVG(occupancy_percentage) as avg_occupancy_percentage,
+                AVG(congestion_percentage) as avg_congestion_percentage,
+                AVG(saturation_percentage) as avg_saturation_percentage,
+                SUM(flow_raw_count) as sum_flow_raw_count,
+                SUM(occupancy_raw_count) as sum_occupancy_raw_count,
+                SUM(congestion_raw_count) as sum_congestion_raw_count,
+                SUM(saturation_raw_count) as sum_saturation_raw_count,
+                geom
+            FROM dynamic_data.scoot_reading AS reading
+            JOIN ({inner_query}) AS borough_detector ON borough_detector.detector_id = reading.detector_id
+            WHERE measurement_start_utc >= '{start}' AND measurement_start_utc < '{end}'
+            GROUP BY borough_detector.name, measurement_start_utc, measurement_end_utc, geom
+        """.format(
+            inner_query=inner_query,
+            start=start_datetime,
+            end=end_datetime
+        )
+        if return_sql:
+            return query
+        query += ";"
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
