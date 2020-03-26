@@ -1,6 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask, Response, jsonify, send_file
+from flask import Flask, Response, jsonify
 from flask_marshmallow import Marshmallow
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
