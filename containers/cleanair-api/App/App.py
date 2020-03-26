@@ -1,6 +1,6 @@
 """CleanAir API Application"""
 # pylint: skip-file
-from flask import Flask, Response, jsonify
+from flask import Flask, Response, jsonify, send_file
 from flask_marshmallow import Marshmallow
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
@@ -10,7 +10,7 @@ from cleanair.databases.base import Base
 from .queries import get_point_forecast, get_all_forecasts, get_scoot_with_location
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
-import csv
+import io, csv
 
 # Initialise application
 app = Flask(__name__)
@@ -185,12 +185,47 @@ def scoot(args):
         session, args["starttime"], end_time=endtime, output_type="query"
     )
 
-    outfile = open("scoot_data.csv", "wb")
-    csv_out = csv.writer(fh)
-    outcsv.writerow(scoot_data.keys())
-    outcsv.writerows(scoot_data.all())
+    headers = [
+        "detector_id",
+        "lon",
+        "lat",
+        "measurement_start_utc",
+        "measurement_end_utc",
+        "n_vehicles_in_interval",
+        "occupancy_percentage",
+        "congestion_percentage",
+        "saturation",
+    ]
 
-    return jsonify(scoot_results.dump(scoot_data))
+    rows = []
+    for scoot_entry in scoot_data.all():
+        rows.append(
+            {
+                "detector_id": scoot_entry.detector_id,
+                "lon": scoot_entry.lon,
+                "lat": scoot_entry.lat,
+                "measurement_start_utc": scoot_entry.measurement_start_utc.isoformat(),
+                "measurement_end_utc": scoot_entry.measurement_end_utc.isoformat(),
+                "n_vehicles_in_interval": scoot_entry.n_vehicles_in_interval,
+                "occupancy_percentage": scoot_entry.occupancy_percentage,
+                "congestion_percentage": scoot_entry.congestion_percentage,
+                "saturation": scoot_entry.saturation,
+            }
+        )
+
+    proxy = io.StringIO()
+    writer = csv.DictWriter(proxy, headers, dialect="excel")
+    writer.writeheader()
+    for row in rows:
+
+        writer.writerow(row)
+
+    mem = io.BytesIO()
+    mem.write(proxy.getvalue().encode("utf-8"))
+    mem.seek(0)
+    proxy.close()
+
+    return send_file(mem, attachment_filename="scoot_data.csv", as_attachment=True,)
 
 
 if __name__ == "__main__":
