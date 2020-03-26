@@ -17,7 +17,9 @@ app = Flask(__name__)
 ma = Marshmallow(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -152,8 +154,7 @@ def scoot(args):
     To request forecast at all points within a bounding box over city hall
     pip install httpie
     http --download GET :5000/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
-    
-    wget -O scoot.csv '0.0.0.0:5000/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
+    curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
     """
 
     session = db_session()
@@ -204,7 +205,7 @@ def scoot(args):
             yield csv.encode("utf-8")
 
     response = Response(generate(), mimetype="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+    # response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
 
     return response
 
