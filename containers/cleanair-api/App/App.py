@@ -7,7 +7,12 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
-from .queries import get_point_forecast, get_all_forecasts, get_scoot_with_location
+from .queries import (
+    get_point_forecast,
+    get_all_forecasts,
+    get_scoot_with_location,
+    get_scoot_daily_with_location,
+)
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
 import datetime
@@ -17,7 +22,9 @@ app = Flask(__name__)
 ma = Marshmallow(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -120,7 +127,7 @@ def box(args):
     pip install httpie
     http  --download GET :5000/api/v1/box lonmin==-0.10653288909912088 latmin==51.49361775468337 lonmax==-0.050657110900877635 latmax==51.515949509214245
     or with curl:
-    curl 'localhost:5000/api/v1/box?lonmin=-0.10653288909912088&latmin=51.49361775468337&lonmax=-0.050657110900877635&ylatmax=51.515949509214245'
+    curl 'localhost:5000/api/v1/box?lonmin=-0.10653288909912088&latmin=51.49361775468337&lonmax=-0.050657110900877635&latmax=51.515949509214245'
     """
     session = db_session()
     all_points = get_all_forecasts(
@@ -151,7 +158,7 @@ def scoot(args):
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http --download GET :5000/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
+    http --download GET urbanair.turing.ac.uk/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
     curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
     """
 
@@ -204,6 +211,76 @@ def scoot(args):
 
     response = Response(generate(), mimetype="text/csv")
     # response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+
+    return response
+
+
+@app.route("/api/v1/scootdaily", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(required=True),
+        "endtime": fields.String(required=False),
+    },
+    location="query",
+)
+def scoot_daily(args):
+    """Get scoot data with lat and lon between start_time and end_time.
+
+    Streams the results from the database and uses yeild_per to avoid loading all data into memory
+    
+    Example:
+    To request forecast at all points within a bounding box over city hall
+    pip install httpie
+    http --download GET urbanair.turing.ac.uk/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
+    curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
+    """
+
+    session = db_session()
+
+    starttime = args["starttime"]
+    if "endtime" in args:
+        endtime = args["endtime"]
+    else:
+        endtime = None
+
+    scoot_data = get_scoot_daily_with_location(
+        session, args["starttime"], end_time=endtime, output_type="query"
+    )
+
+    def generate():
+        count = 0
+        headers = (
+            ",".join(
+                [
+                    "detector_id",
+                    "lon",
+                    "lat",
+                    "day",
+                    "avg_n_vehicles_in_interval",
+                    "sum_n_vehicles_in_interval",
+                ]
+            )
+            + "\n"
+        )
+
+        for i, row in enumerate(scoot_data.all()):
+            if i == 0:
+                yield headers.encode("utf-8")
+
+            str_row = []
+            for r in row:
+                if isinstance(r, str):
+                    str_row.append(r)
+                elif isinstance(r, datetime.datetime):
+                    str_row.append(r.isoformat())
+                else:
+                    str_row.append(str(r))
+
+            csv = ",".join(str_row) + "\n"
+            yield csv.encode("utf-8")
+
+    response = Response(generate(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
 
     return response
 

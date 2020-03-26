@@ -118,9 +118,6 @@ def get_scoot_with_location(session, start_time, end_time=None):
             ScootReading.measurement_start_utc,
             ScootReading.measurement_end_utc,
             ScootReading.n_vehicles_in_interval,
-            ScootReading.occupancy_percentage,
-            ScootReading.congestion_percentage,
-            ScootReading.saturation_percentage.label("saturation"),
         )
         .join(ScootDetector, ScootReading.detector_id == ScootDetector.detector_n)
         .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
@@ -138,3 +135,51 @@ def get_scoot_with_location(session, start_time, end_time=None):
     )
 
     return scoot_readings
+
+
+@db_query
+def get_scoot_daily_with_location(session, start_time, end_time=None):
+
+    scoot_readings = (
+        session.query(
+            ScootReading.detector_id,
+            func.date_trunc("day", ScootReading.measurement_start_utc).label("day"),
+            func.avg(ScootReading.n_vehicles_in_interval).label(
+                "avg_n_vehicles_in_interval"
+            ),
+            func.sum(ScootReading.n_vehicles_in_interval).label(
+                "sum_n_vehicles_in_interval"
+            ),
+        )
+        .group_by(
+            ScootReading.detector_id,
+            func.date_trunc("day", ScootReading.measurement_start_utc),
+        )
+        .filter(ScootReading.measurement_start_utc >= start_time)
+    )
+
+    if end_time:
+
+        scoot_readings = scoot_readings.filter(
+            ScootReading.measurement_start_utc < end_time
+        )
+
+    scoot_reading_cte = scoot_readings.cte("readings")
+
+    summary_q = (
+        session.query(
+            scoot_reading_cte.c.detector_id,
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+            scoot_reading_cte.c.day,
+            scoot_reading_cte.c.avg_n_vehicles_in_interval,
+            scoot_reading_cte.c.sum_n_vehicles_in_interval,
+        )
+        .join(
+            ScootDetector, scoot_reading_cte.c.detector_id == ScootDetector.detector_n
+        )
+        .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+        .order_by(scoot_reading_cte.c.detector_id, scoot_reading_cte.c.day,)
+    )
+
+    return summary_q
