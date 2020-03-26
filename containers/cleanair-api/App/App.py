@@ -60,25 +60,6 @@ class Results(ma.Schema):
 results = Results(many=True)
 
 
-class ScootResults(ma.Schema):
-    """Mapping for API query results"""
-
-    class Meta:
-        fields = [
-            "detector_id",
-            "lon",
-            "lat",
-            "measurement_start_utc",
-            "measurement_end_utc",
-            "n_vehicles_in_interval" "occupancy_percentage",
-            "congestion_percentage",
-            "saturation",
-        ]
-
-
-scoot_results = ScootResults(many=True)
-
-
 @app.route("/", methods=["GET"])
 def index():
     resp = Response(
