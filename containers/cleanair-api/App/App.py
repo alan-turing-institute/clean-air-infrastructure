@@ -261,7 +261,7 @@ def scoot_daily(args):
             + "\n"
         )
 
-        for i, row in enumerate(scoot_data.all()):
+        for i, row in enumerate(scoot_data.yield_per(1000).enable_eagerloads(False)):
             if i == 0:
                 yield headers.encode("utf-8")
 
