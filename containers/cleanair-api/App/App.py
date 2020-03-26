@@ -208,7 +208,7 @@ def scoot(args):
             yield csv.encode("utf-8")
 
     response = Response(generate(), mimetype="text/csv")
-    # response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
 
     return response
 
