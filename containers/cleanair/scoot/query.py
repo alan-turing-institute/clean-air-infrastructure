@@ -176,7 +176,11 @@ class ScootQuery(DBReader):
 
     def get_random_detectors(self, n):
         """
-        Get n random scoot detectors.
+        Randomly get p% of the scoot detectors.
+        """
+        query = """
+            SELECT * FROM interest_points.scoot_detector
+            TABLESAMPLE SYSTEM ({p});
         """
         raise NotImplementedError()
 
