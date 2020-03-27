@@ -1,5 +1,5 @@
 from ..databases import DBReader
-from ..databases.tables import OSHighway
+from ..databases.tables import OSHighway, ScootReading, ScootDetector
 import pandas as pd
 
 class ScootQuery(DBReader):
@@ -174,21 +174,33 @@ class ScootQuery(DBReader):
             df = pd.read_sql(query, session.bind)
             return df
 
-    def get_random_detectors(self, n):
+    def get_random_detectors(self, p, return_sql=False):
         """
         Randomly get p% of the scoot detectors.
         """
         query = """
             SELECT * FROM interest_points.scoot_detector
-            TABLESAMPLE SYSTEM ({p});
-        """
-        raise NotImplementedError()
+            TABLESAMPLE SYSTEM ({p})
+        """.format(p=p)
+        if return_sql:
+            return query
+        query += ";"
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
 
     def get_readings_for_subset(self, subset, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """
         Get all readings for the subset of scoot sensors between the two datetimes.
         """
-        raise NotImplementedError()
+        with self.dbcnxn.open_session() as session:
+            query = session.query(ScootReading)
+            query = query.filter(ScootReading.measurement_start_utc >= start_datetime).filter(
+                ScootReading.measurement_start_utc < end_datetime
+            ).filter(
+                ScootReading.detector_id.in_(subset)
+            )
+            return pd.read_sql(query.statement, query.session.bind)
 
     def get_road_network(self, only_central_boroughs=False, only_major_roads=True):
         """
@@ -203,3 +215,9 @@ class ScootQuery(DBReader):
             if only_major_roads:
                 query = query.filter(OSHighway.road_classification.in_(["A Road", "B Road"]))
             return pd.read_sql(query.statement, query.session.bind)
+
+    def get_readings_for_detector(self, detector_id, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
+        """
+        Get all the readings for the given timerange for just one sensor.
+        """
+
