@@ -30,6 +30,30 @@ class ScootQuery(DBReader):
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
+
+    def detector_to_road_df(self, return_sql=True):
+        """
+        Get a mapping from each detector id to the id of the nearest road.
+        """
+        query = """
+            SELECT
+                detector_n AS detector_id,
+                toid AS road_id,
+                ST_X(interest_points.meta_point."location") as "lon",
+                ST_Y(interest_points.meta_point."location") as "lat",
+                interest_points.meta_point.location as location,
+                road_classification,
+                road_hierarchy,
+                form_of_way,
+                primary_route,
+                directionality,
+                length,
+                geom
+            FROM
+                interest_points.scoot_detector as scoot
+            JOIN
+                static_data.oshighway_roadlink AS road ON ST
+        """
       
     def groupby_sensor_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         query = """
@@ -220,4 +244,13 @@ class ScootQuery(DBReader):
         """
         Get all the readings for the given timerange for just one sensor.
         """
+        with self.dbcnxn.open_session() as session:
+            query = session.query(ScootReading)
+            query.filter(ScootReading.detector_id == detector_id).filter(
+                ScootReading.measurement_start_utc < end_datetime
+            ).filter(
+                ScootReading.measurement_start_utc >= start_datetime
+            )
+            return pd.read_sql(query.statement, query.session.bind)
+            
 

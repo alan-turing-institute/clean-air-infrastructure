@@ -32,6 +32,19 @@ class ScootView(ScootQuery):
                 )
             finally:
                 cnxn.close()
+
+    def create_detector_road_view(self, view_name="detector_road_view"):
+        """
+        Create a mapping from detectors to the closest road id.
+        """
+        command = """
+            CREATE MATERIALIZED VIEW {name}
+            AS {query}
+            WITH DATA;
+        """.format(
+            name=view_name,
+            query=self.detector_to_road_df(return_sql=True)
+        )
     
     def refresh_view(self, view_name):
         command = "REFRESH MATERIALIZED VIEW {name};".format(name=view_name)
