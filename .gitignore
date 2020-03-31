@@ -32,3 +32,4 @@ val/
 *.mp4
 *.cfg
 *-checkpoint.md
+*.orig
