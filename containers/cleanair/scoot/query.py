@@ -48,7 +48,7 @@ class ScootQuery(DBReader):
             SELECT
                 detector_id,
                 toid AS road_id,
-                borough_name,
+                name as borough_name,
                 ST_Distance(st_transform(scoot.location, 27700), st_transform(road.geom, 27700)) as distance_to_road,
                 lon,
                 lat,
@@ -63,11 +63,11 @@ class ScootQuery(DBReader):
                 length,
                 road.geom
             FROM
-                ({detector_borough}) as scoot,
+                ({detector_borough}) as scoot
             JOIN
                 static_data.oshighway_roadlink as road ON ST_Intersects(
                     st_transform(road.geom, 27700), ST_Expand(st_transform(scoot.location, 27700), {radius})
-                );
+                )
         """.format(
             detector_borough=self.detector_borough_join_query(),
             radius=radius

@@ -33,7 +33,7 @@ class ScootView(ScootQuery):
             finally:
                 cnxn.close()
 
-    def create_detector_road_view(self, view_name="detector_to_nearest_road"):
+    def create_detector_road_view(self, return_sql=False, view_name="detector_to_nearest_road"):
         """
         Create a mapping from detectors to the closest road id.
         """
@@ -41,13 +41,16 @@ class ScootView(ScootQuery):
             CREATE MATERIALIZED VIEW {name}
             AS
             SELECT DISTINCT ON (detector_id) *
-            FROM {query}
-            ORDER BY detector_id, distance_to_road;
-            WITH DATA;
+            FROM ({query}) as detector_to_roads
+            ORDER BY detector_id, distance_to_road
+            WITH DATA
         """.format(
             name=view_name,
             query=self.detector_to_road_df(return_sql=True)
         )
+        if return_sql:
+            return command
+        command += ";"
 
         with self.dbcnxn.engine.connect() as cnxn:
             try:
