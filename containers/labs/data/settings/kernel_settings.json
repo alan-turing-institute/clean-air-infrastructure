@@ -1,0 +1,11 @@
+{
+  "kernel_1": {"name":"periodic",
+              "hyperparameters": {
+                "period":0.1
+              }
+  },
+  "kernel_2": {"name":"rbf",
+            "hyperparameters":{
+            }
+  }
+}
