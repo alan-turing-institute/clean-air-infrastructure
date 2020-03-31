@@ -1,17 +1,21 @@
-import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 from .sampling import sample_intensity, sample_n
 
-## This functions plot the results together with the true counts
+
 def plotly_results(
-        scoot_id: int,
-        num_sigmas: int,
+        sensor_df: pd.DataFrame,
+        detector_id: str,
         model,
         test_inputs,
+        num_sigmas: int = 2,
         num_samples: int = 100
     ):
+    """
+    This functions plot the results together with the true counts
+    """
     
     # If test inputs is not a tensorflow object, convert it to one
     if isinstance(test_inputs, np.ndarray):
@@ -21,9 +25,6 @@ def plotly_results(
     count_mean_N, count_var_N = sample_n(model, test_inputs, num_samples)
     # Compute posterior mean and variance of intensity distribution
     intensity_mean_N,intensity_var_N = sample_intensity(model,test_inputs,num_samples)
-    
-    # Select sensor dataframe from scoot id
-    sensor_df = scoot_individual_df_arr[scoot_id]
     
     # Plot
     fig = go.Figure()
@@ -105,7 +106,7 @@ def plotly_results(
             actual]
     
     layout = go.Layout(
-                        title='Timeseries of sensor {scoot_id}'.format(scoot_id=scoot_ids[scoot_id]),
+                        title='Timeseries of sensor {id}'.format(id=detector_id),
                         xaxis_title="Datetime",
                         yaxis_title="# of vechicles per hour",
                         font=dict(size=16)
