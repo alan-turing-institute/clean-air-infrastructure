@@ -13,11 +13,11 @@ SCHEMA_NAMES = [
     "static_data",
     "static_features",
 ]
-EVENTS = [
-    event.listen(
-        Base.metadata,
-        "before_create",
-        DDL("CREATE SCHEMA IF NOT EXISTS {}".format(schema)),
-    )
-    for schema in SCHEMA_NAMES
-]
+# EVENTS = [
+#     event.listen(
+#         Base.metadata,
+#         "before_create",
+#         DDL("CREATE SCHEMA IF NOT EXISTS {}".format(schema)),
+#     )
+#     for schema in SCHEMA_NAMES
+# ]
