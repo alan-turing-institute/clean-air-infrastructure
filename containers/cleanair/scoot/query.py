@@ -1,5 +1,5 @@
 from ..databases import DBReader
-from ..databases.tables import OSHighway
+from ..databases.tables import OSHighway, ScootReading, ScootDetector
 import pandas as pd
 
 class ScootQuery(DBReader):
@@ -27,6 +27,54 @@ class ScootQuery(DBReader):
             order by measurement_start_utc;
         """.format(start=start_datetime, end=end_datetime)
     
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
+
+    def detector_to_road_df(self, return_sql=True, radius=50):
+        """
+        Get a mapping from each detector id to the id of the nearest road.
+
+        Parameters
+        ___
+
+        return_sql : bool, optional
+            If true, returns a string of sql instead of executing query.
+
+        radius : float, optional
+            Radius of intersection disk for detectors in meters.
+        """
+        query = """
+            SELECT
+                detector_id,
+                toid AS road_id,
+                name as borough_name,
+                ST_Distance(st_transform(scoot.location, 27700), st_transform(road.geom, 27700)) as distance_to_road,
+                lon,
+                lat,
+                scoot.location,
+                startnode,
+                endnode,
+                road_classification,
+                route_hierarchy,
+                form_of_way,
+                primary_route,
+                directionality,
+                length,
+                road.geom
+            FROM
+                ({detector_borough}) as scoot
+            JOIN
+                static_data.oshighway_roadlink as road ON ST_Intersects(
+                    st_transform(road.geom, 27700), ST_Expand(st_transform(scoot.location, 27700), {radius})
+                )
+        """.format(
+            detector_borough=self.detector_borough_join_query(),
+            radius=radius
+        )
+        if return_sql:
+            return query
+        query += ";"
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
@@ -174,17 +222,33 @@ class ScootQuery(DBReader):
             df = pd.read_sql(query, session.bind)
             return df
 
-    def get_random_detectors(self, n):
+    def get_random_detectors(self, p, return_sql=False):
         """
-        Get n random scoot detectors.
+        Randomly get p% of the scoot detectors.
         """
-        raise NotImplementedError()
+        query = """
+            SELECT * FROM interest_points.scoot_detector
+            TABLESAMPLE SYSTEM ({p})
+        """.format(p=p)
+        if return_sql:
+            return query
+        query += ";"
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
 
     def get_readings_for_subset(self, subset, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """
         Get all readings for the subset of scoot sensors between the two datetimes.
         """
-        raise NotImplementedError()
+        with self.dbcnxn.open_session() as session:
+            query = session.query(ScootReading)
+            query = query.filter(ScootReading.measurement_start_utc >= start_datetime).filter(
+                ScootReading.measurement_start_utc < end_datetime
+            ).filter(
+                ScootReading.detector_id.in_(subset)
+            )
+            return pd.read_sql(query.statement, query.session.bind)
 
     def get_road_network(self, only_central_boroughs=False, only_major_roads=True):
         """
@@ -199,3 +263,18 @@ class ScootQuery(DBReader):
             if only_major_roads:
                 query = query.filter(OSHighway.road_classification.in_(["A Road", "B Road"]))
             return pd.read_sql(query.statement, query.session.bind)
+
+    def get_readings_for_detector(self, detector_id, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
+        """
+        Get all the readings for the given timerange for just one sensor.
+        """
+        with self.dbcnxn.open_session() as session:
+            query = session.query(ScootReading)
+            query.filter(ScootReading.detector_id == detector_id).filter(
+                ScootReading.measurement_start_utc < end_datetime
+            ).filter(
+                ScootReading.measurement_start_utc >= start_datetime
+            )
+            return pd.read_sql(query.statement, query.session.bind)
+            
+
