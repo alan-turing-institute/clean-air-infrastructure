@@ -31,29 +31,53 @@ class ScootQuery(DBReader):
             df = pd.read_sql(query, session.bind)
             return df
 
-    def detector_to_road_df(self, return_sql=True):
+    def detector_to_road_df(self, return_sql=True, radius=50):
         """
         Get a mapping from each detector id to the id of the nearest road.
+
+        Parameters
+        ___
+
+        return_sql : bool, optional
+            If true, returns a string of sql instead of executing query.
+
+        radius : float, optional
+            Radius of intersection disk for detectors in meters.
         """
         query = """
             SELECT
-                detector_n AS detector_id,
+                detector_id,
                 toid AS road_id,
-                ST_X(interest_points.meta_point."location") as "lon",
-                ST_Y(interest_points.meta_point."location") as "lat",
-                interest_points.meta_point.location as location,
+                borough_name,
+                ST_Distance(st_transform(scoot.location, 27700), st_transform(road.geom, 27700)) as distance_to_road,
+                lon,
+                lat,
+                scoot.location,
+                startnode,
+                endnode,
                 road_classification,
-                road_hierarchy,
+                route_hierarchy,
                 form_of_way,
                 primary_route,
                 directionality,
                 length,
-                geom
+                road.geom
             FROM
-                interest_points.scoot_detector as scoot
+                ({detector_borough}) as scoot,
             JOIN
-                static_data.oshighway_roadlink AS road ON ST
-        """
+                static_data.oshighway_roadlink as road ON ST_Intersects(
+                    st_transform(road.geom, 27700), ST_Expand(st_transform(scoot.location, 27700), {radius})
+                );
+        """.format(
+            detector_borough=self.detector_borough_join_query(),
+            radius=radius
+        )
+        if return_sql:
+            return query
+        query += ";"
+        with self.dbcnxn.open_session() as session:
+            df = pd.read_sql(query, session.bind)
+            return df
       
     def groupby_sensor_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         query = """
