@@ -1,4 +1,4 @@
-from .kernel import choose_kernel
+from .kernel import parse_kernel
 from .plot import plotly_results
 from .query import ScootQuery
 from .sampling import sample_intensity
