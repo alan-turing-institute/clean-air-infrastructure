@@ -22,14 +22,20 @@ python-virtual-environments/
 # Python package
 *.egg-info
 
+# scoot data directories
+containers/labs/experiments/data
+containers/labs/experiments/models
+containers/labs/experiments/results
+containers/labs/experiments/figures
+
 # Misc
 images/
 *.csv
 *.png
+*.npy
 *.pickle
 *-checkpoint.ipynb
 val/
-*.mp4
 *.cfg
 *-checkpoint.md
 *.orig

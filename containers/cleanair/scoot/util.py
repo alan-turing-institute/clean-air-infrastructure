@@ -6,11 +6,18 @@ import json
 import numpy as np
 
 ## Save model and X,Y arrays to file
-def save_model_and_metadata(scoot_id:str,model,X_array,Y_array,start_date:str,end_date:str,kernelsettings:dict,scootsettings:dict):
-    
-    # Specify path to folder and file
-    path_to_folder = '../data/models'
-    
+def save_model_and_metadata(
+        scoot_id: str,
+        model,
+        X_array,
+        Y_array,
+        start_date: str,
+        end_date: str,
+        kernelsettings: dict,
+        scootsettings: dict,
+        dir_path = 'data/models'
+    ):
+
     # Replace / with _
     scoot_id = scoot_id.replace('/','_')
     
@@ -21,7 +28,7 @@ def save_model_and_metadata(scoot_id:str,model,X_array,Y_array,start_date:str,en
     # Get date range from start and end dates
     date_range = str(start_date.day) + start_date.strftime("%b") + '_' + str(end_date.day) + end_date.strftime("%b")
     
-    path_to_file = os.path.join(path_to_folder,scoot_id,date_range)
+    path_to_file = os.path.join(dir_path,scoot_id,date_range)
     print('Saving data to', path_to_file)
 
     # Create directory if necessary
@@ -54,28 +61,32 @@ def save_model_and_metadata(scoot_id:str,model,X_array,Y_array,start_date:str,en
     with open(os.path.join(path_to_file,('metadata.json')), 'w') as json_file:
         json.dump(metadata, json_file)
 
-    
+
 ## Load model and X,Y arrays from file
-def load_model_and_metadata(scoot_id:str, date_range:str = '10feb_16feb'):
+def load_model_and_metadata(
+        scoot_id: str,
+        date_range: str = '10feb_16feb',
+        dir_path="data/models"
+    ):
     
     # Specify path to folder and file
-    path_to_folder = '../data/models'
+    dir_path = '/data/models'
     
     # Replace / with _
     scoot_id = scoot_id.replace('/','_')
     
     # Specify path to folder
-    path_to_folder = os.path.join(path_to_folder,scoot_id,date_range)
+    dir_path = os.path.join(dir_path,scoot_id ,date_range)
 
     # Load model
-    model = pickle.load(open(os.path.join(path_to_folder,'model.h5'), "rb" ))
+    model = pickle.load(open(os.path.join(dir_path,'model.h5'), "rb" ))
                        
     # Load X and Y arrays to file
-    X_array = np.load(os.path.join(path_to_folder,'X.npy'))
-    Y_array = np.load(os.path.join(path_to_folder,'Y.npy'))
+    X_array = np.load(os.path.join(dir_path,'X.npy'))
+    Y_array = np.load(os.path.join(dir_path,'Y.npy'))
     
     # Load metadata
-    with open(os.path.join(path_to_folder,'metadata.json')) as json_file:
+    with open(os.path.join(dir_path,'metadata.json')) as json_file:
         metadata = json.load(json_file)
     
     return model,X_array,Y_array,metadata
