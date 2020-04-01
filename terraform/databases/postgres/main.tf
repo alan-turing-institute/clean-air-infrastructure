@@ -122,10 +122,29 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
   end_ip_address      = "193.60.220.253"
 }
 
-resource "azurerm_postgresql_firewall_rule" "gla_ips_wifi" {
-  name                = "allow-gla-wifi-ips"
-  resource_group_name = "${var.resource_group}"
-  server_name         = "${azurerm_postgresql_server.this.name}"
-  start_ip_address    = "195.99.240.222"
-  end_ip_address      = "195.99.240.222"
+# resource "azurerm_postgresql_firewall_rule" "gla_ips_wifi" {
+#   name                = "allow-gla-wifi-ips"
+#   resource_group_name = "${var.resource_group}"
+#   server_name         = "${azurerm_postgresql_server.this.name}"
+#   start_ip_address    = "195.99.240.222"
+#   end_ip_address      = "195.99.240.222"
+# }
+
+# Add a provider so we can assign database roles
+provider "postgresql" {
+  host            = "${azurerm_postgresql_server.this.name}.postgres.database.azure.com"
+  database        = "${azurerm_key_vault_secret.db_name.value}"
+  username        = "${azurerm_key_vault_secret.db_admin_username.value}@${azurerm_postgresql_server.this.name}"
+  password        = "${azurerm_key_vault_secret.db_admin_password.value}"
+  sslmode         = "require"
+  connect_timeout = 15
+}
+
+# Add extentions
+resource "postgresql_extension" "ext_postgis" {
+  name = "postgis"
+}
+
+resource "postgresql_extension" "ext_uuid" {
+  name = "uuid-ossp"
 }

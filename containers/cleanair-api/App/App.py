@@ -229,7 +229,7 @@ def scoot_daily(args):
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http --download GET urbanair.turing.ac.uk/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
+    http --download GET urbanair.turing.ac.uk/api/v1/scootdaily starttime=='2020-03-01' endtime=='2020-03-02'
     curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
     """
 

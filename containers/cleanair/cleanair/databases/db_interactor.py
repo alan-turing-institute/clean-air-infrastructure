@@ -22,6 +22,3 @@ class DBInteractor:
         # Ensure that tables are initialised
         if initialise_tables:
             self.dbcnxn.initialise_tables()
-
-        # Ensure that extensions have been enabled
-        self.dbcnxn.ensure_extensions()
