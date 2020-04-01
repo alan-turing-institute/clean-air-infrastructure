@@ -51,7 +51,7 @@ def download_blobs(blob_service, dataset, target_directory):
         "oshighway_roadlink": "oshighwayroadlink",
         "scoot_detector": "scootdetectors",
         "ukmap": "ukmap",
-        "urbanvillage": "urbanvillage",
+        "urban_village": "urbanvillage",
     }
     blob_container = dataset_to_blob_container[dataset]
     # Ensure that the target directory exists
@@ -184,6 +184,7 @@ def upload_static_data(
         "oshighway_roadlink": "RoadLink",
         "scoot_detector": "scoot_detectors",
         "ukmap": "UKMap.gdb",
+        "urban_village": "urban_villages",
     }
 
     # Construct Docker arguments
@@ -269,14 +270,14 @@ def main():
 
     # List of available datasets
     datasets = [
-        "hexgrid",
-        "london_boundary",
-        "oshighway_roadlink",
-        "rectgrid_100",
-        "scoot_detector",
-        "street_canyon",
-        "ukmap",
-        "urbanvillage",
+        # "hexgrid",
+        # "london_boundary",
+        # "oshighway_roadlink",
+        # "rectgrid_100",
+        # "scoot_detector",
+        # "street_canyon",
+        # "ukmap",
+        "urban_village",
     ]
 
     # Get a block blob service
