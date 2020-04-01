@@ -1,1 +1,0 @@
-{"kernel_settings": {"kernel_1": {"name": "periodic", "hyperparameters": {"period": 0.1}}, "kernel_2": {"name": "rbf", "hyperparameters": {}}}, "scoot_settings": {"scoot_ids": ["N00/002e1", "N00/002g1"]}, "start_date": "2020-02-10 00:00:00", "end_date": "2020-03-23 00:00:00", "scoot_id": "N00_002e1"}
