@@ -140,6 +140,10 @@ def get_scoot_with_location(session, start_time, end_time=None):
 @db_query
 def get_scoot_daily_with_location(session, start_time, end_time=None):
 
+    """
+    Get scoot data with lat and long positions aggregated by day
+    """
+
     scoot_readings = (
         session.query(
             ScootReading.detector_id,
