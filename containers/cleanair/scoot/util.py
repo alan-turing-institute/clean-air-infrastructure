@@ -18,10 +18,8 @@ def save_model_to_file(model, name, detector_id, xp_root="experiments", prefix="
     model_copy = gpflow.utilities.deepcopy_components(model)
     # Save model to file
     detector_id = detector_id.replace('/', '_')
-    filepath = os.path.join(xp_root, name, "models")
-    Path(filepath).mkdir(exist_ok=True)
-    filepath = generate_fp(name, xp_root, "models", prefix, detector_id, ".h5")
-    pickle.dump(model_copy, open(filepath), "wb")
+    filepath = generate_fp(name, xp_root, "models", prefix, detector_id, "h5")
+    pickle.dump(model_copy, open(filepath, "wb"))
 
 def save_results_to_file(y_pred, name, detector_id, xp_root="experiments", prefix="normal"):
     """
@@ -30,6 +28,7 @@ def save_results_to_file(y_pred, name, detector_id, xp_root="experiments", prefi
     filepath = generate_fp(
         name, xp_root, "results", prefix, detector_id.replace('/', '_'), "npy"
     )
+    Path(os.path.dirname(filepath)).mkdir(exist_ok=True)
     np.save(filepath, y_pred)
 
 def save_processed_data_to_file(
@@ -44,8 +43,9 @@ def save_processed_data_to_file(
     y_filepath = generate_fp(
         name, xp_root, "data", prefix, detector_id.replace("/", "_") + "_Y", "npy"
     )
-    np.save(X, x_filepath)
-    np.save(Y, y_filepath)
+    Path(os.path.dirname(x_filepath)).mkdir(exist_ok=True)
+    np.save(x_filepath, X)
+    np.save(y_filepath, Y)
 
 def load_model_from_file(name, detector_id, xp_root="experiments", prefix="normal"):
     """Load model from pickle."""
