@@ -2,7 +2,12 @@
 from sqlalchemy import func
 from cleanair.loggers import initialise_logging
 from cleanair.decorators import db_query
-from cleanair.databases.tables import ModelResult, MetaPoint
+from cleanair.databases.tables import (
+    ModelResult,
+    MetaPoint,
+    ScootReading,
+    ScootDetector,
+)
 
 initialise_logging(verbosity=0)
 
@@ -97,3 +102,88 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
         .filter(ModelResult.tag == "test_grid")
     )
     return results_q
+
+
+@db_query
+def get_scoot_with_location(session, start_time, end_time=None):
+    """
+    Get scoot data with lat and long positions
+    """
+
+    scoot_readings = (
+        session.query(
+            ScootReading.detector_id,
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+            ScootReading.measurement_start_utc,
+            ScootReading.measurement_end_utc,
+            ScootReading.n_vehicles_in_interval,
+        )
+        .join(ScootDetector, ScootReading.detector_id == ScootDetector.detector_n)
+        .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+        .filter(ScootReading.measurement_start_utc >= start_time)
+    )
+
+    if end_time:
+
+        scoot_readings = scoot_readings.filter(
+            ScootReading.measurement_start_utc < end_time
+        )
+
+    scoot_readings = scoot_readings.order_by(
+        ScootReading.detector_id, ScootReading.measurement_start_utc
+    )
+
+    return scoot_readings
+
+
+@db_query
+def get_scoot_daily_with_location(session, start_time, end_time=None):
+
+    """
+    Get scoot data with lat and long positions aggregated by day
+    """
+
+    scoot_readings = (
+        session.query(
+            ScootReading.detector_id,
+            func.date_trunc("day", ScootReading.measurement_start_utc).label("day"),
+            func.avg(ScootReading.n_vehicles_in_interval).label(
+                "avg_n_vehicles_in_interval"
+            ),
+            func.sum(ScootReading.n_vehicles_in_interval).label(
+                "sum_n_vehicles_in_interval"
+            ),
+        )
+        .group_by(
+            ScootReading.detector_id,
+            func.date_trunc("day", ScootReading.measurement_start_utc),
+        )
+        .filter(ScootReading.measurement_start_utc >= start_time)
+    )
+
+    if end_time:
+
+        scoot_readings = scoot_readings.filter(
+            ScootReading.measurement_start_utc < end_time
+        )
+
+    scoot_reading_cte = scoot_readings.cte("readings")
+
+    summary_q = (
+        session.query(
+            scoot_reading_cte.c.detector_id,
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+            scoot_reading_cte.c.day,
+            scoot_reading_cte.c.avg_n_vehicles_in_interval,
+            scoot_reading_cte.c.sum_n_vehicles_in_interval,
+        )
+        .join(
+            ScootDetector, scoot_reading_cte.c.detector_id == ScootDetector.detector_n
+        )
+        .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+        .order_by(scoot_reading_cte.c.detector_id, scoot_reading_cte.c.day,)
+    )
+
+    return summary_q
