@@ -14,15 +14,11 @@ RUN pip3 install --upgrade pip
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the requirements file into the container
-# -> this reduces rebuilding by separating code changes from dependency changes
-COPY requirements.txt /app/requirements.txt
-
-# Install any needed packages specified in requirements.txt
-RUN pip3 install --trusted-host pypi.python.org -r requirements.txt
-
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
+
+# Install any needed packages specified in requirements.txt
+RUN pip install /app/cleanair
 
 # Copy the run script into the container
 COPY entrypoints/process_static_dataset.py /app

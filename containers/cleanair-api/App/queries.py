@@ -52,13 +52,17 @@ def get_point_forecast(session, lon, lat, max_dist=0.001):
         session, lon, lat, max_dist=max_dist, output_type="subquery"
     )
 
-    return session.query(
-        closest_point_sq.c.lon,
-        closest_point_sq.c.lat,
-        ModelResult.measurement_start_utc,
-        ModelResult.predict_mean,
-        ModelResult.predict_var,
-    ).join(ModelResult)
+    return (
+        session.query(
+            closest_point_sq.c.lon,
+            closest_point_sq.c.lat,
+            ModelResult.measurement_start_utc,
+            ModelResult.predict_mean,
+            ModelResult.predict_var,
+        )
+        .join(ModelResult)
+        .filter(ModelResult.tag == "test_grid")
+    )
 
 
 @db_query
