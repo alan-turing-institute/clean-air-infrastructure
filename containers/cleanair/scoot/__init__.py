@@ -3,6 +3,7 @@ from .plot import plotly_results
 from .query import ScootQuery
 from .sampling import sample_intensity
 from .sampling import sample_n
+from .util import generate_fp
 from .util import save_model_to_file
 from .util import save_processed_data_to_file
 from .util import save_results_to_file

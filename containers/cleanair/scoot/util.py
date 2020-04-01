@@ -47,7 +47,7 @@ def save_processed_data_to_file(
 
 def load_model_from_file(name, detector_id, xp_root="experiments", prefix="normal"):
     """Load model from pickle."""
-    filepath = generate_fp(name, xp_root, "models", prefix, detector_id, ".h5")
+    filepath = generate_fp(name, xp_root, "models", prefix, detector_id.replace("/", "_"), "h5")
     return pickle.load(open(filepath, "rb"))
 
 def load_results_from_file(name, detector_id, xp_root="experiments", prefix="normal"):
