@@ -1,8 +1,23 @@
-# DATABASE USERS (Other users should be created manually.)
+# # DATABASE USERS (Other users should be created manually.)
 
 
-# A user for the cluster
-resource "random_string" "db_cluster_password" {
+# TO ADD READ_WRITE USERS ADD A USERNAME TO THE LIST BELOW
+variable "read_write_users" {
+  description = "users"
+  type = list(string)
+  default = [
+    "ogiles",
+    "jrobinson",
+    "pohara",
+    "ohamelijnck",
+    "jwalsh",
+    "cluster",
+  ]
+}
+
+# Initial_password
+resource "random_string" "read_write_passwords" {
+  count = "${length(var.read_write_users)}"
   keepers = {
     resource_group = "${var.resource_group}"
   }
@@ -10,10 +25,11 @@ resource "random_string" "db_cluster_password" {
   special = true
 }
 
-# :: store the cluster username/password in the keyvault
-resource "azurerm_key_vault_secret" "db_cluster_username" {
-  name         = "${var.db_name}-db-custer-username"
-  value        = "cleanaircluster"
+# :: store the initial passwords in the keyvault
+resource "azurerm_key_vault_secret" "db_read_write_usernames" {
+  count        = "${length(var.read_write_users)}"
+  name         = "${var.db_name}-db-${element(var.read_write_users, count.index)}-username"
+  value        = "${element(var.read_write_users, count.index)}"
   key_vault_id = "${var.key_vault_id}"
   tags = {
     environment = "Terraform Clean Air"
@@ -21,9 +37,10 @@ resource "azurerm_key_vault_secret" "db_cluster_username" {
   }
 }
 
-resource "azurerm_key_vault_secret" "db_cluster_password" {
-  name         = "${var.db_name}-db-cluster-password"
-  value        = "${random_string.db_cluster_password.result}"
+resource "azurerm_key_vault_secret" "db_read_write_passwords" {
+  count        = "${length(var.read_write_users)}"
+  name         = "${var.db_name}-db-${element(var.read_write_users, count.index)}-password"
+  value        = "${random_string.read_write_passwords[count.index].result}"
   key_vault_id = "${var.key_vault_id}"
   tags = {
     environment = "Terraform Clean Air"
@@ -31,48 +48,12 @@ resource "azurerm_key_vault_secret" "db_cluster_password" {
   }
 }
 
-resource "postgresql_role" "cluster_user" {
-  name     = "cluster_user"
+# Create the roles in postgres
+resource "postgresql_role" "postgres_read_write_users" {
+  count    = "${length(var.read_write_users)}"
+  name     = "${element(var.read_write_users, count.index)}"
   login    = true
-  password = "${random_string.db_cluster_password.result}"
-  roles = ["${postgresql_role.read_write.name}"]
-
-}
-
-# A user for the api
-resource "random_string" "db_api_password" {
-  keepers = {
-    resource_group = "${var.resource_group}"
-  }
-  length  = 20
-  special = true
-}
-
-# :: store the cluster username/password in the keyvault
-resource "azurerm_key_vault_secret" "db_api_username" {
-  name         = "${var.db_name}-db-api-username"
-  value        = "cleanairapi"
-  key_vault_id = "${var.key_vault_id}"
-  tags = {
-    environment = "Terraform Clean Air"
-    segment     = "Databases / Postgres"
-  }
-}
-
-resource "azurerm_key_vault_secret" "db_api_password" {
-  name         = "${var.db_name}-db-api-password"
-  value        = "${random_string.db_api_password.result}"
-  key_vault_id = "${var.key_vault_id}"
-  tags = {
-    environment = "Terraform Clean Air"
-    segment     = "Databases / Postgres"
-  }
-}
-
-resource "postgresql_role" "api_user" {
-  name     = "api_user"
-  login    = true
-  password = "${random_string.db_api_password.result}"
-  roles = ["${postgresql_role.read_write_api.name}"]
+  password = "${random_string.read_write_passwords[count.index].result}"
+  roles    = ["${postgresql_role.read_write.name}"]
 
 }
