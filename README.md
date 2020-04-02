@@ -203,7 +203,7 @@ These are run automatically through Kubernetes and the Azure pipeline above is u
 
 ## Database user management
 
-Database users are configured via terraform. To add a trusted user who has "All" privileges on all schemas  add a user name for them to [the terraform user file](terraform/databases/postgres/db_users.tf) by adding their username to the first list. This will create a user on the database and upload their initial login details to the key-vault.
+Database users are configured via terraform. To add a trusted user who has "All" privileges on all schemas add a user name for them to [the terraform user file](terraform/databases/postgres/db_users.tf) by adding their username to the first list. This will create a user on the database and upload their initial login details to the key-vault.
 
 The user should change their password, which can be done using psql:
 
