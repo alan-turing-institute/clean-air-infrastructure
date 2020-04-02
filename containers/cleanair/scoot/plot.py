@@ -111,7 +111,9 @@ def plotly_results(
                         yaxis_title="# of vechicles per hour",
                         font=dict(size=16)
             )
+
+    return data
     
-    fig = go.Figure(data=data, layout=layout)
+    # fig = go.Figure(data=data, layout=layout)
     
-    fig.show()
+    # fig.show()
