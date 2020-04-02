@@ -31,7 +31,6 @@ resource "azurerm_key_vault_secret" "db_cluster_password" {
   }
 }
 
-
 resource "postgresql_role" "cluster_user" {
   name     = "cluster_user"
   login    = true
@@ -40,10 +39,7 @@ resource "postgresql_role" "cluster_user" {
 
 }
 
-
 # A user for the api
-
-
 resource "random_string" "db_api_password" {
   keepers = {
     resource_group = "${var.resource_group}"
@@ -73,9 +69,8 @@ resource "azurerm_key_vault_secret" "db_api_password" {
   }
 }
 
-
-resource "postgresql_role" "cluster_user" {
-  name     = "cluster_user"
+resource "postgresql_role" "api_user" {
+  name     = "api_user"
   login    = true
   password = "${random_string.db_api_password.result}"
   roles = ["${postgresql_role.read_write_api.name}"]

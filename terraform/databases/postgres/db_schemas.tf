@@ -10,7 +10,7 @@ resource postgresql_grant "read_only_dynamic_data" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_dynamic_data.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_dynamic_data" {
@@ -26,7 +26,7 @@ resource postgresql_grant "read_write_api_dynamic_data" {
   role        = "${postgresql_role.read_write_api.name}"
   schema      = "${postgresql_schema.schema_dynamic_data.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 # Interest points
@@ -38,7 +38,7 @@ resource postgresql_grant "read_only_interest_points" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_interest_points.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_interest_points" {
@@ -54,7 +54,7 @@ resource postgresql_grant "read_write_api_interest_points" {
   role        = "${postgresql_role.read_write_api.name}"
   schema      = "${postgresql_schema.schema_interest_points.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 # Model features
@@ -67,7 +67,7 @@ resource postgresql_grant "read_only_model_features" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_model_features.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_model_features" {
@@ -88,7 +88,7 @@ resource postgresql_grant "read_only_model_results" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_model_results.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_model_results" {
@@ -104,7 +104,7 @@ resource postgresql_grant "read_write_api_model_results" {
   role        = "${postgresql_role.read_write_api.name}"
   schema      = "${postgresql_schema.schema_model_results.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 # Processed data
@@ -121,7 +121,7 @@ resource postgresql_grant "read_only_processed_data" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_processed_data.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_processed_data" {
@@ -142,7 +142,7 @@ resource postgresql_grant "read_only_static_data" {
   role        = "${postgresql_role.read_all.name}"
   schema      = "${postgresql_schema.schema_static_data.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
 
 resource postgresql_grant "read_write_static_data" {
@@ -158,5 +158,5 @@ resource postgresql_grant "read_write_api_static_data" {
   role        = "${postgresql_role.read_write_api.name}"
   schema      = "${postgresql_schema.schema_static_data.name}"
   object_type = "table"
-  privileges  = ["USAGE", "SELECT"]
+  privileges  = ["SELECT"]
 }
