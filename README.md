@@ -201,6 +201,21 @@ The process takes approximately 1hr (most of this is for the UKMap data) and you
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
 These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
 
+## Database user management
+
+Database users are configured via terraform. To add a trusted user who has "All" privileges on all schemas  add a user name for them to [the terraform user file](terraform/databases/postgres/db_users.tf) by adding their username to the first list. This will create a user on the database and upload their initial login details to they keyvault.
+
+The user should change their password, which can be done using psql:
+
+```bash
+psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<username>@cleanair-inputs-server password=<password> sslmode=require"
+```
+Then in psql enter the following.
+
+```psql
+\password <username>
+```
+
 
 ## Configure certificates
 
