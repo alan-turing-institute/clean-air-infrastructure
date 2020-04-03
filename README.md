@@ -13,6 +13,7 @@ To run this project you will need:
 - `Terraform` (for configuring the Azure infrastructure)
 - the `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 - `Docker` (For building and testing images locally)
+-  `psql` (command-line tool for interacting with db. Not critical but can be useful)
 
 
 ## Azure Account
@@ -70,6 +71,11 @@ If this fails ensure Gems user_dir is on the path:
 cat << EOF >> ~/.bash_profile
 export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
+```
+
+## psql
+```bash
+brew install postgresql
 ```
 
 
@@ -203,11 +209,14 @@ These are run automatically through Kubernetes and the Azure pipeline above is u
 
 ## Database user management
 
-Database users are configured via terraform. To add a trusted user who has "All" privileges on all schemas add a user name for them to [the terraform user file](terraform/databases/postgres/db_users.tf) by adding their username to the first list. This will create a user on the database and upload their initial login details to the key-vault.
+Terraform creates a number of roles which can be assigned to users. The two key roles are `read_write` and `read_only`. These allow users to read and write, and only read from the database respectively. `read_write` gives 'ALL' privileges, while `read_only` gives 'SELECT'. 
 
-The user should change their password, which can be done using psql:
+To add a user create a role for them and set `inherit` to the required role (https://www.postgresql.org/docs/8.1/sql-createrole.html). This can be done easily using [PGAdmin4](https://www.pgadmin.org/).
+
+When a user first logs in they should change their password, which can be done using psql:
 
 ```bash
+# brew install postgresql
 psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<username>@cleanair-inputs-server password=<password> sslmode=require"
 ```
 Then in psql enter the following.

@@ -1,4 +1,4 @@
-# # DATABASE USERS (Other users should be created manually.)
+# DATABASE USERS (Other users should be created manually.)
 
 
 # TO ADD READ_WRITE USERS ADD A USERNAME TO THE LIST BELOW
@@ -6,11 +6,6 @@ variable "read_write_users" {
   description = "users"
   type = list(string)
   default = [
-    "ogiles",
-    "jrobinson",
-    "pohara",
-    "ohamelijnck",
-    "jwalsh",
     "cluster",
   ]
 }
