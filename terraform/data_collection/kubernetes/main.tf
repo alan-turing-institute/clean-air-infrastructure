@@ -24,10 +24,10 @@ resource "azurerm_resource_group" "this" {
 # Deploy a Kubernetes cluster
 # ---------------------------
 resource "azurerm_kubernetes_cluster" "this" {
-  name                = "${var.cluster_name}"
+  name                = var.cluster_name
   location            = "${module.configuration.location}"
   resource_group_name = "${azurerm_resource_group.this.name}"
-  dns_prefix          = "${var.cluster_name}"
+  dns_prefix          = var.cluster_name
   node_resource_group = "${var.node_resource_group}"
 
   default_node_pool {
