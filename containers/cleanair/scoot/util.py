@@ -1,74 +1,133 @@
 import os
 import pickle
 import gpflow
+import pandas as pd
 import numpy as np
 from pathlib import Path
 
 
-def generate_fp(name, xp_root="experiments", folder="data", kernel_name=None, prefix="normal", postfix="scoot", extension="csv"):
-    if kernel_name:
-        return os.path.join(xp_root, name, folder, kernel_name, prefix + "_" + postfix + "." + extension)
+def generate_fp(
+    root="experiments",
+    experiment="daily",
+    folder="data",
+    timestamp=None,
+    kernel_id=None,
+    filename=None,
+    detector_id=None,
+    extension="csv"
+):
+    # check correct params have been passed
+    if detector_id and not timestamp:
+        raise ValueError("Must pass timestamp of beginning of readings for detector id.")
+    if kernel_id and not timestamp:
+        raise ValueError("Must pass timestamp when also passing kernel id.")
     
-    return os.path.join(xp_root, name, folder, prefix + "_" + postfix + "." + extension)
+    # how to load if detector id is passed
+    if detector_id:
+        detector_id = detector_id.replace('/', '_')
+        if kernel_id:
+            return os.path.join(
+                root, experiment, folder, timestamp, kernel_id, detector_id + "." + extension
+            )
+        return os.path.join(
+            root, experiment, folder, timestamp, detector_id + "." + extension
+        )
+    # if detector id not passed then should load from filename
+    if not filename:
+        raise ValueError("Must pass filename.")
+    return os.path.join(root, experiment, folder, timestamp, filename + "." + extension)
 
-def save_model_to_file(model, name, kernel_name, detector_id, xp_root="experiments", prefix="normal"):
+def save_scoot_df(df, folder="data", extension="csv", **kwargs):
+    filepath = generate_fp(folder=folder, extension=extension, **kwargs)
+    Path(os.path.dirname(filepath)).mkdir(exist_ok=True)
+    df.to_csv(filepath)
+
+def save_model_to_file(model, folder="models", extension="h5", **kwargs):
     """
     Save model using pickle.
     """
+    assert "kernel_id" in kwargs
     # Create model copy
     model_copy = gpflow.utilities.deepcopy_components(model)
     # Save model to file
-    detector_id = detector_id.replace('/', '_')
-    filepath = generate_fp(name, xp_root, "models", kernel_name, prefix, detector_id, "h5")
+    filepath = generate_fp(folder=folder, extension=extension, **kwargs)
     Path(os.path.dirname(filepath)).mkdir(exist_ok=True)
     pickle.dump(model_copy, open(filepath, "wb"))
 
-def save_results_to_file(y_pred, name, kernel_name, detector_id, xp_root="experiments", prefix="normal"):
+def save_results_to_file(y_pred, folder="results", extension="npy", **kwargs):
     """
     Save results to npy with pickle.
     """
     filepath = generate_fp(
-        name, xp_root, "results", kernel_name, prefix, detector_id.replace('/', '_'), "npy"
+        folder=folder, extension=extension, **kwargs
     )
     Path(os.path.dirname(filepath)).mkdir(exist_ok=True)
     np.save(filepath, y_pred)
 
 def save_processed_data_to_file(
-        X, Y, name, detector_id, xp_root="experiments", prefix="normal"
+        X,
+        Y,
+        folder="data",
+        extension="npy",
+        **kwargs
     ):
     """
     Save processed data for a single detector to file.
     """
+    assert "detector_id" in kwargs
+    detector_id = kwargs.pop("detector_id").replace("/", "_")
     x_filepath = generate_fp(
-        name, xp_root, "data", None, prefix, detector_id.replace("/", "_") + "_X", "npy"
+        folder=folder,
+        filename=detector_id + "_X",
+        extension=extension,
+        **kwargs
     )
     y_filepath = generate_fp(
-        name, xp_root, "data", None, prefix, detector_id.replace("/", "_") + "_Y", "npy"
+        folder=folder,
+        filename=detector_id + "_Y",
+        extension=extension,
+        **kwargs
     )
     Path(os.path.dirname(x_filepath)).mkdir(exist_ok=True)
     np.save(x_filepath, X)
     np.save(y_filepath, Y)
 
-def load_model_from_file(name, kernel_name, detector_id, xp_root="experiments", prefix="normal"):
+def load_scoot_df(folder="data", extension="csv", **kwargs):
+    filepath = generate_fp(folder=folder, extension=extension, **kwargs)
+    return pd.read_csv(filepath)
+
+def load_model_from_file(folder="models", extension="h5", **kwargs):
     """Load model from pickle."""
-    filepath = generate_fp(name, xp_root, "models", kernel_name, prefix, detector_id.replace("/", "_"), "h5")
+    assert "kernel_id" in kwargs
+    filepath = generate_fp(folder=folder, extension=extension, **kwargs)
     return pickle.load(open(filepath, "rb"))
 
-def load_results_from_file(name, kernel_name, detector_id, xp_root="experiments", prefix="normal"):
+def load_results_from_file(folder="results", extension="npy", **kwargs):
     """Load results of predictions from model."""
     filepath = generate_fp(
-        name, xp_root, "results", kernel_name, prefix, detector_id.replace('/', '_'), "npy"
+        folder=folder, extension=extension, **kwargs
     )
     return np.load(filepath)
 
-def load_processed_data_from_file(name, detector_id, xp_root="experiments", prefix="normal"):
+def load_processed_data_from_file(
+    folder="data",
+    extension="npy",
+    **kwargs
+):
     """
     Load X and Y from file.
     """
+    assert "detector_id" in kwargs
     x_filepath = generate_fp(
-        name, xp_root=xp_root, folder="data", prefix=prefix, postfix=detector_id.replace("/", "_") + "_X", extension="npy"
+        folder=folder,
+        filename=kwargs.pop("detector_id").replace("/", "_") + "_X",
+        extension=extension,
+        **kwargs
     )
     y_filepath = generate_fp(
-        name, xp_root=xp_root, folder="data", prefix=prefix, postfix=detector_id.replace("/", "_") + "_Y", extension="npy"
+        folder=folder,
+        filename=kwargs.pop("detector_id").replace("/", "_") + "_Y",
+        extension=extension,
+        **kwargs
     )
     return np.load(x_filepath), np.load(y_filepath)
