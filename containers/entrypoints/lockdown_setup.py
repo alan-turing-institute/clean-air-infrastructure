@@ -60,6 +60,9 @@ def main():
     normal_end = normal_start + timedelta(hours=args.nhours)
     lockdown_end = lockdown_start + timedelta(hours=args.nhours)
 
+    # store all the data settings
+    data_settings = []
+
     # create an object for querying from DB
     SQ = ScootQuery(secretfile=args.secretfile)
 
@@ -122,11 +125,30 @@ def main():
                 timestamp=lockdown_start.strftime("%Y-%m-%dT%H:%M:%S"),
                 detector_id=args.detectors[i]
             )
+        # add data settings to list
+        data_settings.append(dict(
+            detectors=args.detectors,
+            normal_start=normal_start.strftime("%Y-%m-%dT%H:%M:%S"),
+            normal_end=normal_end.strftime("%Y-%m-%dT%H:%M:%S"),
+            lockdown_start=lockdown_start.strftime("%Y-%m-%dT%H:%M:%S"),
+            lockdown_end=lockdown_end.strftime("%Y-%m-%dT%H:%M:%S"),
+        ))
+        
         # add on n hours to start and end datetimes
         normal_start = normal_start + timedelta(hours=args.nhours)
         lockdown_start = lockdown_start + timedelta(hours=args.nhours)
         normal_end = normal_start + timedelta(hours=args.nhours)
         lockdown_end = lockdown_start + timedelta(hours=args.nhours)
+
+    print(data_settings)
+    data_settings_fp = os.path.join(
+        args.root,
+        args.experiment,
+        "settings",
+        "data_settings.json"
+    )
+    with open(data_settings_fp, "w") as json_file:
+        json.dump(data_settings, json_file)
 
 if __name__ == "__main__":
     main()

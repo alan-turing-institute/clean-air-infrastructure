@@ -7,6 +7,8 @@ from .query import ScootQuery
 from .sampling import sample_intensity
 from .sampling import sample_n
 from .sampling import percentage_coverage
+from .train import train_sensor_model
+from .train import simple_training_loop
 from .util import generate_fp
 from .util import save_model_to_file
 from .util import save_processed_data_to_file

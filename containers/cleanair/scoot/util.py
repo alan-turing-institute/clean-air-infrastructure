@@ -51,7 +51,7 @@ def save_model_to_file(model, folder="models", extension="h5", **kwargs):
     model_copy = gpflow.utilities.deepcopy_components(model)
     # Save model to file
     filepath = generate_fp(folder=folder, extension=extension, **kwargs)
-    Path(os.path.dirname(filepath)).mkdir(exist_ok=True)
+    Path(os.path.dirname(filepath)).mkdir(exist_ok=True, parents=True)
     pickle.dump(model_copy, open(filepath, "wb"))
 
 def save_results_to_file(y_pred, folder="results", extension="npy", **kwargs):
@@ -118,15 +118,17 @@ def load_processed_data_from_file(
     Load X and Y from file.
     """
     assert "detector_id" in kwargs
+    detector_id = kwargs.pop("detector_id").replace("/", "_")
+
     x_filepath = generate_fp(
         folder=folder,
-        filename=kwargs.pop("detector_id").replace("/", "_") + "_X",
+        filename=detector_id + "_X",
         extension=extension,
         **kwargs
     )
     y_filepath = generate_fp(
         folder=folder,
-        filename=kwargs.pop("detector_id").replace("/", "_") + "_Y",
+        filename=detector_id + "_Y",
         extension=extension,
         **kwargs
     )
