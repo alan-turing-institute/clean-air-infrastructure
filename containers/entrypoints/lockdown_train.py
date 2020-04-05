@@ -90,7 +90,7 @@ def main():
                     x_normal, y_normal, kernel, optimizer, epochs, logging_epoch_freq, M=M
                 )
 
-                # save model and processed data to file
+                # save model to file
                 save_model_to_file(
                     model,
                     root=args.root,

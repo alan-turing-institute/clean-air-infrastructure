@@ -17,4 +17,5 @@ from .util import save_scoot_df
 from .util import load_processed_data_from_file
 from .util import load_model_from_file
 from .util import load_results_from_file
+from .util import load_scoot_df
 from .view import ScootView
