@@ -147,8 +147,15 @@ def main():
         "settings",
         "data_settings.json"
     )
-    with open(data_settings_fp, "w") as json_file:
-        json.dump(data_settings, json_file)
+    try:
+        with open(data_settings_fp, "r") as json_file:
+            original_settings = json.load(json_file)
+            original_settings.extend(data_settings)
+    except FileNotFoundError:
+        original_settings = data_settings.copy()
+    finally:
+        with open(data_settings_fp, "w") as json_file:
+            json.dump(original_settings, json_file)
 
 if __name__ == "__main__":
     main()

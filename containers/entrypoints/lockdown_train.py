@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime, timedelta
 import tensorflow as tf
 from cleanair.parsers import ScootParser
 from cleanair.scoot import (
@@ -57,6 +58,7 @@ def main():
             json.dump(kernel_settings, kernel_file)
 
     # load the data settings
+    normal_end = datetime.strptime(args.normal_start, "%Y-%m-%dT%H:%M:%S") + timedelta(hours=args.nhours * args.rolls)
     data_settings_fp = os.path.join(
         args.root,
         args.experiment,
@@ -74,31 +76,35 @@ def main():
 
     # loop through list of sensor. train model for each sensor
     for data in data_settings:
-        for detector_id in data["detectors"]:
-            for kernel_id in kernel_settings:
-                x_normal, y_normal = load_processed_data_from_file(
-                    root=args.root,
-                    experiment=args.experiment,
-                    timestamp=data["normal_start"],
-                    detector_id=detector_id
-                )
-                # get a kernel from settings
-                kernel = parse_kernel(kernel_settings[kernel_id])
+        if (
+            data["normal_start"] >= args.normal_start and
+            data["normal_start"] < normal_end.strftime("%Y-%m-%dT%H:%M:%S")
+        ):
+            for detector_id in data["detectors"]:
+                for kernel_id in kernel_settings:
+                    x_normal, y_normal = load_processed_data_from_file(
+                        root=args.root,
+                        experiment=args.experiment,
+                        timestamp=data["normal_start"],
+                        detector_id=detector_id
+                    )
+                    # get a kernel from settings
+                    kernel = parse_kernel(kernel_settings[kernel_id])
 
-                # train model
-                model = train_sensor_model(
-                    x_normal, y_normal, kernel, optimizer, epochs, logging_epoch_freq, M=M
-                )
+                    # train model
+                    model = train_sensor_model(
+                        x_normal, y_normal, kernel, optimizer, epochs, logging_epoch_freq, M=M
+                    )
 
-                # save model to file
-                save_model_to_file(
-                    model,
-                    root=args.root,
-                    experiment=args.experiment,
-                    timestamp=data["normal_start"],
-                    detector_id=detector_id,
-                    kernel_id=kernel_id
-                )
+                    # save model to file
+                    save_model_to_file(
+                        model,
+                        root=args.root,
+                        experiment=args.experiment,
+                        timestamp=data["normal_start"],
+                        detector_id=detector_id,
+                        kernel_id=kernel_id
+                    )
 
 if __name__ == "__main__":
     main()

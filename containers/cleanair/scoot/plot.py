@@ -4,7 +4,6 @@ import pandas as pd
 import tensorflow as tf
 from .sampling import sample_intensity, sample_n
 
-
 def plotly_results(
         sensor_df: pd.DataFrame,
         detector_id: str,
