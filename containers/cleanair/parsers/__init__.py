@@ -5,6 +5,7 @@ from .complex import (
     ModelFitParser,
     ModelValidationParser,
     SatelliteArgumentParser,
+    ScootParser,
     ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
 )

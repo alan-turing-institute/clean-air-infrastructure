@@ -118,6 +118,71 @@ class ScootForecastFeatureArgumentParser(
             help="List of SCOOT detectors to forecast for, (default: all of them).",
         )
 
+class ScootParser(
+    SecretFileParserMixin,
+    VerbosityMixin,
+    ArgumentParser
+):
+    """Parser for running lockdown models."""
+    def __init__(self, nhours=24, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-x",
+            "--experiment",
+            default="daily",
+            help="Name of the experiment.",
+        )
+        self.add_argument(
+            "--nhours",
+            type=int,
+            default=nhours,
+            help="The number of hours to request data for (default: {}).".format(
+                nhours
+            ),
+        )
+        self.add_argument(
+            "--root",
+            default="../../../experiments",
+            help="Root to experiments directory."
+        )
+        self.add_argument(
+            "-r",
+            "--rolls",
+            type=int,
+            default=1,
+            help="Number of times to roll forward timeframe."
+        )
+        self.add_argument(
+            "-l",
+            "--lockdown_start",
+            default="2020-03-23T00:00:00",
+            help="The start datetime of lockdown period."
+        )
+        self.add_argument(
+            "-n",
+            "--normal_start",
+            default="2020-02-10T00:00:00",
+            help="The start datetime of normal period."
+        )
+        self.add_argument(
+            "-u",
+            "--user_settings_filepath",
+            default="../../terraform/.secrets/user_settings.json",
+            help="Filepath to user settings."
+        )
+        self.add_argument(
+            "-d",
+            "--detectors",
+            nargs="+",
+            default=["N00/002e1","N00/002g1","N13/016a1"],
+            help="List of SCOOT detectors to forecast for, (default: all of them).",
+        )
+    
+    def parse_args(self):
+        args = super().parse_args()
+        if not args.detectors:
+            raise ArgumentTypeError("No detector ids passed.")
+        return args
 
 class ModelValidationParser(BaseModelParser):
     """
