@@ -35,6 +35,7 @@ class StaticWriter(DBWriter):
             "ukmap": "static_data",
             "scoot_detector": "interest_points",
             "street_canyon": "static_data",
+            "urban_village": "static_data",
         }
 
         # Ensure that the necessary schemas exist
