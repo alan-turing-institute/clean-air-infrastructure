@@ -2,19 +2,23 @@
 import logging
 import pandas as pd
 
-def percent_of_baseline(baseline_gb, latest_gb, groupby_cols=["detector_id"], debug=False, ignore_missing=False):
+def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], debug=False, ignore_missing=False):
     """Group both dataframes by detector id and day then """
     try:
-        normal_set = set(baseline_gb.keys())
-        latest_set = set(latest_gb.keys())
+        normal_set = set(baseline_df.detector_id)
+        latest_set = set(latest_df.detector_id)
         assert normal_set == latest_set
     except AssertionError:
         logging.warning("normal_df and latest_df have different sensors. Trying to compensate.")
     finally:
         detector_set = normal_set.intersection(latest_set)
+
+    # groupby detectorid
+    baseline_gb = baseline_df.groupby("detector_id")
+    latest_gb = latest_df.groupby("detector_id")
     
     # keep results in a dataframe
-    value_cols = ["normal_sum", "latest_sum", "percent_of_normal"]
+    value_cols = ["normal_sum", "latest_sum", "percent_of_baseline"]
     rows_list = []
     normal_zero_count = []
     latest_zero_count = []
@@ -60,7 +64,7 @@ def percent_of_baseline(baseline_gb, latest_gb, groupby_cols=["detector_id"], de
                 index_dict,
                 normal_sum=normal_sum,
                 latest_sum=latest_sum,
-                percent_of_normal=percent_change
+                percent_of_baseline=percent_change
             )
             rows_list.append(row_dict)
 

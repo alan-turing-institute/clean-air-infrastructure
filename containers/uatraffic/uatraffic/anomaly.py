@@ -8,10 +8,13 @@ def remove_outliers(df, k=3, col="n_vehicles_in_interval"):
     return df.loc[~df.index.isin(set(to_remove))]
 
 
-def get_index_of_outliers(gb, k=3, col="n_vehicles_in_interval"):
+def get_index_of_outliers(df, k=3, col="n_vehicles_in_interval"):
     """Returns a list of indices that are outliers."""
     # remove outliers
     to_remove = []  # list of indices to remove
+
+    # groupby detector id
+    gb = df.groupby("detector_id")
 
     for detector_id, group in gb:
         remove_in_group = group.index[
@@ -47,3 +50,4 @@ def align_dfs_by_hour(df1, df2):
 
     df1 = df1.loc[i1.isin(i2)]
     df2 = df2.loc[i2.isin(i1)]
+    return df1, df2
