@@ -14,12 +14,6 @@ def main():
     print(df.head())
     print(df["measurement_start_utc"].min(), df["measurement_start_utc"].max())
 
-    print(
-        lockdown_process.get_scoot_with_location(
-            start_time="2020-03-01", end_time="2020-03-02", output_type="sql"
-        )
-    )
-
 
 if __name__ == "__main__":
     main()
