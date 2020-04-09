@@ -4,8 +4,8 @@ import setuptools
 setuptools.setup(
     name="cleanair",
     version="0.0.1",
-    author="Oscar Giles, James Robinson",
-    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk",
+    author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
+    author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
     description="CleanAir",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
     packages=setuptools.find_packages(),
