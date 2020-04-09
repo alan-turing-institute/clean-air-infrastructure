@@ -10,8 +10,9 @@ from cleanair.databases.base import Base
 from .queries import (
     get_point_forecast,
     get_all_forecasts,
-    get_scoot_with_location,
-    get_scoot_daily_with_location,
+    ScootDaily,
+    ScootDailyPerc,
+    ScootHourly,
 )
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
@@ -140,7 +141,7 @@ def box(args):
     return jsonify(results.dump(all_points))
 
 
-@app.route("/api/v1/scoot", methods=["GET"])
+@app.route("/api/v1/scoot/hourly/raw", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(required=True),
@@ -156,11 +157,13 @@ def scoot(args):
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http --download GET urbanair.turing.ac.uk/api/v1/scoot starttime=='2020-03-01' endtime=='2020-03-02'
-    curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
+    http --download GET :5000/api/v1/scoot/hourly/raw starttime=='2020-03-01' endtime=='2020-03-02'
+    http --download GET urbanair.turing.ac.uk/api/v1/scoot/hourly/raw starttime=='2020-03-01' endtime=='2020-03-02'
     """
 
     session = db_session()
+
+    db_query = ScootHourly()
 
     starttime = args["starttime"]
     if "endtime" in args:
@@ -168,52 +171,12 @@ def scoot(args):
     else:
         endtime = None
 
-    scoot_data = get_scoot_with_location(
-        session, args["starttime"], end_time=endtime, output_type="query"
+    return db_query.stream_csv(
+        "scoot_hourly", session, start_time=args["starttime"], end_time=endtime
     )
 
-    def generate():
-        count = 0
-        headers = (
-            ",".join(
-                [
-                    "detector_id",
-                    "lon",
-                    "lat",
-                    "measurement_start_utc",
-                    "measurement_end_utc",
-                    "n_vehicles_in_interval",
-                    "occupancy_percentage",
-                    "congestion_percentage",
-                    "saturation",
-                ]
-            )
-            + "\n"
-        )
 
-        for i, row in enumerate(scoot_data.yield_per(1000).enable_eagerloads(False)):
-            if i == 0:
-                yield headers.encode("utf-8")
-
-            str_row = []
-            for r in row:
-                if isinstance(r, str):
-                    str_row.append(r)
-                elif isinstance(r, datetime.datetime):
-                    str_row.append(r.isoformat())
-                else:
-                    str_row.append(str(r))
-
-            csv = ",".join(str_row) + "\n"
-            yield csv.encode("utf-8")
-
-    response = Response(generate(), mimetype="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
-
-    return response
-
-
-@app.route("/api/v1/scootdaily", methods=["GET"])
+@app.route("/api/v1/scoot/daily/raw", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(required=True),
@@ -229,11 +192,13 @@ def scoot_daily(args):
     Example:
     To request forecast at all points within a bounding box over city hall
     pip install httpie
-    http --download GET urbanair.turing.ac.uk/api/v1/scootdaily starttime=='2020-03-01' endtime=='2020-03-02'
-    curl 'urbanair.turing.ac.uk/api/v1/scoot?starttime=2020-03-01&endtime=2020-03-02'
+    http --download GET :5000/api/v1/scoot/daily/raw starttime=='2020-03-01' endtime=='2020-03-02'
+    http --download GET urbanair.turing.ac.uk/api/v1/scoot/daily/raw starttime=='2020-03-01' endtime=='2020-03-02'
     """
 
     session = db_session()
+
+    db_query = ScootDaily()
 
     starttime = args["starttime"]
     if "endtime" in args:
@@ -241,46 +206,46 @@ def scoot_daily(args):
     else:
         endtime = None
 
-    scoot_data = get_scoot_daily_with_location(
-        session, args["starttime"], end_time=endtime, output_type="query"
+    return db_query.stream_csv(
+        "scoot_daily", session, start_time=args["starttime"], end_time=endtime
     )
 
-    def generate():
-        count = 0
-        headers = (
-            ",".join(
-                [
-                    "detector_id",
-                    "lon",
-                    "lat",
-                    "day",
-                    "avg_n_vehicles_in_interval",
-                    "sum_n_vehicles_in_interval",
-                ]
-            )
-            + "\n"
-        )
 
-        for i, row in enumerate(scoot_data.yield_per(1000).enable_eagerloads(False)):
-            if i == 0:
-                yield headers.encode("utf-8")
+@app.route("/api/v1/scoot/daily/percent-of-baseline", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(required=True),
+        "endtime": fields.String(required=False),
+        "baseline": fields.String(
+            required=True, validate=lambda val: val in ["lockdown", "normal"]
+        ),
+    },
+    location="query",
+)
+def scoot_percentage(args):
+    """Get scoot percentage data
+    
+    http --download GET :5000/api/v1/scoot/daily/percent-of-baseline starttime=='2020-03-01' endtime=='2020-03-02' baseline=='normal'
+    http --download GET urbanair.turing.ac.uk/api/v1/scoot/daily/percent-of-baseline starttime=='2020-03-01' endtime=='2020-03-02' baseline=='normal'
+    """
 
-            str_row = []
-            for r in row:
-                if isinstance(r, str):
-                    str_row.append(r)
-                elif isinstance(r, datetime.datetime):
-                    str_row.append(r.isoformat())
-                else:
-                    str_row.append(str(r))
+    session = db_session()
 
-            csv = ",".join(str_row) + "\n"
-            yield csv.encode("utf-8")
+    db_query = ScootDailyPerc()
 
-    response = Response(generate(), mimetype="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+    starttime = args["starttime"]
+    if "endtime" in args:
+        endtime = args["endtime"]
+    else:
+        endtime = None
 
-    return response
+    return db_query.stream_csv(
+        "scoot_daily_percentage",
+        session,
+        args["baseline"],
+        start_time=args["starttime"],
+        end_time=endtime,
+    )
 
 
 if __name__ == "__main__":

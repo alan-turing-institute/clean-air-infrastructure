@@ -1,0 +1,43 @@
+from abc import ABC, abstractmethod
+import datetime
+from flask import Response
+
+
+class APIQueryMixin(ABC):
+    @abstractmethod
+    def query(self):
+        pass
+
+    @property
+    @abstractmethod
+    def csv_headers(self):
+        pass
+
+    def __generate_csv(self, *args, **kwargs):
+
+        query = self.query(*args, **kwargs)
+        count = 0
+        headers = ",".join(self.csv_headers) + "\n"
+
+        for i, row in enumerate(query.yield_per(1000).enable_eagerloads(False)):
+            if i == 0:
+                yield headers.encode("utf-8")
+
+            str_row = []
+            for r in row:
+                if isinstance(r, str):
+                    str_row.append(r)
+                elif isinstance(r, datetime.datetime):
+                    str_row.append(r.isoformat())
+                else:
+                    str_row.append(str(r))
+
+            csv = ",".join(str_row) + "\n"
+            yield csv.encode("utf-8")
+
+    def stream_csv(self, filename, *args, **kwargs):
+
+        response = Response(self.__generate_csv(*args, **kwargs), mimetype="text/csv")
+        response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"
+
+        return response
