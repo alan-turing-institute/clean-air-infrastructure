@@ -7,6 +7,7 @@ from cleanair.databases.tables import (
     MetaPoint,
     ScootReading,
     ScootDetector,
+    ScootPercentChange,
 )
 
 initialise_logging(verbosity=0)
@@ -187,3 +188,19 @@ def get_scoot_daily_with_location(session, start_time, end_time=None):
     )
 
     return summary_q
+
+
+@db_query
+def get_scoot_percent_change(session, start_time, end_time=None):
+    """Get scoot data percent change"""
+
+    percent_change = session.query(ScootPercentChange).filter(
+        ScootPercentChange.latest_start_utc >= start_time
+    )
+
+    if end_time:
+        percent_change = percent_change.filter(
+            ScootPercentChange.latest_end_utc < end_time
+        )
+
+    return percent_change

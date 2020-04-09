@@ -12,6 +12,7 @@ from .queries import (
     get_all_forecasts,
     get_scoot_with_location,
     get_scoot_daily_with_location,
+    get_scoot_percent_change,
 )
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs, parser, abort
@@ -22,7 +23,9 @@ app = Flask(__name__)
 ma = Marshmallow(app)
 
 # Configure session
-DB_CONNECTION_INFO = DBConnectionMixin("db_secrets.json")
+DB_CONNECTION_INFO = DBConnectionMixin(
+    "/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+)
 engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -209,6 +212,75 @@ def scoot(args):
 
     response = Response(generate(), mimetype="text/csv")
     response.headers["Content-Disposition"] = "attachment; filename=scoot_data.csv"
+
+    return response
+
+
+@app.route("/api/v1/scootperc", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(required=True),
+        "endtime": fields.String(required=False),
+    },
+    location="query",
+)
+def scoot_percentage(args):
+    """Get scoot percentage data
+    
+    http --download GET :5000/api/v1/scootperc starttime=='2020-03-01' endtime=='2020-03-02'
+    """
+
+    session = db_session()
+    starttime = args["starttime"]
+    if "endtime" in args:
+        endtime = args["endtime"]
+    else:
+        endtime = None
+
+    get_scoot_percent_change(
+        session, args["starttime"], end_time=endtime, output_type="query"
+    )
+
+    def generate():
+        count = 0
+        headers = (
+            ",".join(
+                [
+                    "detector_id",
+                    "lon",
+                    "lat",
+                    "latest_start_utc",
+                    "latest_end_utc",
+                    "day_of_week",
+                    "baseline_period",
+                    "baseline_n_vehicles_in_interval",
+                    "latest_n_vehicles_in_interval",
+                    "percent_of_baseline",
+                ]
+            )
+            + "\n"
+        )
+
+        for i, row in enumerate(scoot_data.yield_per(1000).enable_eagerloads(False)):
+            if i == 0:
+                yield headers.encode("utf-8")
+
+            str_row = []
+            for r in row:
+                if isinstance(r, str):
+                    str_row.append(r)
+                elif isinstance(r, datetime.datetime):
+                    str_row.append(r.isoformat())
+                else:
+                    str_row.append(str(r))
+
+            csv = ",".join(str_row) + "\n"
+            yield csv.encode("utf-8")
+
+    response = Response(generate(), mimetype="text/csv")
+    response.headers[
+        "Content-Disposition"
+    ] = "attachment; filename=scoot_percentage_change.csv"
 
     return response
 
