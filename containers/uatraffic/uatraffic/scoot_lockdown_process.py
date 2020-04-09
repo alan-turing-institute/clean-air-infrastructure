@@ -182,10 +182,6 @@ class LockdownProcess(DBWriter):
                     ScootReading.measurement_start_utc < end_time
                 )
 
-            scoot_readings = scoot_readings.order_by(
-                ScootReading.detector_id, ScootReading.measurement_start_utc
-            )
-
             return scoot_readings
 
 
