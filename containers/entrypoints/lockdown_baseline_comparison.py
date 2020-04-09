@@ -1,5 +1,9 @@
 
+import logging
+from datetime import date
 import pandas as pd
+
+from cleanair.databases.tables import ScootPercentChange
 
 from uatraffic import LockdownProcess
 from uatraffic import remove_outliers
@@ -13,12 +17,15 @@ def main():
         secretfile=secretfile
     )
 
+    latest_start = "2020-03-31"
+    latest_end = "2020-04-01"
+
     # get data from database
     baseline_df = lockdown_process.get_scoot_with_location(
         start_time="2020-03-02", end_time="2020-03-03", output_type="df"
     )
     latest_df = lockdown_process.get_scoot_with_location(
-        start_time="2020-03-31", end_time="2020-04-01", output_type="df"
+        start_time=latest_start, end_time=latest_end, output_type="df"
     )
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
@@ -36,7 +43,32 @@ def main():
     # calculate the percent of latest traffic from local traffic
     metric_df = percent_of_baseline(baseline_df, latest_df)
 
+    metric_df["latest_start_utc"] = latest_start
+    metric_df["latest_end_utc"] = latest_end
+    metric_df["day_of_week"] = date.fromisoformat('2020-01-01').weekday()
+    metric_df["baseline_period"] = "normal"     # ToDo: remove hardcoding
+
     print(metric_df)
+
+    record_cols = [
+        "detector_id",
+        "latest_start_utc",
+        "latest_end_utc",
+        "day_of_week",
+        "baseline_period",
+        "baseline_n_vehicles_in_interval",
+        "latest_n_vehicles_in_interval",
+        "percent_of_baseline",
+        # "lat",
+        # "lon"
+    ]
+
+    upload_records = metric_df[record_cols].to_dict("records")
+    logging.info("Inserting %s records into the database", len(upload_records))
+    with lockdown_process.dbcnxn.open_session() as session:
+        lockdown_process.commit_records(
+            session, upload_records, table=ScootPercentChange, on_conflict="overwrite"
+        )
 
 if __name__ == "__main__":
     main()

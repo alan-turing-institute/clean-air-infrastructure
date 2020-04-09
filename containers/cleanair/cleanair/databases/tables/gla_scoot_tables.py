@@ -31,6 +31,10 @@ class ScootPercentChange(Base):
     latest_n_vehicles_in_interval = Column(Integer(), nullable=False)
     percent_of_baseline = Column(DOUBLE_PRECISION(), nullable=False)
 
+    # ToDo: remove later on?
+    # lat = Column(DOUBLE_PRECISION(), nullable=False)
+    # lon = Column(DOUBLE_PRECISION(), nullable=False)
+
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))

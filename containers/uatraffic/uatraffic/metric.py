@@ -18,7 +18,7 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], de
     latest_gb = latest_df.groupby("detector_id")
     
     # keep results in a dataframe
-    value_cols = ["normal_sum", "latest_sum", "percent_of_baseline"]
+    value_cols = ["baseline_n_vehicles_in_interval", "latest_n_vehicles_in_interval", "percent_of_baseline"]
     rows_list = []
     normal_zero_count = []
     latest_zero_count = []
@@ -35,25 +35,25 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], de
                     raise ValueError("Both dataframes should have the same entries for each hour. See align_dfs_by_hour().")
 
             # sum all vehicles in the normal day for this detector
-            normal_sum = group["n_vehicles_in_interval"].sum()
+            baseline_n_vehicles_in_interval = group["n_vehicles_in_interval"].sum()
             try:
-                assert normal_sum > 0
+                assert baseline_n_vehicles_in_interval > 0
             except AssertionError:
                 logging.debug("Normal sum is not greater than zero for detector %s. Setting normal sum to 1.", name)
                 normal_zero_count.append(name)
-                normal_sum = 1
+                baseline_n_vehicles_in_interval = 1
             
             # sum all vehicles in the latest day for this detector
             # ToDo: is this oK to set to 1?
-            latest_sum = latest_gb.get_group(name)["n_vehicles_in_interval"].sum()
+            latest_n_vehicles_in_interval = latest_gb.get_group(name)["n_vehicles_in_interval"].sum()
             try:
-                assert latest_sum > 0
+                assert latest_n_vehicles_in_interval > 0
             except AssertionError:
                 logging.debug("Latest sum is not greater than zero for detector %s. Setting latest sum to 1.", name)
                 latest_zero_count.append(name)
-                latest_sum = 1
+                latest_n_vehicles_in_interval = 1
                 
-            percent_change = 100 - 100 * (normal_sum - latest_sum) / normal_sum
+            percent_change = 100 - 100 * (baseline_n_vehicles_in_interval - latest_n_vehicles_in_interval) / baseline_n_vehicles_in_interval
 
             if len(groupby_cols) > 1:
                 index_dict = {groupby_cols[i]: name[i] for i in range(len(groupby_cols))}
@@ -62,8 +62,8 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], de
 
             row_dict = dict(
                 index_dict,
-                normal_sum=normal_sum,
-                latest_sum=latest_sum,
+                baseline_n_vehicles_in_interval=baseline_n_vehicles_in_interval,
+                latest_n_vehicles_in_interval=latest_n_vehicles_in_interval,
                 percent_of_baseline=percent_change
             )
             rows_list.append(row_dict)
