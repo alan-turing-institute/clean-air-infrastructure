@@ -20,6 +20,15 @@ def main():
     latest_start = "2020-03-31"
     latest_end = "2020-04-01"
 
+    # get a range of dates over 3 weeks for normal period, starting from 10th Feb
+
+    # split up by weekday (0 Monday, 1 Tuesday)
+
+    # remove zeros to avoid skewing the median
+
+    # take the median for each hour of each weekday
+
+
     # get data from database
     baseline_df = lockdown_process.get_scoot_with_location(
         start_time="2020-03-02", end_time="2020-03-03", output_type="df"
