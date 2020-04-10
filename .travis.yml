@@ -1,7 +1,10 @@
 language: python
+python:
+  - "3.7"
 
 install:
   - pip install -r containers/requirements.txt
+  - pip install 'containers/cleanair[models,traffic,dashboard]'
 
 script:
   # # Run all pytest unit tests
@@ -13,6 +16,7 @@ script:
   # Check black formatting would not make any chages
   - black --check */
 
-  # Run pylint for stricter error checking
+  # Run pylint for stricter error checking. Run for everything but cleanair module and then cleanair module
   # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-  - pylint --disable=C0330 */
+  - pylint --disable=C0330 */ --ignore=cleanair
+  - pylint --disable=C0330 containers/cleanair/*

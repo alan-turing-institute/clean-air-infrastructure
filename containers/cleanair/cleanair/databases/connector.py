@@ -64,12 +64,6 @@ class Connector(DBConnectionMixin):
         if not self.engine.dialect.has_schema(self.engine, schema_name):
             self.engine.execute(CreateSchema(schema_name))
 
-    def ensure_extensions(self):
-        """Ensure required extensions are installed publicly"""
-        with self.engine.connect() as cnxn:
-            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "postgis";')
-            cnxn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
-
     @contextmanager
     def open_session(self, skip_check=False):
         """
