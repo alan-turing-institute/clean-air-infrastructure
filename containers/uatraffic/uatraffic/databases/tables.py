@@ -1,6 +1,10 @@
 
 from sqlalchemy import ForeignKey
-from cleanair.mixins import InstanceTableMixin
+from cleanair.mixins import (
+    DataConfigMixin,
+    InstanceTableMixin,
+    ModelTableMixin,
+)
 from cleanair.databases import Base
 
 class TrafficInstanceTable(Base, InstanceTableMixin):
@@ -19,9 +23,8 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
         ForeignKey("gla_traffic.data_config.data_id")
     )
 
-    def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table.columns]
-        ]
-        return "<Instance(" + ", ".join(vals)
+class TrafficDataTable(Base, DataConfigMixin):
+    __table_args__ = {"schema": "gla_traffic"}
+
+class TrafficModelTable(Base, ModelTableMixin):
+    __table_args__ = {"schema": "gla_traffic"}

@@ -1,5 +1,9 @@
-
+"""
+Classes for traffic instances.
+"""
+import logging
 from cleanair.instance import Instance
+from .tables import TrafficInstanceTable
 
 class TrafficInstance(Instance):
     """
