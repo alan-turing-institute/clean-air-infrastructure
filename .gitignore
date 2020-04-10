@@ -22,11 +22,7 @@ python-virtual-environments/
 # Python package
 *.egg-info
 
-# scoot data directories
-containers/labs/experiments/
-
 # Misc
-images/
 *.csv
 *.png
 *.npy
