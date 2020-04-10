@@ -1,24 +1,31 @@
-
+"""
+Calculate the percent of baseline metric for a recent day.
+"""
 import logging
-from datetime import date
+from datetime import date, datetime, timedelta
 import pandas as pd
 
 from cleanair.databases.tables import ScootPercentChange
 
-from uatraffic.databases import LockdownProcess
+from uatraffic.databases import TrafficQuery
 from uatraffic.preprocess import remove_outliers
 from uatraffic.preprocess import align_dfs_by_hour
 from uatraffic.metric import percent_of_baseline
+from uatraffic.util import BaselineParser
 
 def main():
 
-    secretfile = "../../terraform/.secrets/db_secrets.json"
-    lockdown_process = LockdownProcess(
-        secretfile=secretfile
+    # get args from parser
+    parser = BaselineParser(nhours=24)
+    args = parser.parse_args()
+
+    # get query object
+    lockdown_process = TrafficQuery(
+        secretfile=args.secretfile
     )
 
-    latest_start = "2020-03-31"
-    latest_end = "2020-04-01"
+    # the end of the latest day is latest_start + nhours
+    latest_end = datetime.strptime(args.latest_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
 
     # get a range of dates over 3 weeks for normal period, starting from 10th Feb
 
@@ -31,10 +38,12 @@ def main():
 
     # get data from database
     baseline_df = lockdown_process.get_scoot_with_location(
-        start_time="2020-03-02", end_time="2020-03-03", output_type="df"
+        start_time=args.baseline_start,
+        end_time=args.baseline_end,
+        output_type="df"
     )
     latest_df = lockdown_process.get_scoot_with_location(
-        start_time=latest_start, end_time=latest_end, output_type="df"
+        start_time=args.latest_start, end_time=latest_end, output_type="df"
     )
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
@@ -55,10 +64,11 @@ def main():
     metric_df["latest_start_utc"] = latest_start
     metric_df["latest_end_utc"] = latest_end
     metric_df["day_of_week"] = date.fromisoformat('2020-01-01').weekday()
-    metric_df["baseline_period"] = "normal"     # ToDo: remove hardcoding
+    metric_df["baseline_period"] = args.tag
 
     print(metric_df)
 
+    # upload records to database
     record_cols = [
         "detector_id",
         "latest_start_utc",
