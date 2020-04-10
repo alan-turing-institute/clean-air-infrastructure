@@ -61,7 +61,7 @@ def main():
     # calculate the percent of latest traffic from local traffic
     metric_df = percent_of_baseline(baseline_df, latest_df)
 
-    metric_df["latest_start_utc"] = latest_start
+    metric_df["latest_start_utc"] = args.latest_start
     metric_df["latest_end_utc"] = latest_end
     metric_df["day_of_week"] = date.fromisoformat('2020-01-01').weekday()
     metric_df["baseline_period"] = args.tag

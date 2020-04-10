@@ -2,7 +2,8 @@
 
 class BaselineParserMixin:
 
-    def __init__(self, nhours=24):
+    def __init__(self, nhours=24, **kwargs):
+        super().__init__(**kwargs)
         self.add_argument(
             "-b",
             "--baseline_start",
@@ -11,7 +12,7 @@ class BaselineParserMixin:
         )
         self.add_argument(
             "-e",
-            "--baseline-end",
+            "--baseline_end",
             default="2020-03-02",
             help="Timestamp for end of baseline period."
         )
@@ -19,10 +20,11 @@ class BaselineParserMixin:
             "-t",
             "--tag",
             default="normal",
-            options=["normal", "lockdown"],
+            choices=["normal", "lockdown"],
             help="The tag for the baseline period.",
         )
         self.add_argument(
+            "-n",
             "--nhours",
             type=int,
             default=nhours,

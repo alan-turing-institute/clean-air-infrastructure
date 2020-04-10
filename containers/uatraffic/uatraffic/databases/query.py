@@ -5,7 +5,7 @@ Class for querying traffic and scoot data.
 import pandas as pd
 from sqlalchemy import func
 
-from cleanair.databases import DBReader
+from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     OSHighway,
     MetaPoint,
@@ -16,7 +16,7 @@ from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
 
-class TrafficQuery(DBReader):
+class TrafficQuery(DBWriter):
     """
     Queries to run on the SCOOT DB.
     """

@@ -14,7 +14,7 @@ class ScootParser(
 ):
     """Parser for running lockdown models."""
     def __init__(self, nhours=24, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs, nhours=nhours)
         self.add_argument(
             "-x",
             "--experiment",
@@ -48,18 +48,18 @@ class ScootParser(
 
 class BaselineParser(
     BaselineParserMixin,
-    ArgumentParser,
     SecretFileParserMixin,
-    VerbosityMixin
+    VerbosityMixin,
+    ArgumentParser,
 ):
     """
     Parser for querying a recent day against a baseline.
     """
-    def __init__(self, nhours=24):
-        super().__init__(nhours=nhours)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.add_argument(
             "-l",
             "--latest_start",
-            default="2020-04-06",
+            default="2020-03-30",
             help="Timestamp for beginning of latest day.",
         )
