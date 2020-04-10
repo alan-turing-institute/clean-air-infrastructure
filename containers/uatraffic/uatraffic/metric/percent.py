@@ -2,7 +2,7 @@
 import logging
 import pandas as pd
 
-def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], debug=False, ignore_missing=False):
+def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], ignore_missing=False):
     """Group both dataframes by detector id and day then """
     try:
         normal_set = set(baseline_df.detector_id)
@@ -16,14 +16,14 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], de
     # groupby detectorid
     baseline_gb = baseline_df.groupby("detector_id")
     latest_gb = latest_df.groupby("detector_id")
-    
+
     # keep results in a dataframe
     value_cols = ["baseline_n_vehicles_in_interval", "latest_n_vehicles_in_interval", "percent_of_baseline"]
     rows_list = []
     normal_zero_count = []
     latest_zero_count = []
     different_count = []
-    
+
     for name, group in baseline_gb:
         if name in detector_set:
             try:

@@ -20,5 +20,10 @@ setuptools.setup(
         "tensorflow==2.1.0",
         "tensorflow_probability==0.9",
     ],
+    extras_requires={
+        "plot": [
+            "plotly==4.4.1",
+        ]
+    },
     python_requires=">=3.7",
 )

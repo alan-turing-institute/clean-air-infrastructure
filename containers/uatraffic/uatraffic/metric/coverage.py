@@ -1,43 +1,24 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-def sample_n(model, test_inputs, num_samples=10):
+def percent_coverage(model, x_test, y_test, quantile: int = 0.9, num_samples: int = 1000, num_pertubations: int = 1000, debug=False):
     """
-    Given the trained model this function samples from the posterior intensity and then samples from the Poisson
-    to get estimated mean and variance for the counts.
-    """
-    samplesN = np.random.poisson(np.exp(model.predict_f_samples(test_inputs,num_samples)))
-    samples_mean = np.mean(samplesN,axis=0)
-    samples_var = np.var(samplesN,axis=0)
-    
-    return samples_mean, samples_var
-
- 
-def sample_intensity(model, test_inputs, num_samples: int = 10):
-    """
-    Samples from posterior intensity distribution
-    """
-    intensitiesN = np.exp(model.predict_f_samples(test_inputs, num_samples))
-    intensities_mean = np.mean(intensitiesN,axis=0)
-    intensities_var = np.var(intensitiesN,axis=0)
-    return intensities_mean, intensities_var
-
-def percentage_coverage(model, test_inputs, Ytest, quantile: int = 0.9, num_samples: int = 10, num_pertubations: int = 100, debug=False):
-    """
-    Computes percentage cover.
+    Computes percentage coverage.
 
     model : model
+        A gpflow model to sample from.
 
-    test_inputs : 
-        Set of inputs to compute intensity on
+    x_test : np.array
+        Set of inputs to compute intensity upon.
 
-    y_tes : 
-        Correspending output of test_inputs
+    y_test : np.array
+        Correspending true values of x_test.
 
-    quantile: float, default=0.9
-        Credible interval 
+    quantile: float, optional
+        Credible interval range. Must between 0 and 1 exclusive.
 
-    num_samples : 
+    num_samples : int, optional
         number of samples from intensity
 
     num_pertubations : int, optional
@@ -47,10 +28,12 @@ def percentage_coverage(model, test_inputs, Ytest, quantile: int = 0.9, num_samp
     ___
 
     See Virginia's pdf for details.
-    
     """
 
     # TODO: shall we save the samples from the model to a file so we can easily see them again?
+
+    # check on quantile
+    assert quantile > 0 and quantile < 1
     
     # Number of times total counts were within 90th percentile
     coverage_events = 0
@@ -62,13 +45,13 @@ def percentage_coverage(model, test_inputs, Ytest, quantile: int = 0.9, num_samp
         np.random.seed(i)
         
         # Sample from latent function (intensity)
-        intensity_sample = np.exp(model.predict_f_samples(test_inputs, 1))
+        intensity_sample = np.exp(model.predict_f_samples(x_test, 1))
 
         # Compute emprical distribution of counts
         empirical_count_distribution = np.random.poisson(intensity_sample[0, :, :], (num_pertubations, intensity_sample.shape[1], intensity_sample.shape[2]))
         
         # Total number of actual counts
-        total_counts = np.sum(Ytest)
+        total_counts = np.sum(y_test)
         total_emp_counts = np.sum(empirical_count_distribution, axis=1)
        
         # Compute upper and lower quantiles from the empirical distribution of counts

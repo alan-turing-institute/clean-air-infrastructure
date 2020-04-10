@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from .sampling import sample_intensity, sample_n
+from ..model import sample_intensity, sample_n
 
 def plotly_results(
         sensor_df: pd.DataFrame,
