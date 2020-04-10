@@ -1,7 +1,7 @@
 """
 Database classes and functions for traffic.
 """
-from .scoot_lockdown_process import LockdownProcess
+from .query import TrafficQuery
 from .instance import TrafficInstance
 from .tables import (
     TrafficDataTable,
@@ -10,7 +10,7 @@ from .tables import (
 )
 
 __all__ = [
-    "LockdownProcess",
+    "TrafficQuery",
     "TrafficInstance",
     "TrafficDataTable",
     "TrafficInstanceTable",

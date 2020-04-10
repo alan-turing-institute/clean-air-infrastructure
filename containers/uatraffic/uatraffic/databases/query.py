@@ -1,11 +1,64 @@
-from ..databases import DBReader
-from ..databases.tables import OSHighway, ScootReading, ScootDetector
-import pandas as pd
+"""
+Class for querying traffic and scoot data.
+"""
 
-class ScootQuery(DBReader):
+import pandas as pd
+from sqlalchemy import func
+
+from cleanair.databases import DBReader
+from cleanair.databases.tables import (
+    OSHighway,
+    MetaPoint,
+    ScootReading,
+    ScootDetector,
+)
+from cleanair.decorators import db_query
+from cleanair.loggers import get_logger
+
+
+class TrafficQuery(DBReader):
     """
     Queries to run on the SCOOT DB.
     """
+
+    def __init__(self, **kwargs):
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+    @db_query
+    def get_scoot_with_location(self, start_time, end_time=None):
+        """
+        Get scoot data with lat and long positions
+        """
+
+        with self.dbcnxn.open_session() as session:
+            scoot_readings = (
+                session.query(
+                    ScootReading.detector_id,
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                    ScootReading.measurement_start_utc,
+                    ScootReading.measurement_end_utc,
+                    ScootReading.n_vehicles_in_interval,
+                )
+                .join(
+                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                )
+                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                .filter(ScootReading.measurement_start_utc >= start_time)
+            )
+
+            if end_time:
+
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.measurement_start_utc < end_time
+                )
+
+            return scoot_readings
     
     def groupby_datetime_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """

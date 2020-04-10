@@ -5,10 +5,10 @@ import pandas as pd
 
 from cleanair.databases.tables import ScootPercentChange
 
-from uatraffic import LockdownProcess
-from uatraffic import remove_outliers
-from uatraffic import align_dfs_by_hour
-from uatraffic import percent_of_baseline
+from uatraffic.databases import LockdownProcess
+from uatraffic.preprocess import remove_outliers
+from uatraffic.preprocess import align_dfs_by_hour
+from uatraffic.metric import percent_of_baseline
 
 def main():
 

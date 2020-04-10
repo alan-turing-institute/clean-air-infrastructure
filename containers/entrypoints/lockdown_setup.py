@@ -19,15 +19,14 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from cleanair.scoot import (
-    ScootQuery,
-    save_scoot_df,
-    save_processed_data_to_file,
-    clean_and_normalise_df,
-    split_df_into_numpy_array,
-    generate_fp
-)
 from cleanair.parsers import ScootParser
+from uatraffic.databases import TrafficQuery
+from uatraffic.preprocess import clean_and_normalise_df
+from uatraffic.preprocess import split_df_into_numpy_array
+from uatraffic.util import save_scoot_df
+from uatraffic.util import save_processed_data_to_file
+from uatraffic.util import generate_fp
+
 
 def create_directories(root, experiment):
     data_dir = os.path.join(root, experiment, "data")
@@ -64,7 +63,7 @@ def main():
     data_settings = []
 
     # create an object for querying from DB
-    SQ = ScootQuery(secretfile=args.secretfile)
+    traffic_query = TrafficQuery(secretfile=args.secretfile)
 
     for i in range(args.rolls):
         # read the data from DB
@@ -72,7 +71,7 @@ def main():
             start=normal_start.strftime("%Y-%m-%d %H:%M:%S"),
             end=normal_end.strftime("%Y-%m-%d %H:%M:%S")
         ))
-        normal_df = SQ.get_all_readings(
+        normal_df = traffic_query.get_all_readings(
             start_datetime=normal_start.strftime("%Y-%m-%d %H:%M:%S"),
             end_datetime=normal_end.strftime("%Y-%m-%d %H:%M:%S")
         )
@@ -80,7 +79,7 @@ def main():
             start=lockdown_start.strftime("%Y-%m-%d %H:%M:%S"),
             end=lockdown_end.strftime("%Y-%m-%d %H:%M:%S")
         ))
-        lockdown_df = SQ.get_all_readings(
+        lockdown_df = traffic_query.get_all_readings(
             start_datetime=lockdown_start.strftime("%Y-%m-%d %H:%M:%S"),
             end_datetime=lockdown_end.strftime("%Y-%m-%d %H:%M:%S")
         )
