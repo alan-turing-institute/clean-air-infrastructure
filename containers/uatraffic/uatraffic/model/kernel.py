@@ -1,5 +1,30 @@
 import gpflow
 
+KERNELS = [
+    dict(
+        name="matern32",
+        hyperparameters=dict(
+            lengthscale=0.1,
+            variance=0.1,
+        )
+    ),
+    dict(
+        name="rbf",
+        hyperparameters=dict(
+            lengthscale=0.1,
+            variance=0.1,
+        )
+    ),
+    dict(
+        name="periodic",
+        hyperparameters=dict(
+            period=0.5,
+            lengthscale=0.7,
+            variance=4.5,
+        )
+    )
+]
+
 def parse_kernel_token(next_token, kernel_map):
     """
     Takes a list or dict description of a kernel and returns a gpflow kernel.

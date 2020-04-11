@@ -27,6 +27,9 @@ def main():
     # the end of the latest day is latest_start + nhours
     latest_end = datetime.strptime(args.latest_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
 
+    day_of_week = date.fromisoformat(args.latest_start).weekday()
+    assert day_of_week >= 0 and day_of_week < 7
+
     # get a range of dates over 3 weeks for normal period, starting from 10th Feb
 
     # split up by weekday (0 Monday, 1 Tuesday)
@@ -63,7 +66,7 @@ def main():
 
     metric_df["latest_start_utc"] = args.latest_start
     metric_df["latest_end_utc"] = latest_end
-    metric_df["day_of_week"] = date.fromisoformat('2020-01-01').weekday()
+    metric_df["day_of_week"] = day_of_week
     metric_df["baseline_period"] = args.tag
 
     print(metric_df)

@@ -32,3 +32,32 @@ class BaselineParserMixin:
                 nhours
             ),
         )
+
+class ModellingParserMixin:
+
+    def __init__(self, n_inducing_points=24, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-i",
+            "--n_inducing_points",
+            default=n_inducing_points,
+            help="Number of inducing points. Default is 24."
+        )
+        self.add_argument(
+            "-k",
+            "--kernel",
+            choices=["matern32", "rbf", "periodic"],
+            default="matern32",
+            help="The name of the kernel to run.",
+        )
+        self.add_argument(
+            "--epochs",
+            default=2000,
+            help="Number of epochs to train model for.",
+        )
+        self.add_argument(
+            "-m",
+            "--model_name",
+            default="svgp",
+            help="Name of the model to run.",
+        )

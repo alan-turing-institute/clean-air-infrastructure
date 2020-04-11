@@ -4,10 +4,11 @@ from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from .mixins import BaselineParserMixin
+from .mixins import BaselineParserMixin, ModellingParserMixin
 
-class ScootParser(
+class TrafficModelParser(
     BaselineParserMixin,
+    ModellingParserMixin,
     SecretFileParserMixin,
     VerbosityMixin,
     ArgumentParser
@@ -15,6 +16,12 @@ class ScootParser(
     """Parser for running lockdown models."""
     def __init__(self, nhours=24, **kwargs):
         super().__init__(**kwargs, nhours=nhours)
+        self.add_argument(
+            "-c",
+            "--cluster_id",
+            choices=["local", "pearl", "azure"],
+            default="local",
+        )
         self.add_argument(
             "-x",
             "--experiment",

@@ -2,6 +2,7 @@
 Instances of models and data.
 """
 import abc
+import json
 import logging
 import hashlib
 import git
@@ -187,3 +188,13 @@ class Instance(DBWriter, DBQueryMixin):
         """
         Update the instance table in the database.
         """
+
+    @staticmethod
+    def hash_dict(value):
+        # it is ESSENTIAL to sort by keys when creating hashes!
+        sorted_values = value.copy()
+        for key in sorted_values:
+            if isinstance(sorted_values[key], list):
+                sorted_values[key].sort()
+        hash_string = json.dumps(sorted_values, sort_keys=True)
+        return Instance.hash_fn(hash_string)
