@@ -34,29 +34,23 @@ def parse_kernel_token(next_token, kernel_map):
     # multiply kernels together
     if isinstance(next_token, list):
         # take produce of kernels in list
-        print("*")
         for item in next_token:
             if not kernel:
                 kernel = parse_kernel_token(item, kernel_map)
             else:
                 kernel = kernel * parse_kernel_token(item, kernel_map)
-        print()
         return kernel
     # add kernels together
     if isinstance(next_token, dict) and "+" in next_token and isinstance(next_token["+"], list):
-        print("+")
         for item in next_token["+"]:
             if not kernel:
                 kernel = parse_kernel_token(item, kernel_map)
             else:
                 kernel = kernel + parse_kernel_token(item, kernel_map)
-        print()
         return kernel
     # get kernel with hyperparameters
     if isinstance(next_token, dict):
-        print(next_token["name"])
         params = next_token["hyperparameters"].copy()
-        print(params)
         return kernel_map[
             next_token["name"]
         ](**params)

@@ -41,6 +41,7 @@ class ModellingParserMixin:
             "-i",
             "--n_inducing_points",
             default=n_inducing_points,
+            type=int,
             help="Number of inducing points. Default is 24."
         )
         self.add_argument(
@@ -52,6 +53,7 @@ class ModellingParserMixin:
         )
         self.add_argument(
             "--epochs",
+            type=int,
             default=2000,
             help="Number of epochs to train model for.",
         )

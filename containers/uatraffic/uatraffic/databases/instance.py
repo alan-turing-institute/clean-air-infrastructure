@@ -1,7 +1,11 @@
 """
 Classes for traffic instances.
 """
+import os
 import logging
+import pickle
+import gpflow
+from pathlib import Path
 from cleanair.instance import Instance
 from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable
 
@@ -44,3 +48,15 @@ class TrafficInstance(Instance):
         )]
         with self.dbcnxn.open_session() as session:
             self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
+
+    def save_model(self, model, folder, extension="h5"):
+        """
+        Save the model to the given folder.
+        """
+        # Create model copy
+        model_copy = gpflow.utilities.deepcopy_components(model)
+
+        # Save model to file
+        Path(folder).mkdir(exist_ok=True, parents=True)
+        filepath = os.path.join(folder, self.instance_id + "." + extension)
+        pickle.dump(model_copy, open(filepath, "wb"))

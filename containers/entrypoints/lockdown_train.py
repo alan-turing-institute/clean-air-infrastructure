@@ -145,10 +145,10 @@ def main():
             )
 
             # TODO: write models to blob storage
-            # save_model_to_file(model)
             instance.update_data_table(data_config)
             instance.update_model_table(model_params)
             instance.update_remote_tables()
+            instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
 
         # add data settings to list
         # data_settings.append(dict(
