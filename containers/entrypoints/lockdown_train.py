@@ -1,17 +1,7 @@
 """
 Load data and setup for scoot lockdown.
-
-```bash
-python lockdown_setup.py \
-    -s terraform/.secrets/db_secrets.json \
-    -x daily \
-    --nhours 24 \
-    -u terraform/.secrets/user_settings.json
-    --root ../experiments
-```
 """
 import os
-import json
 import logging
 from datetime import datetime, timedelta, date
 from pathlib import Path
@@ -27,7 +17,6 @@ from uatraffic.model import train_sensor_model
 from uatraffic.model import KERNELS
 from uatraffic.util import save_scoot_df
 from uatraffic.util import save_processed_data_to_file
-from uatraffic.util import save_model_to_file
 
 
 def create_directories(root, experiment):
@@ -51,6 +40,10 @@ def main():
     if args.cluster_id == "local":
         # setup experiment directories
         create_directories(args.root, args.experiment)
+
+    # create directory for storing models
+    # TODO: remove this once we have blob storage?
+    Path(os.path.join(args.root, args.experiment)).mkdir(exist_ok=True)
 
     # process datetimes
     start = datetime.strptime(args.baseline_start, "%Y-%m-%d")
@@ -149,36 +142,10 @@ def main():
             instance.update_model_table(model_params)
             instance.update_remote_tables()
             instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
-
-        # add data settings to list
-        # data_settings.append(dict(
-        #     detectors=args.detectors,
-        #     normal_start=normal_start.strftime("%Y-%m-%dT%H:%M:%S"),
-        #     normal_end=normal_end.strftime("%Y-%m-%dT%H:%M:%S"),
-        #     lockdown_start=lockdown_start.strftime("%Y-%m-%dT%H:%M:%S"),
-        #     lockdown_end=lockdown_end.strftime("%Y-%m-%dT%H:%M:%S"),
-        # ))
         
         # add on n hours to start and end datetimes
         start = start + timedelta(hours=args.nhours)
         end = end + timedelta(hours=args.nhours)
-
-    # print(data_settings)
-    # data_settings_fp = os.path.join(
-    #     args.root,
-    #     args.experiment,
-    #     "settings",
-    #     "data_settings.json"
-    # )
-    # try:
-    #     with open(data_settings_fp, "r") as json_file:
-    #         original_settings = json.load(json_file)
-    #         original_settings.extend(data_settings)
-    # except FileNotFoundError:
-    #     original_settings = data_settings.copy()
-    # finally:
-    #     with open(data_settings_fp, "w") as json_file:
-    #         json.dump(original_settings, json_file)
 
 if __name__ == "__main__":
     main()

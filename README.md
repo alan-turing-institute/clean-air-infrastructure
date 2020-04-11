@@ -343,6 +343,10 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
 ```
 
+**Traffic lockdown model training**
+```bash
+docker build -t cleanairdocker.azurecr.io/traffic/lockdown_train -f containers/dockerfiles/lockdown_train.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets
+
 ## The cleanair parser
 
 A `CleanAirParser` class has been created for interacting with `run_model_fitting.py`. Run the following command to see available options:
