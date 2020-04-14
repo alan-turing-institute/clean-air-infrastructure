@@ -24,11 +24,11 @@ def main():
         secretfile=args.secretfile
     )
 
-    # the end of the latest day is latest_start + nhours
-    latest_end = datetime.strptime(args.latest_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
+    # the end of the comparison day is comparison_start + nhours
+    comparison_end = datetime.strptime(args.comparison_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
 
-    # get the day of week for the latest day
-    day_of_week = date.fromisoformat(args.latest_start).weekday()
+    # get the day of week for the comparison day
+    day_of_week = date.fromisoformat(args.comparison_start).weekday()
     assert day_of_week >= 0 and day_of_week < 7
 
     # get data from database for the given day_of_week
@@ -38,33 +38,33 @@ def main():
         day_of_week=day_of_week,
         output_type="df"
     )
-    latest_df = lockdown_process.get_scoot_with_location(
-        start_time=args.latest_start, end_time=latest_end, output_type="df"
+    comparison_df = lockdown_process.get_scoot_with_location(
+        start_time=args.comparison_start, end_time=comparison_end, output_type="df"
     )
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
-    latest_df["hour"] = pd.to_datetime(latest_df.measurement_start_utc).dt.hour
+    comparison_df["hour"] = pd.to_datetime(comparison_df.measurement_start_utc).dt.hour
 
     # remove outliers and align for missing values
     baseline_df = remove_outliers(baseline_df)
-    latest_df = remove_outliers(latest_df)
+    comparison_df = remove_outliers(comparison_df)
 
-    # calculate the percent of latest traffic from local traffic
-    metric_df = percent_of_baseline(baseline_df, latest_df)
-    metric_df["latest_start_utc"] = args.latest_start
-    metric_df["latest_end_utc"] = latest_end
+    # calculate the percent of comparison traffic from local traffic
+    metric_df = percent_of_baseline(baseline_df, comparison_df)
+    metric_df["measurement_start_utc"] = args.comparison_start
+    metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
     metric_df["baseline_period"] = args.tag
 
     # upload records to database
     record_cols = [
         "detector_id",
-        "latest_start_utc",
-        "latest_end_utc",
+        "measurement_start_utc",
+        "measurement_end_utc",
         "day_of_week",
         "baseline_period",
         "baseline_n_vehicles_in_interval",
-        "latest_n_vehicles_in_interval",
+        "comparison_n_vehicles_in_interval",
         "percent_of_baseline",
         # "lat",
         # "lon"

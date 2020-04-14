@@ -22,12 +22,12 @@ class ScootHourly(APIQueryMixin):
             "detector_id",
             "lon",
             "lat",
-            "latest_start_utc",
-            "latest_end_utc",
+            "measurement_start_utc",
+            "measurement_end_utc",
             "day_of_week",
             "baseline_period",
             "baseline_n_vehicles_in_interval",
-            "latest_n_vehicles_in_interval",
+            "comparison_n_vehicles_in_interval",
             "percent_of_baseline",
         ]
 
@@ -69,11 +69,11 @@ class ScootDailyPerc(APIQueryMixin):
 
         return [
             "detector_id",
-            "latest_start_utc",
-            "latest_end_utc",
+            "measurement_start_utc",
+            "measurement_end_utc",
             "day_of_week",
             "baseline_period",
-            "latest_n_vehicles_in_interval",
+            "comparison_n_vehicles_in_interval",
             "percent_of_baseline",
         ]
 
@@ -81,13 +81,13 @@ class ScootDailyPerc(APIQueryMixin):
 
         percent_change = (
             session.query(ScootPercentChange)
-            .filter(ScootPercentChange.latest_start_utc >= start_time)
+            .filter(ScootPercentChange.measurement_start_utc >= start_time)
             .filter(ScootPercentChange.baseline_period == baseline)
         )
 
         if end_time:
             percent_change = percent_change.filter(
-                ScootPercentChange.latest_end_utc < end_time
+                ScootPercentChange.measurement_start_utc < end_time
             )
 
         return percent_change

@@ -66,7 +66,7 @@ class BaselineParser(
         super().__init__(**kwargs)
         self.add_argument(
             "-l",
-            "--latest_start",
+            "--comparison_start",
             default="2020-03-30",
-            help="Timestamp for beginning of latest day.",
+            help="Timestamp for beginning of comparison day.",
         )

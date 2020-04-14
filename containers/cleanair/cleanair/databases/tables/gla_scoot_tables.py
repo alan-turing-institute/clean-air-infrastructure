@@ -19,8 +19,8 @@ class ScootPercentChange(Base):
         primary_key=True,
         nullable=False,
     )
-    latest_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    latest_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     day_of_week = Column(Integer(), nullable=False)
     baseline_period = Column(
         Enum("lockdown", "normal", name="baseline_period_enum"),
@@ -28,7 +28,7 @@ class ScootPercentChange(Base):
         nullable=False,
     )
     baseline_n_vehicles_in_interval = Column(Integer(), nullable=False)
-    latest_n_vehicles_in_interval = Column(Integer(), nullable=False)
+    comparison_n_vehicles_in_interval = Column(Integer(), nullable=False)
     percent_of_baseline = Column(DOUBLE_PRECISION(), nullable=False)
 
     # ToDo: remove later on?
