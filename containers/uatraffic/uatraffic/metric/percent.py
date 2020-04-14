@@ -2,7 +2,7 @@
 import logging
 import pandas as pd
 
-def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], ignore_missing=False):
+def percent_of_baseline(baseline_df, latest_df, groupby_cols=None, ignore_missing=False):
     """Group both dataframes by detector id and day then """
     try:
         normal_set = set(baseline_df.detector_id)
@@ -13,7 +13,9 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], ig
     finally:
         detector_set = normal_set.intersection(latest_set)
 
-    # groupby detectorid
+    # groupby detectorid and hour
+    if not groupby_cols:
+        groupby_cols = "detector_id"
     baseline_gb = baseline_df.groupby("detector_id")
     latest_gb = latest_df.groupby("detector_id")
 
@@ -26,6 +28,9 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=["detector_id"], ig
 
     for name, group in baseline_gb:
         if name in detector_set:
+            median_by_hour = group.groupby("hour")["n_vehicles_in_interval"].median()
+            print(median_by_hour)
+            exit()
             try:
                 assert list(group["hour"].sort_values()) == list(latest_gb.get_group(name)["hour"].sort_values())
             except AssertionError:

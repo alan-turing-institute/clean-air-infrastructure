@@ -2,8 +2,9 @@
 Class for querying traffic and scoot data.
 """
 
+from datetime import datetime
 import pandas as pd
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
@@ -32,7 +33,16 @@ class TrafficQuery(DBWriter):
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None):
         """
-        Get scoot data with lat and long positions
+        Get scoot data with lat and long positions.
+
+        Parameters
+        ___
+
+        start_time : str
+            Start datetime.
+
+        end_time : str, optional
+            End datetime (exclusive).
         """
 
         with self.dbcnxn.open_session() as session:
@@ -51,12 +61,70 @@ class TrafficQuery(DBWriter):
                 .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
                 .filter(ScootReading.measurement_start_utc >= start_time)
             )
-
+            # get readings upto but not including end_time
             if end_time:
 
                 scoot_readings = scoot_readings.filter(
                     ScootReading.measurement_start_utc < end_time
                 )
+
+            return scoot_readings
+
+    @db_query
+    def get_scoot_filter_by_dow(self, day_of_week, start_time, end_time=None):
+        """
+        Get scoot readings for days between start_time and end_time filtered by day_of_week.
+
+        Parameters
+        ___
+
+        day_of_week : int
+            Day of the week. 0=Mon, 1=Tue, etc.
+
+        start_time : str
+            Start datetime.
+
+        end_time : str, optional
+            End datetime (exclusive).
+        """
+        if not end_time:
+            end_time = datetime.now().strftime("%Y-%m-%d")
+
+        # get list of start times that match the weekday within the timerange
+        starts = pd.date_range(start_time, end_time).to_series()
+        starts = starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)].dt.strftime("%Y-%m-%d").to_list()
+
+        # get list of end times that match the weekday within the timerange
+        ends = pd.date_range(start_time, end_time).to_series()
+        ends = ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)].dt.strftime("%Y-%m-%d").to_list()
+
+        # check lists are the same length
+        assert len(starts) == len(ends)
+
+        with self.dbcnxn.open_session() as session:
+            scoot_readings = (
+                session.query(
+                    ScootReading.detector_id,
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                    ScootReading.measurement_start_utc,
+                    ScootReading.measurement_end_utc,
+                    ScootReading.n_vehicles_in_interval,
+                )
+                .join(
+                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                )
+                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+            )
+            # get a list of or statements
+            or_statements = []
+            for s, e in zip(starts, ends):
+                # append AND statement
+                or_statements.append(and_(
+                    ScootReading.measurement_start_utc >= s,
+                    ScootReading.measurement_start_utc < e
+                ))
+            scoot_readings.filter(or_(*or_statements))
 
             return scoot_readings
     
@@ -235,26 +303,6 @@ class TrafficQuery(DBWriter):
         with self.dbcnxn.open_session() as session:
             df = pd.read_sql(query, session.bind)
             return df
-        
-    def get_all_readings(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
-        """
-        Get every reading for every SCOOT detector + the lat and lon of the sensor.
-        """
-        query = """
-            SELECT detector_id, ST_X(interest_points.meta_point."location") as "lon",
-                ST_Y(interest_points.meta_point."location") as "lat",
-                measurement_start_utc, measurement_end_utc,
-                n_vehicles_in_interval, occupancy_percentage,
-                congestion_percentage, saturation_percentage as "saturation"
-            FROM dynamic_data.scoot_reading 
-            JOIN interest_points.scoot_detector on detector_id = interest_points.scoot_detector.detector_n 
-            JOIN interest_points.meta_point on id = interest_points.scoot_detector.point_id
-            WHERE measurement_start_utc >= '{start}' AND measurement_start_utc < '{end}'
-        """.format(start=start_datetime, end=end_datetime)
-        
-        with self.dbcnxn.open_session() as session:
-            df = pd.read_sql(query, session.bind)
-            return df
 
     def get_readings_for_hour(self, hour):
         """
@@ -329,5 +377,3 @@ class TrafficQuery(DBWriter):
                 ScootReading.measurement_start_utc >= start_datetime
             )
             return pd.read_sql(query.statement, query.session.bind)
-            
-
