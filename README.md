@@ -345,7 +345,7 @@ docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model
 
 **Traffic lockdown model training**
 ```bash
-docker build -t cleanairdocker.azurecr.io/traffic/lockdown_train -f containers/dockerfiles/lockdown_train.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets
+docker build -t cleanairdocker.azurecr.io/traffic/lockdown_train -f containers/dockerfiles/lockdown_train.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/traffic/lockdown_train
 
 ## The cleanair parser
 
