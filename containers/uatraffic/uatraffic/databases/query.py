@@ -124,7 +124,7 @@ class TrafficQuery(DBWriter):
                     ScootReading.measurement_start_utc >= s,
                     ScootReading.measurement_start_utc < e
                 ))
-            scoot_readings.filter(or_(*or_statements))
+            scoot_readings = scoot_readings.filter(or_(*or_statements))
 
             return scoot_readings
     

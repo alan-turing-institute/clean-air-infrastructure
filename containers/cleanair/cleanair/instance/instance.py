@@ -61,13 +61,18 @@ class Instance(DBWriter, DBQueryMixin):
         try:
             super().__init__(secretfile=kwargs.pop("secretfile", "../../terraform/.secrets/db_secrets.json"))
         except FileNotFoundError:
-            logging.warning("db_secrets.json not found. Instance will not be able to read or write from the DB so you must have all data files stored locally.")
+            error_message = "db_secrets.json not found."
+            if kwargs.get("tag") == "validation":
+                error_message += "Instance will not be able to read or write from the DB so you must have all data files stored locally."
+                logging.warning(error_message)
+            else:
+                raise FileNotFoundError(error_message)
 
-        self._model_name = kwargs.get("model_name", None)
-        self._param_id = kwargs.get("param_id", None)
-        self._data_id = kwargs.get("data_id", None)
-        self._cluster_id = kwargs.get("cluster_id", None)
-        self._tag = kwargs.get("tag", None)
+        self._model_name = kwargs.get("model_name")
+        self._param_id = kwargs.get("param_id")
+        self._data_id = kwargs.get("data_id")
+        self._cluster_id = kwargs.get("cluster_id")
+        self._tag = kwargs.get("tag")
 
         if "git_hash" in kwargs:
             # get git hash from parameter

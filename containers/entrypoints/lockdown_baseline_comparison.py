@@ -27,17 +27,12 @@ def main():
     # the end of the latest day is latest_start + nhours
     latest_end = datetime.strptime(args.latest_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
 
-    # split up by weekday (0 Monday, 1 Tuesday)
+    # get the day of week for the latest day
     day_of_week = date.fromisoformat(args.latest_start).weekday()
     assert day_of_week >= 0 and day_of_week < 7
 
-    # remove zeros to avoid skewing the median
-
-    # take the median for each hour of each weekday
-
-
     # get data from database for the given day_of_week
-    baseline_df = lockdown_process.get_scoot_with_location(
+    baseline_df = lockdown_process.get_scoot_filter_by_dow(
         start_time=args.baseline_start,
         end_time=args.baseline_end,
         day_of_week=day_of_week,
@@ -46,30 +41,20 @@ def main():
     latest_df = lockdown_process.get_scoot_with_location(
         start_time=args.latest_start, end_time=latest_end, output_type="df"
     )
-    # check the days of week are correct
-    print(pd.to_datetime(baseline_df.measurement_start_utc).dt.dayofweek().unique())
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
     latest_df["hour"] = pd.to_datetime(latest_df.measurement_start_utc).dt.hour
 
-    # get stats
-    print(baseline_df.head())
-    print(baseline_df["measurement_start_utc"].min(), baseline_df["measurement_start_utc"].max())
-
     # remove outliers and align for missing values
     baseline_df = remove_outliers(baseline_df)
     latest_df = remove_outliers(latest_df)
-    baseline_df, latest_df = align_dfs_by_hour(baseline_df, latest_df)
 
     # calculate the percent of latest traffic from local traffic
     metric_df = percent_of_baseline(baseline_df, latest_df)
-
     metric_df["latest_start_utc"] = args.latest_start
     metric_df["latest_end_utc"] = latest_end
     metric_df["day_of_week"] = day_of_week
     metric_df["baseline_period"] = args.tag
-
-    print(metric_df)
 
     # upload records to database
     record_cols = [

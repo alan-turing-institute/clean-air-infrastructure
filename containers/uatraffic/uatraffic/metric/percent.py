@@ -13,9 +13,12 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=None, ignore_missin
     finally:
         detector_set = normal_set.intersection(latest_set)
 
+    # TODO: remove zeros to avoid skewing the median
+    logging.warning("Remember to remove zeros - this still needs to be implemented.")
+
     # groupby detectorid and hour
     if not groupby_cols:
-        groupby_cols = "detector_id"
+        groupby_cols = ["detector_id"]
     baseline_gb = baseline_df.groupby("detector_id")
     latest_gb = latest_df.groupby("detector_id")
 
@@ -26,21 +29,23 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=None, ignore_missin
     latest_zero_count = []
     different_count = []
 
+    # iterate over detectors
     for name, group in baseline_gb:
         if name in detector_set:
+            # get the median for each hour
             median_by_hour = group.groupby("hour")["n_vehicles_in_interval"].median()
-            print(median_by_hour)
-            exit()
-            try:
-                assert list(group["hour"].sort_values()) == list(latest_gb.get_group(name)["hour"].sort_values())
-            except AssertionError:
-                if ignore_missing:
-                    different_count.append(name)
-                else:
-                    raise ValueError("Both dataframes should have the same entries for each hour. See align_dfs_by_hour().")
+
+            # get the dataframe for the recent day for this detector
+            day_df = latest_gb.get_group(name)
+
+            # align series so they have the same hour indices
+            i1 = median_by_hour.index
+            i2 = day_df.set_index("hour").index
+            median_by_hour = median_by_hour[i1.isin(i2)]
+            day_df = day_df.loc[i2.isin(i1)]
 
             # sum all vehicles in the normal day for this detector
-            baseline_n_vehicles_in_interval = group["n_vehicles_in_interval"].sum()
+            baseline_n_vehicles_in_interval = median_by_hour.sum()
             try:
                 assert baseline_n_vehicles_in_interval > 0
             except AssertionError:
@@ -50,7 +55,7 @@ def percent_of_baseline(baseline_df, latest_df, groupby_cols=None, ignore_missin
             
             # sum all vehicles in the latest day for this detector
             # ToDo: is this oK to set to 1?
-            latest_n_vehicles_in_interval = latest_gb.get_group(name)["n_vehicles_in_interval"].sum()
+            latest_n_vehicles_in_interval = day_df["n_vehicles_in_interval"].sum()
             try:
                 assert latest_n_vehicles_in_interval > 0
             except AssertionError:
