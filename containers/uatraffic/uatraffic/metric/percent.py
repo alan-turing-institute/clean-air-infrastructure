@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import numpy as np
 
-def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, ignore_missing=False):
+def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, min_condfidence_count=6):
     """Group both dataframes by detector id and day then """
     try:
         normal_set = set(baseline_df.detector_id)
@@ -26,18 +26,17 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, ignore_mi
     # keep results in a dataframe
     value_cols = ["baseline_n_vehicles_in_interval", "comparison_n_vehicles_in_interval", "percent_of_baseline"]
     rows_list = []
-    normal_zero_count = []
-    comparison_zero_count = []
-    different_count = []
+    baseline_zero_count = 0
+    comparison_zero_count = 0
 
     # iterate over detectors
     for name, group in baseline_gb:
         if name in detector_set:
-            no_traffic_in_baseline = False
-            no_traffic_in_comparison = False
-            low_confidence = False      # if we have less than 6 datapoints
-            removed_anomaly_in_baseline = False
-            removed_anomaly_in_comparison_day = False
+            flag_dict = dict(
+                no_traffic_in_baseline = False,
+                no_traffic_in_comparison = False,
+                low_confidence = False,      # if we have less than 6 datapoints
+            )
 
             # get the median for each hour
             median_by_hour = group.groupby("hour")["n_vehicles_in_interval"].median()
@@ -55,29 +54,24 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, ignore_mi
             baseline_n_vehicles_in_interval = median_by_hour.sum()
             comparison_n_vehicles_in_interval = day_df["n_vehicles_in_interval"].sum()
 
+            # count the number of observations and raise flag if there are not many observations
+            num_observations = median_by_hour.count()
+            flag_dict["low_confidence"] = num_observations < min_condfidence_count
+
+            # handle data when missing values or total vehicles in zero
+            if baseline_n_vehicles_in_interval <= 0:
+                logging.debug("Baseline sum is not greater than zero for detector %s.", name)
+                percent_change = np.nan
+                flag_dict["no_traffic_in_baseline"] = True
+                baseline_zero_count += 1
             if comparison_n_vehicles_in_interval <= 0:
                 logging.debug("Latest sum is not greater than zero for detector %s.", name)
                 percent_change = 0
-            elif baseline_n_vehicles_in_interval <= 0:
-                logging.debug("Baseline sum is not greater than zero for detector %s.", name)
-                percent_change = np.nan
-
-            try:
-                assert baseline_n_vehicles_in_interval > 0
-            except AssertionError:
-                normal_zero_count.append(name)
-                baseline_n_vehicles_in_interval = 1
-
-            # sum all vehicles in the comparison day for this detector
-            # ToDo: is this oK to set to 1?
-            try:
-                assert comparison_n_vehicles_in_interval > 0
-            except AssertionError:
-                logging.debug("Latest sum is not greater than zero for detector %s. Setting comparison sum to 1.", name)
-                comparison_zero_count.append(name)
-                comparison_n_vehicles_in_interval = 1
-                
-            percent_change = 100 - 100 * (baseline_n_vehicles_in_interval - comparison_n_vehicles_in_interval) / baseline_n_vehicles_in_interval
+                flag_dict["no_traffic_in_comparison"] = True
+                comparison_zero_count += 1
+            # calculate percentage difference in normal conditions
+            if not flag_dict["no_traffic_in_baseline"] and not flag_dict["no_traffic_in_comparison"]:
+                percent_change = 100 - 100 * (baseline_n_vehicles_in_interval - comparison_n_vehicles_in_interval) / baseline_n_vehicles_in_interval
 
             if len(groupby_cols) > 1:
                 index_dict = {groupby_cols[i]: name[i] for i in range(len(groupby_cols))}
@@ -86,13 +80,14 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, ignore_mi
 
             row_dict = dict(
                 index_dict,
+                **flag_dict,
                 baseline_n_vehicles_in_interval=baseline_n_vehicles_in_interval,
                 comparison_n_vehicles_in_interval=comparison_n_vehicles_in_interval,
+                num_observations=num_observations,
                 percent_of_baseline=percent_change
             )
             rows_list.append(row_dict)
 
-    logging.info("%s detectors with zero vehicles in normal", len(normal_zero_count))
-    logging.info("%s detectors with zero vehicles in comparison", len(comparison_zero_count))
-    logging.info("%s detectors with different number of observations.", len(different_count))
+    logging.info("%s detectors with zero vehicles in normal", baseline_zero_count)
+    logging.info("%s detectors with zero vehicles in comparison", comparison_zero_count)
     return pd.DataFrame(rows_list)

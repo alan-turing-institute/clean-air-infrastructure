@@ -49,8 +49,13 @@ def main():
     baseline_df = remove_outliers(baseline_df)
     comparison_df = remove_outliers(comparison_df)
 
+    # TODO: add flags for each detector for anomalies
+    # removed_anomaly_in_baseline = False,
+    # removed_anomaly_in_comparison = False,
+
     # calculate the percent of comparison traffic from local traffic
     metric_df = percent_of_baseline(baseline_df, comparison_df)
+    print(metric_df)
     metric_df["measurement_start_utc"] = args.comparison_start
     metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
@@ -66,8 +71,9 @@ def main():
         "baseline_n_vehicles_in_interval",
         "comparison_n_vehicles_in_interval",
         "percent_of_baseline",
-        # "lat",
-        # "lon"
+        "no_traffic_in_baseline",
+        "no_traffic_in_comparison",
+        "low_confidence",
     ]
 
     upload_records = metric_df[record_cols].to_dict("records")
