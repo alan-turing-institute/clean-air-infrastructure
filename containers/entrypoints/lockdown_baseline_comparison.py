@@ -44,10 +44,17 @@ def main():
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
     comparison_df["hour"] = pd.to_datetime(comparison_df.measurement_start_utc).dt.hour
+    baseline_anomaly_df = baseline_df.copy()
+    comparison_anomaly_df = comparison_df.copy()
 
     # remove outliers and align for missing values
     baseline_df = remove_outliers(baseline_df)
     comparison_df = remove_outliers(comparison_df)
+
+    # get dataframes of anomalous readings
+    # TODO: check nots they are the wrong way round!
+    baseline_anomaly_df = baseline_anomaly_df.loc[~baseline_anomaly_df.index.isin(baseline_df)]
+    comparison_anomaly_df = comparison_anomaly_df.loc[~comparison_anomaly_df.index.isin(comparison_df)]
 
     # TODO: add flags for each detector for anomalies
     # removed_anomaly_in_baseline = False,
@@ -60,6 +67,8 @@ def main():
     metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
     metric_df["baseline_period"] = args.tag
+    metric_df["removed_anomaly_from_baseline"] = metric_df["detector_id"].isin(baseline_anomaly_df["detector_id"].unique())
+    metric_df["removed_anomaly_from_comparison"] = metric_df["detector_id"].isin(comparison_anomaly_df["detector_id"].unique())
 
     # upload records to database
     record_cols = [
@@ -74,6 +83,9 @@ def main():
         "no_traffic_in_baseline",
         "no_traffic_in_comparison",
         "low_confidence",
+        "num_observations",
+        "removed_anomaly_from_baseline",
+        "removed_anomaly_from_comparison",
     ]
 
     upload_records = metric_df[record_cols].to_dict("records")

@@ -33,10 +33,9 @@ class ScootPercentChange(Base):
     no_traffic_in_baseline = Column(BOOLEAN, nullable=False)
     no_traffic_in_comparison = Column(BOOLEAN, nullable=False)
     low_confidence = Column(BOOLEAN, nullable=False)
-
-    # ToDo: remove later on?
-    # lat = Column(DOUBLE_PRECISION(), nullable=False)
-    # lon = Column(DOUBLE_PRECISION(), nullable=False)
+    num_observations = Column(Integer, nullable=False)
+    removed_anomaly_from_baseline = Column(BOOLEAN, nullable=False)
+    removed_anomaly_from_comparison = Column(BOOLEAN, nullable=False)
 
     def __repr__(self):
         vals = [
