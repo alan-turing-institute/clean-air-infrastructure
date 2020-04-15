@@ -6,6 +6,7 @@ from cleanair.mixins import (
 from .mixins import BaselineParserMixin
 from datetime import datetime, timedelta
 
+
 class BaselineParser(
     BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
@@ -20,13 +21,13 @@ class BaselineParser(
             "--comparison_start",
             default="yesterday",
             help="Timestamp for beginning of comparison day.",
-            type = self.validate_type
+            type=self.validate_type,
         )
 
     def validate_type(self, datestr):
 
-        if datestr == 'yesterday':
-            return (datetime.today() - timedelta(days = 1)).date()
+        if datestr == "yesterday":
+            return (datetime.today() - timedelta(days=1)).date()
 
         else:
             try:

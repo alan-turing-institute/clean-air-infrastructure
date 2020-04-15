@@ -14,7 +14,6 @@ from uatraffic.metric import percent_of_baseline
 from uatraffic.util import BaselineParser
 
 
-
 def main():
     """
     Calculate the percent of baseline metric for a recent day.
@@ -23,31 +22,30 @@ def main():
     parser = BaselineParser(nhours=24)
     args = parser.parse_args()
 
-    if args.tag == 'normal':
-        baseline_start = '2020-02-10'
-        baseline_end = '2020-03-03'
+    if args.tag == "normal":
+        baseline_start = "2020-02-10"
+        baseline_end = "2020-03-03"
     else:
-        baseline_start = '2020-03-23'
-        baseline_end = '2020-04-13'
-
+        baseline_start = "2020-03-23"
+        baseline_end = "2020-04-13"
 
     # get query object
     lockdown_process = TrafficQuery(secretfile=args.secretfile)
 
     # the end of the comparison day is comparison_start + nhours
-    comparison_end = args.comparison_start + timedelta(
-        days=1
-    )
+    comparison_end = args.comparison_start + timedelta(days=1)
 
     # get the day of week for the comparison day
     day_of_week = args.comparison_start.weekday()
 
-    logging.info("Comparing scoot data from %s to all %s's between %s baseline. Baseline dates: %s to %s (exclusive)", 
-                 args.comparison_start.isoformat(), 
-                 calendar.day_name[day_of_week],
-                 args.tag,
-                 baseline_start, 
-                 baseline_end)
+    logging.info(
+        "Comparing scoot data from %s to all %s's between %s baseline. Baseline dates: %s to %s (exclusive)",
+        args.comparison_start.isoformat(),
+        calendar.day_name[day_of_week],
+        args.tag,
+        baseline_start,
+        baseline_end,
+    )
 
     # get data from database for the given day_of_week
     baseline_df = lockdown_process.get_scoot_filter_by_dow(
@@ -57,7 +55,9 @@ def main():
         output_type="df",
     )
     comparison_df = lockdown_process.get_scoot_with_location(
-        start_time=args.comparison_start.isoformat(), end_time=comparison_end.isoformat(), output_type="df"
+        start_time=args.comparison_start.isoformat(),
+        end_time=comparison_end.isoformat(),
+        output_type="df",
     )
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
