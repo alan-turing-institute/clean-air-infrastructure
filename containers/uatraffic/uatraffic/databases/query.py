@@ -12,6 +12,7 @@ from cleanair.databases.tables import (
     MetaPoint,
     ScootReading,
     ScootDetector,
+    ScootPercentChange,
 )
 from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
@@ -127,7 +128,24 @@ class TrafficQuery(DBWriter):
             scoot_readings = scoot_readings.filter(or_(*or_statements))
 
             return scoot_readings
-    
+
+    @db_query
+    def get_percent_of_baseline(self, baseline_period, comparison_start, comparison_end=None):
+        """
+        Get the values for the percent_of_baseline metric for a day and baseline.
+        """
+        with self.dbcnxn.open_session() as session:
+            baseline_readings = (
+                session.query(ScootPercentChange)
+                .filter(ScootPercentChange.baseline_period==baseline_period)
+                .filter(ScootPercentChange.measurement_start_utc >= comparison_start)
+            )
+            if comparison_end:
+                baseline_readings = baseline_readings.filter(
+                    ScootPercentChange.measurement_start_utc < comparison_end
+                )
+            return baseline_readings
+
     def groupby_datetime_df(self, start_datetime="2020-02-23 06:00:00", end_datetime="2020-02-23 18:00:00"):
         """
         Group by hour and return the average or sum of the column for that hour.

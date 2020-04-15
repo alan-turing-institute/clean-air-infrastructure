@@ -53,8 +53,10 @@ def main():
 
     # get dataframes of anomalous readings
     # TODO: check nots they are the wrong way round!
-    baseline_anomaly_df = baseline_anomaly_df.loc[~baseline_anomaly_df.index.isin(baseline_df)]
-    comparison_anomaly_df = comparison_anomaly_df.loc[~comparison_anomaly_df.index.isin(comparison_df)]
+    baseline_anomaly_df = baseline_anomaly_df.loc[~baseline_anomaly_df.index.isin(baseline_df.index)]
+    comparison_anomaly_df = comparison_anomaly_df.loc[~comparison_anomaly_df.index.isin(comparison_df.index)]
+    logging.info("Number of anomalies in baseline is %s", len(baseline_anomaly_df))
+    logging.info("Number of anomalies in comparison is %s", len(comparison_anomaly_df))
 
     # TODO: add flags for each detector for anomalies
     # removed_anomaly_in_baseline = False,
