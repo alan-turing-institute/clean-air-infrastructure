@@ -230,8 +230,6 @@ cronjobs:
       secret:
         secretName: secrets
 
-
-
 deployments:
     - name: cleanair-api
       replicas: 2
