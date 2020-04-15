@@ -6,9 +6,8 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import func, or_, and_
 
-from cleanair.databases import DBWriter
+from cleanair.databases import DBReader
 from cleanair.databases.tables import (
-    OSHighway,
     MetaPoint,
     ScootReading,
     ScootDetector,
@@ -18,7 +17,7 @@ from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
 
-class TrafficQuery(DBWriter):
+class TrafficQuery(DBReader):
     """
     Queries to run on the SCOOT DB.
     """
@@ -140,12 +139,12 @@ class TrafficQuery(DBWriter):
             )
             # get a list of or statements
             or_statements = []
-            for s, e in zip(starts, ends):
+            for start, end in zip(starts, ends):
                 # append AND statement
                 or_statements.append(
                     and_(
-                        ScootReading.measurement_start_utc >= s,
-                        ScootReading.measurement_start_utc < e,
+                        ScootReading.measurement_start_utc >= start,
+                        ScootReading.measurement_start_utc < end,
                     )
                 )
             scoot_readings = scoot_readings.filter(or_(*or_statements))

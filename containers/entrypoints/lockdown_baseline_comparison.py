@@ -7,6 +7,7 @@ import calendar
 import pandas as pd
 
 from cleanair.databases.tables import ScootPercentChange
+from cleanair.databases import DBInteractor
 
 from uatraffic.databases import TrafficQuery
 from uatraffic.preprocess import remove_outliers
@@ -19,7 +20,7 @@ def main():
     Calculate the percent of baseline metric for a recent day.
     """
     # get args from parser
-    parser = BaselineParser(nhours=24)
+    parser = BaselineParser()
     args = parser.parse_args()
 
     if args.tag == "normal":
@@ -118,9 +119,10 @@ def main():
         "removed_anomaly_from_comparison",
     ]
 
+    interactor = DBInteractor(args.secretfile)
     upload_records = metric_df[record_cols].to_dict("records")
     logging.info("Inserting %s records into the database", len(upload_records))
-    with lockdown_process.dbcnxn.open_session() as session:
+    with interactor.dbcnxn.open_session() as session:
         lockdown_process.commit_records(
             session, upload_records, table=ScootPercentChange, on_conflict="overwrite"
         )
