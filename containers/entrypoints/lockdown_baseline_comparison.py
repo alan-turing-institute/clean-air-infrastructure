@@ -3,6 +3,7 @@ Calculate the percent of baseline metric for a recent day.
 """
 import logging
 from datetime import date, datetime, timedelta
+import calendar
 import pandas as pd
 
 from cleanair.databases.tables import ScootPercentChange
@@ -21,26 +22,41 @@ def main():
     parser = BaselineParser(nhours=24)
     args = parser.parse_args()
 
+    if args.tag == 'normal':
+        baseline_start = '2020-02-10'
+        baseline_end = '2020-03-03'
+    else:
+        baseline_start = '2020-03-23'
+        baseline_end = '2020-04-13'
+
+
     # get query object
     lockdown_process = TrafficQuery(secretfile=args.secretfile)
 
     # the end of the comparison day is comparison_start + nhours
-    comparison_end = datetime.strptime(args.comparison_start, "%Y-%m-%d") + timedelta(
-        hours=args.nhours
+    comparison_end = args.comparison_start + timedelta(
+        days=1
     )
 
     # get the day of week for the comparison day
-    day_of_week = date.fromisoformat(args.comparison_start).weekday()
+    day_of_week = args.comparison_start.weekday()
+
+    logging.info("Comparing scoot data from %s to all %s's between %s baseline. Baseline dates: %s to %s (exclusive)", 
+                 args.comparison_start.isoformat(), 
+                 calendar.day_name[day_of_week],
+                 args.tag,
+                 baseline_start, 
+                 baseline_end)
 
     # get data from database for the given day_of_week
     baseline_df = lockdown_process.get_scoot_filter_by_dow(
-        start_time=args.baseline_start,
-        end_time=args.baseline_end,
+        start_time=baseline_start,
+        end_time=baseline_end,
         day_of_week=day_of_week,
         output_type="df",
     )
     comparison_df = lockdown_process.get_scoot_with_location(
-        start_time=args.comparison_start, end_time=comparison_end, output_type="df"
+        start_time=args.comparison_start.isoformat(), end_time=comparison_end.isoformat(), output_type="df"
     )
     # add an hour column
     baseline_df["hour"] = pd.to_datetime(baseline_df.measurement_start_utc).dt.hour
@@ -76,6 +92,11 @@ def main():
         comparison_anomaly_df["detector_id"].unique()
     )
 
+    logging.info("Uploading to database")
+
+    metric_df["baseline_start_date"] = baseline_start
+    metric_df["baseline_end_date"] = baseline_end
+
     # upload records to database
     record_cols = [
         "detector_id",
@@ -83,6 +104,8 @@ def main():
         "measurement_end_utc",
         "day_of_week",
         "baseline_period",
+        "baseline_start_date",
+        "baseline_end_date",
         "baseline_n_vehicles_in_interval",
         "comparison_n_vehicles_in_interval",
         "percent_of_baseline",

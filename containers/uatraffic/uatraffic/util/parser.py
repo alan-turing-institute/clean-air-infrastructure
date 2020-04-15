@@ -4,7 +4,7 @@ from cleanair.mixins import (
     VerbosityMixin,
 )
 from .mixins import BaselineParserMixin
-
+from datetime import datetime, timedelta
 
 class BaselineParser(
     BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
@@ -18,6 +18,18 @@ class BaselineParser(
         self.add_argument(
             "-l",
             "--comparison_start",
-            default="2020-03-30",
+            default="yesterday",
             help="Timestamp for beginning of comparison day.",
+            type = self.validate_type
         )
+
+    def validate_type(self, datestr):
+
+        if datestr == 'yesterday':
+            return (datetime.today() - timedelta(days = 1)).date()
+
+        else:
+            try:
+                return datestr.fromisoformat()
+            except ValueError:
+                raise ArgumentTypeError("Not a valid iso date: {}".format(datestr))

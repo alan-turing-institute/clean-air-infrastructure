@@ -26,6 +26,8 @@ class ScootPercentChange(Base):
         primary_key=True,
         nullable=False,
     )
+    baseline_start_date = Column(TIMESTAMP, primary_key=True, nullable=False)
+    baseline_end_date = Column(TIMESTAMP, primary_key=True, nullable=False)
     baseline_n_vehicles_in_interval = Column(Integer(), nullable=False)
     # pylint: disable=C0103
     comparison_n_vehicles_in_interval = Column(Integer(), nullable=False)
