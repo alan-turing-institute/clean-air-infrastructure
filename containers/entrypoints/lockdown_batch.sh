@@ -6,6 +6,15 @@
 #SBATCH --gres=gpu:1 #(number of GPUs to use)
 #SBATCH -t 00:02:00 #(expected job run time)
 
+#SBATCH --job-name=<JOB_NAME>
+#SBATCH --output=<LOG_NAME>
+#SBATCH --nodes=<NODES>
+#SBATCH --ntasks=<CPUS>
+#SBATCH --cpus-per-task=1
+#SBATCH --gres=gpu:1
+#SBATCH --time=<TIME>
+#SBATCH --mem-per-cpu=<MEMORY>
+
 kernels=(matern32, rbf, periodic)   # names of kernels
 # detector_batch_size = 100         # number of detectors in one batch
 # num_detectors = 12421             # total number of detectors in our db
