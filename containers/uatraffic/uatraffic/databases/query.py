@@ -80,7 +80,9 @@ class TrafficQuery(DBWriter):
             return scoot_readings
 
     @db_query
-    def get_scoot_filter_by_dow(self, day_of_week, start_time, end_time=None, detectors=None):
+    def get_scoot_filter_by_dow(
+        self, day_of_week, start_time, end_time=None, detectors=None
+    ):
         """
         Get scoot readings for days between start_time and end_time filtered by day_of_week.
 
@@ -104,11 +106,19 @@ class TrafficQuery(DBWriter):
 
         # get list of start times that match the weekday within the timerange
         starts = pd.date_range(start_time, end_time).to_series()
-        starts = starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)].dt.strftime("%Y-%m-%d").to_list()
+        starts = (
+            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
 
         # get list of end times that match the weekday within the timerange
         ends = pd.date_range(start_time, end_time).to_series()
-        ends = ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)].dt.strftime("%Y-%m-%d").to_list()
+        ends = (
+            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
 
         # check lists are the same length
         assert len(starts) == len(ends)
@@ -132,10 +142,12 @@ class TrafficQuery(DBWriter):
             or_statements = []
             for s, e in zip(starts, ends):
                 # append AND statement
-                or_statements.append(and_(
-                    ScootReading.measurement_start_utc >= s,
-                    ScootReading.measurement_start_utc < e
-                ))
+                or_statements.append(
+                    and_(
+                        ScootReading.measurement_start_utc >= s,
+                        ScootReading.measurement_start_utc < e,
+                    )
+                )
             scoot_readings = scoot_readings.filter(or_(*or_statements))
 
             # get subset of detectors
@@ -147,7 +159,9 @@ class TrafficQuery(DBWriter):
             return scoot_readings
 
     @db_query
-    def get_percent_of_baseline(self, baseline_period, comparison_start, comparison_end=None, detectors=None):
+    def get_percent_of_baseline(
+        self, baseline_period, comparison_start, comparison_end=None, detectors=None
+    ):
         """
         Get the values for the percent_of_baseline metric for a day and baseline.
         """

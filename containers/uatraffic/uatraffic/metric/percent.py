@@ -1,16 +1,20 @@
-
 import logging
 import pandas as pd
 import numpy as np
 
-def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, min_condfidence_count=6):
+
+def percent_of_baseline(
+    baseline_df, comparison_df, groupby_cols=None, min_condfidence_count=6
+):
     """Group both dataframes by detector id and day then """
     try:
         normal_set = set(baseline_df.detector_id)
         comparison_set = set(comparison_df.detector_id)
         assert normal_set == comparison_set
     except AssertionError:
-        logging.warning("normal_df and comparison_df have different sensors. Trying to compensate.")
+        logging.warning(
+            "normal_df and comparison_df have different sensors. Trying to compensate."
+        )
     finally:
         detector_set = normal_set.intersection(comparison_set)
 
@@ -24,7 +28,11 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, min_condf
     comparison_gb = comparison_df.groupby("detector_id")
 
     # keep results in a dataframe
-    value_cols = ["baseline_n_vehicles_in_interval", "comparison_n_vehicles_in_interval", "percent_of_baseline"]
+    value_cols = [
+        "baseline_n_vehicles_in_interval",
+        "comparison_n_vehicles_in_interval",
+        "percent_of_baseline",
+    ]
     rows_list = []
     baseline_zero_count = 0
     comparison_zero_count = 0
@@ -33,9 +41,9 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, min_condf
     for name, group in baseline_gb:
         if name in detector_set:
             flag_dict = dict(
-                no_traffic_in_baseline = False,
-                no_traffic_in_comparison = False,
-                low_confidence = False,      # if we have less than 6 datapoints
+                no_traffic_in_baseline=False,
+                no_traffic_in_comparison=False,
+                low_confidence=False,  # if we have less than 6 datapoints
             )
 
             # get the median for each hour
@@ -60,21 +68,38 @@ def percent_of_baseline(baseline_df, comparison_df, groupby_cols=None, min_condf
 
             # handle data when missing values or total vehicles in zero
             if baseline_n_vehicles_in_interval <= 0:
-                logging.debug("Baseline sum is not greater than zero for detector %s.", name)
+                logging.debug(
+                    "Baseline sum is not greater than zero for detector %s.", name
+                )
                 percent_change = np.nan
                 flag_dict["no_traffic_in_baseline"] = True
                 baseline_zero_count += 1
             if comparison_n_vehicles_in_interval <= 0:
-                logging.debug("Latest sum is not greater than zero for detector %s.", name)
+                logging.debug(
+                    "Latest sum is not greater than zero for detector %s.", name
+                )
                 percent_change = 0
                 flag_dict["no_traffic_in_comparison"] = True
                 comparison_zero_count += 1
             # calculate percentage difference in normal conditions
-            if not flag_dict["no_traffic_in_baseline"] and not flag_dict["no_traffic_in_comparison"]:
-                percent_change = 100 - 100 * (baseline_n_vehicles_in_interval - comparison_n_vehicles_in_interval) / baseline_n_vehicles_in_interval
+            if (
+                not flag_dict["no_traffic_in_baseline"]
+                and not flag_dict["no_traffic_in_comparison"]
+            ):
+                percent_change = (
+                    100
+                    - 100
+                    * (
+                        baseline_n_vehicles_in_interval
+                        - comparison_n_vehicles_in_interval
+                    )
+                    / baseline_n_vehicles_in_interval
+                )
 
             if len(groupby_cols) > 1:
-                index_dict = {groupby_cols[i]: name[i] for i in range(len(groupby_cols))}
+                index_dict = {
+                    groupby_cols[i]: name[i] for i in range(len(groupby_cols))
+                }
             else:
                 index_dict = {groupby_cols[0]: name}
 

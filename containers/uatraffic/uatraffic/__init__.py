@@ -6,9 +6,4 @@ from . import metric
 from . import preprocess
 from . import util
 
-__all__ = [
-    "databases",
-    "metric",
-    "preprocess",
-    "util"
-]
+__all__ = ["databases", "metric", "preprocess", "util"]

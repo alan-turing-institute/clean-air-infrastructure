@@ -1,4 +1,3 @@
-
 from argparse import ArgumentParser, ArgumentTypeError
 from cleanair.mixins import (
     SecretFileParserMixin,
@@ -6,15 +5,14 @@ from cleanair.mixins import (
 )
 from .mixins import BaselineParserMixin
 
+
 class BaselineParser(
-    BaselineParserMixin,
-    SecretFileParserMixin,
-    VerbosityMixin,
-    ArgumentParser,
+    BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
     """
     Parser for querying a recent day against a baseline.
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(

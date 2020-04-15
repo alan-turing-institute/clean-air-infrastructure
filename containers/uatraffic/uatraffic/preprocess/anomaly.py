@@ -1,5 +1,6 @@
 import logging
 
+
 def remove_outliers(df, k=3, col="n_vehicles_in_interval"):
     """Remove outliers $x$ where $|x - \mu| > k \sigma$ for each detector."""
     to_remove = get_index_of_outliers(df, k=3, col=col)
@@ -22,6 +23,7 @@ def get_index_of_outliers(df, k=3, col="n_vehicles_in_interval"):
         ].tolist()
         to_remove.extend(remove_in_group)
     return to_remove
+
 
 def align_dfs_by_hour(df1, df2, keys=None):
     """
