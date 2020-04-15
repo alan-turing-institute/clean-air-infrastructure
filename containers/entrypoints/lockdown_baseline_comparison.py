@@ -13,6 +13,7 @@ from uatraffic.preprocess import align_dfs_by_hour
 from uatraffic.metric import percent_of_baseline
 from uatraffic.util import BaselineParser
 
+
 def main():
 
     # get args from parser
@@ -20,12 +21,12 @@ def main():
     args = parser.parse_args()
 
     # get query object
-    lockdown_process = TrafficQuery(
-        secretfile=args.secretfile
-    )
+    lockdown_process = TrafficQuery(secretfile=args.secretfile)
 
     # the end of the comparison day is comparison_start + nhours
-    comparison_end = datetime.strptime(args.comparison_start, "%Y-%m-%d") + timedelta(hours=args.nhours)
+    comparison_end = datetime.strptime(args.comparison_start, "%Y-%m-%d") + timedelta(
+        hours=args.nhours
+    )
 
     # get the day of week for the comparison day
     day_of_week = date.fromisoformat(args.comparison_start).weekday()
@@ -36,7 +37,7 @@ def main():
         start_time=args.baseline_start,
         end_time=args.baseline_end,
         day_of_week=day_of_week,
-        output_type="df"
+        output_type="df",
     )
     comparison_df = lockdown_process.get_scoot_with_location(
         start_time=args.comparison_start, end_time=comparison_end, output_type="df"
@@ -53,8 +54,12 @@ def main():
 
     # get dataframes of anomalous readings
     # TODO: check nots they are the wrong way round!
-    baseline_anomaly_df = baseline_anomaly_df.loc[~baseline_anomaly_df.index.isin(baseline_df.index)]
-    comparison_anomaly_df = comparison_anomaly_df.loc[~comparison_anomaly_df.index.isin(comparison_df.index)]
+    baseline_anomaly_df = baseline_anomaly_df.loc[
+        ~baseline_anomaly_df.index.isin(baseline_df.index)
+    ]
+    comparison_anomaly_df = comparison_anomaly_df.loc[
+        ~comparison_anomaly_df.index.isin(comparison_df.index)
+    ]
     logging.info("Number of anomalies in baseline is %s", len(baseline_anomaly_df))
     logging.info("Number of anomalies in comparison is %s", len(comparison_anomaly_df))
 
@@ -69,8 +74,12 @@ def main():
     metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
     metric_df["baseline_period"] = args.tag
-    metric_df["removed_anomaly_from_baseline"] = metric_df["detector_id"].isin(baseline_anomaly_df["detector_id"].unique())
-    metric_df["removed_anomaly_from_comparison"] = metric_df["detector_id"].isin(comparison_anomaly_df["detector_id"].unique())
+    metric_df["removed_anomaly_from_baseline"] = metric_df["detector_id"].isin(
+        baseline_anomaly_df["detector_id"].unique()
+    )
+    metric_df["removed_anomaly_from_comparison"] = metric_df["detector_id"].isin(
+        comparison_anomaly_df["detector_id"].unique()
+    )
 
     # upload records to database
     record_cols = [
@@ -96,6 +105,7 @@ def main():
         lockdown_process.commit_records(
             session, upload_records, table=ScootPercentChange, on_conflict="overwrite"
         )
+
 
 if __name__ == "__main__":
     main()

@@ -118,6 +118,7 @@ class ScootForecastFeatureArgumentParser(
             help="List of SCOOT detectors to forecast for, (default: all of them).",
         )
 
+
 class ModelValidationParser(BaseModelParser):
     """
     A parser for model validation.
