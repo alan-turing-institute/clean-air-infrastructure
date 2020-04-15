@@ -30,14 +30,8 @@ class TrafficModelParser(
         )
         self.add_argument(
             "--root",
-            default="../../../experiments",
+            default="../experiments",
             help="Root to experiments directory."
-        )
-        self.add_argument(
-            "-u",
-            "--user_settings_filepath",
-            default="../../terraform/.secrets/user_settings.json",
-            help="Filepath to user settings."
         )
         self.add_argument(
             "-d",
@@ -45,6 +39,18 @@ class TrafficModelParser(
             nargs="+",
             default=["N00/002e1","N00/002g1","N13/016a1"],
             help="List of SCOOT detectors to forecast for, (default: all of them).",
+        )
+        self.add_argument(
+            "--batch_start",
+            default=None,
+            type=int,
+            help="Index of detector to start at during batching.",
+        )
+        self.add_argument(
+            "--batch_size",
+            default=None,
+            type=int,
+            help="Size of the batch.",
         )
     
     def parse_args(self):

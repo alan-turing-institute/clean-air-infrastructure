@@ -167,3 +167,15 @@ class TrafficQuery(DBWriter):
                     ScootReading.detector_id.in_(detectors)
                 )
             return baseline_readings
+
+    @db_query
+    def get_scoot_detectors(self, limit=None, offset=None):
+        """
+        Get all scoot detectors from the interest point schema.
+        """
+        with self.dbcnxn.open_session() as session:
+            readings = session.query(ScootDetector)
+            if isinstance(limit, int) and isinstance(offset, int):
+                readings = readings.order_by(ScootDetector.detector_n).slice(limit, offset)
+
+            return readings
