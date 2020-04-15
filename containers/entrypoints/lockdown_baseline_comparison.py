@@ -2,7 +2,7 @@
 Calculate the percent of baseline metric for a recent day.
 """
 import logging
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 import calendar
 import pandas as pd
 
