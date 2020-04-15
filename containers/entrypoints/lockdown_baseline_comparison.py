@@ -14,6 +14,7 @@ from uatraffic.metric import percent_of_baseline
 from uatraffic.util import BaselineParser
 
 
+
 def main():
     """
     Calculate the percent of baseline metric for a recent day.
