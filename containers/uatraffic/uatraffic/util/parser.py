@@ -8,6 +8,7 @@ from cleanair.mixins import (
 )
 from .mixins import BaselineParserMixin
 
+
 class BaselineParser(
     BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
@@ -24,6 +25,7 @@ class BaselineParser(
             help="Timestamp for beginning of comparison day.",
             type=validate_type,
         )
+
 
 def validate_type(datestr):
     """

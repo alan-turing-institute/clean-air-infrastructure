@@ -8,7 +8,11 @@ import logging
 def remove_outliers(scoot_df, k=3, col="n_vehicles_in_interval"):
     r"""Remove outliers $x$ where $|x - \mu| > k \sigma$ for each detector."""
     to_remove = get_index_of_outliers(scoot_df, k=k, col=col)
-    logging.info("Removed %s anomalous readings out of %s total readings", len(to_remove), len(scoot_df))
+    logging.info(
+        "Removed %s anomalous readings out of %s total readings",
+        len(to_remove),
+        len(scoot_df),
+    )
     return scoot_df.loc[~scoot_df.index.isin(set(to_remove))]
 
 

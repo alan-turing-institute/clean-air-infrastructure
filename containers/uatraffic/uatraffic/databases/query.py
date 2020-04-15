@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import func, or_, and_
 
-from cleanair.databases import DBReader
+from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     MetaPoint,
     ScootReading,
@@ -17,7 +17,7 @@ from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
 
-class TrafficQuery(DBReader):
+class TrafficQuery(DBWriter):  # pylint: disable=abstract-method
     """
     Queries to run on the SCOOT DB.
     """
