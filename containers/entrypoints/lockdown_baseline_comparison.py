@@ -9,13 +9,14 @@ from cleanair.databases.tables import ScootPercentChange
 
 from uatraffic.databases import TrafficQuery
 from uatraffic.preprocess import remove_outliers
-from uatraffic.preprocess import align_dfs_by_hour
 from uatraffic.metric import percent_of_baseline
 from uatraffic.util import BaselineParser
 
 
 def main():
-
+    """
+    Calculate the percent of baseline metric for a recent day.
+    """
     # get args from parser
     parser = BaselineParser(nhours=24)
     args = parser.parse_args()
@@ -30,7 +31,6 @@ def main():
 
     # get the day of week for the comparison day
     day_of_week = date.fromisoformat(args.comparison_start).weekday()
-    assert day_of_week >= 0 and day_of_week < 7
 
     # get data from database for the given day_of_week
     baseline_df = lockdown_process.get_scoot_filter_by_dow(
@@ -53,7 +53,6 @@ def main():
     comparison_df = remove_outliers(comparison_df)
 
     # get dataframes of anomalous readings
-    # TODO: check nots they are the wrong way round!
     baseline_anomaly_df = baseline_anomaly_df.loc[
         ~baseline_anomaly_df.index.isin(baseline_df.index)
     ]
@@ -62,10 +61,6 @@ def main():
     ]
     logging.info("Number of anomalies in baseline is %s", len(baseline_anomaly_df))
     logging.info("Number of anomalies in comparison is %s", len(comparison_anomaly_df))
-
-    # TODO: add flags for each detector for anomalies
-    # removed_anomaly_in_baseline = False,
-    # removed_anomaly_in_comparison = False,
 
     # calculate the percent of comparison traffic from local traffic
     metric_df = percent_of_baseline(baseline_df, comparison_df)
