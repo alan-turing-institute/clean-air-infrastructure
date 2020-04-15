@@ -73,14 +73,29 @@ class ScootDailyPerc(APIQueryMixin):
             "measurement_end_utc",
             "day_of_week",
             "baseline_period",
+            "baseline_start_date",
+            "baseline_end_date",
+            "baseline_n_vehicles_in_interval",
             "comparison_n_vehicles_in_interval",
             "percent_of_baseline",
+            "no_traffic_in_baseline",
+            "no_traffic_in_comparison ",
+            "low_confidence ",
+            "num_observations ",
+            "removed_anomaly_from_baseline",
+            "removed_anomaly_from_comparison",
         ]
 
     def query(self, session, baseline, start_time, end_time=None):
 
         percent_change = (
-            session.query(ScootPercentChange)
+            session.query(
+                ScootPercentChange,
+                func.ST_X(MetaPoint.location).label("lon"),
+                func.ST_Y(MetaPoint.location).label("lat"),
+            )
+            .join(ScootDetector, ScootReading.detector_id == ScootDetector.detector_n)
+            .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             .filter(ScootPercentChange.measurement_start_utc >= start_time)
             .filter(ScootPercentChange.baseline_period == baseline)
         )

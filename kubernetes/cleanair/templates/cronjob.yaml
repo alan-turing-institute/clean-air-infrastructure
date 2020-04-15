@@ -31,10 +31,12 @@ spec:
             - name: secrets
               mountPath: "/secrets/"
               readOnly: true
+            {{- with $cronjob.args }}
+            args:
+{{ toYaml . | indent 12 }}
 
           imagePullSecrets:
           - name: regcred
-
             {{- with $cronjob.env }}
             env:
 {{ toYaml . | indent 12 }}
@@ -42,9 +44,6 @@ spec:
             {{- if $cronjob.command }}
             command: {{ $cronjob.command }}
             {{- end }}
-            {{- with $cronjob.args }}
-            args:
-{{ toYaml . | indent 12 }}
             {{- with $cronjob.resources }}
             resources:
 {{ toYaml . | indent 14 }}
