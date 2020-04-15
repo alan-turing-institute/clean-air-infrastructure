@@ -1,10 +1,12 @@
+"""Parsers for the uatraffic module and their entrypoints."""
+
+from datetime import datetime, timedelta
 from argparse import ArgumentParser, ArgumentTypeError
 from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
 from .mixins import BaselineParserMixin
-from datetime import datetime, timedelta
 
 
 class BaselineParser(
@@ -21,16 +23,19 @@ class BaselineParser(
             "--comparison_start",
             default="yesterday",
             help="Timestamp for beginning of comparison day.",
-            type=self.validate_type,
+            type=validate_type,
         )
 
-    def validate_type(self, datestr):
 
-        if datestr == "yesterday":
-            return (datetime.today() - timedelta(days=1)).date()
+def validate_type(datestr):
+    """
+    Ensure the datestr passed in valid.
+    If yesterday is passed then return yesterdays date.
+    """
+    if datestr == "yesterday":
+        return (datetime.today() - timedelta(days=1)).date()
 
-        else:
-            try:
-                return datestr.fromisoformat()
-            except ValueError:
-                raise ArgumentTypeError("Not a valid iso date: {}".format(datestr))
+    try:
+        return datestr.fromisoformat()
+    except ValueError:
+        raise ArgumentTypeError("Not a valid iso date: {}".format(datestr))

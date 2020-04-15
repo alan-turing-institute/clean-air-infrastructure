@@ -1,3 +1,5 @@
+"""Functions for calculating the percentage change in traffic."""
+
 import logging
 import pandas as pd
 import numpy as np
@@ -18,9 +20,6 @@ def percent_of_baseline(
     finally:
         detector_set = normal_set.intersection(comparison_set)
 
-    # TODO: remove zeros to avoid skewing the median
-    logging.warning("Remember to remove zeros - this still needs to be implemented.")
-
     # groupby detectorid and hour
     if not groupby_cols:
         groupby_cols = ["detector_id"]
@@ -28,11 +27,6 @@ def percent_of_baseline(
     comparison_gb = comparison_df.groupby("detector_id")
 
     # keep results in a dataframe
-    value_cols = [
-        "baseline_n_vehicles_in_interval",
-        "comparison_n_vehicles_in_interval",
-        "percent_of_baseline",
-    ]
     rows_list = []
     baseline_zero_count = 0
     comparison_zero_count = 0
@@ -53,14 +47,16 @@ def percent_of_baseline(
             day_df = comparison_gb.get_group(name)
 
             # align series so they have the same hour indices
-            i1 = median_by_hour.index
-            i2 = day_df.set_index("hour").index
-            median_by_hour = median_by_hour[i1.isin(i2)]
-            day_df = day_df.loc[i2.isin(i1)]
+            median_index = median_by_hour.index
+            day_index = day_df.set_index("hour").index
+            median_by_hour = median_by_hour[median_index.isin(day_index)]
+            day_df = day_df.loc[day_index.isin(median_index)]
 
             # sum all vehicles for this detector
             baseline_n_vehicles_in_interval = median_by_hour.sum()
-            comparison_n_vehicles_in_interval = day_df["n_vehicles_in_interval"].sum()
+            comparison_n_vehicles_in_interval = day_df[
+                "n_vehicles_in_interval"
+            ].sum()  # pylint: disable=C0103
 
             # count the number of observations and raise flag if there are not many observations
             num_observations = median_by_hour.count()

@@ -19,7 +19,7 @@ def main():
     Calculate the percent of baseline metric for a recent day.
     """
     # get args from parser
-    parser = BaselineParser(nhours=24)
+    parser = BaselineParser()
     args = parser.parse_args()
 
     if args.tag == "normal":
@@ -30,7 +30,7 @@ def main():
         baseline_end = "2020-04-13"
 
     # get query object
-    lockdown_process = TrafficQuery(secretfile=args.secretfile)
+    traffic_query = TrafficQuery(secretfile=args.secretfile)
 
     # the end of the comparison day is comparison_start + nhours
     comparison_end = args.comparison_start + timedelta(days=1)
@@ -48,13 +48,13 @@ def main():
     )
 
     # get data from database for the given day_of_week
-    baseline_df = lockdown_process.get_scoot_filter_by_dow(
+    baseline_df = traffic_query.get_scoot_filter_by_dow(
         start_time=baseline_start,
         end_time=baseline_end,
         day_of_week=day_of_week,
         output_type="df",
     )
-    comparison_df = lockdown_process.get_scoot_with_location(
+    comparison_df = traffic_query.get_scoot_with_location(
         start_time=args.comparison_start.isoformat(),
         end_time=comparison_end.isoformat(),
         output_type="df",
@@ -80,8 +80,9 @@ def main():
     logging.info("Number of anomalies in comparison is %s", len(comparison_anomaly_df))
 
     # calculate the percent of comparison traffic from local traffic
+    logging.info("Calculating the percent of baseline metric.")
     metric_df = percent_of_baseline(baseline_df, comparison_df)
-    print(metric_df)
+    logging.info("Writing percent of baseline metrics to database.")
     metric_df["measurement_start_utc"] = args.comparison_start
     metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
@@ -92,8 +93,6 @@ def main():
     metric_df["removed_anomaly_from_comparison"] = metric_df["detector_id"].isin(
         comparison_anomaly_df["detector_id"].unique()
     )
-
-    logging.info("Uploading to database")
 
     metric_df["baseline_start_date"] = baseline_start
     metric_df["baseline_end_date"] = baseline_end
@@ -119,9 +118,8 @@ def main():
     ]
 
     upload_records = metric_df[record_cols].to_dict("records")
-    logging.info("Inserting %s records into the database", len(upload_records))
-    with lockdown_process.dbcnxn.open_session() as session:
-        lockdown_process.commit_records(
+    with traffic_query.dbcnxn.open_session() as session:
+        traffic_query.commit_records(
             session, upload_records, table=ScootPercentChange, on_conflict="overwrite"
         )
 
