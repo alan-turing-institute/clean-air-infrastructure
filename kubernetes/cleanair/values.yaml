@@ -196,6 +196,20 @@ cronjobs:
       secret:
         secretName: secrets
 
+  - name: lockdown-baseline
+    image:
+      repository: cleanairdocker.azurecr.io/lockdown_baseline
+      imagePullPolicy: Always
+    schedule: "* 04-12 * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 10
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
 deployments:
     - name: cleanair-api
       replicas: 2
