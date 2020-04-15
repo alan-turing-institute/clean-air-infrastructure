@@ -19,4 +19,4 @@ RUN mkdir /experiments
 COPY entrypoints/lockdown_train.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "/app/lockdown_train.py", "-s", "/secrets/db_secrets.json", "--root", "/experiments", "-x", "daily", "-b", "2020-02-10", "-e", "2020-02-11"]
+ENTRYPOINT ["python", "/app/lockdown_train.py"]

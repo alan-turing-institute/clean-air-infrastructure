@@ -6,14 +6,16 @@
 #SBATCH --gres=gpu:1 #(number of GPUs to use)
 #SBATCH -t 00:02:00 #(expected job run time)
 
-kernels=(matern32, rbf, periodic)
+kernels=(matern32, rbf, periodic)   # names of kernels
+# detector_batch_size = 100         # number of detectors in one batch
+# num_detectors = 12421             # total number of detectors in our db
 
-detector_batch_size = 10   # number of detectors in one batch
+# testing params
+detector_batch_size = 10
 num_detectors = 100
-# num_detectors = 12421       # total number of detectors in our db
 
 
-for kernel_id in kernels;
+for kernel_id in ${kernels[@]};
 do
     for batch in $(seq 0 $detector_batch_size $num_detectors);
     do
@@ -27,10 +29,10 @@ do
             -x daily \
             -m svgp \
             -i 24 \
-            -s ~/.secrets/db_secrets.json
-            --epochs 2000
-            --batch_start $batch
-            --batch_size $detector_batch_size
+            -s ~/.secrets/db_secrets.json \
+            --epochs 2000 \
+            --batch_start $batch \
+            --batch_size $detector_batch_size \
 
         srun singularity run ~/containers/traffic/lockdown_train.sif \
             -k $kernel_id \
@@ -42,7 +44,7 @@ do
             -x daily \
             -m svgp \
             -i 24 \
-            -s ~/.secrets/db_secrets.json
-            --epochs 2000
-            --batch_start $batch
-            --batch_size $detector_batch_size
+            -s ~/.secrets/db_secrets.json \
+            --epochs 2000 \
+            --batch_start $batch \
+            --batch_size $detector_batch_size \
