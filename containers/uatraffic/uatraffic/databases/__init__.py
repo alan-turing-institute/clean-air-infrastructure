@@ -1,7 +1,7 @@
 """
 Database classes and functions for traffic.
 """
-from .query import TrafficQuery
+from .query import TrafficQuery, TrafficInstanceQuery
 from .instance import TrafficInstance
 from .tables import (
     TrafficDataTable,
@@ -12,6 +12,7 @@ from .tables import (
 __all__ = [
     "TrafficQuery",
     "TrafficInstance",
+    "TrafficInstanceQuery",
     "TrafficDataTable",
     "TrafficInstanceTable",
     "TrafficModelTable",

@@ -6,7 +6,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import func, or_, and_
 
-from cleanair.databases import DBWriter
+from cleanair.databases import DBWriter, DBReader
 from cleanair.databases.tables import (
     OSHighway,
     MetaPoint,
@@ -16,6 +16,8 @@ from cleanair.databases.tables import (
 )
 from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
+
+from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable 
 
 
 class TrafficQuery(DBWriter):
@@ -186,4 +188,34 @@ class TrafficQuery(DBWriter):
             if isinstance(start, int) and isinstance(end, int):
                 readings = readings.order_by(ScootDetector.detector_n).slice(start, end)
 
+            return readings
+
+class TrafficInstanceQuery(DBReader):
+    """
+    Class for querying traffic model instances.
+    """
+
+    @db_query
+    def get_instances_with_params(self, tag=None):
+        """
+        Get all traffic instances and join the json parameters.
+        """
+        with self.dbcnxn.open_session() as session:
+            readings = (
+                session.query(
+                    TrafficInstanceTable,
+                    TrafficModelTable.model_param,
+                    TrafficDataTable.data_config,
+                )
+                .join(
+                    TrafficModelTable,
+                    TrafficModelTable.model_name == TrafficInstanceTable.model_name and TrafficModelTable.param_id == TrafficInstanceTable.param_id
+                )
+                .join(
+                    TrafficDataTable,
+                    TrafficDataTable.data_id == TrafficInstanceTable.data_id
+                )
+            )
+            if tag:
+                readings = readings.filter(TrafficInstanceTable.tag == tag)
             return readings
