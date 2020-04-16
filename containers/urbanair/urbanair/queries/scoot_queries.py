@@ -10,7 +10,7 @@ from cleanair.databases.tables import (
     ScootPercentChange,
 )
 
-from .csv_stream import APIQueryMixin
+from .query_mixins import APIQueryMixin
 
 initialise_logging(verbosity=0)
 
@@ -122,7 +122,6 @@ class ScootDaily(APIQueryMixin):
         ]
 
     def query(self, session, start_time, end_time=None):
-
         """
         Get scoot data with lat and long positions aggregated by day
         """
@@ -242,7 +241,7 @@ def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max
     ids_cte = (
         session.query(MetaPoint.id, MetaPoint.location)
         .filter(
-            MetaPoint.source.in_(["grid_100",]),
+            MetaPoint.source.in_(["grid_100", ]),
             func.ST_Within(
                 MetaPoint.location,
                 func.ST_MakeEnvelope(lon_min, lat_min, lon_max, lat_max, 4326),
