@@ -53,11 +53,16 @@ def main():
     traffic_query = TrafficQuery(secretfile=args.secretfile)
 
     # get list of scoot detectors
-    if args.detectors:
+    if isinstance(args.batch_start, int) and isinstance(args.batch_size, int):
+        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
+        detectors = list(detector_df["detector_id"].unique())
+    elif args.detectors:
         detectors = args.detectors
     else:
-        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_size)
+        detector_df = traffic_query.get_scoot_detectors(output_type="df")
         detectors = list(detector_df["detector_id"].unique())
+
+    logging.info("Training model on %s detectors.", len(detectors))
 
     # columns to train model on
     x_cols=['epoch', 'lon_norm', 'lat_norm']
@@ -98,7 +103,7 @@ def main():
         gb = df.groupby("detector_id")
 
         # loop over all detectors and write each numpy to a file
-        for detector_id in detectors:
+        for detector_id in df["detector_id"].unique():
             # create a data id from dictionary of data settings
             data_config = dict(
                 detectors=[detector_id],

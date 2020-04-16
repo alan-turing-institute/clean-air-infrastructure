@@ -10,4 +10,4 @@
 #SBATCH --time=00:02:00
 #SBATCH --mem-per-cpu=4
 
-singularity exec ~/containers/traffic/lockdown_train.sif sh /app/inner_batch.sh
+singularity exec ~/containers/traffic/lockdown_train.sif sh ~/scripts/inner_batch.sh
