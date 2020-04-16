@@ -13,7 +13,7 @@ class BaselineParserMixin:
         self.add_argument(
             "-e",
             "--baseline_end",
-            default="2020-03-03",
+            default="2020-03-02",
             help="Timestamp for end of baseline period."
         )
         self.add_argument(

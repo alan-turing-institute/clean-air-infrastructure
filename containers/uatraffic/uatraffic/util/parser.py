@@ -52,6 +52,12 @@ class TrafficModelParser(
             type=int,
             help="Size of the batch.",
         )
+        self.add_argument(
+            "--nweeks",
+            default=1,
+            type=int,
+            help="Number of weeks to train on."
+        )
     
     def parse_args(self):
         args = super().parse_args()

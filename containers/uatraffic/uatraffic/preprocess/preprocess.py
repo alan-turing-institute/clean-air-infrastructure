@@ -18,13 +18,16 @@ def clean_and_normalise_df(df: pd.DataFrame):
     df['measurement_start_utc'] = pd.to_datetime(df['measurement_start_utc'])
     df['weekday'] = df['measurement_start_utc'].dt.dayofweek
     df['weekend'] = (df.weekday // 5 == 1).astype(float)
+    df['hour'] = df["measurement_start_utc"].dt.hour
 
     # get datetime as a float between -1, 1
-    df['epoch'] = normalise_daterange(
-        df['measurement_start_utc'],
-        df['measurement_start_utc'].min(),
-        df['measurement_start_utc'].max()
-    )
+    df["epoch"] = (df["hour"] - 12) / 12
+
+    # df['epoch'] = normalise_daterange(
+    #     df['measurement_start_utc'],
+    #     df['measurement_start_utc'].min(),
+    #     df['measurement_start_utc'].max()
+    # )
     # normalise all X columns
     # df['epoch_norm'] = normalise(df['epoch'])
     df['lat_norm'] = normalise(df['lat'])

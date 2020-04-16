@@ -3,7 +3,7 @@ Load data and setup for scoot lockdown.
 """
 import os
 import logging
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from pathlib import Path
 import numpy as np
 import tensorflow as tf
@@ -47,7 +47,7 @@ def main():
 
     # process datetimes
     start = datetime.strptime(args.baseline_start, "%Y-%m-%d")
-    end = start + timedelta(hours=args.nhours)
+    end = start + timedelta(hours=args.nhours, weeks=args.nweeks - 1)
 
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)
@@ -73,17 +73,20 @@ def main():
     logging_epoch_freq = 100
     kernel_dict = next(k for k in KERNELS if k["name"] == args.kernel)
 
-    while start < datetime.strptime(args.baseline_end, "%Y-%m-%d"):
+    while end <= datetime.strptime(args.baseline_end, "%Y-%m-%d"):
         # read the data from DB
+        day_of_week = start.weekday()
         logging.info(
-            "Getting scoot readings from %s to %s.",
+            "Getting scoot readings from %s to %s for day_of_week %s.",
             start.strftime("%Y-%m-%d %H:%M:%S"),
-            end.strftime("%Y-%m-%d %H:%M:%S")
+            end.strftime("%Y-%m-%d %H:%M:%S"),
+            day_of_week,
         )
-        df = traffic_query.get_scoot_with_location(
+        df = traffic_query.get_scoot_filter_by_dow(
             start_time=start.strftime("%Y-%m-%d %H:%M:%S"),
             end_time=end.strftime("%Y-%m-%d %H:%M:%S"),
             detectors=detectors,
+            day_of_week=day_of_week,
             output_type="df",
         )
         # data cleaning and processing
@@ -107,9 +110,10 @@ def main():
             # create a data id from dictionary of data settings
             data_config = dict(
                 detectors=[detector_id],
-                weekdays=[date.fromisoformat(start.strftime("%Y-%m-%d")).weekday()],
+                weekdays=[day_of_week],
                 start=start.strftime("%Y-%m-%dT%H:%M:%S"),
                 end=end.strftime("%Y-%m-%dT%H:%M:%S"),
+                nweeks=args.nweeks,
             )
             # create dict of model settings
             model_params = dict(
@@ -155,7 +159,7 @@ def main():
             instance.update_model_table(model_params)
             instance.update_remote_tables()
             instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
-        
+
         # add on n hours to start and end datetimes
         start = start + timedelta(hours=args.nhours)
         end = end + timedelta(hours=args.nhours)
