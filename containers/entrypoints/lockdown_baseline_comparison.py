@@ -82,6 +82,10 @@ def main():
     # calculate the percent of comparison traffic from local traffic
     logging.info("Calculating the percent of baseline metric.")
     metric_df = percent_of_baseline(baseline_df, comparison_df)
+
+    print(baseline_df.head())
+    print(comparison_df.head())
+
     logging.info("Writing percent of baseline metrics to database.")
     metric_df["measurement_start_utc"] = args.comparison_start
     metric_df["measurement_end_utc"] = comparison_end
@@ -97,6 +101,7 @@ def main():
     metric_df["baseline_start_date"] = baseline_start
     metric_df["baseline_end_date"] = baseline_end
 
+    
     # upload records to database
     record_cols = [
         "detector_id",
