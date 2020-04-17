@@ -24,7 +24,7 @@ from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
 
 
-class TrafficQuery(DateRangeMixin, DBWriter):  # pylint: disable=abstract-method
+class TrafficPercentageChange(DateRangeMixin, DBWriter):  # pylint: disable=abstract-method
     """
     Queries to run on the SCOOT DB.
     """

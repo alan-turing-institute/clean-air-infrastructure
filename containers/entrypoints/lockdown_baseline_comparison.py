@@ -8,7 +8,7 @@ import pandas as pd
 
 from cleanair.databases.tables import ScootPercentChange
 
-from uatraffic.scoot_processing import TrafficQuery
+from uatraffic.scoot_processing import TrafficPercentageChange
 from uatraffic.parsers import BaselineParser
 
 
@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
 
     # get query object
-    traffic_query = TrafficQuery(
+    traffic_query = TrafficPercentageChange(
         secretfile=args.secretfile,
         end=args.comparison_end_date,
         nhours=(args.ndays * 24) - 24,
@@ -39,7 +39,7 @@ def main():
 
     traffic_query.update_remote_tables()
 
-    traffic_query = TrafficQuery(
+    traffic_query = TrafficPercentageChange(
         secretfile=args.secretfile,
         end=args.comparison_end_date,
         nhours=(args.ndays * 24) - 24,
