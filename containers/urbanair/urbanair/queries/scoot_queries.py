@@ -8,6 +8,7 @@ from cleanair.databases.tables import (
     ScootDetector,
     ScootPercentChange,
 )
+from cleanair.decorators import db_query
 from flask import jsonify
 from .query_mixins import APIQueryMixin
 
@@ -64,37 +65,31 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
-    @property
-    def csv_headers(self):
-
-        return [
-            "detector_id",
-            "measurement_start_utc",
-            "measurement_end_utc",
-            "day_of_week",
-            "baseline_period",
-            "baseline_start_date",
-            "baseline_end_date",
-            "baseline_n_vehicles_in_interval",
-            "comparison_n_vehicles_in_interval",
-            "percent_of_baseline",
-            "no_traffic_in_baseline",
-            "no_traffic_in_comparison ",
-            "low_confidence ",
-            "num_observations ",
-            "removed_anomaly_from_baseline",
-            "removed_anomaly_from_comparison",
-        ]
 
     def query(self, session, baseline, start_time, end_time=None):
 
         percent_change = (
             session.query(
-                ScootPercentChange,
+                ScootPercentChange.detector_id,
+                ScootPercentChange.measurement_start_utc,
+                ScootPercentChange.measurement_end_utc,
+                ScootPercentChange.day_of_week,
+                ScootPercentChange.baseline_period,
+                ScootPercentChange.baseline_start_date,
+                ScootPercentChange.baseline_end_date,
+                ScootPercentChange.baseline_n_vehicles_in_interval,
+                ScootPercentChange.comparison_n_vehicles_in_interval,
+                ScootPercentChange.percent_of_baseline,
+                ScootPercentChange.no_traffic_in_baseline,
+                ScootPercentChange.no_traffic_in_comparison,
+                ScootPercentChange.low_confidence,
+                ScootPercentChange.num_observations,
+                ScootPercentChange.removed_anomaly_from_baseline,
+                ScootPercentChange.removed_anomaly_from_comparison,
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
             )
-            .join(ScootDetector, ScootReading.detector_id == ScootDetector.detector_n)
+            .join(ScootDetector, ScootPercentChange.detector_id == ScootDetector.detector_n)
             .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             .filter(ScootPercentChange.measurement_start_utc >= start_time)
             .filter(ScootPercentChange.baseline_period == baseline)

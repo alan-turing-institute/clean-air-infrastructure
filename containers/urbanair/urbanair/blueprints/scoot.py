@@ -1,19 +1,23 @@
 from flask import Blueprint
 from webargs import fields, validate
-from webargs.flaskparser import use_args, use_kwargs, parser, abort
+from webargs.flaskparser import use_args, use_kwargs,  abort
 from ..queries import ScootDaily, ScootDailyPerc, ScootHourly
 from ..db import get_session
+from ..argparsers import validate_today_or_before, validate_iso_string
 
 
 scoot_bp = Blueprint("scoot", __name__)
 
 
-@scoot_bp.route("/hourly/raw", methods=["GET"])
+time_args_dict = {
+    "starttime": fields.String(required=True, validate=validate_iso_string),
+    "endtime": fields.String(required=False, validate=validate_today_or_before)
+}
+
+
+@scoot_bp.route("hourly/raw", methods=["GET"])
 @use_args(
-    {
-        "starttime": fields.String(required=True),
-        "endtime": fields.String(required=False),
-    },
+    time_args_dict,
     location="query",
 )
 def scoot(args):
@@ -38,15 +42,9 @@ def scoot(args):
     )
 
 
-@scoot_bp.route("/daily/raw", methods=["GET"])
+@scoot_bp.route("daily/raw", methods=["GET"])
 @use_args(
-    {
-        "starttime": fields.String(required=True),
-        "endtime": fields.String(required=False),
-        "output": fields.String(
-            required=False, validate=lambda val: val in ["json", "csv"]
-        ),
-    },
+    time_args_dict,
     location="query",
 )
 def scoot_daily(args):
@@ -73,13 +71,10 @@ def scoot_daily(args):
 
 @scoot_bp.route("daily/percent-of-baseline", methods=["GET"])
 @use_args(
-    {
-        "starttime": fields.String(required=True),
-        "endtime": fields.String(required=False),
-        "baseline": fields.String(
-            required=True, validate=lambda val: val in ["lockdown", "normal"]
-        ),
-    },
+    time_args_dict.copy().update(
+        {"baseline": fields.String(
+            required=True, validate=lambda val: val in ["lockdown", "normal"])
+         }),
     location="query",
 )
 def scoot_percentage(args):
