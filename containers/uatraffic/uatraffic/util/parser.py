@@ -1,6 +1,7 @@
 """Parsers for the uatraffic module and their entrypoints."""
 
 from datetime import datetime, timedelta
+from dateutil.parser import isoparse
 from argparse import ArgumentParser, ArgumentTypeError
 from cleanair.mixins import (
     SecretFileParserMixin,
@@ -36,6 +37,6 @@ def validate_type(datestr):
         return (datetime.today() - timedelta(days=1)).date()
 
     try:
-        return datestr.fromisoformat()
+        return isoparse(datestr)
     except ValueError:
         raise ArgumentTypeError("Not a valid iso date: {}".format(datestr))
