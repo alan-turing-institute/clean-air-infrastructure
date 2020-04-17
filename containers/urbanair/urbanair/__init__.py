@@ -11,7 +11,7 @@ def create_app():
     # create and configure the app
     app = Flask(__name__)
     app.config.from_mapping(
-        DATABASE_URI="/Users/ogiles/Documents/project_repos/clean-air-infrastructure/terraform/.secrets/db_secrets.json"
+        DATABASE_URI="db_secrets.json"
     )
 
     # Create DB session object
