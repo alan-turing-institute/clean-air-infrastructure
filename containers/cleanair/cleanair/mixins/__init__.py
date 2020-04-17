@@ -20,4 +20,5 @@ __all__ = [
     "DurationParserMixin",
     "SecretFileParserMixin",
     "SourcesMixin",
+    "VerbosityMixin",
 ]

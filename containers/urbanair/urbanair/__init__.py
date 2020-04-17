@@ -1,7 +1,7 @@
 """Cleanair API"""
 
-import os
-from flask import Flask, jsonify
+
+from flask import Flask
 from . import db
 from . import exceptions
 from .blueprints import scoot_bp, index_bp
@@ -10,9 +10,7 @@ from .blueprints import scoot_bp, index_bp
 def create_app():
     # create and configure the app
     app = Flask(__name__)
-    app.config.from_mapping(
-        DATABASE_URI="db_secrets.json"
-    )
+    app.config.from_mapping(DATABASE_URI="db_secrets.json")
 
     # Create DB session object
     with app.app_context():

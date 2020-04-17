@@ -2,14 +2,11 @@
 from sqlalchemy import func
 from cleanair.loggers import initialise_logging
 from cleanair.databases.tables import (
-    ModelResult,
     MetaPoint,
     ScootReading,
     ScootDetector,
     ScootPercentChange,
 )
-from cleanair.decorators import db_query
-from flask import jsonify
 from .query_mixins import APIQueryMixin
 
 
@@ -65,7 +62,6 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
-
     def query(self, session, baseline, start_time, end_time=None):
 
         percent_change = (
@@ -89,7 +85,10 @@ class ScootDailyPerc(APIQueryMixin):
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
             )
-            .join(ScootDetector, ScootPercentChange.detector_id == ScootDetector.detector_n)
+            .join(
+                ScootDetector,
+                ScootPercentChange.detector_id == ScootDetector.detector_n,
+            )
             .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             .filter(ScootPercentChange.measurement_start_utc >= start_time)
             .filter(ScootPercentChange.baseline_period == baseline)

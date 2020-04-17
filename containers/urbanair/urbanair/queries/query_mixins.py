@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 import datetime
-from flask import Response, jsonify
-from flask.json import JSONEncoder
-import decimal
+from flask import Response
 
 
 class APIQueryMixin(ABC):
@@ -15,13 +13,12 @@ class APIQueryMixin(ABC):
 
     def headers(self, query_result):
         """Get csv headers from the query result"""
-        return [i['name'] for i in query_result.column_descriptions]
+        return [i["name"] for i in query_result.column_descriptions]
 
     def __generate_csv(self, *args, **kwargs):
         """Generate a csv file from a sqlalchemy query"""
         query = self.query(*args, **kwargs)
 
-        count = 0
         headers = ",".join(self.headers(query)) + "\n"
 
         for i, row in enumerate(query.yield_per(1000).enable_eagerloads(False)):

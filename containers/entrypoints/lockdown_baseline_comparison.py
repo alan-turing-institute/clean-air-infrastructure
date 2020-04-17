@@ -1,16 +1,9 @@
 """
 Calculate the percent of baseline metric for a recent day.
 """
-import logging
-from datetime import timedelta
-import calendar
-import pandas as pd
-
-from cleanair.databases.tables import ScootPercentChange
 
 from uatraffic.scoot_processing import TrafficPercentageChange
 from uatraffic.parsers import BaselineParser
-
 
 NORMAL_BASELINE_START = "2020-02-10"
 NORMAL_BASELINE_END = "2020-03-03"

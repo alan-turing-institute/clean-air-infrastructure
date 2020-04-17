@@ -1,7 +1,7 @@
-from webargs.flaskparser import use_args, use_kwargs,  abort
-from dateutil.parser import isoparse
+"""date parsers for api webargs"""
 from datetime import datetime
-from webargs import fields, ValidationError
+from dateutil.parser import isoparse
+from webargs import ValidationError
 
 
 def validate_iso_string(iso_datestring):
@@ -17,5 +17,5 @@ def validate_today_or_before(iso_datestring):
 
     validate_iso_string(iso_datestring)
 
-    if (isoparse(iso_datestring).date() > datetime.today().date()):
+    if isoparse(iso_datestring).date() > datetime.today().date():
         raise ValidationError("Dates in the future cannot be requested")
