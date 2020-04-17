@@ -197,6 +197,33 @@ class TrafficInstanceQuery(DBReader):
     """
 
     @db_query
+    def get_instances(self, tag=None, data_ids=None, param_ids=None, models=None):
+        """
+        Get traffic instances and optionally filter by parameters.
+        """
+        with self.dbcnxn.open_session() as session:
+            readings = session.query(TrafficInstanceTable)
+            # filter by tag
+            if tag:
+                readings = readings.filter(TrafficInstanceTable.tag == tag)
+            # filter by data ids
+            if data_ids:
+                readings = readings.filter(
+                    TrafficInstanceTable.data_id.in_(data_ids)
+                )
+            # filter by param ids and model name
+            if param_ids:
+                readings = readings.filter(
+                    TrafficInstanceTable.param_id.in_(param_ids)
+                )
+            # filter by model names
+            if models:
+                readings = readings.filter(
+                    TrafficInstanceTable.model_name.in_(models)
+                )
+            return readings
+
+    @db_query
     def get_instances_with_params(self, tag=None):
         """
         Get all traffic instances and join the json parameters.
