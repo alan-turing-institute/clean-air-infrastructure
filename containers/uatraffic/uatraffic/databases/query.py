@@ -246,6 +246,8 @@ class TrafficInstanceQuery(DBReader):
                 )
 
             if end_time:
-                raise NotImplementedError("Coming soon - filtering by end time.")
+                readings = readings.filter(
+                    TrafficDataTable.data_config["end"].astext <= end_time
+                )
 
             return readings

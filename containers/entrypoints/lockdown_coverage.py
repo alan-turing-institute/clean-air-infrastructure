@@ -2,19 +2,66 @@
 Calculate the coverage for models.
 """
 import os
+import pickle
 import logging
+from concurrent import futures
 import numpy as np
 
-from uatraffic.databases import TrafficQuery, TrafficInstanceQuery
+from uatraffic.databases import TrafficQuery, TrafficInstanceQuery, TrafficInstance
 from uatraffic.databases import TrafficInstance
 from uatraffic.metric import percent_coverage
 from uatraffic.preprocess import clean_and_normalise_df
 from uatraffic.util import TrafficModelParser
 
-def batch_coverage(instance_df):
+def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=1000, num_samples=1000, quantile=0.9):
     """
     Calculate the coverage using threadings in a batch.
     """
+    models, dfs = [], []
+
+    # load the instance
+    for _, row in instance_df.iterrows():
+        instance_dict = row.to_dict()
+        data_config = instance_dict.pop("data_config")
+        model_param = instance_dict.pop("model_param")
+
+        # get the data for this instance
+        data_df = traffic_query.get_scoot_filter_by_dow(
+            start_time=data_config["start"],
+            end_time=data_config["end"],
+            detectors=data_config["detectors"],
+            day_of_week=data_config["weekdays"][0],
+            output_type="df",
+        )
+
+        # load a model from a file
+        # TODO: sort out filepaths propertly, e.g. loading from blob storage
+        filepath = os.path.join(path_to_models, row["instance_id"] + ".h5")
+        models.append(pickle.load(open(filepath, "rb")))
+
+        # need to normalise the data and convert to numpy arrays
+        dfs.append(clean_and_normalise_df(data_df))
+
+    # store rows of new dataframe
+    rows = []
+
+    # columns the model was trained on
+    x_cols = ['epoch', 'lon_norm', 'lat_norm']
+    y_cols = ["n_vehicles_in_interval"]
+
+    with futures.ThreadPoolExecutor(max_workers=8) as executor:
+
+        future_to_id = {executor.submit(
+            percent_coverage(
+                model,
+                np.array(df[x_cols])[:, 0][:, np.newaxis],  # take first column only
+                np.array(df[y_cols]),
+                num_samples=num_samples,
+                num_pertubations=num_pertubations,
+                quantile=quantile,
+            ) for model, df in zip(models, dfs)
+        )}
+
 
 def main():
     """Entrypoint for coverage"""
@@ -30,8 +77,18 @@ def main():
     # instance_df = instance_query.get_instances_with_params(output_type="df")
     # print(instance_df.groupby("instance_id").count())
 
+    # get list of scoot detectors
+    if isinstance(args.batch_start, int) and isinstance(args.batch_size, int):
+        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
+        detectors = list(detector_df["detector_id"].unique())
+    elif args.detectors:
+        detectors = args.detectors
+    else:
+        detector_df = traffic_query.get_scoot_detectors(output_type="df")
+        detectors = list(detector_df["detector_id"].unique())
+
     # filter by detectors
-    data_df = instance_query.get_data_config(detectors=args.detectors, output_type="df")
+    data_df = instance_query.get_data_config(detectors=detectors, output_type="df")
     for _, row in data_df.iterrows():
         assert set(row.to_dict()["data_config"]["detectors"]).issubset(set(args.detectors))
 
