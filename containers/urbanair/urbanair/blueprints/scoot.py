@@ -71,16 +71,16 @@ def scoot_daily(args):
 
 @scoot_bp.route("daily/percent-of-baseline", methods=["GET"])
 @use_args(
-    time_args_dict.copy().update(
-        {"baseline": fields.String(
-            required=True, validate=lambda val: val in ["lockdown", "normal"])
-         }),
+    {**time_args_dict,
+     **{"baseline": fields.String(
+         required=True, validate=lambda val: val in ["lockdown", "normal"])
+        }},
     location="query",
 )
 def scoot_percentage(args):
     """Get scoot percentage data
 
-    http --download GET :5000/api/v1/scoot/daily/percent-of-baseline starttime=='2020-03-01' endtime=='2020-03-02' baseline=='normal'
+    http --download GET :5000/api/v1/scoot/daily/percent-of-baseline starttime=='2020-04-15' endtime=='2020-04-16' baseline=='normal'
     http --download GET urbanair.turing.ac.uk/api/v1/scoot/daily/percent-of-baseline starttime=='2020-03-01' endtime=='2020-03-02' baseline=='normal'
     """
 
