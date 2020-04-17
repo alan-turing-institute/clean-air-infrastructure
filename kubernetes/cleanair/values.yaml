@@ -214,7 +214,7 @@ deployments:
     - name: cleanair-api
       replicas: 2
       image:
-        repository: cleanairdocker.azurecr.io/cleanairapi
+        repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
       ports:
         containerPort: 8080
