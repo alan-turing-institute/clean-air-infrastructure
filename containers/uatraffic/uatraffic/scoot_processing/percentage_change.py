@@ -24,12 +24,13 @@ from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
 
 
-class TrafficPercentageChange(DateRangeMixin, DBWriter):  # pylint: disable=abstract-method
-    """
+class TrafficPercentageChange(
+    DateRangeMixin, DBWriter)
+  """
     Queries to run on the SCOOT DB.
     """
 
-    def __init__(self, baseline_tag, baseline_start, baseline_end, **kwargs):
+   def __init__(self, baseline_tag, baseline_start, baseline_end, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
