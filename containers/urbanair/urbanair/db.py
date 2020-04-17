@@ -1,3 +1,4 @@
+|"""urbanair database configuration"""
 from flask import current_app, g
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
@@ -7,12 +8,12 @@ from cleanair.databases.base import Base
 
 
 def configure_db_session():
-
+    """Configure a connection to the cleanair database"""
     if "db_session" not in g:
         #  Configure session
-        DB_CONNECTION_INFO = DBConnectionMixin(current_app.config["DATABASE_URI"])
+        db_connection_info = DBConnectionMixin(current_app.config["DATABASE_URI"])
         engine = create_engine(
-            DB_CONNECTION_INFO.connection_string, convert_unicode=True
+            db_connection_info.connection_string, convert_unicode=True
         )
         db_session = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -23,7 +24,7 @@ def configure_db_session():
 
     return g.db_session
 
-
+# pylint: disable=C0103
 def remove_db(e=None):
     db_session = g.pop("db_session", None)
     if db_session:
