@@ -2,6 +2,7 @@
 Class for querying traffic and scoot data.
 """
 
+import json
 from datetime import datetime
 import pandas as pd
 from sqlalchemy import func, or_, and_
@@ -209,7 +210,10 @@ class TrafficInstanceQuery(DBReader):
                 )
                 .join(
                     TrafficModelTable,
-                    TrafficModelTable.model_name == TrafficInstanceTable.model_name and TrafficModelTable.param_id == TrafficInstanceTable.param_id
+                    and_(
+                        TrafficModelTable.model_name == TrafficInstanceTable.model_name,
+                        TrafficModelTable.param_id == TrafficInstanceTable.param_id,
+                    )
                 )
                 .join(
                     TrafficDataTable,
@@ -218,4 +222,30 @@ class TrafficInstanceQuery(DBReader):
             )
             if tag:
                 readings = readings.filter(TrafficInstanceTable.tag == tag)
+            return readings
+
+    @db_query
+    def get_data_config(self, start_time: str = None, end_time: str = None, detectors: list = None):
+        """
+        Get the data id and config from the TrafficDataTable.
+        """
+        # detectors = set(detectors)
+        with self.dbcnxn.open_session() as session:
+            readings = session.query(TrafficDataTable)
+            if detectors:
+                # filter by detector in the json field
+                readings = readings.filter(
+                    TrafficDataTable.data_config["detectors"].contained_by(
+                        json.dumps(detectors)
+                    )
+                )
+
+            if start_time:
+                readings = readings.filter(
+                    TrafficDataTable.data_config["start"].astext >= start_time
+                )
+
+            if end_time:
+                raise NotImplementedError("Coming soon - filtering by end time.")
+
             return readings
