@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: bcf695d87eb6381db85742dda363578a439fdfab
+imageTag: 9f9f693cdde6fce3dd2c6a4cd07540611da87841
 
 # jobs:
 #   - name: process_scoot_roadmap
@@ -262,4 +262,4 @@ letsencryptIssuer:
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
 
-whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32, 195.99.240.222/32, 82.69.108.113/32, 86.149.123.32/32, 31.50.42.13/32, 81.153.172.107
+whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32, 195.99.240.222/32, 82.69.108.113/32, 86.149.123.32/32, 31.50.42.13/32, 81.153.172.107/32, 81.159.84.26/32 
