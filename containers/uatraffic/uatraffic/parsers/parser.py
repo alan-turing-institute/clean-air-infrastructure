@@ -28,7 +28,7 @@ class BaselineParser(
         self.add_argument(
             "-n",
             "--ndays",
-            default=1,
+            default=4,
             help="Timestamp for beginning of comparison day.",
             type=int,
         )
