@@ -6,7 +6,6 @@ import decimal
 
 
 class APIQueryMixin(ABC):
-
     @abstractmethod
     def query(self):
         pass

@@ -20,7 +20,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(index_bp)
-    app.register_blueprint(scoot_bp, url_prefix='/api/v1/scoot/')
+    app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
 
     # Configure exceptions
     exceptions.error_handler(app)
@@ -28,7 +28,7 @@ def create_app():
     return app
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     app = create_app()
     print(app.config)

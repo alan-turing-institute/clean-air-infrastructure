@@ -64,7 +64,6 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
-
     @property
     def csv_headers(self):
 
@@ -110,7 +109,6 @@ class ScootDailyPerc(APIQueryMixin):
 
 
 class ScootDaily(APIQueryMixin):
-
     @property
     def csv_headers(self):
 

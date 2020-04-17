@@ -1,10 +1,10 @@
 from flask import Blueprint, Response
 
 
-index_bp = Blueprint('index', __name__)
+index_bp = Blueprint("index", __name__)
 
 
-@index_bp.route('/', methods=['GET'])
+@index_bp.route("/", methods=["GET"])
 def index():
     resp = Response(
         """

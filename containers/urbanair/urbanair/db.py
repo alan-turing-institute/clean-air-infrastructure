@@ -8,10 +8,12 @@ from cleanair.databases.base import Base
 
 def configure_db_session():
 
-    if 'db_session' not in g:
+    if "db_session" not in g:
         #  Configure session
-        DB_CONNECTION_INFO = DBConnectionMixin(current_app.config['DATABASE_URI'])
-        engine = create_engine(DB_CONNECTION_INFO.connection_string, convert_unicode=True)
+        DB_CONNECTION_INFO = DBConnectionMixin(current_app.config["DATABASE_URI"])
+        engine = create_engine(
+            DB_CONNECTION_INFO.connection_string, convert_unicode=True
+        )
         db_session = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=engine)
         )
@@ -23,7 +25,7 @@ def configure_db_session():
 
 
 def remove_db(e=None):
-    db_session = g.pop('db_session', None)
+    db_session = g.pop("db_session", None)
     if db_session:
         db_session.remove()
 

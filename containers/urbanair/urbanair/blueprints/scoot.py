@@ -5,10 +5,10 @@ from ..queries import ScootDaily, ScootDailyPerc, ScootHourly
 from ..db import get_session
 
 
-scoot_bp = Blueprint('scoot', __name__)
+scoot_bp = Blueprint("scoot", __name__)
 
 
-@scoot_bp.route('/hourly/raw', methods=['GET'])
+@scoot_bp.route("/hourly/raw", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(required=True),
@@ -43,7 +43,9 @@ def scoot(args):
     {
         "starttime": fields.String(required=True),
         "endtime": fields.String(required=False),
-        "output":  fields.String(required=False, validate=lambda val: val in ["json", "csv"]),
+        "output": fields.String(
+            required=False, validate=lambda val: val in ["json", "csv"]
+        ),
     },
     location="query",
 )
@@ -98,5 +100,5 @@ def scoot_percentage(args):
         get_session(),
         baseline,
         start_time=starttime,
-        end_time=endtime
+        end_time=endtime,
     )

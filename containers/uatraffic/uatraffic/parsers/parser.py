@@ -7,11 +7,10 @@ from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from .mixins import BaselineParserMixin
 
 
 class BaselineParser(
-    BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
+    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
     """
     Parser for querying a recent day against a baseline.
@@ -21,10 +20,17 @@ class BaselineParser(
         super().__init__(**kwargs)
         self.add_argument(
             "-l",
-            "--comparison_start",
+            "--comparison_end_date",
             default="yesterday",
             help="Timestamp for beginning of comparison day.",
             type=validate_type,
+        )
+        self.add_argument(
+            "-n",
+            "--ndays",
+            default=1,
+            help="Timestamp for beginning of comparison day.",
+            type=int,
         )
 
 
