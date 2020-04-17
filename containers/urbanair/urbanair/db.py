@@ -1,4 +1,4 @@
-|"""urbanair database configuration"""
+"""urbanair database configuration"""
 from flask import current_app, g
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
@@ -25,6 +25,8 @@ def configure_db_session():
     return g.db_session
 
 # pylint: disable=C0103
+
+
 def remove_db(e=None):
     db_session = g.pop("db_session", None)
     if db_session:
