@@ -43,6 +43,7 @@ def scoot(args):
     {
         "starttime": fields.String(required=True),
         "endtime": fields.String(required=False),
+        "output":  fields.String(required=False, validate=lambda val: val in ["json", "csv"]),
     },
     location="query",
 )

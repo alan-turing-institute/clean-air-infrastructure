@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 import datetime
-from flask import Response
+from flask import Response, jsonify
+from flask.json import JSONEncoder
+import decimal
 
 
 class APIQueryMixin(ABC):
+
     @abstractmethod
     def query(self):
         pass
