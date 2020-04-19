@@ -24,7 +24,6 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
     for _, row in instance_df.iterrows():
         instance_dict = row.to_dict()
         data_config = instance_dict.pop("data_config")
-        ids.append(row["instance_id"])
 
         # get the data for this instance
         data_df = traffic_query.get_scoot_filter_by_dow(
@@ -37,11 +36,15 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
 
         # load a model from a file
         # TODO: sort out filepaths propertly, e.g. loading from blob storage
-        filepath = os.path.join(path_to_models, row["instance_id"] + ".h5")
-        models.append(pickle.load(open(filepath, "rb")))
+        try:
+            filepath = os.path.join(path_to_models, row["instance_id"] + ".h5")
+            models.append(pickle.load(open(filepath, "rb")))
+            ids.append(row["instance_id"])
+            # need to normalise the data
+            dfs.append(clean_and_normalise_df(data_df))
 
-        # need to normalise the data
-        dfs.append(clean_and_normalise_df(data_df))
+        except FileNotFoundError:
+            logging.warning("File for instance %s not found - have you copied from cluster?", row["instance_id"])
 
     # store rows of new dataframe
     rows = []
@@ -106,6 +109,7 @@ def main():
     # dataframe of instances
     # TODO: getting the data ids should be a subquery used by get_instances
     instance_df = instance_query.get_instances(data_ids=list(data_df["data_id"]), output_type="df")
+    instance_df = instance_df.merge(data_df, on="data_id")
     print(instance_df)
 
     # pass the instance df and batch calculate coverage
