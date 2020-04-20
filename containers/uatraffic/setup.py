@@ -14,6 +14,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["cleanair",],
+    install_requires=["cleanair", "flasgger"],
     python_requires=">=3.7",
 )
