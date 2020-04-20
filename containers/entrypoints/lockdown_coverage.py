@@ -9,7 +9,7 @@ from concurrent import futures
 import numpy as np
 import pandas as pd
 
-from uatraffic.databases import TrafficQuery, TrafficInstanceQuery
+from uatraffic.databases import TrafficQuery, TrafficInstanceQuery, TrafficMetric
 from uatraffic.metric import percent_coverage
 from uatraffic.preprocess import clean_and_normalise_df
 from uatraffic.util import TrafficModelParser
@@ -56,7 +56,6 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
     y_cols = ["n_vehicles_in_interval"]
 
     with futures.ThreadPoolExecutor(max_workers=8) as executor:
-
         future_to_id = {executor.submit(
             percent_coverage(
                 model,
@@ -67,7 +66,7 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
                 quantile=quantile,
             )
         ): id for model, df, id in zip(models, dfs, ids)}
-        # once job is finished collect it into a dataframe
+
         for future in futures.as_completed(future_to_id):
             rows.append(dict(
                 instance_id=future_to_id[future],
@@ -77,6 +76,8 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
                 percent = math.ceil((count/number_of_executions) * 100)
                 logging.info("Batch coverage: %s %% complete", percent)
             count += 1
+
+    # once jobs finished collect it into a dataframe
     return pd.DataFrame(rows)
 
 def main():
@@ -114,10 +115,16 @@ def main():
 
     # pass the instance df and batch calculate coverage
     # TODO: clean up filepaths
-    path_to_models = os.path.join(args.root, args.experiment, "models", "models")
+    path_to_models = os.path.join(args.root, args.experiment, "models")
     coverage_df = batch_coverage(instance_df, traffic_query, path_to_models)
     coverage_df.to_csv(os.path.join(args.root, args.experiment, "coverage.csv"))
-    print(coverage_df)
+
+    # upload metrics to DB
+    upload_records = coverage_df[["instance_id", "coverage"]].to_dict("records")
+    with traffic_query.dbcnxn.open_session() as session:
+        traffic_query.commit_records(
+            session, upload_records, table=TrafficMetric, on_conflict="overwrite"
+        )
 
 if __name__ == "__main__":
     main()

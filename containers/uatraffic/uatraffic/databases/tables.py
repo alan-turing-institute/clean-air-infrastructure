@@ -1,5 +1,5 @@
 
-from sqlalchemy import ForeignKeyConstraint, Column, String
+from sqlalchemy import ForeignKeyConstraint, Column, String, ForeignKey, Float
 from cleanair.mixins import (
     DataConfigMixin,
     InstanceTableMixin,
@@ -42,3 +42,30 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
         ),
         {"schema": "gla_traffic"}
     )
+
+class TrafficMetric(Base):
+    """
+    A table for storing metrics from traffic models.
+    """
+
+    __table_args__ = {"schema": "gla_traffic"}
+    __table_name__ = "traffic_metric"
+
+    instance_id = Column(
+        String(64),
+        ForeignKey("gla_traffic.traffic_instance"),
+        primary_key=True,
+        nullable=False,
+    )
+    coverage = Column(
+        Float,
+        nullable=False,
+        index=False,
+    )
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table.columns]
+        ]
+        return "<Instance(" + ", ".join(vals)

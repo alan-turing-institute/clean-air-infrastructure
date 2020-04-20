@@ -6,6 +6,7 @@ from .instance import TrafficInstance
 from .tables import (
     TrafficDataTable,
     TrafficInstanceTable,
+    TrafficMetric,
     TrafficModelTable,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "TrafficInstanceQuery",
     "TrafficDataTable",
     "TrafficInstanceTable",
+    "TrafficMetric",
     "TrafficModelTable",
 ]
