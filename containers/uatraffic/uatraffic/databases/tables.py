@@ -49,11 +49,11 @@ class TrafficMetric(Base):
     """
 
     __table_args__ = {"schema": "gla_traffic"}
-    __table_name__ = "traffic_metric"
+    __tablename__ = "traffic_metric"
 
     instance_id = Column(
         String(64),
-        ForeignKey("gla_traffic.traffic_instance"),
+        ForeignKey("gla_traffic.traffic_instance.instance_id"),
         primary_key=True,
         nullable=False,
     )
