@@ -18,7 +18,7 @@ from cleanair.databases.tables import (
 from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
-from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable 
+from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable, TrafficMetric
 
 
 class TrafficQuery(DBWriter):
@@ -277,4 +277,14 @@ class TrafficInstanceQuery(DBReader):
                     TrafficDataTable.data_config["end"].astext <= end_time
                 )
 
+            return readings
+
+    @db_query
+    def get_instance_metrics(self, tag=None, data_ids=None, param_ids=None, models=None):
+        """
+        Get instances joined with the metrics.
+        """
+        instance_subquery = self.get_instances_with_params(tag=tag, data_ids=data_ids, param_ids=param_ids, models=models, output_type="subquery")
+        with self.dbcnxn.open_session() as session:
+            readings = session.query(TrafficMetric).join(instance_subquery, instance_subquery.instance_id == TrafficMetric.instance_id)
             return readings

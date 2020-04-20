@@ -98,7 +98,7 @@ def main():
 
     # test for querying of detector
     for _, row in data_df.iterrows():
-        assert set(row.to_dict()["data_config"]["detectors"]).issubset(set(args.detectors))
+        assert set(row.to_dict()["data_config"]["detectors"]).issubset(set(detectors))
 
     # dataframe of instances
     # TODO: getting the data ids should be a subquery used by get_instances
