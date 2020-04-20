@@ -55,28 +55,21 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
     x_cols = ['epoch', 'lon_norm', 'lat_norm']
     y_cols = ["n_vehicles_in_interval"]
 
-    with futures.ThreadPoolExecutor(max_workers=8) as executor:
-        future_to_id = {executor.submit(
-            percent_coverage(
-                model,
-                np.array(df[x_cols])[:, 0][:, np.newaxis],  # take first column only
-                np.array(df[y_cols]),
-                num_samples=num_samples,
-                num_pertubations=num_pertubations,
-                quantile=quantile,
-            )
-        ): id for model, df, id in zip(models, dfs, ids)}
-
-        for future in futures.as_completed(future_to_id):
+    with futures.ProcessPoolExecutor() as executer:
+        for instance_id, coverage in zip(ids, executer.map(
+            percent_coverage,
+            models,
+            [np.array(df[x_cols])[:, 0][:, np.newaxis] for df in dfs],
+            [np.array(df[y_cols]) for df in dfs],
+            [quantile for _ in range(number_of_executions)],
+            [num_samples for _ in range(number_of_executions)],
+            [num_pertubations for _ in range(number_of_executions)],
+        )):
+            logging.debug("Finished job %s", instance_id)
             rows.append(dict(
-                instance_id=future_to_id[future],
-                coverage=future.result(),
+                instance_id=instance_id,
+                coverage=coverage,
             ))
-            if (count / number_of_executions) * 100 >= percent:
-                percent = math.ceil((count/number_of_executions) * 100)
-                logging.info("Batch coverage: %s %% complete", percent)
-            count += 1
-
     # once jobs finished collect it into a dataframe
     return pd.DataFrame(rows)
 
