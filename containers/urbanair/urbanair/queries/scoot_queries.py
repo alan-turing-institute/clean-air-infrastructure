@@ -62,29 +62,41 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
-    def query(self, session, start_time, end_time, baseline, exclude_baseline_no_traffic, exclude_comparison_no_traffic, exclude_low_confidence, return_meta):
+    def query(
+        self,
+        session,
+        start_time,
+        end_time,
+        baseline,
+        exclude_baseline_no_traffic,
+        exclude_comparison_no_traffic,
+        exclude_low_confidence,
+        return_meta,
+    ):
 
-        meta_cols = [ScootPercentChange.baseline_start_date,
-                     ScootPercentChange.baseline_end_date,
-                     ScootPercentChange.no_traffic_in_baseline,
-                     ScootPercentChange.no_traffic_in_comparison,
-                     ScootPercentChange.low_confidence,
-                     ScootPercentChange.num_observations,
-                     ScootPercentChange.removed_anomaly_from_baseline,
-                     ScootPercentChange.removed_anomaly_from_comparison,
-                     ]
+        meta_cols = [
+            ScootPercentChange.baseline_start_date,
+            ScootPercentChange.baseline_end_date,
+            ScootPercentChange.no_traffic_in_baseline,
+            ScootPercentChange.no_traffic_in_comparison,
+            ScootPercentChange.low_confidence,
+            ScootPercentChange.num_observations,
+            ScootPercentChange.removed_anomaly_from_baseline,
+            ScootPercentChange.removed_anomaly_from_comparison,
+        ]
 
-        data_cols = [ScootPercentChange.detector_id,
-                     ScootPercentChange.measurement_start_utc,
-                     ScootPercentChange.measurement_end_utc,
-                     ScootPercentChange.day_of_week,
-                     ScootPercentChange.baseline_period,
-                     ScootPercentChange.baseline_n_vehicles_in_interval,
-                     ScootPercentChange.comparison_n_vehicles_in_interval,
-                     ScootPercentChange.percent_of_baseline,
-                     func.ST_X(MetaPoint.location).label("lon"),
-                     func.ST_Y(MetaPoint.location).label("lat"),
-                     ]
+        data_cols = [
+            ScootPercentChange.detector_id,
+            ScootPercentChange.measurement_start_utc,
+            ScootPercentChange.measurement_end_utc,
+            ScootPercentChange.day_of_week,
+            ScootPercentChange.baseline_period,
+            ScootPercentChange.baseline_n_vehicles_in_interval,
+            ScootPercentChange.comparison_n_vehicles_in_interval,
+            ScootPercentChange.percent_of_baseline,
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+        ]
 
         if return_meta:
             all_cols = data_cols + meta_cols
@@ -92,9 +104,7 @@ class ScootDailyPerc(APIQueryMixin):
             all_cols = data_cols
 
         percent_change = (
-            session.query(
-                *all_cols
-            )
+            session.query(*all_cols)
             .join(
                 ScootDetector,
                 ScootPercentChange.detector_id == ScootDetector.detector_n,
@@ -110,13 +120,19 @@ class ScootDailyPerc(APIQueryMixin):
             )
 
         if exclude_baseline_no_traffic:
-            percent_change = percent_change.filter(ScootPercentChange.no_traffic_in_baseline != True)
+            percent_change = percent_change.filter(
+                ScootPercentChange.no_traffic_in_baseline != True
+            )
 
         if exclude_comparison_no_traffic:
-            percent_change = percent_change.filter(ScootPercentChange.no_traffic_in_comparison != True)
+            percent_change = percent_change.filter(
+                ScootPercentChange.no_traffic_in_comparison != True
+            )
 
         if exclude_low_confidence:
-            percent_change = percent_change.filter(ScootPercentChange.low_confidence != True)
+            percent_change = percent_change.filter(
+                ScootPercentChange.low_confidence != True
+            )
 
         return percent_change
 

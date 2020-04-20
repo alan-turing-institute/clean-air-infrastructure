@@ -12,9 +12,7 @@ def create_app():
 
     # create and configure the app
     app = Flask(__name__)
-    app.config.from_mapping(
-        DATABASE_URI="db_secrets.json"
-    )
+    app.config.from_mapping(DATABASE_URI="db_secrets.json")
 
     # Create DB session object
     with app.app_context():
@@ -32,14 +30,12 @@ def create_app():
                 "url": "www.turing.ac.uk/research/research-projects/london-air-quality",
             },
             "termsOfService": "",
-            "version": "0.0.1"
+            "version": "0.0.1",
         },
         "host": "urbanair.turing.ac.uk",  # overrides localhost:5000
         "basePath": "/",  # base bash for blueprint registration
-        "schemes": [
-            "https"
-        ],
-        "operationId": "getmyData"
+        "schemes": ["https"],
+        "operationId": "getmyData",
     }
 
     swagger = Swagger(app, template=template)
