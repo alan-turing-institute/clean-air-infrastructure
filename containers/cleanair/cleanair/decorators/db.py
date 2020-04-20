@@ -6,7 +6,6 @@ import pandas as pd
 class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
 
-    pass
 
 
 def check_empty_df(data_frame, raise_error=True):
