@@ -1,5 +1,6 @@
 """Run the flask app"""
 from urbanair import create_app
+
 # pylint: disable=C0103
 app = create_app()
 

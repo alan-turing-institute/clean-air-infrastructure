@@ -24,6 +24,7 @@ def configure_db_session():
 
     return g.db_session
 
+
 # pylint: disable=C0103
 
 

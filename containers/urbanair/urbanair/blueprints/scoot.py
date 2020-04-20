@@ -74,32 +74,82 @@ def scoot_daily(args):
         **{
             "baseline": fields.String(
                 required=True, validate=lambda val: val in ["lockdown", "normal"]
-            )
+            ),
+            "exclude_baseline_no_traffic": fields.Bool(missing="true"),
+            "exclude_comparison_no_traffic": fields.Bool(missing="true"),
+            "exclude_low_confidence": fields.Bool(missing="true"),
+            "return_meta": fields.Bool(missing="true"),
         },
     },
     location="query",
 )
 def scoot_percentage(args):
-    """Get scoot percentage data
-
-    http --download GET :5000/api/v1/scoot/daily/percent-of-baseline starttime=='2020-04-15'
-                                                                     endtime=='2020-04-16'
-                                                                     baseline=='normal'
-    http --download GET urbanair.turing.ac.uk/api/v1/scoot/daily/percent-of-baseline starttime=='2020-03-01'
-                                                                                     endtime=='2020-03-02'
-                                                                                     baseline=='normal'
+    """
+    Return scoot data as a percentage of a baseline
+    This is using docstrings for specifications.
+    ---
+    parameters:
+      - name: starttime
+        in: query
+        type: string
+        required: true
+        description: ISO date. Request data from this date
+      - name: endtime
+        in: query
+        type: string
+        required: true
+        description: ISO date. Request data until (but excluding) this date 
+      - name: baseline
+        in: query
+        type: string
+        enum: ['lockdown', 'normal']
+        required: true
+        description: Use the 'lockdown' or 'normal' period for comparison
+      - name: exclude_baseline_no_traffic
+        in: query
+        type: boolean
+        default: true
+        description: Exclude any rows which have no data in baseline period
+      - name: exclude_comparison_no_traffic
+        in: query
+        type: boolean
+        default: true
+        description: Exclude any rows which have no data in comparison period
+      - name: exclude_low_confidence
+        in: query
+        type: boolean
+        default: true
+        description: Exclude any rows which have low confidence
+      - name: return_meta
+        in: query
+        type: boolean
+        default: true
+        description: Return metadata columns
+    responses:
+      200:
+        description: A csv file containing the data
+        content:  # Response body
+            application/csv
     """
 
     starttime = args.pop("starttime")
     endtime = args.pop("endtime", None)
     baseline = args.pop("baseline")
+    exclude_baseline_no_traffic = args.pop("exclude_baseline_no_traffic")
+    exclude_comparison_no_traffic = args.pop("exclude_comparison_no_traffic")
+    exclude_low_confidence = args.pop("exclude_low_confidence")
+    return_meta = args.pop("return_meta")
 
     db_query = ScootDailyPerc()
 
     return db_query.stream_csv(
         "scoot_daily_percentage",
         get_session(),
+        starttime,
+        endtime,
         baseline,
-        start_time=starttime,
-        end_time=endtime,
+        exclude_baseline_no_traffic,
+        exclude_comparison_no_traffic,
+        exclude_low_confidence,
+        return_meta,
     )
