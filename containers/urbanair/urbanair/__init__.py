@@ -1,6 +1,6 @@
 """Cleanair API"""
 
-
+import os
 from flask import Flask
 from flasgger import Swagger, APISpec
 from . import db
@@ -12,33 +12,20 @@ def create_app():
 
     # create and configure the app
     app = Flask(__name__)
-    app.config.from_mapping(DATABASE_URI="db_secrets.json")
 
-    # Create DB session object
+    if app.config['ENV'] == 'production':
+        app.config.from_object('urbanair.configurations.production_settings')
+    else:
+        app.config.from_object('urbanair.configurations.development_settings')
+        app.config['DATABASE_URI'] = os.environ.get("DATABASE_URI")
+        if not app.config['DATABASE_URI']:
+            raise ValueError("DATABASE_URI env variable must be set in development mode")
+
+   # Create DB session object
     with app.app_context():
         db.init_app(app)
 
-    template = {
-        "swagger": "2.0",
-        "info": {
-            "title": "UrbanAir API",
-            "description": "API to access UrbanAir 48h air polution forecasts",
-            "contact": {
-                "responsibleOrganization": "Alan Turing Institute",
-                "responsibleDeveloper": "Oscar T Giles",
-                "email": "ogiles@turing.ac.uk",
-                "url": "www.turing.ac.uk/research/research-projects/london-air-quality",
-            },
-            "termsOfService": "",
-            "version": "0.0.1",
-        },
-        "host": "urbanair.turing.ac.uk",  # overrides localhost:5000
-        "basePath": "/",  # base bash for blueprint registration
-        "schemes": ["https"],
-        "operationId": "getmyData",
-    }
-
-    swagger = Swagger(app, template=template)
+    swagger = Swagger(app, template=app.config["SWAGGER_TEMPLATE"])
 
     # Register blueprints
     app.register_blueprint(index_bp)

@@ -119,12 +119,12 @@ def scoot_percentage(args):
         in: query
         type: boolean
         default: true
-        description: Exclude any rows which have low confidence
+        description: Exclude any rows which have less than 6 hours of data matched between baseline and comparison
       - name: return_meta
         in: query
         type: boolean
         default: true
-        description: Return metadata columns
+        description: Return metadata columns. 
     responses:
       200:
         description: A csv file containing the data
