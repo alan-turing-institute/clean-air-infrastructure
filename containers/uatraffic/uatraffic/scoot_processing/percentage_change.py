@@ -24,12 +24,17 @@ from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
 
 
+NORMAL_BASELINE_START = "2020-02-10"
+NORMAL_BASELINE_END = "2020-03-03"
+LOCKDOWN_BASELINE_START = "2020-02-10"
+LOCKDOWN_BASELINE_END = "2020-04-13"
+
 class TrafficPercentageChange(DateRangeMixin, DBWriter):
     """
     Queries to run on the SCOOT DB.
     """
 
-    def __init__(self, baseline_tag, baseline_start, baseline_end, **kwargs):
+    def __init__(self, baseline_tag, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -38,8 +43,16 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
             self.logger = get_logger(__name__)
 
         self.baseline_tag = baseline_tag
-        self.baseline_start = baseline_start
-        self.baseline_end = baseline_end
+
+        if baseline_tag == 'normal':
+            self.baseline_start = NORMAL_BASELINE_START
+            self.baseline_end = NORMAL_BASELINE_END
+        elif baseline_tag == 'lockdown':
+            self.baseline_start = LOCKDOWN_BASELINE_START
+            self.baseline_end = LOCKDOWN_BASELINE_END
+        else:
+            raise ValueError("baseline_tag must be 'normal' or 'lockdown'")
+
 
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None, detectors=None):
