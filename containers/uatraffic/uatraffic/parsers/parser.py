@@ -36,7 +36,7 @@ class BaselineParser(
                           "--backfill",
                           action="store_true",
                           default=True,
-                          help="Backfill to earliest available date")
+                          help="Backfill to earliest available date. Will ignore ndays and calculate from the end of the baseline period")
 
 
 def validate_type(datestr):
