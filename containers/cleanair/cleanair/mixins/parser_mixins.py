@@ -31,7 +31,9 @@ class DurationParserMixin:
             "--end",
             type=str,
             default=end,
-            help="The last time point to get data for in iso format (default: {}).".format(end),
+            help="The last time point to get data for in iso format (default: {}).".format(
+                end
+            ),
         )
         self.add_argument(
             "-n",
