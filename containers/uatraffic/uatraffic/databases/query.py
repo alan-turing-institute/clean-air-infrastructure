@@ -5,7 +5,7 @@ Class for querying traffic and scoot data.
 import json
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import func, or_, and_
+from sqlalchemy import func, or_, and_, not_, Integer
 
 from cleanair.databases import DBWriter, DBReader
 from cleanair.databases.tables import (
@@ -197,7 +197,14 @@ class TrafficInstanceQuery(DBReader):
     """
 
     @db_query
-    def get_instances(self, tag=None, data_ids=None, param_ids=None, models=None):
+    def get_instances(
+        self,
+        tag: str = None,
+        instance_ids: list = None,
+        data_ids: list = None,
+        param_ids: list = None,
+        models: list = None
+    ):
         """
         Get traffic instances and optionally filter by parameters.
         """
@@ -206,6 +213,9 @@ class TrafficInstanceQuery(DBReader):
             # filter by tag
             if tag:
                 readings = readings.filter(TrafficInstanceTable.tag == tag)
+            # filter by instance ids
+            if instance_ids:
+                readings = readings.filter(TrafficInstanceTable.instance_id.in_(instance_ids))
             # filter by data ids
             if data_ids:
                 readings = readings.filter(
@@ -224,14 +234,22 @@ class TrafficInstanceQuery(DBReader):
             return readings
 
     @db_query
-    def get_instances_with_params(self, tag=None):
+    def get_instances_with_params(
+        self,
+        tag: str = None,
+        instance_ids: list = None,
+        data_ids: list = None,
+        param_ids: list = None,
+        models: list = None
+    ):
         """
         Get all traffic instances and join the json parameters.
         """
+        instance_subquery = self.get_instances(tag=tag, instance_ids=instance_ids, data_ids=data_ids, param_ids=param_ids, models=models, output_type="subquery")
         with self.dbcnxn.open_session() as session:
             readings = (
                 session.query(
-                    TrafficInstanceTable,
+                    instance_subquery,
                     TrafficModelTable.model_param,
                     TrafficDataTable.data_config,
                 )
@@ -247,12 +265,10 @@ class TrafficInstanceQuery(DBReader):
                     TrafficDataTable.data_id == TrafficInstanceTable.data_id
                 )
             )
-            if tag:
-                readings = readings.filter(TrafficInstanceTable.tag == tag)
             return readings
 
     @db_query
-    def get_data_config(self, start_time: str = None, end_time: str = None, detectors: list = None):
+    def get_data_config(self, start_time: str = None, end_time: str = None, detectors: list = None, nweeks: int = None):
         """
         Get the data id and config from the TrafficDataTable.
         """
@@ -277,6 +293,22 @@ class TrafficInstanceQuery(DBReader):
                     TrafficDataTable.data_config["end"].astext <= end_time
                 )
 
+            if nweeks and nweeks > 1:
+                readings = readings.filter(
+                    and_(TrafficDataTable.data_config.has_key("nweeks"), TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks)
+                )
+            else:
+                # TODO: this is a temp fix whilst some data configs are missing nweeks. Remove this once data is backfilled.
+                readings = readings.filter(
+                    or_(
+                        and_(
+                            TrafficDataTable.data_config.has_key("nweeks"),
+                            TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == 1
+                        ),
+                        not_(TrafficDataTable.data_config.has_key("nweeks"))
+                    )
+                )
+
             return readings
 
     @db_query
@@ -284,7 +316,7 @@ class TrafficInstanceQuery(DBReader):
         """
         Get instances joined with the metrics.
         """
-        instance_subquery = self.get_instances_with_params(tag=tag, data_ids=data_ids, param_ids=param_ids, models=models, output_type="subquery")
+        instance_subquery = self.get_instances(tag=tag, data_ids=data_ids, param_ids=param_ids, models=models, output_type="subquery")
         with self.dbcnxn.open_session() as session:
-            readings = session.query(TrafficMetric).join(instance_subquery, instance_subquery.instance_id == TrafficMetric.instance_id)
+            readings = session.query(TrafficMetric).join(instance_subquery, instance_subquery.c.instance_id == TrafficMetric.instance_id)
             return readings

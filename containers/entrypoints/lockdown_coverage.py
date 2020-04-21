@@ -2,7 +2,6 @@
 Calculate the coverage for models.
 """
 import os
-import math
 import pickle
 import logging
 from concurrent import futures
@@ -19,6 +18,7 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
     Calculate the coverage using threadings in a batch.
     """
     models, dfs, ids = [], [], []
+    count_missing_files = 0
 
     # load the instance
     for _, row in instance_df.iterrows():
@@ -44,11 +44,13 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
             dfs.append(clean_and_normalise_df(data_df))
 
         except FileNotFoundError:
-            logging.warning("File for instance %s not found - have you copied from cluster?", row["instance_id"])
+            logging.debug("File for instance %s not found - have you copied from cluster?", row["instance_id"])
+            count_missing_files += 1
+
+    logging.warning("Did not find %s model files out of %s", count_missing_files, len(instance_df))
 
     # store rows of new dataframe
     rows = []
-    count = 0
     number_of_executions = len(models)
 
     # columns the model was trained on
@@ -85,7 +87,7 @@ def main():
 
     # get list of scoot detectors
     if isinstance(args.batch_start, int) and isinstance(args.batch_size, int):
-        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
+        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, nweeks=args.nweeks, output_type="df")
         detectors = list(detector_df["detector_id"].unique())
     elif args.detectors:
         detectors = args.detectors
@@ -93,31 +95,33 @@ def main():
         detector_df = traffic_query.get_scoot_detectors(output_type="df")
         detectors = list(detector_df["detector_id"].unique())
 
-    # filter by detectors
-    data_df = instance_query.get_data_config(detectors=detectors, output_type="df")
+    # filter by detectors and nweeks
+    data_df = instance_query.get_data_config(nweeks=args.nweeks, detectors=detectors, output_type="df")
 
     # test for querying of detector
     for _, row in data_df.iterrows():
         assert set(row.to_dict()["data_config"]["detectors"]).issubset(set(detectors))
 
     # dataframe of instances
-    # TODO: getting the data ids should be a subquery used by get_instances
-    instance_df = instance_query.get_instances(data_ids=list(data_df["data_id"]), output_type="df")
-    instance_df = instance_df.merge(data_df, on="data_id")
-    print(instance_df)
+    instance_df = instance_query.get_instances_with_params(data_ids=data_df["data_id"].to_list(), output_type="df")
 
     # pass the instance df and batch calculate coverage
     # TODO: clean up filepaths
+    logging.info("Starting to compute the coverage in batch model.")
     path_to_models = os.path.join(args.root, args.experiment, "models")
+    assert os.path.isdir(path_to_models)
     coverage_df = batch_coverage(instance_df, traffic_query, path_to_models)
-    coverage_df.to_csv(os.path.join(args.root, args.experiment, "coverage.csv"))
 
     # upload metrics to DB
-    upload_records = coverage_df[["instance_id", "coverage"]].to_dict("records")
-    with traffic_query.dbcnxn.open_session() as session:
-        traffic_query.commit_records(
-            session, upload_records, table=TrafficMetric, on_conflict="overwrite"
-        )
+    try:
+        logging.info("Inserting %s records into the metrics table.")
+        upload_records = coverage_df[["instance_id", "coverage"]].to_dict("records")
+        with traffic_query.dbcnxn.open_session() as session:
+            traffic_query.commit_records(
+                session, upload_records, table=TrafficMetric, on_conflict="overwrite"
+            )
+    except KeyError:
+        logging.error("No metrics were calculated. This might be because the model files were missing.")
 
 if __name__ == "__main__":
     main()
