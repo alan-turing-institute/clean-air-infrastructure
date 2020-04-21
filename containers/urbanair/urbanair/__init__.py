@@ -13,15 +13,17 @@ def create_app():
     # create and configure the app
     app = Flask(__name__)
 
-    if app.config['ENV'] == 'production':
-        app.config.from_object('urbanair.configurations.production_settings')
+    if app.config["ENV"] == "production":
+        app.config.from_object("urbanair.configurations.production_settings")
     else:
-        app.config.from_object('urbanair.configurations.development_settings')
-        app.config['DATABASE_URI'] = os.environ.get("DATABASE_URI")
-        if not app.config['DATABASE_URI']:
-            raise ValueError("DATABASE_URI env variable must be set in development mode")
+        app.config.from_object("urbanair.configurations.development_settings")
+        app.config["DATABASE_URI"] = os.environ.get("DATABASE_URI")
+        if not app.config["DATABASE_URI"]:
+            raise ValueError(
+                "DATABASE_URI env variable must be set in development mode"
+            )
 
-   # Create DB session object
+    # Create DB session object
     with app.app_context():
         db.init_app(app)
 

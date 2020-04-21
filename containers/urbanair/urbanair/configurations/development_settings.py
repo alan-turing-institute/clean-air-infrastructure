@@ -16,6 +16,6 @@ SWAGGER_TEMPLATE = {
     },
     "host": "localhost:5000",  # overrides localhost:5000
     "basePath": "/",  # base bash for blueprint registration
-    "schemes": ["http", ],
+    "schemes": ["http",],
     "operationId": "getmyData",
 }

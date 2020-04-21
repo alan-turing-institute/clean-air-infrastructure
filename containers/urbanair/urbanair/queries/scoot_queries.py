@@ -1,6 +1,7 @@
 """API database queries"""
 from sqlalchemy import func
 from cleanair.loggers import initialise_logging
+from cleanair.decorators import db_query
 from cleanair.databases.tables import (
     MetaPoint,
     ScootReading,
@@ -62,6 +63,7 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
+    @db_query
     def query(
         self,
         session,

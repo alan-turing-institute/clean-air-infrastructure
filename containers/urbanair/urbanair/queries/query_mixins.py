@@ -17,6 +17,7 @@ class APIQueryMixin(ABC):
 
     def __generate_csv(self, *args, **kwargs):
         """Generate a csv file from a sqlalchemy query"""
+
         query = self.query(*args, **kwargs)
 
         headers = ",".join(self.headers(query)) + "\n"
@@ -39,6 +40,7 @@ class APIQueryMixin(ABC):
 
     def stream_csv(self, filename, *args, **kwargs):
         """Stream a csv"""
+
         response = Response(self.__generate_csv(*args, **kwargs), mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"
 

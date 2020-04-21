@@ -14,6 +14,14 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["flask", "flask-marshmallow", "flasgger", "webargs", "uwsgi", ],
+    install_requires=[
+        "cleanair",
+        "uatraffic",
+        "flask",
+        "flask-marshmallow",
+        "flasgger",
+        "webargs",
+        "uwsgi",
+    ],
     python_requires=">=3.7",
 )
