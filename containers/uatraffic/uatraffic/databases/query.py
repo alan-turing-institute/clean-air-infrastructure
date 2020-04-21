@@ -256,13 +256,13 @@ class TrafficInstanceQuery(DBReader):
                 .join(
                     TrafficModelTable,
                     and_(
-                        TrafficModelTable.model_name == TrafficInstanceTable.model_name,
-                        TrafficModelTable.param_id == TrafficInstanceTable.param_id,
+                        TrafficModelTable.model_name == instance_subquery.c.model_name,
+                        TrafficModelTable.param_id == instance_subquery.c.param_id,
                     )
                 )
                 .join(
                     TrafficDataTable,
-                    TrafficDataTable.data_id == TrafficInstanceTable.data_id
+                    TrafficDataTable.data_id == instance_subquery.c.data_id
                 )
             )
             return readings

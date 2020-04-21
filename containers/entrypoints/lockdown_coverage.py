@@ -47,7 +47,8 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
             logging.debug("File for instance %s not found - have you copied from cluster?", row["instance_id"])
             count_missing_files += 1
 
-    logging.warning("Did not find %s model files out of %s", count_missing_files, len(instance_df))
+    if count_missing_files:
+        logging.warning("Did not find %s model files out of %s", count_missing_files, len(instance_df))
 
     # store rows of new dataframe
     rows = []
@@ -97,6 +98,7 @@ def main():
 
     # filter by detectors and nweeks
     data_df = instance_query.get_data_config(nweeks=args.nweeks, detectors=detectors, output_type="df")
+    print(data_df)
 
     # test for querying of detector
     for _, row in data_df.iterrows():
@@ -114,7 +116,7 @@ def main():
 
     # upload metrics to DB
     try:
-        logging.info("Inserting %s records into the metrics table.")
+        logging.info("Inserting %s records into the metrics table.", len(coverage_df))
         upload_records = coverage_df[["instance_id", "coverage"]].to_dict("records")
         with traffic_query.dbcnxn.open_session() as session:
             traffic_query.commit_records(
