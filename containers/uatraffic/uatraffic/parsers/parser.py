@@ -1,8 +1,8 @@
 """Parsers for the uatraffic module and their entrypoints."""
 
+from argparse import ArgumentParser, ArgumentTypeError
 from datetime import datetime, timedelta
 from dateutil.parser import isoparse
-from argparse import ArgumentParser, ArgumentTypeError
 from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
@@ -37,7 +37,8 @@ class BaselineParser(
             "--backfill",
             action="store_true",
             default=True,
-            help="Backfill to earliest available date. Will ignore ndays and calculate from the end of the baseline period",
+            help="""Backfill to earliest available date.
+            Will ignore ndays and calculate from the end of the baseline period""",
         )
 
 

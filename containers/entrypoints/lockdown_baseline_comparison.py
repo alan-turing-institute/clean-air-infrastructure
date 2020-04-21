@@ -1,9 +1,8 @@
 """
 Calculate the percent of baseline metric for a recent day.
 """
-
-from dateutil.parser import isoparse
 from datetime import datetime
+from dateutil.parser import isoparse
 from uatraffic.scoot_processing import (
     TrafficPercentageChange,
     LOCKDOWN_BASELINE_END,
@@ -25,7 +24,6 @@ def main():
         # Calculate how many days are backfillable
         ndays_lockdown = (datetime.today() - isoparse(LOCKDOWN_BASELINE_END)).days
         ndays_normal = (datetime.today() - isoparse(NORMAL_BASELINE_END)).days
-        
 
         # get query object
         traffic_query_normal = TrafficPercentageChange(
@@ -61,7 +59,6 @@ def main():
 
     traffic_query_lockdown.update_remote_tables()
     traffic_query_normal.update_remote_tables()
-    
 
 
 if __name__ == "__main__":

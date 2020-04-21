@@ -106,10 +106,12 @@ def scoot_daily(args):
 @scoot_bp.route("daily/percent-of-baseline/lockdown", methods=["GET"])
 @use_args(
     {
-        "starttime": fields.String(required=True, validate=lambda val: validate_lockdown_date(val, LOCKDOWN_BASELINE_END)),
+        "starttime": fields.String(
+            required=True,
+            validate=lambda val: validate_lockdown_date(val, LOCKDOWN_BASELINE_END),
+        ),
         "endtime": fields.String(
-            required=False,
-            validate=lambda val: validate_today_or_before(val),
+            required=False, validate=lambda val: validate_today_or_before(val),
         ),
         "exclude_baseline_no_traffic": fields.Bool(missing="true"),
         "exclude_comparison_no_traffic": fields.Bool(missing="true"),
@@ -184,10 +186,12 @@ def scoot_percentage_lockdown(args):
 @scoot_bp.route("daily/percent-of-baseline/normal", methods=["GET"])
 @use_args(
     {
-        "starttime": fields.String(required=True, validate=lambda val: validate_lockdown_date(val, NORMAL_BASELINE_END)),
+        "starttime": fields.String(
+            required=True,
+            validate=lambda val: validate_lockdown_date(val, NORMAL_BASELINE_END),
+        ),
         "endtime": fields.String(
-            required=False,
-            validate=lambda val: validate_today_or_before(val),
+            required=False, validate=lambda val: validate_today_or_before(val),
         ),
         "exclude_baseline_no_traffic": fields.Bool(missing="true"),
         "exclude_comparison_no_traffic": fields.Bool(missing="true"),

@@ -3,8 +3,8 @@ Class for querying traffic and scoot data.
 """
 
 from datetime import datetime, timedelta
-from dateutil import rrule
 import calendar
+from dateutil import rrule
 import pandas as pd
 from sqlalchemy import func, or_, and_
 
@@ -206,7 +206,7 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
             return baseline_readings
 
     def percent_of_baseline(self, comparison_start_date):
-
+        """Calculate the percentage of baseline"""
         # the end of the comparison day is comparison_start + nhours
         comparison_end_date = comparison_start_date + timedelta(days=1)
 

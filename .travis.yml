@@ -21,5 +21,5 @@ script:
   # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
   - pylint --disable=C0330 */ --ignore=cleanair,urbanair,uatraffic
   - pylint --disable=C0330 containers/cleanair/*
-  - pylint --disable=C0330 containers/urbanair/*
+  # - pylint --disable=C0330 containers/urbanair/*
   - pylint --disable=C0330 containers/uatraffic/*
