@@ -4,6 +4,11 @@ FROM python:3.7
 COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
+# Install traffic app
+COPY uatraffic /app/uatraffic
+RUN pip install /app/uatraffic
+
+
 # Copy the API into the container
 COPY urbanair /var/www/html/urbanair
 

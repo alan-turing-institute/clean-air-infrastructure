@@ -29,6 +29,7 @@ NORMAL_BASELINE_END = "2020-03-03"
 LOCKDOWN_BASELINE_START = "2020-02-10"
 LOCKDOWN_BASELINE_END = "2020-04-13"
 
+
 class TrafficPercentageChange(DateRangeMixin, DBWriter):
     """
     Queries to run on the SCOOT DB.
@@ -44,15 +45,14 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
 
         self.baseline_tag = baseline_tag
 
-        if baseline_tag == 'normal':
+        if baseline_tag == "normal":
             self.baseline_start = NORMAL_BASELINE_START
             self.baseline_end = NORMAL_BASELINE_END
-        elif baseline_tag == 'lockdown':
+        elif baseline_tag == "lockdown":
             self.baseline_start = LOCKDOWN_BASELINE_START
             self.baseline_end = LOCKDOWN_BASELINE_END
         else:
             raise ValueError("baseline_tag must be 'normal' or 'lockdown'")
-
 
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None, detectors=None):

@@ -32,6 +32,11 @@ class BaselineParser(
             help="Timestamp for beginning of comparison day.",
             type=int,
         )
+        self.add_argument("-b",
+                          "--backfill",
+                          action="store_true",
+                          default=True,
+                          help="Backfill to earliest available date")
 
 
 def validate_type(datestr):
