@@ -45,7 +45,6 @@ def scoot(args):
       - name: endtime
         in: query
         type: string
-        required: true
         description: ISO date. Request data until (but excluding) this date 
     responses:
       200:
@@ -86,7 +85,6 @@ def scoot_daily(args):
       - name: endtime
         in: query
         type: string
-        required: true
         description: ISO date. Request data until (but excluding) this date 
     responses:
       200:
@@ -134,7 +132,6 @@ def scoot_percentage_lockdown(args):
       - name: endtime
         in: query
         type: string
-        required: false
         description: ISO date. Request data until (but excluding) this date. If not provided will return all available data from starttime
       - name: exclude_baseline_no_traffic
         in: query
@@ -213,7 +210,6 @@ def scoot_percentage(args):
       - name: endtime
         in: query
         type: string
-        required: false
         description: ISO date. Request data until (but excluding) this date. If not provided will return all available data from starttime
       - name: exclude_baseline_no_traffic
         in: query
