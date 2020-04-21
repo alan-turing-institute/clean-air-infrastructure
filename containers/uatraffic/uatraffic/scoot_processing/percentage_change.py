@@ -27,7 +27,7 @@ from ..metric import percent_of_baseline
 NORMAL_BASELINE_START = "2020-02-10"
 NORMAL_BASELINE_END = "2020-03-02"
 LOCKDOWN_BASELINE_START = "2020-03-30"
-LOCKDOWN_BASELINE_END = "2020-04-21"
+LOCKDOWN_BASELINE_END = "2020-04-20"
 
 
 class TrafficPercentageChange(DateRangeMixin, DBWriter):

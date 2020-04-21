@@ -25,6 +25,7 @@ def main():
         # Calculate how many days are backfillable
         ndays_lockdown = (datetime.today() - isoparse(LOCKDOWN_BASELINE_END)).days
         ndays_normal = (datetime.today() - isoparse(NORMAL_BASELINE_END)).days
+        
 
         # get query object
         traffic_query_normal = TrafficPercentageChange(
@@ -52,14 +53,15 @@ def main():
         )
 
         traffic_query_lockdown = TrafficPercentageChange(
-            secretfile=args.secretfile,=
+            secretfile=args.secretfile,
             end=args.comparison_end_date,
             nhours=(args.ndays * 24) - 24,
             baseline_tag="lockdown",
         )
 
-    traffic_query_normal.update_remote_tables()
     traffic_query_lockdown.update_remote_tables()
+    traffic_query_normal.update_remote_tables()
+    
 
 
 if __name__ == "__main__":
