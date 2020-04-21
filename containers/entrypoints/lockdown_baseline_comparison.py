@@ -2,7 +2,13 @@
 Calculate the percent of baseline metric for a recent day.
 """
 
-from uatraffic.scoot_processing import TrafficPercentageChange
+from dateutil.parser import isoparse
+from datetime import datetime
+from uatraffic.scoot_processing import (
+    TrafficPercentageChange,
+    LOCKDOWN_BASELINE_END,
+    NORMAL_BASELINE_END,
+)
 from uatraffic.parsers import BaselineParser
 
 
@@ -15,24 +21,45 @@ def main():
     parser = BaselineParser()
     args = parser.parse_args()
 
-    # get query object
-    traffic_query = TrafficPercentageChange(
-        secretfile=args.secretfile,
-        end=args.comparison_end_date,
-        nhours=(args.ndays * 24) - 24,
-        baseline_tag="normal",
-    )
+    if args.backfill:
+        # Calculate how many days are backfillable
+        ndays_lockdown = (datetime.today() - isoparse(LOCKDOWN_BASELINE_END)).days
+        ndays_normal = (datetime.today() - isoparse(NORMAL_BASELINE_END)).days
 
-    traffic_query.update_remote_tables()
+        # get query object
+        traffic_query_normal = TrafficPercentageChange(
+            secretfile=args.secretfile,
+            end=args.comparison_end_date,
+            nhours=(ndays_normal * 24) - 24,
+            baseline_tag="normal",
+        )
 
-    traffic_query = TrafficPercentageChange(
-        secretfile=args.secretfile,
-        end=args.comparison_end_date,
-        nhours=(args.ndays * 24) - 24,
-        baseline_tag="lockdown",
-    )
+        traffic_query_lockdown = TrafficPercentageChange(
+            secretfile=args.secretfile,
+            end=args.comparison_end_date,
+            nhours=(ndays_lockdown * 24) - 24,
+            baseline_tag="lockdown",
+        )
 
-    traffic_query.update_remote_tables()
+    else:
+
+        # get query object
+        traffic_query_normal = TrafficPercentageChange(
+            secretfile=args.secretfile,
+            end=args.comparison_end_date,
+            nhours=(args.ndays * 24) - 24,
+            baseline_tag="normal",
+        )
+
+        traffic_query_lockdown = TrafficPercentageChange(
+            secretfile=args.secretfile,
+            end=args.comparison_end_date,
+            nhours=(args.ndays * 24) - 24,
+            baseline_tag="lockdown",
+        )
+
+    traffic_query_normal.update_remote_tables()
+    traffic_query_lockdown.update_remote_tables()
 
 
 if __name__ == "__main__":
