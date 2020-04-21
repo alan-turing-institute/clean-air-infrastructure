@@ -52,7 +52,7 @@ def main():
         )
 
         traffic_query_lockdown = TrafficPercentageChange(
-            secretfile=args.secretfile,
+            secretfile=args.secretfile,=
             end=args.comparison_end_date,
             nhours=(args.ndays * 24) - 24,
             baseline_tag="lockdown",
