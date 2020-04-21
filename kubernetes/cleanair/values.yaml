@@ -263,4 +263,4 @@ letsencryptIssuer:
       secretName: cleanair-certs-prod
 
 # Mike, CityHall, OscarHome, PatrickHome, JamesWHome, SamHome
-whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 86.174.154.235/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32
+whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 81.151.99.40/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32
