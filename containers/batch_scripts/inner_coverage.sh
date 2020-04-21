@@ -7,6 +7,9 @@
 detector_batch_size=10;
 num_detectors=100;
 
+# script params
+nweeks=$1;
+
 for batch in $(seq 0 $detector_batch_size $num_detectors);
 do
     python /app/lockdown_coverage.py \
@@ -19,6 +22,7 @@ do
         -m svgp \
         -s ~/.secrets/db_secrets.json \
         --epochs 2000 \
+        --nweeks $nweeks \
         --batch_start $batch \
         --batch_size $detector_batch_size &
     python /app/lockdown_coverage.py \
@@ -31,6 +35,7 @@ do
         -m svgp \
         -s ~/.secrets/db_secrets.json \
         --epochs 2000 \
+        --nweeks $nweeks \
         --batch_start $batch \
         --batch_size $detector_batch_size &
 done;

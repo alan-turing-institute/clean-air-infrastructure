@@ -10,4 +10,5 @@
 #SBATCH --time=00:02:00
 #SBATCH --mem-per-cpu=4
 
-singularity exec ~/containers/traffic/lockdown_coverage.sif sh ~/batch_scripts/inner_coverage.sh
+# note the number of weeks is passed as the first parameter
+singularity exec ~/containers/traffic/lockdown_coverage.sif sh ~/batch_scripts/inner_coverage.sh $1
