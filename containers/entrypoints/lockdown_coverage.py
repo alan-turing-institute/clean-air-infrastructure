@@ -88,7 +88,7 @@ def main():
 
     # get list of scoot detectors
     if isinstance(args.batch_start, int) and isinstance(args.batch_size, int):
-        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, nweeks=args.nweeks, output_type="df")
+        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
         detectors = list(detector_df["detector_id"].unique())
     elif args.detectors:
         detectors = args.detectors
