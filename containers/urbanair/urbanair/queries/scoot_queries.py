@@ -77,6 +77,10 @@ class ScootDailyPerc(APIQueryMixin):
     ):
 
         meta_cols = [
+            ScootPercentChange.measurement_end_utc,
+            ScootPercentChange.day_of_week,
+            ScootPercentChange.comparison_n_vehicles_in_interval,
+            ScootPercentChange.baseline_period,
             ScootPercentChange.baseline_start_date,
             ScootPercentChange.baseline_end_date,
             ScootPercentChange.no_traffic_in_baseline,
@@ -90,11 +94,7 @@ class ScootDailyPerc(APIQueryMixin):
         data_cols = [
             ScootPercentChange.detector_id,
             ScootPercentChange.measurement_start_utc,
-            ScootPercentChange.measurement_end_utc,
-            ScootPercentChange.day_of_week,
-            ScootPercentChange.baseline_period,
             ScootPercentChange.baseline_n_vehicles_in_interval,
-            ScootPercentChange.comparison_n_vehicles_in_interval,
             ScootPercentChange.percent_of_baseline,
             func.ST_X(MetaPoint.location).label("lon"),
             func.ST_Y(MetaPoint.location).label("lat"),
@@ -136,6 +136,7 @@ class ScootDailyPerc(APIQueryMixin):
                 ScootPercentChange.low_confidence != True
             )
 
+        percent_change = percent_change.order_by(ScootPercentChange.detector_id, ScootPercentChange.measurement_start_utc)
         return percent_change
 
 
