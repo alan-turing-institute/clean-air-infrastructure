@@ -36,7 +36,7 @@ class BaselineParser(
             "-b",
             "--backfill",
             action="store_true",
-            default=True,
+            default=False,
             help="""Backfill to earliest available date.
             Will ignore ndays and calculate from the end of the baseline period""",
         )
