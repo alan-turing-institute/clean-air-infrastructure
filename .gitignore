@@ -23,12 +23,6 @@ python-virtual-environments/
 *.egg-info
 
 # Misc
-*.csv
-*.png
-*.npy
-*.pickle
-*-checkpoint.ipynb
 val/
+notebooks/
 *.cfg
-*-checkpoint.md
-*.orig
