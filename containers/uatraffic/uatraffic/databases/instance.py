@@ -28,26 +28,28 @@ class TrafficInstance(Instance):
         """
         Update the traffic model table.
         """
-        logging.info("Updating the model table.")
-        records = [dict(
-            model_name=self.model_name,
-            param_id=self.param_id,
-            model_param=model_param,
-        )]
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, on_conflict="ignore", table=TrafficModelTable)
+        if model_param:
+            logging.info("Updating the model table.")
+            records = [dict(
+                model_name=self.model_name,
+                param_id=self.param_id,
+                model_param=model_param,
+            )]
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(session, records, on_conflict="ignore", table=TrafficModelTable)
 
     def update_data_table(self, data_config):
         """
         Update the data config table for traffic.
         """
-        logging.info("Updating the traffic data table.")
-        records = [dict(
-            data_id=self.data_id,
-            data_config=data_config
-        )]
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
+        if data_config:
+            logging.info("Updating the traffic data table.")
+            records = [dict(
+                data_id=self.data_id,
+                data_config=data_config
+            )]
+            with self.dbcnxn.open_session() as session:
+                self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
 
     def save_model(self, model, folder, extension="h5"):
         """

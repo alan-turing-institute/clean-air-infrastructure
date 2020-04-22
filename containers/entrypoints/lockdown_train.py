@@ -11,6 +11,12 @@ import tensorflow as tf
 from uatraffic.util import TrafficModelParser
 from uatraffic.databases import TrafficQuery
 from uatraffic.databases import TrafficInstance
+from uatraffic.databases import (
+    NORMAL_BASELINE_START,
+    NORMAL_BASELINE_END,
+    LOCKDOWN_BASELINE_START,
+    LOCKDOWN_BASELINE_END,
+)
 from uatraffic.preprocess import clean_and_normalise_df
 from uatraffic.model import parse_kernel
 from uatraffic.model import train_sensor_model
@@ -46,7 +52,14 @@ def main():
     Path(os.path.join(args.root, args.experiment)).mkdir(exist_ok=True)
 
     # process datetimes
-    start = datetime.strptime(args.baseline_start, "%Y-%m-%d")
+    if args.tag == "normal":
+        start = datetime.strptime(NORMAL_BASELINE_START, "%Y-%m-%d")
+        baseline_end = datetime.strptime(NORMAL_BASELINE_END, "%Y-%m-%d")
+    elif args.tag == "lockdown":
+        start = datetime.strptime(LOCKDOWN_BASELINE_START, "%Y-%m-%d")
+        baseline_end = datetime.strptime(LOCKDOWN_BASELINE_END, "%Y-%m-%d")
+    else:
+        raise NotImplementedError("Only normal and lockdown baselines are available.")
     end = start + timedelta(hours=args.nhours, weeks=args.nweeks - 1)
 
     # create an object for querying from DB
@@ -73,7 +86,7 @@ def main():
     logging_epoch_freq = 100
     kernel_dict = next(k for k in KERNELS if k["name"] == args.kernel)
 
-    while end <= datetime.strptime(args.baseline_end, "%Y-%m-%d"):
+    while end <= baseline_end:
         # read the data from DB
         day_of_week = start.weekday()
         logging.info(
