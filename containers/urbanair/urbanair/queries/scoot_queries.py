@@ -136,7 +136,9 @@ class ScootDailyPerc(APIQueryMixin):
                 ScootPercentChange.low_confidence != True
             )
 
-        percent_change = percent_change.order_by(ScootPercentChange.measurement_start_utc)
+        percent_change = percent_change.order_by(
+            ScootPercentChange.measurement_start_utc
+        )
         return percent_change
 
 
