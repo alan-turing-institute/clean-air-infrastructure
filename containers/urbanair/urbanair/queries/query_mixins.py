@@ -6,18 +6,21 @@ from flask import Response
 class APIQueryMixin(ABC):
     @abstractmethod
     def query(self):
+        """A database query which will be returned as a csv.
+        Ensure all columns are labled appropriately as these will be used as csv columns
+        """
         pass
 
-    @property
-    @abstractmethod
-    def csv_headers(self):
-        pass
+    def headers(self, query_result):
+        """Get csv headers from the query result"""
+        return [i["name"] for i in query_result.column_descriptions]
 
     def __generate_csv(self, *args, **kwargs):
+        """Generate a csv file from a sqlalchemy query"""
 
         query = self.query(*args, **kwargs)
-        count = 0
-        headers = ",".join(self.csv_headers) + "\n"
+
+        headers = ",".join(self.headers(query)) + "\n"
 
         for i, row in enumerate(query.yield_per(1000).enable_eagerloads(False)):
             if i == 0:
@@ -36,6 +39,7 @@ class APIQueryMixin(ABC):
             yield csv.encode("utf-8")
 
     def stream_csv(self, filename, *args, **kwargs):
+        """Stream a csv"""
 
         response = Response(self.__generate_csv(*args, **kwargs), mimetype="text/csv")
         response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"

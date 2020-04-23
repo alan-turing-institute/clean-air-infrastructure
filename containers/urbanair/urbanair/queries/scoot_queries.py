@@ -3,14 +3,13 @@ from sqlalchemy import func
 from cleanair.loggers import initialise_logging
 from cleanair.decorators import db_query
 from cleanair.databases.tables import (
-    ModelResult,
     MetaPoint,
     ScootReading,
     ScootDetector,
     ScootPercentChange,
 )
+from .query_mixins import APIQueryMixin
 
-from .csv_stream import APIQueryMixin
 
 initialise_logging(verbosity=0)
 
@@ -64,37 +63,54 @@ class ScootHourly(APIQueryMixin):
 
 
 class ScootDailyPerc(APIQueryMixin):
-    @property
-    def csv_headers(self):
+    @db_query
+    def query(
+        self,
+        session,
+        start_time,
+        end_time,
+        baseline,
+        exclude_baseline_no_traffic,
+        exclude_comparison_no_traffic,
+        exclude_low_confidence,
+        return_meta,
+    ):
 
-        return [
-            "detector_id",
-            "measurement_start_utc",
-            "measurement_end_utc",
-            "day_of_week",
-            "baseline_period",
-            "baseline_start_date",
-            "baseline_end_date",
-            "baseline_n_vehicles_in_interval",
-            "comparison_n_vehicles_in_interval",
-            "percent_of_baseline",
-            "no_traffic_in_baseline",
-            "no_traffic_in_comparison ",
-            "low_confidence ",
-            "num_observations ",
-            "removed_anomaly_from_baseline",
-            "removed_anomaly_from_comparison",
+        meta_cols = [
+            ScootPercentChange.measurement_end_utc,
+            ScootPercentChange.day_of_week,
+            ScootPercentChange.comparison_n_vehicles_in_interval,
+            ScootPercentChange.baseline_period,
+            ScootPercentChange.baseline_start_date,
+            ScootPercentChange.baseline_end_date,
+            ScootPercentChange.no_traffic_in_baseline,
+            ScootPercentChange.no_traffic_in_comparison,
+            ScootPercentChange.low_confidence,
+            ScootPercentChange.num_observations,
+            ScootPercentChange.removed_anomaly_from_baseline,
+            ScootPercentChange.removed_anomaly_from_comparison,
         ]
 
-    def query(self, session, baseline, start_time, end_time=None):
+        data_cols = [
+            ScootPercentChange.detector_id,
+            ScootPercentChange.measurement_start_utc,
+            ScootPercentChange.baseline_n_vehicles_in_interval,
+            ScootPercentChange.percent_of_baseline,
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+        ]
+
+        if return_meta:
+            all_cols = data_cols + meta_cols
+        else:
+            all_cols = data_cols
 
         percent_change = (
-            session.query(
-                ScootPercentChange,
-                func.ST_X(MetaPoint.location).label("lon"),
-                func.ST_Y(MetaPoint.location).label("lat"),
+            session.query(*all_cols)
+            .join(
+                ScootDetector,
+                ScootPercentChange.detector_id == ScootDetector.detector_n,
             )
-            .join(ScootDetector, ScootReading.detector_id == ScootDetector.detector_n)
             .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             .filter(ScootPercentChange.measurement_start_utc >= start_time)
             .filter(ScootPercentChange.baseline_period == baseline)
@@ -105,6 +121,24 @@ class ScootDailyPerc(APIQueryMixin):
                 ScootPercentChange.measurement_start_utc < end_time
             )
 
+        if exclude_baseline_no_traffic:
+            percent_change = percent_change.filter(
+                ScootPercentChange.no_traffic_in_baseline != True
+            )
+
+        if exclude_comparison_no_traffic:
+            percent_change = percent_change.filter(
+                ScootPercentChange.no_traffic_in_comparison != True
+            )
+
+        if exclude_low_confidence:
+            percent_change = percent_change.filter(
+                ScootPercentChange.low_confidence != True
+            )
+
+        percent_change = percent_change.order_by(
+            ScootPercentChange.measurement_start_utc
+        )
         return percent_change
 
 
@@ -122,7 +156,6 @@ class ScootDaily(APIQueryMixin):
         ]
 
     def query(self, session, start_time, end_time=None):
-
         """
         Get scoot data with lat and long positions aggregated by day
         """
@@ -171,95 +204,3 @@ class ScootDaily(APIQueryMixin):
         )
 
         return summary_q
-
-
-@db_query
-def get_closest_point(session, lon, lat, max_dist=0.001):
-    """Find the closest grid_100 point to a given lat lon location
-
-    args:
-        session: A sqlalchemy session object
-        lon: Longitude
-        lat: Latitude
-        max_dist: Maximum distance to search in in degrees
-    """
-
-    # Find the closest point to the location
-    closest_grid_point_q = (
-        session.query(
-            func.ST_X(MetaPoint.location).label("lon"),
-            func.ST_Y(MetaPoint.location).label("lat"),
-            MetaPoint.id,
-        )
-        .filter(
-            MetaPoint.source == "grid_100",
-            func.ST_Intersects(
-                MetaPoint.location,
-                func.ST_Expand(
-                    func.ST_SetSRID(func.ST_MAKEPoint(lon, lat), 4326), max_dist,
-                ),
-            ),
-        )
-        .order_by(
-            func.ST_Distance(
-                MetaPoint.location, func.ST_SetSRID(func.ST_MAKEPoint(lon, lat), 4326),
-            )
-        )
-        .limit(1)
-    )
-
-    return closest_grid_point_q
-
-
-@db_query
-def get_point_forecast(session, lon, lat, max_dist=0.001):
-    """Pass a lat lon and get the forecast for the closest forecast point"""
-    closest_point_sq = get_closest_point(
-        session, lon, lat, max_dist=max_dist, output_type="subquery"
-    )
-
-    return (
-        session.query(
-            closest_point_sq.c.lon,
-            closest_point_sq.c.lat,
-            ModelResult.measurement_start_utc,
-            ModelResult.predict_mean,
-            ModelResult.predict_var,
-        )
-        .join(ModelResult)
-        .filter(ModelResult.tag == "test_grid")
-    )
-
-
-@db_query
-def get_all_forecasts(session, lon_min=None, lat_min=None, lon_max=None, lat_max=None):
-    """Get all the scoot forecasts within a bounding box
-
-    args:
-        session: A session object
-        bounding_box: A tuple of (lat_min, lon_min, lat_max, lon_max)"""
-
-    ids_cte = (
-        session.query(MetaPoint.id, MetaPoint.location)
-        .filter(
-            MetaPoint.source.in_(["grid_100",]),
-            func.ST_Within(
-                MetaPoint.location,
-                func.ST_MakeEnvelope(lon_min, lat_min, lon_max, lat_max, 4326),
-            ),
-        )
-        .cte("ids")
-    )
-
-    results_q = (
-        session.query(
-            func.ST_X(ids_cte.c.location).label("lon"),
-            func.ST_Y(ids_cte.c.location).label("lat"),
-            ModelResult.measurement_start_utc,
-            ModelResult.predict_mean,
-            ModelResult.predict_var,
-        )
-        .join(ModelResult, ids_cte.c.id == ModelResult.point_id, isouter=True)
-        .filter(ModelResult.tag == "test_grid")
-    )
-    return results_q

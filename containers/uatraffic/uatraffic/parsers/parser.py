@@ -1,16 +1,16 @@
 """Parsers for the uatraffic module and their entrypoints."""
 
-from datetime import datetime, timedelta
 from argparse import ArgumentParser, ArgumentTypeError
+from datetime import datetime, timedelta
+from dateutil.parser import isoparse
 from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from .mixins import BaselineParserMixin
 
 
 class BaselineParser(
-    BaselineParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser,
+    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
     """
     Parser for querying a recent day against a baseline.
@@ -20,10 +20,25 @@ class BaselineParser(
         super().__init__(**kwargs)
         self.add_argument(
             "-l",
-            "--comparison_start",
+            "--comparison_end_date",
             default="yesterday",
             help="Timestamp for beginning of comparison day.",
             type=validate_type,
+        )
+        self.add_argument(
+            "-n",
+            "--ndays",
+            default=4,
+            help="Timestamp for beginning of comparison day.",
+            type=int,
+        )
+        self.add_argument(
+            "-b",
+            "--backfill",
+            action="store_true",
+            default=False,
+            help="""Backfill to earliest available date.
+            Will ignore ndays and calculate from the end of the baseline period""",
         )
 
 
@@ -36,6 +51,6 @@ def validate_type(datestr):
         return (datetime.today() - timedelta(days=1)).date()
 
     try:
-        return datestr.fromisoformat()
+        return isoparse(datestr)
     except ValueError:
         raise ArgumentTypeError("Not a valid iso date: {}".format(datestr))

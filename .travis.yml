@@ -19,7 +19,7 @@ script:
 
   # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
   # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-  - pylint --disable=C0330 */ --ignore=cleanair,cleanair-api,uatraffic
+  - pylint --disable=C0330 */ --ignore=cleanair,urbanair,uatraffic
   - pylint --disable=C0330 containers/cleanair/*
-  - pylint --disable=C0330 containers/cleanair-api/*
+  # - pylint --disable=C0330 containers/urbanair/*
   - pylint --disable=C0330 containers/uatraffic/*

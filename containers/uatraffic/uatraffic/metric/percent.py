@@ -54,9 +54,8 @@ def percent_of_baseline(
 
             # sum all vehicles for this detector
             baseline_n_vehicles_in_interval = median_by_hour.sum()
-            comparison_n_vehicles_in_interval = day_df[
-                "n_vehicles_in_interval"
-            ].sum()  # pylint: disable=C0103
+            # pylint: disable=C0103
+            comparison_n_vehicles_in_interval = day_df["n_vehicles_in_interval"].sum()
 
             # count the number of observations and raise flag if there are not many observations
             num_observations = median_by_hour.count()

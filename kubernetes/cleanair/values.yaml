@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: bcf695d87eb6381db85742dda363578a439fdfab
+imageTag: bcb9981ca93e29ab9c6a6673caf07a6178095b1d
 
 # jobs:
 #   - name: process_scoot_roadmap
@@ -91,7 +91,7 @@ cronjobs:
       repository: cleanairdocker.azurecr.io/input_aqe
       imagePullPolicy: Always
     schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 10
     successfulJobsHistoryLimit: 10
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
@@ -196,30 +196,10 @@ cronjobs:
       secret:
         secretName: secrets
 
-  - name: lockdown-baseline-normal
+  - name: lockdown-baseline
     image:
       repository: cleanairdocker.azurecr.io/lockdown_baseline
       imagePullPolicy: Always
-    args:
-        - --tag
-        - normal
-    schedule: "* 04-12 * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: lockdown-baseline-baseline
-    image:
-      repository: cleanairdocker.azurecr.io/lockdown_baseline
-      imagePullPolicy: Always
-    args:
-        - --tag
-        - lockdown
     schedule: "* 04-12 * * *"
     failedJobsHistoryLimit: 1
     successfulJobsHistoryLimit: 10
@@ -234,7 +214,7 @@ deployments:
     - name: cleanair-api
       replicas: 2
       image:
-        repository: cleanairdocker.azurecr.io/cleanairapi
+        repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
       ports:
         containerPort: 8080
@@ -282,4 +262,5 @@ letsencryptIssuer:
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
 
-whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32, 195.99.240.222/32, 82.69.108.113/32, 86.149.123.32/32, 31.50.42.13/32
+# Mike, CityHall, OscarHome, PatrickHome, JamesWHome, SamHome
+whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32
