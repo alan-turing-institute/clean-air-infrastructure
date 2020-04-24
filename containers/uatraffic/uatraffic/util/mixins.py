@@ -57,7 +57,7 @@ class KernelParserMixin:
             "-k",
             "--kernel",
             choices=["matern32", "rbf", "periodic"],
-            default="matern32",
+            default="rbf",
             help="The name of the kernel to run.",
         )
         self.kernel_group.add_argument(

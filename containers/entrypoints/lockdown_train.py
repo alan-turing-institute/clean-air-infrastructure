@@ -82,6 +82,7 @@ def main():
     Path(os.path.join(args.root, args.experiment)).mkdir(exist_ok=True)
 
     # process datetimes
+    nhours = 24
     if args.tag == "normal":
         start = datetime.strptime(NORMAL_BASELINE_START, "%Y-%m-%d")
         baseline_end = datetime.strptime(NORMAL_BASELINE_END, "%Y-%m-%d")
@@ -98,7 +99,7 @@ def main():
     assert nweeks == 3      # TODO: add better test
 
     # increment end date by number of weeks
-    end = start + timedelta(hours=args.nhours, weeks=nweeks - 1)
+    end = start + timedelta(hours=nhours, weeks=nweeks - 1)
 
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)
@@ -116,15 +117,18 @@ def main():
     logging.info("Training model on %s detectors.", len(detectors))
 
     # columns to train model on
-    x_cols=['epoch', 'lon_norm', 'lat_norm']
-    y_cols=["n_vehicles_in_interval"]
+    x_cols = ["time_norm"]
+    y_cols = ["n_vehicles_in_interval"]
 
     # setup parameters
     optimizer = tf.keras.optimizers.Adam(0.001)
     logging_epoch_freq = 10000      # essentially turn of logging
     kernel_dict = dict(
         name=args.kernel,
-        hyperparameters={k: v for k, v in vars(args) if k in {"lengthscale", "variance", "period"}}
+        hyperparameters=dict(
+            lengthscale=args.lengthscale,
+            variance=args.variance,
+        )
     )
 
     while end <= baseline_end:
@@ -175,6 +179,7 @@ def main():
                 n_inducing_points=args.n_inducing_points,
                 epochs=args.epochs,
                 kernel=kernel_dict,
+                normaliseby=args.normaliseby,
             )
             # create an instance object then write instance to DB
             instance = TrafficInstance(
@@ -205,11 +210,11 @@ def main():
             kernel = parse_kernel(kernel_dict)
 
             logging.info(
-                "Training model on detectors %s with kernel %s starting %s and ending %s",
+                "Training model on detectors %s with kernel %s (lengthscale=%s, variance=%s).",
                 data_config["detectors"],
                 model_params["kernel"]["name"],
-                data_config["start"],
-                data_config["end"],
+                model_params["kernel"]["hyperparameters"]["lengthscale"],
+                model_params["kernel"]["hyperparameters"]["variance"],
             )
             if not getattr(args, "dryrun"):
                 # train model
@@ -224,8 +229,8 @@ def main():
                 instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
 
         # add on n hours to start and end datetimes
-        start = start + timedelta(hours=args.nhours)
-        end = end + timedelta(hours=args.nhours)
+        start = start + timedelta(hours=nhours)
+        end = end + timedelta(hours=nhours)
 
 if __name__ == "__main__":
     main()
