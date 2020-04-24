@@ -2,9 +2,8 @@ services:
   - docker
   - postgresql
 
-
 before_install:
-  - psql -c 'create database cleanair_tests_db' -U postgres
+  - psql -c 'create database cleanair_test_db' -U postgres
   - | 
       mkdir -p .secrets
       echo '{
@@ -17,8 +16,9 @@ before_install:
       }' >> .secrets/db_secrets_offline.json
   
   - docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"  
-  - docker run   -v $(pwd)/.secrets:/secrets insert_static_data:latest -t $SAS_TOKEN -s db_secrets_offline.json -d street_canyon
-language: python
+  - docker run  -v $(pwd)/.secrets:/secrets insert_static_data:latest -t $SAS_TOKEN -s db_secrets_offline.json -d street_canyon
+
+  language: python
 python:
   - "3.7"
 
