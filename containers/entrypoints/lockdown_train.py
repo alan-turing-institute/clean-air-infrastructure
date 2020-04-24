@@ -6,21 +6,21 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import tensorflow as tf
 
 from uatraffic.util import TrafficModelParser
 from uatraffic.databases import TrafficQuery
 from uatraffic.databases import TrafficInstance
-from uatraffic.databases import (
+from uatraffic.dates import (
     NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from uatraffic.preprocess import clean_and_normalise_df
+from uatraffic.preprocess import normalise_datetime
 from uatraffic.model import parse_kernel
 from uatraffic.model import train_sensor_model
-from uatraffic.model import KERNELS
 from uatraffic.util import save_scoot_df
 from uatraffic.util import save_processed_data_to_file
 
@@ -41,6 +41,31 @@ def create_directories(root, experiment):
 def main():
 
     parser = TrafficModelParser()
+    subparsers = parser.add_subparsers(dest='command')
+
+    # subparser for batching models
+    batch_parser = subparsers.add_parser("batch")
+    batch_parser.add_argument(
+        "--batch_start",
+        default=None,
+        type=int,
+        help="Index of detector to start at during batching.",
+    )
+    batch_parser.add_argument(
+        "--batch_size",
+        default=None,
+        type=int,
+        help="Size of the batch.",
+    )
+    # add a parser for testing purposes
+    test_parser = subparsers.add_parser("test")
+    test_parser.add_argument(
+        "-d",
+        "--detectors",
+        nargs="+",
+        default=["N00/002e1", "N00/002g1", "N13/016a1"],
+        help="List of SCOOT detectors to model.",
+    )
     args = parser.parse_args()
 
     if args.cluster_id == "local":
@@ -60,16 +85,24 @@ def main():
         baseline_end = datetime.strptime(LOCKDOWN_BASELINE_END, "%Y-%m-%d")
     else:
         raise NotImplementedError("Only normal and lockdown baselines are available.")
-    end = start + timedelta(hours=args.nhours, weeks=args.nweeks - 1)
+
+    # calculate number of weeks between start and end
+    monday1 = (start - timedelta(days=start.weekday()))
+    monday2 = (baseline_end - timedelta(days=baseline_end.weekday()))
+    nweeks = (monday2 - monday1).days / 7
+    assert nweeks == 3      # TODO: add better test
+
+    # increment end date by number of weeks
+    end = start + timedelta(hours=args.nhours, weeks=nweeks - 1)
 
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)
 
     # get list of scoot detectors
-    if isinstance(args.batch_start, int) and isinstance(args.batch_size, int):
+    if args.command == "batch":
         detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
         detectors = list(detector_df["detector_id"].unique())
-    elif args.detectors:
+    elif args.command == "test":
         detectors = args.detectors
     else:
         detector_df = traffic_query.get_scoot_detectors(output_type="df")
@@ -84,7 +117,10 @@ def main():
     # setup parameters
     optimizer = tf.keras.optimizers.Adam(0.001)
     logging_epoch_freq = 100
-    kernel_dict = next(k for k in KERNELS if k["name"] == args.kernel)
+    kernel_dict = dict(
+        name=args.kernel,
+        hyperparameters={k: v for k, v in vars(args) if k in {"lengthscale", "variance", "period"}}
+    )
 
     while end <= baseline_end:
         # read the data from DB
@@ -103,7 +139,8 @@ def main():
             output_type="df",
         )
         # data cleaning and processing
-        df = clean_and_normalise_df(df)
+        df['measurement_start_utc'] = pd.to_datetime(df['measurement_start_utc'])
+        df = normalise_datetime(df, wrt=args.normaliseby)
 
         # save the data to csv
         if args.cluster_id == "local":
@@ -126,7 +163,7 @@ def main():
                 weekdays=[day_of_week],
                 start=start.strftime("%Y-%m-%dT%H:%M:%S"),
                 end=end.strftime("%Y-%m-%dT%H:%M:%S"),
-                nweeks=args.nweeks,
+                nweeks=nweeks,
             )
             # create dict of model settings
             model_params = dict(
