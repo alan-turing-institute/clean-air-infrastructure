@@ -14,7 +14,7 @@ from ..loggers import get_logger, green
 class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
 
-    def __init__(self, data_directory, schema, table, **kwargs):
+    def __init__(self, target_file, schema, table, **kwargs):
         # Initialise parent classes
         super().__init__(initialise_tables=False, **kwargs)
 
@@ -23,16 +23,15 @@ class StaticWriter(DBWriter):
             self.logger = get_logger(__name__)
 
         # Attributes: directory where local data is held and name of remote table
-        self.data_directory = None
-        self.tmp_directory = data_directory
+        self.target_file = target_file
         self.table_name = table
         self.schema = schema
 
         # Ensure that the necessary schemas exist
         for schema in [self.schema, 'interest_points']:
             self.dbcnxn.ensure_schema(schema)
-
         self.dbcnxn.ensure_extensions()
+
         # Ensure that interest_points table exists
         MetaPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
 
@@ -49,14 +48,6 @@ class StaticWriter(DBWriter):
     def upload_static_files(self):
         """Upload static data to the inputs database"""
 
-   
-        try:
-            self.data_directory =  os.path.abspath(os.path.join(self.tmp_directory, os.listdir(self.tmp_directory)[0]))
-            self.logger.debug("data_directory: %s", self.data_directory)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                "Could not find any static files in /data. Did you mount this path?"
-            )
         # Check whether table exists - excluding reflected tables
         existing_table_names = self.dbcnxn.engine.table_names(schema=self.schema)
         if self.table_name in existing_table_names:
@@ -66,22 +57,22 @@ class StaticWriter(DBWriter):
             )
             return False
 
-
         # Get the connection string
         cnxn_string = " ".join(
             [
-                "host={host}",
+                "dbname={db_name}",
                 "port={port}",
                 "user={username}",
-                "password='{password}'",
-                "dbname={db_name}",
+                "password={password}",
+                "host={host}",
                 "sslmode={ssl_mode}",
             ]
         ).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = ["-lco", "GEOMETRY_NAME=geom"]
-        if glob.glob("/data/{}/*.shp".format(self.data_directory)):
+
+        if glob.glob("/{}/*.shp".format(self.target_file)):
             extra_args += ["-nlt", "PROMOTE_TO_MULTI", "-lco", "precision=NO"]
 
         # Preprocess the UKMap data, keeping only useful columns
@@ -130,27 +121,27 @@ class StaticWriter(DBWriter):
             green(self.dbcnxn.connection_info["db_name"]),
         )
         try:
-            print(self.data_directory)
+            command = [
+                "ogr2ogr",
+                "-overwrite",
+                "-progress",
+                "-f",
+                "PostgreSQL",
+                "PG:{}".format(cnxn_string),
+                "{}".format(self.target_file),
+                "--config",
+                "PG_USE_COPY",
+                "YES",
+                "-t_srs",
+                "EPSG:4326",
+                "-lco",
+                "SCHEMA={}".format(self.schema),
+                "-nln",
+                self.table_name,
+            ] + extra_args
+
             subprocess.run(
-                [
-                    "ogr2ogr",
-                    "-overwrite",
-                    "-progress",
-                    "-f",
-                    "PostgreSQL",
-                    "PG:{}".format(cnxn_string),
-                    "{}".format(self.data_directory),
-                    "--config",
-                    "PG_USE_COPY",
-                    "YES",
-                    "-t_srs",
-                    "EPSG:4326",
-                    "-lco",
-                    "SCHEMA={}".format(self.schema),
-                    "-nln",
-                    self.table_name,
-                ]
-                + extra_args,
+                command,
                 check=True,
             )
         except subprocess.CalledProcessError:
