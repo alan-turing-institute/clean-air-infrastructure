@@ -18,7 +18,7 @@ before_install:
   - docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"  
   - docker run  -v $(pwd)/.secrets:/secrets insert_static_data:latest -t $SAS_TOKEN -s db_secrets_offline.json -d street_canyon
 
-  language: python
+language: python
 python:
   - "3.7"
 
