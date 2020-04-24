@@ -3,7 +3,6 @@ services:
   - postgresql
 
 before_install:
-  - echo $SAS_TOKEN
   - psql -c 'create database cleanair_test_db' -U postgres
   - | 
       mkdir -p .secrets
