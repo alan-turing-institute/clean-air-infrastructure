@@ -1,49 +1,78 @@
-# clean-air-infrastructure
+# UrbanAir API - Repurposed as London Busyness COVID-19
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
 
-Azure Infrastructure for the Clean Air project
+Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/research/research-projects/london-air-quality). Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
 
 
-# Prerequisites
-To run this project you will need:
+Currently repurposed to explore `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/)/
 
-- an `Azure account` (the cloud-computing platform where the infrastructure is deployed)
-- the `Azure command line interface (CLI)` (for managing your Azure subscriptions)
-- the `Azure Python SDK` (for managing the initial setup)
+
+# Contributing
+
+To contribute to the project please speak to one of the following:
+
+| Name               | GitHub ID | Email |
+| ------------------ | --- | --- |
+| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)| <ogiles@turing.ac.uk> |
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson) | <jrobinson@turing.ac.uk> |
+| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)| <pohara@turing.ac.uk> |
+| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)| <ohamelijnck@turing.ac.uk> |
+
+
+## Prerequisites
+To contribute to the project you will need the following (details below):
+
+- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
+- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
 - `Terraform` (for configuring the Azure infrastructure)
-- the `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
+- `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 - `Docker` (For building and testing images locally)
--  `psql` (command-line tool for interacting with db. Not critical but can be useful)
+- `postgreSQL` (command-line tool for interacting with db. Not critical but can be useful)
 
 
 ## Azure Account
-If you do not have an `Azure` account already, please [`follow the procedure here`](https://azure.microsoft.com/en-us/) to get started with an `Azure` subscription.
-
+If you do not have an `Azure` account already, please contact one of the project maintainers
 
 ## Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started.
 
+## CleanAir Packages (optional - required for development)
+The following are optional as we can run everything on docker images. However, they are recommended for development/testing. 
 
-## Azure Python SDK
-You can install the `Azure` Python SDK with `pip` using:
-```bash
-pip install -r containers/requirements.txt
-```
+### CleanAir package
+To run the CleanAir functionality locally (without a docker image) you can install the package with `pip`. 
 
-
-## CleanAir package (optional)
-To run the CleanAir functionality locally (without a docker image) you can install the package with `pip` as follows:
-```bash
-pip install -e containers
-```
-
-## Terraform
-The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
+For a basic install which will allow you to set up a local database run:
 
 ```bash
-brew install terraform
+pip install -e 'containers/cleanair[<optional-dependencies>]'
 ```
 
+Certain functionality requires optional dependencies. These can be installed by adding the following:
+
+| Option keyword   | Functionality               |
+| ------------------ | --------------------------- |
+| setup              | Database static data inserts|
+| models             | CleanAir GPFlow models      |
+| traffic            | FBProphet Trafic Models     |
+| dashboards         | Model fitting Dashboards    |
+
+For getting started we recommend:
+
+```bash
+pip install -e 'containers/cleanair[setup]'
+```
+
+### UrbanAir Flask API package
+```bash
+pip install -e 'containers/urbanair'
+```
+
+### UATraffic (London Busyness only)
+All additional  functionality related to the London Busyness project requires:
+```bash
+pip install -e 'containers/uatraffic'
+```
 
 ## Travis CI CLI
 Ensure you have Ruby 1.9.3 or above installed:
@@ -79,9 +108,16 @@ brew install postgresql
 ```
 
 
-# Setting up the Clean Air infrastructure
-The following steps are needed to setup the Clean Air cloud infrastructure.
+## Terraform (Infrastructure deeployment only)
+The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
+```bash
+brew install terraform
+```
+
+
+# Infrastructure Deployment
+The following steps are needed to setup the Clean Air cloud infrastructure.
 
 ## Login to Travis CLI
 Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
