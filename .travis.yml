@@ -3,7 +3,7 @@ services:
 addons: 
   postgresql: "11"
 
-before_script:
+before_install:
   - psql -c 'create database cleanair_tests_db' -U postgres
   - docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"  
 
