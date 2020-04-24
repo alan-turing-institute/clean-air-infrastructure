@@ -1,10 +1,11 @@
 # UrbanAir API - Repurposed as London Busyness COVID-19
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
 
-Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/research/research-projects/london-air-quality). Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
+Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/research/research-projects/london-air-quality). 
 
+Provides 48h high-resolution air pollution forecasts over London via the [UrbanAir-API](https://urbanair.turing.ac.uk/apidocs/).
 
-Currently repurposed to explore `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/)/
+Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
 
 # Contributing
@@ -22,12 +23,15 @@ To contribute to the project please speak to one of the following:
 ## Prerequisites
 To contribute to the project you will need the following (details below):
 
+### Infrastructure development
 - `Azure account` (the cloud-computing platform where the infrastructure is deployed)
 - `Azure command line interface (CLI)` (for managing your Azure subscriptions)
 - `Terraform` (for configuring the Azure infrastructure)
+
+### All development
 - `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 - `Docker` (For building and testing images locally)
-- `postgreSQL` (command-line tool for interacting with db. Not critical but can be useful)
+- `postgreSQL` (command-line tool for interacting with db)
 
 
 ## Azure Account
@@ -102,20 +106,79 @@ export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
 
-## psql
+## PostgreSQL
 ```bash
 brew install postgresql
 ```
 
-
-## Terraform (Infrastructure deeployment only)
+## Terraform (Infrastructure deployment only)
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
 brew install terraform
 ```
 
+# Configure a Local Database
+In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
 
+```bash 
+brew services start postgresql   
+```
+
+Start a postgres session with:
+
+```bash
+psql postgres
+```
+
+Finally create a new database and exit postgres:
+
+```psql
+CREATE DATABASE cleanair_test_db;
+\q
+```
+
+## Create a local secrets file
+We use secret files to pass secrets to CleanAir programs. 
+```bash
+mkdir -p .secrets
+echo '{
+    "username": "postgres",
+    "password": "''",
+    "host": "host.docker.internal",
+    "port": 5432,
+    "db_name": "cleanair_test_db",
+    "ssl_mode": "prefer"
+}' >> .secrets/db_secrets_offline.json
+```
+
+## Static data
+
+We can now insert `static data` into our local test database.
+To do so you will need a SAS Token to access static datafiles stored on Azure. 
+
+
+### Get a SAS token
+
+If you are an infrastructure developer you can obtain a SAS token by running:
+
+```bash
+INSERT INSTRUCTIONS
+```
+
+Otherwise you must request a SAS token from an infrastructure developer.
+
+### Insert data into the database
+
+Build the dockler image:
+```bash
+docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"
+```
+
+Run the container:
+```bash
+docker run -v $(pwd)/.secrets:/secrets insert_static_data:latest -t <sas_token> -s db_secrets_offline.json
+```
 # Infrastructure Deployment
 The following steps are needed to setup the Clean Air cloud infrastructure.
 

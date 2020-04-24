@@ -6,7 +6,7 @@
 terraform/backend_config.tf
 *.tfstate
 *.tfstate.backup
-
+.secrets
 # VS
 .vscode/
 *.secrets/
