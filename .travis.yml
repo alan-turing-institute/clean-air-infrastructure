@@ -1,17 +1,19 @@
-services:
-  - docker
-  - postgresql
+postgresql: '11'
+  apt:
+    packages:
+      - postgresql-11-postgis-3
+      - postgresql-11-postgis-3-scripts
 
 before_install:
-  - psql -c 'CREATE EXTENSION postgis;'
-  - psql -c 'create database cleanair_test_db' -U postgres
+  - psql -c 'CREATE EXTENSION postgis' -U postgres -p 5433
+  - psql -c 'create database cleanair_test_db' -U postgres -p 5433
   - | 
       mkdir -p .secrets
       echo '{
           "username": "postgres",
           "password": "''",
           "host": "localhost",
-          "port": 5432,
+          "port": 5433,
           "db_name": "cleanair_test_db",
           "ssl_mode": "prefer"
       }' >> .secrets/db_secrets_offline.json
