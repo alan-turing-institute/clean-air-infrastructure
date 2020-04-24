@@ -2,6 +2,10 @@ services:
   - docker
 addons: 
   postgresql: "11"
+  apt:
+    packages:
+    - postgresql-11
+    - postgresql-client-11
 
 before_install:
   - psql -c 'create database cleanair_tests_db' -U postgres
