@@ -1,5 +1,6 @@
 services:
   - docker
+
 addons: 
   postgresql: "11"
   apt:
@@ -7,18 +8,18 @@ addons:
     - postgresql-11
     - postgresql-client-11
 
-before_install:
+before_script:
   - psql -c 'create database cleanair_tests_db' -U postgres
-  - docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"  
+  # - docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"  
 
-language: python
-python:
-  - "3.7"
+# language: python
+# python:
+#   - "3.7"
 
-install:
-  - pip install -r containers/requirements.txt
-  - pip install 'containers/cleanair[models,traffic,dashboard]'
-  - pip install 'containers/uatraffic'
+# install:
+#   - pip install -r containers/requirements.txt
+#   - pip install 'containers/cleanair[models,traffic,dashboard]'
+#   - pip install 'containers/uatraffic'
 
 script:
   # # Run all pytest unit tests
