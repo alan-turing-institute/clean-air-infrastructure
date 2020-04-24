@@ -1,4 +1,5 @@
-postgresql: '11'
+addons:
+  postgresql: '11'
   apt:
     packages:
       - postgresql-11-postgis-3
