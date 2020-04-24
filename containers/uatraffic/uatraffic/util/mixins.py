@@ -15,6 +15,7 @@ class BaselineParserMixin:
         )
 
 class ModellingParserMixin:
+    """Parser options for modelling."""
 
     def __init__(self, n_inducing_points=24, **kwargs):
         super().__init__(**kwargs)
@@ -41,8 +42,8 @@ class ModellingParserMixin:
         self.modelling_group.add_argument(
             "-n",
             "--normaliseby",
-            default="hour",
-            choices=["hour", "epoch"],
+            default="clipped_hour",
+            choices=["clipped_hour", "hour", "epoch"],
             help="The method for normalizing time.",
         )
 

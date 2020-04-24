@@ -66,6 +66,11 @@ def main():
         default=["N00/002e1", "N00/002g1", "N13/016a1"],
         help="List of SCOOT detectors to model.",
     )
+    test_parser.add_argument(
+        "--dryrun",
+        action="store_true",
+        help="Log how the model would train without executing."
+    )
     args = parser.parse_args()
 
     if args.cluster_id == "local":
@@ -116,7 +121,7 @@ def main():
 
     # setup parameters
     optimizer = tf.keras.optimizers.Adam(0.001)
-    logging_epoch_freq = 100
+    logging_epoch_freq = 10000      # essentially turn of logging
     kernel_dict = dict(
         name=args.kernel,
         hyperparameters={k: v for k, v in vars(args) if k in {"lengthscale", "variance", "period"}}
@@ -199,16 +204,24 @@ def main():
             # get a kernel from settings
             kernel = parse_kernel(kernel_dict)
 
-            # train model
-            model = train_sensor_model(
-                x_train, y_train, kernel, optimizer, args.epochs, logging_epoch_freq, M=args.n_inducing_points
+            logging.info(
+                "Training model on detectors %s with kernel %s starting %s and ending %s",
+                data_config["detectors"],
+                model_params["kernel"]["name"],
+                data_config["start"],
+                data_config["end"],
             )
+            if not getattr(args, "dryrun"):
+                # train model
+                model = train_sensor_model(
+                    x_train, y_train, kernel, optimizer, args.epochs, logging_epoch_freq, M=args.n_inducing_points
+                )
 
-            # TODO: write models to blob storage
-            instance.update_data_table(data_config)
-            instance.update_model_table(model_params)
-            instance.update_remote_tables()
-            instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
+                # TODO: write models to blob storage
+                instance.update_data_table(data_config)
+                instance.update_model_table(model_params)
+                instance.update_remote_tables()
+                instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
 
         # add on n hours to start and end datetimes
         start = start + timedelta(hours=args.nhours)

@@ -15,7 +15,7 @@ def denormalise(x, wrt_y):
 
 def normalise_datetime(
     time_df: pd.DataFrame,
-    wrt: str = "hour",
+    wrt: str = "clipped_hour",
     col: str = "measurement_start_utc"
 ) -> pd.DataFrame:
     """
@@ -23,7 +23,7 @@ def normalise_datetime(
 
     Args:
         time_df: Must have a datetime col to normalise.
-        wrt (optional): Normalise with respect to hour or epoch.
+        wrt (optional): Normalise with respect to 'clipped_hour', 'hour' or 'epoch'.
         col (optional): Name of the datetime column.
 
     Returns:
@@ -33,9 +33,13 @@ def normalise_datetime(
         time_df["time"] = time_df[col].astype('int64')//1e9 #convert to epoch
         time_df["time_norm"] = normalise(time_df["time"])
 
-    elif wrt == "hour":
+    elif wrt == "clipped_hour":
         time_df["time"] = time_df[col].dt.hour
         time_df["time_norm"] = (time_df["time"] - 12) / 12
+
+    elif wrt == "hour":
+        time_df["time"] = time_df[col].dt.hour
+        time_df["time_norm"] = time_df["time"]
 
     else:
         raise ValueError("wrt must be either hour or epoch. You passed {arg}".format(arg=wrt))
