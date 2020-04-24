@@ -28,7 +28,7 @@ class StaticWriter(DBWriter):
         self.schema = schema
 
         # Ensure that the necessary schemas exist
-        for schema in [self.schema, 'interest_points']:
+        for schema in [self.schema, "interest_points"]:
             self.dbcnxn.ensure_schema(schema)
         self.dbcnxn.ensure_extensions()
 
@@ -141,8 +141,7 @@ class StaticWriter(DBWriter):
             ] + extra_args
 
             subprocess.run(
-                command,
-                check=True,
+                command, check=True,
             )
         except subprocess.CalledProcessError:
             self.logger.error("Running ogr2ogr failed!")

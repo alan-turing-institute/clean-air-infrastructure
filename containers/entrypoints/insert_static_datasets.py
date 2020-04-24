@@ -11,27 +11,42 @@ from cleanair.inputs import StaticWriter
 from azure.storage.blob import BlobServiceClient
 
 DATASETS = {
-    "street_canyon": {"blob_container": "canyonslondon",
-                      "schema": "static_data",
-                      "table": "street_canyon"},
-    "hexgrid": {"blob_container": "glahexgrid",
-                "schema": "interest_points",
-                "table": "hexgrid"},
-    "london_boundary": {"blob_container": "londonboundary",
-                        "schema": "static_data",
-                        "table": "london_boundary"},
-    "oshighway_roadlink": {"blob_container": "oshighwayroadlink",
-                           "schema": "static_data",
-                           "table": "oshighway_roadlink"},
-    "scoot_detector": {"blob_container": "scootdetectors",
-                       "schema": "interest_points",
-                       "table": "scoot_detector"},
-    "ukmap": {"blob_container": "ukmap",
-              "schema": "static_data",
-              "table": "ukmap"},
-    "urban_village": {"blob_container": "urbanvillage",
-                      "schema": "static_data",
-                      "table": "urban_village"},
+    "rectgrid_100": {
+        "blob_container": "100mgrid",
+        "schema": "interest_points",
+        "table": "rectgrid_100",
+    },
+    "street_canyon": {
+        "blob_container": "canyonslondon",
+        "schema": "static_data",
+        "table": "street_canyon",
+    },
+    "hexgrid": {
+        "blob_container": "glahexgrid",
+        "schema": "interest_points",
+        "table": "hexgrid",
+    },
+    "london_boundary": {
+        "blob_container": "londonboundary",
+        "schema": "static_data",
+        "table": "london_boundary",
+    },
+    "oshighway_roadlink": {
+        "blob_container": "oshighwayroadlink",
+        "schema": "static_data",
+        "table": "oshighway_roadlink",
+    },
+    "scoot_detector": {
+        "blob_container": "scootdetectors",
+        "schema": "interest_points",
+        "table": "scoot_detector",
+    },
+    "ukmap": {"blob_container": "ukmap", "schema": "static_data", "table": "ukmap"},
+    "urban_village": {
+        "blob_container": "urbanvillage",
+        "schema": "static_data",
+        "table": "urban_village",
+    },
 }
 
 
@@ -59,7 +74,7 @@ def download_blobs(blob_service, blob_container_name, target_directory):
 
         target_file = os.path.join(target_directory, blob.name)
 
-        with open(target_file, 'wb') as my_blob:
+        with open(target_file, "wb") as my_blob:
             blob_data = blob_container_client.download_blob(blob.name)
             blob_data.readinto(my_blob)
 
@@ -70,10 +85,9 @@ def download_blobs(blob_service, blob_container_name, target_directory):
                 zip_ref.extractall(target_directory)
                 os.remove(target_file)
             logging.info("Downloading complete")
-        else:
-            raise Exception("The blob is not a .zip file")
+            return target_file[:-4]
 
-        return target_file[:-4]
+        return target_file
 
 
 def main():
@@ -89,17 +103,25 @@ def main():
     )
     logging.getLogger("azure").setLevel(logging.WARNING)
 
-    blob_service_client = BlobServiceClient(account_url=args.account_url, credential=args.sas_token)
+    blob_service_client = BlobServiceClient(
+        account_url=args.account_url, credential=args.sas_token
+    )
 
     # Download the static data and add to the database
     for dataset in args.datasets:
         with tempfile.TemporaryDirectory() as data_directory:
 
-            target_file = download_blobs(blob_service_client, DATASETS[dataset]['blob_container'], data_directory)
+            target_file = download_blobs(
+                blob_service_client, DATASETS[dataset]["blob_container"], data_directory
+            )
 
             # Initialise the writer first to check database connection
             static_writer = StaticWriter(
-                target_file, DATASETS[dataset]['schema'], DATASETS[dataset]['table'], secretfile=args.secretfile)
+                target_file,
+                DATASETS[dataset]["schema"],
+                DATASETS[dataset]["table"],
+                secretfile=args.secretfile,
+            )
             # print(os.listdir(data_directory))
             static_writer.update_remote_tables()
 

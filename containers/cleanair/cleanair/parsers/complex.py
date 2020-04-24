@@ -31,7 +31,7 @@ class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
             "-u",
             "--account_url",
             type=str,
-            default = 'https://londonaqdatasets.blob.core.windows.net',
+            default="https://londonaqdatasets.blob.core.windows.net",
             help="URL of storage account",
         )
         self.add_argument(
@@ -56,7 +56,7 @@ class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
             action="count",
             default=0,
             help="Increase verbosity by one step for each occurence",
-    )
+        )
 
 
 class SatelliteArgumentParser(
