@@ -1,16 +1,16 @@
 FROM continuumio/miniconda3
 
-RUN conda install -c conda-forge gdal
 
 
-# RUN echo "source activate env" > ~/.bashrc
-# ENV PATH /opt/conda/envs/env/bin:$PATH
+
+RUN echo "source activate env" > ~/.bashrc
+ENV PATH /opt/conda/envs/env/bin:$PATH
 # # Install psql, python and pip
 # ENV DEBIAN_FRONTEND=noninteractive
 # RUN apt-get update && apt-get install -y \
 #     postgresql \
 #     python3-pip
-
+RUN conda install -c conda-forge gdal
 # # Upgrade pip
 # RUN pip3 install --upgrade pip
 

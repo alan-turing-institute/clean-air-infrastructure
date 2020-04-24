@@ -140,6 +140,8 @@ class StaticWriter(DBWriter):
                 self.table_name,
             ] + extra_args
 
+            print(os.getcwd())
+            print(" ".join(command))
             subprocess.run(
                 command,
                 check=True,

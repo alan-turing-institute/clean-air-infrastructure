@@ -111,7 +111,6 @@ def main():
             # Initialise the writer first to check database connection
             static_writer = StaticWriter(
                 target_file, DATASETS[dataset]['schema'], DATASETS[dataset]['table'], secretfile=args.secretfile)
-
             # print(os.listdir(data_directory))
             static_writer.update_remote_tables()
 
