@@ -40,6 +40,7 @@ setuptools.setup(
             "dash==1.8.0",
             "plotly==4.4.1",
         ],
+        "setup": ["azure-storage-blob==12.3.0", ],
     },
-    python_requires=">=3.7",
+    python_requires=">=3.6",
 )

@@ -2,6 +2,7 @@
 Module for cleanair parsers.
 """
 from .complex import (
+    DatabaseSetupParser,
     ModelFitParser,
     ModelValidationParser,
     SatelliteArgumentParser,
@@ -20,6 +21,7 @@ from .simple import (
 )
 
 __all__ = [
+    "DatabaseSetupParser",
     "AQEReadingArgumentParser",
     "LAQNReadingArgumentParser",
     "ModelFitParser",

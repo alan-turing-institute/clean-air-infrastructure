@@ -14,6 +14,51 @@ from ..mixins import (
 )
 
 
+class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
+    """Argument parsing for inserting static datafiles"""
+
+    def __init__(self, datasets, **kwargs):
+        super().__init__(**kwargs)
+
+        self.add_argument(
+            "-t",
+            "--sas-token",
+            type=str,
+            required=True,
+            help="sas token to access the cleanair datastore container",
+        )
+        self.add_argument(
+            "-u",
+            "--account_url",
+            type=str,
+            default = 'https://londonaqdatasets.blob.core.windows.net',
+            help="URL of storage account",
+        )
+        self.add_argument(
+            "-c",
+            "--storage-container-name",
+            type=str,
+            default="londonaqdatasets",
+            help="Name of the storage container where the Terraform backend will be stored",
+        )
+        self.add_argument(
+            "-d",
+            "--datasets",
+            nargs="+",
+            type=str,
+            choices=datasets,
+            default=datasets,
+            help="A list of datasets to include",
+        )
+        self.add_argument(
+            "-v",
+            "--verbose",
+            action="count",
+            default=0,
+            help="Increase verbosity by one step for each occurence",
+    )
+
+
 class SatelliteArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):

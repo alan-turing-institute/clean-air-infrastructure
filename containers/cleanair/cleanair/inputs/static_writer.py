@@ -14,7 +14,7 @@ from ..loggers import get_logger, green
 class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, data_directory, schema, table, **kwargs):
         # Initialise parent classes
         super().__init__(initialise_tables=False, **kwargs)
 
@@ -24,31 +24,22 @@ class StaticWriter(DBWriter):
 
         # Attributes: directory where local data is held and name of remote table
         self.data_directory = None
-        self.table_name = None
-
-        # Map of tables to schemas
-        self.schemas = {
-            "hexgrid": "interest_points",
-            "rectgrid_100": "interest_points",
-            "london_boundary": "static_data",
-            "oshighway_roadlink": "static_data",
-            "ukmap": "static_data",
-            "scoot_detector": "interest_points",
-            "street_canyon": "static_data",
-            "urban_village": "static_data",
-        }
+        self.tmp_directory = data_directory
+        self.table_name = table
+        self.schema = schema
 
         # Ensure that the necessary schemas exist
-        for schema in list(set(self.schemas.values())):
+        for schema in [self.schema, 'interest_points']:
             self.dbcnxn.ensure_schema(schema)
 
+        self.dbcnxn.ensure_extensions()
         # Ensure that interest_points table exists
         MetaPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
 
-    @property
-    def schema(self):
-        """Get schema that the current dataset will live under"""
-        return self.schemas[self.table_name]
+    # @property
+    # def schema(self):
+    #     """Get schema that the current dataset will live under"""
+    #     return self.schemas[self.table_name]
 
     @property
     def schema_table(self):
@@ -57,16 +48,15 @@ class StaticWriter(DBWriter):
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
-        # Look for static files in /data then set the file and table names
+
+   
         try:
-            self.data_directory = os.listdir("/data")[0]
+            self.data_directory =  os.path.abspath(os.path.join(self.tmp_directory, os.listdir(self.tmp_directory)[0]))
             self.logger.debug("data_directory: %s", self.data_directory)
         except FileNotFoundError:
             raise FileNotFoundError(
                 "Could not find any static files in /data. Did you mount this path?"
             )
-        self.table_name = self.data_directory.replace(".gdb", "")
-
         # Check whether table exists - excluding reflected tables
         existing_table_names = self.dbcnxn.engine.table_names(schema=self.schema)
         if self.table_name in existing_table_names:
@@ -76,13 +66,14 @@ class StaticWriter(DBWriter):
             )
             return False
 
+
         # Get the connection string
         cnxn_string = " ".join(
             [
                 "host={host}",
                 "port={port}",
                 "user={username}",
-                "password={password}",
+                "password='{password}'",
                 "dbname={db_name}",
                 "sslmode={ssl_mode}",
             ]
@@ -139,6 +130,7 @@ class StaticWriter(DBWriter):
             green(self.dbcnxn.connection_info["db_name"]),
         )
         try:
+            print(self.data_directory)
             subprocess.run(
                 [
                     "ogr2ogr",
@@ -147,7 +139,7 @@ class StaticWriter(DBWriter):
                     "-f",
                     "PostgreSQL",
                     "PG:{}".format(cnxn_string),
-                    "/data/{}".format(self.data_directory),
+                    "{}".format(self.data_directory),
                     "--config",
                     "PG_USE_COPY",
                     "YES",
