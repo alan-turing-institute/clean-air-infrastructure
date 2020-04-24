@@ -1,22 +1,11 @@
 """
 Insert static datasets into the database
 """
-# import argparse
-# import json
 import logging
 import os
-# import shutil
-# import sys
 import tempfile
 import zipfile
 import termcolor
-# import docker
-# from azure.common.client_factory import get_client_from_cli_profile
-# from azure.mgmt.storage import StorageManagementClient
-# from azure.storage.blob import BlockBlobService
-# from azure.keyvault import KeyVaultClient
-# from azure.mgmt.keyvault import KeyVaultManagementClient
-
 from cleanair.parsers import DatabaseSetupParser
 from cleanair.inputs import StaticWriter
 from azure.storage.blob import BlobServiceClient
