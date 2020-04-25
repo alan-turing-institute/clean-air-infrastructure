@@ -5,10 +5,13 @@ import numpy as np
 ## Given the data and the specific sensor this function optimise the ELBO and plot the results 
 def train_sensor_model(X, Y, kernel, optimizer, epochs = 100, logging_epoch_freq = 10, M=10, inducing_point_method="random"):
     
-    ## To remove newaxis when more features
-    num_features = X[:,0][:,np.newaxis].shape[0]
+    num_features = X.shape[1]
+    if num_features > 1:
+        raise NotImplementedError("We are only using one feature - upgrade coming soon.")
     
-    X = tf.convert_to_tensor(X[:,0][:,np.newaxis])
+    # TODO: generalise for multiple features
+    # X = tf.convert_to_tensor(X[:,0][:,np.newaxis])
+    X = tf.convert_to_tensor(X.astype(np.float64))
     Y = tf.convert_to_tensor(Y.astype(np.float64))
 
     # ToDo : number of rows

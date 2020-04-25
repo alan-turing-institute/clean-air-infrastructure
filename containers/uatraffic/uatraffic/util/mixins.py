@@ -40,7 +40,6 @@ class ModellingParserMixin:
             help="Name of the model to run.",
         )
         self.modelling_group.add_argument(
-            "-n",
             "--normaliseby",
             default="clipped_hour",
             choices=["clipped_hour", "hour", "epoch"],
