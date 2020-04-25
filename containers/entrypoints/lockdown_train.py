@@ -140,7 +140,7 @@ def main():
             end.strftime("%Y-%m-%d %H:%M:%S"),
             day_of_week,
         )
-        df = traffic_query.get_scoot_filter_by_dow(
+        df = traffic_query.get_scoot_by_dow(
             start_time=start.strftime("%Y-%m-%d %H:%M:%S"),
             end_time=end.strftime("%Y-%m-%d %H:%M:%S"),
             detectors=detectors,

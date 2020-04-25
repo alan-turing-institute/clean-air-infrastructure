@@ -26,7 +26,7 @@ def batch_coverage(instance_df, traffic_query, path_to_models, num_pertubations=
         data_config = instance_dict.pop("data_config")
 
         # get the data for this instance
-        data_df = traffic_query.get_scoot_filter_by_dow(
+        data_df = traffic_query.get_scoot_by_dow(
             start_time=data_config["start"],
             end_time=data_config["end"],
             detectors=data_config["detectors"],

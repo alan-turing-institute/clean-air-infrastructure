@@ -82,7 +82,7 @@ class TrafficQuery(DBWriter):
             return scoot_readings
 
     @db_query
-    def get_scoot_filter_by_dow(self, day_of_week, start_time, end_time=None, detectors=None):
+    def get_scoot_by_dow(self, day_of_week, start_time, end_time=None, detectors=None):
         """
         Get scoot readings for days between start_time and end_time filtered by day_of_week.
 
@@ -302,19 +302,12 @@ class TrafficInstanceQuery(DBReader):
                     TrafficDataTable.data_config["end"].astext <= end_time
                 )
 
-            if nweeks and nweeks > 1:
+            if nweeks:
+                # TODO: the below method is not working due to casting problem (nweeks field is float/string not int)
                 readings = readings.filter(
-                    and_(TrafficDataTable.data_config.has_key("nweeks"), TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks)
-                )
-            else:
-                # TODO: this is a temp fix whilst some data configs are missing nweeks. Remove this once data is backfilled.
-                readings = readings.filter(
-                    or_(
-                        and_(
-                            TrafficDataTable.data_config.has_key("nweeks"),
-                            TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == 1
-                        ),
-                        not_(TrafficDataTable.data_config.has_key("nweeks"))
+                    and_(
+                        TrafficDataTable.data_config.has_key("nweeks"),
+                        TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks
                     )
                 )
 

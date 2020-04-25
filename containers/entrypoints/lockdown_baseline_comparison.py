@@ -32,7 +32,7 @@ def main():
     assert day_of_week >= 0 and day_of_week < 7
 
     # get data from database for the given day_of_week
-    baseline_df = lockdown_process.get_scoot_filter_by_dow(
+    baseline_df = lockdown_process.get_scoot_by_dow(
         start_time=args.baseline_start,
         end_time=args.baseline_end,
         day_of_week=day_of_week,
