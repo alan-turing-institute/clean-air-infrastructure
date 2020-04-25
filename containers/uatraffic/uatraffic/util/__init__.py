@@ -3,7 +3,7 @@ Useful functions for filepath management and others.
 """
 
 from .filepath import generate_fp
-from .filepath import load_model_from_file
+from .filepath import load_models_from_file
 from .filepath import load_processed_data_from_file
 from .filepath import load_scoot_df
 from .filepath import save_model_to_file
@@ -18,7 +18,7 @@ __all__ = [
     "BaselineParserMixin",
     "TrafficModelParser",
     "generate_fp",
-    "load_model_from_file",
+    "load_models_from_file",
     "load_processed_data_from_file",
     "load_scoot_df",
     "save_model_to_file",

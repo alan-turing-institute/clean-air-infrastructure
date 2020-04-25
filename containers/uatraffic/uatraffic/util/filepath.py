@@ -1,10 +1,29 @@
 import os
 import pickle
+import logging
 import gpflow
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from typing import Iterable
 
+def load_models_from_file(instances: Iterable, path_to_models: str) -> list:
+    """
+    Load models from a directory.
+
+    Args:
+        instances: Instance ids to load models for.
+        path_to_models: Path to directory of models.
+
+    Returns:
+        gpflow trained models.
+    """
+    models = []
+    logging.info("Loading models from %s", path_to_models)
+    for instance_id in instances:
+        filepath = os.path.join(path_to_models, instance_id + ".h5")
+        models.append(pickle.load(open(filepath, "rb")))
+    return models
 
 def generate_fp(
     root="experiments",
