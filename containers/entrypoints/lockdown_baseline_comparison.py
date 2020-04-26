@@ -68,7 +68,7 @@ def main():
     metric_df["measurement_start_utc"] = args.comparison_start
     metric_df["measurement_end_utc"] = comparison_end
     metric_df["day_of_week"] = day_of_week
-    metric_df["baseline_period"] = args.tag
+    metric_df["baseline_period"] = args.baseline_period
     metric_df["removed_anomaly_from_baseline"] = metric_df["detector_id"].isin(baseline_anomaly_df["detector_id"].unique())
     metric_df["removed_anomaly_from_comparison"] = metric_df["detector_id"].isin(comparison_anomaly_df["detector_id"].unique())
 

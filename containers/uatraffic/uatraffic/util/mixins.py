@@ -9,9 +9,16 @@ class BaselineParserMixin:
         self.add_argument(
             "-t",
             "--tag",
+            default="validation",
+            type=str,
+            help="A custom tag to identify model fits.",
+        )
+        self.add_argument(
+            "-b",
+            "--baseline_period",
             default="normal",
             choices=["normal", "lockdown"],
-            help="The tag for the baseline period.",
+            help="The name of the baseline period.",
         )
 
 class ModellingParserMixin:

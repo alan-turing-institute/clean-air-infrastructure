@@ -16,7 +16,7 @@ def prepare_batch(
     normaliseby: str = "clipped_hour",
     x_cols: list = None,
     y_cols: list = None,
-) -> Tuple(list, list):
+) -> Tuple:
     """
     Given a dataframe of instances, return a list of models, x_tests and y_tests.
 

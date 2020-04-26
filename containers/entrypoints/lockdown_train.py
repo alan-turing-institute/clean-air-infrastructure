@@ -18,11 +18,9 @@ from uatraffic.dates import (
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from uatraffic.preprocess import normalise_datetime
+from uatraffic.preprocess import prepare_batch
 from uatraffic.model import parse_kernel
 from uatraffic.model import train_sensor_model
-from uatraffic.util import save_scoot_df
-from uatraffic.util import save_processed_data_to_file
 
 
 def create_directories(root, experiment):
@@ -41,36 +39,7 @@ def create_directories(root, experiment):
 def main():
 
     parser = TrafficModelParser()
-    subparsers = parser.add_subparsers(dest='command')
-
-    # subparser for batching models
-    batch_parser = subparsers.add_parser("batch")
-    batch_parser.add_argument(
-        "--batch_start",
-        default=None,
-        type=int,
-        help="Index of detector to start at during batching.",
-    )
-    batch_parser.add_argument(
-        "--batch_size",
-        default=None,
-        type=int,
-        help="Size of the batch.",
-    )
-    # add a parser for testing purposes
-    test_parser = subparsers.add_parser("test")
-    test_parser.add_argument(
-        "-d",
-        "--detectors",
-        nargs="+",
-        default=["N00/002e1", "N00/002g1", "N13/016a1"],
-        help="List of SCOOT detectors to model.",
-    )
-    test_parser.add_argument(
-        "--dryrun",
-        action="store_true",
-        help="Log how the model would train without executing."
-    )
+    parser.add_custom_subparsers()
     args = parser.parse_args()
 
     if args.cluster_id == "local":
@@ -83,10 +52,10 @@ def main():
 
     # process datetimes
     nhours = 24
-    if args.tag == "normal":
+    if args.baseline_period == "normal":
         start = datetime.strptime(NORMAL_BASELINE_START, "%Y-%m-%d")
         baseline_end = datetime.strptime(NORMAL_BASELINE_END, "%Y-%m-%d")
-    elif args.tag == "lockdown":
+    elif args.baseline_period == "lockdown":
         start = datetime.strptime(LOCKDOWN_BASELINE_START, "%Y-%m-%d")
         baseline_end = datetime.strptime(LOCKDOWN_BASELINE_END, "%Y-%m-%d")
     else:
@@ -97,9 +66,6 @@ def main():
     monday2 = (baseline_end - timedelta(days=baseline_end.weekday()))
     nweeks = (monday2 - monday1).days / 7
     assert nweeks == 3      # TODO: add better test
-
-    # increment end date by number of weeks
-    end = start + timedelta(hours=nhours, weeks=nweeks - 1)
 
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)
@@ -120,9 +86,6 @@ def main():
     x_cols = ["time_norm"]
     y_cols = ["n_vehicles_in_interval"]
 
-    # setup parameters
-    optimizer = tf.keras.optimizers.Adam(0.001)
-    logging_epoch_freq = 10000      # essentially turn of logging
     kernel_dict = dict(
         name=args.kernel,
         hyperparameters=dict(
@@ -130,57 +93,37 @@ def main():
             variance=args.variance,
         )
     )
+    # create dict of model settings
+    model_params = dict(
+        n_inducing_points=args.n_inducing_points,
+        epochs=args.epochs,
+        kernel=kernel_dict,
+        normaliseby=args.normaliseby,
+    )
+    instance_rows = []
+    instance_array = []
+
+    # increment end date by number of weeks
+    end = start + timedelta(hours=nhours, weeks=nweeks - 1)
 
     while end <= baseline_end:
         # read the data from DB
         day_of_week = start.weekday()
-        logging.info(
-            "Getting scoot readings from %s to %s for day_of_week %s.",
-            start.strftime("%Y-%m-%d %H:%M:%S"),
-            end.strftime("%Y-%m-%d %H:%M:%S"),
-            day_of_week,
-        )
-        df = traffic_query.get_scoot_by_dow(
-            start_time=start.strftime("%Y-%m-%d %H:%M:%S"),
-            end_time=end.strftime("%Y-%m-%d %H:%M:%S"),
-            detectors=detectors,
-            day_of_week=day_of_week,
-            output_type="df",
-        )
-        # data cleaning and processing
-        df['measurement_start_utc'] = pd.to_datetime(df['measurement_start_utc'])
-        df = normalise_datetime(df, wrt=args.normaliseby)
-
-        # save the data to csv
-        if args.cluster_id == "local":
-            save_scoot_df(
-                df,
-                root=args.root,
-                experiment=args.experiment,
-                timestamp=start.strftime("%Y-%m-%dT%H:%M:%S"),
-                filename="scoot"
-            )
-
-        # get array of numpy for X and Y
-        gb = df.groupby("detector_id")
 
         # loop over all detectors and write each numpy to a file
-        for detector_id in df["detector_id"].unique():
+        for detector_id in detectors:
             # create a data id from dictionary of data settings
             data_config = dict(
                 detectors=[detector_id],
                 weekdays=[day_of_week],
+                x_cols=x_cols,
+                y_cols=y_cols,
                 start=start.strftime("%Y-%m-%dT%H:%M:%S"),
                 end=end.strftime("%Y-%m-%dT%H:%M:%S"),
                 nweeks=nweeks,
+                baseline_period=args.baseline_period,
             )
-            # create dict of model settings
-            model_params = dict(
-                n_inducing_points=args.n_inducing_points,
-                epochs=args.epochs,
-                kernel=kernel_dict,
-                normaliseby=args.normaliseby,
-            )
+
             # create an instance object then write instance to DB
             instance = TrafficInstance(
                 model_name=args.model_name,
@@ -191,46 +134,48 @@ def main():
                 fit_start_time=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
                 secretfile=args.secretfile,
             )
+            instance_array.append(instance)
+            instance_rows.append(instance.to_dict())
 
-            # get training data
-            x_train = np.array(gb.get_group(detector_id)[x_cols])
-            y_train = np.array(gb.get_group(detector_id)[y_cols])
+            if getattr(args, "dryrun"):
+                continue        # skip DB update on dry run
 
-            if args.cluster_id == "local":
-                save_processed_data_to_file(
-                    x_train,
-                    y_train,
-                    root=args.root,
-                    experiment=args.experiment,
-                    timestamp=start.strftime("%Y-%m-%dT%H:%M:%S"),
-                    detector_id=detector_id
-                )
-
-            # get a kernel from settings
-            kernel = parse_kernel(kernel_dict)
-
-            logging.info(
-                "Training model on detectors %s with kernel %s (lengthscale=%s, variance=%s).",
-                data_config["detectors"],
-                model_params["kernel"]["name"],
-                model_params["kernel"]["hyperparameters"]["lengthscale"],
-                model_params["kernel"]["hyperparameters"]["variance"],
-            )
-            if not getattr(args, "dryrun"):
-                # train model
-                model = train_sensor_model(
-                    x_train, y_train, kernel, optimizer, args.epochs, logging_epoch_freq, M=args.n_inducing_points
-                )
-
-                # TODO: write models to blob storage
-                instance.update_data_table(data_config)
-                instance.update_model_table(model_params)
-                instance.update_remote_tables()
-                instance.save_model(model, os.path.join(args.root, args.experiment, "models"))
+            # TODO: write models to blob storage
+            instance.update_data_table(data_config)
+            instance.update_model_table(model_params)
+            instance.update_remote_tables()
 
         # add on n hours to start and end datetimes
         start = start + timedelta(hours=nhours)
         end = end + timedelta(hours=nhours)
+
+    # setup parameters
+    logging_epoch_freq = 10000      # essentially turn of logging
+
+    instance_df = pd.DataFrame(instance_rows)
+    x_array, y_array = prepare_batch(
+        instance_df,
+        args.secretfile,
+        args.normaliseby,
+        x_cols=x_cols,
+        y_cols=y_cols
+    )
+
+    for instance, x_train, y_train in zip(instance_array, x_array, y_array):
+
+        # get a kernel from settings
+        if getattr(args, "dryrun"):
+            continue
+        logging.info("Training model on instance %s", instance.instance_id)
+        optimizer = tf.keras.optimizers.Adam(0.001)
+        kernel = parse_kernel(kernel_dict)
+        model = train_sensor_model(
+            x_train, y_train, kernel, optimizer, args.epochs, logging_epoch_freq, M=args.n_inducing_points
+        )
+        instance.save_model(
+            model,
+            os.path.join(args.root, args.experiment, "models"),
+        )
 
 if __name__ == "__main__":
     main()

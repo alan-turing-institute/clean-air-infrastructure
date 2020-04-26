@@ -1,11 +1,12 @@
 import os
 import pickle
 import logging
+from pathlib import Path
+from typing import Iterable
+
 import gpflow
 import pandas as pd
 import numpy as np
-from pathlib import Path
-from typing import Iterable
 
 def load_models_from_file(instances: Iterable, path_to_models: str) -> list:
     """
@@ -16,13 +17,20 @@ def load_models_from_file(instances: Iterable, path_to_models: str) -> list:
         path_to_models: Path to directory of models.
 
     Returns:
-        gpflow trained models.
+        GPflow trained models.
     """
     models = []
+    missing_files = 0
     logging.info("Loading models from %s", path_to_models)
     for instance_id in instances:
-        filepath = os.path.join(path_to_models, instance_id + ".h5")
-        models.append(pickle.load(open(filepath, "rb")))
+        try:
+            filepath = os.path.join(path_to_models, instance_id + ".h5")
+            models.append(pickle.load(open(filepath, "rb")))
+        except FileNotFoundError:
+            missing_files += 1
+
+    if missing_files:
+        logging.error("%s missing model files out of %s.", missing_files, len(instances))
     return models
 
 def generate_fp(
