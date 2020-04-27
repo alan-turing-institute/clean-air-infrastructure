@@ -3,6 +3,7 @@ Insert static datasets into the database
 """
 import logging
 import os
+import sys
 import tempfile
 import zipfile
 import termcolor
@@ -78,7 +79,7 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
     ][0]
 
     return generate_account_sas(
-         storage_container_name,
+        storage_container_name,
         account_key=storage_account_key,
         resource_types=ResourceTypes(object=True),
         permission=AccountSasPermissions(read=True),
@@ -134,6 +135,14 @@ def main():
     )
     logging.getLogger("azure").setLevel(logging.WARNING)
 
+    # Generate a SAS token
+    if args.generate_sas_token:
+        sys.stdout.write(generate_sas_token(
+            args.account_url, args.resource_group, args.storage_container_name
+        ))
+        sys.exit(0)
+
+
     blob_service_client = BlobServiceClient(
         account_url=args.account_url, credential=args.sas_token
     )
@@ -158,8 +167,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-
-    sas = get_sas()
-
-    print(sas)
+    main()

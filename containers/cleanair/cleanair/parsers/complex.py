@@ -20,12 +20,18 @@ class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
     def __init__(self, datasets, **kwargs):
         super().__init__(**kwargs)
 
-        self.add_argument(
+        sas_args = self.add_mutually_exclusive_group(required = True)
+        sas_args.add_argument(
             "-t",
             "--sas-token",
             type=str,
-            required=True,
             help="sas token to access the cleanair datastore container",
+        )
+        sas_args.add_argument(
+            "-g",
+            "--generate-sas-token",
+            action='store_true',
+            help="If logged in using 'az login' generate a sas token",
         )
         self.add_argument(
             "-u",
@@ -41,6 +47,14 @@ class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
             default="londonaqdatasets",
             help="Name of the storage container where the Terraform backend will be stored",
         )
+        self.add_argument(
+            "-r",
+            "--resource_group",
+            type=str,
+            default="Datasets",
+            help="Resource group where the static datasets will be stored",
+        )
+
         self.add_argument(
             "-d",
             "--datasets",
