@@ -94,6 +94,7 @@ def main():
     )
     # create dict of model settings
     model_params = dict(
+        inducing_point_method=args.inducing_point_method,
         n_inducing_points=args.n_inducing_points,
         epochs=args.epochs,
         kernel=kernel_dict,
@@ -156,7 +157,10 @@ def main():
     # setup parameters
     logging_epoch_freq = 10000      # essentially turn of logging
 
+    # dataframe of instances
     instance_df = pd.DataFrame(instance_rows)
+
+    # get an array of tensors ready for training
     x_array, y_array = prepare_batch(
         instance_df,
         args.secretfile,
@@ -164,17 +168,23 @@ def main():
         x_cols=x_cols,
         y_cols=y_cols
     )
-
+    # iterate through instances training the model
     for instance, x_train, y_train in zip(instance_array, x_array, y_array):
-
+        logging.info("Training model on instance %s", instance.instance_id)
         # get a kernel from settings
         if getattr(args, "dryrun"):
             continue
-        logging.info("Training model on instance %s", instance.instance_id)
         optimizer = tf.keras.optimizers.Adam(0.001)
-        kernel = parse_kernel(kernel_dict)
+        kernel = parse_kernel(kernel_dict)      # returns gpflow kernel
         model = train_sensor_model(
-            x_train, y_train, kernel, optimizer, args.epochs, logging_epoch_freq, M=args.n_inducing_points
+            x_train,
+            y_train,
+            kernel,
+            optimizer,
+            epochs=args.epochs,
+            logging_epoch_freq=logging_epoch_freq,
+            n_inducing_points=args.n_inducing_points,
+            inducing_point_method=args.inducing_point_method,
         )
         instance.save_model(
             model,
