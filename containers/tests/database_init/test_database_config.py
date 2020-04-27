@@ -45,12 +45,13 @@ def N_ROWS_SCOOT():
 def static_data_sizes():
     """Expected number of rows in scoot"""
 
-    n_rows = {'scoot_detector': {'table': ScootDetector, 'rows': 12421},
-              'london_boundary': {'table': LondonBoundary, 'rows': 33},
-              'oshighway_roadlink': {'table': OSHighway, 'rows': 339214},
-              'street_canyon': {'table': StreetCanyon, 'rows': 242547},
-              'urban_village': {'table': UrbanVillage, 'rows': 747},
-              }
+    n_rows = {
+        "scoot_detector": {"table": ScootDetector, "rows": 12421},
+        "london_boundary": {"table": LondonBoundary, "rows": 33},
+        "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
+        "street_canyon": {"table": StreetCanyon, "rows": 242547},
+        "urban_village": {"table": UrbanVillage, "rows": 747},
+    }
 
     return n_rows
 
@@ -65,6 +66,7 @@ def test_static_tables_filled(secretfile, static_data_sizes):
     "Test all static tables have the expected number of rows"
 
     connect = DBInteractor(secretfile, initialise_tables=True)
+
     @db_query
     def query_table(table):
         """Helper function to return scoot query"""
@@ -74,4 +76,4 @@ def test_static_tables_filled(secretfile, static_data_sizes):
 
     for _, table_dict in static_data_sizes.items():
 
-        assert query_table(table_dict['table']).count() == table_dict['rows']
+        assert query_table(table_dict["table"]).count() == table_dict["rows"]

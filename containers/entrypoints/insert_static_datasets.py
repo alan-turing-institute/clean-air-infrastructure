@@ -8,7 +8,16 @@ import zipfile
 import termcolor
 from cleanair.parsers import DatabaseSetupParser
 from cleanair.inputs import StaticWriter
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import (
+    BlobServiceClient,
+    generate_account_sas,
+    ResourceTypes,
+    AccountSasPermissions,
+)
+from azure.mgmt.storage import StorageManagementClient
+from azure.common.client_factory import get_client_from_cli_profile
+from azure.mgmt.compute import ComputeManagementClient
+from datetime import datetime, timedelta
 
 DATASETS = {
     "rectgrid_100": {
@@ -53,6 +62,28 @@ DATASETS = {
 def emphasised(text):
     """Emphasise text"""
     return termcolor.colored(text, "cyan")
+
+
+def generate_sas_token(account_url, resource_group, storage_container_name):
+    """Generate a SAS token when logged in using az login"""
+
+    client = get_client_from_cli_profile(BlobServiceClient, account_url=account_url)
+
+    storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
+    storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
+        resource_group, storage_container_name,
+    )
+    storage_account_key = [
+        k.value for k in storage_key_list.keys if k.key_name == "key1"
+    ][0]
+
+    return generate_account_sas(
+         storage_container_name,
+        account_key=storage_account_key,
+        resource_types=ResourceTypes(object=True),
+        permission=AccountSasPermissions(read=True),
+        expiry=datetime.utcnow() + timedelta(hours=1),
+    )
 
 
 def download_blobs(blob_service, blob_container_name, target_directory):
@@ -127,4 +158,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+
+    sas = get_sas()
+
+    print(sas)
