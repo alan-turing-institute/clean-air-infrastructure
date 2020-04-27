@@ -7,7 +7,13 @@ from uatraffic.scoot_processing import (
     NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
 )
-from ..queries import ScootDaily, ScootDailyPerc, ScootHourly, ScootHourlyAvailability, ScootPercAvailability
+from ..queries import (
+    ScootDaily,
+    ScootDailyPerc,
+    ScootHourly,
+    ScootHourlyAvailability,
+    ScootPercAvailability,
+)
 from ..db import get_session
 from ..argparsers import (
     validate_today_or_before,
@@ -39,6 +45,8 @@ def scoot(args):
     Return raw hourly scoot data
     Return raw hourly scoot data.
     ---
+    tags:
+        - scoot raw
     parameters:
       - name: starttime
         in: query
@@ -48,7 +56,7 @@ def scoot(args):
       - name: endtime
         in: query
         type: string
-        description: ISO date. Request data until (but excluding) this date 
+        description: ISO date. Request data until (but excluding) this date
     responses:
       200:
         description: A csv file containing the data
@@ -77,6 +85,8 @@ def scoot_daily(args):
     Return daily scoot data
     Return scoot data averaged over days
     ---
+    tags:
+        - scoot raw
     parameters:
       - name: starttime
         in: query
@@ -126,6 +136,8 @@ def scoot_percentage_lockdown(args):
     Return scoot data as a percentage of a 'lockdown' baseline
     Return scoot data as a percentage of a 'lockdown' baseline.
     ---
+    tags:
+        - scoot percentage change
     parameters:
       - name: starttime
         in: query
@@ -206,6 +218,8 @@ def scoot_percentage(args):
     Return scoot data as a percentage of a 'normal' baseline
     Return scoot data as a percentage of a 'normal' baseline. In the returned csv Monday=0
     ---
+    tags:
+        - scoot percentage change
     parameters:
       - name: starttime
         in: query
@@ -264,17 +278,12 @@ def scoot_percentage(args):
     )
 
 
-@scoot_bp.route("hourly/availability", methods=["GET"])
+@scoot_bp.route("availability/hourly/raw", methods=["GET"])
 @use_args(
     {
-        "starttime": fields.String(
-            required=True,
-            validate=validate_iso_string,
-        ),
-        "endtime": fields.String(
-            required=False, validate=validate_iso_string,
-        ),
-        "only_missing": fields.Bool(default=True)
+        "starttime": fields.String(required=True, validate=validate_iso_string,),
+        "endtime": fields.String(required=False, validate=validate_iso_string,),
+        "only_missing": fields.Bool(default=True),
     },
     location="query",
 )
@@ -282,6 +291,8 @@ def scoot_hourly_availability(args):
     """
     Report availability of scoot data on the API
     ---
+    tags:
+        - scoot availability
     parameters:
       - name: starttime
         in: query
@@ -308,10 +319,12 @@ def scoot_hourly_availability(args):
     endtime = args.pop("endtime", None)
     only_missing = args.pop("only_missing")
 
-    return scoot_hourly_availability_query.stream_csv("available_scoot", get_session(), starttime, endtime, only_missing)
+    return scoot_hourly_availability_query.stream_csv(
+        "available_scoot", get_session(), starttime, endtime, only_missing
+    )
 
 
-@scoot_bp.route("daily/percent-of-baseline/normal/availability", methods=["GET"])
+@scoot_bp.route("availability/percent-of-baseline/normal", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(
@@ -321,8 +334,7 @@ def scoot_hourly_availability(args):
         "endtime": fields.String(
             required=False, validate=lambda val: validate_today_or_before(val),
         ),
-        ""
-        "only_missing": fields.Bool(default=True)
+        "" "only_missing": fields.Bool(default=True),
     },
     location="query",
 )
@@ -331,6 +343,8 @@ def scoot_percentage_normal_availability(args):
     Report availability of percentage change data with normal baseline
     Report availability of percentage change data with normal baseline
     ---
+    tags:
+        - scoot availability
     parameters:
       - name: starttime
         in: query
@@ -356,12 +370,14 @@ def scoot_percentage_normal_availability(args):
     starttime = args.pop("starttime", None)
     endtime = args.pop("endtime", None)
     only_missing = args.pop("only_missing")
-    baseline = 'normal'
+    baseline = "normal"
 
-    return scoot_percentage_availability_query.stream_csv("available_scoot", get_session(), baseline, starttime, endtime, only_missing)
+    return scoot_percentage_availability_query.stream_csv(
+        "available_scoot", get_session(), baseline, starttime, endtime, only_missing
+    )
 
 
-@scoot_bp.route("daily/percent-of-baseline/lockdown/availability", methods=["GET"])
+@scoot_bp.route("availability/percent-of-baseline/lockdown", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(
@@ -371,8 +387,7 @@ def scoot_percentage_normal_availability(args):
         "endtime": fields.String(
             required=False, validate=lambda val: validate_today_or_before(val),
         ),
-        ""
-        "only_missing": fields.Bool(default=True)
+        "" "only_missing": fields.Bool(default=True),
     },
     location="query",
 )
@@ -381,6 +396,8 @@ def scoot_percentage_lockdown_availability(args):
     Report availability of percentage change data with lockdown baseline
     Report availability of percentage change data with lockdown baseline
     ---
+    tags:
+        - scoot availability
     parameters:
       - name: starttime
         in: query
@@ -406,6 +423,8 @@ def scoot_percentage_lockdown_availability(args):
     starttime = args.pop("starttime", None)
     endtime = args.pop("endtime", None)
     only_missing = args.pop("only_missing")
-    baseline = 'lockdown'
+    baseline = "lockdown"
 
-    return scoot_percentage_availability_query.stream_csv("available_scoot", get_session(), baseline, starttime, endtime, only_missing)
+    return scoot_percentage_availability_query.stream_csv(
+        "available_scoot", get_session(), baseline, starttime, endtime, only_missing
+    )

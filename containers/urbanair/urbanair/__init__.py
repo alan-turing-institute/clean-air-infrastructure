@@ -2,7 +2,7 @@
 
 import os
 from flask import Flask
-from flasgger import Swagger, APISpec
+from flasgger import Swagger
 from . import db
 from . import exceptions
 from .blueprints import scoot_bp, index_bp
