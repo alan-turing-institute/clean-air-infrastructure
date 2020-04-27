@@ -7,7 +7,7 @@ from uatraffic.scoot_processing import (
     NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
 )
-from ..queries import ScootDaily, ScootDailyPerc, ScootHourly
+from ..queries import ScootDaily, ScootDailyPerc, ScootHourly, ScootHourlyAvailability, ScootPercAvailability
 from ..db import get_session
 from ..argparsers import (
     validate_today_or_before,
@@ -22,6 +22,8 @@ scoot_bp = Blueprint("scoot", __name__)
 # Query objects
 scoot_daily_percent_query = ScootDailyPerc()
 scoot_hourly_query = ScootHourly()
+scoot_hourly_availability_query = ScootHourlyAvailability()
+scoot_percentage_availability_query = ScootPercAvailability()
 
 
 @scoot_bp.route("hourly/raw", methods=["GET"])
@@ -262,20 +264,21 @@ def scoot_percentage(args):
     )
 
 
-@scoot_bp.route("hourly/missing", methods=["GET"])
+@scoot_bp.route("hourly/availability", methods=["GET"])
 @use_args(
     {
         "starttime": fields.String(
             required=True,
-            validate=lambda val: validate_lockdown_date(val, NORMAL_BASELINE_END),
+            validate=validate_iso_string,
         ),
         "endtime": fields.String(
-            required=False, validate=lambda val: validate_today_or_before(val),
+            required=False, validate=validate_iso_string,
         ),
+        "only_missing": fields.Bool(default=True)
     },
     location="query",
 )
-def scoot_hourly_availibility(args):
+def scoot_hourly_availability(args):
     """
     Report availability of scoot data on the API
     ---
@@ -284,11 +287,16 @@ def scoot_hourly_availibility(args):
         in: query
         type: string
         required: true
-        description: ISO date. 
+        description: ISO date
       - name: endtime
         in: query
         type: string
-        description: ISO date. Request data until (but excluding) this date. If not provided will check up until time now
+        description: ISO date. Request data until (but excluding) this date. If not provided will check up until now
+      - name: only_missing
+        in: query
+        type: boolean
+        default: True
+        description: If True only report dates that are missing during the requested time period
     responses:
       200:
         description: A csv file containing the data
@@ -296,7 +304,108 @@ def scoot_hourly_availibility(args):
             application/json
     """
 
-    starttime = args.pop("starttime")
+    starttime = args.pop("starttime", None)
     endtime = args.pop("endtime", None)
+    only_missing = args.pop("only_missing")
 
-    return {"Hi yall": "some json"}
+    return scoot_hourly_availability_query.stream_csv("available_scoot", get_session(), starttime, endtime, only_missing)
+
+
+@scoot_bp.route("daily/percent-of-baseline/normal/availability", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(
+            required=False,
+            validate=lambda val: validate_lockdown_date(val, NORMAL_BASELINE_END),
+        ),
+        "endtime": fields.String(
+            required=False, validate=lambda val: validate_today_or_before(val),
+        ),
+        ""
+        "only_missing": fields.Bool(default=True)
+    },
+    location="query",
+)
+def scoot_percentage_normal_availability(args):
+    """
+    Report availability of percentage change data with normal baseline
+    Report availability of percentage change data with normal baseline
+    ---
+    parameters:
+      - name: starttime
+        in: query
+        type: string
+        required: false
+        description: ISO date
+      - name: endtime
+        in: query
+        type: string
+        description: ISO date. Request data until (but excluding) this date. If not provided will check up until now
+      - name: only_missing
+        in: query
+        type: boolean
+        default: True
+        description: If True only report dates that are missing during the requested time period
+    responses:
+      200:
+        description: A csv file containing the data
+        content:  # Response body
+            application/json
+    """
+
+    starttime = args.pop("starttime", None)
+    endtime = args.pop("endtime", None)
+    only_missing = args.pop("only_missing")
+    baseline = 'normal'
+
+    return scoot_percentage_availability_query.stream_csv("available_scoot", get_session(), baseline, starttime, endtime, only_missing)
+
+
+@scoot_bp.route("daily/percent-of-baseline/lockdown/availability", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(
+            required=False,
+            validate=lambda val: validate_lockdown_date(val, LOCKDOWN_BASELINE_END),
+        ),
+        "endtime": fields.String(
+            required=False, validate=lambda val: validate_today_or_before(val),
+        ),
+        ""
+        "only_missing": fields.Bool(default=True)
+    },
+    location="query",
+)
+def scoot_percentage_lockdown_availability(args):
+    """
+    Report availability of percentage change data with lockdown baseline
+    Report availability of percentage change data with lockdown baseline
+    ---
+    parameters:
+      - name: starttime
+        in: query
+        type: string
+        required: false
+        description: ISO date
+      - name: endtime
+        in: query
+        type: string
+        description: ISO date. Request data until (but excluding) this date. If not provided will check up until now
+      - name: only_missing
+        in: query
+        type: boolean
+        default: True
+        description: If True only report dates that are missing during the requested time period
+    responses:
+      200:
+        description: A csv file containing the data
+        content:  # Response body
+            application/json
+    """
+
+    starttime = args.pop("starttime", None)
+    endtime = args.pop("endtime", None)
+    only_missing = args.pop("only_missing")
+    baseline = 'lockdown'
+
+    return scoot_percentage_availability_query.stream_csv("available_scoot", get_session(), baseline, starttime, endtime, only_missing)
