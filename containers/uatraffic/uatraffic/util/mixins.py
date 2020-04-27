@@ -56,23 +56,25 @@ class ModellingParserMixin:
 class KernelParserMixin:
     """Parser mixin for choosing the kernel and params."""
 
+    KERNEL_GROUP = ["kernel", "lengthscale", "variance"]
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.kernel_group = self.add_argument_group("kernels") 
-        self.kernel_group.add_argument(
+        kernel_group = self.add_argument_group("kernels") 
+        kernel_group.add_argument(
             "-k",
             "--kernel",
             choices=["matern32", "rbf", "periodic"],
             default="rbf",
             help="The name of the kernel to run.",
         )
-        self.kernel_group.add_argument(
+        kernel_group.add_argument(
             "--lengthscale",
             type=float,
             default=1.0,
             help="Value for lengthscale (note ARD not supported).",
         )
-        self.kernel_group.add_argument(
+        kernel_group.add_argument(
             "--variance",
             type=float,
             default=1.0,
@@ -81,6 +83,8 @@ class KernelParserMixin:
 
 class PeriodicKernelParserMixin(KernelParserMixin):
     """Specific parser supporting the periodic kernel."""
+
+    KERNEL_GROUP = KernelParserMixin.KERNEL_GROUP + ["period"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

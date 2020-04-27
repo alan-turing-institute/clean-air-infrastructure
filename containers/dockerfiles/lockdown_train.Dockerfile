@@ -1,5 +1,4 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7
+FROM cleanairdocker.azurecr.io/tensorflow/tensorflow-cuda-2.1.0
 
 # Set the working directory to /app
 WORKDIR /app
@@ -9,6 +8,7 @@ COPY cleanair /app/cleanair/
 COPY uatraffic /app/uatraffic/
 
 # Install any needed packages specified in requirements.txt
+# TODO: remove cache dir
 RUN pip install '/app/cleanair'
 RUN pip install '/app/uatraffic'
 

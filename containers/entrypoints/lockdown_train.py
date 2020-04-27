@@ -5,7 +5,6 @@ import os
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import tensorflow as tf
 
@@ -135,7 +134,12 @@ def main():
                 secretfile=args.secretfile,
             )
             instance_array.append(instance)
-            instance_rows.append(instance.to_dict())
+            instance_dict = dict(
+                instance.to_dict(),
+                data_config=data_config,
+                model_param=model_params,
+            )
+            instance_rows.append(instance_dict)
 
             if getattr(args, "dryrun"):
                 continue        # skip DB update on dry run

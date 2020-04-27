@@ -2,29 +2,43 @@ import gpflow
 import tensorflow as tf
 import numpy as np
 
-## Given the data and the specific sensor this function optimise the ELBO and plot the results 
-def train_sensor_model(X, Y, kernel, optimizer, epochs = 100, logging_epoch_freq = 10, M=10, inducing_point_method="random"):
-    
-    num_features = X.shape[1]
+def train_sensor_model(
+    x_train: tf.Tensor,
+    y_train: tf.Tensor,
+    kernel: gpflow.kernels.Kernel,
+    optimizer: tf.optimizers.Optimizer,
+    epochs: int = 100,
+    logging_epoch_freq: int = 10,
+    n_inducing_points: int = 10,
+    inducing_point_method: str = "random"
+):
+    """
+    Setup the training of the model.
+    """
+    num_features = x_train.shape[1]
     if num_features > 1:
         raise NotImplementedError("We are only using one feature - upgrade coming soon.")
-    
+
     # TODO: generalise for multiple features
     # X = tf.convert_to_tensor(X[:,0][:,np.newaxis])
-    X = tf.convert_to_tensor(X.astype(np.float64))
-    Y = tf.convert_to_tensor(Y.astype(np.float64))
+    # X = tf.convert_to_tensor(X.astype(np.float64))
+    # Y = tf.convert_to_tensor(Y.astype(np.float64))
 
     # ToDo : number of rows
-    if M == X.shape[0]:
-        ind_points = X
+    if n_inducing_points == x_train.shape[0]:
+        ind_points = x_train
     elif inducing_point_method == "random":
         # randomly select 
-        ind_points = tf.random.shuffle(X)[:M]
+        ind_points = tf.random.shuffle(x_train)[:n_inducing_points]
     else:
         # select of regular grid
         # ToDo: double check this line
         ind_points = tf.expand_dims(
-            tf.linspace(np.min(X[:,0]), np.max(X[:,0]), M),1
+            tf.linspace(
+                np.min(x_train[:, 0]),
+                np.max(x_train[:, 0]),
+                n_inducing_points
+            ), 1
         )
     
     lik = gpflow.likelihoods.Poisson()
@@ -35,8 +49,14 @@ def train_sensor_model(X, Y, kernel, optimizer, epochs = 100, logging_epoch_freq
     ## Uncomment to see which variables are training and those that are not
     #print_summary(model)
     
-    simple_training_loop(X, Y, model, optimizer, epochs = epochs, 
-                         logging_epoch_freq = logging_epoch_freq)
+    simple_training_loop(
+        x_train,
+        y_train,
+        model,
+        optimizer,
+        epochs=epochs,
+        logging_epoch_freq=logging_epoch_freq
+    )
 
     return model
     
