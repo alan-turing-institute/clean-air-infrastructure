@@ -1,4 +1,4 @@
-FROM cleanairdocker.azurecr.io/tensorflow/tensorflow-cuda-2.1.0
+FROM cleanairdocker.azurecr.io/tensorflow/tensorflow-2.1.0
 
 # Set the working directory to /app
 WORKDIR /app
