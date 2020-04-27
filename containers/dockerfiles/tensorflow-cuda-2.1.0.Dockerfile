@@ -5,7 +5,7 @@
 ARG UBUNTU_VERSION=18.04
 
 ARG ARCH=
-ARG CUDA=10.0
+ARG CUDA=10.1
 FROM nvidia/cuda${ARCH:+-$ARCH}:${CUDA}-base-ubuntu${UBUNTU_VERSION} as base
 
 ARG ARCH
@@ -17,12 +17,12 @@ SHELL ["/bin/bash", "-c"]
 # Pick up some TF dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
-        cuda-command-line-tools-${CUDA/./-} \
-        cuda-cublas-${CUDA/./-} \
-        cuda-cufft-${CUDA/./-} \
-        cuda-curand-${CUDA/./-} \
-        cuda-cusolver-${CUDA/./-} \
-        cuda-cusparse-${CUDA/./-} \
+        # cuda-command-line-tools-${CUDA/./-} \
+        # cuda-cublas-${CUDA/./-} \
+        # cuda-cufft-${CUDA/./-} \
+        # cuda-curand-${CUDA/./-} \
+        # cuda-cusolver-${CUDA/./-} \
+        # cuda-cusparse-${CUDA/./-} \
         curl \
         libcudnn7=${CUDNN}+cuda${CUDA} \
         libfreetype6-dev \
@@ -66,6 +66,6 @@ RUN python3.7 -m pip install pip && \
 # Some TF tools expect a "python" binary
 RUN ln -s $(which python3.7) /usr/local/bin/python
 
-ARG TF_PACKAGE=tensorflow-gpu
+ARG TF_PACKAGE=tensorflow
 ARG TF_PACKAGE_VERSION=2.1.0
 RUN pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
