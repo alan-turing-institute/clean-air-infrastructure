@@ -12,7 +12,8 @@ variable "cleanair_schemas" {
     "model_features",
     "model_results",
     "processed_data",
-    "static_data"
+    "static_data",
+    "gla_traffic"
   ]
 }
 

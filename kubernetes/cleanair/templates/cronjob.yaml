@@ -34,7 +34,6 @@ spec:
 
           imagePullSecrets:
           - name: regcred
-
             {{- with $cronjob.env }}
             env:
 {{ toYaml . | indent 12 }}
@@ -44,8 +43,8 @@ spec:
             {{- end }}
             {{- with $cronjob.args }}
             args:
-{{ toYaml . | indent 12 }}
-            {{- with $cronjob.resources }}
+{{ toYaml . | indent 12 }}            
+{{- with $cronjob.resources }}
             resources:
 {{ toYaml . | indent 14 }}
             {{- end }}

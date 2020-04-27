@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 4eec6770ce89f08d19892568c48652dd90dc79b6
+imageTag: 61facdb82ee2e5c9ae435e9464c07650bcf42400
 
 # jobs:
 #   - name: process_scoot_roadmap
@@ -91,7 +91,7 @@ cronjobs:
       repository: cleanairdocker.azurecr.io/input_aqe
       imagePullPolicy: Always
     schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
+    failedJobsHistoryLimit: 10
     successfulJobsHistoryLimit: 10
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
@@ -196,11 +196,25 @@ cronjobs:
       secret:
         secretName: secrets
 
+  - name: lockdown-baseline
+    image:
+      repository: cleanairdocker.azurecr.io/lockdown_baseline
+      imagePullPolicy: Always
+    schedule: "* 04-12 * * *"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 10
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+
 deployments:
     - name: cleanair-api
       replicas: 2
       image:
-        repository: cleanairdocker.azurecr.io/cleanairapi
+        repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
       ports:
         containerPort: 8080
@@ -248,4 +262,5 @@ letsencryptIssuer:
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
 
-whitelistSourceRange: 193.60.220.240/32, 51.146.59.38/32, 195.99.240.222/32, 82.69.108.113/32, 86.149.123.32/32, 31.50.42.13/32
+# Mike, CityHall, CityHall2, OscarHome, PatrickHome, JamesWHome, SamHome, Paul(GLA), Theo, Mark Girolami's, OGHOMENEW
+whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.148.164.65/32
