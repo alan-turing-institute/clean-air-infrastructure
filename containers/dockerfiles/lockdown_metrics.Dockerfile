@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.7
+FROM cleanairdocker.azurecr.io/tensorflow/tensorflow-2.1.0
 
 # Set the working directory to /app
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN pip install '/app/uatraffic'
 RUN mkdir /experiments
 
 # Copy the run script into the container
-COPY entrypoints/lockdown_coverage.py /app
+COPY entrypoints/lockdown_metrics.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "/app/lockdown_coverage.py"]
+ENTRYPOINT ["python", "/app/lockdown_metrics.py"]
