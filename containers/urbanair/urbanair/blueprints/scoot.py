@@ -20,7 +20,8 @@ scoot_bp = Blueprint("scoot", __name__)
 
 
 # Query objects
-scoot_daily_percent = ScootDailyPerc()
+scoot_daily_percent_query = ScootDailyPerc()
+scoot_hourly_query = ScootHourly()
 
 
 @scoot_bp.route("hourly/raw", methods=["GET"])
@@ -56,9 +57,7 @@ def scoot(args):
     starttime = args.pop("starttime")
     endtime = args.pop("endtime", None)
 
-    db_query = ScootHourly()
-
-    return db_query.stream_csv(
+    return scoot_hourly_query.stream_csv(
         "scoot_hourly", get_session(), start_time=starttime, end_time=endtime
     )
 
@@ -170,7 +169,7 @@ def scoot_percentage_lockdown(args):
     exclude_low_confidence = args.pop("exclude_low_confidence")
     return_meta = args.pop("return_meta")
 
-    return scoot_daily_percent.stream_csv(
+    return scoot_daily_percent_query.stream_csv(
         "scoot_daily_percentage",
         get_session(),
         starttime,
@@ -250,7 +249,7 @@ def scoot_percentage(args):
     exclude_low_confidence = args.pop("exclude_low_confidence")
     return_meta = args.pop("return_meta")
 
-    return scoot_daily_percent.stream_csv(
+    return scoot_daily_percent_query.stream_csv(
         "scoot_daily_percentage",
         get_session(),
         starttime,
@@ -261,3 +260,43 @@ def scoot_percentage(args):
         exclude_low_confidence,
         return_meta,
     )
+
+
+@scoot_bp.route("hourly/missing", methods=["GET"])
+@use_args(
+    {
+        "starttime": fields.String(
+            required=True,
+            validate=lambda val: validate_lockdown_date(val, NORMAL_BASELINE_END),
+        ),
+        "endtime": fields.String(
+            required=False, validate=lambda val: validate_today_or_before(val),
+        ),
+    },
+    location="query",
+)
+def scoot_hourly_availibility(args):
+    """
+    Report availability of scoot data on the API
+    ---
+    parameters:
+      - name: starttime
+        in: query
+        type: string
+        required: true
+        description: ISO date. 
+      - name: endtime
+        in: query
+        type: string
+        description: ISO date. Request data until (but excluding) this date. If not provided will check up until time now
+    responses:
+      200:
+        description: A csv file containing the data
+        content:  # Response body
+            application/json
+    """
+
+    starttime = args.pop("starttime")
+    endtime = args.pop("endtime", None)
+
+    return {"Hi yall": "some json"}

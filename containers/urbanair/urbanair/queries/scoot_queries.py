@@ -61,6 +61,13 @@ class ScootHourly(APIQueryMixin):
 
         return scoot_readings
 
+    @db_query
+    def query_availability(self, session, start_time, end_time=None):
+
+        in_data = session.query(func.count(ScootReading))
+
+        return in_data
+
 
 class ScootDailyPerc(APIQueryMixin):
     @db_query
