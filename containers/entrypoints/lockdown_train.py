@@ -85,6 +85,7 @@ def main():
     x_cols = ["time_norm"]
     y_cols = ["n_vehicles_in_interval"]
 
+    # get the parameters for the kernel and the model
     kernel_dict = dict(
         name=args.kernel,
         hyperparameters=dict(
@@ -92,14 +93,10 @@ def main():
             variance=args.variance,
         )
     )
-    # create dict of model settings
-    model_params = dict(
-        inducing_point_method=args.inducing_point_method,
-        n_inducing_points=args.n_inducing_points,
-        epochs=args.epochs,
-        kernel=kernel_dict,
-        normaliseby=args.normaliseby,
-    )
+    model_params = {key: args.key for key in parser.MODEL_GROUP}
+    model_params["kernel"] = kernel_dict
+
+    # store instances in arrays
     instance_rows = []
     instance_array = []
 
@@ -155,7 +152,7 @@ def main():
         end = end + timedelta(hours=nhours)
 
     # setup parameters
-    logging_epoch_freq = 10000      # essentially turn of logging
+    logging_freq = 10000      # essentially turn of logging
 
     # dataframe of instances
     instance_df = pd.DataFrame(instance_rows)
@@ -181,8 +178,8 @@ def main():
             y_train,
             kernel,
             optimizer,
-            epochs=args.epochs,
-            logging_epoch_freq=logging_epoch_freq,
+            max_iterations=args.max_iterations,
+            logging_freq=logging_freq,
             n_inducing_points=args.n_inducing_points,
             inducing_point_method=args.inducing_point_method,
         )

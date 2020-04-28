@@ -24,29 +24,42 @@ class BaselineParserMixin:
 class ModellingParserMixin:
     """Parser options for modelling."""
 
-    def __init__(self, n_inducing_points=24, **kwargs):
+    MODEL_GROUP = [
+        "n_inducing_points",
+        "inducing_point_method",
+        "max_iterations",
+        "model_name",
+        "normaliseby",
+    ]
+
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.modelling_group = self.add_argument_group("modelling")
-        self.modelling_group.add_argument(
-            "-i",
+        modelling_group = self.add_argument_group("modelling")
+        modelling_group.add_argument(
             "--n_inducing_points",
-            default=n_inducing_points,
+            default=None,
             type=int,
             help="Number of inducing points. Default is 24."
         )
-        self.modelling_group.add_argument(
-            "--epochs",
+        modelling_group.add_argument(
+            "--inducing_point_method",
+            default="random",
+            type=str,
+            help="Method for optimizing inducing points.",
+        )
+        modelling_group.add_argument(
+            "--max_iterations",
             type=int,
             default=2000,
-            help="Number of epochs to train model for.",
+            help="Max number of iterations to train model.",
         )
-        self.modelling_group.add_argument(
+        modelling_group.add_argument(
             "-m",
             "--model_name",
             default="svgp",
             help="Name of the model to run.",
         )
-        self.modelling_group.add_argument(
+        modelling_group.add_argument(
             "--normaliseby",
             default="clipped_hour",
             choices=["clipped_hour", "hour", "epoch"],
