@@ -19,7 +19,6 @@ from azure.storage.blob import (
 )
 from azure.mgmt.storage import StorageManagementClient
 from azure.common.client_factory import get_client_from_cli_profile
-from azure.mgmt.compute import ComputeManagementClient
 from datetime import datetime, timedelta
 
 DATASETS = {
