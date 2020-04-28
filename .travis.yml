@@ -38,7 +38,7 @@ before_script:
 script:
   
   # # Run all pytest unit tests
-  - python -m pytest -s
+  - python -m pytest containers --travis
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8 --ignore=E203, W503
