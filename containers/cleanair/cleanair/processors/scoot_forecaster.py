@@ -213,22 +213,12 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                 )
 
                 # Add forecasts to the database
-                with self.dbcnxn.open_session() as session:
-                    try:
-                        # Commit and override any existing forecasts
-                        self.commit_records(
-                            session,
-                            forecast_records,
-                            on_conflict="overwrite",
-                            table=ScootForecast,
-                        )
-                        n_records += len(forecast_records)
-                    except IntegrityError as error:
-                        self.logger.error(
-                            "Failed to add forecasts to the database: %s", type(error)
-                        )
-                        self.logger.error(str(error))
-                        session.rollback()
+
+                # Commit and override any existing forecasts
+                self.commit_records(
+                    forecast_records, on_conflict="overwrite", table=ScootForecast,
+                )
+                n_records += len(forecast_records)
 
         # Summarise updates
         self.logger.info(

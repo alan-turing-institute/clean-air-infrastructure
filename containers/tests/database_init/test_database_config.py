@@ -13,26 +13,25 @@ from cleanair.databases.tables import (
 import os
 
 
-@pytest.fixture(scope="session")
-def secretfile(tmpdir_factory):
+@pytest.fixture()
+def N_ROWS_SCOOT():
+    """Expected number of rows in scoot"""
+    return 12421
 
-    fn = tmpdir_factory.mktemp("secrets").join("db_secrets.json")
 
-    with open(fn, "w") as f:
-        f.write(
-            """
-{
-    "username": "testuser",
-    "password": "''",
-    "host": "localhost",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}
-"""
-        )
+@pytest.fixture()
+def static_data_sizes():
+    """Expected number of rows in scoot"""
 
-    return fn
+    n_rows = {
+        "scoot_detector": {"table": ScootDetector, "rows": 12421},
+        "london_boundary": {"table": LondonBoundary, "rows": 33},
+        "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
+        "street_canyon": {"table": StreetCanyon, "rows": 242547},
+        "urban_village": {"table": UrbanVillage, "rows": 747},
+    }
+
+    return n_rows
 
 
 @pytest.fixture()

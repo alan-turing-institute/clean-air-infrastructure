@@ -4,7 +4,7 @@ Class for connecting to Azure databases
 from contextlib import contextmanager
 import time
 import requests
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
@@ -23,7 +23,7 @@ class Connector(DBConnectionMixin):
     __engine = None
     __sessionfactory = None
 
-    def __init__(self, secretfile):
+    def __init__(self, secretfile, connection=None):
 
         # Pass unused arguments onwards
         super().__init__(secretfile)
@@ -34,6 +34,10 @@ class Connector(DBConnectionMixin):
 
         # Avoid repeated internet tests
         self.last_successful_connection = None
+
+        # connection for transactional connections
+        self.connection = connection
+        self.transaction = False
 
     def initialise_tables(self):
         """Ensure that all table connections exist"""
@@ -56,7 +60,12 @@ class Connector(DBConnectionMixin):
         """Access the class-level sqlalchemy sessionfactory"""
         # Initialise the class-level sessionfactory if it does not already exist
         if not self.__sessionfactory:
-            self.__sessionfactory = sessionmaker(bind=self.engine)
+            if self.connection:
+                self.logger.debug("Using a transactional connection")
+                self.transaction = True
+                self.__sessionfactory = sessionmaker(bind=self.connection)
+            else:
+                self.__sessionfactory = sessionmaker(bind=self.engine)
         # Return the class-level sessionfactory
         return self.__sessionfactory
 
@@ -87,6 +96,20 @@ class Connector(DBConnectionMixin):
         try:
             # Use the session factory to create a new session
             session = self.sessionfactory()
+            if self.transaction:
+                # Start a nested session if running tests
+                session.begin_nested()
+                self.logger.debug("In nested session")
+                # then each time that SAVEPOINT ends, reopen it
+                @event.listens_for(session, "after_transaction_end")
+                def restart_savepoint(session, transaction):
+                    if transaction.nested and not transaction._parent.nested:
+                        # ensure that state is expired the way
+                        # session.commit() at the top level normally does
+                        # (optional step)
+                        session.expire_all()
+                        session.begin_nested()
+
             if not skip_check:
                 self.check_internet_connection()
             yield session

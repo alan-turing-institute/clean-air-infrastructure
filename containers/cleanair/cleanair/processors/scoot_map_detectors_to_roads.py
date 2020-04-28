@@ -187,23 +187,12 @@ class ScootPerRoadDetectors(DBWriter, DBQueryMixin):
 
                 # Open a session and insert the road matches
                 start_session = time.time()
-                with self.dbcnxn.open_session() as session:
-                    try:
-                        # Commit and override any existing records
-                        self.commit_records(
-                            session,
-                            road_match_records,
-                            on_conflict="overwrite",
-                            table=ScootRoadMatch,
-                        )
-                        n_records += len(road_match_records)
-                    except IntegrityError as error:
-                        self.logger.error(
-                            "Failed to add road matches to the database: %s",
-                            type(error),
-                        )
-                        self.logger.error(str(error))
-                        session.rollback()
+
+                # Commit and override any existing records
+                self.commit_records(
+                    road_match_records, on_conflict="overwrite", table=ScootRoadMatch,
+                )
+                n_records += len(road_match_records)
 
                 self.logger.info(
                     "Insertion took %s", duration(start_session, time.time())

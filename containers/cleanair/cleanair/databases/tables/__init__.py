@@ -28,6 +28,7 @@ from .ukmap_tables import UKMap
 from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
 
+
 __all__ = [
     "AQEReading",
     "AQESite",

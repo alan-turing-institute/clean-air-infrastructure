@@ -349,22 +349,13 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 )
 
                 start_session = time.time()
-                with self.dbcnxn.open_session() as session:
-                    try:
-                        # Commit the records to the database
-                        self.commit_records(
-                            session,
-                            site_records,
-                            on_conflict="overwrite",
-                            table=ScootReading,
-                        )
-                        n_records_inserted += len(site_records)
-                    except IntegrityError as error:
-                        self.logger.error(
-                            "Failed to add records to the database: %s", type(error)
-                        )
-                        self.logger.error(str(error))
-                        session.rollback()
+
+                # Commit the records to the database
+                self.commit_records(
+                    site_records, on_conflict="overwrite", table=ScootReading,
+                )
+                n_records_inserted += len(site_records)
+
                 self.logger.info(
                     "Insertion took %s", green(duration(start_session, time.time())),
                 )

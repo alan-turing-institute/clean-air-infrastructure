@@ -111,13 +111,12 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
 
             # Insert from the query to reduce memory usage and database round-trips
             # NB. we must overwrite here, as we may be replacing forecasts with readings
-            with self.dbcnxn.open_session() as session:
-                self.commit_records(
-                    session,
-                    q_per_road_forecasts.subquery(),
-                    table=self.table_per_road,
-                    on_conflict="overwrite",
-                )
+
+            self.commit_records(
+                q_per_road_forecasts.subquery(),
+                table=self.table_per_road,
+                on_conflict="overwrite",
+            )
 
             # Print a final timing message
             self.logger.info(

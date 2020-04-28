@@ -186,19 +186,15 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
             for site_reading in site_readings
         ]
 
-        with self.dbcnxn.open_session() as session:
+        # Commit the records to the database
+        self.commit_records(site_records, on_conflict="ignore", table=AQEReading)
 
-            # Commit the records to the database
-            self.commit_records(
-                session, site_records, on_conflict="ignore", table=AQEReading
-            )
-
-            # Commit changes
-            self.logger.info(
-                "Committing %s records to database table %s",
-                green(len(site_readings)),
-                green(AQEReading.__tablename__),
-            )
+        # Commit changes
+        self.logger.info(
+            "Committing %s records to database table %s",
+            green(len(site_readings)),
+            green(AQEReading.__tablename__),
+        )
 
         self.logger.info("Finished %s readings update", green("AQE"))
 
