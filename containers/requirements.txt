@@ -9,3 +9,6 @@ pyflakes==2.1.1
 pylint==2.4.4
 httpie
 pytest==5.4.1
+azure-storage-blob==12.3.0
+azure-mgmt-storage==9.0.0
+azure-common==1.1.25
