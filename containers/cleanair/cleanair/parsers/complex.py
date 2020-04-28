@@ -20,7 +20,7 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     def __init__(self, datasets, **kwargs):
         super().__init__(**kwargs)
 
-        sas_args = self.add_mutually_exclusive_group(required = True)
+        sas_args = self.add_mutually_exclusive_group(required=True)
         sas_args.add_argument(
             "-t",
             "--sas-token",
@@ -30,7 +30,7 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
         sas_args.add_argument(
             "-g",
             "--generate-sas-token",
-            action='store_true',
+            action="store_true",
             help="If logged in using 'az login' generate a sas token",
         )
         self.add_argument(

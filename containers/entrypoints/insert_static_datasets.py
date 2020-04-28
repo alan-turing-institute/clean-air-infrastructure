@@ -80,10 +80,10 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
         k.value for k in storage_key_list.keys if k.key_name == "key1"
     ][0]
 
-    return '?' + generate_account_sas(
+    return "?" + generate_account_sas(
         storage_container_name,
         account_key=storage_account_key,
-        resource_types=ResourceTypes(service = True, container = True, object=True),
+        resource_types=ResourceTypes(service=True, container=True, object=True),
         permission=AccountSasPermissions(read=True, list=True),
         expiry=datetime.utcnow() + timedelta(hours=1),
     )
@@ -123,6 +123,7 @@ def download_blobs(blob_service, blob_container_name, target_directory):
 
         return target_file
 
+
 def configure_database(secretfile):
 
     db_connection = Connector(secretfile)
@@ -134,7 +135,7 @@ def setup_db(args):
 
     # Check database exists
     configure_database(args.secretfile)
-    
+
     blob_service_client = BlobServiceClient(
         account_url=args.account_url, credential=args.sas_token
     )
@@ -158,7 +159,6 @@ def setup_db(args):
             static_writer.update_remote_tables()
 
 
-
 def main():
 
     parser = DatabaseSetupParser(list(DATASETS.keys()))
@@ -172,13 +172,16 @@ def main():
 
     # Generate a SAS token
     if args.generate_sas_token:
-        sys.stdout.write(generate_sas_token(
-            args.account_url, args.resource_group, args.storage_container_name
-        ))
+        sys.stdout.write(
+            generate_sas_token(
+                args.account_url, args.resource_group, args.storage_container_name
+            )
+        )
         sys.exit(0)
 
     else:
         setup_db(args)
-        
+
+
 if __name__ == "__main__":
     main()
