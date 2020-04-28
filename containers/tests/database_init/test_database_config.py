@@ -39,7 +39,6 @@ def N_ROWS_SCOOT():
     """Expected number of rows in scoot"""
     return 12421
 
-
 @pytest.fixture()
 def static_data_sizes():
     """Expected number of rows in scoot"""
@@ -53,7 +52,6 @@ def static_data_sizes():
     }
 
     return n_rows
-
 
 def test_db_connection(secretfile):
     """Test database connection
