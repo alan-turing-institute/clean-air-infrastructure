@@ -3,23 +3,16 @@ Calculate metrics for trained models.
 """
 import os
 import logging
-from datetime import datetime, timedelta
 from uatraffic.databases import TrafficInstanceQuery, TrafficQuery, TrafficMetric
-from uatraffic.dates import (
-    NORMAL_BASELINE_START,
-    NORMAL_BASELINE_END,
-    LOCKDOWN_BASELINE_START,
-    LOCKDOWN_BASELINE_END,
-)
 from uatraffic.metric import batch_metrics
 from uatraffic.preprocess import prepare_batch
 from uatraffic.util import load_models_from_file, TrafficModelParser
 
 def main():
     """Entrypoint function for lockdown metrics."""
+    # get command line arguments
     parser = TrafficModelParser()
     parser.add_custom_subparsers()
-
     args = parser.parse_args()
 
     # query objects
@@ -37,15 +30,17 @@ def main():
         detectors = list(detector_df["detector_id"].unique())
 
     # filter by detectors
-    data_df = instance_query.get_data_config(detectors=detectors, output_type="df")
+    data_df = instance_query.get_data_config(
+        detectors=detectors,
+        baseline_period=args.baseline_period,
+        output_type="df",
+    )
 
     # dataframe of instances
     logging.info("Getting traffic instances from the database.")
-    # TODO remove fit start time
-    fit_start_time = "2020-04-25 00:00:00"
     instance_df = instance_query.get_instances_with_params(
+        tag=args.tag,
         data_ids=data_df["data_id"].to_list(),
-        fit_start_time=fit_start_time,
         output_type="df"
     )
 

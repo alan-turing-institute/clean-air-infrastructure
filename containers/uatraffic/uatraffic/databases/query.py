@@ -277,7 +277,14 @@ class TrafficInstanceQuery(DBReader):
             return readings
 
     @db_query
-    def get_data_config(self, start_time: str = None, end_time: str = None, detectors: list = None, nweeks: int = None):
+    def get_data_config(
+        self,
+        start_time: str = None,
+        end_time: str = None,
+        detectors: list = None,
+        nweeks: int = None,
+        baseline_period: str = None,
+    ):
         """
         Get the data id and config from the TrafficDataTable.
         """
@@ -305,10 +312,12 @@ class TrafficInstanceQuery(DBReader):
             if nweeks:
                 # TODO: the below method is not working due to casting problem (nweeks field is float/string not int)
                 readings = readings.filter(
-                    and_(
-                        TrafficDataTable.data_config.has_key("nweeks"),
-                        TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks
-                    )
+                    TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks
+                )
+
+            if baseline_period:
+                readings = readings.filter(
+                    TrafficDataTable.data_config["baseline_period"].astext == str
                 )
 
             return readings
@@ -329,7 +338,10 @@ class TrafficInstanceQuery(DBReader):
             readings = (
                 session.query(
                     TrafficMetric.instance_id,
-                    TrafficMetric.coverage,
+                    TrafficMetric.coverage50,
+                    TrafficMetric.coverage75,
+                    TrafficMetric.coverage95,
+                    TrafficMetric.nlpl,
                     instance_subquery.c.model_name,
                     instance_subquery.c.param_id,
                     instance_subquery.c.data_id,

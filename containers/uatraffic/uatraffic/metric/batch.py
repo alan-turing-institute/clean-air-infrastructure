@@ -2,6 +2,7 @@
 Methods for batching metric calculation.
 """
 
+import logging
 from concurrent import futures
 
 import pandas as pd
@@ -11,7 +12,7 @@ import tensorflow as tf
 from .coverage import percent_coverage
 from .nlpl import nlpl
 
-def evaluate(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf.Tensor) -> dict:
+def evaluate_metrics(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf.Tensor) -> dict:
     """
     Run all metrics on a model given input data and actual observations.
 
@@ -43,10 +44,12 @@ def batch_metrics(ids: list, models: list, x_tests: list, y_tests: list) -> pd.D
     Returns:
         NLPL and coverage metrics with a column for ids.
     """
+    logging.info("Evaluating metrics for %s instance in batch model.")
     rows = []
+    # start as many processes as number of CPUs
     with futures.ProcessPoolExecutor() as executor:
         for instance_id, results in zip(ids, executor.map(
-            evaluate, models, x_tests, y_tests
+            evaluate_metrics, models, x_tests, y_tests
         )):
             rows.append(dict(results, instance_id=instance_id))
     return pd.DataFrame(rows)

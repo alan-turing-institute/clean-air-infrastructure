@@ -15,6 +15,9 @@ class InstanceTableMixin:
     git_hash = Column(String(40), nullable=False, index=False)
     fit_start_time = Column(TIMESTAMP, primary_key=False, nullable=False)
     cluster_id = Column(String(64), nullable=False, index=False)
+    model_name = Column(String(64), nullable=False, index=False)
+    param_id = Column(String(64), nullable=False, index=False)
+    data_id = Column(String(64), nullable=False, index=False)
 
     def __repr__(self):
         vals = [

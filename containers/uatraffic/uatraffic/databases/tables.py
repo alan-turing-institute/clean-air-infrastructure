@@ -19,25 +19,12 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
 
     __tablename__ = "traffic_instance"
 
-    model_name = Column(
-        String(64),
-        nullable=False,
-        index=False,
-    )
-    param_id = Column(
-        String(64),
-        nullable=False,
-        index=False,
-    )
-    data_id = Column(
-        String(64),
-        nullable=False,
-        index=False,
-    )
-
     __table_args__ = (
         ForeignKeyConstraint(
-            [model_name, param_id],
+            InstanceTableMixin.data_id, TrafficDataTable.data_id
+        ),
+        ForeignKeyConstraint(
+            [InstanceTableMixin.model_name, InstanceTableMixin.param_id],
             [TrafficModelTable.model_name, TrafficModelTable.param_id]
         ),
         {"schema": "gla_traffic"}
@@ -57,11 +44,10 @@ class TrafficMetric(Base):
         primary_key=True,
         nullable=False,
     )
-    coverage = Column(
-        Float,
-        nullable=False,
-        index=False,
-    )
+    coverage50 = Column(Float, nullable=False, index=False)
+    coverage75 = Column(Float, nullable=False, index=False)
+    coverage95 = Column(Float, nullable=False, index=False)
+    nlpl = Column(Float, nullable=False, index=False)
 
     def __repr__(self):
         vals = [
