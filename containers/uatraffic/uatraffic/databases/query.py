@@ -305,6 +305,7 @@ class TrafficInstanceQuery(DBReader):
                 )
 
             if end_time:
+                # TODO: should this be strictly less than?
                 readings = readings.filter(
                     TrafficDataTable.data_config["end"].astext <= end_time
                 )
@@ -317,7 +318,7 @@ class TrafficInstanceQuery(DBReader):
 
             if baseline_period:
                 readings = readings.filter(
-                    TrafficDataTable.data_config["baseline_period"].astext == str
+                    TrafficDataTable.data_config["baseline_period"].astext == baseline_period
                 )
 
             return readings

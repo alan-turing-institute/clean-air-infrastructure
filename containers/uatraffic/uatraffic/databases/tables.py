@@ -21,12 +21,16 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            InstanceTableMixin.data_id, TrafficDataTable.data_id
+            ["data_id"], ["gla_traffic.traffic_data.data_id"]
         ),
         ForeignKeyConstraint(
-            [InstanceTableMixin.model_name, InstanceTableMixin.param_id],
-            [TrafficModelTable.model_name, TrafficModelTable.param_id]
+            ["model_name", "param_id"],
+            ["gla_traffic.traffic_model.model_name", "gla_traffic.traffic_model.param_id"]
         ),
+        # ForeignKeyConstraint(
+        #     [InstanceTableMixin.model_name, InstanceTableMixin.param_id],
+        #     [TrafficModelTable.model_name, TrafficModelTable.param_id]
+        # ),
         {"schema": "gla_traffic"}
     )
 

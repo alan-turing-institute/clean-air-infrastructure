@@ -50,7 +50,7 @@ def main():
     x_array, y_array = prepare_batch(instance_df, args.secretfile)
 
     # run metrics in batch mode
-    logging.info("Evaluating metrics in batch mode.")
+    logging.info("Evaluating metrics in batch mode.", len(instance_df))
     metrics_df = batch_metrics(instance_df["instance_id"], models, x_array, y_array)
 
     # upload metrics to DB

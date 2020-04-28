@@ -25,9 +25,9 @@ def evaluate_metrics(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf
         Dictionary where keys are the name of a metric and values are the evaluated metric.
     """
     return dict(
-        coverage95=percent_coverage(model, x_test, y_test, quantile=95),
+        coverage95=percent_coverage(model, x_test, y_test, quantile=0.95),
         coverage75=percent_coverage(model, x_test, y_test, quantile=0.75),
-        coverage50=percent_coverage(model, x_test, y_test, quantile=50),
+        coverage50=percent_coverage(model, x_test, y_test, quantile=0.50),
         nlpl=nlpl(model, x_test, y_test),
     )
 
