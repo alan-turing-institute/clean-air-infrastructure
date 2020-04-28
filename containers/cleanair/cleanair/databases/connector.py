@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
+from sqlalchemy_utils import database_exists, create_database
 from .base import Base
 from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
@@ -67,8 +68,16 @@ class Connector(DBConnectionMixin):
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""
         with self.engine.connect() as cnxn:
+            self.logger.info("Ensuring database extenstions created")
             cnxn.execute('CREATE EXTENSION IF NOT EXISTS "postgis";')
             cnxn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+
+    def ensure_database_exists(self):
+        """Ensure the database exists"""
+        self.logger.debug("Ensuring database exists")
+        if not database_exists(self.connection_string):
+            self.logger.warning("DATABASE does not exist. Creating database")
+            create_database(self.connection_string)
 
     @contextmanager
     def open_session(self, skip_check=False):

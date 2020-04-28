@@ -14,7 +14,7 @@ from ..mixins import (
 )
 
 
-class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
+class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
     """Argument parsing for inserting static datafiles"""
 
     def __init__(self, datasets, **kwargs):
@@ -63,13 +63,6 @@ class DatabaseSetupParser(SecretFileParserMixin, ArgumentParser):
             choices=datasets,
             default=datasets,
             help="A list of datasets to include",
-        )
-        self.add_argument(
-            "-v",
-            "--verbose",
-            action="count",
-            default=0,
-            help="Increase verbosity by one step for each occurence",
         )
 
 
