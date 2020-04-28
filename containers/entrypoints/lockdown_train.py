@@ -93,7 +93,7 @@ def main():
             variance=args.variance,
         )
     )
-    model_params = {key: args.key for key in parser.MODEL_GROUP}
+    model_params = {key: vars(args)[key] for key in parser.MODEL_GROUP}
     model_params["kernel"] = kernel_dict
 
     # store instances in arrays
