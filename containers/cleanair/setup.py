@@ -15,6 +15,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
+        
         "boto3==1.10.37",
         "colorlog==4.0.2",
         "geoalchemy2==0.6.3",
@@ -29,6 +30,7 @@ setuptools.setup(
         "requests==2.22.0",
         "scipy==1.4.1",
         "sqlalchemy==1.3.11",
+        "sqlalchemy-utils==0.36.3",
         "termcolor==1.1.0",
         "uuid==1.30",
     ],
