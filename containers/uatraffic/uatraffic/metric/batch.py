@@ -3,6 +3,7 @@ Methods for batching metric calculation.
 """
 
 import logging
+from typing import Iterable
 from concurrent import futures
 
 import pandas as pd
@@ -31,7 +32,12 @@ def evaluate_metrics(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf
         nlpl=nlpl(model, x_test, y_test),
     )
 
-def batch_metrics(ids: list, models: list, x_tests: list, y_tests: list) -> pd.DataFrame:
+def batch_metrics(
+    ids: Iterable,
+    models: list,
+    x_tests: list,
+    y_tests: list,
+) -> pd.DataFrame:
     """
     Multi-process function for sampling from each model on x_test and evaluating against y_test.
 
@@ -39,17 +45,25 @@ def batch_metrics(ids: list, models: list, x_tests: list, y_tests: list) -> pd.D
         ids: List of instance ids.
         models: List of gpflow models.
         x_tests: List of numpy arrays of input data.
-        y_tetss: List of numpy arrays of actual count data.
+        y_tests: List of numpy arrays of actual count data.
 
     Returns:
         NLPL and coverage metrics with a column for ids.
     """
-    logging.info("Evaluating metrics for %s instance in batch model.")
+    logging.info("Evaluating metrics for %s instance in batch model.", len(ids))
     rows = []
-    # start as many processes as number of CPUs
-    with futures.ProcessPoolExecutor() as executor:
-        for instance_id, results in zip(ids, executor.map(
-            evaluate_metrics, models, x_tests, y_tests
-        )):
-            rows.append(dict(results, instance_id=instance_id))
+
+    # start as many threads as number of CPUs
+    with futures.ThreadPoolExecutor() as executor:
+        tasks = {
+            executor.submit(evaluate_metrics, model, x_test, y_test): instance_id
+            for instance_id, model, x_test, y_test in zip(
+                ids, models, x_tests, y_tests
+            )
+        }
+        for future in futures.as_completed(tasks):
+            logging.debug("Evaluated instance %s", tasks[future])
+            rows.append(dict(**future.result(), instance_id=tasks[future]))
+
+    logging.info("Finished evaluating metrics in batch mode.")
     return pd.DataFrame(rows)
