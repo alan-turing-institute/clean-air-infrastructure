@@ -25,6 +25,7 @@ def secretfile(tmpdir_factory):
 
     return fn
 
+
 @pytest.fixture(scope="module")
 def engine(secretfile):
     """Create and engine fixture"""
@@ -32,11 +33,12 @@ def engine(secretfile):
 
     return create_engine(connection_str)
 
+
 @pytest.fixture(scope="function")
 def connection(engine):
     """Create a connection fixture"""
-    connection = engine.connect()
-    transaction = connection.begin()
-    yield connection
+    conn = engine.connect()
+    transaction = conn.begin()
+    yield conn
     transaction.rollback()
-    connection.close()
+    conn.close()

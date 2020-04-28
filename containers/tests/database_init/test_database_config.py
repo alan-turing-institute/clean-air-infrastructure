@@ -39,6 +39,7 @@ def N_ROWS_SCOOT():
     """Expected number of rows in scoot"""
     return 12421
 
+
 @pytest.fixture()
 def static_data_sizes():
     """Expected number of rows in scoot"""
@@ -49,9 +50,11 @@ def static_data_sizes():
         "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
         "street_canyon": {"table": StreetCanyon, "rows": 242547},
         "urban_village": {"table": UrbanVillage, "rows": 747},
+        "ukmap": {"table": UKMap, "rows": 0},
     }
 
     return n_rows
+
 
 def test_db_connection(secretfile):
     """Test database connection
@@ -71,6 +74,7 @@ def test_static_tables_filled(secretfile, static_data_sizes):
 
             return session.query(table)
 
-    for _, table_dict in static_data_sizes.items():
-
+    for table_name, table_dict in static_data_sizes.items():
+        count = query_table(table_dict["table"]).count()
+        print(f"Table {table_name} has {count} rows. Expecting {table_dict['rows']}")
         assert query_table(table_dict["table"]).count() == table_dict["rows"]
