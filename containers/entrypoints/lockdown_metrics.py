@@ -43,12 +43,11 @@ def main():
         data_ids=data_df["data_id"].to_list(),
         output_type="df"
     )
+    # load models from file
+    models = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
 
     # get the x and y
     x_array, y_array = prepare_batch(instance_df, args.secretfile)
-    
-    # load models from file
-    models = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
 
     # run metrics in batch mode
     logging.info("Evaluating metrics in batch mode.")
@@ -57,7 +56,8 @@ def main():
     # upload metrics to DB
     try:
         logging.info("Inserting %s records into the traffic metrics table.", len(metrics_df))
-        upload_records = metrics_df[["instance_id", "coverage"]].to_dict("records")
+        record_cols = ["instance_id", "coverage50", "coverage75", "coverage95", "nlpl"]
+        upload_records = metrics_df[record_cols].to_dict("records")
         with traffic_query.dbcnxn.open_session() as session:
             traffic_query.commit_records(
                 session, upload_records, table=TrafficMetric, on_conflict="overwrite"
