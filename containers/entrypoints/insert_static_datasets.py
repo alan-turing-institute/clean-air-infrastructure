@@ -79,13 +79,13 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
         k.value for k in storage_key_list.keys if k.key_name == "key1"
     ][0]
 
-    return "?" + generate_account_sas(
+    return "'?" + generate_account_sas(
         storage_container_name,
         account_key=storage_account_key,
         resource_types=ResourceTypes(service=True, container=True, object=True),
         permission=AccountSasPermissions(read=True, list=True),
-        expiry=datetime.utcnow() + timedelta(hours=1),
-    )
+        expiry=datetime.utcnow() + timedelta(days=1),
+    ) + "'"
 
 
 def download_blobs(blob_service, blob_container_name, target_directory):

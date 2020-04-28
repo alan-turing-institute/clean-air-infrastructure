@@ -16,7 +16,7 @@ def secretfile(tmpdir_factory):
     "username": "postgres",
     "password": "''",
     "host": "localhost",
-    "port": 5432,
+    "port": 5433,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
 }
