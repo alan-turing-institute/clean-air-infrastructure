@@ -166,8 +166,7 @@ def main():
     # Set up logging
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
-
-    # logging.getLogger("azure").setLevel(logging.WARNING)
+    logging.getLogger("azure").setLevel(logging.WARNING)
 
     # Generate a SAS token
     if args.generate_sas_token:
