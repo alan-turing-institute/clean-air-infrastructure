@@ -13,7 +13,7 @@ def secretfile(tmpdir_factory):
         f.write(
             """
 {
-    "username": "testuser",
+    "username": "postgres",
     "password": "''",
     "host": "localhost",
     "port": 5432,

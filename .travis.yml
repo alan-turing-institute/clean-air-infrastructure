@@ -38,7 +38,7 @@ before_script:
 script:
   
   # # Run all pytest unit tests
-  # - python -m pytest -v tests --cov containers --cov-report term-missing
+  - python -m pytest -s
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8 --ignore=E203, W503
