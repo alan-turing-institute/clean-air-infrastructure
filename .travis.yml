@@ -12,7 +12,7 @@ jobs:
         - pip install 'containers/cleanair[models,traffic,dashboard]'
         - pip install 'containers/uatraffic'
     - stage: "Linting and tests"
-      name": "Run linting"
+      name: "Run linting"
       script:
         # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
         - flake8 --ignore=E203, W503
