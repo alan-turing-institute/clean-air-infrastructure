@@ -1,7 +1,7 @@
 language: python
-cache: pip
 python:
   - "3.7"
+cache: pip
 
 jobs:
   include:
@@ -11,16 +11,13 @@ jobs:
         - pip install -r containers/requirements.txt
         - pip install 'containers/cleanair[models,traffic,dashboard]'
         - pip install 'containers/uatraffic'
-
     - stage: "Linting and tests"
       name": "Run linting"
       script:
         # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
         - flake8 --ignore=E203, W503
-
         # Check black formatting would not make any chages
         - black --check */
-
         # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --disable=C0330 */ --ignore=cleanair,urbanair,uatraffic
