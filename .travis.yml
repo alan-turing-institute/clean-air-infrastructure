@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.7"
+cache: pip
 
 jobs:
   include:
@@ -12,12 +13,9 @@ jobs:
         - pip install 'containers/uatraffic'
       script:
         - python --version
-      cache:
-        directories:
-          - $HOME/.cache/pip
 
     - stage: test
-      script: HOME/.cache/pip list
+      script: pip list
     # - stage: "Linting and tests"
     #   name: "Run linting"
     #   script:
