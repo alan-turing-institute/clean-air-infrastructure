@@ -17,10 +17,7 @@ jobs:
           - $HOME/.cache/pip
 
     - stage: test
-      cache:
-          directories:
-            - $HOME/.cache/pip
-      script: pip list
+      script: HOME/.cache/pip list
     # - stage: "Linting and tests"
     #   name: "Run linting"
     #   script:
