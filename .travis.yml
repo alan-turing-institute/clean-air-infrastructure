@@ -13,7 +13,8 @@ jobs:
         - pip install 'containers/uatraffic'
       script:
         - python --version
-    - stage: testscript: pip list
+    - stage: test
+      script: pip list
     # - stage: "Linting and tests"
     #   name: "Run linting"
     #   script:
