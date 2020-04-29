@@ -10,7 +10,7 @@ jobs:
       install:
         - pip install -r containers/requirements.txt
         - pip install 'containers/cleanair[models,traffic,dashboard]'
-        - pip install 'containers/uatraffic'
+        # - pip install 'containers/uatraffic'
 
     - stage: "Linting and tests"
       name: "Run linting"
@@ -25,7 +25,7 @@ jobs:
         - pylint --disable=C0330 containers/cleanair/*
         # - pylint --disable=C0330 containers/urbanair/*
         - pylint --disable=C0330 containers/uatraffic/*
-        
+
     - name: "Run tests"
       addons:
         postgresql: '11'
