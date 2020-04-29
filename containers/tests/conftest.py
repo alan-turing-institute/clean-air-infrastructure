@@ -14,7 +14,7 @@ LOCAL_SECRET = """
 }
 """
 
-TRAVIS_SECRET =  """
+TRAVIS_SECRET = """
 {
     "username": "postgres",
     "password": "''",
@@ -25,10 +25,12 @@ TRAVIS_SECRET =  """
 }
 """
 
+
 def pytest_addoption(parser):
     parser.addoption(
         "--travis", action="store_true", default=False, help="Use travis secretfile"
     )
+
 
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
@@ -45,13 +47,12 @@ def secretfile(request, tmpdir_factory):
     return fn
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def engine(secretfile):
     """Create and engine fixture"""
     connection_str = DBConnectionMixin(secretfile).connection_string
 
     return create_engine(connection_str)
-
 
 @pytest.fixture(scope="function")
 def connection(engine):
