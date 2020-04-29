@@ -44,6 +44,7 @@ def normalise_datetime(
     else:
         raise ValueError("wrt must be either hour or epoch. You passed {arg}".format(arg=wrt))
 
+    time_df = time_df.sort_values("time_norm")
     return time_df
 
 def normalise_location(space_df: pd.DataFrame, x_col="lon", y_col="lat") -> pd.DataFrame:

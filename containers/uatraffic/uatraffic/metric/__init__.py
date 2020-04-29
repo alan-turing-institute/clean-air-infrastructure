@@ -8,7 +8,7 @@ from .batch import evaluate_metrics
 
 __all__ = [
     "batch_metrics",
-    "evaluate",
+    "evaluate_metrics",
     "percent_coverage",
     "percent_of_baseline",
 ]

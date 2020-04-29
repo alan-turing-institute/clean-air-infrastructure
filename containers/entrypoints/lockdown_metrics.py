@@ -47,7 +47,10 @@ def main():
     models = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
 
     # get the x and y
-    x_array, y_array = prepare_batch(instance_df, args.secretfile)
+    x_array, y_array = prepare_batch(
+        instance_df,
+        args.secretfile,
+    )
 
     # run metrics in batch mode
     metrics_df = batch_metrics(instance_df["instance_id"], models, x_array, y_array)

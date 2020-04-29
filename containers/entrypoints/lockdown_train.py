@@ -161,9 +161,6 @@ def main():
     x_array, y_array = prepare_batch(
         instance_df,
         args.secretfile,
-        args.normaliseby,
-        x_cols=x_cols,
-        y_cols=y_cols
     )
     # iterate through instances training the model
     for instance, x_train, y_train in zip(instance_array, x_array, y_array):
