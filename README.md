@@ -151,6 +151,7 @@ az account set --subscription "CleanAir"
 In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
 
 ```bash 
+brew install postgres
 brew services start postgresql   
 ```
 
@@ -170,9 +171,8 @@ echo '{
 
 ## Static data
 
-We can now insert `static data` into our local test database.
+The database requires a number of static datasets. We can now insert `static data` into our local database.
 To do so you will need a SAS Token to access static datafiles stored on Azure. 
-
 
 ### Get a SAS token
 
@@ -186,15 +186,33 @@ Otherwise you must request a SAS token from an infrastructure developer.
 
 ### Insert data into the database
 
-Build the dockler image:
+Once you have a SAS token run the following using the SAS token you were provided with:
+
 ```bash
-docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"
+SAS_TOKEN=<SAS_TOKEN>
 ```
 
-Run the container:
+Create a variable with the location of your secrets file
+
 ```bash
-docker run -v $(pwd)/.secrets:/secrets insert_static_data:latest -t <sas_token> -s db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/db_secrets_offline.json
 ```
+
+You can then download and insert all static data into the database by running the following:
+
+```bash
+python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+```
+
+If you  would also like to add `UKMAP` to the database run:
+
+```bash
+python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
+```
+
+`UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests with `UKMAP` at the moment. 
+
+
 # Infrastructure Deployment
 The following steps are needed to setup the Clean Air cloud infrastructure.
 
@@ -203,12 +221,6 @@ Login to Travis with your github credentials, making sure you are in the Clean A
 
 ```bash
 travis login --pro
-```
-
-## Setup Azure
-To start working with `Azure`, you must first login to your account from the terminal:
-```bash
-az login
 ```
 
 Check which `Azure` subscriptions you have access to by running
@@ -224,7 +236,10 @@ az account set --subscription "CleanAir"
 Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the `NAME`, `ID` and `PASSWORD/SECRET` for the service principal, as these will be needed later.
 
 
-## Setup Terraform with Python
+# DANGER ZONE :skull:
+The following sections make changes to the Cloud Infrastructure. Do not use if you don't know what you are doing. 
+
+## Setup Terraform with Python  
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 
