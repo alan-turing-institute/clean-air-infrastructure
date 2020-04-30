@@ -176,7 +176,7 @@ To do so you will need a SAS Token to access static datafiles stored on Azure.
 
 ### Get a SAS token
 
-If you have access Azure and you have logged in from the [command line](login-to-Azure) you can obtain a SAS token by running:
+If you have access Azure and you have logged in from the [command line](#login-to-Azure) you can obtain a SAS token by running:
 
 ```bash
 SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
