@@ -1,5 +1,5 @@
 import pytest
-from cleanair.databases import DBConfig, Connector
+from cleanair.databases import DBConfig, Connector, DBWriter
 
 
 @pytest.fixture(scope="function")
@@ -29,6 +29,24 @@ def schema():
 def roles():
     return ["readonly", "readwrite"]
 
+@pytest.fixture()
+def readonly_user_login():
+    return {'username': 'HCarlo', 'password': 'areallybadpassword'}
+
+@pytest.fixture()
+def readonly_secretfile(readonly_user_login):
+
+    secret = """
+{{
+    "username": {username},
+    "password": "{password}",
+    "host": "localhost",
+    "port": 5433,
+    "db_name": "cleanair_test_db",
+    "ssl_mode": "prefer"
+}}""".format(**readonly_user_login)
+
+    return secret
 
 def test_load_yaml(secretfile, config_file):
     """Test that we can load yaml and read config file"""
@@ -67,15 +85,20 @@ def test_create_and_list_roles(secretfile, config_file, roles, connection):
 
     assert set(roles).issubset(set(retrieved_roles))
 
-def test_configure_role(secretfile, config_file, connection):
+def test_configure_role(secretfile, config_file, connection, readonly_user_login, readonly_secretfile):
 
     db_config = DBConfig(config_file, secretfile, connection=connection)
-    
     db_config.create_schema()
     db_config.configure_all_roles()
 
-
+    # Create a new user and grant readonly role
+    db_config.create_user(readonly_user_login['username'], readonly_user_login['password'])
+    db_config.grant_role_to_user(readonly_user_login['username'], 'readonly')
     
+    
+    # conn = DBWriter(
+    #     secretfile=readonly_secretfile, initialise_tables=True, connection=connection
+    # )
 
 # def test_assign_role_connect(secretfile, config_file, connection_module):
 

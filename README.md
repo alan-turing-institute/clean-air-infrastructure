@@ -20,28 +20,30 @@ To contribute to the project please speak to one of the following:
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)| <ohamelijnck@turing.ac.uk> |
 
 
-## Prerequisites
+# Non-infrastructure development
+
+To contribute as a non-infrastructure developer you will need the following. Infrastructure developers will need these as well as additional dependencies.
+
 To contribute to the project you will need the following (details below):
 
-### Infrastructure development
-- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
-- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
-- `Terraform` (for configuring the Azure infrastructure)
-
-### All development
-- `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 - `Docker` (For building and testing images locally)
 - `postgreSQL` (command-line tool for interacting with db)
 
+### PostgreSQL
+```bash
+brew install postgresql
+```
 
-## Azure Account
-If you do not have an `Azure` account already, please contact one of the project maintainers
+### Docker
 
-## Azure CLI
-If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started.
 
-## CleanAir Packages (optional - required for development)
-The following are optional as we can run everything on docker images. However, they are recommended for development/testing. 
+
+### Development tools
+The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
+
+```bash
+pip install -r containers/requirements.txt
+```
 
 ### CleanAir package
 To run the CleanAir functionality locally (without a docker image) you can install the package with `pip`. 
@@ -56,7 +58,6 @@ Certain functionality requires optional dependencies. These can be installed by 
 
 | Option keyword   | Functionality               |
 | ------------------ | --------------------------- |
-| setup              | Database static data inserts|
 | models             | CleanAir GPFlow models      |
 | traffic            | FBProphet Trafic Models     |
 | dashboards         | Model fitting Dashboards    |
@@ -64,7 +65,7 @@ Certain functionality requires optional dependencies. These can be installed by 
 For getting started we recommend:
 
 ```bash
-pip install -e 'containers/cleanair[setup]'
+pip install -e 'containers/cleanair[models, traffic, dashboard]'
 ```
 
 ### UrbanAir Flask API package
@@ -78,20 +79,37 @@ All additional  functionality related to the London Busyness project requires:
 pip install -e 'containers/uatraffic'
 ```
 
+# Infrastructure development/deployment
+Cloud infrastructure developers also require the following:
+
+### Infrastructure development
+- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
+- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
+- `Terraform` (for configuring the Azure infrastructure)
+- `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
+
+## Azure Account
+If you do not have an `Azure` account already, please contact one of the project maintainers
+
+## Azure CLI
+If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
+
+
 ## Travis CI CLI
 Ensure you have Ruby 1.9.3 or above installed:
 ```bash
-ruby -v
+brew install ruby
+gem update --system
 ```
 
 Then install the Travis CI CLI with:
 ```bash
-gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
+gem install  travis --no-rdoc --no-ri
 ```
 
 On some versions of OSX, this fails, so you may need the following alternative:
 ```
-ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
+ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future gem install --user-install travis -v 1.8.13 --no-document
 ```
 
 Verify with
@@ -106,12 +124,7 @@ export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
 
-## PostgreSQL
-```bash
-brew install postgresql
-```
-
-## Terraform (Infrastructure deployment only)
+## Terraform 
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
@@ -131,15 +144,8 @@ Start a postgres session with:
 psql postgres
 ```
 
-Finally create a new database and exit postgres:
-
-```psql
-CREATE DATABASE cleanair_test_db;
-\q
-```
-
 ## Create a local secrets file
-We use secret files to pass secrets to CleanAir programs. 
+We use secret files to pass secrets to CleanAir programs. We need to create two, one to work with docker and another for running tests locally.
 ```bash
 mkdir -p .secrets
 echo '{
@@ -150,6 +156,14 @@ echo '{
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
 }' >> .secrets/db_secrets_offline.json
+echo '{
+    "username": "postgres",
+    "password": "''",
+    "host": "localhost",
+    "port": 5432,
+    "db_name": "cleanair_test_db",
+    "ssl_mode": "prefer"
+}' >> .secrets/db_secrets_local_offline.json
 ```
 
 ## Static data
