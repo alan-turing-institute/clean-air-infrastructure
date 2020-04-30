@@ -8,7 +8,7 @@ Provides 48h high-resolution air pollution forecasts over London via the [UrbanA
 Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
 
-# Contributing
+# Contributing :art:
 
 To contribute to the project please speak to one of the following:
 
@@ -20,7 +20,7 @@ To contribute to the project please speak to one of the following:
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)| <ohamelijnck@turing.ac.uk> |
 
 
-# Non-infrastructure development
+# Non-infrastructure development :sparkles:
 
 To contribute as a non-infrastructure developer you will need the following. Infrastructure developers will need these as well as additional dependencies.
 
@@ -78,7 +78,7 @@ All additional  functionality related to the London Busyness project requires:
 pip install -e 'containers/uatraffic'
 ```
 
-# Infrastructure development/deployment
+# Infrastructure development/deployment :building_construction:
 Cloud infrastructure developers also require the following:
 
 ### Infrastructure development
