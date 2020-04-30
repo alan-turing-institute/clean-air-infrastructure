@@ -80,7 +80,7 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
     ][0]
 
     return (
-        "'?"
+        "?"
         + generate_account_sas(
             storage_container_name,
             account_key=storage_account_key,
@@ -88,7 +88,7 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
             permission=AccountSasPermissions(read=True, list=True),
             expiry=datetime.utcnow() + timedelta(days=1),
         )
-        + "'"
+        
     )
 
 
