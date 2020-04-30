@@ -36,8 +36,6 @@ class Connector(DBConnectionMixin):
         # Avoid repeated internet tests
         self.last_successful_connection = None
 
-        self.ensure_database_exists()
-
         # connection for transactional connections
         self.connection = connection
         self.transaction = False

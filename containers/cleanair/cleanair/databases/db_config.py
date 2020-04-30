@@ -293,6 +293,17 @@ class DBConfig(Connector):
             None
         """
 
-        pass
+        self.logger.info("Granting role %s to user %s", role, username)
+
+        with self.open_session() as session:
+
+            session.execute(
+                text(
+                    "GRANT {} TO {}".format(
+                        role, username
+                    )
+                )
+            )
+            session.commit()
 
         
