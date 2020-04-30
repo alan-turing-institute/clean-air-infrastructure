@@ -56,6 +56,15 @@ def prepare_batch(
         data_df = normalise_datetime(data_df, wrt=model_params["normaliseby"])
 
         # add to dicts
+        if getattr(model_params, "median"):
+            gb = data_df.groupby(data_config["x_cols"])
+            median = gb[data_config["y_cols"]].median
+            x_train = np.array(gb.index)
+            y_train = np.array(median)
+            # TODO remove assert
+            assert x_train.shape[0] == 24
+        else:
+
         x_dict[data_id] = tf.convert_to_tensor(
             np.array(data_df[data_config["x_cols"]]).astype(np.float64))
         y_dict[data_id] = tf.convert_to_tensor(

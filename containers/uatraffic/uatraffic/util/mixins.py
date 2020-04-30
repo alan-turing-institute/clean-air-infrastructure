@@ -28,6 +28,7 @@ class ModellingParserMixin:
         "n_inducing_points",
         "inducing_point_method",
         "max_iterations",
+        "median",
         "model_name",
         "normaliseby",
     ]
@@ -64,6 +65,11 @@ class ModellingParserMixin:
             default="clipped_hour",
             choices=["clipped_hour", "hour", "epoch"],
             help="The method for normalizing time.",
+        )
+        modelling_group.add_argument(
+            "--median",
+            action="store_true",
+            help="Train models on the median of the daily profile.",
         )
 
 class KernelParserMixin:
