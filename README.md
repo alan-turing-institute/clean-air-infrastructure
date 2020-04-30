@@ -35,8 +35,7 @@ brew install postgresql
 ```
 
 ### Docker
-
-
+Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -131,17 +130,28 @@ The Azure infrastructure is managed with `Terraform`. To get started [download `
 brew install terraform
 ```
 
+## Login to Azure
+
+To start working with `Azure`, you must first login to your account from the terminal:
+```bash
+az login
+```
+
+Check which `Azure` subscriptions you have access to by running
+```bash
+az account list --output table --refresh
+```
+
+Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+```bash
+az account set --subscription "CleanAir"
+```
+
 # Configure a Local Database
 In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
 
 ```bash 
 brew services start postgresql   
-```
-
-Start a postgres session with:
-
-```bash
-psql postgres
 ```
 
 ## Create a local secrets file
@@ -151,19 +161,11 @@ mkdir -p .secrets
 echo '{
     "username": "postgres",
     "password": "''",
-    "host": "host.docker.internal",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_offline.json
-echo '{
-    "username": "postgres",
-    "password": "''",
     "host": "localhost",
     "port": 5432,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_local_offline.json
+}' >> .secrets/db_secrets_offline.json
 ```
 
 ## Static data
@@ -174,10 +176,10 @@ To do so you will need a SAS Token to access static datafiles stored on Azure.
 
 ### Get a SAS token
 
-If you are an infrastructure developer you can obtain a SAS token by running:
+If you have access Azure and you have logged in from the [command line](login-to-Azure) you can obtain a SAS token by running:
 
 ```bash
-INSERT INSTRUCTIONS
+SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
 ```
 
 Otherwise you must request a SAS token from an infrastructure developer.
