@@ -212,6 +212,13 @@ python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRET
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests with `UKMAP` at the moment. 
 
+### Check the database configuration
+
+You can check everything configured correctly by running:
+
+```bash
+pytest containers/tests/database_init
+```
 
 # Infrastructure Deployment
 The following steps are needed to setup the Clean Air cloud infrastructure.
