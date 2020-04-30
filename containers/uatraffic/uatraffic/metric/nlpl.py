@@ -3,14 +3,15 @@ Negative log predicted likelihood.
 """
 import logging
 import numpy as np
+import tensorflow as tf
 import gpflow
 from scipy.stats import poisson
 
 
 def nlpl(
     model: gpflow.models.GPModel,
-    x_test: np.array,
-    y_test: np.array,
+    x_test: tf.Tensor,
+    y_test: tf.Tensor,
     num_pertubations: int = 1000
 ) -> float:
     """
@@ -25,7 +26,7 @@ def nlpl(
     Returns:
         The negativate log predicted likelihood.
     """
-    # draw samples
+    # draw samples from predictive intensity
     intensity_sample = np.exp(model.predict_f_samples(x_test, num_pertubations))   # (S, N, 1)
     
     # sum the intensity and divide by N (number of observations)

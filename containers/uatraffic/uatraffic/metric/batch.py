@@ -3,7 +3,7 @@ Methods for batching metric calculation.
 """
 
 import logging
-from typing import Iterable
+from collections.abc import Collection
 from concurrent import futures
 
 import pandas as pd
@@ -33,10 +33,10 @@ def evaluate_metrics(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf
     )
 
 def batch_metrics(
-    ids: Iterable,
-    models: list,
-    x_tests: list,
-    y_tests: list,
+    ids: Collection,
+    models: Collection[gpflow.models.GPModel],
+    x_tests: Collection[tf.Tensor],
+    y_tests: Collection[tf.Tensor],
 ) -> pd.DataFrame:
     """
     Multi-process function for sampling from each model on x_test and evaluating against y_test.
@@ -50,6 +50,7 @@ def batch_metrics(
     Returns:
         NLPL and coverage metrics with a column for ids.
     """
+    assert len(ids) == len(models) == len(x_tests) == len(y_tests)
     logging.info("Evaluating metrics for %s instance in batch model.", len(ids))
     rows = []
 

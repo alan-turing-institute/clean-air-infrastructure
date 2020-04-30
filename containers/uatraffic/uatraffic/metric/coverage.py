@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def percent_coverage(model, x_test, y_test, quantile: int = 0.9, num_samples: int = 1000, num_pertubations: int = 1000, debug=False):
+def percent_coverage(model, x_test, y_test, quantile: float = 0.9, num_samples: int = 1000, num_pertubations: int = 1000, debug=False):
     """
     Computes percentage coverage.
 

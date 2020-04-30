@@ -77,7 +77,7 @@ def simple_training_loop(
     optimizer: tf.optimizers.Optimizer,
     max_iterations: int = 2000,
     logging_freq: int = 10,
-    num_batches_per_epoch: int = 10
+    num_batches_per_epoch: int = 1
 ):
     """
     Iterate train a model for n iterations.
@@ -92,6 +92,7 @@ def simple_training_loop(
 
     tf_optimization_step = tf.function(optimization_step)
     for epoch in range(max_iterations):
+        # TODO: remove/ add to this step
         for _ in range(num_batches_per_epoch):
             tf_optimization_step(model, x_train, y_train)
 
