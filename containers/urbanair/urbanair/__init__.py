@@ -31,7 +31,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(index_bp)
-    app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
+    # app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
 
     # Configure exceptions
     exceptions.error_handler(app)
