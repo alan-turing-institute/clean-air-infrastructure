@@ -9,7 +9,17 @@ from ..loggers import get_logger, green, red
 class DBConnectionMixin:
     """Create database connection strings"""
 
-    def __init__(self, secretfile):
+    def __init__(self, secretfile, secret_dict=None):
+        """Generates connection strings for postgresql database
+
+        Args:
+            secretfile (str): Path to a secret file (json). 
+                              Can be the full path to secrets file 
+                              or a filename if the secret is in a directory called '/secrets'
+            secret_dict (dict): A dictionary of login secrets. Will override variables in the json secrets file
+                                if both provided
+
+        """
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -17,11 +27,37 @@ class DBConnectionMixin:
 
         # Get database connection string
         self.connection_info = self.load_connection_info(secretfile)
+
+        if secret_dict:
+            self.connection_info = self.replace_connection_values(
+                self.connection_info, secret_dict
+            )
+
         # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
         self.connection_dict = {
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
         }
+
+    def replace_connection_values(self, connection_info, secret_dict):
+        """Replace values in connection_info with those in secret_dict
+
+        Args:
+            connection_info (dict): A dictionary of connection parameters
+            secret_dict (dict): A dictionary of connection parameters to replace matching 
+                                parameters in connection_info
+
+        Returns:
+            dict: A dictionary of connection parameters
+        """
+
+        connection_info_  = connection_info.copy()
+        for key, value in connection_info_.items():
+            if key in secret_dict:
+                connection_info_[key] = secret_dict[key]
+                print(key)
+
+        return connection_info_
 
     @property
     def connection_string(self):

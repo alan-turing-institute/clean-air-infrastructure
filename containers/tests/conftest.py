@@ -25,6 +25,7 @@ TRAVIS_SECRET = """
 }
 """
 
+
 def pytest_addoption(parser):
     """Add option to enable travis specific options"""
     parser.addoption(
@@ -35,7 +36,8 @@ def pytest_addoption(parser):
 @pytest.fixture(scope="module")
 def readonly_user_login():
     """A username and password for a database user"""
-    return {'username': 'hcarlo', 'password': 'areallybadpassword'}
+    return {"username": "hcarlo", "password": "areallybadpassword"}
+
 
 @pytest.fixture(scope="module")
 def readonly_secret(readonly_user_login):
@@ -48,9 +50,12 @@ def readonly_secret(readonly_user_login):
     "port": 5432,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
-}}""".format(**readonly_user_login)
+}}""".format(
+        **readonly_user_login
+    )
 
     return secret
+
 
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
@@ -66,6 +71,7 @@ def secretfile(request, tmpdir_factory):
 
     return fn
 
+
 @pytest.fixture(scope="module")
 def secretfile_user(tmpdir_factory, readonly_secret):
     """"Create a local secret file for a database user"""
@@ -76,12 +82,14 @@ def secretfile_user(tmpdir_factory, readonly_secret):
 
     return fn
 
+
 @pytest.fixture(scope="function")
 def engine(secretfile):
     """Create and engine fixture"""
     connection_str = DBConnectionMixin(secretfile).connection_string
 
     return create_engine(connection_str)
+
 
 @pytest.fixture(scope="function")
 def connection(engine):
@@ -92,12 +100,14 @@ def connection(engine):
     transaction.rollback()
     conn.close()
 
+
 @pytest.fixture(scope="module")
 def engine_module(secretfile):
     """Create and engine fixture"""
     connection_str = DBConnectionMixin(secretfile).connection_string
 
     return create_engine(connection_str)
+
 
 @pytest.fixture(scope="module")
 def connection_module(engine_module):
@@ -135,4 +145,3 @@ def schema():
 @pytest.fixture(scope="module")
 def roles():
     return ["readonly", "readwrite"]
-

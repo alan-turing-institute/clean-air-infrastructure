@@ -13,7 +13,6 @@ from cleanair.databases.tables import (
 import os
 
 
-
 @pytest.fixture()
 def static_data_sizes():
     """Expected number of rows in scoot"""

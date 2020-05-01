@@ -24,10 +24,17 @@ class Connector(DBConnectionMixin):
     __engine = None
     __sessionfactory = None
 
-    def __init__(self, secretfile, connection=None):
+    def __init__(self, secretfile, connection=None, **kwargs):
+        """
+
+        Args: 
+            connection (sqlalchemy.engine.Connection): Pass an sqlalchemy connection object.
+                                                        Useful when testing to allow operations with 
+                                                        a transaction
+        """
 
         # Pass unused arguments onwards
-        super().__init__(secretfile)
+        super().__init__(secretfile, **kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):

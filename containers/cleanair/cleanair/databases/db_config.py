@@ -70,15 +70,21 @@ class DBConfig(Connector):
         """
         for role in self.roles:
             # Create a role
-            self.create_role(role['role'])
-            self.assign_role_connect(role['role'])
+            self.create_role(role["role"])
+            self.assign_role_connect(role["role"])
 
-            for schema in role['schema']:
-                self.assign_role_schema_usage(role['role'], schema['name'], schema['create'])
-                self.assign_role_schema_privilege(role['role'], schema['name'], schema['privileges'])
-                self.assign_role_schema_default_privilege(role['role'], schema['name'], schema['privileges'])
-                self.assign_role_schema_sequences(role['role'], schema['name'])
-                self.assign_role_schema_default_sequences(role['role'], schema['name'])
+            for schema in role["schema"]:
+                self.assign_role_schema_usage(
+                    role["role"], schema["name"], schema["create"]
+                )
+                self.assign_role_schema_privilege(
+                    role["role"], schema["name"], schema["privileges"]
+                )
+                self.assign_role_schema_default_privilege(
+                    role["role"], schema["name"], schema["privileges"]
+                )
+                self.assign_role_schema_sequences(role["role"], schema["name"])
+                self.assign_role_schema_default_sequences(role["role"], schema["name"])
 
     def create_role(self, role_name):
         """Create a new role
@@ -93,11 +99,9 @@ class DBConfig(Connector):
             with self.open_session() as session:
                 session.execute(text("CREATE ROLE {}".format(role_name)))
                 session.commit()
-                
+
         except ProgrammingError as e:
-            self.logger.warning(
-                f"Creating role %s failed with error: %s", role_name, e
-            )
+            self.logger.warning(f"Creating role %s failed with error: %s", role_name, e)
 
     def assign_role_connect(self, role_name):
         """Allow a role to connect to the database
@@ -222,7 +226,9 @@ class DBConfig(Connector):
             None
         """
 
-        self.logger.info("Granting sequences on schema %s to role %s", schema_name, role_name)
+        self.logger.info(
+            "Granting sequences on schema %s to role %s", schema_name, role_name
+        )
 
         with self.open_session() as session:
 
@@ -246,7 +252,9 @@ class DBConfig(Connector):
             None
         """
 
-        self.logger.info("Granting default sequences on schema %s to role %s", schema_name, role_name)
+        self.logger.info(
+            "Granting default sequences on schema %s to role %s", schema_name, role_name
+        )
 
         with self.open_session() as session:
 
@@ -275,11 +283,7 @@ class DBConfig(Connector):
         with self.open_session() as session:
 
             session.execute(
-                text(
-                    "CREATE USER {} WITH PASSWORD '{}'".format(
-                        username, password
-                    )
-                )
+                text("CREATE USER {} WITH PASSWORD '{}'".format(username, password))
             )
             session.commit()
 
@@ -297,13 +301,5 @@ class DBConfig(Connector):
 
         with self.open_session() as session:
 
-            session.execute(
-                text(
-                    "GRANT {} TO {}".format(
-                        role, username
-                    )
-                )
-            )
+            session.execute(text("GRANT {} TO {}".format(role, username)))
             session.commit()
-
-        
