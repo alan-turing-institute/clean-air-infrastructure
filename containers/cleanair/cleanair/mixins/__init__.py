@@ -28,4 +28,5 @@ __all__ = [
     "ModelTableMixin",
     "SecretFileParserMixin",
     "SourcesMixin",
+    "VerbosityMixin",
 ]
