@@ -64,11 +64,11 @@ def prepare_batch(
             # TODO remove assert
             assert x_train.shape[0] == 24
         else:
+            x_train = np.array(data_df[data_config["x_cols"]]).astype(np.float64)
+            y_train = np.array(data_df[data_config["y_cols"]]).astype(np.float64)
 
-        x_dict[data_id] = tf.convert_to_tensor(
-            np.array(data_df[data_config["x_cols"]]).astype(np.float64))
-        y_dict[data_id] = tf.convert_to_tensor(
-            np.array(data_df[data_config["y_cols"]]).astype(np.float64))
+        x_dict[data_id] = tf.convert_to_tensor(x_train)
+        y_dict[data_id] = tf.convert_to_tensor(y_train)
         df_dict[data_id] = data_df
 
     x_array = instance_df["data_id"].map(lambda x: x_dict[x])
