@@ -13,6 +13,8 @@ from ..databases.tables import (
     LondonBoundary,
     MetaPoint,
     SatelliteForecast,
+    ScootDetector,
+    ScootReading,
 )
 from ..loggers import get_logger
 from ..timestamps import as_datetime
@@ -266,3 +268,60 @@ class DBQueryMixin:
                 == as_datetime(start_date).date().isoformat(),
                 SatelliteForecast.species_code.in_(species),
             )
+
+class ScootQueryMixin:
+
+    @db_query
+    def get_scoot_with_location(
+        self,
+        start_time: str,
+        end_time: str = None,
+        detectors: list = None
+    ):
+        """
+        Get scoot data with lat and long positions.
+
+        Parameters
+        ___
+
+        start_time : str
+            Start datetime.
+
+        end_time : str, optional
+            End datetime (exclusive).
+
+        detectors : list, optional
+            Subset of detectors to get readings for.
+        """
+        if not hasattr(self, "dbcnxn"):
+            raise AttributeError("ScootQuery is a mixin - you must inherit from DBReader or DBWriter as well.")
+
+        with self.dbcnxn.open_session() as session:
+            scoot_readings = (
+                session.query(
+                    ScootReading.detector_id,
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                    ScootReading.measurement_start_utc,
+                    ScootReading.measurement_end_utc,
+                    ScootReading.n_vehicles_in_interval,
+                )
+                .join(
+                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                )
+                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                .filter(ScootReading.measurement_start_utc >= start_time)
+            )
+            # get readings upto but not including end_time
+            if end_time:
+
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.measurement_start_utc < end_time
+                )
+            # get subset of detectors
+            if detectors:
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.detector_id.in_(detectors)
+                )
+
+            return scoot_readings

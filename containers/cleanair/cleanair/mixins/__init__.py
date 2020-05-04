@@ -3,7 +3,7 @@ Mixins for adding functionality
 """
 from .db_connection_mixin import DBConnectionMixin
 from .api_request_mixin import APIRequestMixin
-from .database_query_mixin import DBQueryMixin
+from .database_query_mixin import DBQueryMixin, ScootQueryMixin
 from .date_range_mixin import DateRangeMixin
 from .instance_tables_mixin import (
     DataConfigMixin,
@@ -26,6 +26,7 @@ __all__ = [
     "DurationParserMixin",
     "InstanceTableMixin",
     "ModelTableMixin",
+    "ScootQueryMixin",
     "SecretFileParserMixin",
     "SourcesMixin",
     "VerbosityMixin",
