@@ -10,7 +10,7 @@ class DBInteractor:
     Base class for interacting with tables in the Azure database
     """
 
-    def __init__(self, secretfile, initialise_tables=True, **kwargs):
+    def __init__(self, secretfile, initialise_tables=True, connection = None, secret_dict = None):
         """
         Init method for connecting to database
 
@@ -24,8 +24,6 @@ class DBInteractor:
                                                         a transaction. Defaults to None.
             secret_dict (dict): A dictionary of login secrets. Will override variables in the json secrets file
                                 if both provided
-        Args: 
-            
         """
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -33,7 +31,7 @@ class DBInteractor:
 
         # Ensure that connector exists
         if not hasattr(self, "dbcnxn"):
-            self.dbcnxn = Connector(secretfile, **kwargs)
+            self.dbcnxn = Connector(secretfile, connection= connection, secret_dict=secret_dict)
 
         # Ensure that tables are initialised
         if initialise_tables:
