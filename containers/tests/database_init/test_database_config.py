@@ -43,10 +43,9 @@ class TestDataBaseRoles:
         config_file,
         connection_module,
         readonly_user_login,
-        secretfile_user,
     ):
 
-        db_config = DBConfig(config_file, secretfile, connection=connection_module)
+        db_config = DBConfig(config_file, secretfile, secret_dict = readonly_user_login, connection=connection_module)
         db_config.create_schema()
         db_config.configure_all_roles()
 

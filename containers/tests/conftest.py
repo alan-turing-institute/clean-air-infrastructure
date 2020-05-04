@@ -1,18 +1,11 @@
+"""Fixtures for running database tests"""
+
 import pytest
+from shutil import copyfile
 from cleanair.mixins import DBConnectionMixin
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-LOCAL_SECRET = """
-{
-    "username": "ogiles",
-    "password": "''",
-    "host": "localhost",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}
-"""
 
 TRAVIS_SECRET = """
 {
@@ -25,12 +18,9 @@ TRAVIS_SECRET = """
 }
 """
 
-
 def pytest_addoption(parser):
     """Add option to enable travis specific options"""
-    parser.addoption(
-        "--travis", action="store_true", default=False, help="Use travis secretfile"
-    )
+    parser.addoption('--secretfile', default = None, help="File with connection secrets.")
 
 
 @pytest.fixture(scope="module")
@@ -38,50 +28,18 @@ def readonly_user_login():
     """A username and password for a database user"""
     return {"username": "hcarlo", "password": "areallybadpassword"}
 
-
-@pytest.fixture(scope="module")
-def readonly_secret(readonly_user_login):
-    """A secret file content for a database user"""
-    secret = """
-{{
-    "username": "{username}",
-    "password": "{password}",
-    "host": "localhost",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}}""".format(
-        **readonly_user_login
-    )
-
-    return secret
-
-
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
     """"Create a local secret file in a tempory directory for the database admin"""
     fn = tmpdir_factory.mktemp("secrets").join("db_secrets.json")
 
-    if request.config.getoption("--travis"):
+    if not request.config.getoption("--secretfile"):
         with open(fn, "w") as f:
             f.write(TRAVIS_SECRET)
     else:
-        with open(fn, "w") as f:
-            f.write(LOCAL_SECRET)
+        copyfile(request.config.getoption("--secretfile"), fn)
 
     return fn
-
-
-@pytest.fixture(scope="module")
-def secretfile_user(tmpdir_factory, readonly_secret):
-    """"Create a local secret file for a database user"""
-    fn = tmpdir_factory.mktemp("secrets").join("db_secrets.json")
-
-    with open(fn, "w") as f:
-        f.write(readonly_secret)
-
-    return fn
-
 
 @pytest.fixture(scope="function")
 def engine(secretfile):
