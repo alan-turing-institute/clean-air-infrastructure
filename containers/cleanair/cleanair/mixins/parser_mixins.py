@@ -16,7 +16,6 @@ class ParseDict(Action):
                 ].strip()  # we remove blanks around keys, as is logical
                 if key not in valid_items:
                     parser.error("{} is not a valid secretfile override".format(key))
-                
                 if key == 'port':
                     value = int(split_items[1])
                 else:

@@ -55,7 +55,6 @@ class DBConnectionMixin:
         for key, value in connection_info_.items():
             if key in secret_dict:
                 connection_info_[key] = secret_dict[key]
-                print(key)
 
         return connection_info_
 

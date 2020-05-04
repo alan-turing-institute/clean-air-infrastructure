@@ -8,12 +8,13 @@ def main():
     parser = DataBaseRoleParser()
     args = parser.parse_args()
 
+
     # Set logging verbosity
     default_logger = initialise_logging(args.verbose)
 
     default_logger.warning("This will create roles on the database. It will not revoke them. Any removals from the config.yaml must be manually removed from the database")
 
-    db_config =  DBConfig(config_file = args.config_file, secretfile = args.secretfile)
+    db_config =  DBConfig(config_file = args.config_file, secretfile = args.secretfile, secret_dict = args.secret_dict)
     db_config.configure_all_roles()
 
 if __name__ ==  '__main__':

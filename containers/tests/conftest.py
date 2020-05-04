@@ -28,6 +28,10 @@ def readonly_user_login():
     """A username and password for a database user"""
     return {"username": "hcarlo", "password": "areallybadpassword"}
 
+@pytest.fixture()
+def secret_dict():
+    return {'password': 'areallybadpassword', 'port': 5421}
+
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
     """"Create a local secret file in a tempory directory for the database admin"""
