@@ -15,7 +15,7 @@ def denormalise(x, wrt_y):
 
 def normalise_datetime(
     time_df: pd.DataFrame,
-    wrt: str = "clipped_hour",
+    wrt: str = "hour",
     col: str = "measurement_start_utc"
 ) -> pd.DataFrame:
     """

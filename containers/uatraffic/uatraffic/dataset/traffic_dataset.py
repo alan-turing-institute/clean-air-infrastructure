@@ -6,6 +6,7 @@ import pandas as pd
 import tensorflow as tf
 from cleanair.databases import DBReader
 from cleanair.mixins import ScootQueryMixin
+from ..preprocess import normalise_datetime
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -22,6 +23,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             detectors=self._data_config["detectors"],
             output_type="df",
         )
+        self._df = normalise_datetime(self._df)
         x = self._df[data_config["x_cols"]].to_numpy()
         y = self._df[data_config["y_cols"]].to_numpy()
         self._input_dataset = tf.data.Dataset.from_tensor_slices((x, y))
@@ -53,4 +55,4 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         """
         Returns true if the dictionary passed is valid.
         """
-        assert ["start", "end", "x_cols", "y_cols", "detectors"] in data_config
+        assert {"start", "end", "x_cols", "y_cols", "detectors"}.issubset(data_config)
