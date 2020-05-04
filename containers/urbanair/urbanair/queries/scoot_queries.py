@@ -1,5 +1,6 @@
 """API database queries"""
-from sqlalchemy import func
+from sqlalchemy import func, cast, text
+from sqlalchemy.types import Interval
 from cleanair.loggers import initialise_logging
 from cleanair.decorators import db_query
 from cleanair.databases.tables import (
@@ -8,28 +9,145 @@ from cleanair.databases.tables import (
     ScootDetector,
     ScootPercentChange,
 )
+from uatraffic.scoot_processing import (
+    LOCKDOWN_BASELINE_START,
+    LOCKDOWN_BASELINE_END,
+    NORMAL_BASELINE_START,
+    NORMAL_BASELINE_END,
+)
 from .query_mixins import APIQueryMixin
-
+from datetime import datetime
 
 initialise_logging(verbosity=0)
 
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
+ONE_DAY_INTERVAL = text("interval '1 day'")
+
+
+class ScootPercAvailability(APIQueryMixin):
+    @db_query
+    def query(
+        self, session, baseline, start_time=None, end_time=None, only_missing=False
+    ):
+        """Check what data is available between start_time and end_time"""
+
+        in_data = session.query(
+            func.count(ScootPercentChange.detector_id).label("sensors_with_readings"),
+            ScootPercentChange.measurement_start_utc,
+        ).filter(ScootPercentChange.baseline_period == baseline)
+
+        if start_time:
+            in_data = in_data.filter(
+                ScootPercentChange.measurement_start_utc >= start_time
+            )
+        if end_time:
+            in_data = in_data.filter(
+                ScootPercentChange.measurement_start_utc < end_time
+            )
+
+        if not (start_time and end_time) and baseline == "normal":
+            start_time = NORMAL_BASELINE_END
+
+        elif not (start_time and end_time) and baseline == "lockdown":
+            start_time = LOCKDOWN_BASELINE_END
+
+        in_data_cte = in_data.group_by(ScootPercentChange.measurement_start_utc).cte(
+            "in_data"
+        )
+
+        if end_time:
+            expected_date_times = session.query(
+                func.generate_series(start_time, end_time, ONE_DAY_INTERVAL).label(
+                    "measurement_start_utc"
+                )
+            ).subquery()
+        else:
+            expected_date_times = session.query(
+                func.generate_series(
+                    start_time,
+                    func.date_trunc("day", func.now()) - ONE_DAY_INTERVAL,
+                    ONE_DAY_INTERVAL,
+                ).label("measurement_start_utc")
+            ).subquery()
+
+        available_data_q = (
+            session.query(
+                expected_date_times.c.measurement_start_utc,
+                in_data_cte.c.sensors_with_readings,
+                in_data_cte.c.sensors_with_readings.is_(None).label("no_data"),
+                (in_data_cte.c.sensors_with_readings < 9000).label("less_than_9000"),
+            )
+            .select_entity_from(expected_date_times)
+            .join(
+                in_data_cte,
+                in_data_cte.c.measurement_start_utc
+                == expected_date_times.c.measurement_start_utc,
+                isouter=True,
+            )
+        )
+
+        if only_missing:
+            return available_data_q.filter(
+                in_data_cte.c.sensors_with_readings.is_(None)
+            )
+        else:
+            return available_data_q
+
+
+class ScootHourlyAvailability(APIQueryMixin):
+    @db_query
+    def query(self, session, start_time, end_time=None, only_missing=False):
+        """Check what data is available between start_time and end_time"""
+
+        in_data = session.query(
+            func.count(ScootReading.detector_id).label("sensors_with_readings"),
+            ScootReading.measurement_start_utc,
+        ).filter(ScootReading.measurement_start_utc >= start_time)
+        if end_time:
+            in_data = in_data.filter(ScootReading.measurement_start_utc < end_time)
+
+        in_data_cte = in_data.group_by(ScootReading.measurement_start_utc).cte(
+            "in_data"
+        )
+
+        if end_time:
+            expected_date_times = session.query(
+                func.generate_series(start_time, end_time, ONE_HOUR_INTERVAL).label(
+                    "measurement_start_utc"
+                )
+            ).subquery()
+        else:
+            expected_date_times = session.query(
+                func.generate_series(start_time, func.now(), ONE_HOUR_INTERVAL).label(
+                    "measurement_start_utc"
+                )
+            ).subquery()
+
+        available_data_q = (
+            session.query(
+                expected_date_times.c.measurement_start_utc,
+                in_data_cte.c.sensors_with_readings,
+                in_data_cte.c.sensors_with_readings.is_(None).label("no_data"),
+                (in_data_cte.c.sensors_with_readings < 9000).label("less_than_9000"),
+            )
+            .select_entity_from(expected_date_times)
+            .join(
+                in_data_cte,
+                in_data_cte.c.measurement_start_utc
+                == expected_date_times.c.measurement_start_utc,
+                isouter=True,
+            )
+        )
+
+        if only_missing:
+            return available_data_q.filter(
+                in_data_cte.c.sensors_with_readings.is_(None)
+            )
+        else:
+            return available_data_q
+
 
 class ScootHourly(APIQueryMixin):
-    @property
-    def csv_headers(self):
-        return [
-            "detector_id",
-            "lon",
-            "lat",
-            "measurement_start_utc",
-            "measurement_end_utc",
-            "day_of_week",
-            "baseline_period",
-            "baseline_n_vehicles_in_interval",
-            "comparison_n_vehicles_in_interval",
-            "percent_of_baseline",
-        ]
-
     def query(self, session, start_time, end_time=None):
         """
         Get scoot data with lat and long positions
@@ -143,18 +261,6 @@ class ScootDailyPerc(APIQueryMixin):
 
 
 class ScootDaily(APIQueryMixin):
-    @property
-    def csv_headers(self):
-
-        return [
-            "detector_id",
-            "lon",
-            "lat",
-            "day",
-            "avg_n_vehicles_in_interval",
-            "sum_n_vehicles_in_interval",
-        ]
-
     def query(self, session, start_time, end_time=None):
         """
         Get scoot data with lat and long positions aggregated by day
