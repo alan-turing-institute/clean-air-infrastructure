@@ -269,3 +269,41 @@ class DBConfig(Connector):
                 )
             )
             session.commit()
+
+
+    def create_user(self, username, password):
+        """Create a new user and assign to a role
+        
+        Args:
+            username (str): A username
+            password (str): A user's password
+
+        Returns:
+            None
+        """
+
+        self.logger.info("Creating username %s", username)
+
+        with self.open_session() as session:
+
+            session.execute(
+                text("CREATE USER {} WITH PASSWORD '{}'".format(username, password))
+            )
+            session.commit()
+
+    def grant_role_to_user(self, username, role):
+        """
+        Args:
+            username (str): A username
+            roles (List[str]): A list of roles to assign a user to
+
+        Returns:
+            None
+        """
+
+        self.logger.info("Granting role %s to user %s", role, username)
+
+        with self.open_session() as session:
+
+            session.execute(text("GRANT {} TO {}".format(role, username)))
+            session.commit()
