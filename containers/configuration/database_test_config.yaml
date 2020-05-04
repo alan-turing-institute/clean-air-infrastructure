@@ -1,0 +1,99 @@
+# Configure roles in a database at a schema level
+# This will add the following roles.
+# NB: Removing roles will not remove them on the database if they have already been applied.
+
+database: cleanair_test_db
+
+schema: 
+  - static_data
+  - interest_points
+  - dynamic_data 
+  - dynamic_features 
+  - model_features
+  - model_results
+  - processed_data
+  - static_data
+  - static_features
+  - gla_traffic
+  - not_real_schema
+
+roles:
+  - role: readonly
+    create_schema: False
+    schema: 
+      - name: static_data
+        create: False
+        privileges: 
+          - SELECT
+      - name: interest_points
+        create: False
+        privileges: 
+          - SELECT
+      - name: dynamic_data 
+        create: False
+        privileges: 
+          - SELECT
+      - name: dynamic_features 
+        create: False
+        privileges: 
+          - SELECT
+      - name: model_features
+        create: False
+        privileges: 
+          - SELECT
+      - name: model_results
+        create: False
+        privileges: 
+          - SELECT
+      - name: processed_data
+        create: False
+        privileges: 
+          - SELECT
+      - name: static_data
+        create: False
+        privileges: 
+          - SELECT
+      - name: gla_traffic
+        create: False
+        privileges: 
+          - SELECT
+
+  - role: readwrite
+    create_schema: False
+    schema: 
+      - name: static_data
+        create: False
+        privileges: 
+          - ALL
+      - name: interest_points
+        create: False
+        privileges: 
+          - ALL
+      - name: dynamic_data 
+        create: False
+        privileges: 
+          - ALL
+      - name: dynamic_features 
+        create: False
+        privileges: 
+          - ALL
+      - name: model_features
+        create: False
+        privileges: 
+          - ALL
+      - name: model_results
+        create: False
+        privileges: 
+          - ALL
+      - name: processed_data
+        create: False
+        privileges: 
+          - ALL
+      - name: static_data
+        create: False
+        privileges: 
+          - ALL
+      - name: gla_traffic
+        create: False
+        privileges: 
+          - ALL

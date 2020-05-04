@@ -68,6 +68,9 @@ class DBConfig(Connector):
     def configure_all_roles(self):
         """Configure roles as defined in the configuration file
         """
+
+        self.create_schema()
+        
         for role in self.roles:
             # Create a role
             self.create_role(role["role"])
@@ -267,39 +270,39 @@ class DBConfig(Connector):
             )
             session.commit()
 
-    def create_user(self, username, password):
-        """Create a new user and assign to a role
+    # def create_user(self, username, password):
+    #     """Create a new user and assign to a role
         
-        Args:
-            username (str): A username
-            password (str): A user's password
+    #     Args:
+    #         username (str): A username
+    #         password (str): A user's password
 
-        Returns:
-            None
-        """
+    #     Returns:
+    #         None
+    #     """
 
-        self.logger.info("Creating username %s", username)
+    #     self.logger.info("Creating username %s", username)
 
-        with self.open_session() as session:
+    #     with self.open_session() as session:
 
-            session.execute(
-                text("CREATE USER {} WITH PASSWORD '{}'".format(username, password))
-            )
-            session.commit()
+    #         session.execute(
+    #             text("CREATE USER {} WITH PASSWORD '{}'".format(username, password))
+    #         )
+    #         session.commit()
 
-    def grant_role_to_user(self, username, role):
-        """
-        Args:
-            username (str): A username
-            roles (List[str]): A list of roles to assign a user to
+    # def grant_role_to_user(self, username, role):
+    #     """
+    #     Args:
+    #         username (str): A username
+    #         roles (List[str]): A list of roles to assign a user to
 
-        Returns:
-            None
-        """
+    #     Returns:
+    #         None
+    #     """
 
-        self.logger.info("Granting role %s to user %s", role, username)
+    #     self.logger.info("Granting role %s to user %s", role, username)
 
-        with self.open_session() as session:
+    #     with self.open_session() as session:
 
-            session.execute(text("GRANT {} TO {}".format(role, username)))
-            session.commit()
+    #         session.execute(text("GRANT {} TO {}".format(role, username)))
+    #         session.commit()
