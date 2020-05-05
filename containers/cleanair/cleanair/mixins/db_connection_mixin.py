@@ -42,11 +42,16 @@ class DBConnectionMixin:
             self.connection_info = self.replace_connection_values(
                 self.connection_info, self.read_environment_password()
             )
+
         # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
         self.connection_dict = {
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
         }
+
+    @property
+    def connection_keys(self):
+        return ["username", "password", "host", "port", "db_name"]
 
     @property
     def connection_string(self):
@@ -135,8 +140,9 @@ class DBConnectionMixin:
         """
 
         connection_info_ = connection_info.copy()
-        for key, value in connection_info_.items():
-            if key in secret_dict:
+
+        for key, value in secret_dict.items():
+            if key in self.connection_keys:
                 connection_info_[key] = secret_dict[key]
 
         return connection_info_
