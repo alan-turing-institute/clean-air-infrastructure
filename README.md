@@ -12,12 +12,12 @@ Currently repurposed to assess `busyness` in London during the COVID-19 pandemic
 
 To contribute to the project please speak to one of the following:
 
-| Name               | GitHub ID | Email |
-| ------------------ | --- | --- |
-| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)| <ogiles@turing.ac.uk> |
-| James Robinson     | [@jemrobinson](https://github.com/jemrobinson) | <jrobinson@turing.ac.uk> |
-| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)| <pohara@turing.ac.uk> |
-| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)| <ohamelijnck@turing.ac.uk> |
+| Name               | GitHub ID                                            | Email                     | Admin  |
+| ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Prod Database, Kubernetes Cluster
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  |
+| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     |
+| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
 
 
 # Non-infrastructure development :sparkles:
@@ -215,6 +215,24 @@ You can check everything configured correctly by running:
 ```bash
 pytest containers/tests/database_init
 ```
+
+# Access CleanAir Production Database
+
+To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributing-:art:). To access the database first [login to Azure](#login-to-Azure) from the terminal. 
+
+You can then request an access Token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
+
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+You can then access the database using psql:
+
+```bash
+psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
+```
+replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
+
 
 # Infrastructure Deployment
 The following steps are needed to setup the Clean Air cloud infrastructure.
