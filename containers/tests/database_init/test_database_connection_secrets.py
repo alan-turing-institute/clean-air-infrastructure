@@ -61,3 +61,17 @@ class TestConnectionSecrets:
         # Check we cant connect with the updated loggin info
         with pytest.raises(AttributeError):
             assert connection2.connection.initialise_tables()
+
+    def test_connector_environment (self, secretfile, secret_dict, connection, monkeypatch):
+
+        # Set PGPASWORD environment variable
+        password = 'tokenpassword'
+        monkeypatch.setenv("PGPASSWORD", password)
+
+        # Connector should replace password from secretfile with environment variables
+        connection = Connector(secretfile, connection=connection)
+        assert connection.connection_dict['password'] == password
+
+        connection2 = Connector(secretfile, secret_dict = secret_dict, connection=connection)
+        assert connection2.connection_dict['password'] == password
+

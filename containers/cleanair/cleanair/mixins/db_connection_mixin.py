@@ -10,7 +10,11 @@ class DBConnectionMixin:
     """Create database connection strings"""
 
     def __init__(self, secretfile, secret_dict=None):
-        """Generates connection strings for postgresql database
+        """Generates connection strings for postgresql database.
+
+        First loads connection information from secretfile.
+        Secondly overwrites with values from secret_dict if any are provided.
+        Finally check if PGPASSWORD is an environment variable and overwrites with this. 
 
         Args:
             secretfile (str): Path to a secret file (json). 
@@ -33,31 +37,18 @@ class DBConnectionMixin:
                 self.connection_info, secret_dict
             )
 
+        if self.read_environment_password():
+            self.logger.info("Database password loaded from environment variable")
+            self.connection_info = self.replace_connection_values(
+                self.connection_info, self.read_environment_password()
+            )
         # See here (https://www.postgresql.org/docs/11/libpq-connect.html) for keepalive documentation
         self.connection_dict = {
             "options": "keepalives=1&keepalives_idle=10",
             **self.connection_info,
         }
 
-    def replace_connection_values(self, connection_info, secret_dict):
-        """Replace values in connection_info with those in secret_dict
-
-        Args:
-            connection_info (dict): A dictionary of connection parameters
-            secret_dict (dict): A dictionary of connection parameters to replace matching 
-                                parameters in connection_info
-
-        Returns:
-            dict: A dictionary of connection parameters
-        """
-
-        connection_info_  = connection_info.copy()
-        for key, value in connection_info_.items():
-            if key in secret_dict:
-                connection_info_[key] = secret_dict[key]
-
-        return connection_info_
-
+    
     @property
     def connection_string(self):
         """Get a connection string"""
@@ -117,3 +108,38 @@ class DBConnectionMixin:
             raise FileNotFoundError(
                 "Database secrets could not be loaded from {}".format(secret_file)
             )
+
+    def read_environment_password(self):
+        """Check if PGPASSWORD exists as an environment variable and return its values if it does
+
+        Returns:
+            dict: A dictionary of containing the value of the environment value PGPASSWORD if it exists. Else None
+        """
+        
+        pg_password = os.getenv('PGPASSWORD', default=None)
+
+        if pg_password:
+            return {'password': pg_password}
+        else:
+            return None
+        
+
+    def replace_connection_values(self, connection_info, secret_dict):
+        """Replace values in connection_info with those in secret_dict
+
+        Args:
+            connection_info (dict): A dictionary of connection parameters
+            secret_dict (dict): A dictionary of connection parameters to replace matching 
+                                parameters in connection_info
+
+        Returns:
+            dict: A dictionary of connection parameters
+        """
+
+        connection_info_  = connection_info.copy()
+        for key, value in connection_info_.items():
+            if key in secret_dict:
+                connection_info_[key] = secret_dict[key]
+
+        return connection_info_
+
