@@ -14,8 +14,8 @@ To contribute to the project please speak to one of the following:
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
-| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Prod Database, Kubernetes Cluster
-| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  |
+| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
 
@@ -182,7 +182,7 @@ If you have access Azure and you have logged in from the [command line](#login-t
 SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
 ```
 
-Otherwise you must request a SAS token from an infrastructure developer and set it as a variable:
+Otherwise you must request a SAS token from an [infrastructure developer](#contributing-:art:) and set it as a variable:
 
 ```bash
 SAS_TOKEN=<SAS_TOKEN>
