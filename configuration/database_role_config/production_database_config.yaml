@@ -16,7 +16,6 @@ schema:
   - static_data
   - static_features
 
-
 roles:
   - role: readonly
     create_schema: False
@@ -96,5 +95,45 @@ roles:
           - SELECT
       - name: static_features
         create: False
+        privileges: 
+          - SELECT
+
+  - role: readwritecreate
+    create_schema: False
+    schema: 
+      - name: dynamic_data 
+        create: True
+        privileges: 
+          - SELECT
+      - name: dynamic_features 
+        create: True
+        privileges: 
+          - SELECT
+      - name: gla_traffic
+        create: True
+        privileges: 
+          - SELECT
+      - name: interest_points
+        create: True
+        privileges: 
+          - SELECT
+      - name: model_features
+        create: True
+        privileges: 
+          - SELECT
+      - name: model_results
+        create: True
+        privileges: 
+          - SELECT
+      - name: processed_data
+        create: True
+        privileges: 
+          - SELECT
+      - name: static_data
+        create: True
+        privileges: 
+          - SELECT
+      - name: static_features
+        create: True
         privileges: 
           - SELECT
