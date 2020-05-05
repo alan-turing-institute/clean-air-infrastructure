@@ -15,7 +15,6 @@ schema:
   - static_data
   - static_features
   - gla_traffic
-  - not_real_schema
 
 roles:
   - role: readonly
