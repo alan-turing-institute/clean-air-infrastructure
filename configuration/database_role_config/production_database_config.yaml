@@ -2,7 +2,7 @@
 # This will add the following roles.
 # NB: Removing roles will not remove them on the database if they have already been applied.
 
-database: cleanair_test_db
+database: cleanair_inputs_db
 
 schema: 
  
