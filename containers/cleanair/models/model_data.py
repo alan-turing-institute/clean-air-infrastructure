@@ -4,7 +4,6 @@ Vizualise available sensor data for a model fit
 import json
 import os
 import logging
-import pickle
 import pandas as pd
 import numpy as np
 from dateutil import rrule
@@ -18,6 +17,7 @@ from ..databases.tables import (
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
+from ..timestamps import as_datetime
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -83,11 +83,6 @@ class ModelData(DBWriter, DBQueryMixin):
                     ["box_id", "measurement_start_utc"]
                 )
 
-            if self.config["tag"] == "validation":
-                self.config["include_prediction_y"] = True
-                self.training_dict = self.get_training_data_arrays()
-                self.test_dict = self.get_pred_data_arrays(return_y=True)
-
         else:
             self.restore_config_state(config_dir)
 
@@ -108,7 +103,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "species",
             "features",
             "norm_by",
-            "tag",
         ]
 
         self.logger.info("Validating config")
@@ -248,7 +242,12 @@ class ModelData(DBWriter, DBQueryMixin):
             )
 
         with open(os.path.join(dir_path, "config.json"), "w") as config_f:
-            json.dump(self.config, config_f, sort_keys=True, indent=4)
+            json.dump(
+                ModelData.convert_dates_to_str(self.config),
+                config_f,
+                sort_keys=True,
+                indent=4
+            )
 
         self.logger.info("State files saved to %s", dir_path)
 
@@ -258,7 +257,7 @@ class ModelData(DBWriter, DBQueryMixin):
             raise IOError("{} does not exist".format(dir_path))
 
         with open(os.path.join(dir_path, "config.json"), "r") as config_f:
-            self.config = json.load(config_f)
+            self.config = ModelData.convert_str_to_dates(json.load(config_f))
 
         self.normalised_training_data_df = pd.read_csv(
             os.path.join(os.path.join(dir_path, "normalised_training_data.csv")),
@@ -278,6 +277,26 @@ class ModelData(DBWriter, DBQueryMixin):
                 os.path.join(os.path.join(dir_path, "normalised_satellite_data_y.csv")),
                 index_col=0,
             )
+
+    @staticmethod
+    def convert_dates_to_str(data_config, datetime_format="%Y-%m-%d %H:%M:%S"):
+        return dict(
+            data_config,
+            train_start_date=data_config["train_start_date"].strftime(datetime_format),
+            train_end_date=data_config["train_end_date"].strftime(datetime_format),
+            pred_start_date=data_config["pred_start_date"].strftime(datetime_format),
+            pred_end_date=data_config["pred_end_date"].strftime(datetime_format),
+        )
+
+    @staticmethod
+    def convert_str_to_dates(data_config):
+        return dict(
+            data_config,
+            train_start_date=as_datetime(data_config["train_start_date"]),
+            train_end_date=as_datetime(data_config["train_end_date"]),
+            pred_start_date=as_datetime(data_config["pred_start_date"]),
+            pred_end_date=as_datetime(data_config["pred_end_date"]),
+        )
 
     @property
     def x_names_norm(self):
@@ -886,7 +905,6 @@ class ModelData(DBWriter, DBQueryMixin):
         predict_df["predict_mean"] = y_pred[:, 0]
         predict_df["predict_var"] = y_pred[:, 1]
         predict_df["fit_start_time"] = model_fit_info["fit_start_time"]
-        predict_df["tag"] = self.config["tag"]
 
         # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat(
@@ -921,7 +939,6 @@ class ModelData(DBWriter, DBQueryMixin):
         # add predict_df as new columns to data_df - they should share an index
         new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
         new_df["fit_start_time"] = fit_start_time
-        new_df["tag"] = self.config["tag"]
         return new_df
 
     def update_test_df_with_preds(self, test_pred_dict, fit_start_time):

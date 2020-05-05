@@ -23,6 +23,8 @@ class ValidationInstance(RunnableInstance):
         no_db_write=False,
         restore=False,
         save_model_state=False,
+        write_model_params=False,
+        read_model_params=False,
     )
 
     DEFAULT_MODEL_PARAMS = {
@@ -50,16 +52,22 @@ class ValidationInstance(RunnableInstance):
         super().__init__(**kwargs)
 
     def setup_model(self):
+        """
+        Restore a model from file, write model params to a file and create a model.
+        """
         if self.experiment_config["restore"]:
             raise NotImplementedError("Cannot yet restore model from file.")
         super().setup_model()
-        if self.experiment_config["local_write"]:
+        if self.experiment_config["write_model_params"]:
             model_params_fp = os.path.join(self.experiment_config["model_dir"], "model_params.json")
             logging.info("Writing model parameters to json file.")
             with open(model_params_fp, "w") as json_file:
-                json.dump(self.model_params, model_params_fp)
+                json.dump(self.model_params, json_file)
 
     def load_data(self):
+        """
+        Read the train and test data from a local file or the DB.
+        """
         if self.experiment_config["local_read"]:
             logging.info("Reading from local file.")
             self.model_data = ModelData(
@@ -72,21 +80,50 @@ class ValidationInstance(RunnableInstance):
         if self.experiment_config["local_write"]:
             self.model_data.save_config_state(self.experiment_config["config_dir"])
 
+    def save_data(self):
+        """
+        Save data to a local file.
+        """
+        if self.experiment_config["local_write"]:
+            self.model_data.save_config_state(self.experiment_config["config_dir"])
+
     def save_results(self):
+        """
+        Write results to file and/or the DB.
+        """
+        written = False
+
         if self.experiment_config["predict_write"]:
             logging.info("Writing predictions to file.")
             self.write_predictions_to_file(self.y_test_pred, "test_pred.pickle")
             if self.experiment_config["predict_training"]:
                 self.write_predictions_to_file(self.y_train_pred, "train_pred.pickle")
-        elif not self.experiment_config["no_db_write"]:
-            # ToDo: remove exception
+            written = True
+
+        if not self.experiment_config["no_db_write"]:
             super().save_results()
-        else:
+            written = True
+
+        if not written:
             logging.warning("Did not write predictions.")
 
     def run_prediction(self):
+        """
+        Predict on the test (and training) set.
+
+        Returns
+        ___
+
+        y_test_pred : dict
+            A dictionary containing the model predictions.
+
+        Notes
+        ___
+
+        The `y_test_pred` and optionally `y_train_pred` attributes will be set.
+        """
         logging.info("Starting prediction.")
-        y_test_pred = super().run_prediction()
+        self.y_test_pred = super().run_prediction()
 
         if self.experiment_config["predict_training"]:
             training_data_dict = self.model_data.get_training_data_arrays(dropna=False)
@@ -97,7 +134,7 @@ class ValidationInstance(RunnableInstance):
             self.y_train_pred = self.model.predict(x_train_pred)
             raise NotImplementedError("Not sure how to get the training data back again?")
 
-        return y_test_pred
+        return self.y_test_pred
 
     def write_predictions_to_file(self, y_pred, filename):
         """Write a prediction dict to pickle."""
@@ -105,45 +142,105 @@ class ValidationInstance(RunnableInstance):
         with open(pred_filepath, "wb") as handle:
             pickle.dump(y_pred, handle)
 
-    @classmethod
-    def instance_from_id(cls, instance_id, experiment_config, **kwargs):
+    def __get_results_df(self):
         """
-        Given an id, return an initialised runnable instance.
+        Get a subset of normalised_pred_data_df with the predictions in.
+        """
+        record_cols = [
+            "instance_id",
+            "point_id",
+            "measurement_start_utc",
+            "NO2_mean",
+            "NO2_var",
+        ]
+        results_df = self.model_data.normalised_pred_data_df
+        results_df["instance_id"] = self.instance_id
+        return results_df[record_cols]
+
+    def load_results(self, training_set=False, test_set=True):
+        """
+        Load the predictions, either from a file or from the DB.
 
         Parameters
         ___
 
-        instance_id : str
-            Unique id for the instance that is used to load the instance.
+        filename : str
+            E.g. test_pred.pickle, train_pred.pickle.
+            Not the full filepath! The filepath is given by experiment_config.
+        """
+        if training_set:
+            raise NotImplementedError("Cannot yet load results for the training set.")
 
-        experiment_config : dict
-            How the instance will be loaded, e.g. from file? from DB?.
+        if test_set and self.experiment_config["predict_read_local"]:
+            # load the prediction pickle files and return a results df
+            logging.info("Reading results from a local file.")
+            filepath = os.path.join(self.experiment_config["results_dir"], "test_pred.pickle")
+            with open(filepath, "rb") as handle:
+                y_pred = pickle.load(handle)
+            self.update_results(y_pred)
+            return self.__get_results_df()
+        # else read the results from the DB using super class.
+        return super().load_results(training_set=training_set, test_set=test_set)
 
-        Other Parameters
+    def save_model_params(self, **kwargs):
+        """
+        Save model parameters to file or DB.
+
+        Parameters
         ___
 
-        kwargs : dict, optional
-            See __init__.
-            If loading instance from file then should pass through cluster_id,
-            git_hash, fit_start_time and tag.
+        filename : str, optional
+            Name of the json file containing model params.
         """
-        # return instance from file
-        if experiment_config["local_read"]:
-            instance = cls(
-                instance_id=instance_id,
-                experiment_config=experiment_config,
-                **kwargs,
+        if self.experiment_config["write_model_params"]:
+            logging.info("Writing model parameters to a json file.")
+            filename = kwargs.pop("filename", "model_params.json")
+            filepath = os.path.join(self.experiment_config["model_dir"], filename)
+            with open(filepath, "w") as json_file:
+                json.dump(self.model_params, json_file)
+        if hasattr(self, "dbcnxn") and not self.experiment_config["no_db_write"]:
+            super().save_model_params(**kwargs)
+
+    def load_model_params(self, **kwargs):
+        """
+        Loads the model params from the DB or from a file
+        (if read_model_params is True in experiment_config).
+
+        Parameters
+        ___
+
+        filename : str, optional
+            Name of the json file containing model params.
+
+        Returns
+        ___
+
+        model_params : dict
+            Dictionary of model parameters.
+        """
+        if self.experiment_config["read_model_params"]:
+            logging.info("Reading model parameters from a local file.")
+            filename = kwargs.pop("filename", "model_params.json")
+            filepath = os.path.join(self.experiment_config["model_dir"], filename)
+            with open(filepath, "r") as json_file:
+                return json.load(json_file)
+        return super().load_model_params(**kwargs)
+
+    def load_data_config(self):
+        """
+        Load the data config from file or from DB.
+
+        Returns
+        ___
+
+        data_config : dict
+            Dictionary of data settings.
+        """
+        if self.experiment_config["local_read"]:
+            "Reading data config from local file."
+            filepath = os.path.join(
+                self.experiment_config["config_dir"], "config.json"
             )
-            # load the data config from file
-            data_config_fp = os.path.join(experiment_config["config_dir"], "config.json")
-            with open(data_config_fp, "r") as json_file:
-                instance.data_config = json.load(json_file)
-
-            # get model parameters from file
-            model_params_fp = os.path.join(experiment_config["model_dir"], "model_params.json")
-            with open(model_params_fp, "r") as json_file:
-                instance.model_params = json.load(json_file)
-
-            return instance
-        # return instance from DB
-        return RunnableInstance.instance_from_id(instance_id, experiment_config)
+            with open(filepath, "r") as json_file:
+                return ModelData.convert_str_to_dates(json.load(json_file))
+        return super().load_data_config()

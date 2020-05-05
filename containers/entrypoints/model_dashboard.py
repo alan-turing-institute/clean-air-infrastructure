@@ -40,15 +40,11 @@ def main():  # pylint: disable=too-many-locals
     instance = instance_class.instance_from_id(instance_id, experiment_config, **kwargs)
 
     # get the data and the results
-    print(json.dumps(instance.convert_dates_to_str(), indent=4))
+    data_id = instance.data_id
     instance.load_data()
+    assert instance.data_id == data_id
+    assert instance.instance_id == instance_id
     results_df = instance.load_results()
-    instance.model_data.normalised_pred_data_df = pd.merge(
-        instance.model_data.normalised_pred_data_df,
-        results_df,
-        how="inner",
-        on=["point_id", "measurement_start_utc"],
-    )
 
     # get the mapbox api key
     try:

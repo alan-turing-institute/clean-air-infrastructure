@@ -128,7 +128,6 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             key: kwargs.pop(key) for key in self.__class__.MODEL_ARGS
         }
         # get data params
-        datetime_format = "%Y-%m-%dT%H:%M:%S"
         train_end_date = as_datetime(kwargs.pop("trainend"))
         train_start_date = train_end_date - datetime.timedelta(
             hours=kwargs.pop("trainhours")
@@ -144,7 +143,6 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             "pred_start_date": pred_start_date,
             "pred_end_date": pred_end_date,
             "include_prediction_y": include_prediction_y,
-            "tag": kwargs.get("tag"),
         }
         # get experiment params
         self.experiment_args = {
