@@ -47,7 +47,7 @@ class DashBoard:
             Redraw dashboard with the passed page name
         """
 
-        pages = {"default": CompareFeatures}
+        pages = {"default": ComparePlots}
 
         self.page = pages[name](self)
         self.create_layout()

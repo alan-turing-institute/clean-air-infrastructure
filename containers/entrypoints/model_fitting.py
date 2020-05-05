@@ -18,7 +18,7 @@ def main():
     data_config.update(parser.data_args)
 
     # ToDo: remove hard-coded parameters, it is a temp fix
-    data_config["include_satellite"] = False
+    data_config["include_satellite"] = True
 
     # update model parameters with parsed args
     model_params = ProductionInstance.DEFAULT_MODEL_PARAMS

@@ -127,6 +127,8 @@ class MRDGP(Model):
             Construct the DGP multi-res mixture
         """
 
+        
+
         k_base_1 = get_kernel(self.model_params["base_laqn"]["kernel"], "base_laqn")
         k_base_2 = get_kernel(self.model_params["base_sat"]["kernel"], "base_sat")
         k_dgp_1 = get_kernel(self.model_params["dgp_sat"]["kernel"], "dgp_sat")
@@ -207,6 +209,7 @@ class MRDGP(Model):
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
+        print(x_train.keys())
 
         x_laqn = x_train["laqn"].copy()
         y_laqn = y_train["laqn"]["NO2"].copy()
