@@ -18,9 +18,10 @@ TRAVIS_SECRET = """
 }
 """
 
+
 def pytest_addoption(parser):
     """Add option to enable travis specific options"""
-    parser.addoption('--secretfile', default = None, help="File with connection secrets.")
+    parser.addoption("--secretfile", default=None, help="File with connection secrets.")
 
 
 @pytest.fixture(scope="module")
@@ -28,9 +29,11 @@ def readonly_user_login():
     """A username and password for a database user"""
     return {"username": "hcarlo", "password": "areallybadpassword"}
 
+
 @pytest.fixture()
 def secret_dict():
-    return {'password': 'areallybadpassword', 'port': 5421}
+    return {"password": "areallybadpassword", "port": 5421}
+
 
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
@@ -44,6 +47,7 @@ def secretfile(request, tmpdir_factory):
         copyfile(request.config.getoption("--secretfile"), fn)
 
     return fn
+
 
 @pytest.fixture(scope="function")
 def engine(secretfile):

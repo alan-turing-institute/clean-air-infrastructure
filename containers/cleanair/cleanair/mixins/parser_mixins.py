@@ -3,10 +3,11 @@ Mixins which are used by multiple argument parsers
 """
 from argparse import ArgumentTypeError, ArgumentError, Action
 
+
 class ParseDict(Action):
     def __call__(self, parser, namespace, values, option_string=None):
         d = {}
-        valid_items = ['username', 'password', 'host', 'port', 'db_name', 'ssl_mode']
+        valid_items = ["username", "password", "host", "port", "db_name", "ssl_mode"]
 
         if values:
             for item in values:
@@ -16,7 +17,7 @@ class ParseDict(Action):
                 ].strip()  # we remove blanks around keys, as is logical
                 if key not in valid_items:
                     parser.error("{} is not a valid secretfile override".format(key))
-                if key == 'port':
+                if key == "port":
                     value = int(split_items[1])
                 else:
                     value = split_items[1]
@@ -24,6 +25,7 @@ class ParseDict(Action):
                 d[key] = value
 
         setattr(namespace, self.dest, d)
+
 
 class SecretFileParserMixin:
     """
@@ -46,7 +48,8 @@ class SecretFileParserMixin:
             "(do not put spaces before or after the = sign). "
             "Valid items are 'username', 'password', 'host', 'port', 'db_name', 'ssl_mode'",
             action=ParseDict,
-    )
+        )
+
 
 class DurationParserMixin:
     """

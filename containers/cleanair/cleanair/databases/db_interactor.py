@@ -10,7 +10,9 @@ class DBInteractor:
     Base class for interacting with tables in the Azure database
     """
 
-    def __init__(self, secretfile, initialise_tables=True, connection = None, secret_dict = None):
+    def __init__(
+        self, secretfile, initialise_tables=True, connection=None, secret_dict=None
+    ):
         """
         Init method for connecting to database
 
@@ -31,7 +33,9 @@ class DBInteractor:
 
         # Ensure that connector exists
         if not hasattr(self, "dbcnxn"):
-            self.dbcnxn = Connector(secretfile, connection= connection, secret_dict=secret_dict)
+            self.dbcnxn = Connector(
+                secretfile, connection=connection, secret_dict=secret_dict
+            )
 
         # Ensure that tables are initialised
         if initialise_tables:

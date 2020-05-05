@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 from cleanair.databases import (
     DBWriter,
     Connector,
@@ -8,17 +8,20 @@ from cleanair.databases import (
     DBConfig,
 )
 
+
 @pytest.fixture()
 def secret_dict():
 
-    return {'password': 'areallybadpassword', 'port': 5421}
+    return {"password": "areallybadpassword", "port": 5421}
+
 
 class TestConnectionSecrets:
-
     def test_connector(self, secretfile, secret_dict, connection):
 
         connection = Connector(secretfile, connection=connection)
-        connection2 = Connector(secretfile, connection=connection, secret_dict=secret_dict)
+        connection2 = Connector(
+            secretfile, connection=connection, secret_dict=secret_dict
+        )
 
         assert connection.connection_dict != connection2.connection_dict
 
@@ -27,11 +30,16 @@ class TestConnectionSecrets:
                 assert connection.connection_dict[key] != value
             else:
                 assert connection.connection_dict[key] == value
-    
+
     def test_interactor(self, secretfile, secret_dict, connection):
 
         connection = DBInteractor(secretfile, connection=connection)
-        connection2 = DBInteractor(secretfile, connection=connection, initialise_tables=False, secret_dict=secret_dict)
+        connection2 = DBInteractor(
+            secretfile,
+            connection=connection,
+            initialise_tables=False,
+            secret_dict=secret_dict,
+        )
 
         assert connection.dbcnxn.connection_dict != connection2.dbcnxn.connection_dict
 
@@ -40,15 +48,20 @@ class TestConnectionSecrets:
                 assert connection.dbcnxn.connection_dict[key] != value
             else:
                 assert connection.dbcnxn.connection_dict[key] == value
-       
+
         # Check we cant connect with the updated loggin info
         with pytest.raises(AttributeError):
             assert connection2.connection.initialise_tables()
 
     def test_writer(self, secretfile, secret_dict, connection):
 
-        connection = DBWriter(secretfile = secretfile, connection=connection)
-        connection2 = DBWriter(secretfile = secretfile, connection=connection, initialise_tables=False, secret_dict=secret_dict)
+        connection = DBWriter(secretfile=secretfile, connection=connection)
+        connection2 = DBWriter(
+            secretfile=secretfile,
+            connection=connection,
+            initialise_tables=False,
+            secret_dict=secret_dict,
+        )
 
         assert connection.dbcnxn.connection_dict != connection2.dbcnxn.connection_dict
 
@@ -57,21 +70,24 @@ class TestConnectionSecrets:
                 assert connection.dbcnxn.connection_dict[key] != value
             else:
                 assert connection.dbcnxn.connection_dict[key] == value
-       
+
         # Check we cant connect with the updated loggin info
         with pytest.raises(AttributeError):
             assert connection2.connection.initialise_tables()
 
-    def test_connector_environment (self, secretfile, secret_dict, connection, monkeypatch):
+    def test_connector_environment(
+        self, secretfile, secret_dict, connection, monkeypatch
+    ):
 
         # Set PGPASWORD environment variable
-        password = 'tokenpassword'
+        password = "tokenpassword"
         monkeypatch.setenv("PGPASSWORD", password)
 
         # Connector should replace password from secretfile with environment variables
         connection = Connector(secretfile, connection=connection)
-        assert connection.connection_dict['password'] == password
+        assert connection.connection_dict["password"] == password
 
-        connection2 = Connector(secretfile, secret_dict = secret_dict, connection=connection)
-        assert connection2.connection_dict['password'] == password
-
+        connection2 = Connector(
+            secretfile, secret_dict=secret_dict, connection=connection
+        )
+        assert connection2.connection_dict["password"] == password

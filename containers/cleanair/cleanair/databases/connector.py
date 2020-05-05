@@ -16,7 +16,6 @@ from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
 
 
-
 class Connector(DBConnectionMixin):
     """
     Base class for connecting to databases with sqlalchemy

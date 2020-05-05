@@ -48,7 +48,6 @@ class DBConnectionMixin:
             **self.connection_info,
         }
 
-    
     @property
     def connection_string(self):
         """Get a connection string"""
@@ -115,14 +114,13 @@ class DBConnectionMixin:
         Returns:
             dict: A dictionary of containing the value of the environment value PGPASSWORD if it exists. Else None
         """
-        
-        pg_password = os.getenv('PGPASSWORD', default=None)
+
+        pg_password = os.getenv("PGPASSWORD", default=None)
 
         if pg_password:
-            return {'password': pg_password}
+            return {"password": pg_password}
         else:
             return None
-        
 
     def replace_connection_values(self, connection_info, secret_dict):
         """Replace values in connection_info with those in secret_dict
@@ -136,10 +134,9 @@ class DBConnectionMixin:
             dict: A dictionary of connection parameters
         """
 
-        connection_info_  = connection_info.copy()
+        connection_info_ = connection_info.copy()
         for key, value in connection_info_.items():
             if key in secret_dict:
                 connection_info_[key] = secret_dict[key]
 
         return connection_info_
-

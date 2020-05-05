@@ -70,7 +70,7 @@ class DBConfig(Connector):
         """
 
         self.create_schema()
-        
+
         for role in self.roles:
             # Create a role
             self.create_role(role["role"])
@@ -269,7 +269,6 @@ class DBConfig(Connector):
                 )
             )
             session.commit()
-
 
     def create_user(self, username, password):
         """Create a new user and assign to a role

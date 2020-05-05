@@ -38,14 +38,15 @@ class TestDataBaseRoles:
         assert set(roles).issubset(set(retrieved_roles))
 
     def test_configure_role(
-        self,
-        secretfile,
-        config_file,
-        connection_module,
-        readonly_user_login,
+        self, secretfile, config_file, connection_module, readonly_user_login,
     ):
 
-        db_config = DBConfig(config_file, secretfile, secret_dict = readonly_user_login, connection=connection_module)
+        db_config = DBConfig(
+            config_file,
+            secretfile,
+            secret_dict=readonly_user_login,
+            connection=connection_module,
+        )
         db_config.create_schema()
         db_config.configure_all_roles()
 
@@ -56,4 +57,3 @@ class TestDataBaseRoles:
         db_config.grant_role_to_user(readonly_user_login["username"], "readonly")
 
         assert readonly_user_login["username"] in db_config.list_roles()
-
