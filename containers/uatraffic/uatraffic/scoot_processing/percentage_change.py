@@ -9,7 +9,7 @@ import pandas as pd
 from sqlalchemy import func, or_, and_
 
 from cleanair.databases import DBWriter
-from cleanair.mixins import DateRangeMixin
+from cleanair.mixins import DateRangeMixin, ScootQueryMixin
 from cleanair.loggers.logcolours import green, red
 from cleanair.databases.tables import (
     MetaPoint,
@@ -30,7 +30,7 @@ LOCKDOWN_BASELINE_START = "2020-03-30"
 LOCKDOWN_BASELINE_END = "2020-04-20"
 
 
-class TrafficPercentageChange(DateRangeMixin, DBWriter):
+class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
     """
     Queries to run on the SCOOT DB.
     """
@@ -53,133 +53,6 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
             self.baseline_end = LOCKDOWN_BASELINE_END
         else:
             raise ValueError("baseline_tag must be 'normal' or 'lockdown'")
-
-    @db_query
-    def get_scoot_with_location(self, start_time, end_time=None, detectors=None):
-        """
-        Get scoot data with lat and long positions.
-
-        Parameters
-        ___
-
-        start_time : str
-            Start datetime.
-
-        end_time : str, optional
-            End datetime (exclusive).
-
-        detectors : list, optional
-            Subset of detectors to get readings for.
-        """
-
-        with self.dbcnxn.open_session() as session:
-            scoot_readings = (
-                session.query(
-                    ScootReading.detector_id,
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                    ScootReading.measurement_start_utc,
-                    ScootReading.measurement_end_utc,
-                    ScootReading.n_vehicles_in_interval,
-                )
-                .join(
-                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
-                )
-                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
-                .filter(ScootReading.measurement_start_utc >= start_time)
-            )
-            # get readings upto but not including end_time
-            if end_time:
-
-                scoot_readings = scoot_readings.filter(
-                    ScootReading.measurement_start_utc < end_time
-                )
-            # get subset of detectors
-            if detectors:
-                scoot_readings = scoot_readings.filter(
-                    ScootReading.detector_id.in_(detectors)
-                )
-
-            return scoot_readings
-
-    @db_query
-    def get_scoot_filter_by_dow(
-        self, day_of_week, start_time, end_time=None, detectors=None
-    ):
-        """
-        Get scoot readings for days between start_time and end_time filtered by day_of_week.
-
-        Parameters
-        ___
-
-        day_of_week : int
-            Day of the week. 0=Mon, 1=Tue, etc.
-
-        start_time : str
-            Start datetime.
-
-        end_time : str, optional
-            End datetime (exclusive).
-
-        detectors : list, optional
-            Subset of detectors to get readings for.
-        """
-        if not end_time:
-            end_time = datetime.now().strftime("%Y-%m-%d")
-
-        # get list of start times that match the weekday within the timerange
-        starts = pd.date_range(start_time, end_time).to_series()
-        starts = (
-            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)]
-            .dt.strftime("%Y-%m-%d")
-            .to_list()
-        )
-
-        # get list of end times that match the weekday within the timerange
-        ends = pd.date_range(start_time, end_time).to_series()
-        ends = (
-            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)]
-            .dt.strftime("%Y-%m-%d")
-            .to_list()
-        )
-
-        # check lists are the same length
-        assert len(starts) == len(ends)
-
-        with self.dbcnxn.open_session() as session:
-            scoot_readings = (
-                session.query(
-                    ScootReading.detector_id,
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                    ScootReading.measurement_start_utc,
-                    ScootReading.measurement_end_utc,
-                    ScootReading.n_vehicles_in_interval,
-                )
-                .join(
-                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
-                )
-                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
-            )
-            # get a list of or statements
-            or_statements = []
-            for start, end in zip(starts, ends):
-                # append AND statement
-                or_statements.append(
-                    and_(
-                        ScootReading.measurement_start_utc >= start,
-                        ScootReading.measurement_start_utc < end,
-                    )
-                )
-            scoot_readings = scoot_readings.filter(or_(*or_statements))
-
-            # get subset of detectors
-            if detectors:
-                scoot_readings = scoot_readings.filter(
-                    ScootReading.detector_id.in_(detectors)
-                )
-
-            return scoot_readings
 
     @db_query
     def get_percent_of_baseline(
@@ -223,7 +96,7 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
         )
 
         # get data from database for the given day_of_week
-        baseline_df = self.get_scoot_filter_by_dow(
+        baseline_df = self.get_scoot_by_dow(
             start_time=self.baseline_start,
             end_time=self.baseline_end,
             day_of_week=day_of_week,

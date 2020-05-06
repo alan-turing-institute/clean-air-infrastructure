@@ -1,7 +1,9 @@
 """
 Mixin for useful database queries
 """
-from sqlalchemy import and_, func, literal, null
+from datetime import datetime
+import pandas as pd
+from sqlalchemy import and_, or_, func, literal, null
 from ..decorators import db_query
 from ..databases.tables import (
     AQEReading,
@@ -272,12 +274,7 @@ class DBQueryMixin:
 class ScootQueryMixin:
 
     @db_query
-    def get_scoot_with_location(
-        self,
-        start_time: str,
-        end_time: str = None,
-        detectors: list = None
-    ):
+    def get_scoot_with_location(self, start_time, end_time=None, detectors=None):
         """
         Get scoot data with lat and long positions.
 
@@ -293,8 +290,6 @@ class ScootQueryMixin:
         detectors : list, optional
             Subset of detectors to get readings for.
         """
-        if not hasattr(self, "dbcnxn"):
-            raise AttributeError("ScootQuery is a mixin - you must inherit from DBReader or DBWriter as well.")
 
         with self.dbcnxn.open_session() as session:
             scoot_readings = (
@@ -318,6 +313,85 @@ class ScootQueryMixin:
                 scoot_readings = scoot_readings.filter(
                     ScootReading.measurement_start_utc < end_time
                 )
+            # get subset of detectors
+            if detectors:
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.detector_id.in_(detectors)
+                )
+
+            return scoot_readings
+
+    @db_query
+    def get_scoot_by_dow(
+        self, day_of_week, start_time, end_time=None, detectors=None
+    ):
+        """
+        Get scoot readings for days between start_time and end_time filtered by day_of_week.
+
+        Parameters
+        ___
+
+        day_of_week : int
+            Day of the week. 0=Mon, 1=Tue, etc.
+
+        start_time : str
+            Start datetime.
+
+        end_time : str, optional
+            End datetime (exclusive).
+
+        detectors : list, optional
+            Subset of detectors to get readings for.
+        """
+        if not end_time:
+            end_time = datetime.now().strftime("%Y-%m-%d")
+
+        # get list of start times that match the weekday within the timerange
+        starts = pd.date_range(start_time, end_time).to_series()
+        starts = (
+            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
+
+        # get list of end times that match the weekday within the timerange
+        ends = pd.date_range(start_time, end_time).to_series()
+        ends = (
+            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
+
+        # check lists are the same length
+        assert len(starts) == len(ends)
+
+        with self.dbcnxn.open_session() as session:
+            scoot_readings = (
+                session.query(
+                    ScootReading.detector_id,
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                    ScootReading.measurement_start_utc,
+                    ScootReading.measurement_end_utc,
+                    ScootReading.n_vehicles_in_interval,
+                )
+                .join(
+                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                )
+                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+            )
+            # get a list of or statements
+            or_statements = []
+            for start, end in zip(starts, ends):
+                # append AND statement
+                or_statements.append(
+                    and_(
+                        ScootReading.measurement_start_utc >= start,
+                        ScootReading.measurement_start_utc < end,
+                    )
+                )
+            scoot_readings = scoot_readings.filter(or_(*or_statements))
+
             # get subset of detectors
             if detectors:
                 scoot_readings = scoot_readings.filter(
