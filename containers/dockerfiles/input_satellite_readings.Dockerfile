@@ -1,6 +1,11 @@
 # Use an official Python runtime as a parent image
 FROM python:3.7
 
+# Update certificates
+RUN    apt-get update \
+    && apt-get install openssl \
+    && apt-get install ca-certificates
+
 # Set the working directory to /app
 WORKDIR /app
 
@@ -30,7 +35,7 @@ RUN git clone https://github.com/jswhit/pygrib.git
 RUN cd pygrib && mv setup.cfg.template setup.cfg
 RUN pip install pygrib
 
-
+RUN pip install pyopenssl
 # Copy the run script into the container
 COPY entrypoints/input_satellite_readings.py /app
 

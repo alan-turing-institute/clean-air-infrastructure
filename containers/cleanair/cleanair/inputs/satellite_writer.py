@@ -92,6 +92,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
     @robust_api
     def get_response(api_endpoint, params=None, timeout=60.0):
         """Return the response from an API"""
+
         response = requests.get(api_endpoint, params=params, timeout=timeout)
         response.raise_for_status()
         return response
@@ -123,7 +124,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         endpoint = "https://download.regional.atmosphere.copernicus.eu/services/CAMS50"
         raw_data = self.get_response(
-            endpoint, n_repeat=10, sleep_time=3, params=params, timeout=120.0
+            endpoint, n_repeat=10, sleep_time=10, params=params, timeout=120.0
         )
         return raw_data.content
 

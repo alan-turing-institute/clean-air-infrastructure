@@ -23,6 +23,7 @@ def main():
             end=args.end,
             nhours=args.nhours,
             secretfile=args.secretfile,
+            secret_dict=args.secret_dict,
         )
         satellite_writer.update_remote_tables()
     except Exception as error:
