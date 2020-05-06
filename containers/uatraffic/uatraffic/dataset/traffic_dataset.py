@@ -5,7 +5,7 @@ A traffic dataset.
 import tensorflow as tf
 from cleanair.databases import DBReader
 from cleanair.mixins import ScootQueryMixin
-from ..preprocess import normalise_datetime
+from ..preprocess.normalise import normalise_datetime
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -23,6 +23,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         self._data_config = data_config
 
         # load scoot from the data config
+        # TODO: add day of week
         self._df = self.get_scoot_with_location(
             self._data_config["start"],
             end_time=self._data_config["end"],
@@ -76,4 +77,4 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         """
         Returns true if the dictionary passed is valid.
         """
-        assert {"start", "end", "x_cols", "y_cols", "detectors"}.issubset(data_config)
+        assert {"start", "end", "x_cols", "y_cols", "detectors", "weekdays"}.issubset(data_config)

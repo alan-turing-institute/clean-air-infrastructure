@@ -34,9 +34,9 @@ def evaluate_metrics(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf
 
 def batch_metrics(
     ids: Collection,
-    models: Collection[gpflow.models.GPModel],
-    x_tests: Collection[tf.Tensor],
-    y_tests: Collection[tf.Tensor],
+    models: Collection,
+    x_tests: Collection,
+    y_tests: Collection,
 ) -> pd.DataFrame:
     """
     Multi-process function for sampling from each model on x_test and evaluating against y_test.

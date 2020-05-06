@@ -9,7 +9,6 @@ import pandas as pd
 import tensorflow as tf
 
 from uatraffic.util import TrafficModelParser
-from uatraffic.databases import TrafficQuery
 from uatraffic.databases import TrafficInstance
 from uatraffic.dates import (
     NORMAL_BASELINE_START,

@@ -1,13 +1,8 @@
 """Functions for loading data in batch mode."""
 import logging
 from typing import Tuple
-
 import pandas as pd
-import numpy as np
-import tensorflow as tf
-
-from .normalise import normalise_datetime
-from ..databases import TrafficQuery
+from .traffic_dataset import TrafficDataset
 
 # TODO: this function could be part of an object?
 def prepare_batch(
@@ -28,9 +23,6 @@ def prepare_batch(
         y_array: List of output test tensors.
         df_array (Optional): List of dataframes.
     """
-    # load query object
-    traffic_query = TrafficQuery(secretfile=secretfile)
-
     # store tensors and models
     x_dict = {}
     y_dict = {}
@@ -43,33 +35,25 @@ def prepare_batch(
         data_config = row["data_config"]
         model_params = row["model_param"]
 
-        # get the data for this instance
-        data_df = traffic_query.get_scoot_by_dow(
-            start_time=data_config["start"],
-            end_time=data_config["end"],
-            detectors=data_config["detectors"],
-            day_of_week=data_config["weekdays"][0],
-            output_type="df",
-        )
-        # normalise
-        data_df['measurement_start_utc'] = pd.to_datetime(data_df['measurement_start_utc'])
-        data_df = normalise_datetime(data_df, wrt=model_params["normaliseby"])
+        # get the dataset for this instance
+        # TODO: pass model_params to TrafficDataset for normalisation
+        dataset = TrafficDataset(data_config, secretfile)
+        df_dict[data_id] = dataset.dataframe
+        x_dict[data_id] = dataset.features
+        y_dict[data_id] = dataset.target
 
+        # TODO: move this to Dataset class
         # add to dicts
-        if getattr(model_params, "median"):
-            gb = data_df.groupby(data_config["x_cols"])
-            median = gb[data_config["y_cols"]].median
-            x_train = np.array(gb.index)
-            y_train = np.array(median)
-            # TODO remove assert
-            assert x_train.shape[0] == 24
-        else:
-            x_train = np.array(data_df[data_config["x_cols"]]).astype(np.float64)
-            y_train = np.array(data_df[data_config["y_cols"]]).astype(np.float64)
-
-        x_dict[data_id] = tf.convert_to_tensor(x_train)
-        y_dict[data_id] = tf.convert_to_tensor(y_train)
-        df_dict[data_id] = data_df
+        # if getattr(model_params, "median"):
+        #     gb = data_df.groupby(data_config["x_cols"])
+        #     median = gb[data_config["y_cols"]].median
+        #     x_train = np.array(gb.index)
+        #     y_train = np.array(median)
+        #     # TODO remove assert
+        #     assert x_train.shape[0] == 24
+        # else:
+        #     x_train = np.array(data_df[data_config["x_cols"]]).astype(np.float64)
+        #     y_train = np.array(data_df[data_config["y_cols"]]).astype(np.float64)
 
     x_array = instance_df["data_id"].map(lambda x: x_dict[x])
     y_array = instance_df["data_id"].map(lambda x: y_dict[x])

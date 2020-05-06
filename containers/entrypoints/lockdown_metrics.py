@@ -3,7 +3,7 @@ Calculate metrics for trained models.
 """
 import os
 import logging
-from uatraffic.databases import TrafficInstanceQuery, TrafficQuery, TrafficMetric
+from uatraffic.databases import TrafficInstanceQuery, TrafficMetric
 from uatraffic.metric import batch_metrics
 from uatraffic.preprocess import prepare_batch
 from uatraffic.util import load_models_from_file, TrafficModelParser
