@@ -14,6 +14,10 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["cleanair",],
+    install_requires=[
+        "cleanair",
+        "tensorflow==2.1.0",
+        "tensorflow_probability==0.9",
+    ],
     python_requires=">=3.7",
 )
