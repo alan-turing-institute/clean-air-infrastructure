@@ -24,6 +24,7 @@ def main():
             aws_key=args.aws_key,
             nhours=args.nhours,
             secretfile=args.secretfile,
+            secret_dict = args.secret_dict,
         )
         scoot_writer.update_remote_tables()
 
