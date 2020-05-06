@@ -24,6 +24,5 @@ python-virtual-environments/
 *.egg-info
 
 # Misc
-val/
 notebooks/
 *.cfg
