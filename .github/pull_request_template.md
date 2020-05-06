@@ -32,7 +32,7 @@ List any issues this closes:
 - Closes issue
 - Closes issue
 
-# Checklist
+## Checklist
 Please ensure you have done the following:
 
 - [ ] Code conforms to the projects style guidelines
@@ -46,3 +46,9 @@ Please ensure you have done the following:
 - [ ] Unit tests written and passing on local database. Tests should prove that fix is effective or new feature works as expected
 
 - [ ] Code needs to run on the cluster? Tag database administrator in the pull request review to configure. 
+
+## Reviewer
+
+List anything you would like the reviewer to focus on.
+
+- I'm not sure if my tests cover all use cases well
