@@ -8,40 +8,41 @@ Provides 48h high-resolution air pollution forecasts over London via the [UrbanA
 Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
 
-# Contributing
+# Contributing :art:
 
 To contribute to the project please speak to one of the following:
 
-| Name               | GitHub ID | Email |
-| ------------------ | --- | --- |
-| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)| <ogiles@turing.ac.uk> |
-| James Robinson     | [@jemrobinson](https://github.com/jemrobinson) | <jrobinson@turing.ac.uk> |
-| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)| <pohara@turing.ac.uk> |
-| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)| <ohamelijnck@turing.ac.uk> |
+| Name               | GitHub ID                                            | Email                     | Admin  |
+| ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
+| James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
+| Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     |
+| Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
 
 
-## Prerequisites
+# Non-infrastructure development :sparkles:
+
+To contribute as a non-infrastructure developer you will need the following. Infrastructure developers will need these as well as additional dependencies.
+
 To contribute to the project you will need the following (details below):
 
-### Infrastructure development
-- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
-- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
-- `Terraform` (for configuring the Azure infrastructure)
-
-### All development
-- `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 - `Docker` (For building and testing images locally)
 - `postgreSQL` (command-line tool for interacting with db)
 
+### PostgreSQL
+```bash
+brew install postgresql
+```
 
-## Azure Account
-If you do not have an `Azure` account already, please contact one of the project maintainers
+### Docker
+Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-## Azure CLI
-If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started.
+### Development tools
+The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
 
-## CleanAir Packages (optional - required for development)
-The following are optional as we can run everything on docker images. However, they are recommended for development/testing. 
+```bash
+pip install -r containers/requirements.txt
+```
 
 ### CleanAir package
 To run the CleanAir functionality locally (without a docker image) you can install the package with `pip`. 
@@ -56,7 +57,6 @@ Certain functionality requires optional dependencies. These can be installed by 
 
 | Option keyword   | Functionality               |
 | ------------------ | --------------------------- |
-| setup              | Database static data inserts|
 | models             | CleanAir GPFlow models      |
 | traffic            | FBProphet Trafic Models     |
 | dashboards         | Model fitting Dashboards    |
@@ -64,7 +64,7 @@ Certain functionality requires optional dependencies. These can be installed by 
 For getting started we recommend:
 
 ```bash
-pip install -e 'containers/cleanair[setup]'
+pip install -e 'containers/cleanair[models, traffic, dashboard]'
 ```
 
 ### UrbanAir Flask API package
@@ -78,20 +78,37 @@ All additional  functionality related to the London Busyness project requires:
 pip install -e 'containers/uatraffic'
 ```
 
+# Infrastructure development/deployment :building_construction:
+Cloud infrastructure developers also require the following:
+
+### Infrastructure development
+- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
+- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
+- `Terraform` (for configuring the Azure infrastructure)
+- `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
+
+## Azure Account
+If you do not have an `Azure` account already, please contact one of the project maintainers
+
+## Azure CLI
+If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
+
+
 ## Travis CI CLI
 Ensure you have Ruby 1.9.3 or above installed:
 ```bash
-ruby -v
+brew install ruby
+gem update --system
 ```
 
 Then install the Travis CI CLI with:
 ```bash
-gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
+gem install  travis --no-rdoc --no-ri
 ```
 
 On some versions of OSX, this fails, so you may need the following alternative:
 ```
-ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future gem install --user-install travis -v 1.8.10 --no-rdoc --no-ri
+ARCHFLAGS=-Wno-error=unused-command-line-argument-hard-error-in-future gem install --user-install travis -v 1.8.13 --no-document
 ```
 
 Verify with
@@ -106,90 +123,15 @@ export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
 
-## PostgreSQL
-```bash
-brew install postgresql
-```
-
-## Terraform (Infrastructure deployment only)
+## Terraform 
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
 brew install terraform
 ```
 
-# Configure a Local Database
-In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
+## Login to Azure
 
-```bash 
-brew services start postgresql   
-```
-
-Start a postgres session with:
-
-```bash
-psql postgres
-```
-
-Finally create a new database and exit postgres:
-
-```psql
-CREATE DATABASE cleanair_test_db;
-\q
-```
-
-## Create a local secrets file
-We use secret files to pass secrets to CleanAir programs. 
-```bash
-mkdir -p .secrets
-echo '{
-    "username": "postgres",
-    "password": "''",
-    "host": "host.docker.internal",
-    "port": 5432,
-    "db_name": "cleanair_test_db",
-    "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_offline.json
-```
-
-## Static data
-
-We can now insert `static data` into our local test database.
-To do so you will need a SAS Token to access static datafiles stored on Azure. 
-
-
-### Get a SAS token
-
-If you are an infrastructure developer you can obtain a SAS token by running:
-
-```bash
-INSERT INSTRUCTIONS
-```
-
-Otherwise you must request a SAS token from an infrastructure developer.
-
-### Insert data into the database
-
-Build the dockler image:
-```bash
-docker build -t insert_static_data:latest -f containers/dockerfiles/process_static_dataset.Dockerfile "containers"
-```
-
-Run the container:
-```bash
-docker run -v $(pwd)/.secrets:/secrets insert_static_data:latest -t <sas_token> -s db_secrets_offline.json
-```
-# Infrastructure Deployment
-The following steps are needed to setup the Clean Air cloud infrastructure.
-
-## Login to Travis CLI
-Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
-
-```bash
-travis login --pro
-```
-
-## Setup Azure
 To start working with `Azure`, you must first login to your account from the terminal:
 ```bash
 az login
@@ -205,10 +147,120 @@ Then set your default subscription to the Clean Air project (if you cannot see i
 az account set --subscription "CleanAir"
 ```
 
+# Configure a Local Database
+In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
+
+```bash 
+brew install postgres
+brew services start postgresql   
+```
+
+## Create a local secrets file
+We use secret files to pass secrets to CleanAir programs. We need to create two, one to work with docker and another for running tests locally.
+```bash
+mkdir -p .secrets
+echo '{
+    "username": "postgres",
+    "password": "''",
+    "host": "localhost",
+    "port": 5432,
+    "db_name": "cleanair_test_db",
+    "ssl_mode": "prefer"
+}' >> .secrets/db_secrets_offline.json
+```
+
+## Static data
+
+The database requires a number of static datasets. We can now insert `static data` into our local database.
+To do so you will need a SAS Token to access static datafiles stored on Azure. 
+
+### Insert data into the database
+
+If you have access Azure and you have logged in from the [command line](#login-to-Azure) you can obtain a SAS token by running:
+
+```bash
+SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
+```
+
+Otherwise you must request a SAS token from an [infrastructure developer](#contributing-:art:) and set it as a variable:
+
+```bash
+SAS_TOKEN=<SAS_TOKEN>
+```
+
+Create a variable with the location of your secrets file
+
+```bash
+SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+```
+
+You can then download and insert all static data into the database by running the following:
+
+```bash
+python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+```
+
+If you  would also like to add `UKMAP` to the database run:
+
+```bash
+python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
+```
+
+`UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests with `UKMAP` at the moment. 
+
+### Check the database configuration
+
+You can check everything configured correctly by running:
+
+```bash
+pytest containers/tests/database_init
+```
+
+# Access CleanAir Production Database
+
+To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributing-:art:). To access the database first [login to Azure](#login-to-Azure) from the terminal. 
+
+You can then request an access Token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
+
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+You can then access the database using psql:
+
+```bash
+psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
+```
+replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
+
+
+# Infrastructure Deployment
+The following steps are needed to setup the Clean Air cloud infrastructure.
+
+## Login to Travis CLI
+Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
+
+```bash
+travis login --pro
+```
+
+Check which `Azure` subscriptions you have access to by running
+```bash
+az account list --output table --refresh
+```
+
+Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+```bash
+az account set --subscription "CleanAir"
+```
+
 Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the `NAME`, `ID` and `PASSWORD/SECRET` for the service principal, as these will be needed later.
 
 
-## Setup Terraform with Python
+# DANGER ZONE :skull:
+The following sections make changes to the Cloud Infrastructure. Do not use if you don't know what you are doing. 
+
+## Setup Terraform with Python  
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 

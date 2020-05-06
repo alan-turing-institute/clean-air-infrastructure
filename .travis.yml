@@ -1,3 +1,8 @@
+language: python
+python:
+  - "3.7"
+cache: pip
+
 addons:
   postgresql: '11'
   apt:
@@ -23,10 +28,6 @@ before_install:
           "ssl_mode": "prefer"
       }' >> .secrets/db_secrets_offline.json
 
-language: python
-python:
-  - "3.7"
-
 install:
   - pip install -r containers/requirements.txt
   - pip install 'containers/cleanair[models,traffic,dashboard]'
@@ -38,7 +39,7 @@ before_script:
 script:
   
   # # Run all pytest unit tests
-  - python -m pytest containers --travis
+  - python -m pytest containers
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8 --ignore=E203, W503

@@ -1,80 +1,59 @@
 import pytest
-from cleanair.databases import DBInteractor
-from cleanair.decorators import db_query
-from cleanair.databases.tables import (
-    LondonBoundary,
-    OSHighway,
-    StreetCanyon,
-    ScootDetector,
-    MetaPoint,
-    UKMap,
-    UrbanVillage,
-)
-import os
+from cleanair.databases import DBConfig, Connector, DBWriter
 
 
-@pytest.fixture()
-def N_ROWS_SCOOT():
-    """Expected number of rows in scoot"""
-    return 12421
+class TestDataBaseRoles:
+    def test_load_yaml(self, secretfile, config_file):
+        """Test that we can load yaml and read config file"""
 
+        db_config = DBConfig(config_file, secretfile)
 
-@pytest.fixture()
-def static_data_sizes():
-    """Expected number of rows in scoot"""
+        assert "schema" in db_config.config.keys()
+        assert "roles" in db_config.config.keys()
 
-    n_rows = {
-        "scoot_detector": {"table": ScootDetector, "rows": 12421},
-        "london_boundary": {"table": LondonBoundary, "rows": 33},
-        "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
-        "street_canyon": {"table": StreetCanyon, "rows": 242547},
-        "urban_village": {"table": UrbanVillage, "rows": 747},
-    }
+    def test_schema(self, secretfile, config_file, schema):
 
-    return n_rows
+        db_config = DBConfig(config_file, secretfile)
 
+        assert db_config.schema == schema
 
-@pytest.fixture()
-def N_ROWS_SCOOT():
-    """Expected number of rows in scoot"""
-    return 12421
+    def test_create_schema(self, secretfile, config_file, connection):
 
+        db_config = DBConfig(config_file, secretfile, connection=connection)
+        db_config.create_schema()
 
-@pytest.fixture()
-def static_data_sizes():
-    """Expected number of rows in scoot"""
+        for sch in db_config.schema:
+            assert db_config.check_schema_exists(sch)
 
-    n_rows = {
-        "scoot_detector": {"table": ScootDetector, "rows": 12421},
-        "london_boundary": {"table": LondonBoundary, "rows": 33},
-        "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
-        "street_canyon": {"table": StreetCanyon, "rows": 242547},
-        "urban_village": {"table": UrbanVillage, "rows": 747},
-        "ukmap": {"table": UKMap, "rows": 0},
-    }
+    def test_create_and_list_roles(self, secretfile, config_file, roles, connection):
+        """Creat roles and then check they exist on the database"""
 
-    return n_rows
+        db_config = DBConfig(config_file, secretfile, connection=connection)
 
+        for r in roles:
+            db_config.create_role(r)
 
-def test_db_connection(secretfile):
-    """Test database connection
-    """
-    connect = DBInteractor(secretfile, initialise_tables=True)
+        retrieved_roles = db_config.list_roles()
 
+        assert set(roles).issubset(set(retrieved_roles))
 
-def test_static_tables_filled(secretfile, static_data_sizes):
-    "Test all static tables have the expected number of rows"
+    def test_configure_role(
+        self, secretfile, config_file, connection_module, readonly_user_login,
+    ):
 
-    connect = DBInteractor(secretfile, initialise_tables=True)
+        db_config = DBConfig(
+            config_file,
+            secretfile,
+            secret_dict=readonly_user_login,
+            connection=connection_module,
+        )
+        db_config.create_schema()
+        db_config.configure_all_roles()
 
-    @db_query
-    def query_table(table):
-        """Helper function to return scoot query"""
-        with connect.dbcnxn.open_session() as session:
+        # Create a new user and grant readonly role
+        db_config.create_user(
+            readonly_user_login["username"], readonly_user_login["password"]
+        )
+        db_config.grant_role_to_user(readonly_user_login["username"], "readonly")
 
-            return session.query(table)
-
-    for table_name, table_dict in static_data_sizes.items():
-        count = query_table(table_dict["table"]).count()
-        print(f"Table {table_name} has {count} rows. Expecting {table_dict['rows']}")
-        assert query_table(table_dict["table"]).count() == table_dict["rows"]
+        assert readonly_user_login["username"] in db_config.list_roles()

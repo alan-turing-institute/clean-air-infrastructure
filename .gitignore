@@ -11,6 +11,7 @@ terraform/backend_config.tf
 .vscode/
 *.secrets/
 *.tgz
+.mypy_*
 
 # pyenv
 .python-version
