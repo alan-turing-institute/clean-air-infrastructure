@@ -131,6 +131,7 @@ def main():
             instance_dict = dict(
                 instance.to_dict(),
                 data_config=data_config,
+                preprocessing=preprocessing,
                 model_param=model_params,
             )
             instance_rows.append(instance_dict)
@@ -153,12 +154,12 @@ def main():
     instance_df = pd.DataFrame(instance_rows)
 
     # get an array of tensors ready for training
-    x_array, y_array = prepare_batch(
+    datasets = prepare_batch(
         instance_df,
         args.secretfile,
     )
     # iterate through instances training the model
-    for instance, x_train, y_train in zip(instance_array, x_array, y_array):
+    for instance, dataset in zip(instance_array, datasets):
         logging.info("Training model on instance %s", instance.instance_id)
         # get a kernel from settings
         if getattr(args, "dryrun"):
@@ -166,8 +167,8 @@ def main():
         optimizer = tf.keras.optimizers.Adam(0.001)
         kernel = parse_kernel(kernel_dict)      # returns gpflow kernel
         model = train_sensor_model(
-            x_train,
-            y_train,
+            dataset.feature_tensor,
+            dataset.target_tensor,
             kernel,
             optimizer,
             max_iterations=args.max_iterations,

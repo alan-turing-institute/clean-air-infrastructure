@@ -29,10 +29,11 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
 
         # load scoot from the data config
         # TODO: add day of week
-        traffic_df = self.get_scoot_with_location(
+        traffic_df = self.get_scoot_by_dow(
             self._data_config["start"],
             end_time=self._data_config["end"],
             detectors=self._data_config["detectors"],
+            day_of_week=self.data_config["weekdays"][0],
             output_type="df",
         )
         # from dataframe load datatset
