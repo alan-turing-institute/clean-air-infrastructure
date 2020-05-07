@@ -220,7 +220,7 @@ The database requires a number of static datasets. We can now insert `static dat
 If you have access Azure you can log in to Azure from the [command line](#login-to-Azure) and run the following to obtain a SAS token:
 
 ```bash
-SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
+SAS_TOKEN=$(python containers/entrypoints/setup/insert_static_datasets.py -g)
 ```
 
 Otherwise you must request a SAS token from an [infrastructure developer](#contributors-:dancers:) and set it as a variable:
@@ -238,13 +238,13 @@ SECRETS=$(pwd)/.secrets/db_secrets_offline.json
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
 If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
 ```
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
