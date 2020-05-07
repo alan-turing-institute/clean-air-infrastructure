@@ -276,7 +276,54 @@ psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=c
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
+## Create secret file to connect using CleanAir package
+
+To connect to the database using the CleanAir package you will need to create another secret file:
+
+```bash
+echo '{
+    "username": "<your-turing-credentials>@cleanair-inputs-server",
+    "host": "cleanair-inputs-server.postgres.database.azure.com",
+    "port": 5432,
+    "db_name": "cleanair_inputs_db",
+    "ssl_mode": "require"
+}' >> .secrets/db_secrets_ad.json
+```
+
+Make sure you thn replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+
 # Running entrypoints 
+
+The directory [containers/entrypoints](containers/entrypoints) contains Python scripts which are then built into Docker images in  [containers/dockerfiles](containers/dockerfiles). You can run them locally. 
+
+
+These are scripts which collect and insert data into the database. To see what arguments they take you can call any  of the files with the argument `-h`, for example:
+
+```bash 
+python containers/entrypoints/inputs/input_laqn_readings.py -h
+```
+
+### Connecting to a local database
+
+The entrypoints will need to connect to a database. To do so you can pass one or more of the following arguments:
+
+1. `--secretfile`: Full path to one of the secret .json files you created in the `.secrets` directory.
+
+2. `--secret-dict`: A set of parameters to override the values in `--secretfile`. For example you could alter the port and ssl parameters as `--secret-dict port=5411 ssl_mode=prefer`
+
+### Connecting to a production database
+
+You will notice that the `db_secrets_ad.json` file we created does not contain a password. To run an entrypoint against a production database you must run:
+
+```bash
+az login
+```
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+When you run an entrypoint script the CleanAir package will read the `PGPASSWORD` environment variable. This will also take precedence over any value provided in the`--secret-dict` argument. 
+
 
 
 
