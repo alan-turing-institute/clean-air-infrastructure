@@ -21,6 +21,43 @@ class BaselineParserMixin:
             help="The name of the baseline period.",
         )
 
+class PreprocessingParserMixin:
+    """Parser options for preprocessing and normalising data."""
+
+    PREPROCESSING_GROUP = [
+        "features",
+        "median",
+        "normaliseby",
+        "target",
+    ]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        preprocessing_group = self.add_argument_group("preprocessing")
+        preprocessing_group = self.add_argument_group(
+            "--features",
+            nargs="+",
+            default=["time_norm"],
+            help="Names of the features.",
+        )
+        preprocessing_group.add_argument(
+            "--normaliseby",
+            default="clipped_hour",
+            choices=["clipped_hour", "hour", "epoch"],
+            help="The method for normalizing time.",
+        )
+        preprocessing_group.add_argument(
+            "--median",
+            action="store_true",
+            help="Train models on the median of the daily profile.",
+        )
+        preprocessing_group.add_argument(
+            "--target",
+            nargs="+",
+            default=["n_vehicles_in_interval"],
+            help="The names of the target variables.",
+        )
+
 class ModellingParserMixin:
     """Parser options for modelling."""
 
@@ -28,9 +65,7 @@ class ModellingParserMixin:
         "n_inducing_points",
         "inducing_point_method",
         "max_iterations",
-        "median",
         "model_name",
-        "normaliseby",
     ]
 
     def __init__(self, **kwargs):
@@ -59,17 +94,6 @@ class ModellingParserMixin:
             "--model_name",
             default="svgp",
             help="Name of the model to run.",
-        )
-        modelling_group.add_argument(
-            "--normaliseby",
-            default="clipped_hour",
-            choices=["clipped_hour", "hour", "epoch"],
-            help="The method for normalizing time.",
-        )
-        modelling_group.add_argument(
-            "--median",
-            action="store_true",
-            help="Train models on the median of the daily profile.",
         )
 
 class KernelParserMixin:

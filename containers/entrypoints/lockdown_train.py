@@ -9,14 +9,14 @@ import pandas as pd
 import tensorflow as tf
 
 from uatraffic.util import TrafficModelParser
-from uatraffic.databases import TrafficInstance
+from uatraffic.databases import TrafficInstance, TrafficQuery
 from uatraffic.dates import (
     NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from uatraffic.preprocess import prepare_batch
+from uatraffic.dataset import prepare_batch
 from uatraffic.model import parse_kernel
 from uatraffic.model import train_sensor_model
 
@@ -80,10 +80,6 @@ def main():
 
     logging.info("Training model on %s detectors.", len(detectors))
 
-    # columns to train model on
-    x_cols = ["time_norm"]
-    y_cols = ["n_vehicles_in_interval"]
-
     # get the parameters for the kernel and the model
     kernel_dict = dict(
         name=args.kernel,
@@ -94,6 +90,9 @@ def main():
     )
     model_params = {key: vars(args)[key] for key in parser.MODEL_GROUP}
     model_params["kernel"] = kernel_dict
+
+    # dictionary of preprocessing parameters
+    preprocessing = {key: vars(args)[key] for key in parser.PREPROCESSING_GROUP}
 
     # store instances in arrays
     instance_rows = []
@@ -112,8 +111,6 @@ def main():
             data_config = dict(
                 detectors=[detector_id],
                 weekdays=[day_of_week],
-                x_cols=x_cols,
-                y_cols=y_cols,
                 start=start.strftime("%Y-%m-%dT%H:%M:%S"),
                 end=end.strftime("%Y-%m-%dT%H:%M:%S"),
                 nweeks=nweeks,

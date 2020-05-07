@@ -5,8 +5,15 @@ Class for querying traffic and scoot data.
 import json
 from sqlalchemy import and_, Integer
 from cleanair.databases import DBReader
+from cleanair.mixins import ScootQueryMixin
 from cleanair.decorators import db_query
 from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable, TrafficMetric
+
+class TrafficQuery(DBReader, ScootQueryMixin):
+    """Query traffic data."""
+
+    def __init__(self, secretfile: str = None, **kwargs):
+        super().__init__(secretfile=secretfile, **kwargs)
 
 class TrafficInstanceQuery(DBReader):
     """

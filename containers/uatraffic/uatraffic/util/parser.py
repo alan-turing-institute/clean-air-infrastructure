@@ -4,12 +4,18 @@ from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from .mixins import BaselineParserMixin, ModellingParserMixin, KernelParserMixin
+from .mixins import (
+    BaselineParserMixin,
+    ModellingParserMixin,
+    KernelParserMixin,
+    PreprocessingParserMixin,
+)
 
 class TrafficModelParser(
     BaselineParserMixin,
     ModellingParserMixin,
     KernelParserMixin,
+    PreprocessingParserMixin,
     SecretFileParserMixin,
     VerbosityMixin,
     ArgumentParser

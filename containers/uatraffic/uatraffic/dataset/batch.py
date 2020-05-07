@@ -1,6 +1,6 @@
 """Functions for loading data in batch mode."""
 import logging
-from typing import Tuple
+from typing import List
 import pandas as pd
 from .traffic_dataset import TrafficDataset
 
@@ -9,7 +9,7 @@ def prepare_batch(
     instance_df: pd.DataFrame,
     secretfile: str,
     return_df: bool = False,
-) -> Tuple:
+) -> List[TrafficDataset]:
     """
     Given a dataframe of instances, return a list of models, x_tests and y_tests.
 
@@ -23,10 +23,8 @@ def prepare_batch(
         y_array: List of output test tensors.
         df_array (Optional): List of dataframes.
     """
-    # store tensors and models
-    x_dict = {}
-    y_dict = {}
-    df_dict = {}
+    # store datasets in dictionary
+    datasets = dict()
 
     logging.info("Collecting training data from data_config of instances.")
     for data_id in instance_df["data_id"].unique():
@@ -37,10 +35,7 @@ def prepare_batch(
 
         # get the dataset for this instance
         # TODO: pass model_params to TrafficDataset for normalisation
-        dataset = TrafficDataset(data_config, secretfile)
-        df_dict[data_id] = dataset.dataframe
-        x_dict[data_id] = dataset.features
-        y_dict[data_id] = dataset.target
+        datasets[data_id] = TrafficDataset(data_config, secretfile)
 
         # TODO: move this to Dataset class
         # add to dicts
@@ -55,8 +50,4 @@ def prepare_batch(
         #     x_train = np.array(data_df[data_config["x_cols"]]).astype(np.float64)
         #     y_train = np.array(data_df[data_config["y_cols"]]).astype(np.float64)
 
-    x_array = instance_df["data_id"].map(lambda x: x_dict[x])
-    y_array = instance_df["data_id"].map(lambda x: y_dict[x])
-    if return_df:
-        return x_array, y_array, instance_df["data_id"].map(lambda x: df_dict[x])
-    return x_array, y_array
+    return instance_df["data_id"].map(lambda x: datasets[x])
