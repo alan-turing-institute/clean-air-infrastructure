@@ -112,7 +112,7 @@ class KernelParserMixin:
             help="The name of the kernel to run.",
         )
         kernel_group.add_argument(
-            "--lengthscale",
+            "--lengthscales",
             type=float,
             default=1.0,
             help="Value for lengthscale (note ARD not supported).",

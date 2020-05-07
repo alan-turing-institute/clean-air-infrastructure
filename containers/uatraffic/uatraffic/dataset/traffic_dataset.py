@@ -30,10 +30,10 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         # load scoot from the data config
         # TODO: add day of week
         traffic_df = self.get_scoot_by_dow(
-            self._data_config["start"],
+            day_of_week=self.data_config["weekdays"][0],
+            start_time=self._data_config["start"],
             end_time=self._data_config["end"],
             detectors=self._data_config["detectors"],
-            day_of_week=self.data_config["weekdays"][0],
             output_type="df",
         )
         # from dataframe load datatset
@@ -137,8 +137,11 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         features = set(features)
         target = set(target)
 
-        min_keys = features + target
-        assert min_keys.issubset(traffic_df.columns)
+        min_keys = features.union(target)
+        try:
+            assert min_keys.issubset(traffic_df.columns)
+        except AssertionError:
+            raise KeyError("{min} is not subset of {col}".format(min=min_keys, col=traffic_df.columns))
 
     @staticmethod
     def from_dataframe(traffic_df: pd.DataFrame, preprocessing: dict) -> tf.data.Dataset:
@@ -180,7 +183,6 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             Preprocessed traffic data.
         """
         TrafficDataset.validate_preprocessing(preprocessing)
-        TrafficDataset.validate_dataframe(traffic_df, features=preprocessing["features"], target=preprocessing["target"])
 
         # TODO choose median for robustness to outliers
         if preprocessing["median"]:

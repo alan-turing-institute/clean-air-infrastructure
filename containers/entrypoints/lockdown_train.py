@@ -84,7 +84,7 @@ def main():
     kernel_dict = dict(
         name=args.kernel,
         hyperparameters=dict(
-            lengthscale=args.lengthscale,
+            lengthscales=args.lengthscales,
             variance=args.variance,
         )
     )
@@ -167,7 +167,7 @@ def main():
         optimizer = tf.keras.optimizers.Adam(0.001)
         kernel = parse_kernel(kernel_dict)      # returns gpflow kernel
         model = train_sensor_model(
-            dataset.feature_tensor,
+            dataset.features_tensor,
             dataset.target_tensor,
             kernel,
             optimizer,
