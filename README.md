@@ -428,6 +428,9 @@ These are run automatically through Kubernetes and the Azure pipeline above is u
 
 ## Database user management
 
+Terraform will have created a password and username for the cluster and stored them on the keyvault. Sign into the database as an adminstrator and create a user with this username and password and assign read-write credentials.
+
+
 <!-- 
 ## Configure certificates
 
