@@ -1,6 +1,7 @@
 # UrbanAir API - Repurposed as London Busyness COVID-19
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
 [![Build Status](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure.svg?token=zxQwzfsqCyEouTqXAVUn&branch=master)](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/research/research-projects/london-air-quality). 
 
@@ -26,8 +27,8 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ### Setting up a development environment
 - [Azure account](#azure-account)
-- [Non-infrastructure dependencies](#non-infrastructure-dependencies-:sparkles:)
-- [Infrastructure dependencies](#infrastructure-dependencies-:building_construction:)
+- [Non-infrastructure dependencies](#non-infrastructure-dependencies)
+- [Infrastructure dependencies](#infrastructure-dependencies)
 - [Login to Azure](#login-to-azure)
 - [Configure a local database](#configure-a-local-database) 
 - [Insert static datasets into local database](#static-data-insert)
@@ -49,13 +50,14 @@ A list of key developers on the project. A good place to start if you wish to co
 
 # Contributing guide
 
-### Azure account
-To contribute to the Turing deployment of this project you will need to be on the Turing Institute's AAD. In other words you will need a turing email address `<someone>@turing.ac.uk`. If you do not have one already contact an [infrastructure administrator](#contributors-:dancers:)
+## Azure account
+To contribute to the Turing deployment of this project you will need to be on the Turing Institute's AAD. In other words you will need a turing email address `<someone>@turing.ac.uk`. If you do not have one already contact an [infrastructure administrator](#contributors-:dancers:).
 
 If you are deploying the CleanAir infrastrucure elsewhere you should have access to an Azure account (the cloud-computing platform where the infrastructure is deployed).
 
 
-## Non-infrastructure dependencies :sparkles:
+## Non-infrastructure dependencies 
+:sparkles:
 
 To contribute as a non-infrastructure developer you will need the following:
 
@@ -126,17 +128,17 @@ Cloud infrastructure developers will require the following in addition to the [n
 - `Terraform` (for configuring the Azure infrastructure)
 - `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 
-## Azure subscription
+### Azure subscription
 You need to have access to the CleanAir Azure subscription to deploy infrastructure. If you need access contact an [infrastructure administrator](#contributors-:dancers:)
 
-## Terraform 
+### Terraform 
 The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
 brew install terraform
 ```
 
-## Travis CI CLI
+### Travis CI CLI
 Ensure you have Ruby 1.9.3 or above installed:
 ```bash
 brew install ruby
@@ -193,7 +195,7 @@ In production we use a managed [PostgreSQL database](https://docs.microsoft.com/
 brew services start postgresql   
 ```
 
-## Create a local secrets file
+### Create a local secrets file
 We store database credentials in json files. **For production databases you should never store database passwords in these files - for more information see the production database section**. 
 
 ```bash
@@ -208,11 +210,9 @@ echo '{
 }' >> .secrets/db_secrets_offline.json
 ```
 
-## Static data insert
+### Static data insert
 
 The database requires a number of static datasets. We can now insert `static data` into our local database. You will need a [SAS token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to access static datafiles stored on Azure. 
-
-### Obtain a SAS token
 
 If you have access Azure you can log in to Azure from the [command line](#login-to-Azure) and run the following to obtain a SAS token:
 
