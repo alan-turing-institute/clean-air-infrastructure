@@ -57,7 +57,6 @@ If you are deploying the CleanAir infrastrucure elsewhere you should have access
 
 
 ## Non-infrastructure dependencies 
-:sparkles:
 
 To contribute as a non-infrastructure developer you will need the following:
 
@@ -120,11 +119,11 @@ pip install -e 'containers/uatraffic'
 
 --- 
 
-## Infrastructure dependencies :building_construction:
+## Infrastructure dependencies
 Cloud infrastructure developers will require the following in addition to the [non-infrastructure dependencies](#Non-infrastructure-development-:sparkles:).
 
 ### Infrastructure development
-- `Access to the deployment subscription`
+- `Access to the deployment Azure subscription`
 - `Terraform` (for configuring the Azure infrastructure)
 - `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 
@@ -210,9 +209,11 @@ echo '{
 }' >> .secrets/db_secrets_offline.json
 ```
 
+N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
+
 ### Static data insert
 
-The database requires a number of static datasets. We can now insert `static data` into our local database. You will need a [SAS token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to access static datafiles stored on Azure. 
+The database requires a number of static datasets. We can now insert `static data` into our local database. You will need a [SAS token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to access static data files stored on Azure. 
 
 If you have access Azure you can log in to Azure from the [command line](#login-to-Azure) and run the following to obtain a SAS token:
 

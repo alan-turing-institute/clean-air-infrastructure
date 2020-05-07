@@ -11,7 +11,7 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/extract_ukmap_features.py /app
+COPY entrypoints/feature_processing/extract_ukmap_features.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "extract_ukmap_features.py"]

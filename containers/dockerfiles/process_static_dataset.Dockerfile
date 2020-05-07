@@ -21,7 +21,7 @@ RUN python3.7 -m pip install -U cffi
 RUN python3.7 -m pip install '/tmp/cleanair[setup]'
 
 # # # Copy the run script into the container
-COPY entrypoints/insert_static_datasets.py /app
+COPY entrypoints/setup/insert_static_datasets.py /app
 
 # # # Run the entrypoint script when the container launches
 ENTRYPOINT ["python3.7", "insert_static_datasets.py"]
