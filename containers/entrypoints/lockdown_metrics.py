@@ -3,9 +3,9 @@ Calculate metrics for trained models.
 """
 import os
 import logging
-from uatraffic.databases import TrafficInstanceQuery, TrafficMetric
-from uatraffic.metric import batch_metrics
-from uatraffic.preprocess import prepare_batch
+from uatraffic.databases import TrafficInstanceQuery, TrafficQuery
+from uatraffic.metric import TrafficMetric
+from uatraffic.dataset import prepare_batch
 from uatraffic.util import load_models_from_file, TrafficModelParser
 
 def main():
@@ -46,26 +46,14 @@ def main():
     # load models from file
     models = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
 
-    # get the x and y
-    x_array, y_array = prepare_batch(
+    datasets = prepare_batch(
         instance_df,
         args.secretfile,
     )
-
     # run metrics in batch mode
-    metrics_df = batch_metrics(instance_df["instance_id"], models, x_array, y_array)
-
-    # upload metrics to DB
-    try:
-        logging.info("Inserting %s records into the traffic metrics table.", len(metrics_df))
-        record_cols = ["instance_id", "coverage50", "coverage75", "coverage95", "nlpl"]
-        upload_records = metrics_df[record_cols].to_dict("records")
-        with traffic_query.dbcnxn.open_session() as session:
-            traffic_query.commit_records(
-                session, upload_records, table=TrafficMetric, on_conflict="overwrite"
-            )
-    except KeyError:
-        logging.error("No metrics were calculated. This might be because the model files were missing.")
+    traffic_metric = TrafficMetric(secretfile=args.secretfile)
+    traffic_metric.batch_evaluate_model(instance_df["instance_id"], models, datasets)
+    traffic_metric.update_remote_tables()
 
 if __name__ == "__main__":
     main()

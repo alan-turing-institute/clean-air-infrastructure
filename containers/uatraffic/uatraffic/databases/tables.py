@@ -34,7 +34,7 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
         {"schema": "gla_traffic"}
     )
 
-class TrafficMetric(Base):
+class TrafficMetricTable(Base):
     """
     A table for storing metrics from traffic models.
     """
