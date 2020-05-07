@@ -77,7 +77,6 @@ def simple_training_loop(
     optimizer: tf.optimizers.Optimizer,
     max_iterations: int = 2000,
     logging_freq: int = 10,
-    num_batches_per_epoch: int = 1
 ):
     """
     Iterate train a model for n iterations.
@@ -86,16 +85,14 @@ def simple_training_loop(
     def optimization_step(model: gpflow.models.SVGP, x_train, y_train):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
-            obj = -model.elbo(x_train, y_train)
+            obj = -model.elbo((x_train, y_train))
             grads = tape.gradient(obj, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
     tf_optimization_step = tf.function(optimization_step)
     for epoch in range(max_iterations):
-        # TODO: remove/ add to this step
-        for _ in range(num_batches_per_epoch):
-            tf_optimization_step(model, x_train, y_train)
+        tf_optimization_step(model, x_train, y_train)
 
         epoch_id = epoch + 1
         if epoch_id % logging_freq == 0:
-            tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo(x_train, y_train)}")
+            tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo((x_train, y_train))}")
