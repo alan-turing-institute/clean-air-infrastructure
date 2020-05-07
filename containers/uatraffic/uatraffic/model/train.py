@@ -56,9 +56,6 @@ def train_sensor_model(
     # initialise model with Poisson likelihood and incuding variables
     model = gpflow.models.SVGP(kernel=kernel, likelihood=lik, inducing_variable=ind_points)
 
-    # Uncomment to see which variables are training and those that are not
-    # print_summary(model)
-
     simple_training_loop(
         x_train,
         y_train,
