@@ -16,7 +16,7 @@ from uatraffic.dates import (
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from uatraffic.dataset import prepare_batch
+from uatraffic.dataset import prepare_batch, TrafficDataset
 from uatraffic.model import parse_kernel
 from uatraffic.model import train_sensor_model
 
@@ -120,7 +120,7 @@ def main():
             # create an instance object then write instance to DB
             instance = TrafficInstance(
                 model_name=args.model_name,
-                data_id=TrafficInstance.hash_dict(data_config),
+                data_id=TrafficDataset.data_id_from_hash(data_config, preprocessing),
                 param_id=TrafficInstance.hash_dict(model_params),
                 cluster_id=args.cluster_id,
                 tag=args.tag,
@@ -138,7 +138,6 @@ def main():
             if getattr(args, "dryrun"):
                 continue        # skip DB update on dry run
 
-            # TODO: write models to blob storage
             instance.update_data_table(data_config)
             instance.update_model_table(model_params)
             instance.update_remote_tables()
@@ -176,6 +175,7 @@ def main():
             n_inducing_points=args.n_inducing_points,
             inducing_point_method=args.inducing_point_method,
         )
+        # TODO: write models to blob storage
         instance.save_model(
             model,
             os.path.join(args.root, args.experiment, "models"),

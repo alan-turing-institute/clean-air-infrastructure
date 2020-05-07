@@ -6,6 +6,7 @@ from typing import Collection
 import tensorflow as tf
 import pandas as pd
 from cleanair.databases import DBReader
+from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess.normalise import normalise_datetime
 
@@ -64,7 +65,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     @property
     def data_id(self):
         """The id of the hashed data config."""
-        raise NotImplementedError("Hashing the data config dict is not yet implemented.")
+        return TrafficDataset.data_id_from_hash(self.data_config, self.preprocessing)
 
     @property
     def features_tensor(self):
@@ -190,3 +191,20 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         traffic_df = normalise_datetime(traffic_df, wrt=preprocessing["normaliseby"])
 
         return traffic_df
+
+    @staticmethod
+    def data_id_from_hash(data_config: dict, preprocessing: dict) -> str:
+        """
+        Generate an id from the hash of the two settings dictionaries.
+
+        Args:
+            data_config: Settings for data.
+            preprocessing: Settings for preprocessing and normalising data.
+
+        Returns:
+            An unique id given the settings dictionaries.
+        """
+        # check there are no overlapping keys
+        assert not set(data_config.keys()) & set(preprocessing.keys())
+        merged_dict = {**data_config, **preprocessing}
+        return Instance.hash_dict(merged_dict)
