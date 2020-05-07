@@ -38,7 +38,8 @@ class TrafficInstance(Instance):
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, records, on_conflict="ignore", table=TrafficModelTable)
 
-    def update_data_table(self, data_config):
+    # TODO: this should be moved into the Dataset class
+    def update_data_table(self, data_config, preprocessing):
         """
         Update the data config table for traffic.
         """
@@ -46,7 +47,8 @@ class TrafficInstance(Instance):
             logging.info("Updating the traffic data table.")
             records = [dict(
                 data_id=self.data_id,
-                data_config=data_config
+                data_config=data_config,
+                preprocessing=preprocessing,
             )]
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
@@ -56,7 +58,7 @@ class TrafficInstance(Instance):
         Save the model to the given folder.
         """
         # Create model copy
-        model_copy = gpflow.utilities.deepcopy_components(model)
+        model_copy = gpflow.utilities.deepcopy(model)
 
         # Save model to file
         Path(folder).mkdir(exist_ok=True, parents=True)

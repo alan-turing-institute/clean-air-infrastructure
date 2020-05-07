@@ -139,7 +139,7 @@ def main():
             if getattr(args, "dryrun"):
                 continue        # skip DB update on dry run
 
-            instance.update_data_table(data_config)
+            instance.update_data_table(data_config, preprocessing)
             instance.update_model_table(model_params)
             instance.update_remote_tables()
 
