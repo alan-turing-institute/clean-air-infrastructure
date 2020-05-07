@@ -64,39 +64,39 @@ roles:
       - name: dynamic_data 
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: dynamic_features 
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: gla_traffic
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: interest_points
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: model_features
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: model_results
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: processed_data
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: static_data
         create: False
         privileges: 
-          - SELECT
+          - ALL
       - name: static_features
         create: False
         privileges: 
-          - SELECT
+          - ALL
 
   - role: readwritecreate
     create_schema: False
@@ -104,36 +104,36 @@ roles:
       - name: dynamic_data 
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: dynamic_features 
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: gla_traffic
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: interest_points
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: model_features
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: model_results
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: processed_data
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: static_data
         create: True
         privileges: 
-          - SELECT
+          - ALL
       - name: static_features
         create: True
         privileges: 
-          - SELECT
+          - ALL

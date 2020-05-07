@@ -1,5 +1,7 @@
 # UrbanAir API - Repurposed as London Busyness COVID-19
 [![Build Status](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_apis/build/status/alan-turing-institute.clean-air-infrastructure?branchName=master)](https://dev.azure.com/alan-turing-institute/clean-air-infrastructure/_build/latest?definitionId=1&branchName=master)
+[![Build Status](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure.svg?token=zxQwzfsqCyEouTqXAVUn&branch=master)](https://travis-ci.com/alan-turing-institute/clean-air-infrastructure)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Azure Infrastructure for the [Clean Air project](https://www.turing.ac.uk/research/research-projects/london-air-quality). 
 
@@ -8,9 +10,9 @@ Provides 48h high-resolution air pollution forecasts over London via the [UrbanA
 Currently repurposed to assess `busyness` in London during the COVID-19 pandemic - providing busyness data via the [ip-whitelisted API](https://urbanair.turing.ac.uk/apidocs/).
 
 
-# Contributing :art:
+# Contributors :dancers:
 
-To contribute to the project please speak to one of the following:
+A list of key developers on the project. A good place to start if you wish to contribute.
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
@@ -19,23 +21,62 @@ To contribute to the project please speak to one of the following:
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
 
+# Contents
 
-# Non-infrastructure development :sparkles:
+### Setting up a development environment
+- [Azure account](#azure-account)
+- [Non-infrastructure dependencies](#non-infrastructure-dependencies)
+- [Infrastructure dependencies](#infrastructure-dependencies)
+- [Login to Azure](#login-to-azure)
+- [Configure a local database](#configure-a-local-database) 
+- [Insert static datasets into local database](#static-data-insert)
 
-To contribute as a non-infrastructure developer you will need the following. Infrastructure developers will need these as well as additional dependencies.
 
-To contribute to the project you will need the following (details below):
+### Accessing Production database
+- [Access CleanAir Production Database](#access-cleanair-production-database)
+- [Connect with psql](#connect-using-psql)
+- [Create a production secretfile](#create-secret-file-to-connect-using-CleanAir-package)
 
+### Entry points
+- [Running Entry points](#running-entry-points)
+- [Entry point with local database](#entry-point-with-local-database)
+- [Entry point with production database](#entry-point-with-production-database)
+
+### Infrastructure
+
+- [Infrastructure Deployment](#infrastructure-deployment)
+
+
+
+---
+
+# Contributing guide
+
+## Azure account
+To contribute to the Turing deployment of this project you will need to be on the Turing Institute's AAD. In other words you will need a turing email address `<someone>@turing.ac.uk`. If you do not have one already contact an [infrastructure administrator](#contributors-:dancers:).
+
+If you are deploying the CleanAir infrastrucure elsewhere you should have access to an Azure account (the cloud-computing platform where the infrastructure is deployed).
+
+
+## Non-infrastructure dependencies 
+
+To contribute as a non-infrastructure developer you will need the following:
+
+- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
 - `Docker` (For building and testing images locally)
 - `postgreSQL` (command-line tool for interacting with db)
+- ` CleanAir python packages` (install python packages)
+
+### Azure CLI
+If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
+
+### Docker
+Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### PostgreSQL
 ```bash
 brew install postgresql
 ```
-
-### Docker
-Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -44,7 +85,7 @@ The following are optional as we can run everything on docker images. However, t
 pip install -r containers/requirements.txt
 ```
 
-### CleanAir package
+### CleanAir Python packages
 To run the CleanAir functionality locally (without a docker image) you can install the package with `pip`. 
 
 For a basic install which will allow you to set up a local database run:
@@ -78,23 +119,27 @@ All additional  functionality related to the London Busyness project requires:
 pip install -e 'containers/uatraffic'
 ```
 
-# Infrastructure development/deployment :building_construction:
-Cloud infrastructure developers also require the following:
+--- 
+
+## Infrastructure dependencies
+Cloud infrastructure developers will require the following in addition to the [non-infrastructure dependencies](#Non-infrastructure-development-:sparkles:).
 
 ### Infrastructure development
-- `Azure account` (the cloud-computing platform where the infrastructure is deployed)
-- `Azure command line interface (CLI)` (for managing your Azure subscriptions)
+- `Access to the deployment Azure subscription`
 - `Terraform` (for configuring the Azure infrastructure)
 - `Travis Continuous Integration (CI) CLI` (for setting up automatic deployments)
 
-## Azure Account
-If you do not have an `Azure` account already, please contact one of the project maintainers
+### Azure subscription
+You need to have access to the CleanAir Azure subscription to deploy infrastructure. If you need access contact an [infrastructure administrator](#contributors-:dancers:)
 
-## Azure CLI
-If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
+### Terraform 
+The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
+```bash
+brew install terraform
+```
 
-## Travis CI CLI
+### Travis CI CLI
 Ensure you have Ruby 1.9.3 or above installed:
 ```bash
 brew install ruby
@@ -123,13 +168,6 @@ export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
 
-## Terraform 
-The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
-
-```bash
-brew install terraform
-```
-
 ## Login to Azure
 
 To start working with `Azure`, you must first login to your account from the terminal:
@@ -137,7 +175,9 @@ To start working with `Azure`, you must first login to your account from the ter
 az login
 ```
 
-Check which `Azure` subscriptions you have access to by running
+### Infrastructure developers:
+
+Infrastructure developers should additionally check which `Azure` subscriptions you have access to by running
 ```bash
 az account list --output table --refresh
 ```
@@ -147,16 +187,18 @@ Then set your default subscription to the Clean Air project (if you cannot see i
 az account set --subscription "CleanAir"
 ```
 
-# Configure a Local Database
-In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests. To set up a local version start a local postgres server:
+If you don't have access this is ok. You only need it to deploy and manage infrastructure. 
+
+## Configure a local database
+In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests and for development. To set up a local version start a local postgres server:
 
 ```bash 
-brew install postgres
 brew services start postgresql   
 ```
 
-## Create a local secrets file
-We use secret files to pass secrets to CleanAir programs. We need to create two, one to work with docker and another for running tests locally.
+### Create a local secrets file
+We store database credentials in json files. **For production databases you should never store database passwords in these files - for more information see the production database section**. 
+
 ```bash
 mkdir -p .secrets
 echo '{
@@ -169,20 +211,19 @@ echo '{
 }' >> .secrets/db_secrets_offline.json
 ```
 
-## Static data
+N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
 
-The database requires a number of static datasets. We can now insert `static data` into our local database.
-To do so you will need a SAS Token to access static datafiles stored on Azure. 
+### Static data insert
 
-### Insert data into the database
+The database requires a number of static datasets. We can now insert `static data` into our local database. You will need a [SAS token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to access static data files stored on Azure. 
 
-If you have access Azure and you have logged in from the [command line](#login-to-Azure) you can obtain a SAS token by running:
+If you have access Azure you can log in to Azure from the [command line](#login-to-Azure) and run the following to obtain a SAS token:
 
 ```bash
-SAS_TOKEN=$(python containers/entrypoints/insert_static_datasets.py -g)
+SAS_TOKEN=$(python containers/entrypoints/setup/insert_static_datasets.py -g)
 ```
 
-Otherwise you must request a SAS token from an [infrastructure developer](#contributing-:art:) and set it as a variable:
+Otherwise you must request a SAS token from an [infrastructure developer](#contributors-:dancers:) and set it as a variable:
 
 ```bash
 SAS_TOKEN=<SAS_TOKEN>
@@ -197,35 +238,39 @@ SECRETS=$(pwd)/.secrets/db_secrets_offline.json
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
-If you  would also like to add `UKMAP` to the database run:
+If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py -t $SAS_TOKEN -s $SECRETS -d ukmap
 ```
 
-`UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests with `UKMAP` at the moment. 
+`UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
+
+N.B SAS tokens will expire after a short length of time, after which you will need to request a new one. 
 
 ### Check the database configuration
 
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/database_init
+pytest containers/tests/database_init --secretfile $SECRETS
 ```
+
 
 # Access CleanAir Production Database
 
-To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributing-:art:). To access the database first [login to Azure](#login-to-Azure) from the terminal. 
+To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributors-:dancers:). You should discuss what your access requirements are (e.g. do you need write access).To access the database first [login to Azure](#login-to-Azure) from the terminal. 
 
-You can then request an access Token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
+You can then request an access token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
 
 ```bash
 export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
+## Connect using psql
 You can then access the database using psql:
 
 ```bash
@@ -233,9 +278,57 @@ psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=c
 ```
 replacing `<your-turing-credentials>` with your turing credentials (e.g. `jblogs@turing.ac.uk`).
 
+## Create secret file to connect using CleanAir package
+
+To connect to the database using the CleanAir package you will need to create another secret file:
+
+```bash
+echo '{
+    "username": "<your-turing-credentials>@cleanair-inputs-server",
+    "host": "cleanair-inputs-server.postgres.database.azure.com",
+    "port": 5432,
+    "db_name": "cleanair_inputs_db",
+    "ssl_mode": "require"
+}' >> .secrets/db_secrets_ad.json
+```
+
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+
+# Running entry points
+
+The directory [containers/entrypoints](containers/entrypoints) contains Python scripts which are then built into Docker images in  [containers/dockerfiles](containers/dockerfiles). You can run them locally. 
+
+
+These are scripts which collect and insert data into the database. To see what arguments they take you can call any  of the files with the argument `-h`, for example:
+
+```bash 
+python containers/entrypoints/inputs/input_laqn_readings.py -h
+```
+
+### Entry point with local database
+
+The entrypoints will need to connect to a database. To do so you can pass one or more of the following arguments:
+
+1. `--secretfile`: Full path to one of the secret .json files you created in the `.secrets` directory.
+
+2. `--secret-dict`: A set of parameters to override the values in `--secretfile`. For example you could alter the port and ssl parameters as `--secret-dict port=5411 ssl_mode=prefer`
+
+### Entry point with production database
+
+You will notice that the `db_secrets_ad.json` file we created does not contain a password. To run an entrypoint against a production database you must run:
+
+```bash
+az login
+```
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+When you run an entrypoint script the CleanAir package will read the `PGPASSWORD` environment variable. This will also take precedence over any value provided in the`--secret-dict` argument. 
+
 
 # Infrastructure Deployment
-The following steps are needed to setup the Clean Air cloud infrastructure.
+:skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
 
 ## Login to Travis CLI
 Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
@@ -244,21 +337,8 @@ Login to Travis with your github credentials, making sure you are in the Clean A
 travis login --pro
 ```
 
-Check which `Azure` subscriptions you have access to by running
-```bash
-az account list --output table --refresh
-```
-
-Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
-```bash
-az account set --subscription "CleanAir"
-```
-
 Create an Azure service principal using the documentation for the [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or with [Powershell](https://docs.microsoft.com/en-us/powershell/azure/create-azure-service-principal-azureps), ensuring that you keep track of the `NAME`, `ID` and `PASSWORD/SECRET` for the service principal, as these will be needed later.
 
-
-# DANGER ZONE :skull:
-The following sections make changes to the Cloud Infrastructure. Do not use if you don't know what you are doing. 
 
 ## Setup Terraform with Python  
 `Terraform` uses a backend to keep track of the infrastructure state.
@@ -340,19 +420,7 @@ This will build all of the Docker images and add them to the registry.
 Now go to Azure and update the A-record to point to the ip address of the cleanair-api on the cluster.
 
 ## Add static datasets
-Static datasets (like StreetCanyons or UKMap) only need to be added to the database once - after setting up the infrastructure.
-We will do this manually, using a Docker image from the Azure container registry.
-Please note that you may need to increase the available memory under `Docker > Preferences... > Advanced` (the following instructions were tested using 8 GB).
-
-**NB. If running on OS X, ensure that you have added `/var/folders` as a shareable directory in `Docker > Preferences... > File Sharing`. Ensure you have pushed your latest commit to github if working on a branch**
-
-From the root directory, running the command
-```bash
-python cleanair_setup/insert_static_datasets.py
-```
-
-will download the static datasets to temporary local storage and then upload them to the database.
-The process takes approximately 1hr (most of this is for the UKMap data) and you must have internet connectivity throughout.
+To add static datasets follow the [Static data insert](#static-data-insert) instructions but use the production database credentials
 
 ## Adding live datasets
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
@@ -360,23 +428,10 @@ These are run automatically through Kubernetes and the Azure pipeline above is u
 
 ## Database user management
 
-Terraform creates a number of roles which can be assigned to users. The two key roles are `read_write` and `read_only`. These allow users to read and write, and only read from the database respectively. `read_write` gives 'ALL' privileges, while `read_only` gives 'SELECT'. 
-
-To add a user create a role for them and set `inherit` to the required role (https://www.postgresql.org/docs/8.1/sql-createrole.html). This can be done easily using [PGAdmin4](https://www.pgadmin.org/).
-
-When a user first logs in they should change their password, which can be done using psql:
-
-```bash
-# brew install postgresql
-psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<username>@cleanair-inputs-server password=<password> sslmode=require"
-```
-Then in psql enter the following.
-
-```psql
-\password <username>
-```
+Terraform will have created a password and username for the cluster and stored them on the keyvault. Sign into the database as an adminstrator and create a user with this username and password and assign read-write credentials.
 
 
+<!-- 
 ## Configure certificates
 
 https://cert-manager.io/docs/tutorials/acme/ingress/
@@ -422,7 +477,7 @@ kubectl delete apiservice v1beta1.metrics.k8s.io
 ```
 
 
-Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/
+Follow theses instructions https://cert-manager.io/docs/tutorials/acme/ingress/ -->
 
 <!-- We tell this job which version of the container to run by using GitHub webhooks which keep track of changes to the master branch.
 
@@ -447,26 +502,8 @@ You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
-# Running locally
-It is also possible to run this code entirely locally, without using Azure at all.
 
-## Create a local secrets file
-To run the clean air docker images locally you will need to create a local secrets file:
-Run the following to create a file with the database secrets:
-```
-mkdir -p terraform/.secrets
-touch terraform/.secrets/db_secrets.json
-echo '{
-    "username": "<db_admin_username>@<db_server_name>",
-    "password": "<db_admin_password>",
-    "host": "<db_server_name>.postgres.database.azure.com",
-    "port": 5432,
-    "db_name": "<dbname>",
-    "ssl_mode": "require"
-}' >> terraform/.secrets/db_secrets.json
-```
-
-Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
+<!-- Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
 
 ## Build and run docker images locally
 **AQE - Download AQE data**
@@ -492,9 +529,9 @@ docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_
 **Model fitting**
 ```bash
 docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
-```
+``` -->
 
-## The cleanair parser
+<!-- ## The cleanair parser
 
 A `CleanAirParser` class has been created for interacting with `run_model_fitting.py`. Run the following command to see available options:
 
@@ -503,9 +540,9 @@ python run_model_fitting.py -h
 ```
 
 By passing no arguments, `run_model_fitting.py` will read data from the DB and write the results to the DB using the default data_config.
-Reading and writing data/results is all made possible through the command line. Different arguments are available for `run_dashboard.py`.
+Reading and writing data/results is all made possible through the command line. Different arguments are available for `run_dashboard.py`. -->
 
-### Parser config
+<!-- ### Parser config
 
 If you frequently run model fitting locally, then you may wish to store some of your common settings into the `parser_config.json` file. For example, if you always want to `return_y` and `predict_training`, then your parser config file would look like:
 
@@ -516,9 +553,9 @@ If you frequently run model fitting locally, then you may wish to store some of 
 }
 ```
 
-By passing the `-c` flag, the parser will use the json file to overwrite the default parser values.
+By passing the `-c` flag, the parser will use the json file to overwrite the default parser values. -->
 
-## Running with local database
+<!-- ## Running with local database
 
 ### Install postgres and upload static datasets
 
@@ -547,9 +584,10 @@ CREATE DATABASE cleanair_inputs_db;
 - Download static data and insert into the database:
 ```
 python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
-```
+``` -->
 
-## Dashboard
+
+<!-- ## Dashboard
 
 The dashboard lets you see the predictions and validation scores of a model fit on the LAQN sensors. To run the dashboard you must have a [mapbox API key](https://account.mapbox.com/auth/signup/) and sign up to their account.
 
@@ -565,7 +603,9 @@ python run_dashboard.py
 ```
 
 By default the dashboard will try to load a model fit from the DB, but you can pass command line arguments to load a locally stored model fit.
+ -->
 
+<!-- 
 ## Configure Kubernetes Cluster:
 
 ### Local cluster
@@ -612,4 +652,4 @@ Look at the `model.py`. You will need to extend the `Model` class (or an existin
 
 The `SVGP` class is an example of a `Model` that uses only laqn data and some features. We recommend you look through this class before implementing your model.
 
-All model parameters should be contained within the `model_params` dictionary.
+All model parameters should be contained within the `model_params` dictionary. -->

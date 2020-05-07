@@ -142,7 +142,6 @@ provider "postgresql" {
   max_connections = 20
 }
 
-
 # Add extentions
 resource "postgresql_extension" "ext_postgis" {
   name = "postgis"
@@ -150,4 +149,38 @@ resource "postgresql_extension" "ext_postgis" {
 
 resource "postgresql_extension" "ext_uuid" {
   name = "uuid-ossp"
+}
+
+# Users
+# Random strings
+# --------------
+# :: database admin password
+resource "random_string" "db_cluster_password" {
+  keepers = {
+    resource_group = "${var.resource_group}"
+  }
+  length  = 20
+  special = true
+}
+
+# :: store the database admin name in the keyvault
+resource "azurerm_key_vault_secret" "db_cluster_username" {
+  name         = "${var.db_name}-db-cluster-username"
+  value        = "cluster"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+
+# :: store the database admin password in the keyvault
+resource "azurerm_key_vault_secret" "db_cluster_password" {
+  name         = "${var.db_name}-db-cluster-password"
+  value        = "${random_string.db_cluster_password.result}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
 }

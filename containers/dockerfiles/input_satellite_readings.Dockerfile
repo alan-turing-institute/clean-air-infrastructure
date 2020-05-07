@@ -37,7 +37,7 @@ RUN pip install pygrib
 
 RUN pip install pyopenssl
 # Copy the run script into the container
-COPY entrypoints/input_satellite_readings.py /app
+COPY entrypoints/inputs/input_satellite_readings.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "input_satellite_readings.py"]
