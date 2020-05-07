@@ -399,3 +399,23 @@ class ScootQueryMixin:
                 )
 
             return scoot_readings
+
+    @db_query
+    def get_scoot_detectors(self, start=None, end=None):
+        """
+        Get all scoot detectors from the interest point schema.
+        """
+        with self.dbcnxn.open_session() as session:
+            readings = (
+                session.query(
+                    ScootDetector.detector_n.label("detector_id"),
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                )
+                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+            )
+
+            if isinstance(start, int) and isinstance(end, int):
+                readings = readings.order_by(ScootDetector.detector_n).slice(start, end)
+
+            return readings
