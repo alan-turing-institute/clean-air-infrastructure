@@ -37,13 +37,12 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Connect with psql](#connect-using-psql)
 - [Create a production secretfile](#create-secret-file-to-connect-using-CleanAir-package)
 
-### Running Entrypoints
-- [Running CleanAir Entrypoints](#running-entrypoints)
+### Entry points
+- [Running Entry points](#running-entry-points)
+- [Entry point with local database](#entry-point-with-local-database)
+- [Entry point with production database](#entry-point-with-production-database)
 
-### Contributing
-
-
-### Infrastructure deployment
+### Infrastructure
 
 - [Infrastructure Deployment](#infrastructure-deployment)
 
@@ -293,9 +292,9 @@ echo '{
 }' >> .secrets/db_secrets_ad.json
 ```
 
-Make sure you thn replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
+Make sure you then replace `<your-turing-credentials>` with your full Turing username (e.g.`jblogs@turing.ac.uk@cleanair-inputs-server`).
 
-# Running entrypoints 
+# Running entry points
 
 The directory [containers/entrypoints](containers/entrypoints) contains Python scripts which are then built into Docker images in  [containers/dockerfiles](containers/dockerfiles). You can run them locally. 
 
@@ -306,7 +305,7 @@ These are scripts which collect and insert data into the database. To see what a
 python containers/entrypoints/inputs/input_laqn_readings.py -h
 ```
 
-### Connecting to a local database
+### Entry point with local database
 
 The entrypoints will need to connect to a database. To do so you can pass one or more of the following arguments:
 
@@ -314,7 +313,7 @@ The entrypoints will need to connect to a database. To do so you can pass one or
 
 2. `--secret-dict`: A set of parameters to override the values in `--secretfile`. For example you could alter the port and ssl parameters as `--secret-dict port=5411 ssl_mode=prefer`
 
-### Connecting to a production database
+### Entry point with production database
 
 You will notice that the `db_secrets_ad.json` file we created does not contain a password. To run an entrypoint against a production database you must run:
 
