@@ -1,5 +1,6 @@
 
 from sqlalchemy import ForeignKeyConstraint, Column, String, ForeignKey, Float
+from sqlalchemy.dialects.postgresql import JSONB
 from cleanair.mixins import (
     DataConfigMixin,
     InstanceTableMixin,
@@ -10,6 +11,9 @@ from cleanair.databases import Base
 class TrafficDataTable(Base, DataConfigMixin):
     __tablename__ = "traffic_data"
     __table_args__ = {"schema": "gla_traffic"}
+
+    # TODO this should be included in DataConfigMixin - but AQ work is not ready yet
+    preprocessing = Column(JSONB, nullable=False, index=False)
 
 class TrafficModelTable(Base, ModelTableMixin):
     __tablename__ = "traffic_model"
@@ -27,10 +31,6 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
             ["model_name", "param_id"],
             ["gla_traffic.traffic_model.model_name", "gla_traffic.traffic_model.param_id"]
         ),
-        # ForeignKeyConstraint(
-        #     [InstanceTableMixin.model_name, InstanceTableMixin.param_id],
-        #     [TrafficModelTable.model_name, TrafficModelTable.param_id]
-        # ),
         {"schema": "gla_traffic"}
     )
 
@@ -45,6 +45,12 @@ class TrafficMetric(Base):
     instance_id = Column(
         String(64),
         ForeignKey("gla_traffic.traffic_instance.instance_id"),
+        primary_key=True,
+        nullable=False,
+    )
+    data_id = Column(
+        String(64),
+        ForeignKey("gla_traffic.traffic_data.data_id"),
         primary_key=True,
         nullable=False,
     )

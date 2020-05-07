@@ -34,7 +34,7 @@ class PreprocessingParserMixin:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         preprocessing_group = self.add_argument_group("preprocessing")
-        preprocessing_group = self.add_argument_group(
+        preprocessing_group.add_argument(
             "--features",
             nargs="+",
             default=["time_norm"],
