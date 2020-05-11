@@ -34,6 +34,7 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
+
 class SatelliteArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):

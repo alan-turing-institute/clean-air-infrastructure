@@ -136,11 +136,16 @@ def generate(args):
     """Generate a SAS token"""
 
     sys.stdout.write(
-         generate_sas_token(
-                args.account_url, args.resource_group, args.storage_container_name, args.days, args.hours
-            )
+        generate_sas_token(
+            args.account_url,
+            args.resource_group,
+            args.storage_container_name,
+            args.days,
+            args.hours,
         )
+    )
     sys.exit(0)
+
 
 def insert(args):
     """Insert statit data into a database"""
@@ -185,13 +190,13 @@ def create_parser(datasets):
     )
 
     parsers.add_argument(
-            "-c",
-            "--storage-container-name",
-            type=str,
-            default="londonaqdatasets",
-            help="Name of the storage container where the Terraform backend will be stored",
-        )
-    
+        "-c",
+        "--storage-container-name",
+        type=str,
+        default="londonaqdatasets",
+        help="Name of the storage container where the Terraform backend will be stored",
+    )
+
     parsers.add_argument(
         "-r",
         "--resource_group",
@@ -201,16 +206,26 @@ def create_parser(datasets):
     )
 
     # Subparsers
-    subparsers = parsers.add_subparsers(required=True, dest='command')
-    parser_generate = subparsers.add_parser('generate', help="Generate a SAS Token to download CleanAir static datasets from Azure")
-    parser_insert = subparsers.add_parser('insert', help="Insert CleanAir static datasets into a database")
+    subparsers = parsers.add_subparsers(required=True, dest="command")
+    parser_generate = subparsers.add_parser(
+        "generate",
+        help="Generate a SAS Token to download CleanAir static datasets from Azure",
+    )
+    parser_insert = subparsers.add_parser(
+        "insert", help="Insert CleanAir static datasets into a database"
+    )
 
-    
-    
     # Insert parser args
-    parser_generate.add_argument('--hours', type = int, default = 1, help = 'Number of hours SAS Token valid for')
-    parser_generate.add_argument('--days', type = int, default = 0, help = 'Number of days SAS Token valid for. If used with --hours will be sum of hours and days')
-    
+    parser_generate.add_argument(
+        "--hours", type=int, default=1, help="Number of hours SAS Token valid for"
+    )
+    parser_generate.add_argument(
+        "--days",
+        type=int,
+        default=0,
+        help="Number of days SAS Token valid for. If used with --hours will be sum of hours and days",
+    )
+
     # Generate parser args
     parser_insert.add_argument(
         "-t",
@@ -248,6 +263,7 @@ def main():
 
     # Execute functions
     args.func(args)
+
 
 if __name__ == "__main__":
     main()
