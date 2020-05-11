@@ -5,8 +5,15 @@ Class for querying traffic and scoot data.
 import json
 from sqlalchemy import and_, Integer
 from cleanair.databases import DBReader
+from cleanair.mixins import ScootQueryMixin
 from cleanair.decorators import db_query
-from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable, TrafficMetric
+from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable, TrafficMetricTable
+
+class TrafficQuery(DBReader, ScootQueryMixin):
+    """Query traffic data."""
+
+    def __init__(self, secretfile: str = None, **kwargs):
+        super().__init__(secretfile=secretfile, **kwargs)
 
 class TrafficInstanceQuery(DBReader):
     """
@@ -79,6 +86,7 @@ class TrafficInstanceQuery(DBReader):
                     instance_subquery,
                     TrafficModelTable.model_param,
                     TrafficDataTable.data_config,
+                    TrafficDataTable.preprocessing,
                 )
                 .join(
                     TrafficModelTable,
@@ -156,11 +164,11 @@ class TrafficInstanceQuery(DBReader):
         with self.dbcnxn.open_session() as session:
             readings = (
                 session.query(
-                    TrafficMetric.instance_id,
-                    TrafficMetric.coverage50,
-                    TrafficMetric.coverage75,
-                    TrafficMetric.coverage95,
-                    TrafficMetric.nlpl,
+                    TrafficMetricTable.instance_id,
+                    TrafficMetricTable.coverage50,
+                    TrafficMetricTable.coverage75,
+                    TrafficMetricTable.coverage95,
+                    TrafficMetricTable.nlpl,
                     instance_subquery.c.model_name,
                     instance_subquery.c.param_id,
                     instance_subquery.c.data_id,
@@ -171,6 +179,6 @@ class TrafficInstanceQuery(DBReader):
                     instance_subquery.c.model_param,
                     instance_subquery.c.data_config,
                 )
-                .join(instance_subquery, instance_subquery.c.instance_id == TrafficMetric.instance_id)
+                .join(instance_subquery, instance_subquery.c.instance_id == TrafficMetricTable.instance_id)
             )
             return readings
