@@ -1,8 +1,19 @@
-from flask import Blueprint, Response
-
+from flask import Blueprint, Response, render_template
+from flask_httpauth import HTTPBasicAuth
+from werkzeug.security import generate_password_hash, check_password_hash
 
 index_bp = Blueprint("index", __name__)
 
+auth = HTTPBasicAuth()
+users = {
+    "ati": generate_password_hash("colossus"),
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and \
+            check_password_hash(users.get(username), password):
+        return username
 
 @index_bp.route("/", methods=["GET"])
 def index():
@@ -21,3 +32,8 @@ def index():
         mimetype="text/html",
     )
     return resp
+
+@index_bp.route("/map", methods=["GET"])
+@auth.login_required
+def map():
+    return render_template('map.html')

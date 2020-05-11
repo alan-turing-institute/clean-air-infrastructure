@@ -5,7 +5,7 @@ from flask import Flask
 from flasgger import Swagger, APISpec
 from . import db
 from . import exceptions
-from .blueprints import scoot_bp, index_bp
+from .blueprints import scoot_bp, cams_bp, index_bp
 
 
 def create_app():
@@ -18,10 +18,11 @@ def create_app():
     else:
         app.config.from_object("urbanair.configurations.development_settings")
         app.config["DATABASE_URI"] = os.environ.get("DATABASE_URI")
-        if not app.config["DATABASE_URI"]:
-            raise ValueError(
-                "DATABASE_URI env variable must be set in development mode"
-            )
+        # app.config["DATABASE_URI_JAMCAM"] = os.environ.get("DATABASE_URI_JAMCAM")
+        # if not app.config["DATABASE_URI"] or not app.config["DATABASE_URI_JAMCAM"]:
+        #     raise ValueError(
+        #         "DATABASE_URI and DATABASE_URI_JAMCAM env variable must be set in development mode"
+        #     )
 
     # Create DB session object
     with app.app_context():
@@ -32,6 +33,7 @@ def create_app():
     # Register blueprints
     app.register_blueprint(index_bp)
     app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
+    app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
 
     # Configure exceptions
     exceptions.error_handler(app)

@@ -21,7 +21,8 @@ setuptools.setup(
         "flask-marshmallow",
         "flasgger",
         "webargs",
-        "uwsgi",
+        "flask_httpauth",
+        # "uwsgi",
     ],
     python_requires=">=3.7",
 )

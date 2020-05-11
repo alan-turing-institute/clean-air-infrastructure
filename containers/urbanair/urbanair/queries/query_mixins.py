@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
 import datetime
-from flask import Response
+from flask import Response, jsonify
 
 
 class APIQueryMixin(ABC):
     @abstractmethod
     def query(self):
-        """A database query which will be returned as a csv.
-        Ensure all columns are labled appropriately as these will be used as csv columns
+        """A database query which will be returned as a csv or json.
+        If CSV: Ensure all columns are labled appropriately as these will be used as csv columns
+        If JSON: Object will be serialised as is
         """
         pass
 
@@ -45,3 +46,17 @@ class APIQueryMixin(ABC):
         response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"
 
         return response
+
+    def __generate_json(self, *args, **kwargs):
+        """Generate serialised json from a sqlalchemy query"""
+
+        query = self.query(*args, **kwargs)
+
+        return jsonify(query) #, 200 # defaults to status 200
+
+    def response_json(self, *args, **kwargs):
+        """Respond with JSON"""
+
+        # response = Response(self.__generate_json(*args, **kwargs), mimetype="application/json", status=200)
+        # return response
+        return self.__generate_json(*args, **kwargs)

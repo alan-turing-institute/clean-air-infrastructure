@@ -1,0 +1,33 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+html, body, #mapid {
+    height: 100%;
+    width: 100%;
+}
+#chart{
+    z-index: 99999;
+    position: absolute;
+    bottom: 30px;
+    right: 10px;
+    background: white;
+    border-radius: 20px;
+    width: 400px;
+    height: 250px;
+}
+.mono{
+    font-family: 'Roboto Mono', sans-serif;
+}
+.logo{
+    background-image: url('/static/img/odysseus_logo.png');
+    background-size: contain;
+    z-index: 99999;
+    position: absolute;
+    bottom: 20px;
+    left: 30px;
+    /*background: white;*/
+    /*border-radius: 20px;*/
+    width: 208px;
+    height: 65px;
+}
