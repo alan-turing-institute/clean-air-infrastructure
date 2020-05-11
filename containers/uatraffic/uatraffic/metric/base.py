@@ -15,6 +15,7 @@ from cleanair.loggers import get_logger
 from .coverage import percent_coverage
 from .nlpl import nlpl
 from ..databases import TrafficMetricTable
+from ..dataset import TrafficDataset
 
 class TrafficMetric(DBWriter):
     """
@@ -30,7 +31,7 @@ class TrafficMetric(DBWriter):
             self.logger = get_logger(__name__)
 
     @staticmethod
-    def evaluate_model(model: gpflow.models.GPModel, x_test: tf.Tensor, y_test: tf.Tensor) -> dict:
+    def evaluate_model(model: gpflow.models.GPModel, dataset: TrafficDataset) -> dict:
         """
         Run all metrics on a model given input data and actual observations.
 
@@ -43,10 +44,10 @@ class TrafficMetric(DBWriter):
             Dictionary where keys are the name of a metric and values are the evaluated metric.
         """
         return dict(
-            coverage95=percent_coverage(model, x_test, y_test, quantile=0.95),
-            coverage75=percent_coverage(model, x_test, y_test, quantile=0.75),
-            coverage50=percent_coverage(model, x_test, y_test, quantile=0.50),
-            nlpl=nlpl(model, x_test, y_test),
+            coverage95=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.95),
+            coverage75=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.75),
+            coverage50=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.50),
+            nlpl=nlpl(model, dataset.features_tensor, dataset.target_tensor),
         )
 
     def batch_evaluate_model(
@@ -67,20 +68,23 @@ class TrafficMetric(DBWriter):
             NLPL and coverage metrics with a column for ids.
         """
         assert len(instance_ids) == len(gp_models) == len(traffic_datasets)
-        logging.info("Evaluating metrics for %s instance in batch model.", len(instance_ids))
+        logging.info("Evaluating metrics for %s instances.", len(instance_ids))
         rows = []
 
         # start as many threads as number of CPUs
         with futures.ThreadPoolExecutor() as executor:
             tasks = {
-                executor.submit(TrafficMetric.evaluate_model, model, dataset): instance_id
+                executor.submit(TrafficMetric.evaluate_model, model, dataset): dict(
+                    instance_id=instance_id,
+                    data_id=dataset.data_id,
+                )
                 for instance_id, model, dataset in zip(
                     instance_ids, gp_models, traffic_datasets
                 )
             }
             for future in futures.as_completed(tasks):
                 logging.debug("Evaluated instance %s", tasks[future])
-                rows.append(dict(**future.result(), instance_id=tasks[future]))
+                rows.append(dict(**future.result(), **tasks[future]))
 
         logging.info("Finished evaluating metrics in batch mode.")
         self.metric_df = pd.DataFrame(rows)
@@ -93,9 +97,9 @@ class TrafficMetric(DBWriter):
             self.logger.warning("No metrics will be commited to the traffic metrics table - metric_df is empty.")
         # upload metrics to DB
         logging.info("Inserting %s records into the traffic metrics table.", len(self.metric_df))
-        record_cols = ["instance_id", "coverage50", "coverage75", "coverage95", "nlpl"]
+        record_cols = ["instance_id", "data_id", "coverage50", "coverage75", "coverage95", "nlpl"]
         upload_records = self.metric_df[record_cols].to_dict("records")
         with self.dbcnxn.open_session() as session:
-            session.commit_records(
+            self.commit_records(
                 session, upload_records, table=TrafficMetricTable, on_conflict="overwrite"
             )

@@ -44,15 +44,18 @@ def main():
         output_type="df"
     )
     # load models from file
-    models = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
+    model_dict = load_models_from_file(instance_df["instance_id"], os.path.join(args.root, args.experiment, "models"))
+
+    instance_df = instance_df.loc[instance_df["instance_id"].isin(model_dict.keys())]
 
     datasets = prepare_batch(
         instance_df,
         args.secretfile,
     )
+    model_list = instance_df["instance_id"].map(model_dict)
     # run metrics in batch mode
     traffic_metric = TrafficMetric(secretfile=args.secretfile)
-    traffic_metric.batch_evaluate_model(instance_df["instance_id"], models, datasets)
+    traffic_metric.batch_evaluate_model(instance_df["instance_id"], model_list, datasets)
     traffic_metric.update_remote_tables()
 
 if __name__ == "__main__":

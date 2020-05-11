@@ -86,6 +86,7 @@ class TrafficInstanceQuery(DBReader):
                     instance_subquery,
                     TrafficModelTable.model_param,
                     TrafficDataTable.data_config,
+                    TrafficDataTable.preprocessing,
                 )
                 .join(
                     TrafficModelTable,

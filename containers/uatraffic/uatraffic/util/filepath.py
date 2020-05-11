@@ -8,7 +8,7 @@ import gpflow
 import pandas as pd
 import numpy as np
 
-def load_models_from_file(instances: Iterable, path_to_models: str) -> list:
+def load_models_from_file(instances: Iterable, path_to_models: str) -> dict:
     """
     Load models from a directory.
 
@@ -19,13 +19,13 @@ def load_models_from_file(instances: Iterable, path_to_models: str) -> list:
     Returns:
         GPflow trained models.
     """
-    models = []
+    models = dict()
     missing_files = 0
     logging.info("Loading models from %s", path_to_models)
     for instance_id in instances:
         try:
             filepath = os.path.join(path_to_models, instance_id + ".h5")
-            models.append(pickle.load(open(filepath, "rb")))
+            models[instance_id] = pickle.load(open(filepath, "rb"))
         except FileNotFoundError:
             missing_files += 1
 
