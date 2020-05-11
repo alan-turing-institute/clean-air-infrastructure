@@ -99,6 +99,9 @@ cronjobs:
     - name: secrets
       secret:
         secretName: secrets
+    nodeSelector: 
+        group: gpu
+
 
   - name: input-laqn
     image:

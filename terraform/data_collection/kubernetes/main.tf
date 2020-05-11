@@ -61,6 +61,14 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 }
 
+resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
+  name                  = "internal"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+  vm_size               = "Standard_A2_v2"
+  node_count            = 1
+  node_taints           = ["group=gpu:NoSchedule"]
+}
+
 # Set permissions for the pre-existing service principal
 # ------------------------------------------------------
 # Create a role with appropriate permissions for Kubernetes clusters
