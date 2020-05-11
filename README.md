@@ -30,6 +30,7 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Login to Azure](#login-to-azure)
 - [Configure a local database](#configure-a-local-database) 
 - [Insert static datasets into local database](#static-data-insert)
+- [Configure schema and database roles](#create-schema-and-roles)
 
 
 ### Accessing Production database
@@ -256,6 +257,14 @@ python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOK
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
 
 N.B SAS tokens will expire after a short length of time, after which you will need to request a new one. 
+
+### Create Schema and roles
+
+We must now setup the database schema. This also creates a number of roles on the database.
+
+```bash
+python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+```
 
 ### Check the database configuration
 
