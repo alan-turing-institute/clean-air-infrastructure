@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 61facdb82ee2e5c9ae435e9464c07650bcf42400
+imageTag: e49da066b6268f3b4c0750d197638a593cfcd905
 
 # jobs:
 #   - name: process_scoot_roadmap
@@ -84,7 +84,6 @@ imageTag: 61facdb82ee2e5c9ae435e9464c07650bcf42400
 #       secret:
 #         secretName: secrets
 
-
 cronjobs:
   - name: input-aqe
     image:
@@ -100,7 +99,13 @@ cronjobs:
       secret:
         secretName: secrets
     nodeSelector: 
-        group: gpu
+        agentpool: internal
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+
 
 
   - name: input-laqn
