@@ -92,9 +92,41 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             data_config: Settings to load the data.
 
         Raises:
-            AssertionError: If the dictionary is not valid.
+            KeyError: If one of the dictionary keys are missing.
+            TypeError: If the type of the values are invalid.
+
+        Notes:
+            In python 3.8 type hinting for dictionaries is supported.
+            When upgrading to python 3.8 this function should use type hinting.
         """
-        assert {"start", "end", "detectors", "weekdays"}.issubset(data_config)
+        value_types = [str, str, list, list]
+        min_keys = ["start", "end", "detectors", "weekdays"]
+
+        # check keys are correct
+        if not set(min_keys).issubset(data_config):
+            missing_keys = set(min_keys) - set(data_config.keys())
+            error_message = "The data config dictionary does not contain the following keys: {k}"
+            error_message = error_message.format(k=missing_keys)
+            raise KeyError(error_message)
+
+        # check the types of the values
+        raise_type_error = False
+        for i in range(value_types):
+            if not isinstance(data_config[min_keys[i]], value_types[i]):
+                bad_key = min_keys[i]
+                bad_type = type(data_config[min_keys[i]])
+                actual_type = value_types[i]
+                break
+
+        # raise a type error is appropriate
+        if raise_type_error:
+            error_message = "The value for '{key}' in data_config must be a string. You passed a {bad_type}."
+            error_message = error_message.format(
+                bad_key=bad_key,
+                bad_type=bad_type,
+                actual_type=actual_type,
+            )
+            raise TypeError(error_message)
 
     @staticmethod
     def validate_preprocessing(preprocessing: dict):
