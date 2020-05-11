@@ -44,7 +44,7 @@ def static_data_sizes():
         "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
         "street_canyon": {"table": StreetCanyon, "rows": 242547},
         "urban_village": {"table": UrbanVillage, "rows": 747},
-        "ukmap": {"table": UKMap, "rows": 0},
+        "ukmap": {"table": UKMap, "rows": 11598662},
     }
 
     return n_rows
@@ -71,4 +71,9 @@ def test_static_tables_filled(secretfile, static_data_sizes):
     for table_name, table_dict in static_data_sizes.items():
         count = query_table(table_dict["table"]).count()
         print(f"Table {table_name} has {count} rows. Expecting {table_dict['rows']}")
-        assert query_table(table_dict["table"]).count() == table_dict["rows"]
+
+        if table_dict["table"] == 'ukmap':
+            # UKMap can be empty for tests
+            assert query_table(table_dict["table"]).count() == table_dict["rows"] or query_table(table_dict["table"]).count() == 0
+        else:
+            assert query_table(table_dict["table"]).count() == table_dict["rows"] 
