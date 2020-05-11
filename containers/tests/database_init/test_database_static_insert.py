@@ -14,21 +14,6 @@ import os
 
 
 @pytest.fixture()
-def static_data_sizes():
-    """Expected number of rows in scoot"""
-
-    n_rows = {
-        "scoot_detector": {"table": ScootDetector, "rows": 12421},
-        "london_boundary": {"table": LondonBoundary, "rows": 33},
-        "oshighway_roadlink": {"table": OSHighway, "rows": 339214},
-        "street_canyon": {"table": StreetCanyon, "rows": 242547},
-        "urban_village": {"table": UrbanVillage, "rows": 747},
-    }
-
-    return n_rows
-
-
-@pytest.fixture()
 def N_ROWS_SCOOT():
     """Expected number of rows in scoot"""
     return 12421
@@ -74,6 +59,6 @@ def test_static_tables_filled(secretfile, static_data_sizes):
 
         if table_dict["table"] == 'ukmap':
             # UKMap can be empty for tests
-            assert query_table(table_dict["table"]).count() == table_dict["rows"] or query_table(table_dict["table"]).count() == 0
+            assert (query_table(table_dict["table"]).count() == table_dict["rows"]) or (query_table(table_dict["table"]).count() == 0)
         else:
             assert query_table(table_dict["table"]).count() == table_dict["rows"] 
