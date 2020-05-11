@@ -326,6 +326,33 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 When you run an entrypoint script the CleanAir package will read the `PGPASSWORD` environment variable. This will also take precedence over any value provided in the`--secret-dict` argument. 
 
+### Docker entry point
+To run an entry point from a docker file we first need to build a docker image. Here shown for the satellite input entry point:
+
+```bash
+docker build -t input_satellite:local -f containers/dockerfiles/input_satellite_readings.Dockerfile containers  
+```
+
+To run we need to set a few more environment variables. The first is the directory with secret files in:
+
+```bash
+SECRET_DIR=$(pwd)/.secrets
+```
+
+Now get a new token:
+
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+Finally you can run the docker image, passing PGPASSWORD as an environment variable:
+
+```bash
+docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s '.db_secrets_ad.json' -k <copernicus-key>
+```
+
+Here we also provided the copernicus api key which is stored in the `cleanair` keyvault. 
+
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
