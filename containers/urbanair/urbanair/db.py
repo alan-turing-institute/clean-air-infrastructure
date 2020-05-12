@@ -20,6 +20,7 @@ def configure_db_session(db='urbanapi'):
     db_connection_info = DBConnectionMixin(uri) # TODO@Oscar Should work when jamcam URI in secrets
     engine = create_engine(
         db_connection_info.connection_string, convert_unicode=True
+        # connection_string, convert_unicode=True
     )
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
