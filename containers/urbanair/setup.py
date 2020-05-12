@@ -22,7 +22,7 @@ setuptools.setup(
         "flasgger",
         "webargs",
         "flask_httpauth",
-        # "uwsgi",
+        "uwsgi",
     ],
     python_requires=">=3.7",
 )
