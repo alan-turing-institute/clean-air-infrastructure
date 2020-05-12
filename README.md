@@ -70,7 +70,8 @@ To contribute as a non-infrastructure developer you will need the following:
 - `Azure command line interface (CLI)` (for managing your Azure subscriptions)
 - `Docker` (For building and testing images locally)
 - `postgreSQL` (command-line tool for interacting with db)
-- ` CleanAir python packages` (install python packages)
+- `CleanAir python packages` (install python packages)
+- `GDAL` (For inserting static datasets)
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -80,7 +81,12 @@ Download and install [Docker Desktop](https://www.docker.com/products/docker-des
 
 ### PostgreSQL
 ```bash
-brew install postgresql
+brew install postgresql postgis
+```
+
+### GDAL
+```bash
+brew install gdal
 ```
 
 ### Development tools
