@@ -4,7 +4,7 @@
 
 ## Type of change
 
-Please select the types of change made
+<!-- Please select the types of change made -->
 
 - [ ] Bug fix
 - [ ] New feature
