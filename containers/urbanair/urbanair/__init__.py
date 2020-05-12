@@ -18,11 +18,11 @@ def create_app():
     else:
         app.config.from_object("urbanair.configurations.development_settings")
         app.config["DATABASE_URI"] = os.environ.get("DATABASE_URI")
-        # app.config["DATABASE_URI_JAMCAM"] = os.environ.get("DATABASE_URI_JAMCAM")
-        # if not app.config["DATABASE_URI"] or not app.config["DATABASE_URI_JAMCAM"]:
-        #     raise ValueError(
-        #         "DATABASE_URI and DATABASE_URI_JAMCAM env variable must be set in development mode"
-        #     )
+        app.config["DATABASE_URI_JAMCAM"] = os.environ.get("DATABASE_URI_JAMCAM")
+        if not app.config["DATABASE_URI"] or not app.config["DATABASE_URI_JAMCAM"]:
+            raise ValueError(
+                "DATABASE_URI and DATABASE_URI_JAMCAM env variable must be set in development mode"
+            )
 
     # Create DB session object
     with app.app_context():
