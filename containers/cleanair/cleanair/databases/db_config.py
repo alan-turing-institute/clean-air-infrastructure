@@ -1,3 +1,4 @@
+"""Class for configuring database schema"""
 from yaml import load, Loader
 from sqlalchemy.sql import text
 from sqlalchemy.exc import ProgrammingError
@@ -10,7 +11,7 @@ class DBConfig(Connector):
 
     def __init__(self, config_file, *args, **kwargs):
         """Loads a database configuration file
-        
+
         Args:
             config_file (str): Location of configuration file
 
@@ -20,21 +21,24 @@ class DBConfig(Connector):
         # Initialise parent classes
         super().__init__(*args, **kwargs)
 
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
         self.config_file = config_file
         self.config = self.read_config(config_file)
 
     @staticmethod
     def read_config(config_file):
         """Read a database configuration file
-        
+
         Args:
             config_file (str): Location of configuration file
 
         Returns:
             dict: A dictionary of the required configuration
         """
-        with open(config_file, "r") as f:
-            return load(f, Loader=Loader)
+        with open(config_file, "r") as open_f:
+            return load(open_f, Loader=Loader)
 
     @property
     def schema(self):
@@ -48,12 +52,13 @@ class DBConfig(Connector):
 
     @property
     def database_name(self):
+        "Return name of database in config file"
         return self.config["database"]
 
     def create_schema(self):
         """Create schemas on database"""
         for sch in self.schema:
-            self.logger.info(f"Creating SCHEMA {sch}")
+            self.logger.info("Creating SCHEMA %s", sch)
             self.ensure_schema(sch)
 
     def list_roles(self):
@@ -64,6 +69,7 @@ class DBConfig(Connector):
             ).fetchall()
             if query_role:
                 return [i[0] for i in query_role]
+            return None
 
     def configure_all_roles(self):
         """Configure roles as defined in the configuration file
@@ -91,7 +97,7 @@ class DBConfig(Connector):
 
     def create_role(self, role_name):
         """Create a new role
-        
+
         Args:
             role_name (str): Role name
 
@@ -103,12 +109,14 @@ class DBConfig(Connector):
                 session.execute(text("CREATE ROLE {}".format(role_name)))
                 session.commit()
 
-        except ProgrammingError as e:
-            self.logger.warning(f"Creating role %s failed with error: %s", role_name, e)
+        except ProgrammingError as error:
+            self.logger.warning(
+                "Creating role %s failed with error: %s", role_name, error
+            )
 
     def assign_role_connect(self, role_name):
         """Allow a role to connect to the database
-        
+
         Args:
             role_name (str): Role name
 
@@ -129,7 +137,7 @@ class DBConfig(Connector):
 
     def assign_role_schema_usage(self, role_name, schema_name, create=False):
         """Assign a role to all schemas
-        
+
         Args:
             role_name (str): Role name
             schema_name (str): Schema name
@@ -162,7 +170,7 @@ class DBConfig(Connector):
 
     def assign_role_schema_privilege(self, role_name, schema_name, privileges):
         """Assign a role a list of privileges
-        
+
         Args:
             role_name (str): Role name
             schema_name (str): Schema name
@@ -189,9 +197,10 @@ class DBConfig(Connector):
             )
             session.commit()
 
+    # pylint: disable=C0103
     def assign_role_schema_default_privilege(self, role_name, schema_name, privileges):
         """Assign a role default privilegs
-        
+
         Args:
             role_name (str): Role name
             schema_name (str): Schema name
@@ -220,7 +229,7 @@ class DBConfig(Connector):
 
     def assign_role_schema_sequences(self, role_name, schema_name):
         """Assign a role to all sequences on schema
-        
+
         Args:
             role_name (str): Role name
             schema_name (str): Schema name
@@ -246,7 +255,7 @@ class DBConfig(Connector):
 
     def assign_role_schema_default_sequences(self, role_name, schema_name):
         """Assign a role default sequences on a schema
-        
+
         Args:
             role_name (str): Role name
             schema_name (str): Schema name
@@ -272,7 +281,7 @@ class DBConfig(Connector):
 
     def create_user(self, username, password):
         """Create a new user and assign to a role
-        
+
         Args:
             username (str): A username
             password (str): A user's password

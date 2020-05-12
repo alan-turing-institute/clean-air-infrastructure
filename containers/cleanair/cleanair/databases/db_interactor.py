@@ -17,12 +17,12 @@ class DBInteractor:
         Init method for connecting to database
 
         Args:
-            secretfile (str): Path to a secret file (json). 
-                              Can be the full path to secrets file 
+            secretfile (str): Path to a secret file (json).
+                              Can be the full path to secrets file
                               or a filename if the secret is in a directory called '/secrets'
             initialise_tables (bool): Create all tables. Default to False. Requires admin privileges on database.
             connection (sqlalchemy.engine.Connection): Pass an sqlalchemy connection object.
-                                                        Useful when testing to allow operations with 
+                                                        Useful when testing to allow operations with
                                                         a transaction. Defaults to None.
             secret_dict (dict): A dictionary of login secrets. Will override variables in the json secrets file
                                 if both provided

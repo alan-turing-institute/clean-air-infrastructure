@@ -1,12 +1,14 @@
 """
 Mixins which are used by multiple argument parsers
 """
-from argparse import ArgumentTypeError, ArgumentError, Action
+from argparse import ArgumentTypeError, Action
 
 
 class ParseDict(Action):
+    "Parse items into a dictionary"
+
     def __call__(self, parser, namespace, values, option_string=None):
-        d = {}
+        output_dict = {}
         valid_items = ["username", "password", "host", "port", "db_name", "ssl_mode"]
 
         if values:
@@ -22,9 +24,9 @@ class ParseDict(Action):
                 else:
                     value = split_items[1]
 
-                d[key] = value
+                output_dict[key] = value
 
-        setattr(namespace, self.dest, d)
+        setattr(namespace, self.dest, output_dict)
 
 
 class SecretFileParserMixin:

@@ -3,7 +3,6 @@ Upload static data currently held in geodatabase/shape file format in Azure
 Convert to PostgreSQL using ogr2ogr and upload to the inputs DB
 """
 import glob
-import os
 import subprocess
 from sqlalchemy.exc import OperationalError
 from ..databases import DBWriter
@@ -28,8 +27,8 @@ class StaticWriter(DBWriter):
         self.schema = schema
 
         # Ensure that the necessary schemas exist
-        for schema in [self.schema, "interest_points"]:
-            self.dbcnxn.ensure_schema(schema)
+        for sch in [self.schema, "interest_points"]:
+            self.dbcnxn.ensure_schema(sch)
         self.dbcnxn.ensure_extensions()
 
         # Ensure that interest_points table exists

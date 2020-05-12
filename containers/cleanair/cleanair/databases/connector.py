@@ -27,9 +27,9 @@ class Connector(DBConnectionMixin):
     def __init__(self, secretfile, connection=None, **kwargs):
         """
 
-        Args: 
+        Args:
             connection (sqlalchemy.engine.Connection): Pass an sqlalchemy connection object.
-                                                        Useful when testing to allow operations with 
+                                                        Useful when testing to allow operations with
                                                         a transaction
         """
 
@@ -93,8 +93,8 @@ class Connector(DBConnectionMixin):
 
             if query_schema[0][0] == schema_name:
                 return True
-            else:
-                raise AttributeError("Schema query returned but schema did not match")
+
+            raise AttributeError("Schema query returned but schema did not match")
 
     def ensure_schema(self, schema_name):
         """Ensure that requested schema exists"""
@@ -133,6 +133,7 @@ class Connector(DBConnectionMixin):
                 # then each time that SAVEPOINT ends, reopen it
                 @event.listens_for(session, "after_transaction_end")
                 def restart_savepoint(session, transaction):
+                    # pylint: disable=W0212
                     if transaction.nested and not transaction._parent.nested:
                         # ensure that state is expired the way
                         # session.commit() at the top level normally does

@@ -31,9 +31,6 @@ class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
 class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
     """Argument parsing for inserting static datafiles"""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 
 class SatelliteArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser

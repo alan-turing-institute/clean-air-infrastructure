@@ -31,6 +31,7 @@ setuptools.setup(
         "scipy==1.4.1",
         "sqlalchemy==1.3.11",
         "sqlalchemy-utils==0.36.3",
+        "sklearn==0.0",
         "termcolor==1.1.0",
         "uuid==1.30",
     ],

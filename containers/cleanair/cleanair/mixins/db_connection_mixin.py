@@ -14,11 +14,11 @@ class DBConnectionMixin:
 
         First loads connection information from secretfile.
         Secondly overwrites with values from secret_dict if any are provided.
-        Finally check if PGPASSWORD is an environment variable and overwrites with this. 
+        Finally check if PGPASSWORD is an environment variable and overwrites with this.
 
         Args:
-            secretfile (str): Path to a secret file (json). 
-                              Can be the full path to secrets file 
+            secretfile (str): Path to a secret file (json).
+                              Can be the full path to secrets file
                               or a filename if the secret is in a directory called '/secrets'
             secret_dict (dict): A dictionary of login secrets. Will override variables in the json secrets file
                                 if both provided
@@ -51,6 +51,7 @@ class DBConnectionMixin:
 
     @property
     def connection_keys(self):
+        "Return valid connection keys"
         return ["username", "password", "host", "port", "db_name"]
 
     @property
@@ -113,7 +114,8 @@ class DBConnectionMixin:
                 "Database secrets could not be loaded from {}".format(secret_file)
             )
 
-    def read_environment_password(self):
+    @staticmethod
+    def read_environment_password():
         """Check if PGPASSWORD exists as an environment variable and return its values if it does
 
         Returns:
@@ -124,15 +126,15 @@ class DBConnectionMixin:
 
         if pg_password:
             return {"password": pg_password}
-        else:
-            return None
+
+        return None
 
     def replace_connection_values(self, connection_info, secret_dict):
         """Replace values in connection_info with those in secret_dict
 
         Args:
             connection_info (dict): A dictionary of connection parameters
-            secret_dict (dict): A dictionary of connection parameters to replace matching 
+            secret_dict (dict): A dictionary of connection parameters to replace matching
                                 parameters in connection_info
 
         Returns:
@@ -141,7 +143,7 @@ class DBConnectionMixin:
 
         connection_info_ = connection_info.copy()
 
-        for key, value in secret_dict.items():
+        for key, _ in secret_dict.items():
             if key in self.connection_keys:
                 connection_info_[key] = secret_dict[key]
 
