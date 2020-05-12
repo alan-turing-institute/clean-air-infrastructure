@@ -1,6 +1,6 @@
 # Summary
 
-Please provide an overview of the changes made.
+<!-- Please provide an overview of the changes made. -->
 
 ## Type of change
 
@@ -16,21 +16,21 @@ Please select the types of change made
 
 List any dependencies added to the project
 
-- dependency 1
-- dependency 2
+<!-- - dependency 1 -->
+<!-- - dependency 2 -->
 
 ## Tests
 How has the code been tested?
 
-- Added pytest tests
-- Ran code using local database
+<!-- - Added pytest tests -->
+<!-- - Ran code using local database -->
 
 ## Issues fixes
 
 List any issues this closes:
 
-- Closes issue
-- Closes issue
+<!-- - Closes issue -->
+<!-- - Closes issue -->
 
 ## Checklist
 Please ensure you have done the following:
@@ -51,4 +51,4 @@ Please ensure you have done the following:
 
 List anything you would like the reviewer to focus on.
 
-- I'm not sure if my tests cover all use cases well
+<!-- - I'm not sure if my tests cover all use cases well -->
