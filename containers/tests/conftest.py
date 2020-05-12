@@ -1,11 +1,9 @@
 """Fixtures for running database tests"""
-
-import pytest
+# pylint: disable=redefined-outer-name
 from shutil import copyfile
-from cleanair.mixins import DBConnectionMixin
-from sqlalchemy.orm import sessionmaker
+import pytest
 from sqlalchemy import create_engine
-
+from cleanair.mixins import DBConnectionMixin
 
 TRAVIS_SECRET = """
 {
@@ -32,21 +30,22 @@ def readonly_user_login():
 
 @pytest.fixture()
 def secret_dict():
+    """An example secret_dict pyttest fixture"""
     return {"password": "areallybadpassword", "port": 5421}
 
 
 @pytest.fixture(scope="module")
 def secretfile(request, tmpdir_factory):
     """"Create a local secret file in a tempory directory for the database admin"""
-    fn = tmpdir_factory.mktemp("secrets").join("db_secrets.json")
+    tmp_file = tmpdir_factory.mktemp("secrets").join("db_secrets.json")
 
     if not request.config.getoption("--secretfile"):
-        with open(fn, "w") as f:
-            f.write(TRAVIS_SECRET)
+        with open(tmp_file, "w") as open_file:
+            open_file.write(TRAVIS_SECRET)
     else:
-        copyfile(request.config.getoption("--secretfile"), fn)
+        copyfile(request.config.getoption("--secretfile"), tmp_file)
 
-    return fn
+    return  tmp_file
 
 
 @pytest.fixture(scope="function")
@@ -87,11 +86,13 @@ def connection_module(engine_module):
 
 @pytest.fixture(scope="function")
 def config_file(shared_datadir):
+    "A database config file fixure"
     return shared_datadir / "database_config.yaml"
 
 
 @pytest.fixture(scope="module")
 def schema():
+    "Example database schema fixture"
     return [
         "static_data",
         "interest_points",
@@ -110,4 +111,5 @@ def schema():
 
 @pytest.fixture(scope="module")
 def roles():
+    "Example database roles fixure"
     return ["readonly", "readwrite"]
