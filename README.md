@@ -222,6 +222,12 @@ N.B In some cases your default username may be your OS user. Change the username
 
 We must now setup the database schema. This also creates a number of roles on the database.
 
+Create a variable with the location of your secrets file
+
+```bash
+SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+```
+
 ```bash
 python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
 ```
@@ -242,12 +248,6 @@ Otherwise you must request a SAS token from an [infrastructure developer](#contr
 
 ```bash
 SAS_TOKEN=<SAS_TOKEN>
-```
-
-Create a variable with the location of your secrets file
-
-```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
 ```
 
 You can then download and insert all static data into the database by running the following:
