@@ -6,7 +6,6 @@ import time
 from pathos.multiprocessing import ProcessingPool as Pool
 from fbprophet import Prophet
 import pandas as pd
-from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
 from ..databases.tables import ScootReading, ScootForecast
 from ..decorators import SuppressStdoutStderr
