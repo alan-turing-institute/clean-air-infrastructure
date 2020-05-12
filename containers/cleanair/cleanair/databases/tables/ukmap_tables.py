@@ -1,10 +1,9 @@
 """
 Table for UKMap static data
 """
-from sqlalchemy.ext.declarative import DeferredReflection
-from sqlalchemy import Column, ForeignKey, String, Integer, Enum
+from sqlalchemy import Column, String, Integer
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE
 from geoalchemy2 import Geometry
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN, DATE
 from ..base import Base
 
 

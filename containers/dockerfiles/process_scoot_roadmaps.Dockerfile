@@ -11,7 +11,7 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/process_scoot_roadmaps.py /app
+COPY entrypoints/feature_processing/process_scoot_roadmaps.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "process_scoot_roadmaps.py"]

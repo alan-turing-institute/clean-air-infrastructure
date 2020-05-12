@@ -7,7 +7,6 @@ import time
 from dateutil import rrule
 from sqlalchemy import func
 from sqlalchemy import Table
-from sqlalchemy.exc import IntegrityError
 import boto3
 import botocore
 import pandas

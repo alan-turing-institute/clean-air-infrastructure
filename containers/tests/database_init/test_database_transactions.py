@@ -1,16 +1,19 @@
-import pytest
-from cleanair.databases import DBWriter, Connector
-from cleanair.databases.tables import ScootReading, ScootDetector
+"""Test database transactions work. These allow us to run tests and roll back
+the database state after each function call
+"""
+from datetime import timedelta
 from dateutil import rrule
 from dateutil.parser import isoparse
-from datetime import timedelta
+from cleanair.databases import DBWriter
+from cleanair.databases.tables import ScootReading, ScootDetector
 
 
 def fake_detector_readings(conn, n_datetimes=5, n_detectors=10):
-
+    """Create a fake scoot detector reading"""
     with conn.dbcnxn.open_session() as session:
         detector_n = [
-            i[0] for i in session.query(ScootDetector.detector_n).limit(10).all()
+            i[0]
+            for i in session.query(ScootDetector.detector_n).limit(n_detectors).all()
         ]
 
         readings = [
@@ -36,7 +39,7 @@ def fake_detector_readings(conn, n_datetimes=5, n_detectors=10):
         return readings
 
 
-def test_session_scopes_scoot_reading(secretfile, connection):
+def test_session_scopes_scoot(secretfile, connection):
     """Test that data is writen to database and can be queries"""
 
     conn = DBWriter(
@@ -51,7 +54,7 @@ def test_session_scopes_scoot_reading(secretfile, connection):
 
 
 def test_scoot_reading_empty(secretfile, connection):
-
+    """Test scoot readings table is empty"""
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )

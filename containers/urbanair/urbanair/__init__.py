@@ -2,7 +2,7 @@
 
 import os
 from flask import Flask
-from flasgger import Swagger, APISpec
+from flasgger import Swagger
 from . import db
 from . import exceptions
 from .blueprints import scoot_bp, cams_bp, index_bp
@@ -32,7 +32,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(index_bp)
-    app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
+    # app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
     app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
 
     # Configure exceptions

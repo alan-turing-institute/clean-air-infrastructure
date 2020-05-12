@@ -26,4 +26,4 @@ def validate_lockdown_date(iso_datestring, lockdown_baseline_end_date):
     validate_today_or_before(iso_datestring)
 
     if isoparse(iso_datestring) < isoparse(lockdown_baseline_end_date):
-        raise ValidationError("Cannot be before the comparison end date")
+        raise ValidationError("Cannot be before the baseline end date")

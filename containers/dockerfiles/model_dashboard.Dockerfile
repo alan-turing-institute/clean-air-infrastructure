@@ -11,7 +11,7 @@ COPY cleanair /app/cleanair
 RUN pip install '/app/cleanair[dashboard]'
 
 # Copy the run script into the container
-COPY entrypoints/model_dashboard.py /app
+COPY entrypoints/dashboards/model_dashboard.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "model_dashboard.py"]

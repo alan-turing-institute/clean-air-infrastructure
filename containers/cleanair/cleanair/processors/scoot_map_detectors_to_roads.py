@@ -5,7 +5,6 @@ import time
 from geoalchemy2.comparator import Comparator
 import pandas as pd
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, ScootDetector, OSHighway, ScootRoadMatch
 from ..loggers import duration, get_logger, green

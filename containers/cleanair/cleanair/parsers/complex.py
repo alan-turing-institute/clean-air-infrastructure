@@ -14,56 +14,22 @@ from ..mixins import (
 )
 
 
-class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
-    """Argument parsing for inserting static datafiles"""
+class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
+    """Argument parser for configuring database roles"""
 
-    def __init__(self, datasets, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        sas_args = self.add_mutually_exclusive_group(required=True)
-        sas_args.add_argument(
-            "-t",
-            "--sas-token",
-            type=str,
-            help="sas token to access the cleanair datastore container",
-        )
-        sas_args.add_argument(
-            "-g",
-            "--generate-sas-token",
-            action="store_true",
-            help="If logged in using 'az login' generate a sas token",
-        )
-        self.add_argument(
-            "-u",
-            "--account_url",
-            type=str,
-            default="https://londonaqdatasets.blob.core.windows.net",
-            help="URL of storage account",
-        )
         self.add_argument(
             "-c",
-            "--storage-container-name",
+            "--config-file",
             type=str,
-            default="londonaqdatasets",
-            help="Name of the storage container where the Terraform backend will be stored",
-        )
-        self.add_argument(
-            "-r",
-            "--resource_group",
-            type=str,
-            default="Datasets",
-            help="Resource group where the static datasets will be stored",
+            required=True,
+            help="Location of configuration file",
         )
 
-        self.add_argument(
-            "-d",
-            "--datasets",
-            nargs="+",
-            type=str,
-            choices=datasets,
-            default=datasets,
-            help="A list of datasets to include",
-        )
+
+class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
+    """Argument parsing for inserting static datafiles"""
 
 
 class SatelliteArgumentParser(

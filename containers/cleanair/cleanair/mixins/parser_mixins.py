@@ -1,7 +1,32 @@
 """
 Mixins which are used by multiple argument parsers
 """
-from argparse import ArgumentTypeError
+from argparse import ArgumentTypeError, Action
+
+
+class ParseDict(Action):
+    "Parse items into a dictionary"
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        output_dict = {}
+        valid_items = ["username", "password", "host", "port", "db_name", "ssl_mode"]
+
+        if values:
+            for item in values:
+                split_items = item.split("=", 1)
+                key = split_items[
+                    0
+                ].strip()  # we remove blanks around keys, as is logical
+                if key not in valid_items:
+                    parser.error("{} is not a valid secretfile override".format(key))
+                if key == "port":
+                    value = int(split_items[1])
+                else:
+                    value = split_items[1]
+
+                output_dict[key] = value
+
+        setattr(namespace, self.dest, output_dict)
 
 
 class SecretFileParserMixin:
@@ -16,6 +41,15 @@ class SecretFileParserMixin:
             "--secretfile",
             default="db_secrets.json",
             help="File with connection secrets.",
+        )
+        self.add_argument(
+            "--secret-dict",
+            metavar="KEY=VALUE",
+            nargs="+",
+            help="Set a number of overrides for secretfile using item=value"
+            "(do not put spaces before or after the = sign). "
+            "Valid items are 'username', 'password', 'host', 'port', 'db_name', 'ssl_mode'",
+            action=ParseDict,
         )
 
 

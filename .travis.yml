@@ -1,3 +1,8 @@
+language: python
+python:
+  - "3.7"
+cache: pip
+
 addons:
   postgresql: '11'
   apt:
@@ -23,22 +28,19 @@ before_install:
           "ssl_mode": "prefer"
       }' >> .secrets/db_secrets_offline.json
 
-language: python
-python:
-  - "3.7"
-
 install:
   - pip install -r containers/requirements.txt
   - pip install 'containers/cleanair[models,traffic,dashboard]'
   - pip install 'containers/uatraffic'
 
 before_script:
-  - python containers/entrypoints/insert_static_datasets.py -t $SAS_TOKEN -s .secrets/db_secrets_offline.json -d street_canyon rectgrid_100 hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+  - python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s .secrets/db_secrets_offline.json -d street_canyon rectgrid_100 hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+  - python containers/entrypoints/setup/configure_db_roles.py -s .secrets/db_secrets_offline.json -c configuration/database_role_config/local_database_config.yaml 
 
 script:
   
   # # Run all pytest unit tests
-  - python -m pytest containers --travis
+  - python -m pytest containers
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8 --ignore=E203, W503

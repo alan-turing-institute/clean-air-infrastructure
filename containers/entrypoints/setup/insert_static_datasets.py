@@ -4,13 +4,10 @@ Insert static datasets into the database
 import logging
 import os
 import sys
+from datetime import datetime, timedelta
 import tempfile
 import zipfile
 import termcolor
-from cleanair.loggers import initialise_logging
-from cleanair.parsers import DatabaseSetupParser
-from cleanair.databases import Connector
-from cleanair.inputs import StaticWriter
 from azure.storage.blob import (
     BlobServiceClient,
     generate_account_sas,
@@ -19,7 +16,10 @@ from azure.storage.blob import (
 )
 from azure.mgmt.storage import StorageManagementClient
 from azure.common.client_factory import get_client_from_cli_profile
-from datetime import datetime, timedelta
+from cleanair.parsers import DatabaseSetupParser
+from cleanair.databases import Connector
+from cleanair.inputs import StaticWriter
+
 
 DATASETS = {
     "rectgrid_100": {
@@ -66,10 +66,8 @@ def emphasised(text):
     return termcolor.colored(text, "cyan")
 
 
-def generate_sas_token(account_url, resource_group, storage_container_name):
+def generate_sas_token(resource_group, storage_container_name, days, hours):
     """Generate a SAS token when logged in using az login"""
-
-    client = get_client_from_cli_profile(BlobServiceClient, account_url=account_url)
 
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
@@ -79,13 +77,13 @@ def generate_sas_token(account_url, resource_group, storage_container_name):
         k.value for k in storage_key_list.keys if k.key_name == "key1"
     ][0]
 
-    return "'?" + generate_account_sas(
+    return "?" + generate_account_sas(
         storage_container_name,
         account_key=storage_account_key,
         resource_types=ResourceTypes(service=True, container=True, object=True),
         permission=AccountSasPermissions(read=True, list=True),
-        expiry=datetime.utcnow() + timedelta(days=1),
-    ) + "'"
+        expiry=datetime.utcnow() + timedelta(days=days, hours=hours),
+    )
 
 
 def download_blobs(blob_service, blob_container_name, target_directory):
@@ -124,13 +122,25 @@ def download_blobs(blob_service, blob_container_name, target_directory):
 
 
 def configure_database(secretfile):
-
+    "Configure a database, creating all schema and installing extentions"
     db_connection = Connector(secretfile)
     db_connection.ensure_database_exists()
     db_connection.ensure_extensions()
 
 
-def setup_db(args):
+def generate(args):
+    """Generate a SAS token"""
+
+    sys.stdout.write(
+        generate_sas_token(
+            args.resource_group, args.storage_container_name, args.days, args.hours,
+        )
+    )
+    sys.exit(0)
+
+
+def insert(args):
+    """Insert statit data into a database"""
 
     # Check database exists
     configure_database(args.secretfile)
@@ -158,27 +168,91 @@ def setup_db(args):
             static_writer.update_remote_tables()
 
 
-def main():
+def create_parser(datasets):
+    "Create parser"
+    parsers = DatabaseSetupParser()
 
-    parser = DatabaseSetupParser(list(DATASETS.keys()))
+    # Common arguments
+    parsers.add_argument(
+        "-u",
+        "--account_url",
+        type=str,
+        default="https://londonaqdatasets.blob.core.windows.net",
+        help="URL of storage account",
+    )
+
+    parsers.add_argument(
+        "-c",
+        "--storage-container-name",
+        type=str,
+        default="londonaqdatasets",
+        help="Name of the storage container where the Terraform backend will be stored",
+    )
+
+    parsers.add_argument(
+        "-r",
+        "--resource_group",
+        type=str,
+        default="Datasets",
+        help="Resource group where the static datasets will be stored",
+    )
+
+    # Subparsers
+    subparsers = parsers.add_subparsers(required=True, dest="command")
+    parser_generate = subparsers.add_parser(
+        "generate",
+        help="Generate a SAS Token to download CleanAir static datasets from Azure",
+    )
+    parser_insert = subparsers.add_parser(
+        "insert", help="Insert CleanAir static datasets into a database"
+    )
+
+    # Insert parser args
+    parser_generate.add_argument(
+        "--hours", type=int, default=1, help="Number of hours SAS Token valid for"
+    )
+    parser_generate.add_argument(
+        "--days",
+        type=int,
+        default=0,
+        help="Number of days SAS Token valid for. If used with --hours will be sum of hours and days",
+    )
+
+    # Generate parser args
+    parser_insert.add_argument(
+        "-t",
+        "--sas-token",
+        type=str,
+        help="sas token to access the cleanair datastore container",
+    )
+
+    parser_insert.add_argument(
+        "-d",
+        "--datasets",
+        nargs="+",
+        type=str,
+        choices=datasets,
+        default=datasets,
+        help="A list of datasets to include",
+    )
+
+    # Link to programs
+    parser_generate.set_defaults(func=generate)
+    parser_insert.set_defaults(func=insert)
+
+    return parsers
+
+
+def main():
+    "Insert static datasets entry point"
+    parser = create_parser(datasets=list(DATASETS.keys()))
     args = parser.parse_args()
 
-    # Set up logging
     # Set logging verbosity
-    default_logger = initialise_logging(args.verbose)
     logging.getLogger("azure").setLevel(logging.WARNING)
 
-    # Generate a SAS token
-    if args.generate_sas_token:
-        sys.stdout.write(
-            generate_sas_token(
-                args.account_url, args.resource_group, args.storage_container_name
-            )
-        )
-        sys.exit(0)
-
-    else:
-        setup_db(args)
+    # Execute functions
+    args.func(args)
 
 
 if __name__ == "__main__":
