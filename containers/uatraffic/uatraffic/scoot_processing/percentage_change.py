@@ -323,9 +323,7 @@ class TrafficPercentageChange(DateRangeMixin, DBWriter):
             ]
 
             upload_records = metric_df[record_cols].to_dict("records")
-            
+
             self.commit_records(
-                upload_records,
-                on_conflict="overwrite",
-                table=ScootPercentChange
+                upload_records, on_conflict="overwrite", table=ScootPercentChange
             )
