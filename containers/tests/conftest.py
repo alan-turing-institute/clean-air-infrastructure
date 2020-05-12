@@ -45,7 +45,7 @@ def secretfile(request, tmpdir_factory):
     else:
         copyfile(request.config.getoption("--secretfile"), tmp_file)
 
-    return  tmp_file
+    return tmp_file
 
 
 @pytest.fixture(scope="function")

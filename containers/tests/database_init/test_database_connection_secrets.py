@@ -2,13 +2,7 @@
 # pylint: disable=redefined-outer-name
 import pytest
 from sqlalchemy.exc import OperationalError
-from cleanair.databases import (
-    Connector,
-    DBInteractor,
-    DBReader,
-    DBWriter,
-    DBConfig,
-)
+from cleanair.databases import Connector, DBInteractor, DBWriter
 
 
 @pytest.fixture()
@@ -20,9 +14,7 @@ def secret_dict():
 def test_connector(secretfile, secret_dict, connection):
     """Test that secret_dict overwrites secretfile contents"""
     connection = Connector(secretfile, connection=connection)
-    connection2 = Connector(
-        secretfile, connection=connection, secret_dict=secret_dict
-    )
+    connection2 = Connector(secretfile, connection=connection, secret_dict=secret_dict)
 
     assert connection.connection_dict != connection2.connection_dict
 
@@ -31,6 +23,7 @@ def test_connector(secretfile, secret_dict, connection):
             assert connection.connection_dict[key] != value
         else:
             assert connection.connection_dict[key] == value
+
 
 def test_interactor(secretfile, secret_dict, connection):
     "Same for the interactor"
@@ -54,6 +47,7 @@ def test_interactor(secretfile, secret_dict, connection):
     with pytest.raises(OperationalError):
         assert connection2.dbcnxn.initialise_tables()
 
+
 def test_writer(secretfile, secret_dict, connection):
     "Same for DBWriter"
     connection = DBWriter(secretfile=secretfile, connection=connection)
@@ -76,9 +70,8 @@ def test_writer(secretfile, secret_dict, connection):
     with pytest.raises(OperationalError):
         assert connection2.dbcnxn.initialise_tables()
 
-def test_connector_environment(
-    secretfile, secret_dict, connection, monkeypatch
-):
+
+def test_connector_environment(secretfile, secret_dict, connection, monkeypatch):
     "Test that PGPASSWORD overwrites secretfile and secret_dict"
     # Set PGPASWORD environment variable
     password = "tokenpassword"
@@ -88,7 +81,5 @@ def test_connector_environment(
     connection = Connector(secretfile, connection=connection)
     assert connection.connection_dict["password"] == password
 
-    connection2 = Connector(
-        secretfile, secret_dict=secret_dict, connection=connection
-    )
+    connection2 = Connector(secretfile, secret_dict=secret_dict, connection=connection)
     assert connection2.connection_dict["password"] == password

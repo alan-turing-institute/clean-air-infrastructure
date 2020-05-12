@@ -4,13 +4,10 @@ Insert static datasets into the database
 import logging
 import os
 import sys
+from datetime import datetime, timedelta
 import tempfile
 import zipfile
 import termcolor
-from cleanair.loggers import initialise_logging
-from cleanair.parsers import DatabaseSetupParser
-from cleanair.databases import Connector
-from cleanair.inputs import StaticWriter
 from azure.storage.blob import (
     BlobServiceClient,
     generate_account_sas,
@@ -19,7 +16,10 @@ from azure.storage.blob import (
 )
 from azure.mgmt.storage import StorageManagementClient
 from azure.common.client_factory import get_client_from_cli_profile
-from datetime import datetime, timedelta
+from cleanair.parsers import DatabaseSetupParser
+from cleanair.databases import Connector
+from cleanair.inputs import StaticWriter
+
 
 DATASETS = {
     "rectgrid_100": {
@@ -66,12 +66,8 @@ def emphasised(text):
     return termcolor.colored(text, "cyan")
 
 
-def generate_sas_token(
-    account_url, resource_group, storage_container_name, days, hours
-):
+def generate_sas_token(resource_group, storage_container_name, days, hours):
     """Generate a SAS token when logged in using az login"""
-
-    client = get_client_from_cli_profile(BlobServiceClient, account_url=account_url)
 
     storage_mgmt_client = get_client_from_cli_profile(StorageManagementClient)
     storage_key_list = storage_mgmt_client.storage_accounts.list_keys(
@@ -126,7 +122,7 @@ def download_blobs(blob_service, blob_container_name, target_directory):
 
 
 def configure_database(secretfile):
-
+    "Configure a database, creating all schema and installing extentions"
     db_connection = Connector(secretfile)
     db_connection.ensure_database_exists()
     db_connection.ensure_extensions()
@@ -137,11 +133,7 @@ def generate(args):
 
     sys.stdout.write(
         generate_sas_token(
-            args.account_url,
-            args.resource_group,
-            args.storage_container_name,
-            args.days,
-            args.hours,
+            args.resource_group, args.storage_container_name, args.days, args.hours,
         )
     )
     sys.exit(0)
@@ -177,7 +169,7 @@ def insert(args):
 
 
 def create_parser(datasets):
-
+    "Create parser"
     parsers = DatabaseSetupParser()
 
     # Common arguments
@@ -252,13 +244,11 @@ def create_parser(datasets):
 
 
 def main():
-
+    "Insert static datasets entry point"
     parser = create_parser(datasets=list(DATASETS.keys()))
     args = parser.parse_args()
 
-    # Set up logging
     # Set logging verbosity
-    default_logger = initialise_logging(args.verbose)
     logging.getLogger("azure").setLevel(logging.WARNING)
 
     # Execute functions

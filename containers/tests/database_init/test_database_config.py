@@ -1,5 +1,5 @@
-import pytest
-from cleanair.databases import DBConfig, Connector, DBWriter
+"""Tests for configuring database roles"""
+from cleanair.databases import DBConfig
 
 
 def test_load_yaml(secretfile, config_file):
@@ -10,35 +10,40 @@ def test_load_yaml(secretfile, config_file):
     assert "schema" in db_config.config.keys()
     assert "roles" in db_config.config.keys()
 
-def test_schema(secretfile, config_file, schema):
 
+def test_schema(secretfile, config_file, schema):
+    """Test that schema is correctly read in"""
     db_config = DBConfig(config_file, secretfile)
 
     assert db_config.schema == schema
 
-def test_create_schema(secretfile, config_file, connection):
 
+def test_create_schema(secretfile, config_file, connection):
+    "Test that schemas are created"
     db_config = DBConfig(config_file, secretfile, connection=connection)
     db_config.create_schema()
 
     for sch in db_config.schema:
         assert db_config.check_schema_exists(sch)
 
+
 def test_create_and_list_roles(secretfile, config_file, roles, connection):
     """Creat roles and then check they exist on the database"""
 
     db_config = DBConfig(config_file, secretfile, connection=connection)
 
-    for r in roles:
-        db_config.create_role(r)
+    for role in roles:
+        db_config.create_role(role)
 
     retrieved_roles = db_config.list_roles()
 
     assert set(roles).issubset(set(retrieved_roles))
 
+
 def test_configure_role(
     secretfile, config_file, connection_module, readonly_user_login,
 ):
+    "Test roles and users are created"
 
     db_config = DBConfig(
         config_file,

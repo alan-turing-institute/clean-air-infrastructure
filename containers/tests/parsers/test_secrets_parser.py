@@ -31,6 +31,7 @@ def test_secret_dict(secretfile):
     assert db_interactor.dbcnxn.connection_dict["username"] == "fakeuser"
     assert db_interactor.dbcnxn.connection_dict["port"] == 6666
 
+
 def test_empty_secret_dict(secretfile):
     """Test that we can load yaml and read config file"""
 

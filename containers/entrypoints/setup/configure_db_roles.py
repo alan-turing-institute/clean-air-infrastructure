@@ -5,7 +5,7 @@ from cleanair.parsers import DataBaseRoleParser
 
 
 def main():
-
+    "Confure database roles"
     parser = DataBaseRoleParser()
     args = parser.parse_args()
 
@@ -13,7 +13,8 @@ def main():
     default_logger = initialise_logging(args.verbose)
 
     default_logger.warning(
-        "This will create roles on the database. It will not revoke them. Any removals from the config.yaml must be manually removed from the database"
+        "This will create roles on the database."
+        "It will not revoke them. Any removals from the config.yaml must be manually removed from the database"
     )
 
     db_config = DBConfig(

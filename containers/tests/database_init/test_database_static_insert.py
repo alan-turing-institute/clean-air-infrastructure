@@ -1,3 +1,6 @@
+"""Test that static data has been correctly inserted into a database"""
+# pylint: disable=redefined-outer-name
+
 import pytest
 from cleanair.databases import DBInteractor
 from cleanair.decorators import db_query
@@ -6,13 +9,11 @@ from cleanair.databases.tables import (
     OSHighway,
     StreetCanyon,
     ScootDetector,
-    MetaPoint,
     UKMap,
     UrbanVillage,
 )
-import os
 
-
+# pylint: disable=C0103
 @pytest.fixture()
 def N_ROWS_SCOOT():
     """Expected number of rows in scoot"""
@@ -33,12 +34,6 @@ def static_data_sizes():
     }
 
     return n_rows
-
-
-def test_db_connection(secretfile):
-    """Test database connection
-    """
-    connect = DBInteractor(secretfile, initialise_tables=True)
 
 
 def test_static_tables_filled(secretfile, static_data_sizes):
