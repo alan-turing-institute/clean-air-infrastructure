@@ -52,10 +52,6 @@ def test_static_tables_filled(secretfile, static_data_sizes):
         count = query_table(table_dict["table"]).count()
         print(f"Table {table_name} has {count} rows. Expecting {table_dict['rows']}")
 
-        if table_dict["table"] == "ukmap":
+        if table_dict["table"] != "ukmap":
             # UKMap can be empty for tests
-            assert (query_table(table_dict["table"]).count() == table_dict["rows"]) or (
-                query_table(table_dict["table"]).count() == 0
-            )
-        else:
             assert query_table(table_dict["table"]).count() == table_dict["rows"]
