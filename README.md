@@ -218,6 +218,14 @@ echo '{
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
 
+### Create Schema and roles
+
+We must now setup the database schema. This also creates a number of roles on the database.
+
+```bash
+python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+```
+
 ### Static data insert
 
 The database requires a number of static datasets. We can now insert `static data` into our local database. You will need a [SAS token](https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview) to access static data files stored on Azure. 
@@ -258,13 +266,7 @@ python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOK
 
 N.B SAS tokens will expire after a short length of time, after which you will need to request a new one. 
 
-### Create Schema and roles
 
-We must now setup the database schema. This also creates a number of roles on the database.
-
-```bash
-python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
-```
 
 ### Check the database configuration
 
