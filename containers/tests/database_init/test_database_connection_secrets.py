@@ -1,5 +1,7 @@
 """Test database connection secrets"""
+# pylint: disable=redefined-outer-name
 import pytest
+from sqlalchemy.exc import OperationalError
 from cleanair.databases import (
     Connector,
     DBInteractor,
@@ -49,8 +51,8 @@ def test_interactor(secretfile, secret_dict, connection):
             assert connection.dbcnxn.connection_dict[key] == value
 
     # Check we cant connect with the updated loggin info
-    with pytest.raises(AttributeError):
-        assert connection2.connection.initialise_tables()
+    with pytest.raises(OperationalError):
+        assert connection2.dbcnxn.initialise_tables()
 
 def test_writer(secretfile, secret_dict, connection):
     "Same for DBWriter"
@@ -71,8 +73,8 @@ def test_writer(secretfile, secret_dict, connection):
             assert connection.dbcnxn.connection_dict[key] == value
 
     # Check we cant connect with the updated loggin info
-    with pytest.raises(AttributeError):
-        assert connection2.connection.initialise_tables()
+    with pytest.raises(OperationalError):
+        assert connection2.dbcnxn.initialise_tables()
 
 def test_connector_environment(
     secretfile, secret_dict, connection, monkeypatch
