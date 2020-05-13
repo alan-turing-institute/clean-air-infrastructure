@@ -211,8 +211,12 @@ deployments:
         readOnly: true
       volumes:
       - name: secrets
-        - secret:
-            secretName: secrets
+        projected:
+            sources:
+            - secret:
+                name: secrets
+            - secret:
+                name: basic-auth-secret
         # - secret:
         #     secretName: basic-auth-secret
 

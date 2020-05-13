@@ -37,7 +37,7 @@ def remove_db(exception=None):
 def init_app():
     """Initilise the datase"""
     db_sessions = {'urbanapi': configure_db_session('urbanapi'),
-                  'jamcam': configure_db_session('jamcam')}
+                   'jamcam': configure_db_session('jamcam')}
 
     current_app.config['DB_SESSIONS'] = db_sessions
     current_app.teardown_appcontext(remove_db)
