@@ -30,7 +30,7 @@ def create_app():
         init_app()
         swagger = Swagger(app, template=app.config["SWAGGER_TEMPLATE"])
         app.register_blueprint(static_bp)
-        # app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
+        app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
         # app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
         exceptions.error_handler(app)
     

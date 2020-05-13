@@ -30,7 +30,7 @@ class CamRecent(APIQueryMixin):
         if len(idparts[0]) != 5 or len(idparts[1]) != 5 or not idparts[0].isnumeric() or not idparts[1].isnumeric():
             return None
         res = session.execute(
-            "select counts, vehicle_type, creation_datetime from video_stats where camera_id = '" + id + "' and video_upload_datetime > now()::date - interval '12 hours';")
+            "select counts, vehicle_type, creation_datetime from video_stats where camera_id = '" + id + "' and video_upload_datetime > (select max(video_upload_datetime) from video_stats) - interval '12 hours';")
 
         counts = {
             'truck': [],

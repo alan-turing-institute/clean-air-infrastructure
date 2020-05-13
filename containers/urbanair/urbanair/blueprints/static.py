@@ -8,7 +8,7 @@ static_bp = Blueprint("index", __name__)
 def index():
     return render_template('index.html')
 
-@static_bp.route("/mapjam", methods=["GET"])
+@static_bp.route("/map", methods=["GET"])
 @http_auth.login_required
 def map():
     return render_template('map.html')

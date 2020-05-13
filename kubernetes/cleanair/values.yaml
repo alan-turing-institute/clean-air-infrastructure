@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: da6c301a8e95f1a09e3c24e697f6b3a9579a7c9f
+imageTag: aafc36f5bc21d6a6fc54f407d4bbacc83ccba91d
 
 # jobs:
 #   - name: process_scoot_roadmap
@@ -211,8 +211,10 @@ deployments:
         readOnly: true
       volumes:
       - name: secrets
-        secret:
+        - secret:
             secretName: secrets
+        # - secret:
+        #     secretName: basic-auth-secret
 
 services:
     - name: cleanair-api
