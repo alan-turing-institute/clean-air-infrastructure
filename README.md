@@ -44,6 +44,7 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with production database](#entry-point-with-production-database)
 
 ### Developer guide
+- [Style guide](#style-guide)
 - [Running tests](#running-tests)
 - [Writing tests](#writing-tests)
 
@@ -377,6 +378,20 @@ docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s '.db_s
 Here we also provided the copernicus api key which is stored in the `cleanair` keyvault. 
 
 # Developer guide
+
+## Style guide
+
+### Writing Documentation
+Before being accepted into master all code should have well writen documentation. 
+
+**Please use [Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)**
+
+We would like to move towards adding [type hints](https://docs.python.org/3.7/library/typing.html) so you may optionally add types to your code. In which case you do not need to include types in your google style docstrings. 
+
+Adding and updating existing documentation is highly encouraged.
+
+### Gitmoji
+We like [gitmojo](https://gitmoji.carloscuesta.me/) for an emojo guide to our commit messages. You might consider (entirly optional) to use the [git-moji cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
 
 ## Running tests
 
