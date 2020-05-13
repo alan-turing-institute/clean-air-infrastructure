@@ -393,6 +393,16 @@ Adding and updating existing documentation is highly encouraged.
 ### Gitmoji
 We like [gitmojo](https://gitmoji.carloscuesta.me/) for an emojo guide to our commit messages. You might consider (entirly optional) to use the [git-moji cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
 
+### Working on an issue
+
+The general workflow for contributing to the project is to first choose and issue (or create one) to work on and assign yourself to the issues. 
+
+You can find issues that need work on by searching by the `Needs assignment` label. If you decide to move onto something else or wonder what you've got yourself into please unassign yourself, leave a comment about why you dropped the issue (e.g. got bored, blocked by something etc) and re-add the `Needs assignment` label.
+
+You are encouraged to open a pull request earlier rather than later (either a `draft pull request` or add `WIP` to the title) so others know what you are working on. 
+
+How you label branches is optional, but we encourage using `iss_<issue-number>_<description_of_issue>` where `<issue-number>` is the github issue number and `<description_of_issue>` is a very short description of the issue. For example `iss_928_add_api_docs`.
+
 ## Running tests
 
 Tests should be written where possible before code is accepted into master. Contributing tests to existing code is highly desirable. Tests will also be run on travis (see the [travis configuration](.travis)).
