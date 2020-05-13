@@ -167,7 +167,7 @@ stages:
           echo '{
             "copernicus_key": "${SATELLITE-COPERNICUS-KEY}"
           }' > copernicus_secrets.json
-          echo ${HTTP-BASIC-ADMIN} > basic_auth_password.txt
+          echo $(HTTP-BASIC-ADMIN) > basic_auth_password.txt
           kubectl create secret generic --namespace cleanair secrets --from-file=aws_secrets.json --from-file=db_secrets.json --from-file=copernicus_secrets.json --from-file=db_secrets_jamcam.json --from-file=basic_auth_password.txt
           rm -f aws_secrets.json db_secrets.json copernicus_secrets.json
           # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
