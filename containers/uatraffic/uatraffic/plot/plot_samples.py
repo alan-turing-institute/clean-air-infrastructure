@@ -11,11 +11,11 @@ from ..model import sample_intensity, sample_n
 
 def filled_sample_traces(
     name: str,
-    x_test,
+    x_test: tf.Tensor,
     sample_mean,
     sample_var,
     num_sigmas: int = 2,
-    marker_color: str = "#444",
+    marker_color: str = "blue",
     fillcolor: str = "rgba(0,255,0,0.3)",
     linecolor: str = "rgb(0,255,0)",
 ) -> list:
@@ -73,7 +73,8 @@ def gp_sampled_traces(
     x_test: tf.Tensor,
     y_test: tf.Tensor,
     num_sigmas: int = 2,
-    num_samples: int = 1000
+    num_samples: int = 1000,
+    marker_color: str = "blue",
 ) -> list:
     """
     Get a list of plotly Go scatter traces.
@@ -87,6 +88,7 @@ def gp_sampled_traces(
         y_test: Observations.
         num_sigmas (Optional): Size of the error bars in standard deviations.
         num_samples (Optional): Number of times to sample from the posterior.
+        marker_color (Optional): Color of scatter points.
 
     Returns:
         List of traces. Each item is a plotly Go Scatter object.
@@ -119,7 +121,7 @@ def gp_sampled_traces(
         y=y_test[:, 0],
         mode="markers",
         marker=dict(
-            color="blue",
+            color=marker_color,
         ),
     ))
     return traces

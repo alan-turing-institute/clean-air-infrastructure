@@ -401,9 +401,17 @@ class ScootQueryMixin:
             return scoot_readings
 
     @db_query
-    def get_scoot_detectors(self, start=None, end=None):
+    def get_scoot_detectors(
+        self,
+        offset: int = None,
+        limit: int = None,
+    ):
         """
         Get all scoot detectors from the interest point schema.
+
+        Args:
+            offset: Start selecting detectors from this integer index.
+            limit: Select at most this many detectors.
         """
         with self.dbcnxn.open_session() as session:
             readings = (
@@ -415,7 +423,7 @@ class ScootQueryMixin:
                 .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             )
 
-            if isinstance(start, int) and isinstance(end, int):
-                readings = readings.order_by(ScootDetector.detector_n).slice(start, end)
+            if offset and limit:
+                readings = readings.order_by(ScootDetector.detector_n).slice(offset, offset + limit)
 
             return readings
