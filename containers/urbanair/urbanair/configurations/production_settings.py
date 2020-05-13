@@ -1,6 +1,7 @@
-"""Production configuration environement variables"""
+"""Production configuration environment variables"""
 
-DATABASE_URI = "db_secrets.json"
+DATABASE_SECRETFILE = "db_secrets.json"
+DATABASE_SECRETFILE_JAMCAM = "db_secrets_jamcam.json"
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
     "info": {

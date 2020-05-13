@@ -20,6 +20,7 @@ from ..argparsers import (
     validate_iso_string,
     validate_lockdown_date,
 )
+from ..auth import http_auth
 
 # Create a Blueprint
 scoot_bp = Blueprint("scoot", __name__)
@@ -40,6 +41,7 @@ scoot_percentage_availability_query = ScootPercAvailability()
     },
     location="query",
 )
+@http_auth.login_required
 def scoot(args):
     """
     Return raw hourly scoot data
@@ -80,6 +82,7 @@ def scoot(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_daily(args):
     """
     Return daily scoot data
@@ -131,6 +134,7 @@ def scoot_daily(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_percentage_lockdown(args):
     """
     Return scoot data as a percentage of a 'lockdown' baseline
@@ -213,6 +217,7 @@ def scoot_percentage_lockdown(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_percentage(args):
     """
     Return scoot data as a percentage of a 'normal' baseline
@@ -287,6 +292,7 @@ def scoot_percentage(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_hourly_availability(args):
     """
     Report availability of scoot data on the API
@@ -338,6 +344,7 @@ def scoot_hourly_availability(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_percentage_normal_availability(args):
     """
     Report availability of percentage change data with normal baseline
@@ -391,6 +398,7 @@ def scoot_percentage_normal_availability(args):
     },
     location="query",
 )
+@http_auth.login_required
 def scoot_percentage_lockdown_availability(args):
     """
     Report availability of percentage change data with lockdown baseline

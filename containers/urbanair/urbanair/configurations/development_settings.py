@@ -1,4 +1,6 @@
-"""Production configuration environement variables"""
+"""Development configuration environement variables"""
+
+from werkzeug.security import generate_password_hash
 
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
@@ -18,4 +20,10 @@ SWAGGER_TEMPLATE = {
     "basePath": "/",  # base bash for blueprint registration
     "schemes": ["http",],
     "operationId": "getmyData",
+}
+
+# A development user and password
+HTTP_BASIC_PASSWORD = 'password'
+USERS = {
+    "ati": generate_password_hash(HTTP_BASIC_PASSWORD)
 }

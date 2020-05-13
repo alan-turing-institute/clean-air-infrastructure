@@ -2,37 +2,21 @@ from flask import Blueprint, g, jsonify
 from webargs import fields
 from webargs.flaskparser import use_args
 import json
-# from uatraffic.scoot_processing import (
-#     LOCKDOWN_BASELINE_START,
-#     LOCKDOWN_BASELINE_END,
-#     NORMAL_BASELINE_START,
-#     NORMAL_BASELINE_END,
-# )
-# from ..queries import ScootDaily, ScootDailyPerc, ScootHourly
 from ..queries import CamRecent, CamsSnapshot
 from ..db import get_session
-from ..argparsers import (
-    validate_today_or_before,
-    validate_iso_string,
-    validate_lockdown_date,
-)
+from ..auth import http_auth
 
 # Create a Blueprint
 cams_bp = Blueprint("cams", __name__)
-
-# Query objects
-# scoot_daily_percent = ScootDailyPerc()
-
-
 
 @cams_bp.route("recent", methods=["GET"])
 @use_args(
     {
         "id": fields.String(required=True),
-        # "endtime": fields.String(required=False, validate=validate_today_or_before),
     },
     location="query",
 )
+@http_auth.login_required
 def cam_recent(args):
     """
     Return raw historical count per camera
@@ -59,6 +43,7 @@ def cam_recent(args):
     {},
     location="query",
 )
+@http_auth.login_required
 def cams_snapshot(args):
     """
     Return raw historical count per camera

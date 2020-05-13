@@ -20,6 +20,7 @@ A list of key developers on the project. A good place to start if you wish to co
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     |
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
+| James Walsh        | [@dead-water](https://github.com/dead-water)         | <jwalsh@turing.ac.uk>     | JamCam Database
 
 # Contents
 
@@ -42,6 +43,9 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Running Entry points](#running-entry-points)
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
+
+### UrbanAir Flask API
+- [Running the UrbanAir API](#urbanAir-API)
 
 ### Developer guide
 - [Running tests](#running-tests)
@@ -219,7 +223,7 @@ echo '{
     "port": 5432,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_offline.json
+}' >> .secrets/.db_secrets_offline.json
 ```
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
@@ -231,7 +235,7 @@ We must now setup the database schema. This also creates a number of roles on th
 Create a variable with the location of your secrets file
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
@@ -376,6 +380,45 @@ docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s '.db_s
 
 Here we also provided the copernicus api key which is stored in the `cleanair` keyvault. 
 
+# UrbanAir API
+
+The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+
+## Database access
+
+The UrbanAir API needs to connect to two databases:
+
+1. The CleanAir database
+2. The JamCam database
+
+### Configure CleanAir database secrets
+Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environement variable](#entry-point-with-production-database)
+
+```bash
+export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+```
+
+### Configure JamCam database secrets
+Please contact the JamCam database admin for access. Place the credentials in your `.secrets` folder in a `.json` file.
+
+```bash
+export DATABASE_SECRETFILE_JAMCAM=$(pwd)/.secrets/.db_secrets_jamcam.json  
+```
+
+### Enable Flask development server
+
+```bash
+export FLASK_ENV=development 
+```
+
+You can now run the API
+
+```bash
+python containers/urbanair/wsgi.py
+```
+
+
+
 # Developer guide
 
 ## Running tests
@@ -387,7 +430,7 @@ All tests can be found in the [containers/tests/](containers/tests) directory. W
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash

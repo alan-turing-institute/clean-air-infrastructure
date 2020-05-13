@@ -6,48 +6,41 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
 
-
+# A dict of sqlalchmy session factories
 def configure_db_session(db='urbanapi'):
     """Configure a connection to the cleanair database"""
-    # if "db_session" not in g:
-    #  Configure session
 
-    # default to urbanair database
-    uri = current_app.config["DATABASE_URI"]
     if db == 'jamcam':
-        uri = current_app.config["DATABASE_URI_JAMCAM"]
+        uri = current_app.config["DATABASE_SECRETFILE_JAMCAM"]
+        db_connection_info = DBConnectionMixin(uri, allow_env_pass = False)
+    else:
+        # default to urbanair database
+        uri = current_app.config["DATABASE_SECRETFILE"]
+        db_connection_info = DBConnectionMixin(uri, allow_env_pass = True)
 
-    db_connection_info = DBConnectionMixin(uri) # TODO@Oscar Should work when jamcam URI in secrets
     engine = create_engine(
         db_connection_info.connection_string, convert_unicode=True
-        # connection_string, convert_unicode=True
     )
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
     )
-    # DeferredReflection.prepare(engine)
-    # Base.query = db_session.query_property()
-
-    # g.db_session = db_session
-
-    # return g.db_session
     return db_session
 
+def get_session(db='urbanapi'):
+    """Return a database session"""
+    return current_app.config['DB_SESSIONS'][db]
 
-# pylint: disable=C0103
+def remove_db(exception=None):
+    for _, sess in current_app.config['DB_SESSIONS'].items():
+        sess.remove()
 
-# Deprecated if no globals
-# def remove_db(e=None):
-    # db_session = g.pop("db_session", None)
-    # if db_session:
-    #     db_session.remove()
+def init_app():
+    """Initilise the datase"""
+    db_sessions = {'urbanapi': configure_db_session('urbanapi'),
+                  'jamcam': configure_db_session('jamcam')}
+
+    current_app.config['DB_SESSIONS'] = db_sessions
+    current_app.teardown_appcontext(remove_db)
 
 
-def get_session(db="urbanair"):
-    db_session = configure_db_session(db)
-    return db_session()
 
-
-def init_app(app):
-    configure_db_session('jamcam')
-    # app.teardown_appcontext(remove_db)
