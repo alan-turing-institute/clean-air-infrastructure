@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 61facdb82ee2e5c9ae435e9464c07650bcf42400
+imageTag: da6c301a8e95f1a09e3c24e697f6b3a9579a7c9f
 
 # jobs:
 #   - name: process_scoot_roadmap
