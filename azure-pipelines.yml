@@ -173,29 +173,29 @@ stages:
           # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
         fi
       displayName: 'Add secrets to Kubernetes'
-    # # Prepare Helm chart
-    # - script: |
-    #     echo "Setting image tag to $(Build.SourceVersion)"
-    #     sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
-    #   displayName: 'Prepare Helm chart'
-    # # Install certmanager custom resource definition
-    # - script: |
-    #     kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml  --namespace cleanair
-    #     helm dependency update kubernetes/cleanair
-    #   displayName: 'Install cert manager components'
-    # # Install/upgrade Helm chart
-    # - task: HelmDeploy@0
-    #   displayName: 'Install/upgrade Helm chart'
-    #   inputs:
-    #     connectionType: Azure Resource Manager
-    #     azureSubscriptionEndpoint: 'cleanair-scn'
-    #     azureResourceGroup: $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
-    #     kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
-    #     namespace: $(NAMESPACE)
-    #     command: upgrade
-    #     arguments: --cleanup-on-fail --set nginx-ingress.controller.service.externalTrafficPolicy=Local --timeout 1800s
-    #     chartType: filepath
-    #     chartPath: kubernetes/cleanair
-    #     releaseName: cleanair
-    #     updatedependency: true
-    #     install: true
+    # Prepare Helm chart
+    - script: |
+        echo "Setting image tag to $(Build.SourceVersion)"
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+      displayName: 'Prepare Helm chart'
+    # Install certmanager custom resource definition
+    - script: |
+        kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml  --namespace cleanair
+        helm dependency update kubernetes/cleanair
+      displayName: 'Install cert manager components'
+    # Install/upgrade Helm chart
+    - task: HelmDeploy@0
+      displayName: 'Install/upgrade Helm chart'
+      inputs:
+        connectionType: Azure Resource Manager
+        azureSubscriptionEndpoint: 'cleanair-scn'
+        azureResourceGroup: $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
+        kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
+        namespace: $(NAMESPACE)
+        command: upgrade
+        arguments: --cleanup-on-fail --set nginx-ingress.controller.service.externalTrafficPolicy=Local --timeout 1800s
+        chartType: filepath
+        chartPath: kubernetes/cleanair
+        releaseName: cleanair
+        updatedependency: true
+        install: true
