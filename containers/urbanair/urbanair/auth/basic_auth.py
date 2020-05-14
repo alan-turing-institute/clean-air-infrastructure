@@ -10,4 +10,5 @@ http_auth = HTTPBasicAuth()
 def verify_password(username, password):
     if username in current_app.config['USERS'] and \
             check_password_hash(current_app.config['USERS'].get(username), password):
+        
         return username

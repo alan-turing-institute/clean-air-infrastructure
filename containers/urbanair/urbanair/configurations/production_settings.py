@@ -25,7 +25,8 @@ SWAGGER_TEMPLATE = {
 }
 
 # A development user and password
-HTTP_BASIC_PASSWORD =  read_basic_auth_secret()
+HTTP_BASIC_PASSWORD = 'x7WBcuRtrgK8255rPZcB'
+
 USERS = {
     "ati": generate_password_hash(HTTP_BASIC_PASSWORD)
 }
