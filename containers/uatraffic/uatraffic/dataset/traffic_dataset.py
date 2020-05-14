@@ -8,7 +8,8 @@ import pandas as pd
 from cleanair.databases import DBReader
 from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
-from ..preprocess.normalise import normalise_datetime
+from ..preprocess import normalise_datetime
+from ..databases import TrafficDataTable
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -28,7 +29,6 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         self._preprocessing = preprocessing
 
         # load scoot from the data config
-        # TODO: add day of week
         traffic_df = self.get_scoot_by_dow(
             day_of_week=self.data_config["weekdays"][0],
             start_time=self._data_config["start"],
@@ -157,7 +157,11 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             A new tensorflow dataset.
         """
         TrafficDataset.validate_preprocessing(preprocessing)
-        TrafficDataset.validate_dataframe(traffic_df, features=preprocessing["features"], target=preprocessing["target"])
+        TrafficDataset.validate_dataframe(
+            traffic_df,
+            features=preprocessing["features"],
+            target=preprocessing["target"]
+        )
 
         # create numpy arrays of the x and y columns
         x = traffic_df[preprocessing["features"]].to_numpy()
@@ -186,10 +190,10 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         TrafficDataset.validate_preprocessing(preprocessing)
 
         # TODO choose median for robustness to outliers
-        if preprocessing["median"]:
-            traffic_gb = traffic_df.groupby(preprocessing["features"])
-            median = traffic_gb[preprocessing["target"]].median
-            raise NotImplementedError("Using the median is coming soon.")
+        # if preprocessing["median"]:
+        #     traffic_gb = traffic_df.groupby(preprocessing["features"])
+        #     median = traffic_gb[preprocessing["target"]].median
+        #     raise NotImplementedError("Using the median is coming soon.")
 
         # normalisation
         traffic_df = normalise_datetime(traffic_df, wrt=preprocessing["normaliseby"])
@@ -209,9 +213,21 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             An unique id given the settings dictionaries.
         """
         # check there are no overlapping keys
-        assert not set(data_config.keys()) & set(preprocessing.keys())
+        if set(data_config.keys()) & set(preprocessing.keys()):
+            raise ValueError("Data config and preprocessing dictionaries should not have overlapping keys.")
         merged_dict = {**data_config, **preprocessing}
         return Instance.hash_dict(merged_dict)
+
+    def update_remote_tables(self):
+        """Update the data config table for traffic."""
+        self.logger.info("Updating the traffic data table.")
+        records = [dict(
+            data_id=self.data_id,
+            data_config=self.data_config,
+            preprocessing=self.preprocessing,
+        )]
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
 
 def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     """
