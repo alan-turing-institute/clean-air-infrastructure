@@ -17,40 +17,52 @@ spec:
         spec:
             containers:
             - name: {{ $job.name }}
+              {{- if $job.image.tag}}
+              image: "{{ $job.image.repository }}:{{ $job.image.tag }}"
+              {{else}}
               image: "{{ $job.image.repository }}:{{ $tag }}"
+              {{- end }}
               imagePullPolicy: {{ $job.image.imagePullPolicy }}
+              {{- if $job.command }}
+              command: {{ $job.command }}
+             {{- end }}
+            {{- with $job.volumeMounts }}
               volumeMounts:
-               - name: secrets
-                 mountPath: "/secrets/"
-                 readOnly: true
-              args: {{ $job.args }}
+{{ toYaml . | indent 14 }}
+            {{- end }}
+            {{- with $job.imagePullSecrets }}
             imagePullSecrets:
-            - name: regcred
-            restartPolicy: {{ $job.restartPolicy }}
-
+{{ toYaml . | indent 12 }}
+            {{- end }}
             {{- with $job.volumes }}
             volumes:
 {{ toYaml . | indent 12 }}
           {{- end }}
+           {{- with $job.args }}
+            args: [
+{{  range $job.args  }}
+{{ . }}
+{{ end }}
+          ]
+            args:
+{{ toYaml . | indent 12 }}  
+           {{- end}}
             {{- with $job.env }}
             env:
 {{ toYaml . | indent 12 }}
             {{- end }}
-            {{- with $job.volumeMounts }}
-            volumeMounts:
-{{ toYaml . | indent 12 }}
-            {{- end }}
             {{- with $job.nodeSelector }}
-          nodeSelector:
-{{ toYaml . | indent 12 }}
-          {{- end }}
+            nodeSelector:
+{{ toYaml . | indent 14 }}
+            {{- end }}
           {{- with $job.affinity }}
-          affinity:
-{{ toYaml . | indent 12 }}
+            affinity:
+{{ toYaml . | indent 14 }}
           {{- end }}
           {{- with $job.tolerations }}
-          tolerations:
-{{ toYaml . | indent 12 }}
+            tolerations:
+{{ toYaml . | indent 14 }}
           {{- end }}
+            restartPolicy: {{ $job.restartPolicy }}
     
 {{- end }}

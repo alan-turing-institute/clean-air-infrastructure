@@ -1,21 +1,37 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: fa5a8b5418f02778c657bb7b94c01cf0140f4149
+imageTag: cda60406f1bef394629223e1ecbf1165c3e5bdf5
 
-# jobs:
-#   - name: process_scoot_roadmap
-#     image:
-#       repository: cleanairdocker.azurecr.io/process_scoot_roadmap
-#       imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+jobs:
+  - name: test-jamcam
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
+        imagePullPolicy: IfNotPresent
+    command: ["bash", "/application/deployscripts/cluster.sh", "-m", "0", "1", "2"]
+    restartPolicy: Never
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector: 
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+        cpu: "24"
+      requests:
+        cpu: "24"
 
 #   - name: feature_oshighway
 #     image:
@@ -211,12 +227,8 @@ deployments:
         readOnly: true
       volumes:
       - name: secrets
-        projected:
-            sources:
-            - secret:
-                name: secrets
-            - secret:
-                name: basic-auth-secret
+        secret:
+            secretName: secrets
 
 services:
     - name: cleanair-api
