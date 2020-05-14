@@ -4,8 +4,8 @@ Classes for traffic instances.
 import os
 import logging
 import pickle
-import gpflow
 from pathlib import Path
+import gpflow
 from cleanair.instance import Instance
 from .tables import TrafficInstanceTable, TrafficModelTable
 
