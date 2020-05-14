@@ -150,7 +150,7 @@ cronjobs:
         cpu: "23"
 
   - name: test-jamcam-cron
-    schedule: "30 5-20 * * *
+    schedule: "30 5-20 * * *"
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -188,7 +188,7 @@ cronjobs:
         cpu: "23"
       requests:
         cpu: "23"
-        
+
 #   - name: input-aqe
 #     image:
 #       repository: cleanairdocker.azurecr.io/input_aqe
