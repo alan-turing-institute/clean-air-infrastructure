@@ -8,16 +8,23 @@ jobs:
         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
         tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
         imagePullPolicy: IfNotPresent
-    command: ["bash", "/application/deployscripts/cluster.sh", "-m", "0", "1", "2"]
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "0", "1", "2"]
     restartPolicy: Never
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
       readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
     volumes:
     - name: secrets
       secret:
         secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yml
     imagePullSecrets:
         - name: regcred
     nodeSelector: 
