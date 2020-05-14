@@ -109,8 +109,48 @@ jobs:
 
 
 cronjobs:
+  - name: test-jamcam-cron-on-hour
+    schedule: "0 5-20 * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
+        imagePullPolicy: IfNotPresent
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "3", "4", "5"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yml
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector: 
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+        cpu: "23"
+      requests:
+        cpu: "23"
+
   - name: test-jamcam-cron
-    schedule: "5 * * * *"
+    schedule: "30 5-20 * * *
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
@@ -148,7 +188,7 @@ cronjobs:
         cpu: "23"
       requests:
         cpu: "23"
-
+        
 #   - name: input-aqe
 #     image:
 #       repository: cleanairdocker.azurecr.io/input_aqe
