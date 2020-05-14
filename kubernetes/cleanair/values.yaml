@@ -3,42 +3,42 @@
 imageTag: cda60406f1bef394629223e1ecbf1165c3e5bdf5
 
 jobs:
-  - name: test-jamcam
-    image:
-        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
-        imagePullPolicy: IfNotPresent
-    command: ["bash", "/application/deployscripts/cluster.sh"]
-    args: ["-m", "0", "1", "2"]
-    restartPolicy: Never
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    - mountPath: /application/conf/local/
-      name: credentials
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    - name: credentials
-      secret:
-        secretName: credentials.yml
-    imagePullSecrets:
-        - name: regcred
-    nodeSelector: 
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
-    resources:
-      limits:
-        cpu: "24"
-      requests:
-        cpu: "24"
+#   - name: test-jamcam
+#     image:
+#         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+#         tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
+#         imagePullPolicy: IfNotPresent
+#     command: ["bash", "/application/deployscripts/cluster.sh"]
+#     args: ["-m", "0", "1", "2"]
+#     restartPolicy: Never
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#       readOnly: true
+#     - mountPath: /application/conf/local/
+#       name: credentials
+#       readOnly: true
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     - name: credentials
+#       secret:
+#         secretName: credentials.yml
+#     imagePullSecrets:
+#         - name: regcred
+#     nodeSelector: 
+#         agentpool: jamcam
+#     tolerations:
+#       - key: "group"
+#         operator: "Equal"
+#         value: "gpu"
+#         effect: "NoSchedule"
+#     resources:
+#       limits:
+#         cpu: "23"
+#       requests:
+#         cpu: "23"
 
 #   - name: feature_oshighway
 #     image:
@@ -109,61 +109,101 @@ jobs:
 
 
 cronjobs:
-  - name: input-aqe
-    image:
-      repository: cleanairdocker.azurecr.io/input_aqe
-      imagePullPolicy: Always
+  - name: test-jamcam-cron
     schedule: "5 * * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: input-laqn
     image:
-      repository: cleanairdocker.azurecr.io/input_laqn
-      imagePullPolicy: Always
-    schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
+        imagePullPolicy: IfNotPresent
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "0", "1", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
     volumes:
     - name: secrets
       secret:
         secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yml
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector: 
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+        cpu: "23"
+      requests:
+        cpu: "23"
 
-  - name: input-satellite
-    image:
-      repository: cleanairdocker.azurecr.io/input_satellite
-      imagePullPolicy: Always
-    schedule: "30 10 * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: input-aqe
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_aqe
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
-  - name: input-scoot
-    image:
-      repository: cleanairdocker.azurecr.io/input_scoot
-      imagePullPolicy: Always
-    schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: input-laqn
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_laqn
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: input-satellite
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_satellite
+#       imagePullPolicy: Always
+#     schedule: "30 10 * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: input-scoot
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_scoot
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 #   - name: feature_scoot_forecasts
 #     image:
@@ -205,19 +245,19 @@ cronjobs:
 #       secret:
 #         secretName: secrets
 
-  - name: lockdown-baseline
-    image:
-      repository: cleanairdocker.azurecr.io/lockdown_baseline
-      imagePullPolicy: Always
-    schedule: "* 04-12 * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+#   - name: lockdown-baseline
+#     image:
+#       repository: cleanairdocker.azurecr.io/lockdown_baseline
+#       imagePullPolicy: Always
+#     schedule: "* 04-12 * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
 
 deployments:
     - name: cleanair-api

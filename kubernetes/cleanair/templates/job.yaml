@@ -31,7 +31,11 @@ spec:
               args:
 {{ toYaml . | indent 16 }}     
               {{- end }}
-             
+              {{- with $job.resources }}
+              resources:
+{{ toYaml . | indent 16 }}
+              {{- end }}
+
             {{- with $job.volumeMounts }}
               volumeMounts:
 {{ toYaml . | indent 14 }}
