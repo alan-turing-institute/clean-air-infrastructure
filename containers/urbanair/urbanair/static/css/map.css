@@ -11,10 +11,33 @@ html, body, #mapid {
     position: absolute;
     bottom: 30px;
     right: 10px;
-    background: white;
-    border-radius: 20px;
+    background: #ffffff;
+    border-radius: 10px;
     width: 400px;
     height: 250px;
+}
+#controls{
+    z-index: 99999;
+    position: absolute;
+    top: 30px;
+    right: 10px;
+    background: #ffffff;
+    border-radius: 10px;
+    width: 200px;
+    height: 100px;
+}
+.controls-options{
+    font-family: 'Roboto', sans-serif;
+    font-size: 18px;
+    padding-left: 10px;
+    padding-top: 10px;
+    font-weight: 700;
+}
+.controls-container {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    padding-left: 10px;
+    padding-top: 10px;
 }
 .mono{
     font-family: 'Roboto Mono', sans-serif;
@@ -30,4 +53,10 @@ html, body, #mapid {
     /*border-radius: 20px;*/
     width: 208px;
     height: 65px;
+}
+
+.annotation{
+    position: absolute;
+    clip: rect(0px,314px,217px,33px);
+    left: -13px;
 }
