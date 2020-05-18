@@ -16,6 +16,7 @@ setuptools.setup(
     ],
     install_requires=[
         "boto3==1.10.37",
+        "cfgrib==0.9.8.1",
         "colorlog==4.0.2",
         "geoalchemy2==0.6.3",
         "geopandas==0.6.2",
@@ -34,6 +35,7 @@ setuptools.setup(
         "sklearn==0.0",
         "termcolor==1.1.0",
         "uuid==1.30",
+        "xarray==0.15.1",
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.4", "pathos==0.2.5"],

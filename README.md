@@ -75,6 +75,7 @@ To contribute as a non-infrastructure developer you will need the following:
 - `postgreSQL` (command-line tool for interacting with db)
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
+- `eccodes` (For reading GRIB files)
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -90,6 +91,11 @@ brew install postgresql postgis
 ### GDAL
 ```bash
 brew install gdal
+```
+
+### Eccodes
+```bash
+brew install eccodes
 ```
 
 ### Development tools
