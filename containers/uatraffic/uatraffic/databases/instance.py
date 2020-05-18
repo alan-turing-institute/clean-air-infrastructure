@@ -4,10 +4,10 @@ Classes for traffic instances.
 import os
 import logging
 import pickle
-import gpflow
 from pathlib import Path
+import gpflow
 from cleanair.instance import Instance
-from .tables import TrafficInstanceTable, TrafficModelTable, TrafficDataTable
+from .tables import TrafficInstanceTable, TrafficModelTable
 
 class TrafficInstance(Instance):
     """
@@ -37,21 +37,6 @@ class TrafficInstance(Instance):
             )]
             with self.dbcnxn.open_session() as session:
                 self.commit_records(session, records, on_conflict="ignore", table=TrafficModelTable)
-
-    # TODO: this should be moved into the Dataset class
-    def update_data_table(self, data_config, preprocessing):
-        """
-        Update the data config table for traffic.
-        """
-        if data_config:
-            logging.info("Updating the traffic data table.")
-            records = [dict(
-                data_id=self.data_id,
-                data_config=data_config,
-                preprocessing=preprocessing,
-            )]
-            with self.dbcnxn.open_session() as session:
-                self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
 
     def save_model(self, model, folder, extension="h5"):
         """

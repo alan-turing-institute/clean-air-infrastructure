@@ -12,117 +12,100 @@ from ..mixins import DBQueryMixin
 class Instance(DBWriter, DBQueryMixin):
     """
     An instance is one model trained and fitted on some data.
+
+    Attributes:
+        instance_id: Uniquely identifies this instance.
+        model_name: Name of the model for this instance.
+        param_id: Uniquely identifies a parameter setting of the model.
+            See `Instance.hash_param()`.
+        data_id: Uniquely identifies a data configuration.
+            See `Instance.hash_data()`.
+        cluster_id: The id of the machine used to run the model.
+        tag: Name of the instance type, e.g. 'production', 'test', 'validation'.
+        git_hash: Git hash of the code version.
+        fit_start_time: Datetime when the model started fitting.
+            See `Instance.__hash__()`.
+        secretfile: Path to secretfile.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(       # pylint: disable=too-many-arguments
+        self,
+        model_name: str,
+        param_id: str,
+        data_id: str,
+        cluster_id: str,
+        tag: str,
+        fit_start_time: str,
+        git_hash: str = None,
+        secretfile: str = None,
+    ):
         """
-
-        Parameters
-        ___
-
-        model_name : str, optional
-            Name of the model for this instance.
-
-        param_id : str, optional
-            Uniquely identifies a parameter setting of the model.
-            See `Instance.hash_param()`.
-
-        data_id : str, optional
-            Uniquely identifies a data configuration.
-            See `Instance.hash_data()`.
-
-        cluster_id : str, optional
-            The id of the machine used to run the model.
-
-        tag : str, optional
-            Name of the instance type, e.g. 'production', 'test', 'validation'.
-
-        git_hash : str, optional
-            Git hash of the code version.
-
-        fit_start_time : str, optional
-            Datetime when the model started fitting.
-
-        instance_id : str, optional
-            Uniquely identifies this instance.
-            See `Instance.__hash__()`.
-
-        secretfile : str, optional
-            Path to secretfile.
-
-        Other Parameters
-        ___
-
-        kwargs : dict, optional
-            Further arguments to pass, e.g. model_params, data_config.
-
+        The instance id is created using the model_name, param_id, data_id and git_hash.
         """
         # if the database is not available try and use local files
-        try:
-            super().__init__(secretfile=kwargs.pop("secretfile", "../../terraform/.secrets/db_secrets.json"))
-        except FileNotFoundError:
-            error_message = "db_secrets.json not found."
-            if kwargs.get("tag") == "validation":
-                error_message += "Instance will not be able to read or write from the DB so you must have all data files stored locally."
-                logging.warning(error_message)
-            else:
-                raise FileNotFoundError(error_message)
+        super().__init__(secretfile=secretfile)
 
-        self._model_name = kwargs.get("model_name")
-        self._param_id = kwargs.get("param_id")
-        self._data_id = kwargs.get("data_id")
-        self._cluster_id = kwargs.get("cluster_id")
-        self._tag = kwargs.get("tag")
+        self._model_name = model_name
+        self._param_id = param_id
+        self._data_id = data_id
+        self._cluster_id = cluster_id
+        self._tag = tag
 
-        if "git_hash" in kwargs:
+        if git_hash:
             # get git hash from parameter
-            self._git_hash = kwargs.get("git_hash")
+            self._git_hash = git_hash
         else:
             try:
                 # get the hash of the git repository
                 self._git_hash = git.Repo(search_parent_directories=True).head.object.hexsha
             except git.InvalidGitRepositoryError as error:
                 # catch exception and set to empty string
-                logging.error("Could not find a git repository in the parent directory. Setting git_hash to empty string.")
+                error_message = "Could not find a git repository in the parent directory."
+                error_message += "Setting git_hash to empty string."
+                logging.error(error_message)
                 logging.error(error.__traceback__)
                 self._git_hash = ""
 
-        self._fit_start_time = kwargs.get("fit_start_time", None)
-        self._instance_id = kwargs.get("instance_id", self.__hash__())
+        self._fit_start_time = fit_start_time
+        self._instance_id = self.__hash__()
 
     @property
-    def model_name(self):
+    def model_name(self) -> str:
+        """Name of the model."""
         return self._model_name
 
     @model_name.setter
-    def model_name(self, value):
+    def model_name(self, value: str):
         self._model_name = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def param_id(self):
+    def param_id(self) -> str:
+        """Parameter id of the model."""
         return self._param_id
 
     @param_id.setter
-    def param_id(self, value):
+    def param_id(self, value: str):
         self._param_id = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def data_id(self):
+    def data_id(self) -> str:
+        """Data id of configuration of input data."""
         return self._data_id
 
     @data_id.setter
-    def data_id(self, value):
+    def data_id(self, value: str):
         self._data_id = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def instance_id(self):
+    def instance_id(self) -> str:
+        """A unique id created by hashing the model_name, param_id, data_id and git_hash"""
         return self._instance_id
 
     @instance_id.setter
-    def instance_id(self, value):
+    def instance_id(self, value: str):
         hash_value = self.__hash__()
         if not value or value == hash_value:
             self._instance_id = hash_value
@@ -130,53 +113,74 @@ class Instance(DBWriter, DBQueryMixin):
             raise ValueError("The instance id you passed does not match the hash of the instance.")
 
     @property
-    def git_hash(self):
+    def git_hash(self) -> str:
+        """
+        A hash of the code version.
+        Note there must exist a .git directory if you do not pass a git hash in the init.
+        """
         return self._git_hash
 
     @git_hash.setter
-    def git_hash(self, value):
+    def git_hash(self, value: str):
         self._git_hash = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def tag(self):
+    def tag(self) -> str:
+        """A tag to categorise the instance."""
         return self._tag
 
     @tag.setter
-    def tag(self, value):
+    def tag(self, value: str):
         self._tag = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def cluster_id(self):
+    def cluster_id(self) -> str:
+        """The id of the machine this instance was executed on."""
         return self._cluster_id
 
     @cluster_id.setter
-    def cluster_id(self, value):
+    def cluster_id(self, value: str):
         self._cluster_id = value
         self.instance_id = None     # this will update in setter
 
     @property
-    def fit_start_time(self):
+    def fit_start_time(self) -> str:
+        """The datetime when the model started fitting."""
         return self._fit_start_time
 
     @fit_start_time.setter
-    def fit_start_time(self, value):
+    def fit_start_time(self, value: str):
         self._fit_start_time = value
         self.instance_id = None     # this will update in setter
 
-    def __hash__(self):
+    def __hash__(self) -> str:
         hash_string = self.model_name + str(self.param_id) 
         hash_string += self.git_hash + str(self.data_id)
         return Instance.hash_fn(hash_string)
 
     @staticmethod
-    def hash_fn(hash_string):
+    def hash_fn(hash_string: str) -> str:
+        """Uses sha256 to hash the given string.
+
+        Args:
+            hash_string: The string to hash.
+
+        Returns:
+            The hash of the given string.
+        """
         sha_fn = hashlib.sha256()
         sha_fn.update(bytearray(hash_string, "utf-8"))
         return sha_fn.hexdigest()
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Returns a dictionary of the attributes of the Instance.
+
+        Returns:
+            Contains instance id, param id, data id, cluster id, fit start time,
+                tag, git hash and model name as keys. Values are all strings.
+        """
         return dict(
             instance_id=self.instance_id,
             param_id=self.param_id,
@@ -195,7 +199,22 @@ class Instance(DBWriter, DBQueryMixin):
         """
 
     @staticmethod
-    def hash_dict(value):
+    def hash_dict(value: dict) -> str:
+        """Dumps a dictionary to json string then hashes that string.
+
+        Args:
+            value: A dictionary to hash. Keys and values must be compliant with json types.
+
+        Returns:
+            The hash of dictionary.
+
+        Notes:
+            Any lists within the dictionary are sorted.
+            This means the following two dictionaries `A` and `B` will be hashed to the same string:
+
+            >>> A = dict(key=["a", "b"])
+            >>> B = dict(key=["b", "a"])
+        """
         # it is ESSENTIAL to sort by keys when creating hashes!
         sorted_values = value.copy()
         for key in sorted_values:

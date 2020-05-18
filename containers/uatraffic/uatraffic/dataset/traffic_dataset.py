@@ -8,7 +8,8 @@ import pandas as pd
 from cleanair.databases import DBReader
 from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
-from ..preprocess.normalise import normalise_datetime
+from ..preprocess import normalise_datetime
+from ..databases import TrafficDataTable
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -28,7 +29,6 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         self._preprocessing = preprocessing
 
         # load scoot from the data config
-        # TODO: add day of week
         traffic_df = self.get_scoot_by_dow(
             day_of_week=self.data_config["weekdays"][0],
             start_time=self._data_config["start"],
@@ -90,11 +90,10 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
 
         Args:
             data_config: Settings to load the data.
-
-        Raises:
-            AssertionError: If the dictionary is not valid.
         """
-        assert {"start", "end", "detectors", "weekdays"}.issubset(data_config)
+        value_types = [str, str, list, list]
+        min_keys = ["start", "end", "detectors", "weekdays"]
+        validate_dictionary(data_config, min_keys, value_types)
 
     @staticmethod
     def validate_preprocessing(preprocessing: dict):
@@ -107,7 +106,9 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         Raises:
             AssertionError: If the dictionary is not valid.
         """
-        assert {"features", "target", "median", "normaliseby"}.issubset(preprocessing)
+        value_types = [list, list, bool, str]
+        min_keys = ["features", "target", "median", "normaliseby"]
+        validate_dictionary(preprocessing, min_keys, value_types)
 
     @staticmethod
     def validate_dataframe(traffic_df: pd.DataFrame, features: Collection = None, target: Collection = None):
@@ -156,7 +157,11 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             A new tensorflow dataset.
         """
         TrafficDataset.validate_preprocessing(preprocessing)
-        TrafficDataset.validate_dataframe(traffic_df, features=preprocessing["features"], target=preprocessing["target"])
+        TrafficDataset.validate_dataframe(
+            traffic_df,
+            features=preprocessing["features"],
+            target=preprocessing["target"]
+        )
 
         # create numpy arrays of the x and y columns
         x = traffic_df[preprocessing["features"]].to_numpy()
@@ -208,6 +213,61 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             An unique id given the settings dictionaries.
         """
         # check there are no overlapping keys
-        assert not set(data_config.keys()) & set(preprocessing.keys())
+        if set(data_config.keys()) & set(preprocessing.keys()):
+            raise ValueError("Data config and preprocessing dictionaries should not have overlapping keys.")
         merged_dict = {**data_config, **preprocessing}
         return Instance.hash_dict(merged_dict)
+
+    def update_remote_tables(self):
+        """Update the data config table for traffic."""
+        self.logger.info("Updating the traffic data table.")
+        records = [dict(
+            data_id=self.data_id,
+            data_config=self.data_config,
+            preprocessing=self.preprocessing,
+        )]
+        with self.dbcnxn.open_session() as session:
+            self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
+
+def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
+    """
+    Check the dictionary contains a minimum set of keys and the value types are as expected.
+
+    Args:
+        dict_to_check: A dictionary which will be validated.
+        min_keys: The minimum keys that must be in the dict.
+        value_types: The types of the dictionary values.
+
+    Raises:
+        KeyError: If one of the dictionary keys are missing.
+        TypeError: If the type of the values are invalid.
+
+    Notes:
+        In python 3.8 type hinting for dictionaries is supported.
+        When upgrading to python 3.8 this function should use type hinting.
+    """
+    # check keys are correct
+    if not set(min_keys).issubset(dict_to_check):
+        missing_keys = set(min_keys) - set(dict_to_check.keys())
+        error_message = "The data config dictionary does not contain the following keys: {k}"
+        error_message = error_message.format(k=missing_keys)
+        raise KeyError(error_message)
+
+    # check the types of the values
+    raise_type_error = False
+    for i in range(value_types):
+        if not isinstance(dict_to_check[min_keys[i]], value_types[i]):
+            bad_key = min_keys[i]
+            bad_type = type(dict_to_check[min_keys[i]])
+            actual_type = value_types[i]
+            break
+
+    # raise a type error is appropriate
+    if raise_type_error:
+        error_message = "The value for '{key}' must be a {actual_type}. You passed a {bad_type}."
+        error_message = error_message.format(
+            bad_key=bad_key,
+            bad_type=bad_type,
+            actual_type=actual_type,
+        )
+        raise TypeError(error_message)

@@ -17,7 +17,6 @@ setuptools.setup(
     install_requires=[
         "cleanair",
         "gpflow==2.0.0",
-        "plotly==4.4.1",
         "tensorflow==2.1.0",
         "tensorflow_probability==0.9",
     ],
