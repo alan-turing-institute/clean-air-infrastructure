@@ -78,7 +78,7 @@ class DBWriter(DBInteractor):
 
             except IntegrityError as error:
                 self.logger.error(
-                    "Failed to add forecasts to the database: %s", type(error)
+                    "Failed to add rows to the database: %s", type(error)
                 )
                 self.logger.error(str(error))
                 session.rollback()
