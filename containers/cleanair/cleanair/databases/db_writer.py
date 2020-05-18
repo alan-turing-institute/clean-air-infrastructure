@@ -7,7 +7,7 @@ from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
-from ..loggers import get_logger
+from ..loggers import get_logger, duration
 from .base import Base
 
 
