@@ -40,7 +40,9 @@ def cam_recent(args):
 
 @cams_bp.route("snapshot", methods=["GET"])
 @use_args(
-    {},
+    {
+        "type": fields.String(required=True),
+    },
     location="query",
 )
 @http_auth.login_required
@@ -57,4 +59,4 @@ def cams_snapshot(args):
 
     db_query = CamsSnapshot()
 
-    return db_query.response_json(get_session('jamcam'))
+    return db_query.response_json(get_session('jamcam'), type=args.pop('type'))

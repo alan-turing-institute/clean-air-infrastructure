@@ -111,12 +111,12 @@ jobs:
 cronjobs:
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
-    concurrencyPolicy: Forbid
+    concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: 30c59a532aa3b5887f0c2b22835bb6ac6b6a7dc3
+        tag: latest
         imagePullPolicy: Always
     command: ["bash", "/application/deployscripts/cluster.sh"]
     args: ["-m", "3", "4", "5"]
@@ -153,12 +153,12 @@ cronjobs:
 
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
-    concurrencyPolicy: Forbid
+    concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
+        tag: latest
         imagePullPolicy: Always
     command: ["bash", "/application/deployscripts/cluster.sh"]
     args: ["-m", "0", "1", "2"]
