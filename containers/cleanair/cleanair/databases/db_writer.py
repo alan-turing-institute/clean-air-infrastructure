@@ -78,9 +78,7 @@ class DBWriter(DBInteractor):
                 session.commit()
 
             except IntegrityError as error:
-                self.logger.error(
-                    "Failed to add rows to the database: %s", type(error)
-                )
+                self.logger.error("Failed to add rows to the database: %s", type(error))
                 self.logger.error(str(error))
                 session.rollback()
 
@@ -140,8 +138,8 @@ class DBWriter(DBInteractor):
             self.__commit_records_orm(records)
 
         self.logger.info(
-                    "Database insertion took %s", duration(start_session, time.time())
-                )
+            "Database insertion took %s", duration(start_session, time.time())
+        )
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
