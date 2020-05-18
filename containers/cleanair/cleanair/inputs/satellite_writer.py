@@ -6,11 +6,7 @@ import tempfile
 from dateutil import rrule
 import numpy as np
 import pandas as pd
-
-try:
-    import pygrib
-except ImportError:
-    pass
+import xarray as xr
 import requests
 from sqlalchemy import func
 from ..decorators import robust_api
@@ -26,7 +22,7 @@ from ..mixins import DateRangeMixin
 from ..timestamps import to_nearest_hour
 
 
-class SatelliteWriter(DateRangeMixin, DBWriter):
+class SatelliteWriter(DBWriter):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
@@ -49,8 +45,8 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
     species = ["NO2", "PM25", "PM10", "O3"]  # species to get data for
 
     def __init__(self, copernicus_key, **kwargs):
-        # Initialise parent classes
-        super().__init__(**kwargs)
+        # # Initialise parent classes
+        # super().__init__(**kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -58,12 +54,13 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         # Set
         self.access_key = copernicus_key
-        self.sat_bounding_box = [
-            51.2867601564841,
-            51.6918741102915,
-            -0.51037511051915,
-            0.334015522513336,
-        ]
+
+        self.sat_bounding_box = {
+            "lat_min": 51.2867601564841,
+            "lat_max": 51.6918741102915,
+            "lon_min": -0.51037511051915,
+            "lon_max": 0.334015522513336,
+        }
 
     def build_satellite_grid(self, satellite_boxes_df):
         """Build a dataframe of satellite grid points given a dataframe of satellite boxes"""
@@ -128,7 +125,30 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
         )
         return raw_data.content
 
-    def read_grib_file(self, filecontent, period):
+    def read_grib_file(self, grib_filename):
+        """Read a gribfile and filter by the satellite bounding box.
+
+        Args:
+            grib_filename (str): Path to a grib file containing satellite forecast\
+        
+        Returns:
+            xarray: with 25 (readings) X 8 (lat) * 4 (lon) dimensions corresponsing to grid squares over london
+        """
+
+        # Load dataset as xarray
+        grib_dataset = xr.open_dataset(grib_filename, engine="cfgrib")
+
+        bounded_grib_datasets = (
+            grib_dataset["paramId_0"]
+            .where(grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True)
+            .where(grib_dataset.latitude < self.sat_bounding_box["lat_max"], drop=True)
+            .where(grib_dataset.longitude > self.sat_bounding_box["lon_min"], drop=True)
+            .where(grib_dataset.longitude < self.sat_bounding_box["lon_max"], drop=True)
+        )
+
+        return bounded_grib_datasets
+
+    def read_grib_file_(self, grib_filename, period):
         """Read a grib file into a pandas dataframe"""
 
         def process_grib_layer(grib_layer, _id):
@@ -149,7 +169,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             grib_df["val"] = value.flatten()
             return grib_df
 
-        grb = pygrib.open(filecontent)
+        grb = pygrib.open(grib_filename)
         if grb.messages == 0:
             raise EOFError("No data in grib file")
 
