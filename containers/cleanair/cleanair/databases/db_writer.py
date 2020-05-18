@@ -1,6 +1,7 @@
 """
 Table writer
 """
+import time
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import insert
@@ -126,6 +127,8 @@ class DBWriter(DBInteractor):
             raise ValueError(
                 "Only 'merge' or 'ignore' are valid arguments for 'on_conflict'"
             )
+        # Open a session and insert the road matches
+        start_session = time.time()
         if table:
             self.__commit_records_core(records, table, on_conflict)
         else:
@@ -135,6 +138,10 @@ class DBWriter(DBInteractor):
                     on_conflict,
                 )
             self.__commit_records_orm(records)
+
+        self.logger.info(
+                    "Database insertion took %s", duration(start_session, time.time())
+                )
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

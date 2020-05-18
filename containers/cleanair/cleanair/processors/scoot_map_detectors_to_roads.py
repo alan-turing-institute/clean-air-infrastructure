@@ -184,18 +184,11 @@ class ScootPerRoadDetectors(DBWriter, DBQueryMixin):
                     green(len(road_match_records)),
                 )
 
-                # Open a session and insert the road matches
-                start_session = time.time()
-
                 # Commit and override any existing records
                 self.commit_records(
                     road_match_records, on_conflict="overwrite", table=ScootRoadMatch,
                 )
                 n_records += len(road_match_records)
-
-                self.logger.info(
-                    "Insertion took %s", duration(start_session, time.time())
-                )
 
         # Summarise updates
         self.logger.info(
