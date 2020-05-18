@@ -184,14 +184,14 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         """
         TrafficDataset.validate_preprocessing(preprocessing)
 
-        # TODO choose median for robustness to outliers
-        if preprocessing["median"]:
-            traffic_gb = traffic_df.groupby(preprocessing["features"])
-            median = traffic_gb[preprocessing["target"]].median
-            raise NotImplementedError("Using the median is coming soon.")
-
         # normalisation
         traffic_df = normalise_datetime(traffic_df, wrt=preprocessing["normaliseby"])
+
+        # choose median for robustness to outliers
+        if preprocessing["median"]:
+            traffic_gb = traffic_df.groupby(preprocessing["features"])
+            traffic_df = traffic_gb[preprocessing["target"]].median()  # only works for single task
+            traffic_df["time_norm"] = traffic_df.index
 
         return traffic_df
 
