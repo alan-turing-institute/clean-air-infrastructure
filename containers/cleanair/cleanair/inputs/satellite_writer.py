@@ -24,17 +24,21 @@ from ..mixins import DateRangeMixin
 from ..timestamps import to_nearest_hour
 from ..mixins.availability_mixins import SatelliteAvailabilityMixin
 
+
 class Species(Enum):
     """Valid species for API"""
+
     NO2 = "NO2"
-    PM25  = "PM25"
+    PM25 = "PM25"
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
 
+
 class Periods(Enum):
-    day1 = '0H24H'
-    day2 = '25H48H' 
-    day3 = '49H72H'
+    day1 = "0H24H"
+    day2 = "25H48H"
+    day3 = "49H72H"
+
 
 class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
     """
@@ -55,17 +59,16 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
     half_grid = 0.05  # size of half the grid in lat/lon
     n_points_lat = 12  # number of discrete latitude points per satellite box
     n_points_lon = 8  # number of discrete longitude points per satellite box
-    n_hours_per_grib = 24 # number of expected hours of data per grib file
+    n_hours_per_grib = 24  # number of expected hours of data per grib file
     # bounding box to fetch data for
     sat_bounding_box = {
-            "lat_min": 51.2867601564841,
-            "lat_max": 51.6918741102915,
-            "lon_min": -0.51037511051915,
-            "lon_max": 0.334015522513336,
-        }
-    n_grid_squares_expected = 32 # number of expected hours of data per grib file
+        "lat_min": 51.2867601564841,
+        "lat_max": 51.6918741102915,
+        "lon_min": -0.51037511051915,
+        "lon_max": 0.334015522513336,
+    }
+    n_grid_squares_expected = 32  # number of expected hours of data per grib file
     periods = ["0H24H", "25H48H", "49H72H"]  # time periods of interest
-    
 
     def __init__(self, copernicus_key, **kwargs):
         # Initialise parent classes
@@ -77,7 +80,7 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
 
         # Set
         self.access_key = copernicus_key
-        
+
         self.no2_unit_correction = 1000000000
 
     def build_satellite_grid(self, satellite_boxes_df):
@@ -149,9 +152,9 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
 
         # Load dataset as xarray
         grib_dataset = xr.open_dataset(grib_filename, engine="cfgrib")
-        
+
         bounded_grib_datasets = (
-            grib_dataset["paramId_0"][:self.n_hours_per_grib]
+            grib_dataset["paramId_0"][: self.n_hours_per_grib]
             .where(grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True)
             .where(grib_dataset.latitude < self.sat_bounding_box["lat_max"], drop=True)
             .where(grib_dataset.longitude > self.sat_bounding_box["lon_min"], drop=True)
@@ -178,7 +181,7 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         """
 
         sat_df = sat_xarray.to_dataframe()
-    
+
         # Rename columns
         sat_df_renamed = sat_df.reset_index().rename(
             columns={
@@ -190,17 +193,16 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         )
 
         # Get a subset of columns
-        sat_df_subset = sat_df_renamed[['datetime', 'lat', 'lon', 'val']].copy()
-        sat_df_subset['species'] = species
+        sat_df_subset = sat_df_renamed[["datetime", "lat", "lon", "val"]].copy()
+        sat_df_subset["species"] = species
 
         # Round to stop errors in checking location
         sat_df_subset["lon"] = np.round(sat_df_subset["lon"], 4)
         sat_df_subset["lat"] = np.round(sat_df_subset["lat"], 4)
-        
-        # Correct NO2 units
-        if species  == "NO2":
-            sat_df_subset['val'] = self.correct_no2_units(sat_df_subset['val'])
 
+        # Correct NO2 units
+        if species == "NO2":
+            sat_df_subset["val"] = self.correct_no2_units(sat_df_subset["val"])
 
         return sat_df_subset
 
@@ -218,7 +220,7 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         # Write the grib file to a temporary directory
         with tempfile.TemporaryDirectory() as tmpdir:
             grib_file_path = os.path.join(tmpdir, "tmpgrib_file.grib2")
-            with open(grib_file_path , "wb") as grib_file:
+            with open(grib_file_path, "wb") as grib_file:
                 self.logger.debug("Writing grib file to %s", grib_file_path)
                 grib_file.write(satellite_bytes)
 
@@ -237,14 +239,15 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
         """
 
-        satellite_site_df = self.get_satellite_box(with_centroids=True, output_type = 'df')
-
-        self.logger.info(
-                "Requesting 72 hours of satellite forecast data on %s for species %s",
-                green(reference_date),
-                green(species),
+        satellite_site_df = self.get_satellite_box(
+            with_centroids=True, output_type="df"
         )
 
+        self.logger.info(
+            "Requesting 72 hours of satellite forecast data on %s for species %s",
+            green(reference_date),
+            green(species),
+        )
 
         all_grib_df = pd.DataFrame()
         for period in Periods:
@@ -288,7 +291,6 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
     # def update_reading_table(self):
     #     """Update the satellite reading table"""
 
-    
     #     with self.dbcnxn.open_session() as session:
     #         q_satellite_box = session.query(
     #             SatelliteBox.id.label("box_id"),
