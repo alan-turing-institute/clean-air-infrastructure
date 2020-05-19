@@ -4,6 +4,7 @@ from .connector import Connector
 from .db_interactor import DBInteractor
 from .db_reader import DBReader
 from .db_writer import DBWriter
+from .db_config import DBConfig
 
 __all__ = [
     "Base",
@@ -11,4 +12,5 @@ __all__ = [
     "DBInteractor",
     "DBReader",
     "DBWriter",
+    "DBConfig",
 ]

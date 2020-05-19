@@ -182,20 +182,6 @@ cronjobs:
 #       secret:
 #         secretName: secrets
 
-  - name: satellite
-    image:
-      repository: cleanairdocker.azurecr.io/satellite
-      imagePullPolicy: Always
-    schedule: "30 10 * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
   - name: lockdown-baseline
     image:
       repository: cleanairdocker.azurecr.io/lockdown_baseline

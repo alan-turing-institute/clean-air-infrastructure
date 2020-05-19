@@ -985,7 +985,5 @@ class ModelData(DBWriter, DBQueryMixin):
                 raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
         upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
         self.logger.info("Inserting %s records into the database", len(upload_records))
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(
-                session, upload_records, table=ModelResult, on_conflict="overwrite"
-            )
+
+        self.commit_records(upload_records, table=ModelResult, on_conflict="overwrite")

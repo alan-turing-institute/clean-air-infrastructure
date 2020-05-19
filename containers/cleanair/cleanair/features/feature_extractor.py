@@ -347,13 +347,12 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 q_batch_insert = q_select_and_insert.slice(batch_start, batch_stop)
 
                 # Insert from the query to reduce local memory and database round-trips
-                with self.dbcnxn.open_session() as session:
-                    self.commit_records(
-                        session,
-                        q_batch_insert.subquery(),
-                        table=self.output_table,
-                        on_conflict="ignore",
-                    )
+
+                self.commit_records(
+                    q_batch_insert.subquery(),
+                    table=self.output_table,
+                    on_conflict="ignore",
+                )
 
                 # Log timing statistics
                 elapsed_seconds = time.time() - insert_start

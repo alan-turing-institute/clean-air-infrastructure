@@ -13,7 +13,7 @@ RUN pip install /app/cleanair
 RUN pip install /app/uatraffic
 
 # Copy the run script into the container
-COPY entrypoints/lockdown_baseline_comparison.py /app
+COPY entrypoints/odysseus/lockdown_baseline_comparison.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "lockdown_baseline_comparison.py"]
