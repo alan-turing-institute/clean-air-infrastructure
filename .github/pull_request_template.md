@@ -1,10 +1,13 @@
-# Summary
+<!-- Please follow these instructions when creating a pull request -->
 
-Please provide an overview of the changes made.
+<!-- 1. Ensure select the Odysseus project for the pull request on the right hand menu -->
+<!-- 2. Name the pull request after the issue. e.g. iss_832_add_weather_data_input ->
+
+# Summary
+<!-- Please provide an overview of what this pull request does -->
 
 ## Type of change
-
-Please select the types of change made
+<!-- Please select the types of change made -->
 
 - [ ] Bug fix
 - [ ] New feature
@@ -13,24 +16,23 @@ Please select the types of change made
 - [ ] Pipeline
 
 ## Additional dependencies
+<!-- List any dependencies added to the project ->
 
-List any dependencies added to the project
-
-- dependency 1
-- dependency 2
+<!-- - dependency 1 -->
+<!-- - dependency 2 -->
 
 ## Tests
 How has the code been tested?
 
-- Added pytest tests
-- Ran code using local database
+<!-- - Added pytest tests -->
+<!-- - Ran code using local database -->
 
 ## Issues fixes
 
 List any issues this closes:
 
-- Closes issue
-- Closes issue
+<!-- - Closes issue -->
+<!-- - Closes issue -->
 
 ## Checklist
 Please ensure you have done the following:
@@ -49,6 +51,6 @@ Please ensure you have done the following:
 
 ## Reviewer
 
-List anything you would like the reviewer to focus on.
+<!-- List anything you would like the reviewer to focus on. ->
 
-- I'm not sure if my tests cover all use cases well
+<!-- - I'm not sure if my tests cover all use cases well -->
