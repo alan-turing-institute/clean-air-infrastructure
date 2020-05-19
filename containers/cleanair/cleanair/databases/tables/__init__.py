@@ -25,7 +25,9 @@ from .scoot_tables import (
 )
 from .street_canyon_tables import StreetCanyon
 from .ukmap_tables import UKMap
+from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
+
 
 __all__ = [
     "AQEReading",
@@ -52,5 +54,6 @@ __all__ = [
     "ScootPercentChange",
     "StaticFeature",
     "StreetCanyon",
+    "UrbanVillage",
     "UKMap",
 ]

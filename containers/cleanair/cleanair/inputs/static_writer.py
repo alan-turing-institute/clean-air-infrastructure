@@ -3,7 +3,6 @@ Upload static data currently held in geodatabase/shape file format in Azure
 Convert to PostgreSQL using ogr2ogr and upload to the inputs DB
 """
 import glob
-import os
 import subprocess
 from sqlalchemy.exc import OperationalError
 from ..databases import DBWriter
@@ -14,7 +13,14 @@ from ..loggers import get_logger, green
 class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, target_file, schema, table, **kwargs):
+        """Create a StaticWrite instance for writing static datasets to a database
+
+        Args:
+            target_file (str): Either the path to a target file,  or a directory if a shape  file
+            schema (str): Name of the database schema to  write to
+            table (str): Name of the table to write to
+        """
         # Initialise parent classes
         super().__init__(initialise_tables=False, **kwargs)
 
@@ -23,32 +29,17 @@ class StaticWriter(DBWriter):
             self.logger = get_logger(__name__)
 
         # Attributes: directory where local data is held and name of remote table
-        self.data_directory = None
-        self.table_name = None
-
-        # Map of tables to schemas
-        self.schemas = {
-            "hexgrid": "interest_points",
-            "rectgrid_100": "interest_points",
-            "london_boundary": "static_data",
-            "oshighway_roadlink": "static_data",
-            "ukmap": "static_data",
-            "scoot_detector": "interest_points",
-            "street_canyon": "static_data",
-            "urban_village": "static_data",
-        }
+        self.target_file = target_file
+        self.table_name = table
+        self.schema = schema
 
         # Ensure that the necessary schemas exist
-        for schema in list(set(self.schemas.values())):
-            self.dbcnxn.ensure_schema(schema)
+        for sch in [self.schema, "interest_points"]:
+            self.dbcnxn.ensure_schema(sch)
+        self.dbcnxn.ensure_extensions()
 
         # Ensure that interest_points table exists
         MetaPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
-
-    @property
-    def schema(self):
-        """Get schema that the current dataset will live under"""
-        return self.schemas[self.table_name]
 
     @property
     def schema_table(self):
@@ -57,15 +48,6 @@ class StaticWriter(DBWriter):
 
     def upload_static_files(self):
         """Upload static data to the inputs database"""
-        # Look for static files in /data then set the file and table names
-        try:
-            self.data_directory = os.listdir("/data")[0]
-            self.logger.debug("data_directory: %s", self.data_directory)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                "Could not find any static files in /data. Did you mount this path?"
-            )
-        self.table_name = self.data_directory.replace(".gdb", "")
 
         # Check whether table exists - excluding reflected tables
         existing_table_names = self.dbcnxn.engine.table_names(schema=self.schema)
@@ -79,18 +61,19 @@ class StaticWriter(DBWriter):
         # Get the connection string
         cnxn_string = " ".join(
             [
-                "host={host}",
+                "dbname={db_name}",
                 "port={port}",
                 "user={username}",
                 "password={password}",
-                "dbname={db_name}",
+                "host={host}",
                 "sslmode={ssl_mode}",
             ]
         ).format(**self.dbcnxn.connection_info)
 
         # Add additional arguments if the input data contains shape files
         extra_args = ["-lco", "GEOMETRY_NAME=geom"]
-        if glob.glob("/data/{}/*.shp".format(self.data_directory)):
+
+        if glob.glob("/{}/*.shp".format(self.target_file)):
             extra_args += ["-nlt", "PROMOTE_TO_MULTI", "-lco", "precision=NO"]
 
         # Preprocess the UKMap data, keeping only useful columns
@@ -139,27 +122,27 @@ class StaticWriter(DBWriter):
             green(self.dbcnxn.connection_info["db_name"]),
         )
         try:
+            command = [
+                "ogr2ogr",
+                "-overwrite",
+                "-progress",
+                "-f",
+                "PostgreSQL",
+                "PG:{}".format(cnxn_string),
+                "{}".format(self.target_file),
+                "--config",
+                "PG_USE_COPY",
+                "YES",
+                "-t_srs",
+                "EPSG:4326",
+                "-lco",
+                "SCHEMA={}".format(self.schema),
+                "-nln",
+                self.table_name,
+            ] + extra_args
+
             subprocess.run(
-                [
-                    "ogr2ogr",
-                    "-overwrite",
-                    "-progress",
-                    "-f",
-                    "PostgreSQL",
-                    "PG:{}".format(cnxn_string),
-                    "/data/{}".format(self.data_directory),
-                    "--config",
-                    "PG_USE_COPY",
-                    "YES",
-                    "-t_srs",
-                    "EPSG:4326",
-                    "-lco",
-                    "SCHEMA={}".format(self.schema),
-                    "-nln",
-                    self.table_name,
-                ]
-                + extra_args,
-                check=True,
+                command, check=True,
             )
         except subprocess.CalledProcessError:
             self.logger.error("Running ogr2ogr failed!")

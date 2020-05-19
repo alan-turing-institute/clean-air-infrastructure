@@ -11,7 +11,7 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Copy the run script into the container
-COPY entrypoints/input_laqn_readings.py /app
+COPY entrypoints/inputs/input_laqn_readings.py /app
 
 # Run the entrypoint script when the container launches
 ENTRYPOINT ["python", "input_laqn_readings.py"]

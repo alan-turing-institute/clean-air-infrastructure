@@ -5,7 +5,6 @@ import time
 from geoalchemy2.comparator import Comparator
 import pandas as pd
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, ScootDetector, OSHighway, ScootRoadMatch
 from ..loggers import duration, get_logger, green
@@ -185,29 +184,11 @@ class ScootPerRoadDetectors(DBWriter, DBQueryMixin):
                     green(len(road_match_records)),
                 )
 
-                # Open a session and insert the road matches
-                start_session = time.time()
-                with self.dbcnxn.open_session() as session:
-                    try:
-                        # Commit and override any existing records
-                        self.commit_records(
-                            session,
-                            road_match_records,
-                            on_conflict="overwrite",
-                            table=ScootRoadMatch,
-                        )
-                        n_records += len(road_match_records)
-                    except IntegrityError as error:
-                        self.logger.error(
-                            "Failed to add road matches to the database: %s",
-                            type(error),
-                        )
-                        self.logger.error(str(error))
-                        session.rollback()
-
-                self.logger.info(
-                    "Insertion took %s", duration(start_session, time.time())
+                # Commit and override any existing records
+                self.commit_records(
+                    road_match_records, on_conflict="overwrite", table=ScootRoadMatch,
                 )
+                n_records += len(road_match_records)
 
         # Summarise updates
         self.logger.info(

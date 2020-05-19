@@ -14,6 +14,24 @@ from ..mixins import (
 )
 
 
+class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
+    """Argument parser for configuring database roles"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-c",
+            "--config-file",
+            type=str,
+            required=True,
+            help="Location of configuration file",
+        )
+
+
+class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
+    """Argument parsing for inserting static datafiles"""
+
+
 class SatelliteArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):
