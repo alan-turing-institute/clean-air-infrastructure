@@ -9,7 +9,7 @@ from cleanair.databases import DBReader
 from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
-from ..databases import TrafficDataTable
+from ..databases.tables import TrafficDataTable
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -245,6 +245,8 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     Notes:
         In python 3.8 type hinting for dictionaries is supported.
         When upgrading to python 3.8 this function should use type hinting.
+
+        Only supports dictionaries with one depth level.
     """
     # check keys are correct
     if not set(min_keys).issubset(dict_to_check):
@@ -255,11 +257,11 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
 
     # check the types of the values
     raise_type_error = False
-    for i in range(value_types):
-        if not isinstance(dict_to_check[min_keys[i]], value_types[i]):
-            bad_key = min_keys[i]
-            bad_type = type(dict_to_check[min_keys[i]])
-            actual_type = value_types[i]
+    for key, value in zip(min_keys, value_types):
+        if not isinstance(dict_to_check[key], value):
+            bad_key = key
+            bad_type = type(dict_to_check[key])
+            actual_type = value
             break
 
     # raise a type error is appropriate

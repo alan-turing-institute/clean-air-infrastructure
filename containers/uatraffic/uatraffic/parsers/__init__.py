@@ -1,9 +1,11 @@
 """
-Useful functions for filepath management and others.
+Traffic parsers.
 """
 
-from .parser import BaselineParser
+from .baseline_parser import BaselineParser
+from .training_parser import TrainTrafficModelParser
 
 __all__ = [
     "BaselineParser",
+    "TrainTrafficModelParser",
 ]

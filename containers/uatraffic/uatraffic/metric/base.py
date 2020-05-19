@@ -7,14 +7,13 @@ from typing import Collection
 
 import pandas as pd
 import gpflow
-import tensorflow as tf
 
 from cleanair.databases import DBWriter
 from cleanair.loggers import get_logger
 
 from .coverage import percent_coverage
 from .nlpl import nlpl
-from ..databases import TrafficMetricTable
+from ..databases.tables import TrafficMetricTable
 from ..dataset import TrafficDataset
 
 class TrafficMetric(DBWriter):

@@ -1,18 +1,23 @@
+"""
+Parsers for training a model.
+"""
 
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from .mixins import (
+from ..mixins import (
     BaselineParserMixin,
+    InstanceParserMixin,
     ModellingParserMixin,
     KernelParserMixin,
     PreprocessingParserMixin,
 )
 
-class TrafficModelParser(
+class TrainTrafficModelParser(
     BaselineParserMixin,
+    InstanceParserMixin,
     ModellingParserMixin,
     KernelParserMixin,
     PreprocessingParserMixin,
@@ -23,12 +28,7 @@ class TrafficModelParser(
     """Parser for running lockdown models."""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.add_argument(
-            "-c",
-            "--cluster_id",
-            choices=["local", "pearl", "azure"],
-            default="local",
-        )
+
         self.add_argument(
             "-x",
             "--experiment",
@@ -40,10 +40,10 @@ class TrafficModelParser(
             default="../experiments",
             help="Root to experiments directory."
         )
-    
+
     def add_custom_subparsers(
         self,
-        dest="command",
+        dest: str = "command",
         batch: bool = True,
         test: bool = True,
         **kwargs,
@@ -85,21 +85,3 @@ class TrafficModelParser(
                 action="store_true",
                 help="Log how the model would train without executing."
             )
-
-class BaselineParser(
-    BaselineParserMixin,
-    SecretFileParserMixin,
-    VerbosityMixin,
-    ArgumentParser,
-):
-    """
-    Parser for querying a recent day against a baseline.
-    """
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "-l",
-            "--comparison_start",
-            default="2020-03-30",
-            help="Timestamp for beginning of comparison day.",
-        )

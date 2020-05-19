@@ -1,5 +1,12 @@
 """Classes for traffic mixins."""
 
+from .parser_mixins import (
+    BaselineParserMixin,
+    InstanceParserMixin,
+    ModellingParserMixin,
+    KernelParserMixin,
+    PreprocessingParserMixin,
+)
 from .query_mixins import (
     TrafficDataQueryMixin,
     TrafficInstanceQueryMixin,
@@ -7,6 +14,11 @@ from .query_mixins import (
 )
 
 __all__ = [
+    "BaselineParserMixin",
+    "InstanceParserMixin",
+    "ModellingParserMixin",
+    "KernelParserMixin",
+    "PreprocessingParserMixin",
     "TrafficDataQueryMixin",
     "TrafficInstanceQueryMixin",
     "TrafficMetricQueryMixin",

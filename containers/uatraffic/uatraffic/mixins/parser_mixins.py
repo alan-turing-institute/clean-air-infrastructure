@@ -3,22 +3,42 @@ Mixins for traffic parsers.
 """
 
 class BaselineParserMixin:
+    """Arguments for baseline periods."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.add_argument(
-            "-t",
-            "--tag",
-            default="validation",
-            type=str,
-            help="A custom tag to identify model fits.",
-        )
+
         self.add_argument(
             "-b",
             "--baseline_period",
             default="normal",
             choices=["normal", "lockdown"],
             help="The name of the baseline period.",
+        )
+
+class InstanceParserMixin:
+    """Arguments for creating/selecting an instance."""
+
+    INSTANCE_GROUP = [
+        "tag",
+        "cluster_id",
+    ]
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        instance_group = self.add_argument_group("instance")
+        instance_group.add_argument(
+            "-t",
+            "--tag",
+            default="validation",
+            type=str,
+            help="A custom tag to identify model fits.",
+        )
+        instance_group.add_argument(
+            "-c",
+            "--cluster_id",
+            choices=["local", "pearl", "azure"],
+            default="local",
         )
 
 class PreprocessingParserMixin:
@@ -75,7 +95,7 @@ class ModellingParserMixin:
             "--n_inducing_points",
             default=None,
             type=int,
-            help="Number of inducing points. Default is 24."
+            help="Number of inducing points. If not set then no inducing points are used."
         )
         modelling_group.add_argument(
             "--inducing_point_method",
@@ -122,18 +142,4 @@ class KernelParserMixin:
             type=float,
             default=1.0,
             help="Initial value for variance.",
-        )
-
-class PeriodicKernelParserMixin(KernelParserMixin):
-    """Specific parser supporting the periodic kernel."""
-
-    KERNEL_GROUP = KernelParserMixin.KERNEL_GROUP + ["period"]
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.kernel_group.add_argument(
-            "--period",
-            type=float,
-            default=1.0,
-            help="Period of a periodic kernel.",
         )
