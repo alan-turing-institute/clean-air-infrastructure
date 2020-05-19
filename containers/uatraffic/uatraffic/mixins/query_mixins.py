@@ -2,7 +2,7 @@
 import json
 from sqlalchemy import Integer, and_
 from cleanair.decorators import db_query
-from ..databases import (
+from ..databases.tables import (
     TrafficDataTable,
     TrafficMetricTable,
     TrafficModelTable,
