@@ -9,7 +9,7 @@ from cleanair.databases import DBReader
 from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
-from ..databases import TrafficDataTable
+from ..databases.tables import TrafficDataTable
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
@@ -189,14 +189,14 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         """
         TrafficDataset.validate_preprocessing(preprocessing)
 
-        # TODO choose median for robustness to outliers
-        # if preprocessing["median"]:
-        #     traffic_gb = traffic_df.groupby(preprocessing["features"])
-        #     median = traffic_gb[preprocessing["target"]].median
-        #     raise NotImplementedError("Using the median is coming soon.")
-
         # normalisation
         traffic_df = normalise_datetime(traffic_df, wrt=preprocessing["normaliseby"])
+
+        # choose median for robustness to outliers
+        if preprocessing["median"]:
+            traffic_gb = traffic_df.groupby(preprocessing["features"])
+            traffic_df = traffic_gb[preprocessing["target"]].median()  # only works for single task
+            traffic_df["time_norm"] = traffic_df.index
 
         return traffic_df
 
@@ -226,8 +226,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             data_config=self.data_config,
             preprocessing=self.preprocessing,
         )]
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
+        self.commit_records(records, on_conflict="ignore", table=TrafficDataTable)
 
 def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     """
@@ -245,6 +244,8 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     Notes:
         In python 3.8 type hinting for dictionaries is supported.
         When upgrading to python 3.8 this function should use type hinting.
+
+        Only supports dictionaries with one depth level.
     """
     # check keys are correct
     if not set(min_keys).issubset(dict_to_check):
@@ -255,11 +256,11 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
 
     # check the types of the values
     raise_type_error = False
-    for i in range(value_types):
-        if not isinstance(dict_to_check[min_keys[i]], value_types[i]):
-            bad_key = min_keys[i]
-            bad_type = type(dict_to_check[min_keys[i]])
-            actual_type = value_types[i]
+    for key, value in zip(min_keys, value_types):
+        if not isinstance(dict_to_check[key], value):
+            bad_key = key
+            bad_type = type(dict_to_check[key])
+            actual_type = value
             break
 
     # raise a type error is appropriate
