@@ -175,7 +175,7 @@ gem update --system
 
 Then install the Travis CI CLI with:
 ```bash
-gem install  travis --no-rdoc --no-ri
+gem install  travis -no-rdoc -no-ri
 ```
 
 On some versions of OSX, this fails, so you may need the following alternative:
