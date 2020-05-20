@@ -2,9 +2,13 @@ import os
 import pytest
 import os
 import io
+import pandas as pd
+import numpy as np
 from cleanair.inputs import SatelliteWriter
 from cleanair.inputs.satellite_writer import Species, Periods
 from dateutil.parser import isoparse
+from dateutil.rrule import HOURLY, rrule
+
 
 @pytest.fixture()
 def copernicus_key():
@@ -81,7 +85,7 @@ def test_read_grib_file_24(copernicus_key, secretfile, grib_file_24, connection)
     out = satellite_writer.read_grib_file(grib_file_24)
 
     # Expect hours of data
-    assert out.shape[0] == satellite_writer.n_hours_per_grib
+    assert out.shape[0] == 25
 
     # There should be 32 grid points
     assert out.shape[1] * out.shape[2] == satellite_writer.n_grid_squares_expected
@@ -116,7 +120,7 @@ def test_grib_to_pandas(copernicus_key, secretfile, grib_file_24, connection):
     # Check we have the correct number of  datapoints
     assert (
         pd_data.shape[0]
-        == satellite_writer.n_hours_per_grib * satellite_writer.n_grid_squares_expected
+        == 25 * satellite_writer.n_grid_squares_expected
     )
 
 
@@ -140,8 +144,22 @@ def test_api_24_call(
     )
 
 
+@pytest.mark.parametrize(
+    "expected_start_date, expected_end_date, period",
+    [
+        ("2020-05-01", "2020-05-02T00:00:00", Periods.day1.value),
+        ("2020-05-02T01:00:00", "2020-05-03T00:00:00", Periods.day2.value),
+        ("2020-05-03T01:00:00", "2020-05-04T00:00:00", Periods.day3.value),
+    ],
+)
 def test_api_call_and_process(
-    copernicus_key, secretfile, mock_request_satellite_data, connection
+    copernicus_key,
+    secretfile,
+    mock_request_satellite_data,
+    connection,
+    expected_start_date,
+    expected_end_date,
+    period,
 ):
     """Test that we can make an api call and then return the correct dataframe"""
 
@@ -151,7 +169,7 @@ def test_api_call_and_process(
 
     # Get gribdata
     grib_bytes = satellite_writer.request_satellite_data(
-        "2020-05-01", Periods.day1.value, Species.NO2.value
+        "2020-05-01", period, Species.NO2.value
     )
 
     pd_data = satellite_writer.grib_bytes_to_df(grib_bytes, Species.NO2.value)
@@ -159,11 +177,20 @@ def test_api_call_and_process(
     # Check we have the correct column names
     assert set(pd_data.columns) == set(["datetime", "lat", "lon", "val", "species"])
 
-    # Check we have the correct number of  datapoints
-    assert (
-        pd_data.shape[0]
-        == satellite_writer.n_hours_per_grib * satellite_writer.n_grid_squares_expected
+    # Check we have data for the expected dates
+    time_stamps = pd_data["datetime"].apply(pd.to_datetime).unique()
+    expected_times = np.array(
+        list(
+            rrule(
+                freq=HOURLY,
+                dtstart=isoparse(expected_start_date),
+                until=isoparse(expected_end_date),
+            )
+        ),
+        dtype=np.datetime64,
     )
+
+    assert np.all(time_stamps == expected_times)
 
 
 def test_satellite_availability_mixin(
@@ -212,7 +239,9 @@ def test_satellite_availability_mixin(
         output_type="df",
     )
 
-    # Check we have a full set of data
+    # Check we have a full set of data in the database
     satellite_forecast_df.shape[0] == satellite_writer.n_grid_squares_expected * 72
-
-    print(satellite_forecast_df["measurement_start_utc"])
+    time_stamps = satellite_forecast_df["measurement_start_utc"].apply(pd.to_datetime).unique()
+    expected_times = np.array(list(rrule(freq=HOURLY, dtstart=isoparse("2020-05-01"), count = 73 )), dtype = np.datetime64)
+    assert len(time_stamps) == 73
+    assert np.all(time_stamps == expected_times)

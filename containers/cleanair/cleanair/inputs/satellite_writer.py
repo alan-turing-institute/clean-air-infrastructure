@@ -59,7 +59,6 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
     half_grid = 0.05  # size of half the grid in lat/lon
     n_points_lat = 12  # number of discrete latitude points per satellite box
     n_points_lon = 8  # number of discrete longitude points per satellite box
-    n_hours_per_grib = 24  # number of expected hours of data per grib file
     # bounding box to fetch data for
     sat_bounding_box = {
         "lat_min": 51.2867601564841,
@@ -154,7 +153,7 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         grib_dataset = xr.open_dataset(grib_filename, engine="cfgrib")
 
         bounded_grib_datasets = (
-            grib_dataset["paramId_0"][: self.n_hours_per_grib]
+            grib_dataset["paramId_0"]
             .where(grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True)
             .where(grib_dataset.latitude < self.sat_bounding_box["lat_max"], drop=True)
             .where(grib_dataset.longitude > self.sat_bounding_box["lon_min"], drop=True)
