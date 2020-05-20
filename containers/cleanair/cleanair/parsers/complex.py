@@ -62,8 +62,8 @@ class SatelliteArgumentParser(
                 ) as f_secret:
                     data = json.load(f_secret)
                     args.copernicus_key = data["copernicus_key"]
-            except json.decoder.JSONDecodeError:
-                raise ArgumentTypeError("Could not determine copernicus_key")
+            except (json.decoder.JSONDecodeError, FileNotFoundError):
+                args.copernicus_key = None
         return args
 
 

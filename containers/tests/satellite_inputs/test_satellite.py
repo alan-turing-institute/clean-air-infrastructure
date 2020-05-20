@@ -248,6 +248,9 @@ def test_satellite_availability_mixin(
     assert len(time_stamps) == 73
     assert np.all(time_stamps == expected_times)
 
+    # # Test the query mixin works
+    # satellite_writer
+
 
 def test_satellite_date_generator(copernicus_key, secretfile, connection):
     """Check get_datetime_list mixing generates correct number of hours"""
@@ -296,15 +299,32 @@ def test_satellite_arg_generator(copernicus_key, secretfile, connection):
         == 2
     )
 
+
 def test_satellite_daterange_mixin(copernicus_key, secretfile, connection):
 
     satellite_writer = SatelliteWriter(
-        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection,
-        end = '2020-05-03', nhours = 48
+        copernicus_key=copernicus_key,
+        secretfile=secretfile,
+        connection=connection,
+        end="2020-05-03",
+        nhours=48,
     )
 
-    assert satellite_writer.start_date == isoparse('2020-05-01').date()
-    assert satellite_writer.end_date == isoparse('2020-05-03').date()
+    assert satellite_writer.start_date == isoparse("2020-05-01").date()
+    assert satellite_writer.end_date == isoparse("2020-05-03").date()
 
-    assert satellite_writer.start_datetime == isoparse('2020-05-01')
-    assert satellite_writer.end_datetime == isoparse('2020-05-03')
+    assert satellite_writer.start_datetime == isoparse("2020-05-01")
+    assert satellite_writer.end_datetime == isoparse("2020-05-03")
+
+
+def test_satellite_availability_sql(copernicus_key, secretfile, connection):
+
+    satellite_writer = SatelliteWriter(
+        copernicus_key=copernicus_key,
+        secretfile=secretfile,
+        connection=connection,
+        end="2020-05-03",
+        nhours=48,
+    )
+
+    print(satellite_writer.get_satellite_availability("2020-05-01", output_type="sql"))

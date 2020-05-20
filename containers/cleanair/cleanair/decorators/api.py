@@ -28,10 +28,12 @@ def robust_api(api_call):
                 if i < n_repeat:
                     logger.info(
                         "%s %s. Sleeping for %s seconds before next attempt",
-                        red("Failed to make API request on attempt"), red(i), green(sleep_time),
+                        red("Failed to make API request on attempt"),
+                        red(i),
+                        green(sleep_time),
                     )
                     time.sleep(sleep_time)
-              
+
         raise requests.exceptions.HTTPError
 
     return robust_api_output

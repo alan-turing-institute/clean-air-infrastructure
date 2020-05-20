@@ -41,7 +41,9 @@ class Periods(Enum):
     day3 = "49H72H"
 
 
-class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, DateGeneratorMixin):
+class SatelliteWriter(
+    DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, DateGeneratorMixin
+):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
@@ -71,7 +73,9 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
     periods = [i.value for i in Periods]  # time periods of interest
     species = [i.value for i in Species]
 
-    def __init__(self, copernicus_key, method = 'missing', end = 'today', nhours = 24, **kwargs):
+    def __init__(
+        self, copernicus_key, method="missing", end="today", nhours=24, **kwargs
+    ):
         """Create an object to request copernicus satellite data and write to the cleanair database
 
         Args:
@@ -127,9 +131,10 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
         """
 
+        if not self.access_key:
+            raise AttributeError("copernicus key is None. Ensure a key was passed when initialising class")
         # Ensure start_date is a date string, not a datetime (e.g. '2020-01-01)
-        start_date = start_date.split('T')[0]
-
+        start_date = start_date.split("T")[0]
 
         call_type = "FORECAST"
         time_required = period
@@ -267,7 +272,9 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
             all_grib_df = pd.DataFrame()
             for period in Periods:
                 self.logger.info(
-                    "Requesting data for period: %s, species: %s", period.value, species,
+                    "Requesting data for period: %s, species: %s",
+                    period.value,
+                    species,
                 )
                 # Get gribdata
                 grib_bytes = self.request_satellite_data(
@@ -304,7 +311,12 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
             )
         except requests.exceptions.HTTPError:
 
-            self.logger.warning("%s reference_day=%s species=%s", red("Failed to retrieve data for"), red(reference_date), red(species))
+            self.logger.warning(
+                "%s reference_day=%s species=%s",
+                red("Failed to retrieve data for"),
+                red(reference_date),
+                red(species),
+            )
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
@@ -393,8 +405,6 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
             )
             session.commit()
 
-    
-
     def update_remote_tables_missing(self):
 
         pass
@@ -404,7 +414,11 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
         start_date = self.start_date.isoformat()
         end_date = self.end_date.isoformat()
 
-        self.logger.info("Requesting all copernicus satellite data between %s and %s", red(start_date),red(end_date))
+        self.logger.info(
+            "Requesting all copernicus satellite data between %s and %s",
+            red(start_date),
+            red(end_date),
+        )
 
         # Generate a list of arguments to pass to self.upgrade_reading_table
         arg_list = self.get_arg_list(
@@ -415,16 +429,15 @@ class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, Date
         for reference_date, species in arg_list:
             self.upgrade_reading_table(reference_date, species)
 
-
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
         # self.update_interest_points()
 
-        if self.method == 'all':
+        if self.method == "all":
             self.update_remote_tables_all()
-        
-        elif self.method == 'missing':
+
+        elif self.method == "missing":
             self.update_remote_tables_missing()
-        
+
         else:
             raise AttributeError("Not a valid method")

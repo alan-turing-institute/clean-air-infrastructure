@@ -1,7 +1,8 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
-from sqlalchemy import and_, func, literal, null
+from sqlalchemy import and_, func, literal, null, text, select, column, String
+from sqlalchemy.sql.expression import bindparam
 from ...decorators import db_query
 from ...databases.tables import (
     MetaPoint,
@@ -12,6 +13,11 @@ from ...databases.tables import (
 from ...loggers import get_logger
 from ...timestamps import as_datetime
 from ...decorators import db_query
+from ...databases.base import Values
+
+
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
+ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class SatelliteAvailabilityMixin:
@@ -80,3 +86,88 @@ class SatelliteAvailabilityMixin:
                 )
 
             return sat_forecast_q
+
+    @db_query
+    def get_satellite_availability(
+        self, reference_start_date, reference_end_date=None, species=None
+    ):
+        """
+        Return all the available data aggregated by reference_start_utc between reference_start_date and reference_end_date
+
+        Args:
+            reference_start_date (str): iso date. The first date to check data from 
+            reference_end_date (str): Optional. iso date. The last date to check data from. 
+            species (list[str]): A list of strings specifying species of polutants
+        """
+
+        if not species:
+            species = ["NO2", "PM25", "PM10", "O3"]
+
+        with self.dbcnxn.open_session() as session:
+
+            # Create a CTE of counts of data between reference_start_date and reference_end_date
+            in_data = session.query(
+                SatelliteForecast.species_code,
+                SatelliteForecast.reference_start_utc,
+                func.count(SatelliteForecast.measurement_start_utc).label("n_records"),
+            ).group_by(
+                SatelliteForecast.species_code, SatelliteForecast.reference_start_utc
+            )
+
+            in_data = in_data.filter(
+                SatelliteForecast.reference_start_utc >= reference_start_date
+            )
+
+            if reference_end_date:
+                in_data = in_data.filter(
+                    SatelliteForecast.reference_start_utc < reference_end_date
+                )
+
+            in_data_cte = in_data.cte("in_data")
+
+            # Generate expected time series
+            if reference_end_date:
+                expected_date_times = session.query(
+                    func.generate_series(
+                        reference_start_date, reference_end_date, ONE_DAY_INTERVAL
+                    ).label("reference_start_utc")
+                ).subquery()
+            else:
+                expected_date_times = session.query(
+                    func.generate_series(
+                        reference_start_date, func.current_date(), ONE_DAY_INTERVAL
+                    ).label("reference_start_utc")
+                ).subquery()
+
+            # Generate expected species
+            species_sub_q = session.query(
+                Values(
+                    [column("species", String),],
+                    *[(polutant,) for polutant in species],
+                    alias_name="t2",
+                )
+            ).subquery()
+
+            
+            dates = session.query(expected_date_times,
+                          species_sub_q).subquery()
+
+            available_data_q = (
+                session.query(
+                    dates.c.reference_start_utc,
+                    dates.c.species,
+                    in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
+                    in_data_cte.c.n_records,
+                    (in_data_cte.c.n_records == 73 * 32).label("expected_n_records")
+                )
+                .select_entity_from(dates)
+                .join(
+                    in_data_cte,
+                    (in_data_cte.c.reference_start_utc
+                    == dates.c.reference_start_utc) &
+                    (in_data_cte.c.species_code == dates.c.species),
+                    isouter=True,
+                )
+            )
+
+            return available_data_q
