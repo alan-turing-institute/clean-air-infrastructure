@@ -240,6 +240,10 @@ echo '{
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
 
+```bash
+createdb cleanair_test_db
+```
+
 ### Create Schema and roles
 
 We must now setup the database schema. This also creates a number of roles on the database.
