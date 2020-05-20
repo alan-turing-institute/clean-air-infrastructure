@@ -122,15 +122,15 @@ For getting started we recommend:
 pip install -e 'containers/cleanair[models, traffic, dashboard]'
 ```
 
-### UrbanAir Flask API package
-```bash
-pip install -e 'containers/urbanair'
-```
-
 ### UATraffic (London Busyness only)
 All additional  functionality related to the London Busyness project requires:
 ```bash
 pip install -e 'containers/uatraffic'
+```
+
+### UrbanAir Flask API package
+```bash
+pip install -e 'containers/urbanair'
 ```
 
 --- 
