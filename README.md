@@ -76,6 +76,10 @@ To contribute as a non-infrastructure developer you will need the following:
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
 
+The instructions below are to install the dependencies system-wide, however you can
+follow the [instructions at the end if you wish to use an anaconda environment](#With-a-Conda-environment)
+if you want to keep it all separated from your system.
+
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
 
@@ -195,6 +199,38 @@ export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
 
+### With a Conda environment
+
+It's possible to set it up all with a conda environment, this way you can keep different
+versions of software around in your machine. All the steps above can be done with:
+
+```bash
+# Non-infrastructure dependencies
+
+conda create -n busyness python=3.7
+conda install -c conda-forge gdal postgis uwsgi
+conda activate busyness
+pip install azure-cli
+# The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
+# but they install fine.
+pip install -r containers/requirements.txt
+# This will fail on building fbprohet, but it installs it after.
+pip install -e 'containers/cleanair[models, traffic, dashboard]'
+pip install -e 'containers/uatraffic'
+pip install -e 'containers/urbanair'
+
+## Infrastructure dependencies
+
+# if you don't get rb-ffi and rb-json you'll need to install gcc_linux-64 and libgcc to build these in order to install travis.
+conda install -c conda-forge terraform ruby rb-ffi rb-json
+# At least on Linux you'll need to dissable IPV6 to make this version of gem to work.
+gem install  travis -no-rdoc -no-ri
+# Create a soft link of the executables installed by gem into a place seen within the conda env.
+conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed -e 's/,//' -e 's/"//g')
+ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
+```
+
+
 ## Login to Azure
 
 To start working with `Azure`, you must first login to your account from the terminal:
@@ -222,6 +258,24 @@ In production we use a managed [PostgreSQL database](https://docs.microsoft.com/
 ```bash 
 brew services start postgresql   
 ```
+
+<details>
+<summary> If you installed the database using conda </summary>
+
+Set it up the server and users first with:
+
+```bash
+initdb -D mylocal_db
+pg_ctl -D mylocal_db -l logfile start
+createdb --owner=${USER} myinner_db
+```
+
+When you want to work in this environment again you'll need to run:
+```bash
+pg_ctl -D mylocal_db -l logfile start
+```
+
+</details>
 
 ### Create a local secrets file
 We store database credentials in json files. **For production databases you should never store database passwords in these files - for more information see the production database section**. 
