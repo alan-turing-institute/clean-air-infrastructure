@@ -98,7 +98,4 @@ class TrafficMetric(DBWriter):
         logging.info("Inserting %s records into the traffic metrics table.", len(self.metric_df))
         record_cols = ["instance_id", "data_id", "coverage50", "coverage75", "coverage95", "nlpl"]
         upload_records = self.metric_df[record_cols].to_dict("records")
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(
-                session, upload_records, table=TrafficMetricTable, on_conflict="overwrite"
-            )
+        self.commit_records(upload_records, on_conflict="overwrite", table=TrafficMetricTable)

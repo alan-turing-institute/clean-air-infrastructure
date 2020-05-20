@@ -21,12 +21,14 @@ class TrafficInstance(Instance):
         # add a row to the instance table
         records = [self.to_dict()]
         logging.info("Inserting 1 record into the instance table.")
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, on_conflict="ignore", table=TrafficInstanceTable)
+        self.commit_records(records, on_conflict="ignore", table=TrafficInstanceTable)
 
-    def update_model_table(self, model_param):
+    def update_model_table(self, model_param: dict):
         """
         Update the traffic model table.
+
+        Args:
+            model_param: Model parameters.
         """
         if model_param:
             logging.info("Updating the model table.")
@@ -35,10 +37,9 @@ class TrafficInstance(Instance):
                 param_id=self.param_id,
                 model_param=model_param,
             )]
-            with self.dbcnxn.open_session() as session:
-                self.commit_records(session, records, on_conflict="ignore", table=TrafficModelTable)
+            self.commit_records(records, on_conflict="ignore", table=TrafficModelTable)
 
-    def save_model(self, model, folder, extension="h5"):
+    def save_model(self, model: gpflow.models.GPModel, folder: str, extension: str = "h5"):
         """
         Save the model to the given folder.
         """

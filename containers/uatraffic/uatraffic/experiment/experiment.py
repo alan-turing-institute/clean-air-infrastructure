@@ -5,6 +5,7 @@ Experiments summerise multiple instances.
 import pandas as pd
 from cleanair.databases import DBWriter
 from .instance import TrafficInstance
+from ..databases.tables import TrafficInstanceTable
 
 class Experiment(DBWriter):
     """
@@ -42,4 +43,7 @@ class Experiment(DBWriter):
 
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
-        raise NotImplementedError("Coming soon")
+        site_records = self.frame.to_dict("records")
+        self.commit_records(
+            site_records, on_conflict="overwrite", table=TrafficInstanceTable,
+        )

@@ -226,8 +226,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             data_config=self.data_config,
             preprocessing=self.preprocessing,
         )]
-        with self.dbcnxn.open_session() as session:
-            self.commit_records(session, records, on_conflict="ignore", table=TrafficDataTable)
+        self.commit_records(records, on_conflict="ignore", table=TrafficDataTable)
 
 def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     """
