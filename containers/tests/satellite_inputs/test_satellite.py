@@ -118,10 +118,7 @@ def test_grib_to_pandas(copernicus_key, secretfile, grib_file_24, connection):
     assert set(pd_data.columns) == set(["datetime", "lat", "lon", "val", "species"])
 
     # Check we have the correct number of  datapoints
-    assert (
-        pd_data.shape[0]
-        == 25 * satellite_writer.n_grid_squares_expected
-    )
+    assert pd_data.shape[0] == 25 * satellite_writer.n_grid_squares_expected
 
 
 def test_api_24_call(
@@ -241,7 +238,73 @@ def test_satellite_availability_mixin(
 
     # Check we have a full set of data in the database
     satellite_forecast_df.shape[0] == satellite_writer.n_grid_squares_expected * 72
-    time_stamps = satellite_forecast_df["measurement_start_utc"].apply(pd.to_datetime).unique()
-    expected_times = np.array(list(rrule(freq=HOURLY, dtstart=isoparse("2020-05-01"), count = 73 )), dtype = np.datetime64)
+    time_stamps = (
+        satellite_forecast_df["measurement_start_utc"].apply(pd.to_datetime).unique()
+    )
+    expected_times = np.array(
+        list(rrule(freq=HOURLY, dtstart=isoparse("2020-05-01"), count=73)),
+        dtype=np.datetime64,
+    )
     assert len(time_stamps) == 73
     assert np.all(time_stamps == expected_times)
+
+
+def test_satellite_date_generator(copernicus_key, secretfile, connection):
+    """Check get_datetime_list mixing generates correct number of hours"""
+
+    satellite_writer = SatelliteWriter(
+        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
+    )
+
+    datelist = satellite_writer.get_datetime_list("2020-05-01", "2020-05-05", HOURLY)
+
+    # Check lists are the correct length
+    assert len(datelist) == 24 * 4
+
+
+def test_satellite_arg_generator(copernicus_key, secretfile, connection):
+    """Check get_datetime_list mixing generates correct number of hours"""
+
+    satellite_writer = SatelliteWriter(
+        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
+    )
+
+    # Check we can generate argument lists of the correct size
+    assert len(
+        list(
+            satellite_writer.get_arg_list(
+                "2020-05-01",
+                "2020-05-05",
+                HOURLY,
+                [i.value for i in Species],
+                transpose=False,
+            )
+        )
+    ) == 24 * 4 * len(Species)
+    assert (
+        len(
+            list(
+                satellite_writer.get_arg_list(
+                    "2020-05-01",
+                    "2020-05-05",
+                    HOURLY,
+                    [i.value for i in Species],
+                    transpose=True,
+                )
+            )
+        )
+        == 2
+    )
+
+def test_satellite_daterange_mixin(copernicus_key, secretfile, connection):
+
+    satellite_writer = SatelliteWriter(
+        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection,
+        end = '2020-05-03', nhours = 48
+    )
+
+    assert satellite_writer.start_date == isoparse('2020-05-01').date()
+    assert satellite_writer.end_date == isoparse('2020-05-03').date()
+
+    assert satellite_writer.start_datetime == isoparse('2020-05-01')
+    assert satellite_writer.end_datetime == isoparse('2020-05-03')

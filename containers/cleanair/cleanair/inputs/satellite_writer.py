@@ -6,6 +6,7 @@ import os
 from enum import Enum
 import tempfile
 from dateutil import rrule
+from dateutil.parser import isoparse
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -19,8 +20,8 @@ from ..databases.tables import (
     SatelliteGrid,
     SatelliteForecast,
 )
-from ..loggers import get_logger, green
-from ..mixins import DateRangeMixin
+from ..loggers import get_logger, green, red
+from ..mixins import DateGeneratorMixin, DateRangeMixin
 from ..timestamps import to_nearest_hour
 from ..mixins.availability_mixins import SatelliteAvailabilityMixin
 
@@ -40,7 +41,7 @@ class Periods(Enum):
     day3 = "49H72H"
 
 
-class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
+class SatelliteWriter(DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, DateGeneratorMixin):
     """
     Get Satellite data from
     (https://download.regional.atmosphere.copernicus.eu/services/CAMS50)
@@ -67,11 +68,20 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         "lon_max": 0.334015522513336,
     }
     n_grid_squares_expected = 32  # number of expected hours of data per grib file
-    periods = ["0H24H", "25H48H", "49H72H"]  # time periods of interest
+    periods = [i.value for i in Periods]  # time periods of interest
+    species = [i.value for i in Species]
 
-    def __init__(self, copernicus_key, **kwargs):
+    def __init__(self, copernicus_key, method = 'missing', end = 'today', nhours = 24, **kwargs):
+        """Create an object to request copernicus satellite data and write to the cleanair database
+
+        Args:
+            copernicus_key (str): A copernicus API key
+            method (str): Options: 'all' or 'missing'. Method to use when requesting data. 'all' will request all data
+                'missing' will request data which is not already in the database between the required dates
+        """
+
         # Initialise parent classes
-        super().__init__(**kwargs)
+        super().__init__(end=end, nhours=nhours, **kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -79,7 +89,7 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
 
         # Set
         self.access_key = copernicus_key
-
+        self.method = method
         self.no2_unit_correction = 1000000000
 
     def build_satellite_grid(self, satellite_boxes_df):
@@ -112,10 +122,15 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
         exception if it fails
 
         args:
-            start_date: Date to collect data from
+            start_date (str): isodate to collect data from. If an isodatetime str is provided (e.g. 2020-01-01T00:00:00) the time part will be striped
             period (str): The time periods to request data for. Can use Enum (e.g. Species.No2.value)
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
         """
+
+        # Ensure start_date is a date string, not a datetime (e.g. '2020-01-01)
+        start_date = start_date.split('T')[0]
+
+
         call_type = "FORECAST"
         time_required = period
         level = "SURFACE"
@@ -248,111 +263,48 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
             green(species),
         )
 
-        all_grib_df = pd.DataFrame()
-        for period in Periods:
+        try:
+            all_grib_df = pd.DataFrame()
+            for period in Periods:
+                self.logger.info(
+                    "Requesting data for period: %s, species: %s", period.value, species,
+                )
+                # Get gribdata
+                grib_bytes = self.request_satellite_data(
+                    reference_date, period.value, species
+                )
+                grib_data_df = self.grib_bytes_to_df(grib_bytes, species)
+                all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
+
+            # Join grib data and convert into a list of forecasts
+            reading_entries = (
+                all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
+                .apply(
+                    lambda data, rd=reference_date: SatelliteForecast(
+                        reference_start_utc=rd,
+                        measurement_start_utc=to_nearest_hour(data["datetime"]),
+                        measurement_end_utc=to_nearest_hour(data["datetime"])
+                        + datetime.timedelta(hours=1),
+                        species_code=data["species"],
+                        box_id=str(data["id"]),
+                        value=data["val"],
+                    ),
+                    axis=1,
+                )
+                .tolist()
+            )
+
+            # Commit forecasts to the database
             self.logger.info(
-                "Requesting data for period: %s, species: %s", period.value, species,
+                "Adding forecasts to database table %s",
+                green(SatelliteForecast.__tablename__),
             )
-            # Get gribdata
-            grib_bytes = self.request_satellite_data(
-                reference_date, period.value, species
+            self.commit_records(
+                reading_entries, on_conflict="overwrite", table=SatelliteForecast,
             )
-            grib_data_df = self.grib_bytes_to_df(grib_bytes, species)
-            all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
+        except requests.exceptions.HTTPError:
 
-        # Join grib data and convert into a list of forecasts
-        reading_entries = (
-            all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
-            .apply(
-                lambda data, rd=reference_date: SatelliteForecast(
-                    reference_start_utc=rd,
-                    measurement_start_utc=to_nearest_hour(data["datetime"]),
-                    measurement_end_utc=to_nearest_hour(data["datetime"])
-                    + datetime.timedelta(hours=1),
-                    species_code=data["species"],
-                    box_id=str(data["id"]),
-                    value=data["val"],
-                ),
-                axis=1,
-            )
-            .tolist()
-        )
-
-        # Commit forecasts to the database
-        self.logger.info(
-            "Adding forecasts to database table %s",
-            green(SatelliteForecast.__tablename__),
-        )
-        self.commit_records(
-            reading_entries, on_conflict="overwrite", table=SatelliteForecast,
-        )
-
-    # def update_reading_table(self):
-    #     """Update the satellite reading table"""
-
-    #     with self.dbcnxn.open_session() as session:
-    #         q_satellite_box = session.query(
-    #             SatelliteBox.id.label("box_id"),
-    #             func.ST_X(SatelliteBox.centroid).label("lon"),
-    #             func.ST_Y(SatelliteBox.centroid).label("lat"),
-    #         )
-
-    #     satellite_site_df = pd.read_sql(
-    #         q_satellite_box.statement, q_satellite_box.session.bind
-    #     )
-
-    #     for start_date in rrule.rrule(
-    #         rrule.DAILY, dtstart=self.start_date, until=self.end_date
-    #     ):
-
-    #         self.logger.info(
-    #             "Requesting 72 hours of satellite forecast data on %s for species %s",
-    #             green(start_date.date()),
-    #             green(self.species),
-    #         )
-
-    #         # Make three calls to API top get all 72 hours of data for all species
-    #         reference_date = str(start_date.date())
-
-    #         all_grib_df = pd.DataFrame()
-    #         for period in self.periods:
-    #             for species in self.species:
-    #                 self.logger.info(
-    #                     "Requesting data for period: %s, species: %s", period, species,
-    #                 )
-    #                 # Get gribdata
-    #                 grib_bytes = self.request_satellite_data(
-    #                     reference_date, period, species
-    #                 )
-    #                 grib_data_df = self.grib_to_df(grib_bytes, period, species)
-    #                 all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
-
-    #         # Join grib data and convert into a list of forecasts
-    #         reading_entries = (
-    #             all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
-    #             .apply(
-    #                 lambda data, rd=reference_date: SatelliteForecast(
-    #                     reference_start_utc=rd,
-    #                     measurement_start_utc=to_nearest_hour(data["date"]),
-    #                     measurement_end_utc=to_nearest_hour(data["date"])
-    #                     + datetime.timedelta(hours=1),
-    #                     species_code=data["species"],
-    #                     box_id=str(data["id"]),
-    #                     value=data["val"],
-    #                 ),
-    #                 axis=1,
-    #             )
-    #             .tolist()
-    #         )
-
-    #         # Commit forecasts to the database
-    #         self.logger.info(
-    #             "Adding forecasts to database table %s",
-    #             green(SatelliteForecast.__tablename__),
-    #         )
-    #         self.commit_records(
-    #             reading_entries, on_conflict="overwrite", table=SatelliteForecast,
-    #         )
+            self.logger.warning("%s reference_day=%s species=%s", red("Failed to retrieve data for"), red(reference_date), red(species))
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
@@ -441,7 +393,38 @@ class SatelliteWriter(DBWriter, SatelliteAvailabilityMixin):
             )
             session.commit()
 
+    
+
+    def update_remote_tables_missing(self):
+
+        pass
+
+    def update_remote_tables_all(self):
+
+        start_date = self.start_date.isoformat()
+        end_date = self.end_date.isoformat()
+
+        self.logger.info("Requesting all copernicus satellite data between %s and %s", red(start_date),red(end_date))
+
+        # Generate a list of arguments to pass to self.upgrade_reading_table
+        arg_list = self.get_arg_list(
+            start_date, end_date, rrule.DAILY, self.species, transpose=False
+        )
+
+        # self.upgrade_reading_table(reference_date, species)
+        for reference_date, species in arg_list:
+            self.upgrade_reading_table(reference_date, species)
+
+
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
-        self.update_interest_points()
-        self.update_reading_table()
+        # self.update_interest_points()
+
+        if self.method == 'all':
+            self.update_remote_tables_all()
+        
+        elif self.method == 'missing':
+            self.update_remote_tables_missing()
+        
+        else:
+            raise AttributeError("Not a valid method")
