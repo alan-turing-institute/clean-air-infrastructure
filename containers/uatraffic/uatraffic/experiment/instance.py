@@ -7,7 +7,7 @@ import pickle
 from pathlib import Path
 import gpflow
 from cleanair.instance import Instance
-from .tables import TrafficInstanceTable, TrafficModelTable
+from ..databases.tables import TrafficInstanceTable, TrafficModelTable
 
 class TrafficInstance(Instance):
     """

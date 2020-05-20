@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 
-from uatraffic.util import TrafficModelParser
+from uatraffic.parsers import TrainTrafficModelParser
 from uatraffic.databases import TrafficInstance, TrafficQuery
 from uatraffic.dates import (
     NORMAL_BASELINE_START,
@@ -36,7 +36,7 @@ def create_directories(root, experiment):
 
 def main():
 
-    parser = TrafficModelParser()
+    parser = TrainTrafficModelParser()
     parser.add_custom_subparsers()
     args = parser.parse_args()
 
