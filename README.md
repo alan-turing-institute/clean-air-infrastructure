@@ -79,18 +79,31 @@ To contribute as a non-infrastructure developer you will need the following:
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
 
+<details>
+<summary>Or follow a simpler option</summary>
+Install it using on your own preferred environment with `pip install azure-cli`
+</details>
+
 ### Docker
 Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### PostgreSQL
+
+[PostgreSQL](https://www.postgresql.org/download) and [PostGIS](https://postgis.net/install).
+
 ```bash
 brew install postgresql postgis
 ```
 
 ### GDAL
+
+[GDAl](https://gdal.org/) can be installed using `brew` on a mac
 ```bash
 brew install gdal
 ```
+
+or any of the [binaries](https://gdal.org/download.html#binaries) provided for different platforms.
+
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -147,7 +160,7 @@ Cloud infrastructure developers will require the following in addition to the [n
 You need to have access to the CleanAir Azure subscription to deploy infrastructure. If you need access contact an [infrastructure administrator](#contributors-:dancers:)
 
 ### Terraform 
-The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
+The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from their website](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
 brew install terraform
