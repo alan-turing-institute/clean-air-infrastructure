@@ -3,6 +3,8 @@ Mixin for checking what satellite data is in database and what is missing
 """
 from sqlalchemy import and_, func, literal, null, text, select, column, String
 from sqlalchemy.sql.expression import bindparam
+from dateutil.parser import isoparse
+from datetime import timedelta
 from ...decorators import db_query
 from ...databases.tables import (
     MetaPoint,
@@ -99,7 +101,7 @@ class SatelliteAvailabilityMixin:
             reference_end_date (str): Optional. iso date. The last date to check data from. 
             species (list[str]): A list of strings specifying species of polutants
         """
-
+        
         if not species:
             species = ["NO2", "PM25", "PM10", "O3"]
 
@@ -127,15 +129,16 @@ class SatelliteAvailabilityMixin:
 
             # Generate expected time series
             if reference_end_date:
+                reference_end_date_minus_1d = (isoparse(reference_end_date) - timedelta(hours = 1)).isoformat()
                 expected_date_times = session.query(
                     func.generate_series(
-                        reference_start_date, reference_end_date, ONE_DAY_INTERVAL
+                        reference_start_date, reference_end_date_minus_1d, ONE_DAY_INTERVAL
                     ).label("reference_start_utc")
                 ).subquery()
             else:
                 expected_date_times = session.query(
                     func.generate_series(
-                        reference_start_date, func.current_date(), ONE_DAY_INTERVAL
+                        reference_start_date, func.current_date() - ONE_DAY_INTERVAL, ONE_DAY_INTERVAL
                     ).label("reference_start_utc")
                 ).subquery()
 
@@ -148,9 +151,7 @@ class SatelliteAvailabilityMixin:
                 )
             ).subquery()
 
-            
-            dates = session.query(expected_date_times,
-                          species_sub_q).subquery()
+            dates = session.query(expected_date_times, species_sub_q).subquery()
 
             available_data_q = (
                 session.query(
@@ -158,14 +159,13 @@ class SatelliteAvailabilityMixin:
                     dates.c.species,
                     in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
                     in_data_cte.c.n_records,
-                    (in_data_cte.c.n_records == 73 * 32).label("expected_n_records")
+                    (in_data_cte.c.n_records == 73 * 32).label("expected_n_records"),
                 )
                 .select_entity_from(dates)
                 .join(
                     in_data_cte,
-                    (in_data_cte.c.reference_start_utc
-                    == dates.c.reference_start_utc) &
-                    (in_data_cte.c.species_code == dates.c.species),
+                    (in_data_cte.c.reference_start_utc == dates.c.reference_start_utc)
+                    & (in_data_cte.c.species_code == dates.c.species),
                     isouter=True,
                 )
             )

@@ -14,7 +14,7 @@ def check(args):
 
     satellite_writer = SatelliteWriter(
         copernicus_key=args.copernicus_key,
-        end=args.end,
+        end=args.upto,
         nhours=args.nhours,
         secretfile=args.secretfile,
         secret_dict=args.secret_dict,
@@ -23,8 +23,8 @@ def check(args):
     if args.web:
         "Show in a browser"
         available_data = satellite_writer.get_satellite_availability(
-            reference_start_date=satellite_writer.start_date,
-            reference_end_date=satellite_writer.end_date,
+            reference_start_date=satellite_writer.start_date.isoformat(),
+            reference_end_date=satellite_writer.end_date.isoformat(),
             output_type="html",
         )
 
@@ -37,8 +37,8 @@ def check(args):
             time.sleep(1)
     else:
         available_data = satellite_writer.get_satellite_availability(
-            reference_start_date=satellite_writer.start_date,
-            reference_end_date=satellite_writer.end_date,
+            reference_start_date=satellite_writer.start_date.isoformat(),
+            reference_end_date=satellite_writer.end_date.isoformat(),
             output_type="tabulate",
         )
 
@@ -50,7 +50,7 @@ def fill(args):
     # Update the satellite forecast table on the database, logging any unhandled exceptions
     satellite_writer = SatelliteWriter(
         copernicus_key=args.copernicus_key,
-        end=args.end,
+        end=args.upto,
         nhours=args.nhours,
         secretfile=args.secretfile,
         secret_dict=args.secret_dict,

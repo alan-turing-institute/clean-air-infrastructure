@@ -20,7 +20,6 @@ class DateRangeMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        
         # Convert end argument into a datetime
         if end == "now":
             self.end_datetime = datetime.now().replace(
@@ -32,7 +31,10 @@ class DateRangeMixin:
             )
         elif end == "today":
             self.end_datetime = datetime.combine(date.today(), datetime.min.time())
-            
+        
+        elif end == "tomorrow":
+            self.end_datetime = datetime.combine(date.today() + timedelta(days = 1), datetime.min.time())
+
         elif end == "yesterday":
             self.end_datetime = datetime.combine(
                 date.today() - timedelta(days=1), datetime.min.time()

@@ -61,11 +61,11 @@ class DurationParserMixin:
     def __init__(self, nhours=48, ndays=2, end="lasthour", **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
-            "-e",
-            "--end",
+            "-u",
+            "--upto",
             type=str,
             default=end,
-            help="The last time point to get data for in iso format. Or one of: 'lasthour', 'now', 'today', 'yesterday'. (default: {})".format(
+            help="Time point to get data up to in iso format. Or one of: 'lasthour', 'now', 'today', 'tomorrow', 'yesterday'. (default: {}). To get data that includes today you would use 'tomorrow' to specify all data up to but not including tomorrows date".format(
                 end
             ),
         )
