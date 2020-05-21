@@ -548,13 +548,38 @@ Create an Azure service principal using the documentation for the [Azure CLI](ht
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 
+<details>
+<summary> You can download the `tfstate` file with `az` though you won't need it.</summary>
+
+```bash
+cd terraform
+az storage blob download -c terraformbackend -f terraform.tfstate -n terraform.tfstate --account-name terraformstorage924roouq --auth-mode key
+```
+
+</details>
+
+
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```bash
-python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY> -n <SERVICE_PRINCIPAL_NAME> -s <SERVICE_PRINCIPAL_ID> -p <SERVICE_PRINCIPAL_PASSWORD>
+python cleanair_setup/initialise_terraform.py -i $AWS_KEY_ID -k $AWS_KEY -n $SERVICE_PRINCIPAL_NAME -s $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_PASSWORD
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
+
+```bash
+AWS_KEY=$(az keyvault secret show --vault-name terraform-configuration --name scoot-aws-key -o tsv --query value)
+AWS_KEY_ID=$(az keyvault secret show --vault-name terraform-configuration --name scoot-aws-key-id -o tsv --query value)
+```
+
+And `SERVICE_PRINCIPAL`'s  `NAME`, `ID` and `PASSWORD` are also available in the `terraform-configuration` keyvault.
+
+```bash
+SERVICE_PRINCIPAL_NAME=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-name -o tsv --query value)
+SERVICE_PRINCIPAL_ID=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-id -o tsv --query value)
+SERVICE_PRINCIPAL_PASSWORD=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-password -o tsv --query value)
+```
+
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
