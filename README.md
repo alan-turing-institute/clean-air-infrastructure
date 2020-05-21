@@ -275,6 +275,10 @@ When you want to work in this environment again you'll need to run:
 pg_ctl -D mylocal_db -l logfile start
 ```
 
+You can stop it with:
+```bash
+pg_ctl -D mylocal_db stop
+```
 </details>
 
 ### Create a local secrets file
@@ -368,7 +372,9 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 ```
 
 ## Connect using psql
-You can then access the database using psql:
+
+Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
+access the database using psql:
 
 ```bash
 psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
