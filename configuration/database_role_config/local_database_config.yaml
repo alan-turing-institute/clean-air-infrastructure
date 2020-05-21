@@ -15,6 +15,7 @@ schema:
   - processed_data
   - static_data
   - static_features
+  - jamcam
 
 roles:
   - role: readonly
@@ -56,7 +57,10 @@ roles:
         create: False
         privileges: 
           - SELECT
-      
+      - name: jamcam
+        create: False
+        privileges:
+          - SELECT
 
   - role: readwrite
     create_schema: False
@@ -97,6 +101,10 @@ roles:
         create: False
         privileges: 
           - ALL
+      - name: jamcam
+        create: False
+        privileges:
+          - ALL
 
   - role: readwritecreate
     create_schema: False
@@ -136,4 +144,8 @@ roles:
       - name: static_features
         create: True
         privileges: 
+          - ALL
+      - name: jamcam
+        create: True
+        privileges:
           - ALL
