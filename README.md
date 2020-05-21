@@ -448,13 +448,26 @@ Now get a new token:
 export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-Finally you can run the docker image, passing PGPASSWORD as an environment variable:
+Finally you can run the docker image, passing PGPASSWORD as an environment variable
+(:warning: this writes data into the online database)
 
 ```bash
-docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s '.db_secrets_ad.json' -k <copernicus-key>
+docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_ad.json' -k <copernicus-key>
 ```
 
-Here we also provided the copernicus api key which is stored in the `cleanair` keyvault. 
+Here we also provided the copernicus api key which is stored in the `cleanair-secrets`
+[Azure's keyvault](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.KeyVault%2Fvaults).
+
+If you want to run that example with the local database you can do so by:
+
+```bash
+COPERNICUS_KEY=$(az keyvault secret show --vault-name cleanair-secrets --name satellite-copernicus-key -o tsv --query value)
+# OSX or Windows: change "localhost" to host.docker.internal on your db_secrets_offline.json
+docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_offline.json' -k $COPERNICUS_KEY
+# Linux:
+docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_offline.json' -k $COPERNICUS_KEY
+```
+
 
 # Developer guide
 
