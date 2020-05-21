@@ -4,7 +4,7 @@ Mixins which are used by multiple argument parsers
 from argparse import ArgumentTypeError, Action
 
 
-class ParseDict(Action):
+class ParseSecretDict(Action):
     "Parse items into a dictionary"
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -49,7 +49,7 @@ class SecretFileParserMixin:
             help="Set a number of overrides for secretfile using item=value"
             "(do not put spaces before or after the = sign). "
             "Valid items are 'username', 'password', 'host', 'port', 'db_name', 'ssl_mode'",
-            action=ParseDict,
+            action=ParseSecretDict,
         )
 
 

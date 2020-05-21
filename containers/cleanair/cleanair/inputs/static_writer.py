@@ -14,6 +14,13 @@ class StaticWriter(DBWriter):
     """Manage interactions with the static database on Azure"""
 
     def __init__(self, target_file, schema, table, **kwargs):
+        """Create a StaticWrite instance for writing static datasets to a database
+
+        Args:
+            target_file (str): Either the path to a target file,  or a directory if a shape  file
+            schema (str): Name of the database schema to  write to
+            table (str): Name of the table to write to
+        """
         # Initialise parent classes
         super().__init__(initialise_tables=False, **kwargs)
 
@@ -33,11 +40,6 @@ class StaticWriter(DBWriter):
 
         # Ensure that interest_points table exists
         MetaPoint.__table__.create(self.dbcnxn.engine, checkfirst=True)
-
-    # @property
-    # def schema(self):
-    #     """Get schema that the current dataset will live under"""
-    #     return self.schemas[self.table_name]
 
     @property
     def schema_table(self):
