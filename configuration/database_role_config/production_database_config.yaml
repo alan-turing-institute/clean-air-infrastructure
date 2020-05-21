@@ -149,3 +149,55 @@ roles:
         create: True
         privileges:
           - ALL
+
+  - role: readwrite
+    create_schema: False
+    schema: 
+      - name: dynamic_data 
+        create: False
+        privileges: 
+          - ALL
+      - name: dynamic_features 
+        create: False
+        privileges: 
+          - ALL
+      - name: gla_traffic
+        create: False
+        privileges: 
+          - ALL
+      - name: interest_points
+        create: False
+        privileges: 
+          - ALL
+      - name: model_features
+        create: False
+        privileges: 
+          - ALL
+      - name: model_results
+        create: False
+        privileges: 
+          - ALL
+      - name: processed_data
+        create: False
+        privileges: 
+          - ALL
+      - name: static_data
+        create: False
+        privileges: 
+          - ALL
+      - name: static_features
+        create: False
+        privileges: 
+          - ALL
+      - name: jamcam
+        create: False
+        privileges:
+          - ALL
+
+  - role: jamcamreadwrite
+    create_schema: False
+    schema: 
+      - name: jamcam
+        create: True
+        privileges:
+          - ALL

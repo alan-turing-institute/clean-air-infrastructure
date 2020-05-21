@@ -149,3 +149,11 @@ roles:
         create: True
         privileges:
           - ALL
+
+  - role: jamcamreadwrite
+    create_schema: False
+    schema: 
+      - name: jamcam
+        create: True
+        privileges:
+          - ALL
