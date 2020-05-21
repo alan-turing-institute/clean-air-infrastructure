@@ -2,6 +2,7 @@
 
 from enum import Enum
 
+
 class Species(Enum):
     """Valid species for API"""
 
@@ -10,8 +11,10 @@ class Species(Enum):
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
 
+
 class Periods(Enum):
     """Valid time periods for copernicus satellite API requests"""
+
     day1 = "0H24H"
     day2 = "25H48H"
     day3 = "49H72H"

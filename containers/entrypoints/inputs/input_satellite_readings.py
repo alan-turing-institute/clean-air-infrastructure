@@ -28,12 +28,12 @@ def check(args):
             output_type="html",
         )
 
-        with tempfile.NamedTemporaryFile(suffix='.html', mode='w') as tmp:
+        with tempfile.NamedTemporaryFile(suffix=".html", mode="w") as tmp:
             tmp.write("<h1>Satellite data availability</h1>")
             tmp.write(available_data)
             tmp.write("<p>Where has_data = False there is missing data</p>")
             tmp.seek(0)
-            webbrowser.open('file://' + tmp.name, new=2)
+            webbrowser.open("file://" + tmp.name, new=2)
             time.sleep(1)
     else:
         available_data = satellite_writer.get_satellite_availability(
@@ -43,6 +43,7 @@ def check(args):
         )
 
         print(available_data)
+
 
 def fill(args):
 
@@ -65,7 +66,8 @@ def create_parser():
     # Subparsers
     subparsers = parsers.add_subparsers(required=True, dest="command")
     parser_check = subparsers.add_parser(
-        "check", help="Check what satellite readings are available in the cleanair database",
+        "check",
+        help="Check what satellite readings are available in the cleanair database",
     )
 
     parser_insert = subparsers.add_parser(
@@ -77,7 +79,13 @@ def create_parser():
         "-m", "--method", default="missing", type=str, choices=["missing", "all"]
     )
 
-    parser_check.add_argument('-w', '--web', default=False, action='store_true', help="Open a browser to show available data. Else print to console")
+    parser_check.add_argument(
+        "-w",
+        "--web",
+        default=False,
+        action="store_true",
+        help="Open a browser to show available data. Else print to console",
+    )
 
     # Link to programs
     parser_check.set_defaults(func=check)

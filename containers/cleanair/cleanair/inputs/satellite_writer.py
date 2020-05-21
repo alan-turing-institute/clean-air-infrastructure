@@ -118,7 +118,9 @@ class SatelliteWriter(
         """
 
         if not self.access_key:
-            raise AttributeError("copernicus key is None. Ensure a key was passed when initialising class")
+            raise AttributeError(
+                "copernicus key is None. Ensure a key was passed when initialising class"
+            )
         # Ensure start_date is a date string, not a datetime (e.g. '2020-01-01)
         start_date = start_date.split("T")[0]
 
@@ -396,9 +398,13 @@ class SatelliteWriter(
         start_date = self.start_date.isoformat()
         end_date = self.end_date.isoformat()
 
-        arg_df = self.get_satellite_availability(start_date, end_date, output_type = 'df')
-        arg_df['reference_start_utc'] = arg_df['reference_start_utc'].apply(datetime.datetime.isoformat)
-        arg_list = arg_df[arg_df['has_data'] != True][['reference_start_utc', 'species']].to_records(index=False)
+        arg_df = self.get_satellite_availability(start_date, end_date, output_type="df")
+        arg_df["reference_start_utc"] = arg_df["reference_start_utc"].apply(
+            datetime.datetime.isoformat
+        )
+        arg_list = arg_df[arg_df["has_data"] != True][
+            ["reference_start_utc", "species"]
+        ].to_records(index=False)
 
         for reference_date, species in arg_list:
             self.upgrade_reading_table(reference_date, species)

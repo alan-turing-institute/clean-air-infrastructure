@@ -3,6 +3,7 @@ import functools
 import pandas as pd
 from tabulate import tabulate
 
+
 class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
 
@@ -37,15 +38,15 @@ def db_query(query_f):
             check_empty_df(data_frame, error_empty)
             return data_frame
 
-        if output_type == 'html':
+        if output_type == "html":
             data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
             check_empty_df(data_frame, error_empty)
             return data_frame.to_html()
 
-        if output_type == 'tabulate':
+        if output_type == "tabulate":
             data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
             check_empty_df(data_frame, error_empty)
-            return tabulate(data_frame, headers='keys', tablefmt='psq')
+            return tabulate(data_frame, headers="keys", tablefmt="psq")
 
         if output_type == "list":
             query_df = pd.read_sql(output_q.statement, output_q.session.bind)
