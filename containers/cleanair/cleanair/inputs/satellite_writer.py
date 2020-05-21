@@ -399,8 +399,8 @@ class SatelliteWriter(
         arg_df = self.get_satellite_availability(start_date, end_date, output_type="df")
         arg_df["reference_start_utc"] = arg_df["reference_start_utc"].apply(
             datetime.datetime.isoformat
-        )  
-    
+        )
+
         # pylint: disable=singleton-comparison
         arg_list = arg_df[arg_df["has_data"] != True][
             ["reference_start_utc", "species"]
