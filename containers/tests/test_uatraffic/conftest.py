@@ -32,7 +32,6 @@ def scoot_df():
     detectors = ["A", "B"]
     date_range = pd.date_range(start=start_time, end=end_time, freq="h")
     size = len(date_range)
-    print("Size:", size)
 
     for d in detectors:
         time_series = generate_discrete_timeseries(size)
