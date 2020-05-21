@@ -1,11 +1,46 @@
 language: python
+python:
+  - "3.7"
+cache: pip
+
+addons:
+  postgresql: '11'
+  apt:
+    packages:
+      - postgresql-11-postgis-3
+      - postgresql-11-postgis-3-scripts
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install gdal-bin
+  - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
+  - sudo systemctl restart postgresql@11-main
+  # - psql -c 'CREATE EXTENSION postgis' -U postgres -p 5433
+  # - psql -c 'create database cleanair_test_db' -U postgres -p 5433
+  - | 
+      mkdir -p .secrets
+      echo '{
+          "username": "postgres",
+          "password": "''",
+          "host": "localhost",
+          "port": 5433,
+          "db_name": "cleanair_test_db",
+          "ssl_mode": "prefer"
+      }' >> .secrets/db_secrets_offline.json
 
 install:
   - pip install -r containers/requirements.txt
+  - pip install 'containers/cleanair[models,traffic,dashboard]'
+  - pip install 'containers/uatraffic'
+
+before_script:
+  - python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s .secrets/db_secrets_offline.json -d street_canyon rectgrid_100 hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+  - python containers/entrypoints/setup/configure_db_roles.py -s .secrets/db_secrets_offline.json -c configuration/database_role_config/local_database_config.yaml 
 
 script:
+  
   # # Run all pytest unit tests
-  # - python -m pytest -v tests --cov containers --cov-report term-missing
+  - python -m pytest containers
 
   # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
   - flake8 --ignore=E203, W503
@@ -13,5 +48,9 @@ script:
   # Check black formatting would not make any chages
   - black --check */
 
-  # Run pylint for stricter error checking
-  - pylint --disable=C0330 */
+  # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
+  # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+  - pylint --disable=C0330 */ --ignore=cleanair,urbanair,uatraffic
+  - pylint --disable=C0330 containers/cleanair/*
+  # - pylint --disable=C0330 containers/urbanair/*
+  - pylint --disable=C0330 containers/uatraffic/*

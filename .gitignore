@@ -6,11 +6,12 @@
 terraform/backend_config.tf
 *.tfstate
 *.tfstate.backup
-
+.secrets
 # VS
 .vscode/
 *.secrets/
 *.tgz
+.mypy_*
 
 # pyenv
 .python-version
