@@ -49,3 +49,24 @@ def scoot_df():
             ignore_index=True,
         )
     return frame
+
+@pytest.fixture(scope="function")
+def anomalous_scoot_df(scoot_df):
+    """Add some anomalies to the fake scoot data."""
+    # get mean and standard deviation
+    mean = scoot_df["n_vehicles_in_interval"].mean()
+    std = scoot_df["n_vehicles_in_interval"].std()
+
+    # add negative anomaly at index 6
+    scoot_df.at[6, "n_vehicles_in_interval"] = -2
+
+    # add zero anomaly at index 7
+    scoot_df.at[7, "n_vehicles_in_interval"] = 0
+
+    # add low anomaly at index 8 (this may also be negative)
+    scoot_df.at[8, "n_vehicles_in_interval"] = mean - 3 * std - 1
+
+    # add big anomaly at index 65
+    scoot_df.at[65, "n_vehicles_in_interval"] = mean + 3 * std + 1
+
+    return scoot_df
