@@ -483,7 +483,7 @@ We would like to move towards adding [type hints](https://docs.python.org/3.7/li
 Adding and updating existing documentation is highly encouraged.
 
 ### Gitmoji
-We like [gitmojo](https://gitmoji.carloscuesta.me/) for an emojo guide to our commit messages. You might consider (entirly optional) to use the [git-moji cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
+We like [gitmoji](https://gitmoji.carloscuesta.me/) for an emoji guide to our commit messages. You might consider (entirly optional) to use the [gitmoji-cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
 
 ### Working on an issue
 
@@ -497,17 +497,14 @@ How you label branches is optional, but we encourage using `iss_<issue-number>_<
 
 ## Running tests
 
-Tests should be written where possible before code is accepted into master. Contributing tests to existing code is highly desirable. Tests will also be run on travis (see the [travis configuration](.travis)).
+Tests should be written where possible before code is accepted into master. Contributing tests to existing code is highly desirable. Tests will also be run on travis (see the [travis configuration](.travis.yml)).
 
-All tests can be found in the [containers/tests/](containers/tests) directory. We already ran some tests to check our local database was set up. 
+All tests can be found in the [`containers/tests/`](containers/tests) directory. We already ran some tests to check our local database was set up. 
 
 To run the full test suite against the local database run
 
 ```bash
 SECRETS=$(pwd)/.secrets/db_secrets_offline.json
-```
-
-```bash
 pytest containers --secretfile $SECRETS
 ```
 
@@ -526,7 +523,7 @@ def test_scoot_reading_empty(secretfile, connection):
         assert session.query(ScootReading).count() == 0
 ```
 
-It uses the `DBWriter` class to  connect to the database. In general when interacting with a database we write a class which inherits from either  `DBWriter` or  `DBReader`. Both classes take a `secretfile` as an argument which provides database connection secrets. 
+It uses the `DBWriter` class to  connect to the database. In general when interacting with a database we write a class which inherits from either `DBWriter` or `DBReader`. Both classes take a `secretfile` as an argument which provides database connection secrets.
 
 **Critically, we also pass a special `connection` fixture when initialising any class that interacts with the database**. 
 
