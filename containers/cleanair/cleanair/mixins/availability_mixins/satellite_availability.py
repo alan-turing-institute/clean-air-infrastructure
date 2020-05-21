@@ -101,7 +101,7 @@ class SatelliteAvailabilityMixin:
             reference_end_date (str): Optional. iso date. The last date to check data from. 
             species (list[str]): A list of strings specifying species of polutants
         """
-        
+
         if not species:
             species = ["NO2", "PM25", "PM10", "O3"]
 
@@ -129,16 +129,22 @@ class SatelliteAvailabilityMixin:
 
             # Generate expected time series
             if reference_end_date:
-                reference_end_date_minus_1d = (isoparse(reference_end_date) - timedelta(hours = 1)).isoformat()
+                reference_end_date_minus_1d = (
+                    isoparse(reference_end_date) - timedelta(hours=1)
+                ).isoformat()
                 expected_date_times = session.query(
                     func.generate_series(
-                        reference_start_date, reference_end_date_minus_1d, ONE_DAY_INTERVAL
+                        reference_start_date,
+                        reference_end_date_minus_1d,
+                        ONE_DAY_INTERVAL,
                     ).label("reference_start_utc")
                 ).subquery()
             else:
                 expected_date_times = session.query(
                     func.generate_series(
-                        reference_start_date, func.current_date() - ONE_DAY_INTERVAL, ONE_DAY_INTERVAL
+                        reference_start_date,
+                        func.current_date() - ONE_DAY_INTERVAL,
+                        ONE_DAY_INTERVAL,
                     ).label("reference_start_utc")
                 ).subquery()
 
