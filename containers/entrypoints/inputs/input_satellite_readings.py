@@ -11,6 +11,7 @@ from cleanair.parsers import SatelliteArgumentParser
 
 def check(args):
     # Update the satellite forecast table on the database, logging any unhandled exceptions
+
     satellite_writer = SatelliteWriter(
         copernicus_key=args.copernicus_key,
         end=args.end,
@@ -18,7 +19,6 @@ def check(args):
         secretfile=args.secretfile,
         secret_dict=args.secret_dict,
     )
-
 
     if args.web:
         "Show in a browser"
@@ -77,7 +77,7 @@ def create_parser():
         "-m", "--method", default="missing", type=str, choices=["missing", "all"]
     )
 
-    parser_check.add_argument('-w', '--web', default=False, action='store_true')
+    parser_check.add_argument('-w', '--web', default=False, action='store_true', help="Open a browser to show available data")
 
     # Link to programs
     parser_check.set_defaults(func=check)

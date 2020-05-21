@@ -20,12 +20,13 @@ class DateRangeMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+        
         # Convert end argument into a datetime
         if end == "now":
             self.end_datetime = datetime.now().replace(
                 microsecond=0, second=0, minute=0
             )
-        if end == "lasthour":
+        elif end == "lasthour":
             self.end_datetime = (datetime.now() - timedelta(hours=1)).replace(
                 microsecond=0, second=0, minute=0
             )

@@ -74,7 +74,7 @@ class SatelliteWriter(
     species = [i.value for i in Species]
 
     def __init__(
-        self, copernicus_key, method="missing", end="today", nhours=24, **kwargs
+        self, copernicus_key, method="missing", end="now", nhours=24, **kwargs
     ):
         """Create an object to request copernicus satellite data and write to the cleanair database
 
@@ -407,7 +407,15 @@ class SatelliteWriter(
 
     def update_remote_tables_missing(self):
 
-        pass
+        start_date = self.start_date.isoformat()
+        end_date = self.end_date.isoformat()
+
+        arg_df = self.get_satellite_availability(start_date, end_date, output_type = 'df')
+        arg_df['reference_start_utc'] = arg_df['reference_start_utc'].apply(datetime.datetime.isoformat)
+        arg_list = arg_df[arg_df['has_data'] != True][['reference_start_utc', 'species']].to_records(index=False)
+
+        for reference_date, species in arg_list:
+            self.upgrade_reading_table(reference_date, species)
 
     def update_remote_tables_all(self):
 
@@ -425,7 +433,6 @@ class SatelliteWriter(
             start_date, end_date, rrule.DAILY, self.species, transpose=False
         )
 
-        # self.upgrade_reading_table(reference_date, species)
         for reference_date, species in arg_list:
             self.upgrade_reading_table(reference_date, species)
 
