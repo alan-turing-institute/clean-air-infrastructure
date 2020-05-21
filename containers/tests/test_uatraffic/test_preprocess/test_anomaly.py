@@ -5,7 +5,7 @@ import pandas as pd
 from uatraffic import preprocess
 
 @pytest.fixture(scope="function")
-def anomalous_scoot_df(scoot_df):
+def anomalous_scoot_df(scoot_df: pd.DataFrame):
     """Add some anomalies to the fake scoot data."""
     # get mean and standard deviation
     mean = scoot_df["n_vehicles_in_interval"].mean()
