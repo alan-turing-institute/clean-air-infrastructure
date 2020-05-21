@@ -5,7 +5,7 @@ import io
 import pandas as pd
 import numpy as np
 from cleanair.inputs import SatelliteWriter
-from cleanair.inputs.satellite_writer import Species, Periods
+from cleanair.types import Species, Periods
 from dateutil.parser import isoparse
 from dateutil.rrule import HOURLY, rrule
 

@@ -65,7 +65,7 @@ def create_parser():
     # Subparsers
     subparsers = parsers.add_subparsers(required=True, dest="command")
     parser_check = subparsers.add_parser(
-        "check", help="Check what satellite readings are available in the database",
+        "check", help="Check what satellite readings are available in the cleanair database",
     )
 
     parser_insert = subparsers.add_parser(
@@ -77,7 +77,7 @@ def create_parser():
         "-m", "--method", default="missing", type=str, choices=["missing", "all"]
     )
 
-    parser_check.add_argument('-w', '--web', default=False, action='store_true', help="Open a browser to show available data")
+    parser_check.add_argument('-w', '--web', default=False, action='store_true', help="Open a browser to show available data. Else print to console")
 
     # Link to programs
     parser_check.set_defaults(func=check)

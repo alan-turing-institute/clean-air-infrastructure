@@ -32,6 +32,7 @@ class DateRangeMixin:
             )
         elif end == "today":
             self.end_datetime = datetime.combine(date.today(), datetime.min.time())
+            
         elif end == "yesterday":
             self.end_datetime = datetime.combine(
                 date.today() - timedelta(days=1), datetime.min.time()

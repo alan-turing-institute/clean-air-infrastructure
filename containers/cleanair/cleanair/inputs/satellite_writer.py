@@ -12,6 +12,7 @@ import pandas as pd
 import xarray as xr
 import requests
 from sqlalchemy import func
+from ..types import Periods, Species
 from ..decorators import robust_api
 from ..databases import DBWriter
 from ..databases.tables import (
@@ -24,21 +25,6 @@ from ..loggers import get_logger, green, red
 from ..mixins import DateGeneratorMixin, DateRangeMixin
 from ..timestamps import to_nearest_hour
 from ..mixins.availability_mixins import SatelliteAvailabilityMixin
-
-
-class Species(Enum):
-    """Valid species for API"""
-
-    NO2 = "NO2"
-    PM25 = "PM25"
-    PM10 = "PM10"
-    O3 = "O3"  # species to get data for
-
-
-class Periods(Enum):
-    day1 = "0H24H"
-    day2 = "25H48H"
-    day3 = "49H72H"
 
 
 class SatelliteWriter(

@@ -65,7 +65,7 @@ class DurationParserMixin:
             "--end",
             type=str,
             default=end,
-            help="The last time point to get data for in iso format (default: {}).".format(
+            help="The last time point to get data for in iso format. Or one of: 'lasthour', 'now', 'today', 'yesterday'. (default: {})".format(
                 end
             ),
         )
