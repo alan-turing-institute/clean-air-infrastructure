@@ -1,7 +1,8 @@
+"""Tests related to satellite inputs"""
+# pylint: skip-file
+
 import os
 import pytest
-import os
-import io
 import pandas as pd
 import numpy as np
 from cleanair.inputs import SatelliteWriter
@@ -18,6 +19,7 @@ def copernicus_key():
 
 @pytest.fixture()
 def grib_file_24(shared_datadir):
+    """grib file with first 24 hours"""
     return (
         shared_datadir
         / "W_fr-meteofrance,MODEL,ENSEMBLE+FORECAST+SURFACE+NO2+0H24H_C_LFPW_20200501000000.grib2"
@@ -26,6 +28,7 @@ def grib_file_24(shared_datadir):
 
 @pytest.fixture()
 def grib_file_48(shared_datadir):
+    """grib file with 25:48 hours"""
     return (
         shared_datadir
         / "W_fr-meteofrance,MODEL,ENSEMBLE+FORECAST+SURFACE+NO2+25H48H_C_LFPW_20200501000000.grib2"
@@ -34,6 +37,7 @@ def grib_file_48(shared_datadir):
 
 @pytest.fixture()
 def grib_file_72(shared_datadir):
+    """grib file from 49:50 hours"""
     return (
         shared_datadir
         / "W_fr-meteofrance,MODEL,ENSEMBLE+FORECAST+SURFACE+NO2+49H72H_C_LFPW_20200501000000.grib2"
@@ -44,6 +48,7 @@ def grib_file_72(shared_datadir):
 def mock_request_satellite_data(monkeypatch, grib_file_24, grib_file_48, grib_file_72):
     """Mock the copernicus api response. Returns a bytes object"""
 
+    # pylint: disable=unused-argument
     def get_grib_bytes(self, start_date, period, species):
         """Overrides SatelliteWriter.request_satellite_data
         Arguments have no effect. Returns data from a file
@@ -94,6 +99,7 @@ def test_read_grib_file_24(copernicus_key, secretfile, grib_file_24, connection)
 def test_readgrib_missing_file(copernicus_key, secretfile, connection):
     "Test that a FileNotFoundError is raised if the file is the wrong size"
 
+    # pylint: disable=singleton-comparison
     grib_file = "afilethatdoesntexist_sdfaetq342rasdfasdfa.grib2"
     assert os.path.exists(grib_file) == False
 
@@ -101,7 +107,7 @@ def test_readgrib_missing_file(copernicus_key, secretfile, connection):
         copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
     )
     with pytest.raises(FileNotFoundError):
-        out = satellite_writer.read_grib_file(grib_file)
+        satellite_writer.read_grib_file(grib_file)
 
 
 def test_grib_to_pandas(copernicus_key, secretfile, grib_file_24, connection):

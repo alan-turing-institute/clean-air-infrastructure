@@ -1,15 +1,17 @@
-from cleanair.mixins import DateRangeMixin
+"""Daterange mixin  tests"""
+# pylint: skip-file
 from dateutil.parser import isoparse
-
+from cleanair.mixins import DateRangeMixin
 
 class ExampleDateRangeClass(DateRangeMixin):
+    """An example class using a daterange mixin"""
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
 
 def test_daterange_mixin():
-
+    "Test daterange mixin"
     date_instance = ExampleDateRangeClass(end="2020-01-02", nhours=5)
 
     assert date_instance.end_date == isoparse("2020-01-02").date()
