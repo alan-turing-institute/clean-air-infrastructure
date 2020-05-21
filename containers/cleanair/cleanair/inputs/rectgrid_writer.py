@@ -70,32 +70,30 @@ class RectGridWriter(DBWriter):
 
         # Upload data to the database
         self.logger.info("Starting static %s upload...", green("rectgrid"))
-        with self.dbcnxn.open_session() as session:
-            # Update the meta_points table and retrieve point IDs
-            self.logger.info(
-                "Merging %i grid points into %s table...",
-                len(grid_cells),
-                green(MetaPoint.__tablename__),
-            )
-            meta_points = [
-                MetaPoint.build_entry("rectgrid", geometry=g["point_id"])
-                for g in grid_cells
-            ]
-            self.commit_records(session, meta_points, on_conflict="overwrite")
-            for grid_cell, meta_point in zip(grid_cells, meta_points):
-                grid_cell[
-                    "point_id"
-                ] = meta_point.id  # this will be None if the record was not inserted
 
-            # Commit the grid cell records to the database
-            grid_records = [
-                RectGrid.build_entry(grid_cell)
-                for grid_cell in grid_cells
-                if grid_cell["point_id"]
-            ]
-            self.logger.info(
-                "Adding %i new cells to %s table...",
-                len(grid_records),
-                green("rectgrid"),
-            )
-            self.commit_records(session, grid_records, on_conflict="overwrite")
+        # Update the meta_points table and retrieve point IDs
+        self.logger.info(
+            "Merging %i grid points into %s table...",
+            len(grid_cells),
+            green(MetaPoint.__tablename__),
+        )
+        meta_points = [
+            MetaPoint.build_entry("rectgrid", geometry=g["point_id"])
+            for g in grid_cells
+        ]
+        self.commit_records(meta_points, on_conflict="overwrite")
+        for grid_cell, meta_point in zip(grid_cells, meta_points):
+            grid_cell[
+                "point_id"
+            ] = meta_point.id  # this will be None if the record was not inserted
+
+        # Commit the grid cell records to the database
+        grid_records = [
+            RectGrid.build_entry(grid_cell)
+            for grid_cell in grid_cells
+            if grid_cell["point_id"]
+        ]
+        self.logger.info(
+            "Adding %i new cells to %s table...", len(grid_records), green("rectgrid"),
+        )
+        self.commit_records(grid_records, on_conflict="overwrite")

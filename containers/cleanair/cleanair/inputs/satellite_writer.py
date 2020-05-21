@@ -92,6 +92,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
     @robust_api
     def get_response(api_endpoint, params=None, timeout=60.0):
         """Return the response from an API"""
+
         response = requests.get(api_endpoint, params=params, timeout=timeout)
         response.raise_for_status()
         return response
@@ -123,7 +124,7 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
 
         endpoint = "https://download.regional.atmosphere.copernicus.eu/services/CAMS50"
         raw_data = self.get_response(
-            endpoint, n_repeat=10, sleep_time=3, params=params, timeout=120.0
+            endpoint, n_repeat=10, sleep_time=10, params=params, timeout=120.0
         )
         return raw_data.content
 
@@ -206,64 +207,58 @@ class SatelliteWriter(DateRangeMixin, DBWriter):
             q_satellite_box.statement, q_satellite_box.session.bind
         )
 
-        with self.dbcnxn.open_session() as session:
-            for start_date in rrule.rrule(
-                rrule.DAILY, dtstart=self.start_date, until=self.end_date
-            ):
+        for start_date in rrule.rrule(
+            rrule.DAILY, dtstart=self.start_date, until=self.end_date
+        ):
 
-                self.logger.info(
-                    "Requesting 72 hours of satellite forecast data on %s for species %s",
-                    green(start_date.date()),
-                    green(self.species),
-                )
+            self.logger.info(
+                "Requesting 72 hours of satellite forecast data on %s for species %s",
+                green(start_date.date()),
+                green(self.species),
+            )
 
-                # Make three calls to API top get all 72 hours of data for all species
-                reference_date = str(start_date.date())
+            # Make three calls to API top get all 72 hours of data for all species
+            reference_date = str(start_date.date())
 
-                all_grib_df = pd.DataFrame()
-                for period in self.periods:
-                    for species in self.species:
-                        self.logger.info(
-                            "Requesting data for period: %s, species: %s",
-                            period,
-                            species,
-                        )
-                        # Get gribdata
-                        grib_bytes = self.request_satellite_data(
-                            reference_date, period, species
-                        )
-                        grib_data_df = self.grib_to_df(grib_bytes, period, species)
-                        all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
-
-                # Join grib data and convert into a list of forecasts
-                reading_entries = (
-                    all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
-                    .apply(
-                        lambda data, rd=reference_date: SatelliteForecast(
-                            reference_start_utc=rd,
-                            measurement_start_utc=to_nearest_hour(data["date"]),
-                            measurement_end_utc=to_nearest_hour(data["date"])
-                            + datetime.timedelta(hours=1),
-                            species_code=data["species"],
-                            box_id=str(data["box_id"]),
-                            value=data["val"],
-                        ),
-                        axis=1,
+            all_grib_df = pd.DataFrame()
+            for period in self.periods:
+                for species in self.species:
+                    self.logger.info(
+                        "Requesting data for period: %s, species: %s", period, species,
                     )
-                    .tolist()
-                )
+                    # Get gribdata
+                    grib_bytes = self.request_satellite_data(
+                        reference_date, period, species
+                    )
+                    grib_data_df = self.grib_to_df(grib_bytes, period, species)
+                    all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
 
-                # Commit forecasts to the database
-                self.logger.info(
-                    "Adding forecasts to database table %s",
-                    green(SatelliteForecast.__tablename__),
+            # Join grib data and convert into a list of forecasts
+            reading_entries = (
+                all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
+                .apply(
+                    lambda data, rd=reference_date: SatelliteForecast(
+                        reference_start_utc=rd,
+                        measurement_start_utc=to_nearest_hour(data["date"]),
+                        measurement_end_utc=to_nearest_hour(data["date"])
+                        + datetime.timedelta(hours=1),
+                        species_code=data["species"],
+                        box_id=str(data["box_id"]),
+                        value=data["val"],
+                    ),
+                    axis=1,
                 )
-                self.commit_records(
-                    session,
-                    reading_entries,
-                    on_conflict="overwrite",
-                    table=SatelliteForecast,
-                )
+                .tolist()
+            )
+
+            # Commit forecasts to the database
+            self.logger.info(
+                "Adding forecasts to database table %s",
+                green(SatelliteForecast.__tablename__),
+            )
+            self.commit_records(
+                reading_entries, on_conflict="overwrite", table=SatelliteForecast,
+            )
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""

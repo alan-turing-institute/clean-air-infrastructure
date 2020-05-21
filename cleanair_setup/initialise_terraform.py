@@ -1,6 +1,7 @@
 """
 Setup initial Azure infrastructure used by Terraform
 """
+# pylint: skip-file
 import argparse
 import logging
 import os

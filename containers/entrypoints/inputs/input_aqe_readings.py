@@ -19,7 +19,10 @@ def main():
     # Update the AQE tables on the database, logging any unhandled exceptions
     try:
         aqe_writer = AQEWriter(
-            end=args.end, nhours=args.nhours, secretfile=args.secretfile
+            end=args.end,
+            nhours=args.nhours,
+            secretfile=args.secretfile,
+            secret_dict=args.secret_dict,
         )
         aqe_writer.update_remote_tables()
     except Exception as error:
