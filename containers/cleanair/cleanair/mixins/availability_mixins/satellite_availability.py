@@ -1,10 +1,10 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
-from sqlalchemy import and_, func, literal, null, text, select, column, String
-from sqlalchemy.sql.expression import bindparam
-from dateutil.parser import isoparse
 from datetime import timedelta
+from sqlalchemy import func, text, column, String
+from dateutil.parser import isoparse
+
 from ...decorators import db_query
 from ...databases.tables import (
     MetaPoint,
@@ -13,8 +13,6 @@ from ...databases.tables import (
     SatelliteGrid,
 )
 from ...loggers import get_logger
-from ...timestamps import as_datetime
-from ...decorators import db_query
 from ...databases.base import Values
 
 
@@ -70,8 +68,8 @@ class SatelliteAvailabilityMixin:
         Get satellite forecast readings
 
         Args:
-            reference_start_date (str): Default None. isostring specifying when to get data from. 
-            reference_end_date (str): Default None. isostring specifying when to get data from
+            reference_start_date (str): Default None. isostring specifying when to get data from.
+            reference_end_date (str): Default None. isostring specifying when to get data from.
         """
 
         with self.dbcnxn.open_session() as session:
@@ -94,11 +92,12 @@ class SatelliteAvailabilityMixin:
         self, reference_start_date, reference_end_date=None, species=None
     ):
         """
-        Return all the available data aggregated by reference_start_utc between reference_start_date and reference_end_date
+        Return all the available data aggregated by reference_start_utc
+        between reference_start_date and reference_end_date
 
         Args:
-            reference_start_date (str): iso date. The first date to check data from 
-            reference_end_date (str): Optional. iso date. The last date to check data from. 
+            reference_start_date (str): iso date. The first date to check data from
+            reference_end_date (str): Optional. iso date. The last date to check data from
             species (list[str]): A list of strings specifying species of polutants
         """
 

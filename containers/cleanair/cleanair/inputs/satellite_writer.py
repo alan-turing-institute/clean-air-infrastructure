@@ -3,15 +3,12 @@ Satellite
 """
 import datetime
 import os
-from enum import Enum
 import tempfile
 from dateutil import rrule
-from dateutil.parser import isoparse
 import numpy as np
 import pandas as pd
 import xarray as xr
 import requests
-from sqlalchemy import func
 from ..types import Periods, Species
 from ..decorators import robust_api
 from ..databases import DBWriter
@@ -112,7 +109,8 @@ class SatelliteWriter(
         exception if it fails
 
         args:
-            start_date (str): isodate to collect data from. If an isodatetime str is provided (e.g. 2020-01-01T00:00:00) the time part will be striped
+            start_date (str): isodate to collect data from. If an isodatetime str
+            is provided (e.g. 2020-01-01T00:00:00) the time part will be striped
             period (str): The time periods to request data for. Can use Enum (e.g. Species.No2.value)
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
         """
@@ -151,8 +149,8 @@ class SatelliteWriter(
         """Read a gribfile and filter by the satellite bounding box.
 
         Args:
-            grib_filename (str): Path to a grib file containing satellite forecast\
-        
+            grib_filename (str): Path to a grib file containing satellite forecast
+
         Returns:
             xarray: with 25 (readings) X 8 (lat) * 4 (lon) dimensions corresponsing to grid squares over london
         """
@@ -179,7 +177,7 @@ class SatelliteWriter(
         Convert a sat_xarray returned by read_grib_file to a pandas dataframe
         renaming columns and coverting units for NO2.
 
-        Args: 
+        Args:
             sat_xarray (xarray.core.dataarray.DataArray'>):  An  xarray data array returned  by self.read_grib_file
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
         Returns:
@@ -215,7 +213,7 @@ class SatelliteWriter(
 
     def grib_bytes_to_df(self, satellite_bytes, species):
         """Given satellite_bytes return a dataframe
-        
+
         Args:
             satellite_bytes (Bytes): Array of bytes returned by self.request_satellite_data
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
@@ -394,14 +392,16 @@ class SatelliteWriter(
             session.commit()
 
     def update_remote_tables_missing(self):
-
+        """Update remote tables where expected data is missing between self.start_date and self.end_date"""
         start_date = self.start_date.isoformat()
         end_date = self.end_date.isoformat()
 
         arg_df = self.get_satellite_availability(start_date, end_date, output_type="df")
         arg_df["reference_start_utc"] = arg_df["reference_start_utc"].apply(
             datetime.datetime.isoformat
-        )
+        )  
+    
+        # pylint: disable=singleton-comparison
         arg_list = arg_df[arg_df["has_data"] != True][
             ["reference_start_utc", "species"]
         ].to_records(index=False)
@@ -410,7 +410,7 @@ class SatelliteWriter(
             self.upgrade_reading_table(reference_date, species)
 
     def update_remote_tables_all(self):
-
+        """Update remote tables with all data between self.start_date and self.end_date"""
         start_date = self.start_date.isoformat()
         end_date = self.end_date.isoformat()
 

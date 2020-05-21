@@ -15,7 +15,7 @@ def check_empty_df(data_frame, raise_error=True):
             "The query returned no data. Check the query and ensure all required data is available"
         )
 
-
+# pylint: disable=too-many-return-statements
 def db_query(query_f):
     """
     Wrapper for functions that return an sqlalchemy query object.

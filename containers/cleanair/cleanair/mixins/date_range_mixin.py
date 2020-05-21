@@ -63,7 +63,8 @@ class DateGeneratorMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    def get_datetime_list(self, start_datetime, end_datetime, frequency):
+    @staticmethod
+    def get_datetime_list(start_datetime, end_datetime, frequency):
         """
         Get a list of datetimes between start_datetime and end_datetime (exclusive)
 
@@ -93,7 +94,7 @@ class DateGeneratorMixin:
         """
         Get the cartesian product of datetime_list and *args where args are iterables
         to be used as inputs for functions which need to operate over times and other arguments
-        
+
 
         Args:
             datetime_list (list[str]): List of datetime strings. Can generate with self.get_datetime_list
