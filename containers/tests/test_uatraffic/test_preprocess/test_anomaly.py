@@ -2,28 +2,24 @@
 
 import pytest
 import pandas as pd
+import numpy as np
 from uatraffic import preprocess
+from ..data_generators import create_daily_readings_df
 
 @pytest.fixture(scope="function")
-def anomalous_scoot_df(scoot_df: pd.DataFrame):
+def anomalous_scoot_df() -> pd.DataFrame:
     """Add some anomalies to the fake scoot data."""
-    # get mean and standard deviation
-    mean = scoot_df["n_vehicles_in_interval"].mean()
-    std = scoot_df["n_vehicles_in_interval"].std()
+    start = 100
+    readings = np.arange(start, start+22, 1)
+    readings = np.append(readings, [70, 151])
+    return create_daily_readings_df(readings)
 
-    # add negative anomaly at index 6
-    scoot_df.at[6, "n_vehicles_in_interval"] = -2
-
-    # add zero anomaly at index 7
-    scoot_df.at[7, "n_vehicles_in_interval"] = 0
-
-    # add low anomaly at index 8 (this may also be negative)
-    scoot_df.at[8, "n_vehicles_in_interval"] = mean - 3 * std - 1
-
-    # add big anomaly at index 65
-    scoot_df.at[65, "n_vehicles_in_interval"] = mean + 3 * std + 1
-
-    return scoot_df
+@pytest.fixture(scope="function")
+def negative_scoot_df() -> pd.DataFrame:
+    """A scoot dataframe with a negative reading"""
+    readings = np.repeat(np.arange(1, 8), 3)
+    readings = np.append(readings, [-1, -10, -100])
+    return create_daily_readings_df(readings)
 
 def test_no_outliers_removed(scoot_df: pd.DataFrame):
     """Test that no outliers are removed if they shouldn't."""
@@ -34,7 +30,12 @@ def test_no_outliers_removed(scoot_df: pd.DataFrame):
 def test_outliers_removed(anomalous_scoot_df: pd.DataFrame):  # pylint: disable=redefined-outer-name
     """Test that anomalous readings are removed."""
     clean_df = preprocess.remove_outliers(anomalous_scoot_df)
-    assert 6 not in clean_df.index      # negative should be removed
-    assert 7 in clean_df.index          # zero is currently accepted
-    assert 54 not in clean_df.index     # low anomaly
-    assert 65 not in clean_df.index     # high anomaly
+    assert 22 not in clean_df.index     # low anomaly
+    assert 23 not in clean_df.index     # high anomaly
+
+def test_negative_readings_removed(negative_scoot_df: pd.DataFrame):    # pylint: disable=redefined-outer-name
+    """Test that negative values are removed."""
+    clean_df = preprocess.remove_outliers(negative_scoot_df)
+    assert 21 not in clean_df.index
+    assert 22 not in clean_df.index
+    assert 23 not in clean_df.index

@@ -14,6 +14,9 @@ def generate_discrete_timeseries(
     gradiant: float = 0.0,
 ) -> np.ndarray:
     """Create a timeseries with discrete values."""
+    # set seed
+    np.random.seed(0)
+
     X = np.linspace(0, size, num=size)
 
     # combine sine and cosine waves to create function
@@ -31,12 +34,15 @@ def generate_scoot_df(
     """Generate a scoot dataframe.
     
     Args:
-        start_date: First timestamp.
-        end_date: Last timestamp (inclusive).
+        start_date: First date.
+        end_date: Last date (exclusive).
         num_detectors: Number of detectors to generate data for.
         day_of_week: 0 is Monday, 1 is Tuesday, etc.
             Default of 7 means all days are used.
     """
+    # set seed
+    random.seed(0)
+
     columns = ["detector_id", "measurement_start_utc", "measurement_end_utc", "n_vehicles_in_interval"]
     scoot_df = pd.DataFrame(columns=columns)
 
@@ -62,9 +68,21 @@ def generate_scoot_df(
             frame = frame.loc[frame["measurement_start_utc"].dayofweek() == day_of_week]
         
         frame["detector_id"] = detector_id
-        frame["measurment_end_utc"] = frame["measurment_start_utc"] + pd.DateOffset(hours=1)
+        frame["measurement_end_utc"] = frame["measurement_start_utc"] + pd.DateOffset(hours=1)
 
         # append new dataframe
-        scoot_df = pd.concat(scoot_df, frame, ignore_index=True)
+        assert set(scoot_df.columns) == set(frame.columns)
+        scoot_df = pd.concat([scoot_df, frame], ignore_index=True, sort=False)
     
     return scoot_df
+
+def create_daily_readings_df(readings: np.ndarray) -> pd.DataFrame:
+    """Create a simple dataframe over one day for one detector."""
+    start_date = "2020-01-01"
+    end_date = "2020-01-02"
+    frame = pd.DataFrame()
+    frame["n_vehicles_in_interval"] = readings
+    frame["detector_id"] = np.repeat("A", 24)
+    frame["measurement_start_utc"] = pd.date_range(start=start_date, end=end_date, freq="h", closed="left")
+    frame["measurement_end_utc"] = frame["measurement_start_utc"] + pd.DateOffset(hours=1)
+    return frame
