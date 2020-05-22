@@ -102,7 +102,6 @@ def percent_of_baseline(
                 percent_change = percent_of_baseline_counts(
                     baseline_n_vehicles_in_interval,
                     comparison_n_vehicles_in_interval,
-                    num_observations,
                 )
 
             if len(groupby_cols) > 1:
@@ -129,17 +128,19 @@ def percent_of_baseline(
 def percent_of_baseline_counts(
     baseline_count: int,
     comparison_count: int,
-    num_observations: int,
 ) -> float:
     """Calculate the percentage change of the comparison count compared to the baseline.
 
     Args:
         baseline_count: Total count in baseline period.
         comparison_count: Total count in comparison period.
-        num_observations: Number of observations in baseline/comparison period.
 
     Returns:
         If comparison_count <= baseline count then returned value will be 0 - 100%.
         Else returned value will be greater than 100%.
     """
-    return 100 - 100 * (baseline_count - comparison_count)/ num_observations
+    if comparison_count == 0:
+        return 0
+    if baseline_count == 0:
+        return np.nan
+    return 100 - 100 * (baseline_count - comparison_count)/ baseline_count
