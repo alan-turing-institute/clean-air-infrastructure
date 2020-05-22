@@ -75,6 +75,7 @@ To contribute as a non-infrastructure developer you will need the following:
 - `postgreSQL` (command-line tool for interacting with db)
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
+- `eccodes` (For reading GRIB files)
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -90,6 +91,11 @@ brew install postgresql postgis
 ### GDAL
 ```bash
 brew install gdal
+```
+
+### Eccodes
+```bash
+brew install eccodes
 ```
 
 ### Development tools
@@ -222,7 +228,7 @@ echo '{
     "port": 5432,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_offline.json
+}' >> .secrets/.db_secrets_offline.json
 ```
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
@@ -234,7 +240,7 @@ We must now setup the database schema. This also creates a number of roles on th
 Create a variable with the location of your secrets file
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
@@ -414,7 +420,7 @@ All tests can be found in the [containers/tests/](containers/tests) directory. W
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash

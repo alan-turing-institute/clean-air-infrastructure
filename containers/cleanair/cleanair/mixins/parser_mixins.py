@@ -58,18 +58,22 @@ class DurationParserMixin:
     Parser for any entrypoint which needs a duration
     """
 
-    def __init__(self, nhours=48, end="lasthour", **kwargs):
+    def __init__(self, nhours=48, ndays=2, end="lasthour", **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
-            "-e",
-            "--end",
+            "-u",
+            "--upto",
             type=str,
             default=end,
-            help="The last time point to get data for in iso format (default: {}).".format(
+            help="Time point to get data up to in iso format."
+            "Or one of: 'lasthour', 'now', 'today', 'tomorrow', 'yesterday'. (default: {})."
+            "To get data that includes today you would use 'tomorrow'"
+            "to specify all data up to but not including tomorrows date".format(
                 end
             ),
         )
-        self.add_argument(
+        time_group = self.add_mutually_exclusive_group()
+        time_group.add_argument(
             "-n",
             "--nhours",
             type=int,
@@ -78,10 +82,17 @@ class DurationParserMixin:
                 nhours
             ),
         )
+        time_group.add_argument(
+            "--ndays",
+            type=int,
+            help="The number of days to request data for (default: {}).".format(ndays),
+        )
 
     def parse_args(self, args=None, namespace=None):
         """Raise an exception if the provided arguments are invalid"""
         args = super().parse_args(args, namespace)
+        if args.ndays:
+            args.nhours = args.ndays * 24
         if args.nhours < 1:
             raise ArgumentTypeError("Argument --nhours must be greater than 0")
         return args
