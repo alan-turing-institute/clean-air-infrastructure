@@ -25,6 +25,10 @@ def generate_discrete_timeseries(
     # floor function and add poisson noise
     return np.random.choice([-1, 1], size) * (np.random.poisson(lambda_noise, size) - 1) + np.floor(underlying_function)
 
+def generate_detector_id() -> str:
+    """Generate a random 4 character id."""
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+
 def generate_scoot_df(
     start_date: str = "2020-01-01",
     end_date: str = "2020-01-02",
@@ -32,7 +36,7 @@ def generate_scoot_df(
     day_of_week: int = 7,
 ) -> pd.DataFrame:
     """Generate a scoot dataframe.
-    
+
     Args:
         start_date: First date.
         end_date: Last date (exclusive).
@@ -48,7 +52,7 @@ def generate_scoot_df(
 
     for _ in range(num_detectors):
         # random detector id
-        detector_id = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        detector_id = generate_detector_id()
 
         # new dataframe with all dates between date range
         frame = pd.DataFrame()
@@ -79,11 +83,13 @@ def generate_scoot_df(
 
 def create_daily_readings_df(readings: np.ndarray) -> pd.DataFrame:
     """Create a simple dataframe over one day for one detector."""
+    random.seed(0)
     start_date = "2020-01-01"
     end_date = "2020-01-02"
     frame = pd.DataFrame()
     frame["n_vehicles_in_interval"] = readings
-    frame["detector_id"] = np.repeat("A", 24)
+    frame["detector_id"] = np.repeat(generate_detector_id(), 24)
     frame["measurement_start_utc"] = pd.date_range(start=start_date, end=end_date, freq="h", closed="left")
     frame["measurement_end_utc"] = frame["measurement_start_utc"] + pd.DateOffset(hours=1)
+    frame["hour"] = frame["measurement_start_utc"].dt.hour
     return frame
