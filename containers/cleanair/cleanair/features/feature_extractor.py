@@ -11,12 +11,13 @@ from ..databases.tables import (
     UKMap,
     MetaPoint,
 )
+from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
 from ..loggers import duration, green, get_logger, duration_from_seconds
 
 
-class FeatureExtractor(DBWriter, DBQueryMixin):
+class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
     def __init__(self, dynamic=False, batch_size=10, sources=None, **kwargs):
