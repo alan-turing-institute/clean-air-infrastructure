@@ -10,7 +10,7 @@ from ..data_generators import scoot_generator
 
 @pytest.fixture(scope="function")
 def baseline_df() -> pd.DataFrame:
-    """Three weeks of baseline data for scoot."""
+    """Three weeks of baseline data for 5 scoot detectors."""
     return scoot_generator.generate_scoot_df(
         end_date="2020-01-23",
         day_of_week=2,
@@ -19,11 +19,29 @@ def baseline_df() -> pd.DataFrame:
 
 @pytest.fixture(scope="function")
 def comparison_df() -> pd.DataFrame:
-    """Comparison day for scoot."""
+    """Comparison day for 5 scoot detectors."""
     return scoot_generator.generate_scoot_df(
         end_date="2020-01-02",
         day_of_week=2,
         num_detectors=5,
+    )
+
+@pytest.fixture(scope="function")
+def missing_baseline_df() -> pd.DataFrame:
+    """Three weeks of baseline data for 4 scoot detectors."""
+    return scoot_generator.generate_scoot_df(
+        end_date="2020-01-23",
+        day_of_week=2,
+        num_detectors=4,
+    )
+
+@pytest.fixture(scope="function")
+def missing_comparison_df() -> pd.DataFrame:
+    """Comparison day for 4 scoot detectors."""
+    return scoot_generator.generate_scoot_df(
+        end_date="2020-01-02",
+        day_of_week=2,
+        num_detectors=4,
     )
 
 def test_percent_of_baseline_counts():
@@ -42,6 +60,10 @@ def test_percent_of_baseline(baseline_df: pd.DataFrame, comparison_df: pd.DataFr
     # five detectors should have readings
     assert len(percent_df["detector_id"].unique()) == 5
 
+    __test_percent_df(percent_df)
+
+def __test_percent_df(percent_df: pd.DataFrame):
+    """Test a percent of baseline dataframe with no missing values."""
     # all metric values should be strictly positive
     assert percent_df["percent_of_baseline"].map(lambda x: x > 0).all()
 
@@ -49,3 +71,25 @@ def test_percent_of_baseline(baseline_df: pd.DataFrame, comparison_df: pd.DataFr
     assert not percent_df["no_traffic_in_baseline"].all()
     assert not percent_df["no_traffic_in_comparison"].all()
     assert not percent_df["low_confidence"].all()
+
+    # check the number of observations is 24 hours
+    assert percent_df["num_observations"].map(lambda x: x == 24).all()
+
+    # check there are no massive percentages - this shouldn't happen for fake data
+    assert percent_df["percent_of_baseline"].map(lambda x: x < 200).all()
+
+def test_missing_baseline(
+    missing_baseline_df: pd.DataFrame,
+    comparison_df: pd.DataFrame,
+):
+    """Test the percent of baseline correctly handles a missing detector in the baseline dataframe."""
+    percent_df = metric.percent_of_baseline(missing_baseline_df, comparison_df)
+
+    # check missing detectors are not in the metrics dataframe
+    missing = set(comparison_df["detector_id"]) - set(missing_baseline_df["detector_id"])
+    assert not percent_df["detector_id"].isin(missing).all()
+
+    # four detectors should have readings
+    assert len(percent_df["detector_id"].unique()) == 4
+
+    __test_percent_df(percent_df)
