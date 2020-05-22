@@ -43,7 +43,7 @@ def generate_scoot_df(
     # set seed
     random.seed(0)
 
-    columns = ["detector_id", "measurement_start_utc", "measurement_end_utc", "n_vehicles_in_interval"]
+    columns = ["detector_id", "measurement_start_utc", "measurement_end_utc", "n_vehicles_in_interval", "hour"]
     scoot_df = pd.DataFrame(columns=columns)
 
     for _ in range(num_detectors):
@@ -65,10 +65,11 @@ def generate_scoot_df(
         )
         # filter by day of week if applicable
         if day_of_week < 7:
-            frame = frame.loc[frame["measurement_start_utc"].dayofweek() == day_of_week]
+            frame = frame.loc[frame["measurement_start_utc"].dt.dayofweek == day_of_week]
         
         frame["detector_id"] = detector_id
         frame["measurement_end_utc"] = frame["measurement_start_utc"] + pd.DateOffset(hours=1)
+        frame["hour"] = frame["measurement_start_utc"].dt.hour
 
         # append new dataframe
         assert set(scoot_df.columns) == set(frame.columns)
