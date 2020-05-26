@@ -1,12 +1,15 @@
 """
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
+
+# pylint: disable=no-name-in-module,no-member
+
 import logging
 import os
 import numpy as np
 import gpflow
 from gpflow import settings
-from gpflow.session_manager import get_session
+from gpflow.session_manager import get_session      # pylint: disable=import-error
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 
@@ -137,7 +140,7 @@ class SVGP(Model):
                 lengthscales=self.model_params["kernel"]["lengthscale"],
                 ARD=True,
             )
-            self.model = gpflow.models.SVGP(
+            self.model = gpflow.models.SVGP(    # pylint: disable=too-many-function-args,unexpected-keyword-arg
                 x_array,
                 y_array,
                 kern,

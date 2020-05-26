@@ -5,7 +5,6 @@ import logging
 import pandas as pd
 import numpy as np
 
-
 def percent_of_baseline(
     baseline_df: pd.DataFrame,
     comparison_df: pd.DataFrame,
