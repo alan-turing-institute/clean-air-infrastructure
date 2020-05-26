@@ -130,7 +130,7 @@ pip install -e 'containers/urbanair'
 ### UATraffic (London Busyness only)
 All additional  functionality related to the London Busyness project requires:
 ```bash
-pip install -e 'containers/uatraffic'
+pip install -e 'containers/odysseus'
 ```
 
 --- 

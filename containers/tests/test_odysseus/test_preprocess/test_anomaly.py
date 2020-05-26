@@ -3,7 +3,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from uatraffic import preprocess
+from odysseus import preprocess
 from ..data_generators import create_daily_readings_df
 
 @pytest.fixture(scope="function")

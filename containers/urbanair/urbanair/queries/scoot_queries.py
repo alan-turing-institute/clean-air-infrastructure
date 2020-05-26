@@ -9,7 +9,7 @@ from cleanair.databases.tables import (
     ScootDetector,
     ScootPercentChange,
 )
-from uatraffic.scoot_processing import (
+from odysseus.scoot_processing import (
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
     NORMAL_BASELINE_START,

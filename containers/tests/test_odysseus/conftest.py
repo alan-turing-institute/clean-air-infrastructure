@@ -1,4 +1,4 @@
-"""Fixtures for uatraffic module."""
+"""Fixtures for odysseus module."""
 
 import pytest
 from .data_generators import generate_scoot_df

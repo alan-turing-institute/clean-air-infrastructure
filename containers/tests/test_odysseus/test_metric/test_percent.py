@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from uatraffic import metric
+from odysseus import metric
 from ..data_generators import scoot_generator
 
 # pylint: disable=redefined-outer-name
