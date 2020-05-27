@@ -19,9 +19,9 @@ def create_app():
     else:
         app.config.from_object("urbanair.configurations.development_settings")
         app.config["DATABASE_SECRETFILE"] = os.environ.get("DATABASE_SECRETFILE")
-        if not app.config["DATABASE_SECRETFILE"] or not app.config["DATABASE_SECRETFILE"]:
+        if not app.config["DATABASE_SECRETFILE"]:
             raise ValueError(
-                "DATABASE_URI and DATABASE_URI_JAMCAM env variable must be set in development mode"
+                "DATABASE_SECRETFILE environment variable must be set in development mode"
             )
 
     # Create DB session object
@@ -30,7 +30,7 @@ def create_app():
         swagger = Swagger(app, template=app.config["SWAGGER_TEMPLATE"])
         app.register_blueprint(static_bp)
         app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
-        app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
+        # app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
         exceptions.error_handler(app)
     
     return app
