@@ -392,20 +392,12 @@ The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x
 The UrbanAir API needs to connect to two databases:
 
 1. The CleanAir database
-2. The JamCam database
 
 ### Configure CleanAir database secrets
 Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environement variable](#entry-point-with-production-database)
 
 ```bash
 export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
-```
-
-### Configure JamCam database secrets
-Please contact the JamCam database admin for access. Place the credentials in your `.secrets` folder in a `.json` file.
-
-```bash
-export DATABASE_SECRETFILE_JAMCAM=$(pwd)/.secrets/.db_secrets_jamcam.json  
 ```
 
 ### Enable Flask development server
@@ -419,8 +411,6 @@ You can now run the API
 ```bash
 python containers/urbanair/wsgi.py
 ```
-
-
 
 # Developer guide
 
