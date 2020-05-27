@@ -387,12 +387,6 @@ Here we also provided the copernicus api key which is stored in the `cleanair` k
 
 The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
 
-## Database access
-
-The UrbanAir API needs to connect to two databases:
-
-1. The CleanAir database
-
 ### Configure CleanAir database secrets
 Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environement variable](#entry-point-with-production-database)
 
