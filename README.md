@@ -282,7 +282,7 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/database_init --secretfile $SECRETS
+pytest containers/tests/test_database_init --secretfile $SECRETS
 ```
 
 
