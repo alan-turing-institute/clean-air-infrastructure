@@ -196,7 +196,7 @@ roles:
 
   - role: jamcamreadwrite
     create_schema: False
-    schema: 
+    schema:
       - name: jamcam
         create: True
         privileges:
