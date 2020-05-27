@@ -113,7 +113,7 @@ stages:
       inputs:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
-        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-db-cluster-password,cleanair-inputs-db-cluster-username,cleanair-inputs-db-server-name, http-basic-admin, container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-db-cluster-password,cleanair-inputs-db-cluster-username,cleanair-inputs-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
     # Install matching Kubectl version
     - task: KubectlInstaller@0
       displayName: 'Install matching Kubectl version'
