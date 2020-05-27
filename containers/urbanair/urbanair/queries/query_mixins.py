@@ -52,11 +52,9 @@ class APIQueryMixin(ABC):
 
         query = self.query(*args, **kwargs)
 
-        return jsonify(query) #, 200 # defaults to status 200
+        return jsonify(query) 
 
     def response_json(self, *args, **kwargs):
         """Respond with JSON"""
 
-        # response = Response(self.__generate_json(*args, **kwargs), mimetype="application/json", status=200)
-        # return response
         return self.__generate_json(*args, **kwargs)

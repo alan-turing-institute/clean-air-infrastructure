@@ -1,12 +1,13 @@
 """
 Table writer
 """
+import time
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.inspection import inspect
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
-from ..loggers import get_logger
+from ..loggers import get_logger, duration
 from .base import Base
 
 
@@ -77,9 +78,7 @@ class DBWriter(DBInteractor):
                 session.commit()
 
             except IntegrityError as error:
-                self.logger.error(
-                    "Failed to add forecasts to the database: %s", type(error)
-                )
+                self.logger.error("Failed to add rows to the database: %s", type(error))
                 self.logger.error(str(error))
                 session.rollback()
 
@@ -126,6 +125,8 @@ class DBWriter(DBInteractor):
             raise ValueError(
                 "Only 'merge' or 'ignore' are valid arguments for 'on_conflict'"
             )
+        # Open a session and insert the road matches
+        start_session = time.time()
         if table:
             self.__commit_records_core(records, table, on_conflict)
         else:
@@ -135,6 +136,10 @@ class DBWriter(DBInteractor):
                     on_conflict,
                 )
             self.__commit_records_orm(records)
+
+        self.logger.info(
+            "Database insertion took %s", duration(start_session, time.time())
+        )
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""

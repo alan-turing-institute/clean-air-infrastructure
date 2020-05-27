@@ -1,6 +1,5 @@
 """Production configuration environment variables"""
 from werkzeug.security import generate_password_hash
-from .secret_readers import read_basic_auth_secret
 
 DATABASE_SECRETFILE = "db_secrets.json"
 DATABASE_SECRETFILE_JAMCAM = "db_secrets_jamcam.json"
@@ -22,11 +21,4 @@ SWAGGER_TEMPLATE = {
     "basePath": "/",  # base bash for blueprint registration
     "schemes": ["https"],
     "operationId": "getmyData",
-}
-
-# A development user and password
-HTTP_BASIC_PASSWORD = 'x7WBcuRtrgK8255rPZcB'
-
-USERS = {
-    "ati": generate_password_hash(HTTP_BASIC_PASSWORD)
 }

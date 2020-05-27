@@ -4,7 +4,6 @@ from webargs.flaskparser import use_args
 import json
 from ..queries import CamRecent, CamsSnapshot
 from ..db import get_session
-from ..auth import http_auth
 
 # Create a Blueprint
 cams_bp = Blueprint("cams", __name__)
@@ -16,7 +15,6 @@ cams_bp = Blueprint("cams", __name__)
     },
     location="query",
 )
-@http_auth.login_required
 def cam_recent(args):
     """
     Return raw historical count per camera
@@ -36,7 +34,7 @@ def cam_recent(args):
 
     db_query = CamRecent()
 
-    return db_query.response_json(get_session('jamcam'), id=args.pop("id"))
+    return db_query.response_json(get_session(), id=args.pop("id"))
 
 @cams_bp.route("snapshot", methods=["GET"])
 @use_args(
@@ -45,7 +43,6 @@ def cam_recent(args):
     },
     location="query",
 )
-@http_auth.login_required
 def cams_snapshot(args):
     """
     Return raw historical count per camera
@@ -59,4 +56,4 @@ def cams_snapshot(args):
 
     db_query = CamsSnapshot()
 
-    return db_query.response_json(get_session('jamcam'), type=args.pop('type'))
+    return db_query.response_json(get_session(), type=args.pop('type'))
