@@ -21,9 +21,3 @@ SWAGGER_TEMPLATE = {
     "schemes": ["http",],
     "operationId": "getmyData",
 }
-
-# A development user and password
-HTTP_BASIC_PASSWORD = 'password'
-USERS = {
-    "ati": generate_password_hash(HTTP_BASIC_PASSWORD)
-}
