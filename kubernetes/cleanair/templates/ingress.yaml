@@ -23,7 +23,6 @@ metadata:
     nginx.ingress.kubernetes.io/auth-secret: basic-auth
     # message to display with an appropriate context why the authentication is required
     nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
-s
 spec:
   tls:
   - hosts:

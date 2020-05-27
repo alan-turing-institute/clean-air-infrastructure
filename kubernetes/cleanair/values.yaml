@@ -3,6 +3,7 @@
 imageTag: 9182a0510a3458ed76d7121719f49c98eb6c5d86
 
 jobs:
+
 #   - name: test-jamcam
 #     image:
 #         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
@@ -109,6 +110,35 @@ jobs:
 
 
 cronjobs:
+
+  - name: input-aqe
+    image:
+        repository: cleanairdocker.azurecr.io/input_aqe
+        imagePullPolicy: Always
+    schedule: "5 * * * *"
+    failedJobsHistoryLimit: 10
+    successfulJobsHistoryLimit: 10
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    volumes:
+    - name: secrets
+    secret:
+        secretName: secrets
+
+    # - name: input-laqn
+    #     image:
+    #     repository: cleanairdocker.azurecr.io/input_laqn
+    #     imagePullPolicy: Always
+    #     schedule: "5 * * * *"
+    #     failedJobsHistoryLimit: 1
+    #     successfulJobsHistoryLimit: 10
+    #     concurrencyPolicy: Forbid
+    #     restartPolicy: OnFailure
+    #     volumes:
+    #     - name: secrets
+    #     secret:
+    #         secretName: secrets
+
 #   - name: test-jamcam-cron-on-hour
 #     schedule: "0 4-19 * * *"
 #     concurrencyPolicy: Allow
@@ -193,33 +223,7 @@ cronjobs:
 #         cpu: "23"
 #         nvidia.com/gpu: 4
 
-  - name: input-aqe
-    image:
-      repository: cleanairdocker.azurecr.io/input_aqe
-      imagePullPolicy: Always
-    schedule: "5 * * * *"
-    failedJobsHistoryLimit: 10
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-
-  - name: input-laqn
-    image:
-      repository: cleanairdocker.azurecr.io/input_laqn
-      imagePullPolicy: Always
-    schedule: "5 * * * *"
-    failedJobsHistoryLimit: 1
-    successfulJobsHistoryLimit: 10
-    concurrencyPolicy: Forbid
-    restartPolicy: OnFailure
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
+  
 
 #   - name: input-satellite
 #     image:
