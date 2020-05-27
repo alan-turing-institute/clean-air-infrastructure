@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: d127b2d39763dfad24699138545dc261a582ca0a
+imageTag: 9182a0510a3458ed76d7121719f49c98eb6c5d86
 
 jobs:
 #   - name: test-jamcam
