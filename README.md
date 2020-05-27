@@ -22,7 +22,7 @@ A list of key developers on the project. A good place to start if you wish to co
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|
 | James Walsh        | [@dead-water](https://github.com/dead-water)         | <jwalsh@turing.ac.uk>     | 
 | David Perez-Suarez  | [@dpshelio](https://github.com/dpshelio)            | <d.perez-suarez@ucl.ac.uk>|
-| Oliver Hamelijnck  | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>|
+| Tim Spain  | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>|
 
 # Contents
 
