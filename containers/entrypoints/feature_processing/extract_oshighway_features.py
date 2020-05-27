@@ -4,6 +4,7 @@ Run feature processing using OSHighway data
 import webbrowser
 import tempfile
 import time
+import argparse
 from cleanair.loggers import initialise_logging
 from cleanair.features import OSHighwayFeatures
 from cleanair.parsers import OsHighwayFeatureArgumentParser
@@ -19,7 +20,7 @@ def check(args):
 
     if args.web:
         # show in browser
-        available_data = static_feature_extractor.get_static_feature_availability(args.feature_name, args.source, args.exclude_has_data, output_type='html')
+        available_data = static_feature_extractor.get_static_feature_availability(args.feature_name, args.sources, args.exclude_has_data, output_type='html')
 
         with tempfile.NamedTemporaryFile(suffix=".html", mode="w") as tmp:
             tmp.write("<h1>Feature availability. Feature={}</h1>".format(args.feature_name))
@@ -29,19 +30,19 @@ def check(args):
             webbrowser.open("file://" + tmp.name, new=2)
             time.sleep(1)
     else:
-        available_data =  static_feature_extractor.get_static_feature_availability(args.feature_name, args.source, args.exclude_has_data, output_type='tabulate')
+        available_data =  static_feature_extractor.get_static_feature_availability(args.feature_name, args.sources, args.exclude_has_data, output_type='tabulate')
 
         print(available_data)
 
     # Extract static features into the appropriate tables on the database
-    static_feature_extractor.get_static_feature_availability(args.feature_name, args.source, args.exclude_has_data)
+    static_feature_extractor.get_static_feature_availability(args.feature_name, args.sources, args.exclude_has_data)
 
 
 def fill(args):
     """Fill the database"""
 
     static_feature_extractor = OSHighwayFeatures(
-        secretfile=args.secretfile, sources=None
+        secretfile=args.secretfile, sources=args.sources
     )
 
     static_feature_extractor.update_remote_tables()
@@ -50,8 +51,15 @@ def create_parser():
     """Create parser"""
 
     # Parse and interpret command line arguments
-    parsers = OsHighwayFeatureArgumentParser(
-        description="Extract static OSHighway features and check what is in database"
+    parent_parser = argparse.ArgumentParser(add_help=False)                                 
+    parent_parser.add_argument(
+        "--sources",
+        nargs="+",
+        default=['laqn', 'aqe'],
+    )
+
+    parsers =  OsHighwayFeatureArgumentParser(
+        description="Extract static OSHighway features and check what is in database",
     )
 
     subparsers = parsers.add_subparsers(required=True, dest="command")
@@ -59,12 +67,14 @@ def create_parser():
     parser_check = subparsers.add_parser(
         "check",
         help="Check what static features are available in the cleanair database",
+        parents = [parent_parser]
     )
 
-    # parser_insert = subparsers.add_parser(
-    #     "fill",
-    #     help="Process static features",
-    # )
+    parser_insert = subparsers.add_parser(
+        "fill",
+        help="Process static features",
+        parents = [parent_parser]
+    )
 
     # parser_insert.add_argument(
     #     "-m", "--method", default="missing", type=str, choices=["missing", "all"]
@@ -74,10 +84,6 @@ def create_parser():
         "-f",
         "--feature-name",
         required=True,
-        type=str,
-    )
-    parser_check.add_argument(
-        "--source",
         type=str,
     )
     parser_check.add_argument(
@@ -93,9 +99,11 @@ def create_parser():
         help="Open a browser to show available data. Else print to console",
     )
 
+    
+
     # # Link to programs
     parser_check.set_defaults(func=check)
-    # parser_insert.set_defaults(func=fill)
+    parser_insert.set_defaults(func=fill)
 
     return parsers
 

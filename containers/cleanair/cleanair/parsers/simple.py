@@ -24,9 +24,9 @@ class LAQNReadingArgumentParser(
 
 
 class OsHighwayFeatureArgumentParser(
-    SecretFileParserMixin, VerbosityMixin, ArgumentParser
+     SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):
-    """Argument parsing for OS highway features"""
+    """OsHighway Parser"""
 
 class ScootReadingFeatureArgumentParser(
     DurationParserMixin,
