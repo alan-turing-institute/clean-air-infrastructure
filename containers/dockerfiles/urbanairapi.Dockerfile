@@ -5,8 +5,8 @@ COPY cleanair /app/cleanair
 RUN pip install /app/cleanair
 
 # Install traffic app
-COPY odysseus /app/odysseus
-RUN pip install /app/odysseus
+COPY uatraffic /app/uatraffic
+RUN pip install /app/uatraffic
 
 
 # Copy the API into the container

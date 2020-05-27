@@ -31,7 +31,7 @@ before_install:
 install:
   - pip install -r containers/requirements.txt
   - pip install 'containers/cleanair[models,traffic,dashboard]'
-  - pip install 'containers/odysseus'
+  - pip install 'containers/uatraffic'
 
 before_script:
   - python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s .secrets/db_secrets_offline.json -d street_canyon rectgrid_100 hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
@@ -50,8 +50,7 @@ script:
 
   # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
   # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-  - pylint --disable=C0330 */ --ignore=cleanair,urbanair,odysseus,tests
+  - pylint --disable=C0330 */ --ignore=cleanair,urbanair,uatraffic
   - pylint --disable=C0330 containers/cleanair/*
   # - pylint --disable=C0330 containers/urbanair/*
-  - pylint --disable=C0330 containers/odysseus/*
-  - pylint --disable=C0330 containers/tests/*
+  - pylint --disable=C0330 containers/uatraffic/*

@@ -16,7 +16,7 @@ setuptools.setup(
     ],
     install_requires=[
         "cleanair",
-        "odysseus",
+        "uatraffic",
         "flask",
         "flask-marshmallow",
         "flasgger",

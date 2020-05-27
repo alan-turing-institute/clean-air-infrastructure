@@ -130,7 +130,7 @@ pip install -e 'containers/urbanair'
 ### UATraffic (London Busyness only)
 All additional  functionality related to the London Busyness project requires:
 ```bash
-pip install -e 'containers/odysseus'
+pip install -e 'containers/uatraffic'
 ```
 
 --- 
@@ -282,7 +282,7 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/test_database_init --secretfile $SECRETS
+pytest containers/tests/database_init --secretfile $SECRETS
 ```
 
 
