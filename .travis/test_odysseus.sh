@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # filepaths to include
-INCLUDE="containers/odysseus containers/tests/test_odysseus containers/entrypoints/odysseus"
+INCLUDE="containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*"
 
 
 # Run all pytest unit tests
