@@ -5,6 +5,7 @@ EXCLUDE_BLACK="test_odysseus|odysseus"
 
 # replace | with , for pylint exclusion
 EXCLUDE_PYLINT=$(echo $EXCLUDE_BLACK | tr "|" ",")
+EXCLUDE_PYLINT="$EXCLUDE_PYLINT,cleanair.egg-info"
 
 # Run all pytest unit tests
 python -m pytest containers/tests/test_cleanair

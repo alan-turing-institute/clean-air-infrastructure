@@ -18,7 +18,7 @@ class InstanceQueryMixin:
     """
 
     @db_query
-    def get_instances(
+    def get_instances(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
         instance_ids: list = None,
@@ -57,7 +57,7 @@ class InstanceQueryMixin:
             return readings
 
     @db_query
-    def get_instances_with_params(
+    def get_instances_with_params(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
         instance_ids: list = None,

@@ -162,6 +162,7 @@ class Instance(DBWriter):
         self.instance_id = None  # this will update in setter
 
     def hash(self) -> str:
+        """Hash the model name, param id, data id and git hash return a unique id."""
         hash_string = self.model_name + str(self.param_id)
         hash_string += self.git_hash + str(self.data_id)
         return Instance.hash_fn(hash_string)
