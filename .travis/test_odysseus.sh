@@ -15,4 +15,4 @@ black --check $INCLUDE
 
 # Run pylint for stricter error checking.
 # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-pylint --disable=C0330 $INCLUDE
+pylint --rcfile=.pylintrc $INCLUDE

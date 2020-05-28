@@ -18,7 +18,7 @@ black --check --exclude $EXCLUDE_BLACK */
 
 # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
 # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-pylint --disable=C0330 */ --ignore=cleanair,urbanair,odysseus,tests
-pylint --disable=C0330 containers/cleanair/*
-# pylint --disable=C0330 containers/urbanair/*
-pylint --disable=C0330 --ignore=$EXCLUDE_PYLINT containers/tests/*
+pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
+pylint --rcfile=.pylintrc containers/cleanair/*
+# pylint --rcfile=.pylintrc containers/urbanair/*
+pylint --rcfile=.pylintrc --ignore=$EXCLUDE_PYLINT containers/tests/*

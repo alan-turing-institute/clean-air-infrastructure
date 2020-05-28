@@ -14,6 +14,6 @@ class HexGrid(DeferredReflection, Base):
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
+            for column in [c.name for c in self.__table__.columns]  # pylint: disable=no-member
         ]
         return "<HexGrid(" + ", ".join(vals) + ")>"

@@ -275,6 +275,14 @@ class DBQueryMixin:
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
+    def __init__(self, **kwargs):
+        # Pass unused arguments onwards
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None, detectors=None):
         """
