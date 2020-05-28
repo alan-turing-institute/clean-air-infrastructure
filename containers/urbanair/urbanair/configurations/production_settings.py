@@ -2,7 +2,6 @@
 from werkzeug.security import generate_password_hash
 
 DATABASE_SECRETFILE = "db_secrets.json"
-DATABASE_SECRETFILE_JAMCAM = "db_secrets_jamcam.json"
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
     "info": {
