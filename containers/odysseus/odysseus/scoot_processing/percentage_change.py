@@ -2,19 +2,16 @@
 Class for querying traffic and scoot data.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import calendar
 from dateutil import rrule
 import pandas as pd
-from sqlalchemy import func, or_, and_
 
 from cleanair.databases import DBWriter
 from cleanair.mixins import DateRangeMixin, ScootQueryMixin
 from cleanair.loggers.logcolours import green, red
 from cleanair.databases.tables import (
-    MetaPoint,
     ScootReading,
-    ScootDetector,
     ScootPercentChange,
 )
 from cleanair.decorators import db_query
