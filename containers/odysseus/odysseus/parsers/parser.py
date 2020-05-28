@@ -1,4 +1,4 @@
-"""Parsers for the uatraffic module and their entrypoints."""
+"""Parsers for the odysseus module and their entrypoints."""
 
 from argparse import ArgumentParser, ArgumentTypeError
 from datetime import datetime, timedelta
