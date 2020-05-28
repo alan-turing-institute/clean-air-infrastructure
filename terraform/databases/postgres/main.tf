@@ -130,27 +130,6 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
 #   end_ip_address      = "195.99.240.222"
 # }
 
-# Add a provider so we can assign database roles (max_connections should be fairly large https://github.com/terraform-providers/terraform-provider-postgresql/issues/81)
-provider "postgresql" {
-  host            = "${azurerm_postgresql_server.this.name}.postgres.database.azure.com"
-  database        = "${azurerm_key_vault_secret.db_name.value}"
-  username        = "${azurerm_key_vault_secret.db_admin_username.value}@${azurerm_postgresql_server.this.name}"
-  password        = "${azurerm_key_vault_secret.db_admin_password.value}"
-  sslmode         = "require"
-  connect_timeout = 15
-  superuser = false
-  max_connections = 20
-}
-
-# Add extentions
-resource "postgresql_extension" "ext_postgis" {
-  name = "postgis"
-}
-
-resource "postgresql_extension" "ext_uuid" {
-  name = "uuid-ossp"
-}
-
 # Users
 # Random strings
 # --------------
