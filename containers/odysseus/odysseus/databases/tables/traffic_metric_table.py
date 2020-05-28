@@ -31,8 +31,5 @@ class TrafficMetricTable(Base):
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in cols
-        ]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<Instance(" + ", ".join(vals)
