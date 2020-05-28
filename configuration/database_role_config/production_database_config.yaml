@@ -195,7 +195,7 @@ roles:
           - ALL
 
   - role: jamcamreadwrite
-    create_schema: False
+    create_schema: True
     schema:
       - name: jamcam
         create: True
