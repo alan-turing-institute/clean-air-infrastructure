@@ -6,11 +6,11 @@ WORKDIR /app
 
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair/
-COPY uatraffic /app/uatraffic/
+COPY odysseus /app/odysseus/
 
 # Install any needed packages specified in requirements.txt
 RUN pip install '/app/cleanair'
-RUN pip install '/app/uatraffic'
+RUN pip install '/app/odysseus'
 
 # Create directory for storing models
 RUN mkdir /experiments

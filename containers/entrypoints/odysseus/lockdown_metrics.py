@@ -3,15 +3,16 @@ Calculate metrics for trained models.
 """
 import os
 import logging
-from uatraffic.databases import TrafficInstanceQuery, TrafficQuery
-from uatraffic.metric import TrafficMetric
-from uatraffic.dataset import prepare_batch
-from uatraffic.util import load_models_from_file, TrafficModelParser
+from odysseus.databases import TrafficInstanceQuery, TrafficQuery
+from odysseus.metric import TrafficMetric
+from odysseus.dataset import prepare_batch
+from odysseus.parsers import TrainTrafficModelParser
+from odysseus.model import load_models_from_file
 
 def main():
     """Entrypoint function for lockdown metrics."""
     # get command line arguments
-    parser = TrafficModelParser()
+    parser = TrainTrafficModelParser()
     parser.add_custom_subparsers()
     args = parser.parse_args()
 

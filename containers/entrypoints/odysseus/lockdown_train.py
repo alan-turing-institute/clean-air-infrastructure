@@ -8,17 +8,18 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 
-from uatraffic.parsers import TrainTrafficModelParser
-from uatraffic.databases import TrafficInstance, TrafficQuery
-from uatraffic.dates import (
+from odysseus.parsers import TrainTrafficModelParser
+from odysseus.experiment import TrafficInstance
+from odysseus.databases import TrafficQuery
+from odysseus.dates import (
     NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from uatraffic.dataset import prepare_batch, TrafficDataset
-from uatraffic.model import parse_kernel
-from uatraffic.model import train_sensor_model
+from odysseus.dataset import prepare_batch, TrafficDataset
+from odysseus.model import parse_kernel
+from odysseus.model import train_sensor_model
 
 
 def create_directories(root, experiment):
