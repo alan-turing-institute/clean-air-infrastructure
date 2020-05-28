@@ -1,14 +1,32 @@
 """Functions for calculating the percentage change in traffic."""
 
+from typing import List
 import logging
 import pandas as pd
 import numpy as np
 
 
 def percent_of_baseline(
-    baseline_df, comparison_df, groupby_cols=None, min_condfidence_count=6
-):
-    """Group both dataframes by detector id and day then """
+    baseline_df: pd.DataFrame,
+    comparison_df: pd.DataFrame,
+    groupby_cols: List[str] = None,
+    min_condfidence_count: int = 6,
+) -> pd.DataFrame:
+    """Percent change from the baseline for each detector in the comparison dataframe.
+
+    Args:
+        baseline_df: Contains observations, possibly for multiple detectors over multiple weeks.
+        comparison_df: A single day of observations, possibly for multiple detectors.
+
+    Kwargs:
+        groupby_cols: Names of columns in the dataframe to groupby. Default is 'detector_id'.
+        min_confidence_count: Minimum number of observations to calculate the percent of baseline
+            metric with confidence. Less observations than this value will set the
+            `low_confidence` flag to true.
+
+    Returns:
+        Percent of baseline metric for each detector with columns for e.g. flags.
+    """
     try:
         normal_set = set(baseline_df.detector_id)
         comparison_set = set(comparison_df.detector_id)
@@ -81,14 +99,8 @@ def percent_of_baseline(
                 not flag_dict["no_traffic_in_baseline"]
                 and not flag_dict["no_traffic_in_comparison"]
             ):
-                percent_change = (
-                    100
-                    - 100
-                    * (
-                        baseline_n_vehicles_in_interval
-                        - comparison_n_vehicles_in_interval
-                    )
-                    / baseline_n_vehicles_in_interval
+                percent_change = percent_of_baseline_counts(
+                    baseline_n_vehicles_in_interval, comparison_n_vehicles_in_interval,
                 )
 
             if len(groupby_cols) > 1:
@@ -111,3 +123,21 @@ def percent_of_baseline(
     logging.info("%s detectors with zero vehicles in normal", baseline_zero_count)
     logging.info("%s detectors with zero vehicles in comparison", comparison_zero_count)
     return pd.DataFrame(rows_list)
+
+
+def percent_of_baseline_counts(baseline_count: int, comparison_count: int,) -> float:
+    """Calculate the percentage change of the comparison count compared to the baseline.
+
+    Args:
+        baseline_count: Total count in baseline period.
+        comparison_count: Total count in comparison period.
+
+    Returns:
+        If comparison_count <= baseline count then returned value will be 0 - 100%.
+        Else returned value will be greater than 100%.
+    """
+    if comparison_count == 0:
+        return 0
+    if baseline_count == 0:
+        return np.nan
+    return 100 - 100 * (baseline_count - comparison_count) / baseline_count

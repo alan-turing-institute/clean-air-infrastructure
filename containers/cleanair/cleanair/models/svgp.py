@@ -1,6 +1,7 @@
 """
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
+
 import logging
 import os
 import numpy as np

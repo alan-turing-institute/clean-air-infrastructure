@@ -2,7 +2,7 @@
 import setuptools
 
 setuptools.setup(
-    name="uatraffic",
+    name="odysseus",
     version="0.0.1",
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",

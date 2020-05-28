@@ -1,7 +1,7 @@
 from flask import Blueprint
 from webargs import fields
 from webargs.flaskparser import use_args
-from uatraffic.scoot_processing import (
+from odysseus.scoot_processing import (
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
     NORMAL_BASELINE_START,
