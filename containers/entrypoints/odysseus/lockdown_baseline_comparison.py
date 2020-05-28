@@ -3,12 +3,12 @@ Calculate the percent of baseline metric for a recent day.
 """
 from datetime import datetime
 from dateutil.parser import isoparse
-from uatraffic.scoot_processing import (
+from odysseus.scoot_processing import (
     TrafficPercentageChange,
     LOCKDOWN_BASELINE_END,
     NORMAL_BASELINE_END,
 )
-from uatraffic.parsers import BaselineParser
+from odysseus.parsers import BaselineParser
 
 
 def main():
