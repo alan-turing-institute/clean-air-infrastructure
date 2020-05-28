@@ -1,8 +1,6 @@
 """
 Table for traffic data.
 """
-from sqlalchemy import Column
-from sqlalchemy.dialects.postgresql import JSONB
 from cleanair.databases import Base
 from cleanair.mixins import DataConfigMixin
 
