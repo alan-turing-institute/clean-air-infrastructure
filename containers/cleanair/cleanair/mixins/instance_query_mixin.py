@@ -37,22 +37,18 @@ class InstanceQueryMixin:
                 readings = readings.filter(self.instance_table.tag == tag)
             # filter by instance ids
             if instance_ids:
-                readings = readings.filter(self.instance_table.instance_id.in_(instance_ids))
+                readings = readings.filter(
+                    self.instance_table.instance_id.in_(instance_ids)
+                )
             # filter by data ids
             if data_ids:
-                readings = readings.filter(
-                    self.instance_table.data_id.in_(data_ids)
-                )
+                readings = readings.filter(self.instance_table.data_id.in_(data_ids))
             # filter by param ids and model name
             if param_ids:
-                readings = readings.filter(
-                    self.instance_table.param_id.in_(param_ids)
-                )
+                readings = readings.filter(self.instance_table.param_id.in_(param_ids))
             # filter by model names
             if models:
-                readings = readings.filter(
-                    self.instance_table.model_name.in_(models)
-                )
+                readings = readings.filter(self.instance_table.model_name.in_(models))
             # get all instances that were fit after the given date
             if fit_start_time:
                 readings = readings.filter(
@@ -74,9 +70,14 @@ class InstanceQueryMixin:
         Get all traffic instances and join the json parameters.
         """
         instance_subquery = self.get_instances(
-            tag=tag, instance_ids=instance_ids, data_ids=data_ids,
-            param_ids=param_ids, models=models, fit_start_time=fit_start_time,
-            output_type="subquery")
+            tag=tag,
+            instance_ids=instance_ids,
+            data_ids=data_ids,
+            param_ids=param_ids,
+            models=models,
+            fit_start_time=fit_start_time,
+            output_type="subquery",
+        )
         with self.dbcnxn.open_session() as session:
             readings = (
                 session.query(
@@ -90,11 +91,11 @@ class InstanceQueryMixin:
                     and_(
                         self.model_table.model_name == instance_subquery.c.model_name,
                         self.model_table.param_id == instance_subquery.c.param_id,
-                    )
+                    ),
                 )
                 .join(
                     self.data_table,
-                    self.data_table.data_id == instance_subquery.c.data_id
+                    self.data_table.data_id == instance_subquery.c.data_id,
                 )
             )
             return readings

@@ -46,12 +46,14 @@ class TrafficDataQueryMixin:
             if nweeks:
                 # TODO: the below method is not working due to casting problem (nweeks field is float/string not int)
                 readings = readings.filter(
-                    TrafficDataTable.data_config["nweeks"].astext.cast(Integer) == nweeks
+                    TrafficDataTable.data_config["nweeks"].astext.cast(Integer)
+                    == nweeks
                 )
 
             if baseline_period:
                 readings = readings.filter(
-                    TrafficDataTable.data_config["baseline_period"].astext == baseline_period
+                    TrafficDataTable.data_config["baseline_period"].astext
+                    == baseline_period
                 )
 
             return readings

@@ -271,6 +271,7 @@ class DBQueryMixin:
                 SatelliteForecast.species_code.in_(species),
             )
 
+
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
@@ -323,9 +324,7 @@ class ScootQueryMixin:
             return scoot_readings
 
     @db_query
-    def get_scoot_by_dow(
-        self, day_of_week, start_time, end_time=None, detectors=None
-    ):
+    def get_scoot_by_dow(self, day_of_week, start_time, end_time=None, detectors=None):
         """
         Get scoot readings for days between start_time and end_time filtered by day_of_week.
 
@@ -403,9 +402,7 @@ class ScootQueryMixin:
 
     @db_query
     def get_scoot_detectors(
-        self,
-        offset: int = None,
-        limit: int = None,
+        self, offset: int = None, limit: int = None,
     ):
         """
         Get all scoot detectors from the interest point schema.
@@ -415,16 +412,15 @@ class ScootQueryMixin:
             limit: Select at most this many detectors.
         """
         with self.dbcnxn.open_session() as session:
-            readings = (
-                session.query(
-                    ScootDetector.detector_n.label("detector_id"),
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                )
-                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
-            )
+            readings = session.query(
+                ScootDetector.detector_n.label("detector_id"),
+                func.ST_X(MetaPoint.location).label("lon"),
+                func.ST_Y(MetaPoint.location).label("lat"),
+            ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
 
             if offset and limit:
-                readings = readings.order_by(ScootDetector.detector_n).slice(offset, offset + limit)
+                readings = readings.order_by(ScootDetector.detector_n).slice(
+                    offset, offset + limit
+                )
 
             return readings

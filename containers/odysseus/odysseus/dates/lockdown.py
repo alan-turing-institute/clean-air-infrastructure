@@ -3,6 +3,7 @@
 LOCKDOWN_BASELINE_START = "2020-03-30"
 LOCKDOWN_BASELINE_END = "2020-04-20"
 
+
 def timestamp_is_lockdown(timestamp: str) -> bool:
     """
     Check if the timestamp is in the lockdown period.

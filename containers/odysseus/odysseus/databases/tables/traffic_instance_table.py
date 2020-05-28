@@ -11,12 +11,13 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
     __tablename__ = "traffic_instance"
 
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["data_id"], ["gla_traffic.traffic_data.data_id"]
-        ),
+        ForeignKeyConstraint(["data_id"], ["gla_traffic.traffic_data.data_id"]),
         ForeignKeyConstraint(
             ["model_name", "param_id"],
-            ["gla_traffic.traffic_model.model_name", "gla_traffic.traffic_model.param_id"]
+            [
+                "gla_traffic.traffic_model.model_name",
+                "gla_traffic.traffic_model.param_id",
+            ],
         ),
-        {"schema": "gla_traffic"}
+        {"schema": "gla_traffic"},
     )

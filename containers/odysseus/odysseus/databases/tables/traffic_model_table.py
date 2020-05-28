@@ -3,6 +3,7 @@
 from cleanair.databases import Base
 from cleanair.mixins import ModelTableMixin
 
+
 class TrafficModelTable(Base, ModelTableMixin):
     """Storing model parameters and information."""
 

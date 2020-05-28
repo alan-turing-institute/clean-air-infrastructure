@@ -9,6 +9,7 @@ import git
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 
+
 class Instance(DBWriter, DBQueryMixin):
     """
     An instance is one model trained and fitted on some data.
@@ -28,7 +29,7 @@ class Instance(DBWriter, DBQueryMixin):
         secretfile: Path to secretfile.
     """
 
-    def __init__(       # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         model_name: str,
         param_id: str,
@@ -57,10 +58,14 @@ class Instance(DBWriter, DBQueryMixin):
         else:
             try:
                 # get the hash of the git repository
-                self._git_hash = git.Repo(search_parent_directories=True).head.object.hexsha
+                self._git_hash = git.Repo(
+                    search_parent_directories=True
+                ).head.object.hexsha
             except git.InvalidGitRepositoryError as error:
                 # catch exception and set to empty string
-                error_message = "Could not find a git repository in the parent directory."
+                error_message = (
+                    "Could not find a git repository in the parent directory."
+                )
                 error_message += "Setting git_hash to empty string."
                 logging.error(error_message)
                 logging.error(error.__traceback__)
@@ -77,7 +82,7 @@ class Instance(DBWriter, DBQueryMixin):
     @model_name.setter
     def model_name(self, value: str):
         self._model_name = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def param_id(self) -> str:
@@ -87,7 +92,7 @@ class Instance(DBWriter, DBQueryMixin):
     @param_id.setter
     def param_id(self, value: str):
         self._param_id = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def data_id(self) -> str:
@@ -97,7 +102,7 @@ class Instance(DBWriter, DBQueryMixin):
     @data_id.setter
     def data_id(self, value: str):
         self._data_id = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def instance_id(self) -> str:
@@ -110,7 +115,9 @@ class Instance(DBWriter, DBQueryMixin):
         if not value or value == hash_value:
             self._instance_id = hash_value
         else:
-            raise ValueError("The instance id you passed does not match the hash of the instance.")
+            raise ValueError(
+                "The instance id you passed does not match the hash of the instance."
+            )
 
     @property
     def git_hash(self) -> str:
@@ -123,7 +130,7 @@ class Instance(DBWriter, DBQueryMixin):
     @git_hash.setter
     def git_hash(self, value: str):
         self._git_hash = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def tag(self) -> str:
@@ -133,7 +140,7 @@ class Instance(DBWriter, DBQueryMixin):
     @tag.setter
     def tag(self, value: str):
         self._tag = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def cluster_id(self) -> str:
@@ -143,7 +150,7 @@ class Instance(DBWriter, DBQueryMixin):
     @cluster_id.setter
     def cluster_id(self, value: str):
         self._cluster_id = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     @property
     def fit_start_time(self) -> str:
@@ -153,10 +160,10 @@ class Instance(DBWriter, DBQueryMixin):
     @fit_start_time.setter
     def fit_start_time(self, value: str):
         self._fit_start_time = value
-        self.instance_id = None     # this will update in setter
+        self.instance_id = None  # this will update in setter
 
     def __hash__(self) -> str:
-        hash_string = self.model_name + str(self.param_id) 
+        hash_string = self.model_name + str(self.param_id)
         hash_string += self.git_hash + str(self.data_id)
         return Instance.hash_fn(hash_string)
 
