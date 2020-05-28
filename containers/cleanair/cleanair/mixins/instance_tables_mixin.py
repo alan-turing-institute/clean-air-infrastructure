@@ -53,6 +53,7 @@ class DataConfigMixin:
     data_id = Column(String(64), primary_key=True, nullable=False)
     # we might be able to build an index on certain keys, but not the whole column :(
     data_config = Column(JSONB, nullable=False, index=False)
+    preprocessing = Column(JSONB, nullable=False, index=False)
 
     def __repr__(self):
         vals = [

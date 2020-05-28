@@ -15,5 +15,4 @@ def timestamp_is_lockdown(timestamp: str) -> bool:
         True if the timestamp is greater than or equal to the lockdown start
         and strictly less than the lockdown end.
     """
-    # TODO: better type checking and format checking / corrections
     return LOCKDOWN_BASELINE_START <= timestamp < LOCKDOWN_BASELINE_END

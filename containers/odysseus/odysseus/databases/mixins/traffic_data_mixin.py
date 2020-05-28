@@ -38,7 +38,6 @@ class TrafficDataQueryMixin:
                 )
 
             if end_time:
-                # TODO: should this be strictly less than?
                 readings = readings.filter(
                     TrafficDataTable.data_config["end"].astext <= end_time
                 )

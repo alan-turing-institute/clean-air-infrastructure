@@ -17,15 +17,14 @@ from cleanair.databases.tables import (
 from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
+from ..dates import (
+    NORMAL_BASELINE_START,
+    NORMAL_BASELINE_END,
+    LOCKDOWN_BASELINE_START,
+    LOCKDOWN_BASELINE_END,
+)
 from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
-
-
-NORMAL_BASELINE_START = "2020-02-10"
-NORMAL_BASELINE_END = "2020-03-02"
-LOCKDOWN_BASELINE_START = "2020-03-30"
-LOCKDOWN_BASELINE_END = "2020-04-20"
-
 
 class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
     """
