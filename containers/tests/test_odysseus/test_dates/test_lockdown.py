@@ -8,6 +8,7 @@ from odysseus.dates import (
 )
 from .date_formats import SIMPLE, LONG, LONGT
 
+
 def test_timestamp_is_lockdown():
     """Test the timestamp_is_lockdown method."""
     lockdown_start = datetime.strptime(LOCKDOWN_BASELINE_START, SIMPLE)

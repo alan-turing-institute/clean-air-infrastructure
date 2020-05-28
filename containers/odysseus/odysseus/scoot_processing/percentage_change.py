@@ -26,6 +26,7 @@ from ..dates import (
 from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
 
+
 class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
     """
     Queries to run on the SCOOT DB.
