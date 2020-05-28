@@ -1,7 +1,6 @@
 """Mixin query for traffic data config."""
 
 import json
-from sqlalchemy import Integer
 from cleanair.decorators import db_query
 from ..tables import TrafficDataTable
 
@@ -15,7 +14,6 @@ class TrafficDataQueryMixin:
         start_time: str = None,
         end_time: str = None,
         detectors: list = None,
-        nweeks: int = None,
         baseline_period: str = None,
     ):
         """
@@ -40,13 +38,6 @@ class TrafficDataQueryMixin:
             if end_time:
                 readings = readings.filter(
                     TrafficDataTable.data_config["end"].astext <= end_time
-                )
-
-            if nweeks:
-                # TODO: the below method is not working due to casting problem (nweeks field is float/string not int)
-                readings = readings.filter(
-                    TrafficDataTable.data_config["nweeks"].astext.cast(Integer)
-                    == nweeks
                 )
 
             if baseline_period:

@@ -30,10 +30,9 @@ class TrafficMetricTable(Base):
     nlpl = Column(Float, nullable=False, index=False)
 
     def __repr__(self):
+        columns = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
         vals = [
             "{}='{}'".format(column, getattr(self, column))
-            for column in [
-                c.name for c in self.__table__.columns
-            ]  # pylint: disable=no-member
+            for column in columns
         ]
         return "<Instance(" + ", ".join(vals)

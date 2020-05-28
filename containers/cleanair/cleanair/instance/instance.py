@@ -7,10 +7,9 @@ import logging
 import hashlib
 import git
 from ..databases import DBWriter
-from ..mixins import DBQueryMixin
 
 
-class Instance(DBWriter, DBQueryMixin):
+class Instance(DBWriter):
     """
     An instance is one model trained and fitted on some data.
 
@@ -25,7 +24,7 @@ class Instance(DBWriter, DBQueryMixin):
         tag: Name of the instance type, e.g. 'production', 'test', 'validation'.
         git_hash: Git hash of the code version.
         fit_start_time: Datetime when the model started fitting.
-            See `Instance.__hash__()`.
+            See `Instance.hash()`.
         secretfile: Path to secretfile.
     """
 
@@ -72,7 +71,7 @@ class Instance(DBWriter, DBQueryMixin):
                 self._git_hash = ""
 
         self._fit_start_time = fit_start_time
-        self._instance_id = self.__hash__()
+        self._instance_id = self.hash()
 
     @property
     def model_name(self) -> str:
@@ -111,7 +110,7 @@ class Instance(DBWriter, DBQueryMixin):
 
     @instance_id.setter
     def instance_id(self, value: str):
-        hash_value = self.__hash__()
+        hash_value = self.hash()
         if not value or value == hash_value:
             self._instance_id = hash_value
         else:
@@ -162,7 +161,7 @@ class Instance(DBWriter, DBQueryMixin):
         self._fit_start_time = value
         self.instance_id = None  # this will update in setter
 
-    def __hash__(self) -> str:
+    def hash(self) -> str:
         hash_string = self.model_name + str(self.param_id)
         hash_string += self.git_hash + str(self.data_id)
         return Instance.hash_fn(hash_string)
