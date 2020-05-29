@@ -8,6 +8,7 @@ Base = declarative_base()  # pylint: disable=invalid-name
 
 class Values(FromClause):
     """Create SQL for values within a query"""
+
     named_with_column = True
 
     # pylint: disable=unused-argument

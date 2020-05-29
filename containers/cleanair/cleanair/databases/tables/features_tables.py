@@ -24,6 +24,7 @@ class StaticFeature(Base):
         nullable=False,
     )
     feature_name = Column(String(50), primary_key=True, nullable=False)
+    feature_source = Column(String(50), primary_key=True, nullable=False)
     value_1000 = Column(Float, nullable=False)
     value_500 = Column(Float, nullable=False)
     value_200 = Column(Float, nullable=False)
@@ -51,13 +52,14 @@ class StaticFeature(Base):
         )
 
     @staticmethod
-    def build_entry(feature_name, reading_tuple):
+    def build_entry(feature_name, feature_source, reading_tuple):
         """
         Create a StaticFeature entry and return it
         """
         return StaticFeature(
             point_id=str(reading_tuple[0]),
             feature_name=feature_name,
+            feature_source=feature_source,
             value_1000=reading_tuple[1],
             value_500=reading_tuple[2],
             value_200=reading_tuple[3],

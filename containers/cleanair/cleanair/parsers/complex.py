@@ -14,6 +14,45 @@ from ..mixins import (
 )
 
 
+class OsHighwayFeatureArgumentParser(
+    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
+):
+    """OsHighway Parser"""
+
+
+class SourceParser(SourcesMixin, ArgumentParser):
+    """Sources Parser"""
+
+
+class FeatureSourceParser(ArgumentParser):
+    """Sources Parser"""
+
+    def __init__(self, feature_sources, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-source",
+            type=str,
+            required=True,
+            choices=feature_sources,
+            help="List of sources to process, (default: {}).".format(
+                ",".join(feature_sources)
+            ),
+        )
+
+
+class FeatureNameParser(ArgumentParser):
+    def __init__(self, feature_names, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-name",
+            required=False,
+            nargs="+",
+            choices=feature_names,
+            help="Specify feature names to run. If not provided will process all feature names",
+            type=str,
+        )
+
+
 class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
     """Argument parser for configuring database roles"""
 

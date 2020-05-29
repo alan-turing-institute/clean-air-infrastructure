@@ -3,5 +3,4 @@
 from .satellite_availability import SatelliteAvailabilityMixin
 from .static_feature_availability import StaticFeatureAvailabilityMixin
 
-__all__ = ["SatelliteAvailabilityMixin",
-           "StaticFeatureAvailabilityMixin"]
+__all__ = ["SatelliteAvailabilityMixin", "StaticFeatureAvailabilityMixin"]

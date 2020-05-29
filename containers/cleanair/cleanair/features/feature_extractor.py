@@ -17,13 +17,22 @@ from ..databases.tables import (
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
-from ..loggers import duration, green,red, get_logger, duration_from_seconds
+from ..loggers import duration, green, red, get_logger, duration_from_seconds
 
 
 class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, dynamic=False, batch_size=10, sources=None, **kwargs):
+    def __init__(
+        self,
+        feature_source,
+        table,
+        features,
+        dynamic=False,
+        batch_size=10,
+        sources=None,
+        **kwargs
+    ):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -36,6 +45,9 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+        self.feature_source = feature_source
+        self.table = table
+        self.features = features
         self.dynamic = dynamic
         self.sources = sources if sources else []
         self.batch_size = batch_size
@@ -45,25 +57,9 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             self.output_table = StaticFeature
 
     @property
-    def features(self):
-        """A dictionary of features of the kind:
-
-        {
-            "building_height": {
-                "type": "value",
-                "feature_dict": {
-                    "calculated_height_of_building": ["*"]
-                },
-                "aggfunc": max_
-            }
-        }
-        """
-        raise NotImplementedError("Must be implemented by child classes")
-
-    @property
-    def table(self):
-        """Either returns an sql table instance or a subquery"""
-        raise NotImplementedError("Must be implemented by child classes")
+    def feature_names(self):
+        """Return a list of all feature names"""
+        return self.features.keys()
 
     @db_query
     def query_input_geometries(self, feature_name):
@@ -182,8 +178,9 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 func.Geometry(
                     func.ST_Buffer(func.Geography(MetaPoint.location), 10)
                 ).label("buff_geom_10"),
-            ).filter(MetaPoint.location.ST_Within(boundary_geom),
-                     MetaPoint.id.in_(point_ids))
+            ).filter(
+                MetaPoint.location.ST_Within(boundary_geom), MetaPoint.id.in_(point_ids)
+            )
 
         return q_meta_point
 
@@ -301,7 +298,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             return res
 
     @db_query
-    def query_features(self, point_ids, feature_name, feature_type, agg_func ):
+    def query_features(self, point_ids, feature_name, feature_type, agg_func):
         """
         For a given features, produce a query containing the full feature processing stage.
 
@@ -321,9 +318,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
-        cte_buffers = self.query_meta_points(
-            point_ids = point_ids
-        ).cte("buffers")
+        cte_buffers = self.query_meta_points(point_ids=point_ids).cte("buffers")
 
         if feature_type == "geom":
             # Use case to avoid calculating intersections if we know the geom is covered
@@ -454,6 +449,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             out = session.query(
                 *group_by_columns,
                 literal(feature_name).label("feature_name"),
+                literal(self.feature_source).label("feature_source"),
                 func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
                 func.coalesce(res.c.value_500, 0.0).label("value_500"),
                 func.coalesce(res.c.value_200, 0.0).label("value_200"),
@@ -461,10 +457,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 func.coalesce(res.c.value_10, 0.0).label("value_10"),
             ).join(res, cte_buffers.c.id == res.c.id, isouter=True)
 
-            
             return out
-            
-    
 
     def update_remote_tables(self):
         """
@@ -485,40 +478,56 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 n_features,
             )
 
-            missing_point_ids_df = self.get_static_feature_availability(feature_name, self.sources, exclude_has_data = True, output_type = 'df')
+            missing_point_ids_df = self.get_static_feature_availability(
+                feature_name, self.sources, exclude_has_data=True, output_type="df"
+            )
 
             if missing_point_ids_df.empty:
-                self.logger.info("No interest points require processing for feature %s, sources: %s", red(feature_name), red(self.sources))
+                self.logger.info(
+                    "No interest points require processing for feature %s, sources: %s",
+                    red(feature_name),
+                    red(self.sources),
+                )
                 continue
-            
-            self.logger.info("%s interest points from sources %s require processing for feature %s", green(missing_point_ids_df.shape[0]), green(self.sources), green(feature_name) )
-            
-            missing_point_ids = missing_point_ids_df['id'].astype(str).values
+
+            self.logger.info(
+                "%s interest points from sources %s require processing for feature %s",
+                green(missing_point_ids_df.shape[0]),
+                green(self.sources),
+                green(feature_name),
+            )
+
+            missing_point_ids = missing_point_ids_df["id"].astype(str).values
             n_point_ids = missing_point_ids.size
             batch_size = 500
-            n_batches = ceil(n_point_ids/min(batch_size, n_point_ids))
+            n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
 
-            self.logger.info("Processing %s interest points in %s batches of max size %s", missing_point_ids.size, n_batches, batch_size)
-            
-            missing_point_id_batches = np.array_split(missing_point_ids, missing_point_ids.size/batch_size )
+            self.logger.info(
+                "Processing %s interest points in %s batches of max size %s",
+                missing_point_ids.size,
+                n_batches,
+                batch_size,
+            )
+
+            missing_point_id_batches = np.array_split(
+                missing_point_ids, missing_point_ids.size / batch_size
+            )
 
             for batch_no, point_id_batch in enumerate(missing_point_id_batches):
                 self.logger.info("Processing batch %s of %s", batch_no, n_batches)
-                sq_select_and_insert = self.query_features(point_id_batch,
-                                                        feature_name, 
-                                                        feature_type=self.features[feature_name]["type"],
-                                                        agg_func=self.features[feature_name]["aggfunc"],
-                                                        output_type = 'subquery'
-                                                        )
-                
+                sq_select_and_insert = self.query_features(
+                    point_id_batch,
+                    feature_name,
+                    feature_type=self.features[feature_name]["type"],
+                    agg_func=self.features[feature_name]["aggfunc"],
+                    output_type="subquery",
+                )
+
                 self.commit_records(
-                    sq_select_and_insert,
-                    on_conflict="ignore",
-                    table=self.output_table
+                    sq_select_and_insert, on_conflict="ignore", table=self.output_table
                 )
                 # Print a final timing message
-        
-            
+
             # Print a timing message at the end of each feature
             self.logger.info(
                 "Finished adding records for '%s' after %s",
@@ -531,42 +540,37 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             green(duration(update_start, time.time())),
         )
 
+        # while True:
 
-            # while True:
+        #     if self.dynamic:
+        #         # Create full select-and-insert query
+        #         q_select_and_insert = self.query_features_dynamic(
+        #             feature_name,
+        #             feature_dict=self.features[feature_name]["feature_dict"],
+        #             agg_func=self.features[feature_name]["aggfunc"],
+        #             batch_size=self.batch_size,
+        #             output_type="query",
+        #         )
 
-            #     if self.dynamic:
-            #         # Create full select-and-insert query
-            #         q_select_and_insert = self.query_features_dynamic(
-            #             feature_name,
-            #             feature_dict=self.features[feature_name]["feature_dict"],
-            #             agg_func=self.features[feature_name]["aggfunc"],
-            #             batch_size=self.batch_size,
-            #             output_type="query",
-            #         )
+        #     else:
+        #         # Create full select-and-insert query
+        #         q_select_and_insert = self.query_features(
+        #             feature_name,
+        #             feature_type=self.features[feature_name]["type"],
+        #             agg_func=self.features[feature_name]["aggfunc"],
+        #             batch_size=self.batch_size,
+        #             output_type="query",
+        #         )
 
-            #     else:
-            #         # Create full select-and-insert query
-            #         q_select_and_insert = self.query_features(
-            #             feature_name,
-            #             feature_type=self.features[feature_name]["type"],
-            #             agg_func=self.features[feature_name]["aggfunc"],
-            #             batch_size=self.batch_size,
-            #             output_type="query",
-            #         )
+        #     if q_select_and_insert:
+        #         self.logger.info("Commiting to database")
+        #         with self.dbcnxn.open_session() as session:
+        #             self.commit_records(
+        #                 q_select_and_insert.subquery(),
+        #                 on_conflict="ignore",
+        #                 table=self.output_table,
+        #             )
 
-            #     if q_select_and_insert:
-            #         self.logger.info("Commiting to database")
-            #         with self.dbcnxn.open_session() as session:
-            #             self.commit_records(
-            #                 q_select_and_insert.subquery(),
-            #                 on_conflict="ignore",
-            #                 table=self.output_table,
-            #             )
-
-            #         quit()
-            #     else:
-            #         break
-
-                
-
-        
+        #         quit()
+        #     else:
+        #         break
