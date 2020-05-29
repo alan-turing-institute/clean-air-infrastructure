@@ -5,6 +5,7 @@ Table that summerises an instance (model + data + result).
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB
 
+
 class InstanceTableMixin:
     """Table of Instances."""
 
@@ -26,6 +27,7 @@ class InstanceTableMixin:
         ]
         return "<Instance(" + ", ".join(vals)
 
+
 class ModelTableMixin:
     """Table of model parameters."""
 
@@ -36,24 +38,22 @@ class ModelTableMixin:
     model_param = Column(JSONB, nullable=False, index=True)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ModelTable(" + ", ".join(vals)
+
 
 class DataConfigMixin:
     """Table of model parameters."""
 
     __tablename__ = "data_config"
-    
+
     data_id = Column(String(64), primary_key=True, nullable=False)
     # we might be able to build an index on certain keys, but not the whole column :(
     data_config = Column(JSONB, nullable=False, index=False)
+    preprocessing = Column(JSONB, nullable=False, index=False)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<DataConfig(" + ", ".join(vals)

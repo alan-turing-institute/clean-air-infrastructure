@@ -7,7 +7,7 @@ from cleanair.mixins import (
     SecretFileParserMixin,
     VerbosityMixin,
 )
-from ..mixins import (
+from .parser_mixins import (
     BaselineParserMixin,
     InstanceParserMixin,
     ModellingParserMixin,
@@ -15,7 +15,7 @@ from ..mixins import (
     PreprocessingParserMixin,
 )
 
-class TrainTrafficModelParser(
+class TrainTrafficModelParser(  # pylint: disable=too-many-ancestors
     BaselineParserMixin,
     InstanceParserMixin,
     ModellingParserMixin,

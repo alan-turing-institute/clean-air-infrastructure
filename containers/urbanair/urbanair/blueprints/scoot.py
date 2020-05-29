@@ -1,10 +1,8 @@
 from flask import Blueprint
 from webargs import fields
 from webargs.flaskparser import use_args
-from odysseus.scoot_processing import (
-    LOCKDOWN_BASELINE_START,
+from odysseus.dates import (
     LOCKDOWN_BASELINE_END,
-    NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
 )
 from ..queries import (

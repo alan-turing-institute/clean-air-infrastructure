@@ -11,12 +11,15 @@ from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
 from ..databases.tables import TrafficDataTable
 
+
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
     A traffic dataset that queries the database given a data config dictionary.
     """
 
-    def __init__(self, data_config: dict, preprocessing: dict, secretfile: str, **kwargs):
+    def __init__(
+        self, data_config: dict, preprocessing: dict, secretfile: str, **kwargs
+    ):
         # check the data config dictionary is valid
         TrafficDataset.validate_data_config(data_config)
         TrafficDataset.validate_preprocessing(preprocessing)
@@ -38,7 +41,9 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         )
         # from dataframe load datatset
         self._df = TrafficDataset.preprocess_dataframe(traffic_df, self._preprocessing)
-        self._input_dataset = TrafficDataset.from_dataframe(self._df, self._preprocessing)
+        self._input_dataset = TrafficDataset.from_dataframe(
+            self._df, self._preprocessing
+        )
 
         # pass the variant tensor the init of the Dataset class
         variant_tensor = self._input_dataset._variant_tensor_attr
@@ -111,7 +116,9 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         validate_dictionary(preprocessing, min_keys, value_types)
 
     @staticmethod
-    def validate_dataframe(traffic_df: pd.DataFrame, features: Collection = None, target: Collection = None):
+    def validate_dataframe(
+        traffic_df: pd.DataFrame, features: Collection = None, target: Collection = None
+    ):
         """
         Check the dataframe passed has the right column names.
 
@@ -142,10 +149,16 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         try:
             assert min_keys.issubset(traffic_df.columns)
         except AssertionError:
-            raise KeyError("{min} is not subset of {col}".format(min=min_keys, col=traffic_df.columns))
+            raise KeyError(
+                "{min} is not subset of {col}".format(
+                    min=min_keys, col=traffic_df.columns
+                )
+            )
 
     @staticmethod
-    def from_dataframe(traffic_df: pd.DataFrame, preprocessing: dict) -> tf.data.Dataset:
+    def from_dataframe(
+        traffic_df: pd.DataFrame, preprocessing: dict
+    ) -> tf.data.Dataset:
         """
         Return a dataset given a traffic dataframe.
 
@@ -160,7 +173,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         TrafficDataset.validate_dataframe(
             traffic_df,
             features=preprocessing["features"],
-            target=preprocessing["target"]
+            target=preprocessing["target"],
         )
 
         # create numpy arrays of the x and y columns
@@ -176,7 +189,9 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         )
 
     @staticmethod
-    def preprocess_dataframe(traffic_df: pd.DataFrame, preprocessing: dict) -> pd.DataFrame:
+    def preprocess_dataframe(
+        traffic_df: pd.DataFrame, preprocessing: dict
+    ) -> pd.DataFrame:
         """
         Return a dataframe that has been normalised and preprocessed.
 
@@ -195,7 +210,9 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         # choose median for robustness to outliers
         if preprocessing["median"]:
             traffic_gb = traffic_df.groupby(preprocessing["features"])
-            traffic_df = traffic_gb[preprocessing["target"]].median()  # only works for single task
+            traffic_df = traffic_gb[
+                preprocessing["target"]
+            ].median()  # only works for single task
             traffic_df["time_norm"] = traffic_df.index
 
         return traffic_df
@@ -214,19 +231,24 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         """
         # check there are no overlapping keys
         if set(data_config.keys()) & set(preprocessing.keys()):
-            raise ValueError("Data config and preprocessing dictionaries should not have overlapping keys.")
+            raise ValueError(
+                "Data config and preprocessing dictionaries should not have overlapping keys."
+            )
         merged_dict = {**data_config, **preprocessing}
         return Instance.hash_dict(merged_dict)
 
     def update_remote_tables(self):
         """Update the data config table for traffic."""
         self.logger.info("Updating the traffic data table.")
-        records = [dict(
-            data_id=self.data_id,
-            data_config=self.data_config,
-            preprocessing=self.preprocessing,
-        )]
+        records = [
+            dict(
+                data_id=self.data_id,
+                data_config=self.data_config,
+                preprocessing=self.preprocessing,
+            )
+        ]
         self.commit_records(records, on_conflict="ignore", table=TrafficDataTable)
+
 
 def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     """
@@ -250,7 +272,9 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
     # check keys are correct
     if not set(min_keys).issubset(dict_to_check):
         missing_keys = set(min_keys) - set(dict_to_check.keys())
-        error_message = "The data config dictionary does not contain the following keys: {k}"
+        error_message = (
+            "The data config dictionary does not contain the following keys: {k}"
+        )
         error_message = error_message.format(k=missing_keys)
         raise KeyError(error_message)
 
@@ -265,10 +289,10 @@ def validate_dictionary(dict_to_check: dict, min_keys: list, value_types: list):
 
     # raise a type error is appropriate
     if raise_type_error:
-        error_message = "The value for '{key}' must be a {actual_type}. You passed a {bad_type}."
+        error_message = (
+            "The value for '{key}' must be a {actual_type}. You passed a {bad_type}."
+        )
         error_message = error_message.format(
-            bad_key=bad_key,
-            bad_type=bad_type,
-            actual_type=actual_type,
+            bad_key=bad_key, bad_type=bad_type, actual_type=actual_type,
         )
         raise TypeError(error_message)

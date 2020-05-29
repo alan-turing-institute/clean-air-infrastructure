@@ -2,32 +2,29 @@
 Class for querying traffic and scoot data.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 import calendar
 from dateutil import rrule
 import pandas as pd
-from sqlalchemy import func, or_, and_
 
 from cleanair.databases import DBWriter
 from cleanair.mixins import DateRangeMixin, ScootQueryMixin
 from cleanair.loggers.logcolours import green, red
 from cleanair.databases.tables import (
-    MetaPoint,
     ScootReading,
-    ScootDetector,
     ScootPercentChange,
 )
 from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 
+from ..dates import (
+    NORMAL_BASELINE_START,
+    NORMAL_BASELINE_END,
+    LOCKDOWN_BASELINE_START,
+    LOCKDOWN_BASELINE_END,
+)
 from ..preprocess import remove_outliers
 from ..metric import percent_of_baseline
-
-
-NORMAL_BASELINE_START = "2020-02-10"
-NORMAL_BASELINE_END = "2020-03-02"
-LOCKDOWN_BASELINE_START = "2020-03-30"
-LOCKDOWN_BASELINE_END = "2020-04-20"
 
 
 class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):

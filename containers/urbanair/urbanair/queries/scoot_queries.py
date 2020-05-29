@@ -1,6 +1,5 @@
 """API database queries"""
-from sqlalchemy import func, cast, text
-from sqlalchemy.types import Interval
+from sqlalchemy import func, text
 from cleanair.loggers import initialise_logging
 from cleanair.decorators import db_query
 from cleanair.databases.tables import (
@@ -9,14 +8,11 @@ from cleanair.databases.tables import (
     ScootDetector,
     ScootPercentChange,
 )
-from odysseus.scoot_processing import (
-    LOCKDOWN_BASELINE_START,
+from odysseus.dates import (
     LOCKDOWN_BASELINE_END,
-    NORMAL_BASELINE_START,
     NORMAL_BASELINE_END,
 )
 from .query_mixins import APIQueryMixin
-from datetime import datetime
 
 initialise_logging(verbosity=0)
 

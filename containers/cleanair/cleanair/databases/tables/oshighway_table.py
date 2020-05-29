@@ -12,8 +12,6 @@ class OSHighway(DeferredReflection, Base):
     __table_args__ = {"schema": "static_data"}
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<OSHighway(" + ", ".join(vals) + ")>"

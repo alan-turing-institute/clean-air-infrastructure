@@ -10,6 +10,7 @@ from .instance_tables_mixin import (
     InstanceTableMixin,
     ModelTableMixin,
 )
+from .instance_query_mixin import InstanceQueryMixin
 from .parser_mixins import (
     DurationParserMixin,
     SecretFileParserMixin,
@@ -25,6 +26,7 @@ __all__ = [
     "DBQueryMixin",
     "DurationParserMixin",
     "InstanceTableMixin",
+    "InstanceQueryMixin",
     "ModelTableMixin",
     "ScootQueryMixin",
     "SecretFileParserMixin",
