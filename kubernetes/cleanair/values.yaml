@@ -139,47 +139,47 @@ cronjobs:
     #     secret:
     #         secretName: secrets
 
-#   - name: test-jamcam-cron-on-hour
-#     schedule: "0 4-19 * * *"
-#     concurrencyPolicy: Allow
-#     restartPolicy: OnFailure
-#     failedJobsHistoryLimit: 10
-#     image:
-#         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-#         tag: latest
-#         imagePullPolicy: Always
-#     command: ["bash", "/application/deployscripts/cluster.sh"]
-#     args: ["-m", "3", "4", "5"]
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#       readOnly: true
-#     - mountPath: /application/conf/local/
-#       name: credentials
-#       readOnly: true
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     - name: credentials
-#       secret:
-#         secretName: credentials.yml
-#     imagePullSecrets:
-#         - name: regcred
-#     nodeSelector: 
-#         agentpool: jamcam
-#     tolerations:
-#       - key: "group"
-#         operator: "Equal"
-#         value: "gpu"
-#         effect: "NoSchedule"
-#     resources:
-#       limits:
-#         cpu: "23"
-#         nvidia.com/gpu: 4
-#       requests:
-#         cpu: "23"
-#         nvidia.com/gpu: 4
+   - name: test-jamcam-cron-on-hour
+     schedule: "0 4-19 * * *"
+     concurrencyPolicy: Allow
+     restartPolicy: OnFailure
+     failedJobsHistoryLimit: 10
+     image:
+         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+         tag: latest
+         imagePullPolicy: Always
+     command: ["bash", "/application/deployscripts/cluster.sh"]
+     args: ["-m", "3", "4", "5"]
+     volumeMounts:
+     - name: secrets
+       mountPath: "/secrets/"
+       readOnly: true
+     - mountPath: /application/conf/local/
+       name: credentials
+       readOnly: true
+     volumes:
+     - name: secrets
+       secret:
+         secretName: secrets
+     - name: credentials
+       secret:
+         secretName: credentials.yml
+     imagePullSecrets:
+         - name: regcred
+     nodeSelector:
+         agentpool: jamcam
+     tolerations:
+       - key: "group"
+         operator: "Equal"
+         value: "gpu"
+         effect: "NoSchedule"
+     resources:
+       limits:
+         cpu: "23"
+         nvidia.com/gpu: 4
+       requests:
+         cpu: "23"
+         nvidia.com/gpu: 4
 
 #   - name: test-jamcam-cron-on-half-hour
 #     schedule: "30 4-19 * * *"
