@@ -152,8 +152,16 @@ roles:
 
   - role: jamcamreadwrite
     create_schema: False
-    schema: 
+    schema:
       - name: jamcam
         create: True
         privileges:
           - ALL
+
+  - role: jamcamread
+    create_schema: False
+    schema:
+      - name: jamcam
+        create: False
+        privileges:
+          - SELECT
