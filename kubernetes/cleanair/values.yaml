@@ -179,7 +179,7 @@ cronjobs:
     - name: dshm
       emptyDir:
         medium: Memory
-        sizeLimit: "1Gi"
+        sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
     nodeSelector:
@@ -227,10 +227,10 @@ cronjobs:
     - name: dshm
       emptyDir:
         medium: Memory
-        sizeLimit: "1Gi"
+        sizeLimit: "200Gi"
     imagePullSecrets:
         - name: regcred
-    nodeSelector: 
+    nodeSelector:
         agentpool: jamcam
     tolerations:
       - key: "group"
@@ -244,6 +244,40 @@ cronjobs:
       requests:
         cpu: "23"
         nvidia.com/gpu: 4
+
+  - name: test-jamcam-cron-view-refresh
+    schedule: "0 4-19 * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/refresh.sh"]
+    args: []
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    - mountPath: /dev/shm
+      name: dshm
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: "1Gi"
+    imagePullSecrets:
+        - name: regcred
 
 #   - name: input-satellite
 #     image:
