@@ -68,9 +68,7 @@ class DurationParserMixin:
             help="Time point to get data up to in iso format."
             "Or one of: 'lasthour', 'now', 'today', 'tomorrow', 'yesterday'. (default: {})."
             "To get data that includes today you would use 'tomorrow'"
-            "to specify all data up to but not including tomorrows date".format(
-                end
-            ),
+            "to specify all data up to but not including tomorrows date".format(end),
         )
         time_group = self.add_mutually_exclusive_group()
         time_group.add_argument(

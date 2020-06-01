@@ -26,8 +26,6 @@ ALL_FEATURES = [
 def check(args):
     """Check what data is available in the database"""
 
-    print(args)
-
     # Set up feature extractor
     static_feature_extractor = FeatureExtractor(
         feature_source=args.feature_source,
@@ -63,17 +61,16 @@ def check(args):
 
         print(available_data)
 
-    # # Extract static features into the appropriate tables on the database
-    # static_feature_extractor.get_static_feature_availability(
-    #     args.feature_name, args.sources, args.exclude_has_data
-    # )
-
-
 def fill(args):
     """Fill the database"""
 
-    static_feature_extractor = OSHighwayFeatures(
-        secretfile=args.secretfile, sources=args.sources
+    # Set up feature extractor
+    static_feature_extractor = FeatureExtractor(
+        feature_source=args.feature_source,
+        table=FEATURE_CONFIG[args.feature_source]["table"],
+        features=FEATURE_CONFIG[args.feature_source]["features"],
+        secretfile=args.secretfile,
+        sources=args.sources,
     )
 
     static_feature_extractor.update_remote_tables()
@@ -110,19 +107,19 @@ def create_parser():
         help="Open a browser to show available data. Else print to console",
     )
 
-    # #     parser_insert = subparsers.add_parser(
-    # #         "fill",
-    # #         help="Process static features",
-    # #         parents = [parent_parser]
-    # #     )
+    parser_insert = subparsers.add_parser(
+        "fill",
+        help="Process static features",
+        parents = [feature_source_parser, feature_name_parser, source_parser]
+    )
 
-    # #     # parser_insert.add_argument(
-    # #     #     "-m", "--method", default="missing", type=str, choices=["missing", "all"]
-    # #     # )
+    parser_insert.add_argument(
+        "-m", "--method", default="missing", type=str, choices=["missing", "all"]
+    )
 
     # #     # # Link to programs
     parser_check.set_defaults(func=check)
-    # #     parser_insert.set_defaults(func=fill)
+    parser_insert.set_defaults(func=fill)
 
     return main_parser
 

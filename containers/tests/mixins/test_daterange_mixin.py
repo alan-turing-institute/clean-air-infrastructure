@@ -3,8 +3,10 @@
 from dateutil.parser import isoparse
 from cleanair.mixins import DateRangeMixin
 
+
 class ExampleDateRangeClass(DateRangeMixin):
     """An example class using a daterange mixin"""
+
     def __init__(self, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
