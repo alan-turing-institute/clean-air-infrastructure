@@ -1,0 +1,11 @@
+azure-pipelines.yml
+cleanair_setup/
+configuration/
+containers/
+file.txt
+kubernetes/
+LICENSE
+pipeline.pdf
+README.md
+setup.cfg
+terraform/
