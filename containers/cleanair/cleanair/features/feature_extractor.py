@@ -77,7 +77,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 for feature in self.features[feature_name]["feature_dict"].keys()
             ]
             q_source = session.query(*columns)
-
             # Construct filters
             filter_list = []
             if (
@@ -314,7 +313,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         # )
 
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
-
+        
         # Get all the metapoints and buffer geometries as a common table expression
         cte_buffers = self.query_meta_points(point_ids=point_ids).cte("buffers")
 
