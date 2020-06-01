@@ -1,15 +1,15 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 996449209c13045136a6d1d9e5f15dd76fb3a7c7
+imageTag: d09e02b8037cd3b5af70032655f6cd7d7a587443
 
 jobs:
 
-  - name: static_features_oshighway
+  - name: static-features-oshighway
     image:
         repository: cleanairdocker.azurecr.io/feature_static
         imagePullPolicy: Always
-    args: ["--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: Always
+    args: ["fill", "--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -21,12 +21,12 @@ jobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: static_features_ukmap
+  - name: static-features-ukmap
     image:
         repository: cleanairdocker.azurecr.io/feature_static
         imagePullPolicy: Always
-    args: ["--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: Always
+    args: ["fill", "--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -38,12 +38,12 @@ jobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: static_features_street_canyon
+  - name: static-features-street-canyon
     image:
         repository: cleanairdocker.azurecr.io/feature_static
         imagePullPolicy: Always
-    args: ["--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: Always
+    args: ["fill",  "--feature-source", "streetcanyon", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
