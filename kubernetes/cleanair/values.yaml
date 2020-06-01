@@ -4,81 +4,56 @@ imageTag: 996449209c13045136a6d1d9e5f15dd76fb3a7c7
 
 jobs:
 
-#   - name: test-jamcam
-#     image:
-#         repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-#         tag: 19a4c2a2480ed015b7d3425cb1748ce472052064
-#         imagePullPolicy: IfNotPresent
-#     command: ["bash", "/application/deployscripts/cluster.sh"]
-#     args: ["-m", "0", "1", "2"]
-#     restartPolicy: Never
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#       readOnly: true
-#     - mountPath: /application/conf/local/
-#       name: credentials
-#       readOnly: true
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     - name: credentials
-#       secret:
-#         secretName: credentials.yml
-#     imagePullSecrets:
-#         - name: regcred
-#     nodeSelector: 
-#         agentpool: jamcam
-#     tolerations:
-#       - key: "group"
-#         operator: "Equal"
-#         value: "gpu"
-#         effect: "NoSchedule"
-#     resources:
-#       limits:
-#         cpu: "23"
-#       requests:
-#         cpu: "23"
+  - name: static_features_oshighway
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: Always
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: feature_oshighway
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_oshighway
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: static_features_ukmap
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: Always
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: feature_streetcanyon
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_streetcanyon
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-#   - name: feature_ukmap
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_ukmap
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: static_features_street_canyon
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: Always
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
 #   - name: input_satellite_backdate
 #     image:
