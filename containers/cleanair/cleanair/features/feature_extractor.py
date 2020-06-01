@@ -156,8 +156,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         order to ensure that repeated calls will return the same set of points.
         """
 
-        boundary_geom = self.query_london_boundary()
-
         with self.dbcnxn.open_session() as session:
 
             q_meta_point = session.query(
@@ -179,7 +177,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                     func.ST_Buffer(func.Geography(MetaPoint.location), 10)
                 ).label("buff_geom_10"),
             ).filter(
-                MetaPoint.location.ST_Within(boundary_geom), MetaPoint.id.in_(point_ids)
+              MetaPoint.id.in_(point_ids)
             )
 
         return q_meta_point
@@ -469,6 +467,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
         # Iterate over each of the features and calculate the overlap with the interest points
         n_features = len(self.features)
+
         for idx_feature, feature_name in enumerate(self.features, start=1):
             feature_start = time.time()
             self.logger.info(
@@ -477,9 +476,9 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 idx_feature,
                 n_features,
             )
-
+            
             missing_point_ids_df = self.get_static_feature_availability(
-                feature_name, self.sources, exclude_has_data=True, output_type="df"
+                [feature_name], self.sources, exclude_has_data=True, output_type="df"
             )
 
             if missing_point_ids_df.empty:
@@ -497,9 +496,10 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 green(feature_name),
             )
 
+
             missing_point_ids = missing_point_ids_df["id"].astype(str).values
             n_point_ids = missing_point_ids.size
-            batch_size = 500
+            batch_size = 250
             n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
 
             self.logger.info(
@@ -510,7 +510,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             )
 
             missing_point_id_batches = np.array_split(
-                missing_point_ids, missing_point_ids.size / batch_size
+                missing_point_ids, n_batches
             )
 
             for batch_no, point_id_batch in enumerate(missing_point_id_batches):
@@ -526,7 +526,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 self.commit_records(
                     sq_select_and_insert, on_conflict="ignore", table=self.output_table
                 )
-                # Print a final timing message
 
             # Print a timing message at the end of each feature
             self.logger.info(

@@ -46,6 +46,11 @@ class Features(DBWriter, DBQueryMixin):
         """Either returns an sql table instance or a subquery"""
         raise NotImplementedError("Must be implemented by child classes")
 
+    @property
+    def feature_source(self):
+        """The name of the feature source. For example 'oshighway'"""
+        raise NotImplementedError("Must be implemented by child classes")
+
     @db_query
     def query_meta_points(
         self, include_sources=None, exclude_processed=True, feature_name=None
@@ -130,6 +135,7 @@ class Features(DBWriter, DBQueryMixin):
             q_source = q_source.filter(*filter_list)
         return q_source
 
+    @db_query
     def process_features(self, feature_name, feature_type, agg_func, batch_size=1):
         """
         Process geometric features in large batches as none of them are particularly slow at present
@@ -275,6 +281,7 @@ class Features(DBWriter, DBQueryMixin):
             out = session.query(
                 cte_buffers.c.id,
                 literal(feature_name).label("feature_name"),
+                literal(self.feature_source).label("feature_source"),
                 func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
                 func.coalesce(res.c.value_500, 0.0).label("value_500"),
                 func.coalesce(res.c.value_200, 0.0).label("value_200"),

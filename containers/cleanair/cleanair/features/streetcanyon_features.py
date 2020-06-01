@@ -14,6 +14,10 @@ class StreetCanyonFeatures(FeatureExtractor):
         return StreetCanyon
 
     @property
+    def feature_source(self):
+        return "streetcanyon"
+
+    @property
     def features(self):
         return {
             "min_canyon_ratio": {

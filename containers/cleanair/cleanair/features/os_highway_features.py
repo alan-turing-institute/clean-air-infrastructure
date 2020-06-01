@@ -14,6 +14,10 @@ class OSHighwayFeatures(FeatureExtractor):
         return OSHighway
 
     @property
+    def feature_source(self):
+        return "oshighway"
+
+    @property
     def features(self):
 
         return {

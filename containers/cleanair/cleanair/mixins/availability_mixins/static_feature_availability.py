@@ -47,8 +47,6 @@ class StaticFeatureAvailabilityMixin:
                 StaticFeature.feature_name.in_(feature_names)
             )
 
-    
-
             in_data_cte = in_data.cte("in_data")
 
             expected_values = session.query(
