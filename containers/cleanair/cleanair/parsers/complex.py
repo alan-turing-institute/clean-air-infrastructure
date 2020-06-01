@@ -14,10 +14,10 @@ from ..mixins import (
 )
 
 
-class OsHighwayFeatureArgumentParser(
+class StaticFeatureArgumentParser(
     SecretFileParserMixin, VerbosityMixin, ArgumentParser,
 ):
-    """OsHighway Parser"""
+    """Static feature Parser"""
 
 
 class SourceParser(SourcesMixin, ArgumentParser):

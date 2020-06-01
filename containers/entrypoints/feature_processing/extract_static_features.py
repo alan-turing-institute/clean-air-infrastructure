@@ -8,7 +8,7 @@ import argparse
 from cleanair.loggers import initialise_logging
 from cleanair.features import FeatureExtractor, FEATURE_CONFIG
 from cleanair.parsers import (
-    OsHighwayFeatureArgumentParser,
+    StaticFeatureArgumentParser,
     SourceParser,
     FeatureSourceParser,
     FeatureNameParser,
@@ -85,8 +85,8 @@ def create_parser():
     )
     feature_name_parser = FeatureNameParser(ALL_FEATURES, add_help=False)
 
-    main_parser = OsHighwayFeatureArgumentParser(
-        description="Extract static OSHighway features and check what is in database",
+    main_parser = StaticFeatureArgumentParser(
+        description="Extract static features and check what is in database",
     )
 
     # Create subparser

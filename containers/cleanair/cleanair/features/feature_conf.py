@@ -2,8 +2,8 @@
 Street Canyon feature extraction
 """
 
-from ..databases.tables import StreetCanyon, OSHighway
-from .feature_funcs import sum_length, avg_, min_, max_
+from ..databases.tables import StreetCanyon, OSHighway, UKMap
+from .feature_funcs import sum_length, avg_, min_, max_, sum_area
 
 FEATURE_CONFIG = {
     "streetcanyon": {
@@ -71,4 +71,47 @@ FEATURE_CONFIG = {
             },
         },
     },
+    "ukmap": {
+        "table": UKMap,
+        "features": {
+            "building_height": {
+                "type": "value",
+                "feature_dict": {"calculated_height_of_building": ["*"]},
+                "aggfunc": max_,
+            },
+            "flat": {
+                "type": "geom",
+                "feature_dict": {"feature_type": ["Vegetated", "Water"]},
+                "aggfunc": sum_area,
+            },
+            "grass": {
+                "type": "geom",
+                "feature_dict": {"feature_type": ["Vegetated"]},
+                "aggfunc": sum_area,
+            },
+            "hospitals": {
+                "type": "geom",
+                "feature_dict": {"landuse": ["Hospitals"]},
+                "aggfunc": sum_area,
+            },
+            "museums": {
+                "type": "geom",
+                "feature_dict": {"landuse": ["Museum"]},
+                "aggfunc": sum_area,
+            },
+            "park": {
+                "type": "geom",
+                "feature_dict": {
+                    "feature_type": ["Vegetated"],
+                    "landuse": ["Recreational open space"],
+                },
+                "aggfunc": sum_area,
+            },
+            "water": {
+                "type": "geom",
+                "feature_dict": {"feature_type": ["Water"]},
+                "aggfunc": sum_area,
+            },
+        }
+    }
 }

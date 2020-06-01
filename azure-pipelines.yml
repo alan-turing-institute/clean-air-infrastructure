@@ -43,20 +43,14 @@ stages:
       displayName: 'Build SCOOT road mapping image'
     # Feature extraction
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
-      displayName: 'Build OSHighway feature processing image'
-    - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_forecast_features.Dockerfile containers
       displayName: 'Build SCOOT forecast feature processing image'
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_reading_features.Dockerfile containers
       displayName: 'Build SCOOT reading feature processing image'
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion) -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
-      displayName: 'Build street canyon feature processing image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
-      displayName: 'Build UKMap feature processing image'
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_static:$(Build.SourceVersion) -f containers/dockerfiles/extract_static_features.Dockerfile containers
+      displayName: 'Build Static feature processing image'
     # Output API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
@@ -80,11 +74,9 @@ stages:
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_static:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
