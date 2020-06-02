@@ -4,7 +4,7 @@ Calculate metrics for trained models.
 import os
 import logging
 from odysseus.databases import TrafficInstanceQuery, TrafficQuery
-from odysseus.metric import TrafficMetric
+from odysseus.metrics import TrafficMetric
 from odysseus.dataset import prepare_batch
 from odysseus.parsers import TrainTrafficModelParser
 from odysseus.modelling import load_models_from_file
