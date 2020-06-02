@@ -7,6 +7,7 @@ from . import exceptions
 from .blueprints import scoot_bp, cams_bp, static_bp
 from .db import init_app
 
+
 def create_app():
 
     # create and configure the app
@@ -31,7 +32,7 @@ def create_app():
         app.register_blueprint(cams_bp, url_prefix="/api/v1/cams/")
         # app.register_blueprint(scoot_bp, url_prefix="/api/v1/scoot/")
         exceptions.error_handler(app)
-    
+
     return app
 
 

@@ -15,9 +15,7 @@ def configure_db_session():
     uri = current_app.config["DATABASE_SECRETFILE"]
     db_connection_info = DBConnectionMixin(uri)
 
-    engine = create_engine(
-        db_connection_info.connection_string, convert_unicode=True
-    )
+    engine = create_engine(db_connection_info.connection_string, convert_unicode=True)
 
     db_session = scoped_session(
         sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -25,18 +23,18 @@ def configure_db_session():
 
     return db_session
 
+
 def get_session():
     """Return a database session"""
-    return current_app.config['DB_SESSIONS']
+    return current_app.config["DB_SESSIONS"]
+
 
 def remove_db(exception=None):
-    current_app.config['DB_SESSIONS'].remove()
+    current_app.config["DB_SESSIONS"].remove()
+
 
 def init_app():
     """Initilise the datase"""
-    
-    current_app.config['DB_SESSIONS'] = configure_db_session()
+
+    current_app.config["DB_SESSIONS"] = configure_db_session()
     current_app.teardown_appcontext(remove_db)
-
-
-

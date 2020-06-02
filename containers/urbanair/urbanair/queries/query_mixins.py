@@ -52,7 +52,7 @@ class APIQueryMixin(ABC):
 
         query = self.query(*args, **kwargs)
 
-        return jsonify(query) 
+        return jsonify(query)
 
     def response_json(self, *args, **kwargs):
         """Respond with JSON"""

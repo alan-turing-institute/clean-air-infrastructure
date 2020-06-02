@@ -6,6 +6,7 @@ from .scoot_queries import (
     ScootPercAvailability,
 )
 from .cam_queries import CamRecent, CamsSnapshot
+
 __all__ = [
     "ScootHourly",
     "ScootHourlyAvailability",
@@ -13,5 +14,5 @@ __all__ = [
     "ScootPercAvailability",
     "ScootDaily",
     "CamRecent",
-    "CamsSnapshot"
+    "CamsSnapshot",
 ]

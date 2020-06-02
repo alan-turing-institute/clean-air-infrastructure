@@ -8,12 +8,10 @@ from ..db import get_session
 # Create a Blueprint
 cams_bp = Blueprint("cams", __name__)
 
+
 @cams_bp.route("recent", methods=["GET"])
 @use_args(
-    {
-        "id": fields.String(required=True),
-    },
-    location="query",
+    {"id": fields.String(required=True),}, location="query",
 )
 def cam_recent(args):
     """
@@ -36,12 +34,10 @@ def cam_recent(args):
 
     return db_query.response_json(get_session(), id=args.pop("id"))
 
+
 @cams_bp.route("snapshot", methods=["GET"])
 @use_args(
-    {
-        "type": fields.String(required=True),
-    },
-    location="query",
+    {"type": fields.String(required=True),}, location="query",
 )
 def cams_snapshot(args):
     """
@@ -56,4 +52,4 @@ def cams_snapshot(args):
 
     db_query = CamsSnapshot()
 
-    return db_query.response_json(get_session(), type=args.pop('type'))
+    return db_query.response_json(get_session(), type=args.pop("type"))

@@ -81,8 +81,6 @@ class DBConfig(Connector):
         # Create tables
         self.initialise_tables()
 
-
-
         for role in self.roles:
             # Create a role
             self.create_role(role["role"])
