@@ -48,7 +48,6 @@ def test_configure_role(
     db_config = DBConfig(
         config_file,
         secretfile,
-        secret_dict=readonly_user_login,
         connection=connection_module,
     )
     db_config.create_schema()
@@ -59,5 +58,7 @@ def test_configure_role(
         readonly_user_login["username"], readonly_user_login["password"]
     )
     db_config.grant_role_to_user(readonly_user_login["username"], "readonly")
+
+    print("DON")
 
     assert readonly_user_login["username"] in db_config.list_roles()
