@@ -206,6 +206,7 @@ EOF
 It's possible to set it up all with a conda environment, this way you can keep different
 versions of software around in your machine. All the steps above can be done with:
 
+## Linux and MacOS
 ```bash
 # Non-infrastructure dependencies
 
@@ -233,6 +234,7 @@ conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed 
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
 
+## Windows
 
 ## Login to Azure
 
