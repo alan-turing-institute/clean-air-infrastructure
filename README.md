@@ -23,7 +23,7 @@ A list of key developers on the project. A good place to start if you wish to co
 | David Perez-Suarez  | [@dpshelio](https://github.com/dpshelio)            | <d.perez-suarez@ucl.ac.uk>|
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
 | Tim Spain  | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>       |
-
+| Edward Thorpe-Woods      | [@TeddyTW](https://github.com/TeddyTW)        | <ethorpe-woods@turing.ac.uk>|
 
 # Contents
 
