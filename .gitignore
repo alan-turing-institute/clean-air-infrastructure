@@ -25,3 +25,7 @@ python-virtual-environments/
 
 # Misc
 images/
+
+# database
+mylocal_db/
+logfile

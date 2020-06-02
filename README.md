@@ -78,21 +78,38 @@ To contribute as a non-infrastructure developer you will need the following:
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
 
+The instructions below are to install the dependencies system-wide, however you can
+follow the [instructions at the end if you wish to use an anaconda environment](#With-a-Conda-environment)
+if you want to keep it all separated from your system.
+
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
+
+<details>
+<summary>Or follow a simpler option</summary>
+Install it using on your own preferred environment with `pip install azure-cli`
+</details>
 
 ### Docker
 Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### PostgreSQL
+
+[PostgreSQL](https://www.postgresql.org/download) and [PostGIS](https://postgis.net/install).
+
 ```bash
 brew install postgresql postgis
 ```
 
 ### GDAL
+
+[GDAl](https://gdal.org/) can be installed using `brew` on a mac
 ```bash
 brew install gdal
 ```
+
+or any of the [binaries](https://gdal.org/download.html#binaries) provided for different platforms.
+
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -124,15 +141,15 @@ For getting started we recommend:
 pip install -e 'containers/cleanair[models, traffic, dashboard]'
 ```
 
-### UrbanAir Flask API package
-```bash
-pip install -e 'containers/urbanair'
-```
-
 ### UATraffic (London Busyness only)
 All additional  functionality related to the London Busyness project requires:
 ```bash
 pip install -e 'containers/odysseus'
+```
+
+### UrbanAir Flask API package
+```bash
+pip install -e 'containers/urbanair'
 ```
 
 --- 
@@ -149,7 +166,7 @@ Cloud infrastructure developers will require the following in addition to the [n
 You need to have access to the CleanAir Azure subscription to deploy infrastructure. If you need access contact an [infrastructure administrator](#contributors-:dancers:)
 
 ### Terraform 
-The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from here](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
+The Azure infrastructure is managed with `Terraform`. To get started [download `Terraform` from their website](https://www.terraform.io). If using Mac OS, you can instead use `homebrew`:
 
 ```bash
 brew install terraform
@@ -164,7 +181,7 @@ gem update --system
 
 Then install the Travis CI CLI with:
 ```bash
-gem install  travis --no-rdoc --no-ri
+gem install  travis -no-rdoc -no-ri
 ```
 
 On some versions of OSX, this fails, so you may need the following alternative:
@@ -183,6 +200,39 @@ cat << EOF >> ~/.bash_profile
 export PATH="\$PATH:$(ruby -e 'puts Gem.user_dir')/bin"
 EOF
 ```
+
+### With a Conda environment
+
+It's possible to set it up all with a conda environment, this way you can keep different
+versions of software around in your machine. All the steps above can be done with:
+
+```bash
+# Non-infrastructure dependencies
+
+conda create -n busyness python=3.7
+conda install -c conda-forge gdal postgis uwsgi
+conda activate busyness
+pip install azure-cli
+pip install azure-nspkg azure-mgmt-nspkg
+# The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
+# but they install fine.
+pip install -r containers/requirements.txt
+# This will fail on building fbprohet, but it installs it after.
+pip install -e 'containers/cleanair[models, traffic, dashboard]'
+pip install -e 'containers/uatraffic'
+pip install -e 'containers/urbanair'
+
+## Infrastructure dependencies
+
+# if you don't get rb-ffi and rb-json you'll need to install gcc_linux-64 and libgcc to build these in order to install travis.
+conda install -c conda-forge terraform ruby rb-ffi rb-json
+# At least on Linux you'll need to dissable IPV6 to make this version of gem to work.
+gem install  travis -no-rdoc -no-ri
+# Create a soft link of the executables installed by gem into a place seen within the conda env.
+conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed -e 's/,//' -e 's/"//g')
+ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
+```
+
 
 ## Login to Azure
 
@@ -212,6 +262,28 @@ In production we use a managed [PostgreSQL database](https://docs.microsoft.com/
 brew services start postgresql   
 ```
 
+<details>
+<summary> If you installed the database using conda </summary>
+
+Set it up the server and users first with:
+
+```bash
+initdb -D mylocal_db
+pg_ctl -D mylocal_db -l logfile start
+createdb --owner=${USER} myinner_db
+```
+
+When you want to work in this environment again you'll need to run:
+```bash
+pg_ctl -D mylocal_db -l logfile start
+```
+
+You can stop it with:
+```bash
+pg_ctl -D mylocal_db stop
+```
+</details>
+
 ### Create a local secrets file
 We store database credentials in json files. **For production databases you should never store database passwords in these files - for more information see the production database section**. 
 
@@ -228,6 +300,10 @@ echo '{
 ```
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
+
+```bash
+createdb cleanair_test_db
+```
 
 ### Create Schema and roles
 
@@ -299,7 +375,9 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 ```
 
 ## Connect using psql
-You can then access the database using psql:
+
+Once your IP has been whitelisted (ask the [database adminstrators](#contributors-:dancers:)), you will be able to
+access the database using psql:
 
 ```bash
 psql "host=cleanair-inputs-server.postgres.database.azure.com port=5432 dbname=cleanair_inputs_db user=<your-turing-credentials>@cleanair-inputs-server sslmode=require"
@@ -373,13 +451,26 @@ Now get a new token:
 export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-Finally you can run the docker image, passing PGPASSWORD as an environment variable:
+Finally you can run the docker image, passing PGPASSWORD as an environment variable
+(:warning: this writes data into the online database)
 
 ```bash
-docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s '.db_secrets_ad.json' -k <copernicus-key>
+docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_ad.json' -k <copernicus-key>
 ```
 
-Here we also provided the copernicus api key which is stored in the `cleanair` keyvault. 
+Here we also provided the copernicus api key which is stored in the `cleanair-secrets`
+[Azure's keyvault](https://portal.azure.com/#blade/HubsExtension/BrowseResource/resourceType/Microsoft.KeyVault%2Fvaults).
+
+If you want to run that example with the local database you can do so by:
+
+```bash
+COPERNICUS_KEY=$(az keyvault secret show --vault-name cleanair-secrets --name satellite-copernicus-key -o tsv --query value)
+# OSX or Windows: change "localhost" to host.docker.internal on your db_secrets_offline.json
+docker run -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_offline.json' -k $COPERNICUS_KEY
+# Linux:
+docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:local -s 'db_secrets_offline.json' -k $COPERNICUS_KEY
+```
+
 
 # Developer guide
 
@@ -395,7 +486,7 @@ We would like to move towards adding [type hints](https://docs.python.org/3.7/li
 Adding and updating existing documentation is highly encouraged.
 
 ### Gitmoji
-We like [gitmojo](https://gitmoji.carloscuesta.me/) for an emojo guide to our commit messages. You might consider (entirly optional) to use the [git-moji cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
+We like [gitmoji](https://gitmoji.carloscuesta.me/) for an emoji guide to our commit messages. You might consider (entirly optional) to use the [gitmoji-cli](https://github.com/carloscuesta/gitmoji-cli) as a hook when writing commit messages. 
 
 ### Working on an issue
 
@@ -409,17 +500,14 @@ How you label branches is optional, but we encourage using `iss_<issue-number>_<
 
 ## Running tests
 
-Tests should be written where possible before code is accepted into master. Contributing tests to existing code is highly desirable. Tests will also be run on travis (see the [travis configuration](.travis)).
+Tests should be written where possible before code is accepted into master. Contributing tests to existing code is highly desirable. Tests will also be run on travis (see the [travis configuration](.travis.yml)).
 
-All tests can be found in the [containers/tests/](containers/tests) directory. We already ran some tests to check our local database was set up. 
+All tests can be found in the [`containers/tests/`](containers/tests) directory. We already ran some tests to check our local database was set up. 
 
 To run the full test suite against the local database run
 
 ```bash
 SECRETS=$(pwd)/.secrets/db_secrets_offline.json
-```
-
-```bash
 pytest containers --secretfile $SECRETS
 ```
 
@@ -438,7 +526,7 @@ def test_scoot_reading_empty(secretfile, connection):
         assert session.query(ScootReading).count() == 0
 ```
 
-It uses the `DBWriter` class to  connect to the database. In general when interacting with a database we write a class which inherits from either  `DBWriter` or  `DBReader`. Both classes take a `secretfile` as an argument which provides database connection secrets. 
+It uses the `DBWriter` class to  connect to the database. In general when interacting with a database we write a class which inherits from either `DBWriter` or `DBReader`. Both classes take a `secretfile` as an argument which provides database connection secrets.
 
 **Critically, we also pass a special `connection` fixture when initialising any class that interacts with the database**. 
 
@@ -462,13 +550,38 @@ Create an Azure service principal using the documentation for the [Azure CLI](ht
 `Terraform` uses a backend to keep track of the infrastructure state.
 We keep the backend in `Azure` storage so that everyone has a synchronised version of the state.
 
+<details>
+<summary> You can download the `tfstate` file with `az` though you won't need it.</summary>
+
+```bash
+cd terraform
+az storage blob download -c terraformbackend -f terraform.tfstate -n terraform.tfstate --account-name terraformstorage924roouq --auth-mode key
+```
+
+</details>
+
+
 To enable this, we have to create an initial `Terraform` configuration by running (from the root directory):
 
 ```bash
-python cleanair_setup/initialise_terraform.py -i <AWS_KEY_ID> -k <AWS_KEY> -n <SERVICE_PRINCIPAL_NAME> -s <SERVICE_PRINCIPAL_ID> -p <SERVICE_PRINCIPAL_PASSWORD>
+python cleanair_setup/initialise_terraform.py -i $AWS_KEY_ID -k $AWS_KEY -n $SERVICE_PRINCIPAL_NAME -s $SERVICE_PRINCIPAL_ID -p $SERVICE_PRINCIPAL_PASSWORD
 ```
 
 Where `AWS_KEY_ID` and `AWS_KEY` are the secure key information needed to access TfL's SCOOT data on Amazon Web Services.
+
+```bash
+AWS_KEY=$(az keyvault secret show --vault-name terraform-configuration --name scoot-aws-key -o tsv --query value)
+AWS_KEY_ID=$(az keyvault secret show --vault-name terraform-configuration --name scoot-aws-key-id -o tsv --query value)
+```
+
+And `SERVICE_PRINCIPAL`'s  `NAME`, `ID` and `PASSWORD` are also available in the `terraform-configuration` keyvault.
+
+```bash
+SERVICE_PRINCIPAL_NAME=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-name -o tsv --query value)
+SERVICE_PRINCIPAL_ID=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-id -o tsv --query value)
+SERVICE_PRINCIPAL_PASSWORD=$(az keyvault secret show --vault-name terraform-configuration --name azure-service-principal-password -o tsv --query value)
+```
+
 This will only need to be run once (by anyone), but it's not a problem if you run it multiple times.
 
 
