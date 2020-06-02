@@ -53,7 +53,7 @@ def cams_snapshot(args):
           type: string
           required: True
           enum: ['people', 'cars', 'buses', 'trucks', 'motorbikes', 'all']
-          default: 'bike'
+          default: 'people'
           description: Hourly aggregate per detection class
     responses:
       200:
