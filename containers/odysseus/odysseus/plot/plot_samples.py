@@ -6,7 +6,7 @@ import tensorflow as tf
 import numpy as np
 import gpflow
 import plotly.graph_objects as go
-from ..model import sample_intensity, sample_n
+from ..modelling import sample_intensity, sample_n
 
 
 def filled_sample_traces(
