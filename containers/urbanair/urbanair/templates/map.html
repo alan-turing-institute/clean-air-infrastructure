@@ -177,7 +177,7 @@
                         // console.log(c)
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(activities['sum_counts'][activities['camera_id'].findIndex(i => i === c.id.replace("JamCams_", ""))])
+                                'icon': generateIcon2(activities['sum_counts'][activities['camera_id'].findIndex(i => i === c.id.replace("JamCams_", "") + '.mp4')])
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +

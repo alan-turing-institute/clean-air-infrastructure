@@ -17,12 +17,14 @@ def cam_recent(args):
     """
     Return raw historical count per camera
     ---
+    tags:
+        - jamcam
     parameters:
-      - name: camera_id
+      - name: id
         in: query
         type: string
         required: true
-        description: Camera ID, in jamcam format
+        description: Camera ID, in jamcam format (e.g. 00001.06508)
     responses:
       200:
         description: A JSON containing historical counts
@@ -43,6 +45,16 @@ def cams_snapshot(args):
     """
     Return raw historical count per camera
     ---
+    tags:
+        - jamcam
+    parameters:
+        - name: type
+          in: query
+          type: string
+          required: True
+          enum: ['people', 'cars', 'buses', 'trucks', 'motorbikes', 'all']
+          default: 'bike'
+          description: Hourly aggregate per detection class
     responses:
       200:
         description: A JSON containing last hour of aggregated count data per camera

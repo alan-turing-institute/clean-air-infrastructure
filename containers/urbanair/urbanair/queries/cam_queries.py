@@ -27,9 +27,9 @@ class CamRecent(APIQueryMixin):
         ):
             return None
         res = session.execute(
-            "select counts, detection_class, creation_datetime from video_stats where camera_id = '"
-            + id
-            + "' and video_upload_datetime > (select max(video_upload_datetime) from video_stats) - interval '12 hours';"
+            "select counts, detection_class, creation_datetime from jamcam.video_stats_v2 where camera_id = '"
+            + id + '.mp4'
+            + "' and video_upload_datetime > (select max(video_upload_datetime) from jamcam.video_stats_v2) - interval '12 hours';"
         )
 
         counts = {"truck": [], "person": [], "car": [], "motorbike": [], "bus": []}
@@ -47,7 +47,7 @@ class CamRecent(APIQueryMixin):
             for type in counts:
                 counts[type].append(0)
                 for row in rows:
-                    if row["creation_datetime"] == date and type == row["vehicle_type"]:
+                    if row["creation_datetime"] == date and type == row['detection_class']:
                         counts[type][-1] = row[
                             "counts"
                         ]  # if row['counts'] is not None else counts[type].append(0)
@@ -62,17 +62,17 @@ class CamsSnapshot(APIQueryMixin):
         """
         try:
             if type == "people":
-                res = session.execute("select * from sum_counts_last_hour_people")
+                res = session.execute("select * from jamcam.sum_counts_last_hour_people")
             elif type == "cars":
-                res = session.execute("select * from sum_counts_last_hour_cars")
+                res = session.execute("select * from jamcam.sum_counts_last_hour_cars")
             elif type == "buses":
-                res = session.execute("select * from sum_counts_last_hour_buses")
+                res = session.execute("select * from jamcam.sum_counts_last_hour_buses")
             elif type == "trucks":
-                res = session.execute("select * from sum_counts_last_hour_trucks")
+                res = session.execute("select * from jamcam.sum_counts_last_hour_trucks")
             elif type == "motorbikes":
-                res = session.execute("select * from sum_counts_last_hour_motorbikes")
+                res = session.execute("select * from jamcam.sum_counts_last_hour_motorbikes")
             else:
-                res = session.execute("select * from sum_counts_last_hour")
+                res = session.execute("select * from jamcam.sum_counts_last_hour")
             snapshot = {"camera_id": [], "sum_counts": []}
             for r in res:
                 snapshot["camera_id"].append(r["camera_id"])
