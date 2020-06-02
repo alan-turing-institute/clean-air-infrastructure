@@ -18,8 +18,8 @@ from odysseus.dates import (
     LOCKDOWN_BASELINE_END,
 )
 from odysseus.dataset import prepare_batch, TrafficDataset
-from odysseus.model import parse_kernel
-from odysseus.model import train_sensor_model
+from odysseus.modelling import parse_kernel
+from odysseus.modelling import train_sensor_model
 
 
 def create_directories(root, experiment):
@@ -64,7 +64,6 @@ def main():
     monday1 = (start - timedelta(days=start.weekday()))
     monday2 = (baseline_end - timedelta(days=baseline_end.weekday()))
     nweeks = (monday2 - monday1).days / 7
-    assert nweeks == 3      # TODO: add better test
 
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)

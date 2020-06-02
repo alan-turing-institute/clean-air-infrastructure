@@ -7,7 +7,7 @@ from odysseus.databases import TrafficInstanceQuery, TrafficQuery
 from odysseus.metric import TrafficMetric
 from odysseus.dataset import prepare_batch
 from odysseus.parsers import TrainTrafficModelParser
-from odysseus.model import load_models_from_file
+from odysseus.modelling import load_models_from_file
 
 def main():
     """Entrypoint function for lockdown metrics."""
