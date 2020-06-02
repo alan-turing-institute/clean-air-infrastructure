@@ -66,7 +66,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
   vm_size               = "Standard_NC24"
   enable_auto_scaling   = true
-  max_count             = 2
+  max_count             = 4
   min_count             = 1
   node_count            = 1
   os_disk_size_gb       = 100
