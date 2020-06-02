@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 996449209c13045136a6d1d9e5f15dd76fb3a7c7
+imageTag: b8d2e1f225aea7a600103845d4ab64936a652198
 
 jobs:
 
@@ -371,4 +371,4 @@ letsencryptIssuer:
       secretName: cleanair-certs-prod
 
 # Mike, CityHall, CityHall2, OscarHome, PatrickHome, JamesWHome, SamHome, Paul(GLA), Theo, Mark Girolami's, OGHOMENEW
-whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.174.154.231/32
+# whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.174.154.231/32
