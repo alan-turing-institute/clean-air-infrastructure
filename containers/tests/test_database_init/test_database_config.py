@@ -59,6 +59,4 @@ def test_configure_role(
     )
     db_config.grant_role_to_user(readonly_user_login["username"], "readonly")
 
-    print("DON")
-
     assert readonly_user_login["username"] in db_config.list_roles()
