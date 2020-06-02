@@ -1,9 +1,7 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, ForeignKey, String, Integer, Enum, BigInteger
+from sqlalchemy import Column, String, BigInteger
 from sqlalchemy.dialects.postgresql import (
-    DOUBLE_PRECISION,
     TIMESTAMP,
-    BOOLEAN,
     SMALLINT,
     REAL,
     VARCHAR,
