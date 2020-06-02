@@ -653,7 +653,7 @@ Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEAN
 4. We can now set up Azure pipelines. Once the cleanair api has been deployed on kubernetes you can update the alias record to point to the ip address of the cleanair-api on the cluster.
 
 
-# Initialising the input databases
+## Initialising the input databases
 Terraform will now have created a number of databases. We need to add the datasets to the database.
 This is done using Docker images from the Azure container registry.
 You will need the username, password and server name for the Azure container registry.
@@ -686,10 +686,14 @@ To add static datasets follow the [Static data insert](#static-data-insert) inst
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
 These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
 
-## Database user management
+## Kubernetes deployment
 
-Terraform will have created a password and username for the cluster and stored them on the keyvault. Sign into the database as an adminstrator and create a user with this username and password and assign read-write credentials.
+The [azure pipeline](#setting-up-azure-pipelines) will deploy the cleanair helmchart to the azure kubernetes cluster we deployed with terraform. If you deployed GPU enabled machines on Azure (current default in the terraform script) then you need to install the nvidia device plugin daemonset. The manifest for this is [adapted from the Azure docs](https://docs.microsoft.com/en-us/azure/aks/gpu-cluster). However, as our GPU machines have [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#:~:text=Taints%20are%20the%20opposite%20%E2%80%93%20they,not%20scheduled%20onto%20inappropriate%20nodes.) applied we have to add tolerations to the manifest, otherwise the nodes will block the daemonset. To install the custom manifest run,
 
+
+```bash
+kubectl apply -f kubernetes/gpu_resources/nvidia-device-plugin-ds.yaml
+```
 
 <!-- 
 ## Configure certificates
