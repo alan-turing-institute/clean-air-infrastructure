@@ -64,4 +64,4 @@ def cams_snapshot(args):
 
     db_query = CamsSnapshot()
 
-    return db_query.response_json(get_session(), type=args.pop("type"))
+    return db_query.response_json(get_session(), type_=args.pop("type"))

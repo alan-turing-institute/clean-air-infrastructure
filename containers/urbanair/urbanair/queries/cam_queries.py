@@ -56,24 +56,25 @@ class CamRecent(APIQueryMixin):
 
 
 class CamsSnapshot(APIQueryMixin):
-    def query(self, session, type):
+    def query(self, session, type_):
         """
         Return the result of the database view of the most recent
         """
         try:
-            if type == "people":
+            if type_ == "people":
                 res = session.execute("select * from jamcam.sum_counts_last_hour_people")
-            elif type == "cars":
+            elif type_ == "cars":
                 res = session.execute("select * from jamcam.sum_counts_last_hour_cars")
-            elif type == "buses":
+            elif type_ == "buses":
                 res = session.execute("select * from jamcam.sum_counts_last_hour_buses")
-            elif type == "trucks":
+            elif type_ == "trucks":
                 res = session.execute("select * from jamcam.sum_counts_last_hour_trucks")
-            elif type == "motorbikes":
+            elif type_ == "motorbikes":
                 res = session.execute("select * from jamcam.sum_counts_last_hour_motorbikes")
             else:
                 res = session.execute("select * from jamcam.sum_counts_last_hour")
             snapshot = {"camera_id": [], "sum_counts": []}
+
             for r in res:
                 snapshot["camera_id"].append(r["camera_id"])
                 snapshot["sum_counts"].append(r["sum_counts"])
