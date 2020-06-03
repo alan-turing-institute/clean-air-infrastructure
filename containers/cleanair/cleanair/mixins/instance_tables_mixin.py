@@ -21,11 +21,9 @@ class InstanceTableMixin:
     data_id = Column(String(64), nullable=False, index=False)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table.columns]
-        ]
-        return "<Instance(" + ", ".join(vals)
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+        return "<" + self.__tablename__ + "(" + ", ".join(vals)
 
 
 class ModelTableMixin:
@@ -40,7 +38,7 @@ class ModelTableMixin:
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
-        return "<ModelTable(" + ", ".join(vals)
+        return "<" + self.__tablename__ + "(" + ", ".join(vals)
 
 
 class DataConfigMixin:
@@ -56,4 +54,33 @@ class DataConfigMixin:
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
-        return "<DataConfig(" + ", ".join(vals)
+        return "<" + self.__tablename__ + "(" + ", ".join(vals)
+
+class MetricsTableMixin:
+    """Table for model metrics."""
+
+    __tablename__ = "metrics"
+
+    instance_id = Column(String(64), primary_key=True, nullable=False)
+    data_id = Column(String(64), primary_key=True, nullable=False)
+
+    def __repr__(self):
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+        return "<" + self.__tablename__ + "(" + ", ".join(vals)
+
+class ResultTableMixin:
+    """Table mixin for model results."""
+
+    __tablename__ = "result"
+
+    instance_id = Column(String(64), primary_key=True, nullable=False)
+    data_id = Column(String(64), primary_key=True, nullable=False)
+
+    point_id = Column(UUID, primary_key=True, nullable=False)
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+
+    def __repr__(self):
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
+        return "<" + self.__tablename__ + "(" + ", ".join(vals)
