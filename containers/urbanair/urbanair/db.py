@@ -6,40 +6,35 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
 
-
+# A dict of sqlalchmy session factories
 def configure_db_session():
-    """Configure a connection to the cleanair database"""
-    if "db_session" not in g:
-        #  Configure session
-        db_connection_info = DBConnectionMixin(current_app.config["DATABASE_URI"])
-        engine = create_engine(
-            db_connection_info.connection_string, convert_unicode=True
-        )
-        db_session = scoped_session(
-            sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        )
-        DeferredReflection.prepare(engine)
-        Base.query = db_session.query_property()
-        g.db_session = db_session
+    """Configure a connection to the cleanair database
+    """
 
-    return g.db_session
+    # default to urbanair database
+    uri = current_app.config["DATABASE_SECRETFILE"]
+    db_connection_info = DBConnectionMixin(uri)
 
+    engine = create_engine(db_connection_info.connection_string, convert_unicode=True)
 
-# pylint: disable=C0103
+    db_session = scoped_session(
+        sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    )
 
-
-def remove_db(e=None):
-    db_session = g.pop("db_session", None)
-    if db_session:
-        db_session.remove()
+    return db_session
 
 
 def get_session():
+    """Return a database session"""
+    return current_app.config["DB_SESSIONS"]
 
-    db_session = configure_db_session()
-    return db_session()
+
+def remove_db(exception=None):
+    current_app.config["DB_SESSIONS"].remove()
 
 
-def init_app(app):
-    configure_db_session()
-    app.teardown_appcontext(remove_db)
+def init_app():
+    """Initilise the datase"""
+
+    current_app.config["DB_SESSIONS"] = configure_db_session()
+    current_app.teardown_appcontext(remove_db)

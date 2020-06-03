@@ -16,7 +16,7 @@
 - [ ] Pipeline
 
 ## Additional dependencies
-<!-- List any dependencies added to the project ->
+<!-- List any dependencies added to the project -->
 
 <!-- - dependency 1 -->
 <!-- - dependency 2 -->
