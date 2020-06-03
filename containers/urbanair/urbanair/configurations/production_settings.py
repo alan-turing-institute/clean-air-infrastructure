@@ -1,6 +1,7 @@
-"""Production configuration environement variables"""
+"""Production configuration environment variables"""
+from werkzeug.security import generate_password_hash
 
-DATABASE_URI = "db_secrets.json"
+DATABASE_SECRETFILE = "db_secrets.json"
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",
     "info": {
