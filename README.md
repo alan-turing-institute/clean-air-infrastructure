@@ -236,7 +236,29 @@ conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed 
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
 
+## Install for Windows
+```bash
+# Download Ubuntu on Windows 
+# To enable visual code with WSL legacy run on bash:
+code .
+# In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
+# Use the File menu to open your folder.
+# To enable visual code with WSL legacy run:
+code .
+# In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
+# Use the File menu to open your folder.
 
+# Check if conda is recognised as commands, if not run:
+curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
+sha256sum Anaconda3-2019.03-Linux-x86_64.sh
+# The output is: 45c851b7497cc14d5ca060064394569f724b67d9b5f98a926ed49b834a6bb73a  Anaconda3-2019.03-Linux-x86_64.sh
+bash Anaconda3-2019.03-Linux-x86_64.sh
+# In every question of the output write yes
+source ~/.bashrc
+# To check installation y
+conda list
+#Continue with conda instructions above. 
+```
 ## Login to Azure
 
 To start working with `Azure`, you must first login to your account from the terminal:
