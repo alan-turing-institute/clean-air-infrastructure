@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
 imageTag: 61facdb82ee2e5c9ae435e9464c07650bcf42400
@@ -250,3 +251,379 @@ letsencryptIssuer:
 
 # Mike, CityHall, CityHall2, OscarHome, PatrickHome, JamesWHome, SamHome, Paul(GLA), Theo, Mark Girolami's, OGHOMENEW
 whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.175.41.21
+=======
+# This is a YAML-formatted file.
+# Variables to be passed into the templates.
+imageTag: b8d2e1f225aea7a600103845d4ab64936a652198
+
+jobs:
+
+#   - name: feature_oshighway
+#     image:
+#       repository: cleanairdocker.azurecr.io/feature_oshighway
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: feature_streetcanyon
+#     image:
+#       repository: cleanairdocker.azurecr.io/feature_streetcanyon
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: feature_ukmap
+#     image:
+#       repository: cleanairdocker.azurecr.io/feature_ukmap
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 1
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: input_satellite_backdate
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_satellite
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     args: ['--nhours', 720]
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: input_scoot_backdate
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_scoot
+#       imagePullPolicy: Always
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     args: ['--nhours', 720]
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+
+cronjobs:
+
+#   - name: input-aqe
+#     image:
+#         repository: cleanairdocker.azurecr.io/input_aqe
+#         imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 10
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     imagePullSecrets:
+#         - name: regcred
+
+#   - name: input-laqn
+#     image:
+#         repository: cleanairdocker.azurecr.io/input_laqn
+#         imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     imagePullSecrets:
+#         - name: regcred
+ 
+  - name: test-jamcam-cron-on-hour
+    schedule: "0 4-19 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "3", "4", "5"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    - mountPath: /dev/shm
+      name: dshm
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: "200Gi"
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector:
+        agentpool: jamcam
+    tolerations:
+        - key: "group"
+          operator: "Equal"
+          value: "gpu"
+          effect: "NoSchedule"
+    resources:
+        limits:
+            cpu: "23"
+            nvidia.com/gpu: 4
+        requests:
+            cpu: "23"
+            nvidia.com/gpu: 4
+
+  - name: test-jamcam-cron-on-half-hour
+    schedule: "30 4-19 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/cluster.sh"]
+    args: ["-m", "0", "1", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    - mountPath: /dev/shm
+      name: dshm
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: "200Gi"
+    imagePullSecrets:
+        - name: regcred
+    nodeSelector:
+        agentpool: jamcam
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
+    resources:
+      limits:
+        cpu: "23"
+        nvidia.com/gpu: 4
+      requests:
+        cpu: "23"
+        nvidia.com/gpu: 4
+
+  - name: test-jamcam-cron-view-refresh
+    schedule: "0 4-19 * * *"
+    concurrencyPolicy: Forbid
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+        tag: latest
+        imagePullPolicy: Always
+    command: ["bash", "/application/deployscripts/refresh.sh"]
+    args: []
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    - mountPath: /application/conf/local/
+      name: credentials
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    - name: credentials
+      secret:
+        secretName: credentials.yaml
+    imagePullSecrets:
+        - name: regcred
+
+#   - name: input-satellite
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_satellite
+#       imagePullPolicy: Always
+#     schedule: "30 10 * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: input-scoot
+#     image:
+#       repository: cleanairdocker.azurecr.io/input_scoot
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: feature_scoot_forecasts
+#     image:
+#       repository: cleanairdocker.azurecr.io/feature_scoot_forecasts
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     resources:
+#         requests:
+#           memory: "2Gi"
+#           cpu: "4"
+#         limits:
+#           memory: "4Gi"
+#           cpu: "8"
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: feature_scoot_readings
+#     image:
+#       repository: cleanairdocker.azurecr.io/feature_scoot_readings
+#       imagePullPolicy: Always
+#     schedule: "5 * * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 3
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     resources:
+#         requests:
+#           memory: "2Gi"
+#         limits:
+#           memory: "4Gi"
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+#   - name: lockdown-baseline
+#     image:
+#       repository: cleanairdocker.azurecr.io/lockdown_baseline
+#       imagePullPolicy: Always
+#     schedule: "* 04-12 * * *"
+#     failedJobsHistoryLimit: 1
+#     successfulJobsHistoryLimit: 10
+#     concurrencyPolicy: Forbid
+#     restartPolicy: OnFailure
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+
+deployments:
+    - name: cleanair-api
+      replicas: 2
+      image:
+        repository: cleanairdocker.azurecr.io/urbanairapi
+        imagePullPolicy: Always
+      ports:
+        containerPort: 8080
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+
+services:
+    - name: cleanair-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+        - name: https
+          port: 443
+          targetPort: 8080
+
+tls:
+    - host: urbanair.turing.ac.uk
+      secretName: cleanair-certs
+
+ingressRules:
+    - host: urbanair.turing.ac.uk
+      paths:
+        - path: /
+          serviceName: cleanair-api
+          servicePort: 80
+
+# Should always be set to staging to check certificates. Once configured correctly change to prod
+letsencryptType: prod
+
+letsencryptIssuer:
+    - name: letsencrypt-staging
+      email: ogiles@turing.ac.uk
+      server: https://acme-staging-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-staging
+    - name: letsencrypt-prod
+      email: ogiles@turing.ac.uk
+      server: https://acme-v02.api.letsencrypt.org/directory
+      secretName: cleanair-certs-prod
+
+# Mike, CityHall, CityHall2, OscarHome, PatrickHome, JamesWHome, SamHome, Paul(GLA), Theo, Mark Girolami's, OGHOMENEW
+# whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.174.154.231/32
+>>>>>>> 566626e3b8beb34ade921a178a3b33a981c759c5

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 {{- $chart_name := .Chart.Name }}
 {{- $chart_version := .Chart.Version | replace "+" "_" }}
@@ -72,4 +73,81 @@ spec:
           {{- end }}
   schedule: {{ $cronjob.schedule | quote }}
   successfulJobsHistoryLimit: {{ $cronjob.successfulJobsHistoryLimit }}
+=======
+
+{{- $chart_name := .Chart.Name }}
+{{- $chart_version := .Chart.Version | replace "+" "_" }}
+{{- $release_name := .Release.Name }}
+{{- $tag := .Values.imageTag }}
+
+{{- range $cronjob := .Values.cronjobs }}
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: "{{ $release_name }}-{{ $cronjob.name }}"
+  labels:
+    chart: "{{ $chart_name }}-{{ $chart_version }}"
+spec:
+  schedule: "{{ $cronjob.schedule }}"
+  concurrencyPolicy: {{ $cronjob.concurrencyPolicy }}
+  failedJobsHistoryLimit: {{ $cronjob.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {{ $release_name }}
+            cron: {{ $cronjob.name }}
+        spec:
+          containers:
+          - name: {{ $cronjob.name }}
+          {{- if $cronjob.image.tag}}
+            image: "{{ $cronjob.image.repository }}:{{ $cronjob.image.tag }}"
+          {{else}}
+            image: "{{ $cronjob.image.repository }}:{{ $tag }}"
+          {{- end }}
+            imagePullPolicy: {{ $cronjob.image.imagePullPolicy }}
+            {{- with $cronjob.command }}
+            command:
+{{ toYaml . | indent 14 }}
+            {{- end }}
+            {{- with $cronjob.args }}
+            args:
+{{ toYaml . | indent 14 }} 
+            {{- end }}
+            {{- with $cronjob.resources }}
+            resources:
+{{ toYaml . | indent 14 }}
+              {{- end }}
+            {{- with $cronjob.volumeMounts }}
+            volumeMounts:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+        {{- with $cronjob.imagePullSecrets }}
+          imagePullSecrets:
+{{ toYaml . | indent 10 }}
+        {{- end }}
+         {{- with $cronjob.volumes }}
+          volumes:
+{{ toYaml . | indent 10 }}
+          {{- end }}
+          {{- with $cronjob.env }}
+          env:
+{{ toYaml . | indent 10 }}
+          {{- end }}
+          {{- with $cronjob.nodeSelector }}
+          nodeSelector:
+{{ toYaml . | indent 12 }}
+            {{- end }}
+        {{- with $cronjob.affinity }}
+          affinity:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+        {{- with $cronjob.tolerations }}
+          tolerations:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+          restartPolicy: {{ $cronjob.restartPolicy }}
+>>>>>>> 566626e3b8beb34ade921a178a3b33a981c759c5
 {{- end }}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 trigger:
 - master
 
@@ -190,3 +191,197 @@ stages:
         releaseName: cleanair
         updatedependency: true
         install: true
+=======
+trigger:
+- master
+
+pr: none
+
+variables:
+  namespace: "cleanair"
+  helm_release: "cleanair"
+  kubernetes_cluster_name: "cleanair-kubernetes"
+  kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
+
+stages:
+- stage: Docker
+  displayName: Add new Docker images to ACR
+  jobs:
+  - job: BuildAndPushDocker
+    displayName: Build and register Docker images
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureKeyVault@1
+      displayName: 'Read KeyVault secrets'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        KeyVaultName: 'cleanair-secrets'
+        SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
+    # Inputs
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion) -f containers/dockerfiles/input_aqe_readings.Dockerfile containers
+      displayName: 'Build AQE data collection image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion) -f containers/dockerfiles/input_laqn_readings.Dockerfile containers
+      displayName: 'Build LAQN data collection image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion) -f containers/dockerfiles/input_satellite_readings.Dockerfile containers
+      displayName: 'Build satellite data collection image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion) -f containers/dockerfiles/input_scoot_readings.Dockerfile containers
+      displayName: 'Build SCOOT data collection image'
+    # Processing
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion) -f containers/dockerfiles/process_scoot_roadmaps.Dockerfile containers
+      displayName: 'Build SCOOT road mapping image'
+    # Feature extraction
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion) -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers
+      displayName: 'Build OSHighway feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_forecast_features.Dockerfile containers
+      displayName: 'Build SCOOT forecast feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_reading_features.Dockerfile containers
+      displayName: 'Build SCOOT reading feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion) -f containers/dockerfiles/extract_streetcanyon_features.Dockerfile containers
+      displayName: 'Build street canyon feature processing image'
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion) -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers
+      displayName: 'Build UKMap feature processing image'
+    # Output API
+    - script: |
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
+      displayName: 'Build urbanair API image'
+    # GLA Lockdown images
+    - script: |
+         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion) -f containers/dockerfiles/lockdown_baseline.Dockerfile containers
+      displayName: 'Building the GLA lockdown baseline image'
+    # List available images
+    - script: |
+        docker images
+      displayName: 'List images'
+    # Login to ACR
+    - script: |
+        echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
+      displayName: 'Login to ACR'
+    # Push Docker images to ACR
+    - script: |
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_oshighway:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_streetcanyon:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_ukmap:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
+      displayName: 'Push Docker images to ACR'
+
+- stage: Kubernetes
+  displayName: Update Helm chart on Azure Kubernetes cluster
+  jobs:
+  - job: UpdateAzureKubernetesHelmChart
+    displayName: Install Kubectl and install/upgrade helm
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    # Connect to Azure
+    - task: AzureCLI@1
+      displayName: 'Connect to Azure'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az aks get-credentials -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
+          KUBERNETES_VERSION=$(az aks show -n $(KUBERNETES_CLUSTER_NAME) -g $(KUBERNETES_CLUSTER_RESOURCE_GROUP) --query "kubernetesVersion" -o tsv)
+          echo "##vso[task.setvariable variable=kubernetes_version]$KUBERNETES_VERSION"
+    # Read Azure key vault
+    - task: AzureKeyVault@1
+      displayName: 'Read KeyVault secrets'
+      inputs:
+        azureSubscription: 'cleanair-scn'
+        KeyVaultName: 'cleanair-secrets'
+        SecretsFilter: 'scoot-aws-key,scoot-aws-key-id,satellite-copernicus-key,cleanair-inputs-db-name,cleanair-inputs-db-cluster-password,cleanair-inputs-db-cluster-username,cleanair-inputs-db-server-name, container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
+    # Install matching Kubectl version
+    - task: KubectlInstaller@0
+      displayName: 'Install matching Kubectl version'
+      inputs:
+        kubectlVersion: $(KUBERNETES_VERSION)
+    # Install latest Helm version
+    - task: HelmInstaller@1
+      displayName: 'Install latest Helm version'
+      inputs:
+        helmVersionToInstall: 3.1.2
+    # List installed versions
+    - script: |
+        echo "Kubernetes version on the cluster is ${KUBERNETES_VERSION}"
+        echo "Kubectl details:"
+        kubectl version
+        echo "Helm details:"
+        echo "Helm $(NAMESPACE) namespace:"
+        helm list --namespace $(NAMESPACE)
+      displayName: 'List installed versions'
+    # Add secrets to Kubernetes
+    - script: |
+        # Check whether we need to create a new namespace
+        if [ "$(kubectl get namespace $(NAMESPACE) 2> /dev/null | grep $(NAMESPACE))" == "" ]; then
+        kubectl create namespace $(NAMESPACE)
+        fi
+        echo "Adding secrets to Kubernetes"
+        if [ "$(kubectl get secret regcred --namespace cleanair 2> /dev/null | grep regcred)" == "" ]; then
+          kubectl create secret docker-registry --namespace cleanair regcred --docker-server=$(CONTAINER-REGISTRY-LOGIN-SERVER) --docker-username=$(CONTAINER-REGISTRY-ADMIN-USERNAME) --docker-password=$(CONTAINER-REGISTRY-ADMIN-PASSWORD)
+        fi
+        if [ "$(kubectl get secret secrets --namespace cleanair 2> /dev/null | grep secrets)" == "" ]; then
+          echo  '{
+            "aws_key_id": "$(SCOOT-AWS-KEY-ID)",
+            "aws_key": "$(SCOOT-AWS-KEY)"
+          }' > aws_secrets.json
+          echo '{
+            "username": "$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)",
+            "password": "$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)",
+            "host": "$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com",
+            "port": 5432,
+            "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
+            "ssl_mode": "require"
+          }' > db_secrets.json
+          echo '{
+            "copernicus_key": "${SATELLITE-COPERNICUS-KEY}"
+          }' > copernicus_secrets.json
+          kubectl create secret generic --namespace cleanair secrets --from-file=aws_secrets.json --from-file=db_secrets.json --from-file=copernicus_secrets.json
+          rm -f aws_secrets.json db_secrets.json copernicus_secrets.json
+          # kubectl create secret generic --namespace cleanair secrets --from-literal=host='$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com' --from-literal=port=5432 --from-literal=db_name='$(CLEANAIR-INPUTS-DB-NAME)' --from-literal=username='$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)' --from-literal=password='$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)' --from-literal=ssl_mode='require' --from-literal=aws_key_id='$(SCOOT-AWS-KEY-ID)' --from-literal=aws_key='$(SCOOT-AWS-KEY)'
+        fi
+      displayName: 'Add secrets to Kubernetes'
+    # Prepare Helm chart
+    - script: |
+        echo "Setting image tag to $(Build.SourceVersion)"
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+      displayName: 'Prepare Helm chart'
+    # Install certmanager custom resource definition
+    - script: |
+        kubectl apply --validate=false -f https://raw.githubusercontent.com/jetstack/cert-manager/v0.13.1/deploy/manifests/00-crds.yaml  --namespace cleanair
+        helm dependency update kubernetes/cleanair
+      displayName: 'Install cert manager components'
+    # Install/upgrade Helm chart
+    - task: HelmDeploy@0
+      displayName: 'Install/upgrade Helm chart'
+      inputs:
+        connectionType: Azure Resource Manager
+        azureSubscriptionEndpoint: 'cleanair-scn'
+        azureResourceGroup: $(KUBERNETES_CLUSTER_RESOURCE_GROUP)
+        kubernetesCluster: $(KUBERNETES_CLUSTER_NAME)
+        namespace: $(NAMESPACE)
+        command: upgrade
+        arguments: --cleanup-on-fail --set nginx-ingress.controller.service.externalTrafficPolicy=Local --timeout 1800s
+        chartType: filepath
+        chartPath: kubernetes/cleanair
+        releaseName: cleanair
+        updatedependency: true
+        install: true
+>>>>>>> 566626e3b8beb34ade921a178a3b33a981c759c5

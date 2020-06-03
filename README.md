@@ -239,7 +239,6 @@ ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 code .
 # In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
 # Use the File menu to open your folder.
-
 # Check if conda is recognised as commands, if not run:
 curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 sha256sum Anaconda3-2019.03-Linux-x86_64.sh
