@@ -215,6 +215,7 @@ versions of software around in your machine. All the steps above can be done wit
 
 conda create -n busyness python=3.7
 conda activate busyness
+conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
 pip install azure-cli
 pip install azure-nspkg azure-mgmt-nspkg
@@ -240,10 +241,6 @@ ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ## Install for Windows
 ```bash
 # Download Ubuntu on Windows 
-# To enable visual code with WSL legacy run on bash:
-code .
-# In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
-# Use the File menu to open your folder.
 # To enable visual code with WSL legacy run:
 code .
 # In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
