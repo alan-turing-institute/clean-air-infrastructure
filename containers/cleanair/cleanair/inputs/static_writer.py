@@ -282,7 +282,7 @@ class StaticWriter(DBWriter):
                 ),
                 """CREATE INDEX IF NOT EXISTS  oshighway_roadlink_toid_idx on {} (toid);""".format(
                     self.schema_table
-                )
+                ),
                 """ALTER TABLE {}
                        DROP COLUMN alternat_1,
                        DROP COLUMN alternat_2,
