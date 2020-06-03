@@ -580,6 +580,19 @@ sed -i '' "s/.*PGPASSWORD.*/PGPASSWORD=$(az account get-access-token --resource-
 
 If you need to store other environment variables and access them in your notebook, simply add them to the `.env` file.
 
+To access the environment variables, include the following lines at the top of your jupyter notebook:
+
+```python
+%load_ext dotenv
+%dotenv
+```
+
+You can now access the value of these variables as follows:
+
+```python
+secretfile = os.getenv("SECRETS", None)
+```
+
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
 
