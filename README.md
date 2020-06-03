@@ -234,23 +234,19 @@ ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
 ## Install for Windows
 ```bash
-#download Ubuntu on Windows 
-#to enable visual code with WSL legacy run:
+# Download Ubuntu on Windows 
+# To enable visual code with WSL legacy run:
 code .
-# check if conda is recognised as commands, if not run:
+# Check if conda is recognised as commands, if not run:
 curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 sha256sum Anaconda3-2019.03-Linux-x86_64.sh
-#the output is: 45c851b7497cc14d5ca060064394569f724b67d9b5f98a926ed49b834a6bb73a  Anaconda3-2019.03-Linux-x86_64.sh
-
+# The output is: 45c851b7497cc14d5ca060064394569f724b67d9b5f98a926ed49b834a6bb73a  Anaconda3-2019.03-Linux-x86_64.sh
 bash Anaconda3-2019.03-Linux-x86_64.sh
-
-# in every question of the output write yes
+# In every question of the output write yes
 source ~/.bashrc
-
-#to check installation y
+#To check installation y
 conda list
- 
-#continue with conda instructions above. 
+# Continue with conda instructions above. 
 ```
 
 
