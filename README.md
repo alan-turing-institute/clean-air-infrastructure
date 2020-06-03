@@ -235,7 +235,6 @@ ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ## Install for Windows
 ```bash
 # Download Ubuntu on Windows 
-<<<<<<< HEAD
 # To enable visual code with WSL legacy run on bash:
 code .
 # In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
