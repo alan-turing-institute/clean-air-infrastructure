@@ -35,12 +35,12 @@ def main():  # pylint: disable=R0914
     predict_training = kwargs.pop("predict_training")
 
     # get the model config from the parser arguments
-    model_config = parser.generate_data_config()
+    data_config = parser.generate_data_config()
 
-    if "aqe" in model_config["train_sources"] + model_config["pred_sources"]:
+    if "aqe" in data_config["train_sources"] + data_config["pred_sources"]:
         raise NotImplementedError("AQE cannot currently be run. Coming soon")
 
-    if model_config["species"] != ["NO2"]:
+    if data_config["species"] != ["NO2"]:
         raise NotImplementedError(
             "The only pollutant we can model right now is NO2. Coming soon"
         )
@@ -55,7 +55,7 @@ def main():  # pylint: disable=R0914
         logger.info("Reading local data")
         model_data = ModelData(**kwargs)
     else:
-        model_data = ModelData(config=model_config, **kwargs)
+        model_data = ModelData(config=data_config, **kwargs)
 
     # write model results to file
     if local_write:
