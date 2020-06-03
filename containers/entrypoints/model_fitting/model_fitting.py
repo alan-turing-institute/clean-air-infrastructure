@@ -7,6 +7,7 @@ import pickle
 from cleanair.models import ModelData, SVGP
 from cleanair.loggers import initialise_logging
 from cleanair.parsers import ModelFitParser
+from cleanair.instance import AirQualityInstance
 
 
 def write_predictions_to_file(y_pred, results_dir, filename):
