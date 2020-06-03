@@ -27,3 +27,9 @@ python-virtual-environments/
 # Notebooks
 notebooks/
 *.cfg
+# Misc
+images/
+
+# database
+mylocal_db/
+logfile
