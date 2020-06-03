@@ -208,6 +208,10 @@ class SVGP(Model):
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
+        # TODO need a better fix for inducing point validation
+        if self.model_params["n_inducing_points"] > x_array.shape[0]:
+            self.model_params["n_inducing_points"] = x_array.shape[0]
+
         z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
             0
         ]

@@ -15,6 +15,15 @@ def write_predictions_to_file(y_pred, results_dir, filename):
     with open(pred_filepath, "wb") as handle:
         pickle.dump(y_pred, handle)
 
+# TODO: make this into a nice re-usable function somewhere
+def validate_shapes(x_array, y_array):
+    """Check the shapes of x and y are correct."""
+    assert x_array.shape[0] == y_array.shape[0]
+    assert x_array.shape[0] > 0
+    assert y_array.shape[0] > 0
+    assert y_array.shape[1] == 1  # just one task
+    assert x_array.shape[1] >= 3  # at least 3 features
+
 
 def main():  # pylint: disable=R0914
     """
@@ -55,6 +64,7 @@ def main():  # pylint: disable=R0914
         logger.info("Reading local data")
         model_data = ModelData(**kwargs)
     else:
+        print("Reading from database using data config.")
         model_data = ModelData(config=data_config, **kwargs)
 
     # write model results to file
@@ -73,6 +83,10 @@ def main():  # pylint: disable=R0914
         "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
     )
     fit_start_time = datetime.datetime.now()
+    print("X train keys:", x_train.keys())
+    print("Y train keys:", y_train.keys())
+    validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
+    print("X hexgrid test shape:", x_test["hexgrid"].shape)
     model_fitter.fit(x_train, y_train)
 
     # Get info about the model fit
