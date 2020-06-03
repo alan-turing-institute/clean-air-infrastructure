@@ -5,7 +5,7 @@ resource "random_string" "db_admin_password" {
   keepers = {
     resource_group = "${var.resource_group}"
   }
-  length  = 20
+  length  = 25
   special = true
 }
 
@@ -130,30 +130,52 @@ resource "azurerm_postgresql_firewall_rule" "turing_ips_wifi" {
 #   end_ip_address      = "195.99.240.222"
 # }
 
-# Add a provider so we can assign database roles (max_connections should be fairly large https://github.com/terraform-providers/terraform-provider-postgresql/issues/81)
-provider "postgresql" {
-  host            = "${azurerm_postgresql_server.this.name}.postgres.database.azure.com"
-  database        = "${azurerm_key_vault_secret.db_name.value}"
-  username        = "${azurerm_key_vault_secret.db_admin_username.value}@${azurerm_postgresql_server.this.name}"
-  password        = "${azurerm_key_vault_secret.db_admin_password.value}"
-  sslmode         = "require"
-  connect_timeout = 15
-  superuser = false
-  max_connections = 20
-}
-
-# Add extentions
-resource "postgresql_extension" "ext_postgis" {
-  name = "postgis"
-}
-
-resource "postgresql_extension" "ext_uuid" {
-  name = "uuid-ossp"
-}
-
 # Users
 # Random strings
 # --------------
+
+variable "cluster_db_usernames" {
+    description = "Users names and passwords which are written to a keyvault. They need to be created on the database manually"
+    type        = list(string)
+    default     = ["urbanairapi", "jamcamwriter"]
+}
+
+# :: database passwords
+resource "random_string" "db_user_passwords" {
+  keepers = {
+    resource_group = var.resource_group
+  }
+  length  = 20
+  special = true
+  count   = length(var.cluster_db_usernames)
+}
+
+# :: store the database username and passwords in the database
+resource "azurerm_key_vault_secret" "cluster_db_usernames" {
+  count        = length(var.cluster_db_usernames)
+  name         = "${var.db_name}-db-${var.cluster_db_usernames[count.index]}-username"
+  value        = var.cluster_db_usernames[count.index]
+  key_vault_id = var.key_vault_id
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+
+# :: store the database admin password in the keyvault
+resource "azurerm_key_vault_secret" "db_user_passwords" {
+  count        = length(var.cluster_db_usernames)
+  name         = "${var.db_name}-db-${var.cluster_db_usernames[count.index]}-password"
+  value        = "${random_string.db_user_passwords[count.index].result}"
+  key_vault_id = "${var.key_vault_id}"
+  tags = {
+    environment = "Terraform Clean Air"
+    segment     = "Databases / Postgres"
+  }
+}
+
+
+##Old passwords
 # :: database admin password
 resource "random_string" "db_cluster_password" {
   keepers = {
@@ -184,3 +206,5 @@ resource "azurerm_key_vault_secret" "db_cluster_password" {
     segment     = "Databases / Postgres"
   }
 }
+
+

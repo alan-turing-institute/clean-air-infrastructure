@@ -1,4 +1,6 @@
-"""Production configuration environement variables"""
+"""Development configuration environement variables"""
+
+from werkzeug.security import generate_password_hash
 
 SWAGGER_TEMPLATE = {
     "swagger": "2.0",

@@ -9,7 +9,7 @@ from ..loggers import get_logger, green, red
 class DBConnectionMixin:
     """Create database connection strings"""
 
-    def __init__(self, secretfile, secret_dict=None):
+    def __init__(self, secretfile, secret_dict=None, allow_env_pass=True):
         """Generates connection strings for postgresql database.
 
         First loads connection information from secretfile.
@@ -22,7 +22,7 @@ class DBConnectionMixin:
                               or a filename if the secret is in a directory called '/secrets'
             secret_dict (dict): A dictionary of login secrets. Will override variables in the json secrets file
                                 if both provided
-
+            allow_env_pass (bool): Allow password to be overwritten by environment variable PGPASSWORD
         """
 
         # Ensure logging is available
@@ -37,7 +37,7 @@ class DBConnectionMixin:
                 self.connection_info, secret_dict
             )
 
-        if self.read_environment_password():
+        if allow_env_pass and self.read_environment_password():
             self.logger.info("Database password loaded from environment variable")
             self.connection_info = self.replace_connection_values(
                 self.connection_info, self.read_environment_password()
