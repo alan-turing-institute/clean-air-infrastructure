@@ -81,7 +81,7 @@ class Instance(DBWriter):
     @model_name.setter
     def model_name(self, value: str):
         self._model_name = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def param_id(self) -> str:
@@ -91,7 +91,7 @@ class Instance(DBWriter):
     @param_id.setter
     def param_id(self, value: str):
         self._param_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def data_id(self) -> str:
@@ -101,7 +101,7 @@ class Instance(DBWriter):
     @data_id.setter
     def data_id(self, value: str):
         self._data_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def instance_id(self) -> str:
@@ -129,7 +129,7 @@ class Instance(DBWriter):
     @git_hash.setter
     def git_hash(self, value: str):
         self._git_hash = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def tag(self) -> str:
@@ -139,7 +139,7 @@ class Instance(DBWriter):
     @tag.setter
     def tag(self, value: str):
         self._tag = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def cluster_id(self) -> str:
@@ -149,7 +149,7 @@ class Instance(DBWriter):
     @cluster_id.setter
     def cluster_id(self, value: str):
         self._cluster_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def fit_start_time(self) -> str:
@@ -159,7 +159,7 @@ class Instance(DBWriter):
     @fit_start_time.setter
     def fit_start_time(self, value: str):
         self._fit_start_time = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     def hash(self) -> str:
         """Hash the model name, param id, data id and git hash return a unique id."""

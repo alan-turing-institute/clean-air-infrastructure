@@ -22,6 +22,7 @@ class InstanceQueryMixin:
         Any object that inherits this mixin must assign the above attributes.
     """
 
+    # declaring these attributes prevents mypy errors
     data_table: DataTableMixin
     instance_table: InstanceTableMixin
     model_table: ModelTableMixin

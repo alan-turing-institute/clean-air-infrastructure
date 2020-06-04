@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
-    ModelResult,
+    AirQualityResultTable,
     SatelliteGrid,
 )
 from ..databases import DBWriter
