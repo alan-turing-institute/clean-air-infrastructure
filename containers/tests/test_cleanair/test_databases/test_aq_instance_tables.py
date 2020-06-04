@@ -1,10 +1,12 @@
 
 from typing import Any, Dict, Union
+import pandas as pd
 from cleanair.databases import DBWriter
 from cleanair.instance import AirQualityInstance
 from cleanair.databases.tables import (
     AirQualityDataTable,
     AirQualityModelTable,
+    AirQualityResultTable,
 )
 from cleanair.models import DataConfig, ModelParamSVGP
 
@@ -87,3 +89,15 @@ def test_insert_instance(
 
     # insert instance
     svgp_instance.update_remote_tables()
+
+def test_insert_result_table(
+    secretfile: str,
+    connection: Any,    # TODO what type is this?
+    result_df: pd.DataFrame,
+):
+    """Insert fake results into the results air quality table."""
+    conn = DBWriter(
+        secretfile=secretfile, initialise_tables=True, connection=connection
+    )
+    records = result_df.to_dict("records")
+    conn.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")

@@ -2,9 +2,12 @@
 Fixtures for the cleanair module.
 """
 
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 from typing import Dict, List, Union
 import pytest
+import random
+import pandas as pd
 from cleanair.models import DataConfig, ModelParamSVGP
 from cleanair.instance import AirQualityInstance
 
@@ -100,3 +103,21 @@ def svgp_instance(
         fit_start_time=fit_start_time,
         secretfile=secretfile,
     )
+
+@pytest.fixture(scope="module")
+def svgp_result(svgp_instance) -> pd.DataFrame:
+    """Predictions from an svgp model."""
+    start = datetime(2020, 1, 1, 0, 0, 0)
+    nhours = 24
+    end = start + timedelta(hours=nhours)
+    point_id = uuid.uuid1()
+    random.seed(0)
+    data = dict(
+        fit_start_time=pd.date_range(start, end),
+        no2_mean=[100 * random.random() for i in range(nhours)],
+        no2_var=[10 * random.random() for i in range(nhours)],
+    )
+    result_df = pd.DataFrame(data)
+    result_df["point_id"] = point_id
+    result_df["instance_id"] = svgp_instance.instance_id
+    result_df["data_id"] = svgp_instance.data_id
