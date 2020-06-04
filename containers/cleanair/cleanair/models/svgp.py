@@ -22,7 +22,7 @@ class SVGP(Model):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params: ModelParamSVGP, tasks=None, **kwargs):
+    def __init__(self, model_params: ModelParamSVGP = dict(), tasks=None, **kwargs):
         """
         SVGP.
 
@@ -83,7 +83,7 @@ class SVGP(Model):
         ]
 
         # check model parameters
-        if model_params is None:
+        if not model_params:
             self.model_params = self.get_default_model_params()
         else:
             self.check_model_params_are_valid()
