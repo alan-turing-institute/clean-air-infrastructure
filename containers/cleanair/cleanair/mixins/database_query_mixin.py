@@ -18,7 +18,6 @@ from ..databases.tables import (
     ScootDetector,
     ScootReading,
 )
-from ..databases import Connector
 from ..loggers import get_logger
 from ..timestamps import as_datetime
 
@@ -276,7 +275,6 @@ class DBQueryMixin:
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
-    dbcnxn: Connector
 
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None, detectors=None):

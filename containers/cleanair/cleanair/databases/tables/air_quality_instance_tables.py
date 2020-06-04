@@ -3,7 +3,7 @@
 from sqlalchemy import ForeignKeyConstraint, Column
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from ..base import Base
-from ...mixins import (
+from ..instance_tables_mixin import (
     InstanceTableMixin,
     ModelTableMixin,
     DataTableMixin,
@@ -21,11 +21,11 @@ class AirQualityInstanceTable(Base, InstanceTableMixin):
         ForeignKeyConstraint(
             ["model_name", "param_id"],
             [
-                "modelling.air_quality_model.model_name",
-                "modelling.air_quality_model.param_id",
+                "air_quality_modelling.air_quality_model.model_name",
+                "air_quality_modelling.air_quality_model.param_id",
             ],
         ),
-        {"schema": "modelling"},
+        {"schema": "air_quality_modelling"},
     )
 
 class AirQualityDataTable(Base, DataTableMixin):
@@ -44,11 +44,11 @@ class AirQualityMetricsTable(Base, MetricsTableMixin):
     """Storing metrics that have been evaluated on a model."""
 
     __tablename__ = "air_quality_metrics"
-    __table_args__ = {
+    __table_args__ = (
         ForeignKeyConstraint(["data_id"], ["air_quality_modelling.air_quality_data.data_id"]),
         ForeignKeyConstraint(["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]),
         {"schema": "air_quality_modelling"},
-    }
+    )
 
     # columns for no2 metrics
     no2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
@@ -80,12 +80,12 @@ class AirQualityResultTable(Base, ResultTableMixin):
 
     __tablename__ = "air_quality_result"
 
-    __table_args__ = {
+    __table_args__ = (
         ForeignKeyConstraint(["data_id"], ["air_quality_modelling.air_quality_data.data_id"]),
         ForeignKeyConstraint(["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]),
         ForeignKeyConstraint(["point_id"], ["interest_points.meta_point.id"]),
         {"schema": "air_quality_modelling"},
-    }
+    )
 
     # column for each pollutant
     NO2_mean = Column(DOUBLE_PRECISION, nullable=True)
