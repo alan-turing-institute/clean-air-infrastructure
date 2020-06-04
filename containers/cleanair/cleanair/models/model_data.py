@@ -1,6 +1,7 @@
 """
 Vizualise available sensor data for a model fit
 """
+from typing import Dict, List, Union
 import json
 import os
 import pickle
@@ -18,11 +19,12 @@ from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 
+DataConfig = Dict[str, Union[str, bool, List[str]]]
 
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, config=None, config_dir=None, **kwargs):
+    def __init__(self, config: DataConfig, config_dir=None, **kwargs):
         """
         Initialise the ModelData object with a config file
         args:

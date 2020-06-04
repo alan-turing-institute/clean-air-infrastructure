@@ -2,6 +2,7 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
+from typing import Dict, Union
 import logging
 import os
 import numpy as np
@@ -14,13 +15,14 @@ import tensorflow as tf
 from ..loggers import get_logger
 from .model import Model
 
+ModelParamSVGP = Dict[str, Union[float, bool, int, Dict, None]]
 
 class SVGP(Model):
     """
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params=None, tasks=None, **kwargs):
+    def __init__(self, model_params: ModelParamSVGP, tasks=None, **kwargs):
         """
         SVGP.
 

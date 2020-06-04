@@ -1,14 +1,19 @@
 
-from typing import Any
+from typing import Any, Dict, Union
 from cleanair.databases import DBWriter
-from cleanair.instance import Instance
-from cleanair.databases.tables import AirQualityDataTable
+from cleanair.instance import AirQualityInstance
+from cleanair.databases.tables import (
+    AirQualityDataTable,
+    AirQualityModelTable,
+)
+from cleanair.models import DataConfig, ModelParamSVGP
 
-def test_insert_aq_data_table(
+def test_insert_laqn_data_table(
     secretfile: str,
     connection: Any,    # TODO what type is this?
-    base_aq_data_config: dict,
-    base_aq_preprocessing: dict,
+    base_data_id: int,
+    base_aq_data_config: DataConfig,
+    base_aq_preprocessing: Dict,
 ):
     """Test data is inserted into the air quality data config table.
 
@@ -20,10 +25,65 @@ def test_insert_aq_data_table(
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )
-    data_id = Instance.hash_dict(dict(base_aq_data_config, **base_aq_preprocessing))
     records = [dict(
-        data_id=data_id,
+        data_id=base_data_id,
         data_config=base_aq_data_config,
         preprocessing=base_aq_preprocessing,
     )]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
+
+def test_insert_svgp(
+    secretfile: str,
+    connection: Any,    # TODO what type is this?
+    svgp_model_params: ModelParamSVGP,
+    svgp_param_id: str,
+):
+    """Test data is inserted into the air quality model table.
+
+    Args:
+        secretfile: The fixture for secretfiles.
+        connection: The fixture for DB connection.
+        svgp_model_params: Simple model parameters for an SVGP.
+    """
+    conn = DBWriter(
+        secretfile=secretfile, initialise_tables=True, connection=connection
+    )
+    model_name = "svgp"
+    records = [dict(
+        model_name=model_name,
+        param_id=svgp_param_id,
+        model_param=svgp_model_params,
+    )]
+    conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
+
+def test_insert_instance(
+    secretfile: str,
+    connection: Any,    # TODO what type is this?
+    svgp_instance: AirQualityInstance,
+    base_aq_data_config: DataConfig,
+    base_aq_preprocessing: Dict,
+    svgp_model_params: ModelParamSVGP,
+):
+    """Insert instance into database."""
+    conn = DBWriter(
+        secretfile=secretfile, initialise_tables=True, connection=connection
+    )
+    # insert model
+    model_name = "svgp"
+    records = [dict(
+        model_name=model_name,
+        param_id=svgp_instance.param_id,
+        model_param=svgp_model_params,
+    )]
+    conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
+
+    # insert data
+    records = [dict(
+        data_id=svgp_instance.data_id,
+        data_config=base_aq_data_config,
+        preprocessing=base_aq_preprocessing,
+    )]
+    conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
+
+    # insert instance
+    svgp_instance.update_remote_tables()
