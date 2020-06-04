@@ -1,11 +1,12 @@
 """Tables for air quality instances, models, data, metrics and results."""
 
-from sqlalchemy import ForeignKeyConstraint, Column, Float
+from sqlalchemy import ForeignKeyConstraint, Column
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from ..base import Base
 from ...mixins import (
     InstanceTableMixin,
     ModelTableMixin,
-    DataConfigMixin,
+    DataTableMixin,
     MetricsTableMixin,
     ResultTableMixin,
 )
@@ -27,7 +28,7 @@ class AirQualityInstanceTable(Base, InstanceTableMixin):
         {"schema": "modelling"},
     )
 
-class AirQualityDataTable(Base, DataConfigMixin):
+class AirQualityDataTable(Base, DataTableMixin):
     """Storing settings for air quality data settings."""
 
     __tablename__ = "air_quality_data"
@@ -50,29 +51,29 @@ class AirQualityMetricsTable(Base, MetricsTableMixin):
     }
 
     # columns for no2 metrics
-    no2_mae = Column(Float, nullable=True, index=False)
-    no2_mse = Column(Float, nullable=True, index=False)
-    no2_r2_score = Column(Float, nullable=False, index=False)
+    no2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    no2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    no2_r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
 
     # columns for o3 metrics
-    o3_mae = Column(Float, nullable=True, index=False)
-    o3_mse = Column(Float, nullable=True, index=False)
-    o3_r2_score = Column(Float, nullable=True, index=False)
+    o3_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    o3_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    o3_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
     # columns for pm10 metrics
-    pm10_mae = Column(Float, nullable=True, index=False)
-    pm10_mse = Column(Float, nullable=True, index=False)
-    pm10_r2_score = Column(Float, nullable=True, index=False)
+    pm10_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    pm10_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    pm10_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
     # columns for pm25 metrics
-    pm25_mae = Column(Float, nullable=True, index=False)
-    pm25_mse = Column(Float, nullable=True, index=False)
-    pm25_r2_score = Column(Float, nullable=True, index=False)
+    pm25_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    pm25_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    pm25_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
     # columns for co2 metrics
-    co2_mae = Column(Float, nullable=True, index=False)
-    co2_mse = Column(Float, nullable=True, index=False)
-    co2_r2_score = Column(Float, nullable=True, index=False)
+    co2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    co2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    co2_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
 class AirQualityResultTable(Base, ResultTableMixin):
     """Storing the results of air quality model fits."""

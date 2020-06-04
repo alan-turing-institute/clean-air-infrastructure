@@ -41,7 +41,7 @@ class ModelTableMixin:
         return "<" + self.__tablename__ + "(" + ", ".join(vals)
 
 
-class DataConfigMixin:
+class DataTableMixin:
     """Table of model parameters."""
 
     __tablename__ = "data_config"

@@ -6,7 +6,7 @@ from .api_request_mixin import APIRequestMixin
 from .database_query_mixin import DBQueryMixin, ScootQueryMixin
 from .date_range_mixin import DateRangeMixin
 from .instance_tables_mixin import (
-    DataConfigMixin,
+    DataTableMixin,
     InstanceTableMixin,
     MetricsTableMixin,
     ModelTableMixin,
@@ -22,7 +22,7 @@ from .parser_mixins import (
 
 __all__ = [
     "APIRequestMixin",
-    "DataConfigMixin",
+    "DataTableMixin",
     "DateRangeMixin",
     "DBConnectionMixin",
     "DBQueryMixin",

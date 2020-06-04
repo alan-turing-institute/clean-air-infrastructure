@@ -51,7 +51,6 @@ __all__ = [
     "JamCamFrameStats",
     "JamCamVideoStats",
     "MetaPoint",
-    "ModelResult",
     "OSHighway",
     "RectGrid",
     "RectGrid100",

@@ -2,7 +2,12 @@
 
 from sqlalchemy import and_
 from ..decorators import db_query
-
+from ..databases import Connector
+from .instance_tables_mixin import (
+    DataTableMixin,
+    InstanceTableMixin,
+    ModelTableMixin,
+)
 
 class InstanceQueryMixin:
     """
@@ -16,6 +21,11 @@ class InstanceQueryMixin:
     Notes:
         Any object that inherits this mixin must assign the above attributes.
     """
+
+    data_table: DataTableMixin
+    instance_table: InstanceTableMixin
+    model_table: ModelTableMixin
+    dbcnxn: Connector
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments
