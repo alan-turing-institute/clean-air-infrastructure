@@ -2,6 +2,10 @@
 Module for cleanair parsers.
 """
 from .complex import (
+    SecretFileParser,
+    SourceParser,
+    VerbosityParser,
+    DurationParser,
     DataBaseRoleParser,
     DatabaseSetupParser,
     FeatureNameParser,
@@ -25,6 +29,10 @@ from .simple import (
 )
 
 __all__ = [
+    "SecretFileParser",
+    "SourceParser",
+    "VerbosityParser",
+    "DurationParser",
     "DataBaseRoleParser",
     "DatabaseSetupParser",
     "AQEReadingArgumentParser",

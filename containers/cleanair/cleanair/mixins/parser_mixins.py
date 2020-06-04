@@ -4,6 +4,7 @@ Mixins which are used by multiple argument parsers
 from argparse import ArgumentTypeError, Action
 
 
+
 class ParseSecretDict(Action):
     "Parse items into a dictionary"
 

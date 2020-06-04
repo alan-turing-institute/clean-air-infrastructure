@@ -11,6 +11,7 @@ from ..mixins import (
 )
 
 
+
 class AQEReadingArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):
