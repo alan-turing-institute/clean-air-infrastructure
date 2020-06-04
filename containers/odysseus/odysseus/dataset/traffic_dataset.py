@@ -235,7 +235,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
                 "Data config and preprocessing dictionaries should not have overlapping keys."
             )
         merged_dict = {**data_config, **preprocessing}
-        return Instance.hash_dict(merged_dict)
+        return hash_dict(merged_dict)
 
     def update_remote_tables(self):
         """Update the data config table for traffic."""

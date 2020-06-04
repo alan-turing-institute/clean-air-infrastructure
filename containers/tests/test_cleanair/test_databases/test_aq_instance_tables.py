@@ -100,13 +100,5 @@ def test_insert_result_table(
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )
-    conn.dbcnxn.initialise_tables()
-    inst = inspect(AirQualityResultTable)
-    attr_names = [c_attr.key for c_attr in inst.mapper.column_attrs]
-    print(attr_names)
-    assert "NO2_mean" in attr_names
     records = svgp_result.to_dict("records")
-    print(records)
-    with conn.dbcnxn.open_session() as session:
-        print(session.query(AirQualityResultTable))
     conn.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")

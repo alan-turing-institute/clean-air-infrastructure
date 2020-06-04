@@ -18,6 +18,7 @@ from ..databases.tables import (
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
+from ..instance import hash_dict
 
 DataConfig = Dict[str, Union[str, bool, List[str]]]
 
@@ -83,6 +84,11 @@ class ModelData(DBWriter, DBQueryMixin):
 
         else:
             self.restore_config_state(config_dir)
+    
+    @property
+    def data_id(self) -> str:
+        """Hash of the data config dictionary."""
+        return hash_dict(self.config)
 
     def __validate_config(self, config):
 

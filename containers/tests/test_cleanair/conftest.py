@@ -46,7 +46,7 @@ def base_aq_preprocessing() -> Dict:
 @pytest.fixture(scope="module")
 def base_data_id(base_aq_data_config: DataConfig, base_aq_preprocessing: Dict) -> str:
     """Data id of base data config & preprocessing."""
-    return AirQualityInstance.hash_dict(dict(base_aq_data_config, **base_aq_preprocessing))
+    return AirQualityhash_dict(dict(base_aq_data_config, **base_aq_preprocessing))
 
 @pytest.fixture(scope="module")
 def svgp_model_params() -> ModelParamSVGP:
@@ -66,7 +66,7 @@ def svgp_model_params() -> ModelParamSVGP:
 @pytest.fixture(scope="module")
 def svgp_param_id(svgp_model_params: ModelParamSVGP) -> str:
     """Param id of svgp model params"""
-    return AirQualityInstance.hash_dict(svgp_model_params)
+    return AirQualityhash_dict(svgp_model_params)
 
 @pytest.fixture(scope="module")
 def production_tag() -> str:
