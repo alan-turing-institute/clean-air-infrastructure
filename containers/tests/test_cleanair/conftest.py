@@ -5,7 +5,7 @@ Fixtures for the cleanair module.
 import pytest
 
 @pytest.fixture(scope="module")
-def base_data_config() -> dict:
+def base_aq_data_config() -> dict:
     """An air quality data config dictionary with basic settings."""
 
     usused_variable = 0
@@ -32,3 +32,8 @@ def base_data_config() -> dict:
         "model_type": "svgp",
         "tag": "test",
     }
+
+@pytest.fixture(scope="module")
+def base_aq_preprocessing() -> dict:
+    """An air quality dictionary for preprocessing settings."""
+    return dict()

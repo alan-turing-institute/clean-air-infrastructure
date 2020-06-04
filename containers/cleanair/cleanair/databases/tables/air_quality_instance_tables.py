@@ -1,12 +1,13 @@
 """Tables for air quality instances, models, data, metrics and results."""
 
-from sqlalchemy import ForeignKeyConstraint
+from sqlalchemy import ForeignKeyConstraint, Column, Float
 from ..base import Base
 from ...mixins import (
     InstanceTableMixin,
     ModelTableMixin,
     DataConfigMixin,
     MetricsTableMixin,
+    ResultTableMixin,
 )
 
 class AirQualityInstanceTable(Base, InstanceTableMixin):

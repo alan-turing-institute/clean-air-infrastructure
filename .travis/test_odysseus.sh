@@ -16,3 +16,5 @@ black --check $INCLUDE
 # Run pylint for stricter error checking.
 # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
 pylint --rcfile=.pylintrc $INCLUDE
+
+mypy --config-file .mypy.ini $INCLUDE
