@@ -1,4 +1,6 @@
-this is an obvious error
+"""
+Fixtures for the cleanair module.
+"""
 
 import pytest
 
@@ -6,6 +8,7 @@ import pytest
 def base_data_config() -> dict:
     """An air quality data config dictionary with basic settings."""
 
+    usused_variable = 0
     return {
         "train_start_date": "2020-01-01",
         "train_end_date": "2020-01-02",

@@ -3,7 +3,7 @@ Table that summerises an instance (model + data + result).
 """
 
 from sqlalchemy import Column, String
-from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB
+from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
 
 
 class InstanceTableMixin:

@@ -1,12 +1,17 @@
 """Mixin query for traffic data config."""
 
 import json
+import typing
+from cleanair.databases import Connector
 from cleanair.decorators import db_query
 from ..tables import TrafficDataTable
 
 
 class TrafficDataQueryMixin:
     """Queries for the traffic data table."""
+
+    # necessary to stop mypy complaining during type hinting
+    dbcnxn: Connector
 
     @db_query
     def get_data_config(
