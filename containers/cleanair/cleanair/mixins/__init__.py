@@ -8,7 +8,9 @@ from .date_range_mixin import DateRangeMixin
 from .instance_tables_mixin import (
     DataConfigMixin,
     InstanceTableMixin,
+    MetricsTableMixin,
     ModelTableMixin,
+    ResultTableMixin,
 )
 from .instance_query_mixin import InstanceQueryMixin
 from .parser_mixins import (
@@ -27,7 +29,9 @@ __all__ = [
     "DurationParserMixin",
     "InstanceTableMixin",
     "InstanceQueryMixin",
+    "MetricsTableMixin",
     "ModelTableMixin",
+    "ResultTableMixin",
     "ScootQueryMixin",
     "SecretFileParserMixin",
     "SourcesMixin",
