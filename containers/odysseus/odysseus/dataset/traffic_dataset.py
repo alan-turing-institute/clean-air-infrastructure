@@ -10,6 +10,7 @@ from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
 from ..databases.tables import TrafficDataTable
+from ..instance import hash_dict
 
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):

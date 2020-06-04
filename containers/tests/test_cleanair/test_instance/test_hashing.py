@@ -1,6 +1,6 @@
 """Test the base Instance class."""
 
-from cleanair.instance import Instance
+from cleanair.instance import hash_dict
 
 
 def test_hash_dict():
