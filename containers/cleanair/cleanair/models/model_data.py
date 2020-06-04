@@ -340,7 +340,7 @@ class ModelData(DBWriter, DBQueryMixin):
             A list of interest point sources, e.g. 'laqn', 'satellite'.
 
         species : list
-            Pollutants to get data for, e.g. 'no2', 'o3'.
+            Pollutants to get data for, e.g. 'NO2', 'o3'.
 
         Returns
         ___
@@ -369,7 +369,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         The returned dictionary includes index to allow model predictions
         to be appended to dataframes (required when dropna is used).
-        At the moment, `laqn_no2_index` and `laqn_pm10_index` will be the same.
+        At the moment, `laqn_NO2_index` and `laqn_pm10_index` will be the same.
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
         """

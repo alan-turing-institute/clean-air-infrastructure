@@ -1,6 +1,7 @@
 
 from typing import Any, Dict, Union
 import pandas as pd
+from sqlalchemy import inspect
 from cleanair.databases import DBWriter
 from cleanair.instance import AirQualityInstance
 from cleanair.databases.tables import (
@@ -93,11 +94,19 @@ def test_insert_instance(
 def test_insert_result_table(
     secretfile: str,
     connection: Any,    # TODO what type is this?
-    result_df: pd.DataFrame,
+    svgp_result: pd.DataFrame,
 ):
     """Insert fake results into the results air quality table."""
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )
-    records = result_df.to_dict("records")
+    conn.dbcnxn.initialise_tables()
+    inst = inspect(AirQualityResultTable)
+    attr_names = [c_attr.key for c_attr in inst.mapper.column_attrs]
+    print(attr_names)
+    assert "NO2_mean" in attr_names
+    records = svgp_result.to_dict("records")
+    print(records)
+    with conn.dbcnxn.open_session() as session:
+        print(session.query(AirQualityResultTable))
     conn.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")

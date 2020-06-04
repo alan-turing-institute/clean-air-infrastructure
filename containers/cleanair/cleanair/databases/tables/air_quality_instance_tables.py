@@ -50,30 +50,30 @@ class AirQualityMetricsTable(Base, MetricsTableMixin):
         {"schema": "air_quality_modelling"},
     )
 
-    # columns for no2 metrics
-    no2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    no2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    no2_r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
+    # columns for NO2 metrics
+    NO2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    NO2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    NO2_r2_score = Column(DOUBLE_PRECISION, nullable=False, index=False)
 
-    # columns for o3 metrics
-    o3_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    o3_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    o3_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    # columns for O3 metrics
+    O3_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    O3_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    O3_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
-    # columns for pm10 metrics
-    pm10_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    pm10_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    pm10_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    # columns for PM10 metrics
+    PM10_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    PM10_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    PM10_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
-    # columns for pm25 metrics
-    pm25_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    pm25_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    pm25_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    # columns for PM25 metrics
+    PM25_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    PM25_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    PM25_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
-    # columns for co2 metrics
-    co2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    co2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
-    co2_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    # columns for CO2 metrics
+    CO2_mae = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    CO2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
+    CO2_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
 class AirQualityResultTable(Base, ResultTableMixin):
     """Storing the results of air quality model fits."""
@@ -88,13 +88,13 @@ class AirQualityResultTable(Base, ResultTableMixin):
     )
 
     # column for each pollutant
-    no2_mean = Column(DOUBLE_PRECISION, nullable=True)
-    no2_var = Column(DOUBLE_PRECISION, nullable=True)
-    pm10_mean = Column(DOUBLE_PRECISION, nullable=True)
-    pm10_var = Column(DOUBLE_PRECISION, nullable=True)
-    pm25_mean = Column(DOUBLE_PRECISION, nullable=True)
-    pm25_var = Column(DOUBLE_PRECISION, nullable=True)
-    co2_mean = Column(DOUBLE_PRECISION, nullable=True)
-    co2_var = Column(DOUBLE_PRECISION, nullable=True)
-    o3_mean = Column(DOUBLE_PRECISION, nullable=True)
-    o3_var = Column(DOUBLE_PRECISION, nullable=True) 
+    NO2_mean = Column(DOUBLE_PRECISION, nullable=True)
+    NO2_var = Column(DOUBLE_PRECISION, nullable=True)
+    PM10_mean = Column(DOUBLE_PRECISION, nullable=True)
+    PM10_var = Column(DOUBLE_PRECISION, nullable=True)
+    PM25_mean = Column(DOUBLE_PRECISION, nullable=True)
+    PM25_var = Column(DOUBLE_PRECISION, nullable=True)
+    CO2_mean = Column(DOUBLE_PRECISION, nullable=True)
+    CO2_var = Column(DOUBLE_PRECISION, nullable=True)
+    O3_mean = Column(DOUBLE_PRECISION, nullable=True)
+    O3_var = Column(DOUBLE_PRECISION, nullable=True) 

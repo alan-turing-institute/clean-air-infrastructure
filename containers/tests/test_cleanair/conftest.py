@@ -110,14 +110,15 @@ def svgp_result(svgp_instance) -> pd.DataFrame:
     start = datetime(2020, 1, 1, 0, 0, 0)
     nhours = 24
     end = start + timedelta(hours=nhours)
-    point_id = uuid.uuid1()
+    point_id = uuid.uuid1().hex
     random.seed(0)
     data = dict(
-        fit_start_time=pd.date_range(start, end),
-        no2_mean=[100 * random.random() for i in range(nhours)],
-        no2_var=[10 * random.random() for i in range(nhours)],
+        measurement_start_utc=pd.date_range(start, end, freq="H", closed="left"),
+        NO2_mean=[100 * random.random() for i in range(nhours)],
+        NO2_var=[10 * random.random() for i in range(nhours)],
     )
     result_df = pd.DataFrame(data)
     result_df["point_id"] = point_id
     result_df["instance_id"] = svgp_instance.instance_id
     result_df["data_id"] = svgp_instance.data_id
+    return result_df
