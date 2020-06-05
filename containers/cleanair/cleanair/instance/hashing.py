@@ -1,7 +1,6 @@
 """Functions for hashing."""
 import json
 import hashlib
-from datetime import date, datetime
 
 
 def hash_dict(value: dict) -> str:
