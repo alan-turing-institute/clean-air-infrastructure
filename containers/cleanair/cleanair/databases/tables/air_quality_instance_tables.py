@@ -11,13 +11,16 @@ from ..instance_tables_mixin import (
     ResultTableMixin,
 )
 
+
 class AirQualityInstanceTable(Base, InstanceTableMixin):
     """Store a air quality instance."""
 
     __tablename__ = "air_quality_instance"
 
     __table_args__ = (
-        ForeignKeyConstraint(["data_id"], ["air_quality_modelling.air_quality_data.data_id"]),
+        ForeignKeyConstraint(
+            ["data_id"], ["air_quality_modelling.air_quality_data.data_id"]
+        ),
         ForeignKeyConstraint(
             ["model_name", "param_id"],
             [
@@ -28,11 +31,13 @@ class AirQualityInstanceTable(Base, InstanceTableMixin):
         {"schema": "air_quality_modelling"},
     )
 
+
 class AirQualityDataTable(Base, DataTableMixin):
     """Storing settings for air quality data settings."""
 
     __tablename__ = "air_quality_data"
     __table_args__ = {"schema": "air_quality_modelling"}
+
 
 class AirQualityModelTable(Base, ModelTableMixin):
     """Store model parameters for an air qualty instance."""
@@ -40,13 +45,18 @@ class AirQualityModelTable(Base, ModelTableMixin):
     __tablename__ = "air_quality_model"
     __table_args__ = {"schema": "air_quality_modelling"}
 
+
 class AirQualityMetricsTable(Base, MetricsTableMixin):
     """Storing metrics that have been evaluated on a model."""
 
     __tablename__ = "air_quality_metrics"
     __table_args__ = (
-        ForeignKeyConstraint(["data_id"], ["air_quality_modelling.air_quality_data.data_id"]),
-        ForeignKeyConstraint(["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]),
+        ForeignKeyConstraint(
+            ["data_id"], ["air_quality_modelling.air_quality_data.data_id"]
+        ),
+        ForeignKeyConstraint(
+            ["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]
+        ),
         {"schema": "air_quality_modelling"},
     )
 
@@ -75,14 +85,19 @@ class AirQualityMetricsTable(Base, MetricsTableMixin):
     CO2_mse = Column(DOUBLE_PRECISION, nullable=True, index=False)
     CO2_r2_score = Column(DOUBLE_PRECISION, nullable=True, index=False)
 
+
 class AirQualityResultTable(Base, ResultTableMixin):
     """Storing the results of air quality model fits."""
 
     __tablename__ = "air_quality_result"
 
     __table_args__ = (
-        ForeignKeyConstraint(["data_id"], ["air_quality_modelling.air_quality_data.data_id"]),
-        ForeignKeyConstraint(["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]),
+        ForeignKeyConstraint(
+            ["data_id"], ["air_quality_modelling.air_quality_data.data_id"]
+        ),
+        ForeignKeyConstraint(
+            ["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]
+        ),
         ForeignKeyConstraint(["point_id"], ["interest_points.meta_point.id"]),
         {"schema": "air_quality_modelling"},
     )
@@ -97,4 +112,4 @@ class AirQualityResultTable(Base, ResultTableMixin):
     CO2_mean = Column(DOUBLE_PRECISION, nullable=True)
     CO2_var = Column(DOUBLE_PRECISION, nullable=True)
     O3_mean = Column(DOUBLE_PRECISION, nullable=True)
-    O3_var = Column(DOUBLE_PRECISION, nullable=True) 
+    O3_var = Column(DOUBLE_PRECISION, nullable=True)

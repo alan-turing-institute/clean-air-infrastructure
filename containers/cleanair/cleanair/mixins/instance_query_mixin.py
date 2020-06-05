@@ -9,6 +9,7 @@ from ..databases.instance_tables_mixin import (
     ModelTableMixin,
 )
 
+
 class InstanceQueryMixin:
     """
     Class for querying instances.
@@ -26,7 +27,7 @@ class InstanceQueryMixin:
     data_table: DataTableMixin
     instance_table: InstanceTableMixin
     model_table: ModelTableMixin
-    dbcnxn: Any     # TODO what is the type of this?
+    dbcnxn: Any  # TODO what is the type of this?
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments

@@ -3,6 +3,7 @@ import json
 import hashlib
 from datetime import date, datetime
 
+
 def hash_dict(value: dict) -> str:
     """Dumps a dictionary to json string then hashes that string.
 
@@ -26,6 +27,7 @@ def hash_dict(value: dict) -> str:
             sorted_values[key].sort()
     hash_string = json.dumps(sorted_values, sort_keys=True)
     return hash_fn(hash_string)
+
 
 def hash_fn(hash_string: str) -> str:
     """Uses sha256 to hash the given string.

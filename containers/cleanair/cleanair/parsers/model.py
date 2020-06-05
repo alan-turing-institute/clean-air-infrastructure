@@ -97,15 +97,10 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             help="If passed the model will use satellite data.",
         )
         self.add_argument(
-            "--hexgrid",
-            action="store_true",
-            help="Predict at the hexgrid.",
+            "--hexgrid", action="store_true", help="Predict at the hexgrid.",
         )
         self.add_argument(
-            "--maxiter",
-            default=2000,
-            type=int,
-            help="Number of training iterations.",
+            "--maxiter", default=2000, type=int, help="Number of training iterations.",
         )
 
         self.train_end_date = None
