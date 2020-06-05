@@ -14,16 +14,17 @@ from cleanair.instance import AirQualityInstance, hash_dict
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityResultTable, AirQualityModelTable
 
+
 class AirQualityResult(DBWriter):
     """The predictions from an air quality model."""
 
     def __init__(
-        self, 
+        self,
         secretfile: str,
         result_df: pd.DataFrame,
         instance_id: str,
         data_id: str,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
         self.result_df = result_df
@@ -33,7 +34,7 @@ class AirQualityResult(DBWriter):
             self.result_df["instance_id"] = self.instance_id
         if "data_id" not in self.result_df:
             self.result_df["data_id"] = self.data_id
-    
+
     def update_remote_tables(self):
         """Write air quality results to the database."""
         # get column names of result table
@@ -42,20 +43,19 @@ class AirQualityResult(DBWriter):
 
         # filter dataframe by selecting only columns that will be commited to db
         # then convert to records
-        records = self.result_df.loc[:, self.result_df.columns.isin(record_cols)].to_dict("records")
+        records = self.result_df.loc[
+            :, self.result_df.columns.isin(record_cols)
+        ].to_dict("records")
 
         # commit the records to the air quality results table
         self.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")
+
 
 class AirQualityModelParams(DBWriter):
     """Parameters of an air quality model."""
 
     def __init__(
-        self,
-        secretfile: str,
-        model_name: str,
-        model_params: ModelParamSVGP,
-        **kwargs,
+        self, secretfile: str, model_name: str, model_params: ModelParamSVGP, **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
         self.model_name = model_name
@@ -65,21 +65,25 @@ class AirQualityModelParams(DBWriter):
     def param_id(self) -> str:
         """Parameter id of the hashed model params dict."""
         return hash_dict(self.model_params)
-    
+
     def update_remote_tables(self):
         """Write the air quality model parameters to the database."""
-        records = [dict(
-            model_name=self.model_name,
-            model_param=self.model_params,
-            param_id=self.param_id,
-        )]
+        records = [
+            dict(
+                model_name=self.model_name,
+                model_param=self.model_params,
+                param_id=self.param_id,
+            )
+        ]
         self.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
+
 
 def write_predictions_to_file(y_pred, results_dir, filename):
     """Write a prediction dict to pickle."""
     pred_filepath = os.path.join(results_dir, filename)
     with open(pred_filepath, "wb") as handle:
         pickle.dump(y_pred, handle)
+
 
 # TODO: make this into a nice re-usable function somewhere
 def validate_shapes(x_array, y_array):
@@ -98,7 +102,7 @@ def main():  # pylint: disable=R0914
     # Parse and interpret command line arguments
     parser = ModelFitParser(description="Run model fitting")
     kwargs = parser.parse_kwargs()
-    secretfile=kwargs.get("secretfile")
+    secretfile = kwargs.get("secretfile")
 
     # Extract arguments that should not be passed onwards
     logger = initialise_logging(kwargs.pop("verbose", 0))
@@ -166,13 +170,15 @@ def main():  # pylint: disable=R0914
         if "satellite" in x_train:
             x_train_pred.pop("satellite")
         y_train_pred = model_fitter.predict(x_train_pred)
-    
+
     print("Finished predicting at ", datetime.now().isoformat())
 
     # Internally update the model results in the ModelData object
     model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
 
-    aq_model_params = AirQualityModelParams(secretfile, "svgp", model_fitter.model_params)
+    aq_model_params = AirQualityModelParams(
+        secretfile, "svgp", model_fitter.model_params
+    )
     svgp_instance = AirQualityInstance(
         model_name=aq_model_params.model_name,
         param_id=aq_model_params.param_id,

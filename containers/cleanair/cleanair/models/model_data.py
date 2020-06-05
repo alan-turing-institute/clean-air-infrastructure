@@ -23,6 +23,7 @@ from ..instance import hash_dict
 
 DataConfig = Dict[str, Union[str, bool, List[str]]]
 
+
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
@@ -46,8 +47,8 @@ class ModelData(DBWriter, DBQueryMixin):
             raise ValueError(
                 "Either config or config_dir must be supplied as arguments"
             )
-        
-        self.preprocessing: Dict = dict() # TODO initialise this with preprocessing settings
+
+        self.preprocessing: Dict = dict()  # TODO initialise this with preprocessing settings
 
         if config:
             # Validate the configuration
@@ -89,13 +90,13 @@ class ModelData(DBWriter, DBQueryMixin):
 
         else:
             self.restore_config_state(config_dir)
-    
+
     @property
     def data_id(self) -> str:
         """Hash of the data config dictionary."""
         data_config = ModelData.make_data_config_json_serializable(self.config)
         return hash_dict(data_config)
-    
+
     @staticmethod
     def make_data_config_json_serializable(data_config: DataConfig):
         """Converts any date or datetime values to a string formatted to ISO.
@@ -997,10 +998,14 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-        records = [dict(
-            data_id=self.data_id,
-            data_config=ModelData.make_data_config_json_serializable(self.config),
-            preprocessing=self.preprocessing,   # TODO when we start using preprocessing dict update this
-        )]
-        self.logger.info("Writing the model settings to the air quality modelling data table.")
+        records = [
+            dict(
+                data_id=self.data_id,
+                data_config=ModelData.make_data_config_json_serializable(self.config),
+                preprocessing=self.preprocessing,  # TODO when we start using preprocessing dict update this
+            )
+        ]
+        self.logger.info(
+            "Writing the model settings to the air quality modelling data table."
+        )
         self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

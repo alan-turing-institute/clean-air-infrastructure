@@ -56,6 +56,7 @@ class DataTableMixin:
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<" + self.__tablename__ + "(" + ", ".join(vals)
 
+
 class MetricsTableMixin:
     """Table for model metrics."""
 
@@ -68,6 +69,7 @@ class MetricsTableMixin:
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<" + self.__tablename__ + "(" + ", ".join(vals)
+
 
 class ResultTableMixin:
     """Table mixin for model results."""

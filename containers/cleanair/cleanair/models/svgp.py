@@ -11,6 +11,7 @@ from gpflow import settings
 from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
@@ -18,6 +19,7 @@ from ..loggers import get_logger
 from .model import Model
 
 ModelParamSVGP = Dict[str, Union[float, bool, int, Dict, None]]
+
 
 class SVGP(Model):
     """

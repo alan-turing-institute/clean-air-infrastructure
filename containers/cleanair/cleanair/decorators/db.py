@@ -1,7 +1,7 @@
 """DB decorators"""
 import functools
 import pandas as pd
-
+import geopandas as gpd
 
 class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
@@ -23,7 +23,7 @@ def db_query(query_f):
 
     @functools.wraps(query_f)
     def db_query_output(
-        *args, output_type="query", limit=None, error_empty=False, **kwargs
+        *args, output_type="query", limit=None, geom_col = 'geom', error_empty=False, **kwargs
     ):
 
         output_q = query_f(*args, **kwargs)
@@ -35,6 +35,11 @@ def db_query(query_f):
             data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
             check_empty_df(data_frame, error_empty)
             return data_frame
+        
+        if output_type == 'gdf':
+            data_frame = gpd.GeoDataFrame.from_postgis(output_q.statement, output_q.session.bind, geom_col = geom_col)
+            check_empty_df(data_frame, error_empty)
+            return data_frame 
 
         if output_type == "list":
             query_df = pd.read_sql(output_q.statement, output_q.session.bind)

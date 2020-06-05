@@ -275,7 +275,8 @@ class DBQueryMixin:
 
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
-    dbcnxn: Any     # TODO what is the type of this?
+
+    dbcnxn: Any  # TODO what is the type of this?
 
     @db_query
     def get_scoot_with_location(self, start_time, end_time=None, detectors=None):

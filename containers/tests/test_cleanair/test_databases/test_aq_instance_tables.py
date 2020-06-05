@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, Union
 import pandas as pd
 from sqlalchemy import inspect
@@ -11,9 +10,10 @@ from cleanair.databases.tables import (
 )
 from cleanair.models import DataConfig, ModelParamSVGP
 
+
 def test_insert_laqn_data_table(
     secretfile: str,
-    connection: Any,    # TODO what type is this?
+    connection: Any,  # TODO what type is this?
     base_data_id: int,
     base_aq_data_config: DataConfig,
     base_aq_preprocessing: Dict,
@@ -28,16 +28,19 @@ def test_insert_laqn_data_table(
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )
-    records = [dict(
-        data_id=base_data_id,
-        data_config=base_aq_data_config,
-        preprocessing=base_aq_preprocessing,
-    )]
+    records = [
+        dict(
+            data_id=base_data_id,
+            data_config=base_aq_data_config,
+            preprocessing=base_aq_preprocessing,
+        )
+    ]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
+
 
 def test_insert_svgp(
     secretfile: str,
-    connection: Any,    # TODO what type is this?
+    connection: Any,  # TODO what type is this?
     svgp_model_params: ModelParamSVGP,
     svgp_param_id: str,
 ):
@@ -52,16 +55,19 @@ def test_insert_svgp(
         secretfile=secretfile, initialise_tables=True, connection=connection
     )
     model_name = "svgp"
-    records = [dict(
-        model_name=model_name,
-        param_id=svgp_param_id,
-        model_param=svgp_model_params,
-    )]
+    records = [
+        dict(
+            model_name=model_name,
+            param_id=svgp_param_id,
+            model_param=svgp_model_params,
+        )
+    ]
     conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
+
 
 def test_insert_instance(
     secretfile: str,
-    connection: Any,    # TODO what type is this?
+    connection: Any,  # TODO what type is this?
     svgp_instance: AirQualityInstance,
     base_aq_data_config: DataConfig,
     base_aq_preprocessing: Dict,
@@ -73,27 +79,32 @@ def test_insert_instance(
     )
     # insert model
     model_name = "svgp"
-    records = [dict(
-        model_name=model_name,
-        param_id=svgp_instance.param_id,
-        model_param=svgp_model_params,
-    )]
+    records = [
+        dict(
+            model_name=model_name,
+            param_id=svgp_instance.param_id,
+            model_param=svgp_model_params,
+        )
+    ]
     conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
 
     # insert data
-    records = [dict(
-        data_id=svgp_instance.data_id,
-        data_config=base_aq_data_config,
-        preprocessing=base_aq_preprocessing,
-    )]
+    records = [
+        dict(
+            data_id=svgp_instance.data_id,
+            data_config=base_aq_data_config,
+            preprocessing=base_aq_preprocessing,
+        )
+    ]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
 
     # insert instance
     svgp_instance.update_remote_tables()
 
+
 def test_insert_result_table(
     secretfile: str,
-    connection: Any,    # TODO what type is this?
+    connection: Any,  # TODO what type is this?
     svgp_result: pd.DataFrame,
 ):
     """Insert fake results into the results air quality table."""
