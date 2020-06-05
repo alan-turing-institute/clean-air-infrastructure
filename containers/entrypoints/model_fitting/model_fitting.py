@@ -150,8 +150,7 @@ def main():  # pylint: disable=R0914
         "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
     )
     fit_start_time = datetime.now()
-    print("X train keys:", x_train.keys())
-    print("Y train keys:", y_train.keys())
+    print("Fitting model.")
     validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
     # print("X hexgrid test shape:", x_test["hexgrid"].shape)
     model_fitter.fit(x_train, y_train)
@@ -160,12 +159,15 @@ def main():  # pylint: disable=R0914
     # model_fit_info = model_fitter.fit_info()
 
     # Do prediction
+    print("Predicting at ", datetime.now().isoformat())
     y_test_pred = model_fitter.predict(x_test)
     if predict_training:
         x_train_pred = x_train.copy()
         if "satellite" in x_train:
             x_train_pred.pop("satellite")
         y_train_pred = model_fitter.predict(x_train_pred)
+    
+    print("Finished predicting at ", datetime.now().isoformat())
 
     # Internally update the model results in the ModelData object
     model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
