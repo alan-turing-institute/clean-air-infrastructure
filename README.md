@@ -236,7 +236,6 @@ gem install  travis -no-rdoc -no-ri
 conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed -e 's/,//' -e 's/"//g')
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
-
 ## Login to Azure
 
 To start working with `Azure`, you must first login to your account from the terminal:
