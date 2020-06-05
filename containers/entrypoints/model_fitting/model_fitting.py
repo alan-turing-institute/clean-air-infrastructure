@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import pickle
 import pandas as pd
+from sqlalchemy import inspect
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
 from cleanair.loggers import initialise_logging
 from cleanair.parsers import ModelFitParser
@@ -35,7 +36,15 @@ class AirQualityResult(DBWriter):
     
     def update_remote_tables(self):
         """Write air quality results to the database."""
-        records = self.result_df.to_dict("records")
+        # get column names of result table
+        inst = inspect(AirQualityResultTable)
+        record_cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
+
+        # filter dataframe by selecting only columns that will be commited to db
+        # then convert to records
+        records = self.result_df.loc[:, self.result_df.columns.isin(record_cols)].to_dict("records")
+
+        # commit the records to the air quality results table
         self.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")
 
 class AirQualityModelParams(DBWriter):
@@ -187,7 +196,11 @@ def main():  # pylint: disable=R0914
             svgp_instance.instance_id,
             svgp_instance.data_id,
         )
+        # insert records into database - data & model go first, then instance, then result
         model_data.update_remote_tables()
+        aq_model_params.update_remote_tables()
+        svgp_instance.update_remote_tables()
+        result.update_remote_tables()
 
     # Write the model results to file
     if predict_write:

@@ -2,7 +2,7 @@
 Vizualise available sensor data for a model fit
 """
 from typing import Dict, List, Union
-from datetime import datetime
+from datetime import date, datetime
 import json
 import os
 import pickle
@@ -13,7 +13,7 @@ from dateutil.relativedelta import relativedelta
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
-    AirQualityResultTable,
+    AirQualityDataTable,
     SatelliteGrid,
 )
 from ..databases import DBWriter
@@ -46,6 +46,8 @@ class ModelData(DBWriter, DBQueryMixin):
             raise ValueError(
                 "Either config or config_dir must be supplied as arguments"
             )
+        
+        self.preprocessing: Dict = dict() # TODO initialise this with preprocessing settings
 
         if config:
             # Validate the configuration
@@ -91,11 +93,25 @@ class ModelData(DBWriter, DBQueryMixin):
     @property
     def data_id(self) -> str:
         """Hash of the data config dictionary."""
-        data_config = self.config.copy()
-        for key in ["train_start_date", "train_end_date", "pred_start_date", "pred_end_date"]:
-            if type(data_config[key]) is datetime:
-                data_config[key] = data_config[key].isoformat()
+        data_config = ModelData.make_data_config_json_serializable(self.config)
         return hash_dict(data_config)
+    
+    @staticmethod
+    def make_data_config_json_serializable(data_config: DataConfig):
+        """Converts any date or datetime values to a string formatted to ISO.
+
+        Args:
+            data_config: Contains some values with datetimes or dates.
+ 
+        Returns:
+            New data config with date/datetime values changed to ISO strings.
+            Note the returned data config is a NEW object, i.e. we copy the `data_config` parameter.
+        """
+        new_config = data_config.copy()
+        for key, value in data_config.items():
+            if isinstance(value, date) or isinstance(value, datetime):
+                new_config[key] = value.isoformat()
+        return new_config
 
     def __validate_config(self, config):
 
@@ -981,24 +997,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-        record_cols = [
-            "tag",
-            "fit_start_time",
-            "point_id",
-            "measurement_start_utc",
-            "predict_mean",
-            "predict_var",
-        ]
-        df_cols = self.normalised_pred_data_df
-        for col in record_cols:
-            if col not in df_cols:
-                msg = "The data frame must contain the following columns: {}."
-                msg += "You passed these columns: {}."
-                msg += (
-                    "Ensure model results have been passed to update_model_results_df()"
-                )
-                raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
-        upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-        self.logger.info("Inserting %s records into the database", len(upload_records))
-
-        self.commit_records(upload_records, table=AirQualityResultTable, on_conflict="overwrite")
+        records = [dict(
+            data_id=self.data_id,
+            data_config=ModelData.make_data_config_json_serializable(self.config),
+            preprocessing=self.preprocessing,   # TODO when we start using preprocessing dict update this
+        )]
+        self.logger.info("Writing the model settings to the air quality modelling data table.")
+        self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")
