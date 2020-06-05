@@ -144,7 +144,7 @@ def main():  # pylint: disable=R0914
     print("X train keys:", x_train.keys())
     print("Y train keys:", y_train.keys())
     validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
-    print("X hexgrid test shape:", x_test["hexgrid"].shape)
+    # print("X hexgrid test shape:", x_test["hexgrid"].shape)
     model_fitter.fit(x_train, y_train)
 
     # Get info about the model fit

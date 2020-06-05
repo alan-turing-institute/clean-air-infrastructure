@@ -94,8 +94,8 @@ class ModelData(DBWriter, DBQueryMixin):
         data_config = self.config.copy()
         for key in ["train_start_date", "train_end_date", "pred_start_date", "pred_end_date"]:
             if type(data_config[key]) is datetime:
-                data_config[key] = data_config[key].isoformat(seconds=True)
-        return hash_dict(self.config)
+                data_config[key] = data_config[key].isoformat()
+        return hash_dict(data_config)
 
     def __validate_config(self, config):
 
