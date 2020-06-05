@@ -2,6 +2,7 @@
 Vizualise available sensor data for a model fit
 """
 from typing import Dict, List, Union
+from datetime import datetime
 import json
 import os
 import pickle
@@ -50,6 +51,8 @@ class ModelData(DBWriter, DBQueryMixin):
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
+            # TODO remove print statement
+            print("Data id:", self.data_id)
 
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
@@ -88,6 +91,10 @@ class ModelData(DBWriter, DBQueryMixin):
     @property
     def data_id(self) -> str:
         """Hash of the data config dictionary."""
+        data_config = self.config.copy()
+        for key in ["train_start_date", "train_end_date", "pred_start_date", "pred_end_date"]:
+            if type(data_config[key]) is datetime:
+                data_config[key] = data_config[key].isoformat(seconds=True)
         return hash_dict(self.config)
 
     def __validate_config(self, config):

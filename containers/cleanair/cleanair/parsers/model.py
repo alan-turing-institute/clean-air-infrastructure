@@ -156,7 +156,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             "include_satellite": self.include_satellite,
             "include_prediction_y": self.include_prediction_y,
             "train_sources": ["laqn"],
-            "pred_sources": ["laqn", "hexgrid"],    # TODO remove hardcoding
+            "pred_sources": ["laqn"],    # TODO remove hardcoding
             "train_interest_points": "all",
             "train_satellite_interest_points": "all",
             "pred_interest_points": "all",
