@@ -138,9 +138,11 @@ class SVGP(Model):
         custom_config.jitter = self.model_params["jitter"]
         with settings.temp_settings(custom_config), get_session().as_default():
             kern = gpflow.kernels.RBF(
-                num_input_dimensions,
+                input_dim=num_input_dimensions,
                 lengthscales=self.model_params["kernel"]["lengthscale"],
                 ARD=True,
+            ) + gpflow.kernels.Periodic(
+                input_dim=num_input_dimensions,
             )
             self.model = gpflow.models.SVGP(
                 x_array,

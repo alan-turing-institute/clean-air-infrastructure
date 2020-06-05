@@ -96,6 +96,17 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             action="store_true",
             help="If passed the model will use satellite data.",
         )
+        self.add_argument(
+            "--hexgrid",
+            action="store_true",
+            help="Predict at the hexgrid.",
+        )
+        self.add_argument(
+            "--maxiter",
+            default=2000,
+            type=int,
+            help="Number of training iterations.",
+        )
 
         self.train_end_date = None
         self.train_start_date = None
@@ -117,6 +128,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
         self.include_prediction_y = kwargs.pop("return_y")
         self.include_satellite = kwargs.pop("include_satellite")
         self.tag = kwargs.pop("tag")
+        self.hexgrid = kwargs.pop("hexgrid")
 
         # Convert timestamps into start and end datetimes
         self.train_end_date = as_datetime(kwargs.pop("trainend"))
@@ -148,7 +160,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             self.parse_kwargs()
 
         # Generate and return the config dictionary
-        return {
+        data_config = {
             "train_start_date": self.train_start_date,
             "train_end_date": self.train_end_date,
             "pred_start_date": self.pred_start_date,
@@ -156,7 +168,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             "include_satellite": self.include_satellite,
             "include_prediction_y": self.include_prediction_y,
             "train_sources": ["laqn"],
-            "pred_sources": ["laqn", "hexgrid"],    # TODO remove hardcoding
+            "pred_sources": ["laqn"],
             "train_interest_points": "all",
             "train_satellite_interest_points": "all",
             "pred_interest_points": "all",
@@ -171,6 +183,9 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             "model_type": "svgp",
             "tag": self.tag,
         }
+        if self.hexgrid:
+            data_config["pred_sources"].append("hexgrid")
+        return data_config
 
     def save_config(self):
         """

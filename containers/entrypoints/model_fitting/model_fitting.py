@@ -123,7 +123,7 @@ def main():  # pylint: disable=R0914
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = 10
+    model_fitter.model_params["maxiter"] = kwargs.pop("maxiter")
     model_fitter.model_params["model_state_fp"] = model_dir
 
     # Get the model data
@@ -150,10 +150,12 @@ def main():  # pylint: disable=R0914
         "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
     )
     fit_start_time = datetime.now()
-    print("Fitting model.")
+    print("Fitting model. Training for {m} iterations".format(m=model_fitter.model_params["maxiter"]))
+    print("Start training at", fit_start_time.isoformat())
     validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
     # print("X hexgrid test shape:", x_test["hexgrid"].shape)
     model_fitter.fit(x_train, y_train)
+    print("Training completed at", datetime.now().isoformat())
 
     # Get info about the model fit
     # model_fit_info = model_fitter.fit_info()
@@ -203,6 +205,7 @@ def main():  # pylint: disable=R0914
         aq_model_params.update_remote_tables()
         svgp_instance.update_remote_tables()
         result.update_remote_tables()
+        print("Instance id:", svgp_instance.instance_id)
 
     # Write the model results to file
     if predict_write:
