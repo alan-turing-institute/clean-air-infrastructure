@@ -4,7 +4,6 @@ Add satellite readings to database
 import webbrowser
 import tempfile
 import time
-from argparse import ArgumentParser
 from cleanair.inputs import SatelliteWriter
 from cleanair.parsers.entrypoint_parsers import create_satellite_input_parser
 
