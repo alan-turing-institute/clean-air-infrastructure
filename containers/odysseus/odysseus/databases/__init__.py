@@ -2,7 +2,7 @@
 Database classes and functions for traffic.
 """
 from . import mixins
-from .query import TrafficInstanceQuery, TrafficQuery
+from .traffic_queries import TrafficInstanceQuery, TrafficQuery
 
 __all__ = [
     "mixins",
