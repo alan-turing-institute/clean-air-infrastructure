@@ -25,11 +25,9 @@ class FeatureSourceParser(ArgumentParser):
         self.add_argument(
             "--feature-source",
             type=str,
-            required=True,
+            required = True,
             choices=feature_sources,
-            help="List of sources to process, (default: {}).".format(
-                ",".join(feature_sources)
-            ),
+            help="Source of features to process. Can only process one at a time"
         )
 
 

@@ -121,8 +121,8 @@ def test_subparser():
 
     assert args.web
 
-def test_satellite_input_parser(capsys, secretfile):
-
+def test_duration_parser_n_days(secretfile):
+    "Test N days is correctly changed to nhours"
     def check():
         "fake check function"
         pass
@@ -135,4 +135,4 @@ def test_satellite_input_parser(capsys, secretfile):
 
     args = parser.parse_args(["check", "-s", str(secretfile), '--ndays', "5"])
 
-    print(args)
+    assert args.nhours == 5 * 24
