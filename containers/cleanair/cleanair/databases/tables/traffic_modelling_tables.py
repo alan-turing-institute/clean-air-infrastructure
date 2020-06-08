@@ -10,15 +10,15 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
     __tablename__ = "traffic_instance"
 
     __table_args__ = (
-        ForeignKeyConstraint(["data_id"], ["gla_traffic.traffic_data.data_id"]),
+        ForeignKeyConstraint(["data_id"], ["traffic_modelling.traffic_data.data_id"]),
         ForeignKeyConstraint(
             ["model_name", "param_id"],
             [
-                "gla_traffic.traffic_model.model_name",
-                "gla_traffic.traffic_model.param_id",
+                "traffic_modelling.traffic_model.model_name",
+                "traffic_modelling.traffic_model.param_id",
             ],
         ),
-        {"schema": "gla_traffic"},
+        {"schema": "traffic_modelling"},
     )
 
 
@@ -26,32 +26,32 @@ class TrafficDataTable(Base, DataConfigMixin):
     """Storing settings for traffic data."""
 
     __tablename__ = "traffic_data"
-    __table_args__ = {"schema": "gla_traffic"}
+    __table_args__ = {"schema": "traffic_modelling"}
 
 
 class TrafficModelTable(Base, ModelTableMixin):
     """Storing model parameters and information."""
 
     __tablename__ = "traffic_model"
-    __table_args__ = {"schema": "gla_traffic"}
+    __table_args__ = {"schema": "traffic_modelling"}
 
 class TrafficMetricTable(Base):
     """
     A table for storing metrics from traffic models.
     """
 
-    __table_args__ = {"schema": "gla_traffic"}
+    __table_args__ = {"schema": "traffic_modelling"}
     __tablename__ = "traffic_metric"
 
     instance_id = Column(
         String(64),
-        ForeignKey("gla_traffic.traffic_instance.instance_id"),
+        ForeignKey("traffic_modelling.traffic_instance.instance_id"),
         primary_key=True,
         nullable=False,
     )
     data_id = Column(
         String(64),
-        ForeignKey("gla_traffic.traffic_data.data_id"),
+        ForeignKey("traffic_modelling.traffic_data.data_id"),
         primary_key=True,
         nullable=False,
     )
