@@ -14,16 +14,6 @@ from ..mixins import (
 )
 
 
-class StaticFeatureArgumentParser(
-    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
-):
-    """Static feature Parser"""
-
-
-class SourceParser(SourcesMixin, ArgumentParser):
-    """Sources Parser"""
-
-
 class FeatureSourceParser(ArgumentParser):
     """Sources Parser"""
 
@@ -34,13 +24,12 @@ class FeatureSourceParser(ArgumentParser):
             type=str,
             required=True,
             choices=feature_sources,
-            help="List of sources to process, (default: {}).".format(
-                ",".join(feature_sources)
-            ),
+            help="Source of features to process. Can only process one at a time",
         )
 
 
 class FeatureNameParser(ArgumentParser):
+    """Parser arguments for choosing which features to process"""
     def __init__(self, feature_names, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
@@ -71,9 +60,7 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     """Argument parsing for inserting static datafiles"""
 
 
-class SatelliteArgumentParser(
-    DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
-):
+class SatelliteArgumentParser(ArgumentParser):
     """Argument parsing for Satellite readings"""
 
     def __init__(self, **kwargs):

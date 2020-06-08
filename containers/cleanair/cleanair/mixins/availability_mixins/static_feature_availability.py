@@ -1,9 +1,7 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
-from datetime import timedelta
-from sqlalchemy import func, text, column, String
-from dateutil.parser import isoparse
+from sqlalchemy import text, column, String
 
 from ...decorators import db_query
 from ...databases.tables import (
@@ -49,27 +47,26 @@ class StaticFeatureAvailabilityMixin:
 
             in_data_cte = in_data.cte("in_data")
 
-            expected_values = session.query(
-                MetaPoint.id,
-                Values(
-                    [column("feature_name", String),],
-                    *[(feature,) for feature in feature_names],
-                    alias_name="t2",
-                ),
-                
-
-            ).filter(MetaPoint.source.in_(sources)).subquery()
-
-            available_data_q = (
+            expected_values = (
                 session.query(
-                    expected_values,
-                    in_data_cte.c.point_id.isnot(None).label("has_data")
+                    MetaPoint.id,
+                    Values(
+                        [column("feature_name", String),],
+                        *[(feature,) for feature in feature_names],
+                        alias_name="t2",
+                    ),
                 )
-                .join(
-                    in_data_cte,
-                    ( in_data_cte.c.point_id == expected_values.c.id)
-                    & (in_data_cte.c.feature_name == expected_values.c.feature_name), isouter=True,
-                )
+                .filter(MetaPoint.source.in_(sources))
+                .subquery()
+            )
+
+            available_data_q = session.query(
+                expected_values, in_data_cte.c.point_id.isnot(None).label("has_data")
+            ).join(
+                in_data_cte,
+                (in_data_cte.c.point_id == expected_values.c.id)
+                & (in_data_cte.c.feature_name == expected_values.c.feature_name),
+                isouter=True,
             )
 
             if exclude_has_data:

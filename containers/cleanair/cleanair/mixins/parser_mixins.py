@@ -2,6 +2,7 @@
 Mixins which are used by multiple argument parsers
 """
 from argparse import ArgumentTypeError, Action
+from dateutil.parser import isoparse
 
 
 class ParseSecretDict(Action):
@@ -27,6 +28,15 @@ class ParseSecretDict(Action):
                 output_dict[key] = value
 
         setattr(namespace, self.dest, output_dict)
+
+
+class ParseNHours(Action):
+    "Parse ndays into nhours"
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        "Replace nhours with ndays*24"
+
+        setattr(namespace, "nhours", values * 24)
 
 
 class SecretFileParserMixin:
@@ -63,7 +73,7 @@ class DurationParserMixin:
         self.add_argument(
             "-u",
             "--upto",
-            type=str,
+            type=self.check_upto,
             default=end,
             help="Time point to get data up to in iso format."
             "Or one of: 'lasthour', 'now', 'today', 'tomorrow', 'yesterday'. (default: {})."
@@ -84,16 +94,43 @@ class DurationParserMixin:
             "--ndays",
             type=int,
             help="The number of days to request data for (default: {}).".format(ndays),
+            action=ParseNHours,
         )
 
-    def parse_args(self, args=None, namespace=None):
-        """Raise an exception if the provided arguments are invalid"""
-        args = super().parse_args(args, namespace)
-        if args.ndays:
-            args.nhours = args.ndays * 24
-        if args.nhours < 1:
+    @staticmethod
+    def is_iso_string(isostring):
+        """Check if isostring is a valid iso string
+
+        Arguments:
+            isostring (str): An iso string
+        """
+        try:
+            isoparse(isostring)
+        except ValueError:
+            return False
+
+        return True
+
+    def check_upto(self, value):
+        "validate the upto argument"
+
+        acceptable_values = ["lasthour", "now", "today", "tomorrow", "yesterday"]
+
+        if not isinstance(value, str):
+            raise ArgumentTypeError("%s is not of type str" % value)
+
+        if (value in acceptable_values) or self.is_iso_string(value):
+            return value
+
+        raise ArgumentTypeError("%s is not a valid argument" % value)
+
+    def check_ndays_greater_1(self, value):
+        "validate ndays argument"
+
+        if value < 1:
             raise ArgumentTypeError("Argument --nhours must be greater than 0")
-        return args
+
+        return int(value)
 
 
 class VerbosityMixin:
@@ -118,4 +155,33 @@ class SourcesMixin:
             nargs="+",
             default=sources,
             help="List of sources to process, (default: {}).".format(",".join(sources)),
+        )
+
+
+class WebMixin:
+    """Parser for any entrypoint which needs to display sqlquery results
+    as an html table"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-w",
+            "--web",
+            default=False,
+            action="store_true",
+            help="Open a browser to show available data. Else print to console",
+        )
+
+
+class InsertMethodMixin:
+    """Parser for any entrypoint which needs to set a insert method
+    when inserting data into a database.
+    Missing means only process and insert data that is known to be missing from the database
+    All means insert all data even if it isnt missing. Can be used to overwrite existing data
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-m", "--method", default="missing", type=str, choices=["missing", "all"]
         )

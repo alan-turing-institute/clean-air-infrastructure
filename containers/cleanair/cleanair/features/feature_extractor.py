@@ -3,8 +3,7 @@ Feature extraction Base  class
 """
 import time
 from math import ceil
-import concurrent.futures
-from sqlalchemy import func, literal, or_, case, tuple_
+from sqlalchemy import func, literal, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 import numpy as np
 from ..databases import DBWriter
@@ -17,7 +16,7 @@ from ..databases.tables import (
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
-from ..loggers import duration, green, red, get_logger, duration_from_seconds
+from ..loggers import duration, green, red, get_logger
 
 
 class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
@@ -95,7 +94,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     @db_query
     def get_static_processed(self, feature_name):
         """Return the features which have already been processed for a given feature name
-        
+
         args:
             feature_name: string
                 Name of the feature to check for
@@ -110,10 +109,10 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
     @db_query
     def get_dynamic_processed(self, feature_name):
-        """Return the features which have already been processed for a given feature name between 
+        """Return the features which have already been processed for a given feature name between
         a self.start_datetime and self.end_datetime. To be returned they must have as many hours as would be expected
         from the difference between self.start_datetime and self.end_datetime.
-        
+
         args:
             feature_name: string
                 Name of the feature to check for
@@ -175,9 +174,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 func.Geometry(
                     func.ST_Buffer(func.Geography(MetaPoint.location), 10)
                 ).label("buff_geom_10"),
-            ).filter(
-              MetaPoint.id.in_(point_ids)
-            )
+            ).filter(MetaPoint.id.in_(point_ids))
 
         return q_meta_point
 
@@ -313,7 +310,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         # )
 
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
-        
+
         # Get all the metapoints and buffer geometries as a common table expression
         cte_buffers = self.query_meta_points(point_ids=point_ids).cte("buffers")
 
@@ -475,7 +472,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 idx_feature,
                 n_features,
             )
-            
+
             missing_point_ids_df = self.get_static_feature_availability(
                 [feature_name], self.sources, exclude_has_data=True, output_type="df"
             )
@@ -495,7 +492,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 green(feature_name),
             )
 
-
             missing_point_ids = missing_point_ids_df["id"].astype(str).values
             n_point_ids = missing_point_ids.size
             batch_size = 250
@@ -508,9 +504,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 batch_size,
             )
 
-            missing_point_id_batches = np.array_split(
-                missing_point_ids, n_batches
-            )
+            missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
 
             for batch_no, point_id_batch in enumerate(missing_point_id_batches):
                 self.logger.info("Processing batch %s of %s", batch_no, n_batches)

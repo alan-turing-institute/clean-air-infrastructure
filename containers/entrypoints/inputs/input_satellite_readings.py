@@ -5,7 +5,7 @@ import webbrowser
 import tempfile
 import time
 from cleanair.inputs import SatelliteWriter
-from cleanair.parsers import SatelliteArgumentParser
+from cleanair.parsers.entrypoint_parsers import create_satellite_input_parser
 
 
 def check(args):
@@ -13,7 +13,7 @@ def check(args):
     # Update the satellite forecast table on the database, logging any unhandled exceptions
 
     satellite_writer = SatelliteWriter(
-        copernicus_key=args.copernicus_key,
+        copernicus_key=None,
         end=args.upto,
         nhours=args.nhours,
         secretfile=args.secretfile,
@@ -60,46 +60,12 @@ def fill(args):
     satellite_writer.update_remote_tables()
 
 
-def create_parser():
-    "Create parser"
-    parsers = SatelliteArgumentParser()
-    # Subparsers
-    subparsers = parsers.add_subparsers(required=True, dest="command")
-    parser_check = subparsers.add_parser(
-        "check",
-        help="Check what satellite readings are available in the cleanair database",
-    )
-
-    parser_insert = subparsers.add_parser(
-        "fill",
-        help="Read satellite data from the Copernicus API and insert into the database",
-    )
-
-    parser_insert.add_argument(
-        "-m", "--method", default="missing", type=str, choices=["missing", "all"]
-    )
-
-    parser_check.add_argument(
-        "-w",
-        "--web",
-        default=False,
-        action="store_true",
-        help="Open a browser to show available data. Else print to console",
-    )
-
-    # Link to programs
-    parser_check.set_defaults(func=check)
-    parser_insert.set_defaults(func=fill)
-
-    return parsers
-
-
 def main():
     """
     Update satellite table
     """
     # Parse and interpret command line arguments
-    args = create_parser().parse_args()
+    args = create_satellite_input_parser(check, fill).parse_args()
 
     # Execute program
     args.func(args)
