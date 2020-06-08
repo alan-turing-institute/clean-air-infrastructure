@@ -2,7 +2,7 @@
 Mixins which are used by multiple argument parsers
 """
 from argparse import ArgumentTypeError, Action
-
+from dateutil.parser import isoparse
 
 class ParseSecretDict(Action):
     "Parse items into a dictionary"
@@ -177,7 +177,4 @@ class InsertMethodMixin:
         super().__init__(**kwargs)
         self.add_argument(
             "-m", "--method", default="missing", type=str, choices=["missing", "all"]
-        )
-        self.add_argument(
-            "--exclude-has-data", default=False, action="store_true",
         )
