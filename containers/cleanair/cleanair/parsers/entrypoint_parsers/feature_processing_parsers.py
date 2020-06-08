@@ -9,8 +9,9 @@ from cleanair.parsers import (
     WebParser,
     InsertMethodParser,
     FeatureNameParser,
-    FeatureSourceParser
+    FeatureSourceParser,
 )
+
 
 def create_static_feature_parser(check, fill, all_source_names, all_features):
     """
@@ -28,10 +29,14 @@ def create_static_feature_parser(check, fill, all_source_names, all_features):
     insert_method_parser = InsertMethodParser(add_help=False)
     source_parser = SourceParser(sources=["laqn", "aqe"], add_help=False)
     feature_name_parser = FeatureNameParser(all_features, add_help=False)
-    feature_source_parser = FeatureSourceParser(feature_sources = all_source_names, add_help=False)
+    feature_source_parser = FeatureSourceParser(
+        feature_sources=all_source_names, add_help=False
+    )
 
     # Define parsers with arguments that apply to all commands
-    main_parser = ArgumentParser(description = "Extract static features and check what is in database")
+    main_parser = ArgumentParser(
+        description="Extract static features and check what is in database"
+    )
 
     # subparsers
     subparsers = main_parser.add_subparsers(required=True, dest="command")
@@ -40,21 +45,20 @@ def create_static_feature_parser(check, fill, all_source_names, all_features):
         help="Check what satellite readings are available in the cleanair database",
         parents=[
             feature_source_parser,
-            source_parser, 
+            source_parser,
             feature_name_parser,
             secret_parser,
             verbosity_parser,
             web_parser,
-            insert_method_parser,           
+            insert_method_parser,
         ],
-
     )
     parser_insert = subparsers.add_parser(
         "fill",
         help="Read satellite data from the Copernicus API and insert into the database",
         parents=[
             feature_source_parser,
-            source_parser, 
+            source_parser,
             feature_name_parser,
             secret_parser,
             verbosity_parser,
@@ -68,7 +72,7 @@ def create_static_feature_parser(check, fill, all_source_names, all_features):
 
     return main_parser
 
-    
+
 def create_satellite_input_parser(check, fill):
     """
     Create a parser for the static feature processor
@@ -94,13 +98,7 @@ def create_satellite_input_parser(check, fill):
     parser_check = subparsers.add_parser(
         "check",
         help="Check what satellite readings are available in the cleanair database",
-        parents=[
-            secret_parser,
-            verbosity_parser,
-            duration_parser,
-            web_parser,
-        ],
-
+        parents=[secret_parser, verbosity_parser, duration_parser, web_parser,],
     )
     parser_insert = subparsers.add_parser(
         "fill",

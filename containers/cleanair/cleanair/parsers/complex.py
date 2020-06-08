@@ -25,9 +25,9 @@ class FeatureSourceParser(ArgumentParser):
         self.add_argument(
             "--feature-source",
             type=str,
-            required = True,
+            required=True,
             choices=feature_sources,
-            help="Source of features to process. Can only process one at a time"
+            help="Source of features to process. Can only process one at a time",
         )
 
 
@@ -62,8 +62,7 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     """Argument parsing for inserting static datafiles"""
 
 
-class SatelliteArgumentParser(ArgumentParser
-):
+class SatelliteArgumentParser(ArgumentParser):
     """Argument parsing for Satellite readings"""
 
     def __init__(self, **kwargs):

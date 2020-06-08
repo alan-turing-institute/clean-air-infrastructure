@@ -33,7 +33,7 @@ def check(args):
     if not args.feature_name:
         args.feature_name = list(FEATURE_CONFIG[args.feature_source]["features"].keys())
 
-    if args.method == 'all':
+    if args.method == "all":
         exclude_missing = False
     else:
         exclude_missing = True
@@ -56,10 +56,7 @@ def check(args):
             time.sleep(1)
     else:
         available_data = static_feature_extractor.get_static_feature_availability(
-            args.feature_name,
-            args.sources,
-            exclude_missing,
-            output_type="tabulate",
+            args.feature_name, args.sources, exclude_missing, output_type="tabulate",
         )
 
         print(available_data)
@@ -82,7 +79,7 @@ def fill(args):
 
 def create_parser():
     """Create parser"""
-    
+
     print(FEATURE_CONFIG.keys())
     quit()
 
@@ -139,7 +136,9 @@ def main():
     """
 
     # Parse and interpret command line arguments
-    args = create_static_feature_parser(check, fill, FEATURE_CONFIG.keys(), ALL_FEATURES).parse_args()
+    args = create_static_feature_parser(
+        check, fill, FEATURE_CONFIG.keys(), ALL_FEATURES
+    ).parse_args()
 
     # Execute program
     args.func(args)

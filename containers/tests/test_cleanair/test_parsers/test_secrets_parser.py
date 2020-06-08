@@ -12,6 +12,7 @@ from cleanair.parsers import (
 )
 from cleanair.parsers.entrypoint_parsers import create_satellite_input_parser
 
+
 class ExampleConnectionParser(SecretFileParserMixin, ArgumentParser):
     """A simple parser to create a DBInteractor class"""
 
@@ -121,8 +122,10 @@ def test_subparser():
 
     assert args.web
 
+
 def test_duration_parser_n_days(secretfile):
     "Test N days is correctly changed to nhours"
+
     def check():
         "fake check function"
         pass
@@ -133,6 +136,6 @@ def test_duration_parser_n_days(secretfile):
 
     parser = create_satellite_input_parser(check, fill)
 
-    args = parser.parse_args(["check", "-s", str(secretfile), '--ndays', "5"])
+    args = parser.parse_args(["check", "-s", str(secretfile), "--ndays", "5"])
 
     assert args.nhours == 5 * 24

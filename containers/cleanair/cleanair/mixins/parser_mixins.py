@@ -4,6 +4,7 @@ Mixins which are used by multiple argument parsers
 from argparse import ArgumentTypeError, Action
 from dateutil.parser import isoparse
 
+
 class ParseSecretDict(Action):
     "Parse items into a dictionary"
 
@@ -26,15 +27,17 @@ class ParseSecretDict(Action):
 
                 output_dict[key] = value
 
-        
         setattr(namespace, self.dest, output_dict)
+
 
 class ParseNHours(Action):
     "Parse ndays into nhours"
+
     def __call__(self, parser, namespace, values, option_string=None):
         "Replace nhours with ndays*24"
 
-        setattr(namespace, 'nhours', values * 24)
+        setattr(namespace, "nhours", values * 24)
+
 
 class SecretFileParserMixin:
     """
@@ -91,7 +94,7 @@ class DurationParserMixin:
             "--ndays",
             type=int,
             help="The number of days to request data for (default: {}).".format(ndays),
-            action = ParseNHours,
+            action=ParseNHours,
         )
 
     @staticmethod
@@ -121,8 +124,8 @@ class DurationParserMixin:
         "validate ndays argument"
 
         if value < 1:
-             raise ArgumentTypeError("Argument --nhours must be greater than 0")
-        
+            raise ArgumentTypeError("Argument --nhours must be greater than 0")
+
         return int(value)
 
 

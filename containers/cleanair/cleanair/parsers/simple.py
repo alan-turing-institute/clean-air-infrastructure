@@ -36,7 +36,8 @@ class DurationParser(DurationParserMixin, ArgumentParser):
     """
     Parser for any entrypoint which needs a duration
     """
-    
+
+
 class WebParser(WebMixin, ArgumentParser):
     """
     Parser for any entrypoint which allows verbosity to be set

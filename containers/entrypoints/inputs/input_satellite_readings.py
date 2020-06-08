@@ -61,7 +61,6 @@ def fill(args):
     satellite_writer.update_remote_tables()
 
 
-
 def main():
     """
     Update satellite table
