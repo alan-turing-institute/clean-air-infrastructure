@@ -3,8 +3,7 @@ Feature extraction Base  class
 """
 import time
 from math import ceil
-import concurrent.futures
-from sqlalchemy import func, literal, or_, case, tuple_
+from sqlalchemy import func, literal, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 import numpy as np
 from ..databases import DBWriter
@@ -17,7 +16,7 @@ from ..databases.tables import (
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
-from ..loggers import duration, green, red, get_logger, duration_from_seconds
+from ..loggers import duration, green, red, get_logger
 
 
 class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
@@ -95,7 +94,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     @db_query
     def get_static_processed(self, feature_name):
         """Return the features which have already been processed for a given feature name
-        
+
         args:
             feature_name: string
                 Name of the feature to check for
@@ -110,10 +109,10 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
     @db_query
     def get_dynamic_processed(self, feature_name):
-        """Return the features which have already been processed for a given feature name between 
+        """Return the features which have already been processed for a given feature name between
         a self.start_datetime and self.end_datetime. To be returned they must have as many hours as would be expected
         from the difference between self.start_datetime and self.end_datetime.
-        
+
         args:
             feature_name: string
                 Name of the feature to check for

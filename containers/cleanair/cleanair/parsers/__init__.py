@@ -16,7 +16,6 @@ from .simple import (
     InsertMethodParser,
     WebParser,
     SecretFileParser,
-    SourceParser,
     VerbosityParser,
     DurationParser,
     AQEReadingArgumentParser,

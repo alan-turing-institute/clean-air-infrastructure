@@ -2,18 +2,15 @@
 Complex per-entrypoint argument parsers
 """
 # pylint: disable=too-many-ancestors
-from argparse import ArgumentParser, ArgumentTypeError, Action
+from argparse import ArgumentParser, ArgumentTypeError
 import json
 import os
-from dateutil.parser import isoparse
 from .model import BaseModelParser
 from ..mixins import (
     SecretFileParserMixin,
     DurationParserMixin,
-    InsertMethodMixin,
     VerbosityMixin,
     SourcesMixin,
-    WebMixin,
 )
 
 
@@ -32,6 +29,7 @@ class FeatureSourceParser(ArgumentParser):
 
 
 class FeatureNameParser(ArgumentParser):
+    """Parser arguments for choosing which features to process"""
     def __init__(self, feature_names, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(

@@ -1,9 +1,7 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
-from datetime import timedelta
-from sqlalchemy import func, text, column, String
-from dateutil.parser import isoparse
+from sqlalchemy import text, column, String
 
 from ...decorators import db_query
 from ...databases.tables import (

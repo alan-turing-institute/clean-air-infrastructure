@@ -1,6 +1,7 @@
 """
 Scoot feature extraction
 """
+# pylint: skip-file
 from sqlalchemy import func
 from .feature_extractor import FeatureExtractor
 from ..databases.tables import OSHighway, ScootRoadForecast, ScootRoadReading
@@ -45,6 +46,7 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
 
     @property
     def table(self):
+        """featre table"""
         return OSHighway
 
     @property

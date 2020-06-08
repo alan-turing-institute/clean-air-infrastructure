@@ -99,16 +99,21 @@ class DurationParserMixin:
 
     @staticmethod
     def is_iso_string(isostring):
+        """Check if isostring is a valid iso string
 
+        Arguments:
+            isostring (str): An iso string
+        """
         try:
             isoparse(isostring)
-        except ValueError as error:
+        except ValueError:
             return False
 
         return True
 
     def check_upto(self, value):
         "validate the upto argument"
+
         acceptable_values = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
         if not isinstance(value, str):
@@ -117,8 +122,7 @@ class DurationParserMixin:
         if (value in acceptable_values) or self.is_iso_string(value):
             return value
 
-        else:
-            raise ArgumentTypeError("%s is not a valid argument" % value)
+        raise ArgumentTypeError("%s is not a valid argument" % value)
 
     def check_ndays_greater_1(self, value):
         "validate ndays argument"
