@@ -7,14 +7,6 @@ import time
 from argparse import ArgumentParser
 from cleanair.inputs import SatelliteWriter
 from cleanair.parsers.entrypoint_parsers import create_satellite_input_parser
-from cleanair.parsers import (
-    SecretFileParser,
-    VerbosityParser,
-    SourceParser,
-    DurationParser,
-    WebParser,
-    InsertMethodParser,
-)
 
 
 def check(args):
