@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
 from .. import Base
-from ...mixins import DataConfigMixin, InstanceTableMixin, ModelTableMixin
+from ..mixins import DataConfigMixin, InstanceTableMixin, ModelTableMixin
 
 class TrafficInstanceTable(Base, InstanceTableMixin):
     """Store a traffic instance."""
