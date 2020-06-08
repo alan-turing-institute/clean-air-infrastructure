@@ -112,6 +112,6 @@ FEATURE_CONFIG = {
                 "feature_dict": {"feature_type": ["Water"]},
                 "aggfunc": sum_area,
             },
-        }
-    }
+        },
+    },
 }

@@ -2,33 +2,37 @@
 Module for cleanair parsers.
 """
 from .complex import (
-    SecretFileParser,
-    SourceParser,
-    VerbosityParser,
-    DurationParser,
     DataBaseRoleParser,
     DatabaseSetupParser,
     FeatureNameParser,
     ModelFitParser,
     ModelValidationParser,
-    StaticFeatureArgumentParser,
     SatelliteArgumentParser,
     ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
-    SourceParser,
     FeatureSourceParser,
 )
 from .simple import (
+    InsertMethodParser,
+    WebParser,
+    SecretFileParser,
+    SourceParser,
+    VerbosityParser,
+    DurationParser,
     AQEReadingArgumentParser,
     LAQNReadingArgumentParser,
     ScootReadingFeatureArgumentParser,
     ScootRoadmapArgumentParser,
+    SourceParser,
     StaticDatasetArgumentParser,
+    StaticFeatureArgumentParser,
     StreetCanyonFeatureArgumentParser,
     UKMapFeatureArgumentParser,
 )
 
 __all__ = [
+    "InsertMethodParser",
+    "WebParser",
     "SecretFileParser",
     "SourceParser",
     "VerbosityParser",

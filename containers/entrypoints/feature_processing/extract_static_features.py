@@ -4,7 +4,7 @@ Run feature processing using OSHighway data
 import webbrowser
 import tempfile
 import time
-import argparse
+from argparse import ArgumentParser
 from cleanair.loggers import initialise_logging
 from cleanair.features import FeatureExtractor, FEATURE_CONFIG
 from cleanair.parsers import (
@@ -56,10 +56,14 @@ def check(args):
             time.sleep(1)
     else:
         available_data = static_feature_extractor.get_static_feature_availability(
-            args.feature_name, args.sources, args.exclude_has_data, output_type="tabulate",
+            args.feature_name,
+            args.sources,
+            args.exclude_has_data,
+            output_type="tabulate",
         )
 
         print(available_data)
+
 
 def fill(args):
     """Fill the database"""
@@ -79,13 +83,15 @@ def fill(args):
 def create_parser():
     """Create parser"""
 
+    secret_parser = SecretFileParser(add_help=False)
+    verbosity_parser = VerbosityParser(add_help=False)
     source_parser = SourceParser(sources=["laqn", "aqe"], add_help=False)
     feature_source_parser = FeatureSourceParser(
         feature_sources=FEATURE_CONFIG.keys(), add_help=False
     )
     feature_name_parser = FeatureNameParser(ALL_FEATURES, add_help=False)
 
-    main_parser = StaticFeatureArgumentParser(
+    main_parser = ArgumentParser(
         description="Extract static features and check what is in database",
     )
 
@@ -110,7 +116,7 @@ def create_parser():
     parser_insert = subparsers.add_parser(
         "fill",
         help="Process static features",
-        parents = [feature_source_parser, feature_name_parser, source_parser]
+        parents=[feature_source_parser, feature_name_parser, source_parser],
     )
 
     parser_insert.add_argument(

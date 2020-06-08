@@ -175,9 +175,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 func.Geometry(
                     func.ST_Buffer(func.Geography(MetaPoint.location), 10)
                 ).label("buff_geom_10"),
-            ).filter(
-              MetaPoint.id.in_(point_ids)
-            )
+            ).filter(MetaPoint.id.in_(point_ids))
 
         return q_meta_point
 
@@ -313,7 +311,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         # )
 
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
-        
+
         # Get all the metapoints and buffer geometries as a common table expression
         cte_buffers = self.query_meta_points(point_ids=point_ids).cte("buffers")
 
@@ -475,7 +473,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 idx_feature,
                 n_features,
             )
-            
+
             missing_point_ids_df = self.get_static_feature_availability(
                 [feature_name], self.sources, exclude_has_data=True, output_type="df"
             )
@@ -495,7 +493,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 green(feature_name),
             )
 
-
             missing_point_ids = missing_point_ids_df["id"].astype(str).values
             n_point_ids = missing_point_ids.size
             batch_size = 250
@@ -508,9 +505,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
                 batch_size,
             )
 
-            missing_point_id_batches = np.array_split(
-                missing_point_ids, n_batches
-            )
+            missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
 
             for batch_no, point_id_batch in enumerate(missing_point_id_batches):
                 self.logger.info("Processing batch %s of %s", batch_no, n_batches)
