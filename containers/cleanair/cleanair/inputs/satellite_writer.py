@@ -379,6 +379,9 @@ class SatelliteWriter(
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 
+        if len(arg_list) == 0:
+            self.logger.info(green("No missing data between requested dates"))
+
         for reference_date, species in arg_list:
             self.upgrade_reading_table(reference_date, species)
 
