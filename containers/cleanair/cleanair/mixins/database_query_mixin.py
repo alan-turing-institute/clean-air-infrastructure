@@ -278,10 +278,7 @@ class ScootQueryMixin:
 
     @db_query
     def get_scoot_with_location(
-        self,
-        start_time: str,
-        end_time: str = None,
-        detectors: List = None
+        self, start_time: str, end_time: str = None, detectors: List = None
     ):
         """
         Get scoot data with lat and long positions.
@@ -323,7 +320,9 @@ class ScootQueryMixin:
             return scoot_readings
 
     @staticmethod
-    def create_day_of_week_daterange(day_of_week: int, start_date: str, end_date: str) -> Iterable:
+    def create_day_of_week_daterange(
+        day_of_week: int, start_date: str, end_date: str
+    ) -> Iterable:
         """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
 
         Args:
@@ -353,7 +352,13 @@ class ScootQueryMixin:
         return zip(starts, ends)
 
     @db_query
-    def get_scoot_by_dow(self, day_of_week: int, start_date: str, end_date: str = None, detectors: List = None):
+    def get_scoot_by_dow(
+        self,
+        day_of_week: int,
+        start_date: str,
+        end_date: str = None,
+        detectors: List = None,
+    ):
         """
         Get scoot readings for days between start_date and end_date filtered by day_of_week.
 
@@ -365,7 +370,6 @@ class ScootQueryMixin:
         """
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-
 
         with self.dbcnxn.open_session() as session:
             scoot_readings = (
@@ -384,7 +388,9 @@ class ScootQueryMixin:
             )
             # get a list of or statements
             or_statements = []
-            for start, end in self.create_day_of_week_daterange(day_of_week, start_date, end_date):
+            for start, end in self.create_day_of_week_daterange(
+                day_of_week, start_date, end_date
+            ):
                 # append AND statement
                 or_statements.append(
                     and_(

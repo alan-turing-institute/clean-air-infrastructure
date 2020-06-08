@@ -6,10 +6,10 @@ from typing import Collection
 import tensorflow as tf
 import pandas as pd
 from cleanair.databases import DBReader
+from cleanair.databases.tables import TrafficDataTable
 from cleanair.instance import Instance
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
-from ..databases.tables import TrafficDataTable
 
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):

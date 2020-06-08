@@ -4,6 +4,7 @@ from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
 from .. import Base
 from ..mixins import DataConfigMixin, InstanceTableMixin, ModelTableMixin
 
+
 class TrafficInstanceTable(Base, InstanceTableMixin):
     """Store a traffic instance."""
 
@@ -34,6 +35,7 @@ class TrafficModelTable(Base, ModelTableMixin):
 
     __tablename__ = "traffic_model"
     __table_args__ = {"schema": "traffic_modelling"}
+
 
 class TrafficMetricTable(Base):
     """
