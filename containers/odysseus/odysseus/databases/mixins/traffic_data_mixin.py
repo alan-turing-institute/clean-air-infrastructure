@@ -2,7 +2,7 @@
 
 import json
 from cleanair.decorators import db_query
-from ..tables import TrafficDataTable
+from cleanair.databases.tables import TrafficDataTable
 
 
 class TrafficDataQueryMixin:

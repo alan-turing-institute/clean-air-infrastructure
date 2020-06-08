@@ -1,4 +1,4 @@
-
+"""Testing database query mixins."""
 
 from datetime import date
 from cleanair.mixins import ScootQueryMixin

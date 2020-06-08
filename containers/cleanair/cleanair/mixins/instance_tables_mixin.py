@@ -9,8 +9,6 @@ from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB
 class InstanceTableMixin:
     """Table of Instances."""
 
-    __tablename__ = "instance"
-
     instance_id = Column(String(64), primary_key=True, nullable=False)
     tag = Column(String(64), nullable=False, index=False)
     git_hash = Column(String(40), nullable=False, index=False)
@@ -31,8 +29,6 @@ class InstanceTableMixin:
 class ModelTableMixin:
     """Table of model parameters."""
 
-    __tablename__ = "model"
-
     model_name = Column(String(64), primary_key=True, nullable=False)
     param_id = Column(String(64), primary_key=True, nullable=False)
     model_param = Column(JSONB, nullable=False, index=True)
@@ -45,8 +41,6 @@ class ModelTableMixin:
 
 class DataConfigMixin:
     """Table of model parameters."""
-
-    __tablename__ = "data_config"
 
     data_id = Column(String(64), primary_key=True, nullable=False)
     # we might be able to build an index on certain keys, but not the whole column :(

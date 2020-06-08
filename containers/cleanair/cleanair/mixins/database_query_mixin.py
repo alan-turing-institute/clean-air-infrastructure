@@ -2,7 +2,7 @@
 Mixin for useful database queries
 """
 from datetime import datetime
-from typing import Iterable, Tuple, List
+from typing import Iterable, List
 import pandas as pd
 from sqlalchemy import and_, or_, func, literal, null
 from ..decorators import db_query
@@ -321,7 +321,7 @@ class ScootQueryMixin:
                 )
 
             return scoot_readings
-    
+
     @staticmethod
     def create_day_of_week_daterange(day_of_week: int, start_date: str, end_date: str) -> Iterable:
         """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
@@ -334,7 +334,6 @@ class ScootQueryMixin:
         Returns
             List of date tuples. The first item in the tuple will be exactly one day before the last item in the tuple.
         """
-        # TODO add testing to this function
         # get list of start times that match the weekday within the timerange
         starts = pd.date_range(start_date, end_date, closed="left").to_series()
         starts = (
