@@ -76,19 +76,19 @@ if __name__ == "__main__":
     
 
     df = read_results.generate_json(
-            instance_id="9a44e654774f6a1fca9ed9a2586f6c26bdb6f6d5527933c7388874fbb95e76f7",
+            instance_id="98767984efc60e9b11041bc1703a503f1782905c229d7f429b69112b5aee9075",
         )
 
-    print(read_results.get_forecast_json(instance_id="9a44e654774f6a1fca9ed9a2586f6c26bdb6f6d5527933c7388874fbb95e76f7", output_type='sql'))
+    print(read_results.get_forecast_json(instance_id="98767984efc60e9b11041bc1703a503f1782905c229d7f429b69112b5aee9075", output_type='sql'))
 
-    quit()
+ 
 
     json_output = list(df)
 
     # print(json.dumps({'type': "FeatureCollection", "features": json_output}, indent = 4))
 
 
-    with open('/Users/ogiles/Desktop/KAINOS_DATA/full_forecast.geojson', 'w') as f:
+    with open('/Users/ogiles/Desktop/KAINOS_DATA/full_forecast_iter_500.geojson', 'w') as f:
        json.dump({'type': "FeatureCollection", "features": json_output}, f, indent = 4)
 
 
