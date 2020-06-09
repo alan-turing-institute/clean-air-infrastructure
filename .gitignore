@@ -29,3 +29,6 @@ images/
 # database
 mylocal_db/
 logfile
+
+#vizfiles 
+visualization/*.geojson
