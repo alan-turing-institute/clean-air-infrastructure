@@ -26,10 +26,8 @@ class SatelliteBox(Base):
     )  # pylint: disable=invalid-name
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteBox(" + ", ".join(vals) + ")>"
 
     @staticmethod
@@ -82,10 +80,8 @@ class SatelliteGrid(Base):
     )
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteGrid(" + ", ".join(vals)
 
     @staticmethod
@@ -113,8 +109,6 @@ class SatelliteForecast(Base):
     value = Column(DOUBLE_PRECISION, nullable=True)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteForecast(" + ", ".join(vals) + ")>"

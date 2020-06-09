@@ -1,13 +1,19 @@
 """
 Module for interacting with tables in the Azure Postgres database
 """
+from .air_quality_instance_tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityMetricsTable,
+    AirQualityModelTable,
+    AirQualityResultTable,
+)
 from .aqe_tables import AQESite, AQEReading
 from .features_tables import StaticFeature, DynamicFeature
 from .hexgrid_table import HexGrid
 from .laqn_tables import LAQNSite, LAQNReading
 from .londonboundary_table import LondonBoundary
 from .meta_point_table import MetaPoint
-from .model_results_table import ModelResult
 from .oshighway_table import OSHighway
 from .rectgrid_table import RectGrid, RectGrid100
 from .satellite_tables import (
@@ -30,6 +36,11 @@ from .gla_scoot_tables import ScootPercentChange
 from .jamcam_tables import JamCamFrameStats, JamCamVideoStats
 
 __all__ = [
+    "AirQualityDataTable",
+    "AirQualityInstanceTable",
+    "AirQualityMetricsTable",
+    "AirQualityModelTable",
+    "AirQualityResultTable",
     "AQEReading",
     "AQESite",
     "DynamicFeature",
@@ -40,7 +51,6 @@ __all__ = [
     "JamCamFrameStats",
     "JamCamVideoStats",
     "MetaPoint",
-    "ModelResult",
     "OSHighway",
     "RectGrid",
     "RectGrid100",

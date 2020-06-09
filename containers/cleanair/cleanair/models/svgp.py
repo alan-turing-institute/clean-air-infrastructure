@@ -2,6 +2,7 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
+from typing import Dict, Union
 import logging
 import os
 import numpy as np
@@ -11,8 +12,13 @@ from gpflow.session_manager import get_session
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
 from ..loggers import get_logger
 from .model import Model
+
+ModelParamSVGP = Dict[str, Union[float, bool, int, Dict, None]]
 
 
 class SVGP(Model):
@@ -20,7 +26,7 @@ class SVGP(Model):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params=None, tasks=None, **kwargs):
+    def __init__(self, model_params: ModelParamSVGP = dict(), tasks=None, **kwargs):
         """
         SVGP.
 
@@ -81,7 +87,7 @@ class SVGP(Model):
         ]
 
         # check model parameters
-        if model_params is None:
+        if not model_params:
             self.model_params = self.get_default_model_params()
         else:
             self.check_model_params_are_valid()
@@ -208,6 +214,10 @@ class SVGP(Model):
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
+        # TODO need a better fix for inducing point validation
+        if self.model_params["n_inducing_points"] > x_array.shape[0]:
+            self.model_params["n_inducing_points"] = x_array.shape[0]
+
         z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
             0
         ]

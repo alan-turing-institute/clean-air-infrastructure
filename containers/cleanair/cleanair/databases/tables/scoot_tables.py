@@ -101,10 +101,8 @@ class ScootDetector(DeferredReflection, Base):
     __table_args__ = {"schema": "interest_points"}
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootDetector(" + ", ".join(vals)
 
 
@@ -133,10 +131,8 @@ class ScootRoadMatch(Base):
     detector = relationship("ScootDetector")
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadMatch(" + ", ".join(vals)
 
 
@@ -160,10 +156,8 @@ class ScootRoadForecast(Base):
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
 
 
@@ -187,8 +181,6 @@ class ScootRoadReading(Base):
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"

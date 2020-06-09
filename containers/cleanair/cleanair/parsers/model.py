@@ -91,6 +91,11 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             default=48,
             help="The number of hours to predict for",
         )
+        self.add_argument(
+            "--include_satellite",
+            action="store_true",
+            help="If passed the model will use satellite data.",
+        )
 
         self.train_end_date = None
         self.train_start_date = None
@@ -98,6 +103,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
         self.pred_end_date = None
         self.include_prediction_y = None
         self.tag = None
+        self.include_satellite = False
 
     def parse_kwargs(self):
         """
@@ -109,6 +115,7 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
 
         # Remove any arguments which are needed for the data config
         self.include_prediction_y = kwargs.pop("return_y")
+        self.include_satellite = kwargs.pop("include_satellite")
         self.tag = kwargs.pop("tag")
 
         # Convert timestamps into start and end datetimes
@@ -146,10 +153,10 @@ class BaseModelParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             "train_end_date": self.train_end_date,
             "pred_start_date": self.pred_start_date,
             "pred_end_date": self.pred_end_date,
-            "include_satellite": True,
+            "include_satellite": self.include_satellite,
             "include_prediction_y": self.include_prediction_y,
             "train_sources": ["laqn"],
-            "pred_sources": ["laqn"],
+            "pred_sources": ["laqn", "hexgrid"],  # TODO remove hardcoding
             "train_interest_points": "all",
             "train_satellite_interest_points": "all",
             "pred_interest_points": "all",

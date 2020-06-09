@@ -19,6 +19,7 @@ setuptools.setup(
         "colorlog==4.0.2",
         "geoalchemy2==0.6.3",
         "geopandas==0.6.2",
+        "gitpython==3.1.0",
         "holidays==0.9.8",
         "matplotlib==3.1.2",
         "numpy==1.17.4",
