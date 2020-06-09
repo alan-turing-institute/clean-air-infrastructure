@@ -28,27 +28,34 @@
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/outdoors-v11',
-        center: [-0.444309864574433,51.442521283062],
-        zoom: 14
+        center: [-0.127872, 51.503890],
+        zoom: 13
     });
   
  	map.on('load', function() {
 	    map.addLayer({
-	       	id: 'full_forecast_nested_iter_500',
+	       	id: 'example_nested',
 	        type: 'fill',
+            tolerance: 3.5,
 	        source: {
 	          type: 'geojson',
-	          data: './full_forecast_nested_iter_500.geojson' // replace this with the url of your own geojson
+	          data: './example_nested.geojson' // replace this with the url of your own geojson
 	        },
 	    	paint: {
 	    	    'fill-color': [
                     'interpolate',
                     ['linear'],
                     ['get', 'NO2_mean', ['get', "0"]],
-                    0,'#0d00ff',
-                    15, '#ff0f0f',
+                    10,'#FFEDA0',
+                    12, '#FED976',
+                    14, '#FEB24C',
+                    16, '#FD8D3C',
+                    18, '#FC4E2A', 
+                    20, '#E31A1C',
+                    22, '#BD0026', 
+                    24, '#800026'
                     ],
-	    	    'fill-opacity': 1.0
+	    	    'fill-opacity': 0.7
             }
         
     	});
@@ -59,13 +66,21 @@
         var hour = e.target.value;
         console.log(hour)
         // update the map
-        map.setPaintProperty('full_forecast_nested_iter_500', 'fill-color', [
+        map.setPaintProperty('example_nested', 'fill-color', [
                     'interpolate',
                     ['linear'],
                     ['get', 'NO2_mean', ['get', hour]],
-                    0,'#0d00ff',
-                    15, '#ff0f0f'
+                    10,'#FFEDA0',
+                    12, '#FED976',
+                    14, '#FEB24C',
+                    16, '#FD8D3C',
+                    18, '#FC4E2A', 
+                    20, '#E31A1C',
+                    22, '#BD0026', 
+                    24, '#800026'
                     ]);
+
+        
     });
 </script>
 </body>
