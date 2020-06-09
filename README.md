@@ -83,8 +83,10 @@ To contribute as a non-infrastructure developer you will need the following:
 - `GDAL` (For inserting static datasets)
 
 The instructions below are to install the dependencies system-wide, however you can
-follow the [instructions at the end if you wish to use an anaconda environment](#With-a-Conda-environment)
+follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
 if you want to keep it all separated from your system.
+
+Windows is not supported. However, you may use [Windows Subsystem for Linux 2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) and then install dependencies with [conda](#with-a-conda-environment).
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -222,7 +224,6 @@ pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-# This will fail on building fbprohet, but it installs it after.
 pip install -e 'containers/cleanair[models, dashboard]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
@@ -236,38 +237,6 @@ gem install  travis -no-rdoc -no-ri
 # Create a soft link of the executables installed by gem into a place seen within the conda env.
 conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed -e 's/,//' -e 's/"//g')
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
-```
-
-
-## Install for Windows
-
-```bash
-# Download Ubuntu on Windows 
-# Download Windows Terminal
-# Install Oh_my_zsh on Ubuntu
-sudo apt install zsh
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
-export ZSH="/home/walsh/.oh-my-zsh"
-```
-A powerlevel10k configuration wizard will appear. In order to pass it, [download the MesloLGS Italic font](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf).
-The symbols should be recognized now and print q to exit.
-```bash 
-# To enable visual code with WSL legacy run
-code .
-# In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
-# Use the File menu to open your folder.
-
-# Install miniconda to manage your python environments
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-sh Miniconda3-latest-Linux-x86_64.sh
-
-# Follow the quickstart 
-# If you don’t see conda after restarting your shell, run
- conda init zsh
-# To check installation, run
-conda list
-# Continue with conda instructions above. 
 ```
 
 
