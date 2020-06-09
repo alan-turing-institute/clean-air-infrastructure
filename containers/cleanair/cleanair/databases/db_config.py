@@ -78,9 +78,6 @@ class DBConfig(Connector):
         # Create Schema
         self.create_schema()
 
-        # Create tables
-        #self.initialise_tables()
-
         for role in self.roles:
             # Create a role
             self.create_role(role["role"])
