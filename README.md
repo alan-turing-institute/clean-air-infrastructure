@@ -215,6 +215,7 @@ versions of software around in your machine. All the steps above can be done wit
 
 conda create -n busyness python=3.7
 conda activate busyness
+conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
 pip install azure-cli
 pip install azure-nspkg azure-mgmt-nspkg
@@ -222,7 +223,7 @@ pip install azure-nspkg azure-mgmt-nspkg
 # but they install fine.
 pip install -r containers/requirements.txt
 # This will fail on building fbprohet, but it installs it after.
-pip install -e 'containers/cleanair[models, traffic, dashboard]'
+pip install -e 'containers/cleanair[models, dashboard]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
@@ -237,29 +238,39 @@ conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed 
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
 
+
 ## Install for Windows
+
 ```bash
 # Download Ubuntu on Windows 
-# To enable visual code with WSL legacy run on bash:
-code .
-# In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
-# Use the File menu to open your folder.
-# To enable visual code with WSL legacy run:
+# Download Windows Terminal
+# Install Oh_my_zsh on Ubuntu
+sudo apt install zsh
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
+export ZSH="/home/walsh/.oh-my-zsh"
+```
+A powerlevel10k configuration wizard will appear. In order to pass it, [download the MesloLGS Italic font](https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf).
+The symbols should be recognized now and print q to exit.
+```bash 
+# To enable visual code with WSL legacy run
 code .
 # In the VS code: Press F1, select Remote-WSL: New Window for the default distro or Remote-WSL: New Window using Distro for a specific distro.
 # Use the File menu to open your folder.
 
-# Check if conda is recognised as commands, if not run:
-curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
-sha256sum Anaconda3-2019.03-Linux-x86_64.sh
-# The output is: 45c851b7497cc14d5ca060064394569f724b67d9b5f98a926ed49b834a6bb73a  Anaconda3-2019.03-Linux-x86_64.sh
-bash Anaconda3-2019.03-Linux-x86_64.sh
-# In every question of the output write yes
-source ~/.bashrc
-# To check installation y
+# Install miniconda to manage your python environments
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+sh Miniconda3-latest-Linux-x86_64.sh
+
+# Follow the quickstart 
+# If you don’t see conda after restarting your shell, run
+ conda init zsh
+# To check installation, run
 conda list
-#Continue with conda instructions above. 
+# Continue with conda instructions above. 
 ```
+
+
 ## Login to Azure
 
 To start working with `Azure`, you must first login to your account from the terminal:
