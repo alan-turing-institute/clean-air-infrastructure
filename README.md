@@ -53,7 +53,7 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Writing tests](#writing-tests)
 
 ### Researcher guide
-- [Setup notebooks](#setup-notebooks)
+- [Setup notebooks](#setup-notebook)
 
 ### Infrastructure
 
@@ -544,7 +544,7 @@ This fixture ensures that all interactions with the database take place within a
 First install jupyter with conda (you can also use pip).
 
 ```bash
-conda install jupyter
+pip install jupyter
 ```
 
 You can start the notebook:
@@ -559,7 +559,7 @@ To access the database, the notebooks need access to the `PGPASSWORD` environmen
 It is also recommended to set the `SECRETS` variable.
 We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
 
-> **Note**: if you are using a shared system or scientific cluster, **do not** follow these steps to store you password in a file.
+> **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
 
 Run the below command to create a `.env` file, replacing `path/to/secretfile` with the path to your `db_secrets`.
 
@@ -570,7 +570,7 @@ PGPASSWORD=
 ' > path/to/notebook/.env
 ```
 
-To set the `PGPASSWORD`, run the below command.
+To set the `PGPASSWORD`, run the following command.
 This will create a new password using the azure cli and replace the line in `.env` that contains `PGPASSWORD` with the new password.
 Remember to replace `path/to/notebook` with the path to your notebook directory.
 
@@ -592,6 +592,8 @@ You can now access the value of these variables as follows:
 ```python
 secretfile = os.getenv("SECRETS", None)
 ```
+
+Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
