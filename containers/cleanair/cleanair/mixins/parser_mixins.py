@@ -147,6 +147,7 @@ class DurationParserMixin:
 
         raise ArgumentTypeError("%s is not a valid argument" % value)
 
+
 class VerbosityMixin:
     """
     Parser for any entrypoint which allows verbosity to be set

@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import cdsapi
 import xarray as xr
-import requests
 from ..types import Species
 from ..decorators import robust_api
 from ..databases import DBWriter

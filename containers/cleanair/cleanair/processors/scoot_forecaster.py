@@ -1,5 +1,5 @@
 """Traffic model fitting"""
-#pylint: skip-file
+# pylint: skip-file
 import datetime
 from functools import partial, reduce
 import logging

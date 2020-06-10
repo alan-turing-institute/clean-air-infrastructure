@@ -21,6 +21,7 @@ from ..loggers import duration, green, red, get_logger
 
 class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
+
     # pylint: disable=R0913
     def __init__(
         self,
