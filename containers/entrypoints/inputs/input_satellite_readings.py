@@ -48,6 +48,7 @@ def check(args):
 def fill(args):
     """Call the API and fill the database"""
     # Update the satellite forecast table on the database, logging any unhandled exceptions
+
     satellite_writer = SatelliteWriter(
         copernicus_key=args.copernicus_key,
         end=args.upto,

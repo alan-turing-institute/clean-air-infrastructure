@@ -1,9 +1,29 @@
 """
 Mixins which are used by multiple argument parsers
 """
+import os
+import json
 from argparse import ArgumentTypeError, Action
 from dateutil.parser import isoparse
 
+class LoadCopernicusKey(Action):
+    "Attempt to load a copernicus key for a secret directory if not key provided"
+    def __call__(self, parser, namespace, values, option_string=None):
+        "Load copernicus key if missing"
+
+        if values == "":
+            try:
+                with open(
+                    os.path.abspath(
+                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
+                    )
+                ) as f_secret:
+                    data = json.load(f_secret)
+                    values = data["copernicus_key"]
+            except (json.decoder.JSONDecodeError, FileNotFoundError):
+                values = None
+
+        setattr(namespace, self.dest, values)
 
 class ParseSecretDict(Action):
     "Parse items into a dictionary"
@@ -185,3 +205,19 @@ class InsertMethodMixin:
         self.add_argument(
             "-m", "--method", default="missing", type=str, choices=["missing", "all"]
         )
+
+class CopernicusMixin:
+    """Argument parsing for Satellite readings"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-k",
+            "--copernicus-key",
+            type=str,
+            action=LoadCopernicusKey,
+            required=True,
+            help="copernicus key for accessing satellite data. If provided with no value will try to load from 'secrets/copernicus_secrets.json'",
+        )
+
+    

@@ -11,6 +11,7 @@ from ..mixins import (
     DurationParserMixin,
     VerbosityMixin,
     SourcesMixin,
+    CopernicusMixin,
 )
 
 
@@ -61,37 +62,8 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     """Argument parsing for inserting static datafiles"""
 
 
-class SatelliteArgumentParser(ArgumentParser):
+class SatelliteArgumentParser(CopernicusMixin, ArgumentParser):
     """Argument parsing for Satellite readings"""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "-k",
-            "--copernicus-key",
-            type=str,
-            default="",
-            help="copernicus key for accessing satellite data.",
-        )
-
-    def parse_args(self, args=None, namespace=None):
-        """
-        Check whether we have the Copernicus key and try to retrieve it from a local
-        secrets file if not
-        """
-        args = super().parse_args(args, namespace)
-        if not args.copernicus_key:
-            try:
-                with open(
-                    os.path.abspath(
-                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                    )
-                ) as f_secret:
-                    data = json.load(f_secret)
-                    args.copernicus_key = data["copernicus_key"]
-            except (json.decoder.JSONDecodeError, FileNotFoundError):
-                args.copernicus_key = None
-        return args
 
 
 class ScootReadingArgumentParser(

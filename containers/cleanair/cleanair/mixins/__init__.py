@@ -6,6 +6,7 @@ from .api_request_mixin import APIRequestMixin
 from .database_query_mixin import DBQueryMixin
 from .date_range_mixin import DateRangeMixin, DateGeneratorMixin
 from .parser_mixins import (
+    CopernicusMixin,
     DurationParserMixin,
     InsertMethodMixin,
     SecretFileParserMixin,
@@ -16,6 +17,7 @@ from .parser_mixins import (
 
 __all__ = [
     "APIRequestMixin",
+    "CopernicusMixin",
     "DateRangeMixin",
     "DateGeneratorMixin",
     "DBConnectionMixin",
