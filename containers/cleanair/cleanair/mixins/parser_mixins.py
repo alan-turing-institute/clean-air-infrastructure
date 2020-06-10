@@ -147,15 +147,6 @@ class DurationParserMixin:
 
         raise ArgumentTypeError("%s is not a valid argument" % value)
 
-    def check_ndays_greater_1(self, value):
-        "validate ndays argument"
-
-        if value < 1:
-            raise ArgumentTypeError("Argument --nhours must be greater than 0")
-
-        return int(value)
-
-
 class VerbosityMixin:
     """
     Parser for any entrypoint which allows verbosity to be set
@@ -221,5 +212,6 @@ class CopernicusMixin:
             type=str,
             action=LoadCopernicusKey,
             required=True,
-            help="copernicus key for accessing satellite data. If provided with no value will try to load from 'secrets/copernicus_secrets.json'",
+            help="""copernicus key for accessing satellite data.
+If provided with no value will try to load from 'secrets/copernicus_secrets.json'""",
         )
