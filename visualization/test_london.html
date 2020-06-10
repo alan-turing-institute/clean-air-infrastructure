@@ -20,7 +20,13 @@
 			<h2>Time: <label id='Item'>"2020-01-30T00:00:00"</label></h2>
 			<input id='slider' class='row' type='range' min='0' max='47' step='1' value='0' />
 		</div>
-	</div>
+    </div>
+    <div>
+        <form name="myForm" action="/action_page" onsubmit="return validateForm()" method="post">
+            Instance ID: <input type="text" name="instanceID">
+            <input type="submit" value="Submit">
+        </form>
+    </div>
 </div>
 
 <script>
@@ -89,6 +95,14 @@
                     24, '#800026'
                     ]); 
     });
+
+    function validateForm() {
+    var x = document.forms["myForm"]["instanceID"].value;
+        if (x == "") {
+            alert("Instance ID must be filled out");
+            return false;
+        }
+    }
 </script>
 </body>
 </html>
