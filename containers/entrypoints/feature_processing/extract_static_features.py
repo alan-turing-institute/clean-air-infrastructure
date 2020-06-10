@@ -74,6 +74,7 @@ def fill(args):
 
     static_feature_extractor.update_remote_tables()
 
+
 def main():
     """
     Extract static OSHighway features

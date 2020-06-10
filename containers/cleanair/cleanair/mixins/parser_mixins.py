@@ -6,8 +6,10 @@ import json
 from argparse import ArgumentTypeError, Action
 from dateutil.parser import isoparse
 
+
 class LoadCopernicusKey(Action):
     "Attempt to load a copernicus key for a secret directory if not key provided"
+
     def __call__(self, parser, namespace, values, option_string=None):
         "Load copernicus key if missing"
 
@@ -24,6 +26,7 @@ class LoadCopernicusKey(Action):
                 values = None
 
         setattr(namespace, self.dest, values)
+
 
 class ParseSecretDict(Action):
     "Parse items into a dictionary"
@@ -206,6 +209,7 @@ class InsertMethodMixin:
             "-m", "--method", default="missing", type=str, choices=["missing", "all"]
         )
 
+
 class CopernicusMixin:
     """Argument parsing for Satellite readings"""
 
@@ -219,5 +223,3 @@ class CopernicusMixin:
             required=True,
             help="copernicus key for accessing satellite data. If provided with no value will try to load from 'secrets/copernicus_secrets.json'",
         )
-
-    

@@ -31,8 +31,11 @@ def main():
         scoot_road_readings.update_remote_tables()
 
         # Construct SCOOT features from readings around each interest point
-        scoot_feature_extractor = ScootReadingFeatures(batch_size=500,
-            nhours=args.nhours, end=args.upto, secretfile=args.secretfile
+        scoot_feature_extractor = ScootReadingFeatures(
+            batch_size=500,
+            nhours=args.nhours,
+            end=args.upto,
+            secretfile=args.secretfile,
         )
         scoot_feature_extractor.update_remote_tables()
 

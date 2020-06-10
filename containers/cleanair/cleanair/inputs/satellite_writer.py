@@ -53,10 +53,12 @@ class SatelliteWriter(
         "lon_min": -0.51037511051915,
         "lon_max": 0.334015522513336,
     }
-    species_to_copernicus = {"NO2": "particulate_matter_2.5um", 
-                             "PM25": "particulate_matter_2.5um", 
-                             "PM10": "particulate_matter_10um",
-                             "O3": "ozone"}
+    species_to_copernicus = {
+        "NO2": "particulate_matter_2.5um",
+        "PM25": "particulate_matter_2.5um",
+        "PM10": "particulate_matter_10um",
+        "O3": "ozone",
+    }
     n_grid_squares_expected = 32  # number of expected hours of data per grib file
     species = [i.value for i in Species]
 
@@ -146,13 +148,10 @@ class SatelliteWriter(
                     "time": "00:00",
                     "type": "forecast",
                     "variable": [self.species_to_copernicus[species]],
-                    'area': [
-                        59.35, -9.84, 47.27,
-                        5.63,
-                    ],
-                    "level": "0"
+                    "area": [59.35, -9.84, 47.27, 5.63,],
+                    "level": "0",
                 },
-                grib_file_path
+                grib_file_path,
             )
 
             grib_file = self.read_grib_file(grib_file_path)
@@ -172,15 +171,15 @@ class SatelliteWriter(
         grib_dataset = xr.open_dataset(grib_filename, engine="cfgrib")
 
         bounded_grib_datasets = (
-            grib_dataset
-            .where(grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True)
+            grib_dataset.where(
+                grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True
+            )
             .where(grib_dataset.latitude < self.sat_bounding_box["lat_max"], drop=True)
             .where(grib_dataset.longitude > self.sat_bounding_box["lon_min"], drop=True)
             .where(grib_dataset.longitude < self.sat_bounding_box["lon_max"], drop=True)
         )
 
         return bounded_grib_datasets
-      
 
     def correct_no2_units(self, values):
         """Correct NO2 units"""
@@ -201,7 +200,6 @@ class SatelliteWriter(
 
         sat_df = sat_xarray.to_dataframe()
 
-       
         # Rename columns
         sat_df_renamed = sat_df.reset_index().rename(
             columns={
@@ -247,9 +245,7 @@ class SatelliteWriter(
         )
 
         # Get gribdata
-        grib_df = self.request_satellite_data(
-            reference_date, species
-        )
+        grib_df = self.request_satellite_data(reference_date, species)
 
         # Join grib data and convert into a list of forecasts
         reading_entries = (
@@ -285,9 +281,8 @@ class SatelliteWriter(
 
         # Request satellite data from today for an arbitary pollutant and convert to a dataframe
 
-        grib_data_df= self.request_satellite_data(
-            datetime.date.today().strftime("%Y-%m-%d"),
-            species=Species.NO2.value,
+        grib_data_df = self.request_satellite_data(
+            datetime.date.today().strftime("%Y-%m-%d"), species=Species.NO2.value,
         )
 
         # Construct a SatelliteBox for each box, a SatelliteGrid for each

@@ -21,10 +21,8 @@ def copernicus_key():
 @pytest.fixture()
 def grib_data_df(shared_datadir):
     """grib file with first 24 hours"""
-    return (
-        shared_datadir
-        / "example_grib_df.pkl"
-    )
+    return shared_datadir / "example_grib_df.pkl"
+
 
 @pytest.fixture()
 def mock_request_satellite_data(monkeypatch, grib_data_df):
@@ -35,7 +33,7 @@ def mock_request_satellite_data(monkeypatch, grib_data_df):
         """Overrides SatelliteWriter.request_satellite_data
         Arguments have no effect. Returns data from a file
         """
-        with open(grib_data_df, 'rb') as grib_f:
+        with open(grib_data_df, "rb") as grib_f:
             dat = pickle.load(grib_f)
             return dat
 
@@ -50,6 +48,7 @@ def test_init_satellite_writer(copernicus_key, secretfile, connection):
 
     assert satellite_writer.access_key == copernicus_key
 
+
 def test_readgrib_missing_file(copernicus_key, secretfile, connection):
     "Test that a FileNotFoundError is raised if the file is the wrong size"
 
@@ -63,9 +62,8 @@ def test_readgrib_missing_file(copernicus_key, secretfile, connection):
     with pytest.raises(FileNotFoundError):
         satellite_writer.read_grib_file(grib_file)
 
-def test_api_call(
-    copernicus_key, secretfile, mock_request_satellite_data, connection
-):
+
+def test_api_call(copernicus_key, secretfile, mock_request_satellite_data, connection):
     """Test API call using a mock api endpoint"""
 
     satellite_writer = SatelliteWriter(
@@ -73,8 +71,9 @@ def test_api_call(
     )
 
     assert satellite_writer.request_satellite_data(
-                "2020-05-01", Species.NO2.value
-            ).shape ==  (2304, 5)
+        "2020-05-01", Species.NO2.value
+    ).shape == (2304, 5)
+
 
 def test_satellite_availability_mixin(
     copernicus_key, secretfile, mock_request_satellite_data, connection
@@ -98,14 +97,13 @@ def test_satellite_availability_mixin(
     sat_box = satellite_writer.get_satellite_box(output_type="df")
     print(satellite_writer.get_satellite_grid(output_type="sql"), end="\n\n")
     sat_grid = satellite_writer.get_satellite_grid(output_type="df")
-    
+
     # Check all the grid squares are inserted
     assert sat_box.shape[0] == satellite_writer.n_grid_squares_expected
 
-
     # Upload readings to database
     satellite_writer.upgrade_reading_table("2020-05-01", Species.NO2.value)
-    return 
+    return
     print(
         satellite_writer.get_satellite_forecast(
             reference_start_date="2020-05-01",
@@ -133,6 +131,7 @@ def test_satellite_availability_mixin(
     )
     assert len(time_stamps) == 72
     assert np.all(time_stamps == expected_times)
+
 
 def test_satellite_date_generator(copernicus_key, secretfile, connection):
     """Check get_datetime_list mixing generates correct number of hours"""
