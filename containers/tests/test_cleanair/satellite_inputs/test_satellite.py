@@ -57,7 +57,7 @@ def test_init_satellite_writer(copernicus_key, secretfile, connection):
 
 
 # def test_read_grib(grib_file, copernicus_key, secretfile, connection):
-    # "This test fails because I cant install correct dependencies of travis"
+# "This test fails because I cant install correct dependencies of travis"
 #     satellite_writer = SatelliteWriter(
 #         copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
 #     )
