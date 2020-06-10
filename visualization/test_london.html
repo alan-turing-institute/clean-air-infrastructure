@@ -24,7 +24,7 @@
 </div>
 
 <script>
-    mapboxgl.accessToken = '';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiY2hyaXN0eW5ha291IiwiYSI6ImNrYjB5ZXRubjAyODUyc3BqeXlqZGsycTAifQ.7igbLhd8jNwEe6gZZ7oyAw';
     var map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/outdoors-v11',
@@ -33,6 +33,7 @@
     });
   
  	map.on('load', function() {
+       
 	    map.addLayer({
 	       	id: 'example_nested',
 	        type: 'fill',
@@ -59,12 +60,20 @@
             }
         
     	});
-       
+      
     });
 
     document.getElementById('slider').addEventListener('input', function(e) {
         var hour = e.target.value;
         console.log(hour)
+        var features = map.querySourceFeatures('example_nested', {
+        sourceLayer: 'original'
+        });          
+        var list= features[0].properties[hour];
+        var myObj = JSON.parse(list);
+        console.log(myObj["measurement_start_utc"])
+        document.getElementById('Item').innerText = myObj["measurement_start_utc"];
+                
         // update the map
         map.setPaintProperty('example_nested', 'fill-color', [
                     'interpolate',
@@ -78,9 +87,7 @@
                     20, '#E31A1C',
                     22, '#BD0026', 
                     24, '#800026'
-                    ]);
-
-        
+                    ]); 
     });
 </script>
 </body>
