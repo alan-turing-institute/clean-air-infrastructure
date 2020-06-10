@@ -12,8 +12,9 @@ addons:
       - postgresql-11-postgis-3-scripts
 
 before_install:
+  - conda install -c conda-forge eccodes
   - sudo apt-get update
-  - sudo apt-get -y install gdal-bin libgrib2c0d
+  - sudo apt-get -y install gdal-bin
   - sudo sed -i -e '/local.*peer/s/postgres/all/' -e 's/peer\|md5/trust/g' /etc/postgresql/*/main/pg_hba.conf
   - sudo systemctl restart postgresql@11-main
   # - psql -c 'CREATE EXTENSION postgis' -U postgres -p 5433
