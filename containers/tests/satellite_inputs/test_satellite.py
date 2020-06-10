@@ -50,21 +50,6 @@ def test_init_satellite_writer(copernicus_key, secretfile, connection):
 
     assert satellite_writer.access_key == copernicus_key
 
-
-def test_read_grib_df(copernicus_key, secretfile, grib_data_df, connection):
-    "Test that we can read a grib file"
-
-    assert os.path.exists(grib_data_df)
-
-    satellite_writer = SatelliteWriter(
-        copernicus_key=copernicus_key, secretfile=secretfile, connection=connection
-    )
-
-    out = pd.read_csv(grib_data_df)
-
-    assert not out.empty
-
-
 def test_readgrib_missing_file(copernicus_key, secretfile, connection):
     "Test that a FileNotFoundError is raised if the file is the wrong size"
 
