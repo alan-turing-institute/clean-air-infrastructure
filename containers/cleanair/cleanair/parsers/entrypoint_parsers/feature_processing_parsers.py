@@ -87,7 +87,6 @@ def create_satellite_input_parser(check, fill):
     verbosity_parser = VerbosityParser(add_help=False)
     duration_parser = DurationParser(ndays=5, end="tomorrow", add_help=False)
     web_parser = WebParser(add_help=False)
-    insert_method_parser = InsertMethodParser(add_help=False)
     copernicus_key_parser = SatelliteArgumentParser(add_help=False)
 
     # Define parsers with arguments that apply to all commands
@@ -98,7 +97,7 @@ def create_satellite_input_parser(check, fill):
     parser_check = subparsers.add_parser(
         "check",
         help="Check what satellite readings are available in the cleanair database",
-        parents=[secret_parser, verbosity_parser, duration_parser, web_parser,],
+        parents=[secret_parser, verbosity_parser, duration_parser, web_parser],
     )
     parser_insert = subparsers.add_parser(
         "fill",
@@ -108,7 +107,6 @@ def create_satellite_input_parser(check, fill):
             verbosity_parser,
             copernicus_key_parser,
             duration_parser,
-            insert_method_parser,
         ],
     )
 

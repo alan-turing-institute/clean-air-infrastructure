@@ -164,7 +164,7 @@ class SatelliteAvailabilityMixin:
                     dates.c.species,
                     in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
                     in_data_cte.c.n_records,
-                    (in_data_cte.c.n_records == 73 * 32).label("expected_n_records"),
+                    (in_data_cte.c.n_records == 72 * 32).label("expected_n_records"),
                 )
                 .select_entity_from(dates)
                 .join(

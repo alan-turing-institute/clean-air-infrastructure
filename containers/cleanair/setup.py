@@ -16,6 +16,7 @@ setuptools.setup(
     ],
     install_requires=[
         "boto3==1.10.37",
+        "cdsapi==0.2.8",
         "cfgrib==0.9.8.1",
         "colorlog==4.0.2",
         "pyeccodes==0.1.1",
