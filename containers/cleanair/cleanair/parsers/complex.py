@@ -30,6 +30,7 @@ class FeatureSourceParser(ArgumentParser):
 
 class FeatureNameParser(ArgumentParser):
     """Parser arguments for choosing which features to process"""
+
     def __init__(self, feature_names, **kwargs):
         super().__init__(**kwargs)
         self.add_argument(

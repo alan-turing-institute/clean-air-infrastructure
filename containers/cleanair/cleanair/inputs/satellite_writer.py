@@ -7,9 +7,10 @@ import tempfile
 from dateutil import rrule
 import numpy as np
 import pandas as pd
+import cdsapi
 import xarray as xr
 import requests
-from ..types import Periods, Species
+from ..types import Species
 from ..decorators import robust_api
 from ..databases import DBWriter
 from ..databases.tables import (
@@ -52,8 +53,11 @@ class SatelliteWriter(
         "lon_min": -0.51037511051915,
         "lon_max": 0.334015522513336,
     }
+    species_to_copernicus = {"NO2": "particulate_matter_2.5um", 
+                             "PM25": "particulate_matter_2.5um", 
+                             "PM10": "particulate_matter_10um",
+                             "O3": "ozone"}
     n_grid_squares_expected = 32  # number of expected hours of data per grib file
-    periods = [i.value for i in Periods]  # time periods of interest
     species = [i.value for i in Species]
 
     def __init__(
@@ -103,7 +107,7 @@ class SatelliteWriter(
         return pd.concat(grid_dfs, ignore_index=True)
 
     @robust_api
-    def request_satellite_data(self, start_date, period, species):
+    def request_satellite_data(self, start_date, species):
         """
         Request satellite data. Will make multiple attempts to read data and raise an
         exception if it fails
@@ -111,39 +115,48 @@ class SatelliteWriter(
         args:
             start_date (str): isodate to collect data from. If an isodatetime str
             is provided (e.g. 2020-01-01T00:00:00) the time part will be striped
-            period (str): The time periods to request data for. Can use Enum (e.g. Species.No2.value)
             species (str): Type of species. Can use Enum (e.g. Species.No2.value)
+
+        Return:
+            Returns a pandas dataframe with the grib data
         """
 
         if not self.access_key:
             raise AttributeError(
                 "copernicus key is None. Ensure a key was passed when initialising class"
             )
+
         # Ensure start_date is a date string, not a datetime (e.g. '2020-01-01)
         start_date = start_date.split("T")[0]
 
-        call_type = "FORECAST"
-        time_required = period
-        level = "SURFACE"
-        referencetime = start_date + "T00:00:00Z"
+        cop_client = cdsapi.Client(
+            url="https://ads.atmosphere.copernicus.eu/api/v2", key=self.access_key
+        )
 
-        params = {
-            "token": self.access_key,
-            "grid": "0.1",
-            "model": "ENSEMBLE",
-            "package": "_".join([call_type, species, level]),
-            "time": time_required,
-            "referencetime": referencetime,
-            "format": "GRIB2",
-        }
+        # Write the grib file to a temporary directory
+        with tempfile.TemporaryDirectory() as tmpdir:
+            grib_file_path = os.path.join(tmpdir, "tmpgrib_file.grib2")
+            cop_client.retrieve(
+                "cams-europe-air-quality-forecasts",
+                {
+                    "model": "ensemble",
+                    "date": start_date,
+                    "format": "grib",
+                    "leadtime_hour": [str(i) for i in range(72)],
+                    "time": "00:00",
+                    "type": "forecast",
+                    "variable": [self.species_to_copernicus[species]],
+                    'area': [
+                        59.35, -9.84, 47.27,
+                        5.63,
+                    ],
+                    "level": "0"
+                },
+                grib_file_path
+            )
 
-        endpoint = "https://download.regional.atmosphere.copernicus.eu/services/CAMS50"
-
-        # Make request and raise exception if fails. robust_api wrapper will recall multiple times
-        response = requests.get(endpoint, params=params, timeout=120.0)
-        response.raise_for_status()
-
-        return response.content
+            grib_file = self.read_grib_file(grib_file_path)
+            return self.xarray_to_pandas(grib_file, species)
 
     def read_grib_file(self, grib_filename):
         """Read a gribfile and filter by the satellite bounding box.
@@ -159,7 +172,7 @@ class SatelliteWriter(
         grib_dataset = xr.open_dataset(grib_filename, engine="cfgrib")
 
         bounded_grib_datasets = (
-            grib_dataset["paramId_0"]
+            grib_dataset
             .where(grib_dataset.latitude > self.sat_bounding_box["lat_min"], drop=True)
             .where(grib_dataset.latitude < self.sat_bounding_box["lat_max"], drop=True)
             .where(grib_dataset.longitude > self.sat_bounding_box["lon_min"], drop=True)
@@ -167,6 +180,7 @@ class SatelliteWriter(
         )
 
         return bounded_grib_datasets
+      
 
     def correct_no2_units(self, values):
         """Correct NO2 units"""
@@ -187,6 +201,7 @@ class SatelliteWriter(
 
         sat_df = sat_xarray.to_dataframe()
 
+       
         # Rename columns
         sat_df_renamed = sat_df.reset_index().rename(
             columns={
@@ -211,29 +226,6 @@ class SatelliteWriter(
 
         return sat_df_subset
 
-    def grib_bytes_to_df(self, satellite_bytes, species):
-        """Given satellite_bytes return a dataframe
-
-        Args:
-            satellite_bytes (Bytes): Array of bytes returned by self.request_satellite_data
-            species (str): Type of species. Can use Enum (e.g. Species.No2.value)
-        Returns:
-            pd.DataFrame: A pandas dataframe of satellite data with columns:
-            datetime, lat, lon, value, species
-        """
-
-        # Write the grib file to a temporary directory
-        with tempfile.TemporaryDirectory() as tmpdir:
-            grib_file_path = os.path.join(tmpdir, "tmpgrib_file.grib2")
-            with open(grib_file_path, "wb") as grib_file:
-                self.logger.debug("Writing grib file to %s", grib_file_path)
-                grib_file.write(satellite_bytes)
-
-            grib_data_xarray = self.read_grib_file(grib_file_path)
-            grib_pandas_df = self.xarray_to_pandas(grib_data_xarray, species)
-
-        return grib_pandas_df
-
     def upgrade_reading_table(self, reference_date, species):
         """
         Update satellite readings table for a reference date and species
@@ -254,68 +246,49 @@ class SatelliteWriter(
             green(species),
         )
 
-        try:
-            all_grib_df = pd.DataFrame()
-            for period in Periods:
-                self.logger.info(
-                    "Requesting data for period: %s, species: %s",
-                    period.value,
-                    species,
-                )
-                # Get gribdata
-                grib_bytes = self.request_satellite_data(
-                    reference_date, period.value, species
-                )
-                grib_data_df = self.grib_bytes_to_df(grib_bytes, species)
-                all_grib_df = pd.concat([all_grib_df, grib_data_df], axis=0)
+        # Get gribdata
+        grib_df = self.request_satellite_data(
+            reference_date, species
+        )
 
-            # Join grib data and convert into a list of forecasts
-            reading_entries = (
-                all_grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
-                .apply(
-                    lambda data, rd=reference_date: SatelliteForecast(
-                        reference_start_utc=rd,
-                        measurement_start_utc=to_nearest_hour(data["datetime"]),
-                        measurement_end_utc=to_nearest_hour(data["datetime"])
-                        + datetime.timedelta(hours=1),
-                        species_code=data["species"],
-                        box_id=str(data["id"]),
-                        value=data["val"],
-                    ),
-                    axis=1,
-                )
-                .tolist()
+        # Join grib data and convert into a list of forecasts
+        reading_entries = (
+            grib_df.merge(satellite_site_df, how="left", on=["lon", "lat"])
+            .apply(
+                lambda data, rd=reference_date: SatelliteForecast(
+                    reference_start_utc=rd,
+                    measurement_start_utc=to_nearest_hour(data["datetime"]),
+                    measurement_end_utc=to_nearest_hour(data["datetime"])
+                    + datetime.timedelta(hours=1),
+                    species_code=data["species"],
+                    box_id=str(data["id"]),
+                    value=data["val"],
+                ),
+                axis=1,
             )
+            .tolist()
+        )
 
-            # Commit forecasts to the database
-            self.logger.info(
-                "Adding forecasts to database table %s",
-                green(SatelliteForecast.__tablename__),
-            )
-            self.commit_records(
-                reading_entries, on_conflict="overwrite", table=SatelliteForecast,
-            )
-        except requests.exceptions.HTTPError:
+        # Commit forecasts to the database
+        self.logger.info(
+            "Adding forecasts to database table %s",
+            green(SatelliteForecast.__tablename__),
+        )
 
-            self.logger.warning(
-                "%s reference_day=%s species=%s",
-                red("Failed to retrieve data for"),
-                red(reference_date),
-                red(species),
-            )
+        self.commit_records(
+            reading_entries, on_conflict="overwrite", table=SatelliteForecast,
+        )
 
     def update_interest_points(self):
         """Create interest points and insert into the database"""
         self.logger.info("Starting satellite site list update...")
 
         # Request satellite data from today for an arbitary pollutant and convert to a dataframe
-        period = "0H24H"
-        grib_bytes = self.request_satellite_data(
+
+        grib_data_df= self.request_satellite_data(
             datetime.date.today().strftime("%Y-%m-%d"),
-            period=period,
             species=Species.NO2.value,
         )
-        grib_data_df = self.grib_bytes_to_df(grib_bytes, Species.NO2.value)
 
         # Construct a SatelliteBox for each box, a SatelliteGrid for each
         # discretised location inside the box and a MetaPoint for each
@@ -406,6 +379,9 @@ class SatelliteWriter(
             ["reference_start_utc", "species"]
         ].to_records(index=False)
 
+        if len(arg_list) == 0:
+            self.logger.info(green("No missing data between requested dates"))
+
         for reference_date, species in arg_list:
             self.upgrade_reading_table(reference_date, species)
 
@@ -430,6 +406,7 @@ class SatelliteWriter(
 
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
+
         # self.update_interest_points()
 
         if self.method == "all":
