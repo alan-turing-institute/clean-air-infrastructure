@@ -55,239 +55,45 @@ jobs:
     imagePullSecrets:
         - name: regcred
 
-#   - name: input_satellite_backdate
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_satellite
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     args: ['--nhours', 720]
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-#   - name: input_scoot_backdate
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_scoot
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     args: ['--nhours', 720]
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-
 cronjobs:
 
-#   - name: input-aqe
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_aqe
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
-
-#   - name: input-laqn
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_laqn
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
- 
-  - name: test-jamcam-cron-on-hour
-    schedule: "0 4-19 * * *"
+  - name: input-aqe
+    schedule: "5 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: latest
-        imagePullPolicy: Always
-    command: ["bash", "/application/deployscripts/cluster.sh"]
-    args: ["-m", "3", "4", "5"]
+        repository: cleanairdocker.azurecr.io/input_aqe
+        imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
       readOnly: true
-    - mountPath: /application/conf/local/
-      name: credentials
-      readOnly: true
-    - mountPath: /dev/shm
-      name: dshm
     volumes:
     - name: secrets
       secret:
         secretName: secrets
-    - name: credentials
-      secret:
-        secretName: credentials.yaml
-    - name: dshm
-      emptyDir:
-        medium: Memory
-        sizeLimit: "1Gi"
     imagePullSecrets:
         - name: regcred
-    nodeSelector:
-        agentpool: jamcam
-    tolerations:
-        - key: "group"
-          operator: "Equal"
-          value: "gpu"
-          effect: "NoSchedule"
-    resources:
-        limits:
-            cpu: "23"
-            nvidia.com/gpu: 4
-        requests:
-            cpu: "23"
-            nvidia.com/gpu: 4
 
-  - name: test-jamcam-cron-on-half-hour
-    schedule: "30 4-19 * * *"
+  - name: input-laqn
+    schedule: "5 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: latest
-        imagePullPolicy: Always
-    command: ["bash", "/application/deployscripts/cluster.sh"]
-    args: ["-m", "0", "1", "2"]
+        repository: cleanairdocker.azurecr.io/input_laqn
+        imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
       readOnly: true
-    - mountPath: /application/conf/local/
-      name: credentials
-      readOnly: true
-    - mountPath: /dev/shm
-      name: dshm
     volumes:
     - name: secrets
       secret:
         secretName: secrets
-    - name: credentials
-      secret:
-        secretName: credentials.yaml
-    - name: dshm
-      emptyDir:
-        medium: Memory
-        sizeLimit: "1Gi"
     imagePullSecrets:
         - name: regcred
-    nodeSelector: 
-        agentpool: jamcam
-    tolerations:
-      - key: "group"
-        operator: "Equal"
-        value: "gpu"
-        effect: "NoSchedule"
-    resources:
-      limits:
-        cpu: "23"
-        nvidia.com/gpu: 4
-      requests:
-        cpu: "23"
-        nvidia.com/gpu: 4
-
-#   - name: input-satellite
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_satellite
-#       imagePullPolicy: Always
-#     schedule: "30 10 * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-#   - name: input-scoot
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_scoot
-#       imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-
-cronjobs:
-
-#   - name: input-aqe
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_aqe
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
-
-#   - name: input-laqn
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_laqn
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
  
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
@@ -413,33 +219,44 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-#   - name: input-satellite
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_satellite
-#       imagePullPolicy: Always
-#     schedule: "30 10 * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: input-satellite
+    schedule: "30 10 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/input_satellite
+      imagePullPolicy: IfNotPresent
+    args: ["fill", "--ndays", "30", "-k", ""]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: input-scoot
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_scoot
-#       imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: input-scoot
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/input_scoot
+      imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
 #   - name: feature_scoot_forecasts
 #     image:
