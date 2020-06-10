@@ -407,7 +407,7 @@ class SatelliteWriter(
     def update_remote_tables(self):
         """Update all relevant tables on the remote database"""
 
-        # self.update_interest_points()
+        self.update_interest_points()
 
         if self.method == "all":
             self.update_remote_tables_all()

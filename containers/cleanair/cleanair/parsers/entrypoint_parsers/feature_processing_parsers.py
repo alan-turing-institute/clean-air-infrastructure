@@ -85,6 +85,7 @@ def create_satellite_input_parser(check, fill):
     # Parser parent mixins
     secret_parser = SecretFileParser(add_help=False)
     verbosity_parser = VerbosityParser(add_help=False)
+    insert_method_parser = InsertMethodParser(add_help=False)
     duration_parser = DurationParser(ndays=5, end="tomorrow", add_help=False)
     web_parser = WebParser(add_help=False)
     copernicus_key_parser = SatelliteArgumentParser(add_help=False)
@@ -107,6 +108,7 @@ def create_satellite_input_parser(check, fill):
             verbosity_parser,
             copernicus_key_parser,
             duration_parser,
+            insert_method_parser,
         ],
     )
 
