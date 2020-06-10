@@ -19,12 +19,12 @@ A list of key developers on the project. A good place to start if you wish to co
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
-| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)        | <cnakou@turing.ac.uk>     | 
+| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>     | 
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     | 
 | David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>|
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
 | Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>       |
-
+| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>|
 
 # Contents
 
@@ -84,8 +84,10 @@ To contribute as a non-infrastructure developer you will need the following:
 - `eccodes` (For reading GRIB files)
 
 The instructions below are to install the dependencies system-wide, however you can
-follow the [instructions at the end if you wish to use an anaconda environment](#With-a-Conda-environment)
+follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
 if you want to keep it all separated from your system.
+
+Windows is not supported. However, you may use [Windows Subsystem for Linux 2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) and then install dependencies with [conda](#with-a-conda-environment).
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -219,14 +221,14 @@ versions of software around in your machine. All the steps above can be done wit
 
 conda create -n busyness python=3.7
 conda activate busyness
+conda install -c anaconda postgresql
 conda install -c conda-forge gdal postgis uwsgi
 pip install azure-cli
 pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-# This will fail on building fbprohet, but it installs it after.
-pip install -e 'containers/cleanair[models, traffic, dashboard]'
+pip install -e 'containers/cleanair[models, dashboard]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
