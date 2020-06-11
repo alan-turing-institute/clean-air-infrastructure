@@ -1,5 +1,7 @@
 """
 Taken from sqlalchemy utils - minor adjustments required to source code
+to allow for using different schemas and checking that materialized views
+exist before creating them
 
 Copyright (c) 2012, Konsta Vesterinen
 
