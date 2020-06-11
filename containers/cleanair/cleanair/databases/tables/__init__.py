@@ -27,7 +27,7 @@ from .street_canyon_tables import StreetCanyon
 from .ukmap_tables import UKMap
 from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
-from .jamcam_tables import JamCamFrameStats, JamCamVideoStats
+from .jamcam_tables import JamCamFrameStats, JamCamVideoStats, MyView
 
 __all__ = [
     "AQEReading",
@@ -41,6 +41,7 @@ __all__ = [
     "JamCamVideoStats",
     "MetaPoint",
     "ModelResult",
+    "MyView",
     "OSHighway",
     "RectGrid",
     "RectGrid100",

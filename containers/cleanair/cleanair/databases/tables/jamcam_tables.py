@@ -1,5 +1,7 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import Column, String, BigInteger, select, func
+from ..views import create_view, create_materialized_view
+
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     SMALLINT,
@@ -57,3 +59,13 @@ class JamCamVideoStats(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamFrameStats(" + ", ".join(vals) + ")>"
+
+
+# Define views
+class MyView(Base):
+    __table__ = create_materialized_view(
+        name="test_view",
+        schema="jamcam",
+        selectable=select([JamCamVideoStats.id, JamCamVideoStats.camera_id]),
+        metadata=Base.metadata,
+    )
