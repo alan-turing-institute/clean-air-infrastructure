@@ -11,7 +11,7 @@ class DBInteractor:
     """
 
     def __init__(
-        self, secretfile, initialise_tables=True, connection=None, secret_dict=None
+        self, secretfile, initialise_tables=False, connection=None, secret_dict=None
     ):
         """
         Init method for connecting to database
