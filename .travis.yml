@@ -13,7 +13,10 @@ addons:
 jobs:
   include:
     - stage: "Tests"                # naming the Tests stage
-      name: "cleanair" 
+      name: "cleanair"
+      env:
+        # replace | with , for pylint exclusion
+        EXCLUDE_PYLINT="test_odysseus,odysseus,cleanair.egg-info"
       before_install:
         - sh .travis/before_install.sh
 
@@ -25,7 +28,19 @@ jobs:
         - sh .travis/before_script.sh
 
       script:
-        - sh .travis/test_cleanair.sh
+        # Run all pytest unit tests
+        - python -m pytest containers/tests/test_cleanair
+        - python -m pytest containers/tests/test_database_init
+
+        # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
+        - flake8 --ignore=E203, W503
+
+        # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
+        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+        - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
+        - pylint --rcfile=.pylintrc containers/cleanair/*
+        # pylint --rcfile=.pylintrc containers/urbanair/*
+        - pylint --rcfile=.pylintrc --ignore=$EXCLUDE_PYLINT containers/tests/*
     # separate parallel job for odysseus
     - name: "odysseus" 
       before_install:
@@ -40,4 +55,19 @@ jobs:
         - sh .travis/before_script.sh
 
       script:
-        - sh .travis/test_odysseus.sh
+        # Run all pytest unit tests
+        - python -m pytest containers/tests/test_odysseus
+
+        # Run pylint for stricter error checking.
+        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
+    
+    - name: "code_style"
+      install:
+        - pip install -r containers/requirements.txt
+
+      script:
+        # Check black formatting would not make any chages
+        - black --check
+        # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
+        - flake8 --ignore=E203, W503
