@@ -14,9 +14,7 @@ jobs:
   include:
     - stage: "Tests"                # naming the Tests stage
       name: "cleanair"
-      env:
-        # replace | with , for pylint exclusion
-        EXCLUDE_PYLINT="test_odysseus,odysseus,cleanair.egg-info"
+
       before_install:
         - sh .travis/before_install.sh
 
@@ -32,15 +30,12 @@ jobs:
         - python -m pytest containers/tests/test_cleanair
         - python -m pytest containers/tests/test_database_init
 
-        # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
-        - flake8 --ignore=E203, W503
-
         # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
         - pylint --rcfile=.pylintrc containers/cleanair/*
         # pylint --rcfile=.pylintrc containers/urbanair/*
-        - pylint --rcfile=.pylintrc --ignore=$EXCLUDE_PYLINT containers/tests/*
+        - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
     # separate parallel job for odysseus
     - name: "odysseus" 
       before_install:
@@ -68,6 +63,6 @@ jobs:
 
       script:
         # Check black formatting would not make any chages
-        - black --check
+        - black --check */
         # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
         - flake8 --ignore=E203, W503
