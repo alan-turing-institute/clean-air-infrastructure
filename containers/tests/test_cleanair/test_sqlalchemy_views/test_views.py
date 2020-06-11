@@ -1,9 +1,31 @@
 import pytest
-from cleanair.databases import DBWriter, connector, refresh_materialized_view
-from cleanair.databases.tables import MyView, JamCamVideoStats
+from sqlalchemy import select, func
+from cleanair.databases import (
+    DBWriter,
+    connector,
+    refresh_materialized_view,
+    Base,
+)
+from cleanair.databases.views import create_materialized_view
+from cleanair.databases.tables import JamCamVideoStats
 
 
-def test_create_view(secretfile, connection):
+@pytest.fixture()
+def MyView():
+    # Define views
+    class MyView(Base):
+        __table__ = create_materialized_view(
+            name="test_view",
+            schema="jamcam",
+            selectable=select([JamCamVideoStats.id, JamCamVideoStats.camera_id]),
+            metadata=Base.metadata,
+        )
+
+    return MyView
+
+
+def test_create_view(secretfile, connection, MyView):
+    """Check that we can create a materialised view and refresh it"""
 
     db_instance = DBWriter(secretfile=secretfile, initialise_tables=True)
 
