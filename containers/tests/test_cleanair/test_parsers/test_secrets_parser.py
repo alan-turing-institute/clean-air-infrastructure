@@ -8,7 +8,7 @@ class ExampleConnectionParser(SecretFileParserMixin, ArgumentParser):
     """A simple parser to create a DBInteractor class"""
 
 
-def test_secret_dict(secretfile):
+def test_secret_dict(secretfile, connection):
     """Test that we can load yaml and read config file"""
 
     parser = ExampleConnectionParser()
@@ -25,6 +25,7 @@ def test_secret_dict(secretfile):
     db_interactor = DBInteractor(
         initialise_tables=False,
         secretfile=args.secretfile,
+        connection=connection,
         secret_dict=args.secret_dict,
     )
 

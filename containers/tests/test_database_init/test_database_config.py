@@ -2,18 +2,18 @@
 from cleanair.databases import DBConfig
 
 
-def test_load_yaml(secretfile, config_file):
+def test_load_yaml(secretfile, config_file, connection):
     """Test that we can load yaml and read config file"""
 
-    db_config = DBConfig(config_file, secretfile)
+    db_config = DBConfig(config_file, secretfile, connection=connection)
 
     assert "schema" in db_config.config.keys()
     assert "roles" in db_config.config.keys()
 
 
-def test_schema(secretfile, config_file, schema):
+def test_schema(secretfile, config_file, schema, connection):
     """Test that schema is correctly read in"""
-    db_config = DBConfig(config_file, secretfile)
+    db_config = DBConfig(config_file, secretfile, connection=connection)
 
     assert db_config.schema == schema
 
@@ -45,7 +45,7 @@ def test_configure_role(
 ):
     "Test roles and users are created"
 
-    db_config = DBConfig(config_file, secretfile, connection=connection_module,)
+    db_config = DBConfig(config_file, secretfile, connection=connection_module)
     db_config.create_schema()
     db_config.configure_all_roles()
 

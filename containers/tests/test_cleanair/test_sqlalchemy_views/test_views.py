@@ -27,7 +27,9 @@ def MyView():
 def test_create_view(secretfile, connection, MyView):
     """Check that we can create a materialised view and refresh it"""
 
-    db_instance = DBWriter(secretfile=secretfile, initialise_tables=True)
+    db_instance = DBWriter(
+        secretfile=secretfile, connection=connection, initialise_tables=True
+    )
 
     db_instance.commit_records(
         [JamCamVideoStats(id=4232, camera_id="sdfs")],
