@@ -1,8 +1,7 @@
 """Test database connection secrets"""
 # pylint: disable=redefined-outer-name
 import pytest
-from sqlalchemy.exc import OperationalError
-from cleanair.databases import Connector, DBInteractor, DBWriter
+from cleanair.databases import Connector, DBInteractor
 
 
 @pytest.fixture()
