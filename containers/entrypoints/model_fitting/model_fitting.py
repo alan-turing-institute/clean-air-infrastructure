@@ -7,10 +7,8 @@ import pickle
 import pandas as pd
 from sqlalchemy import inspect
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
-from cleanair.loggers import initialise_logging
 from cleanair.parsers import ModelFitParser
 from cleanair.instance import AirQualityInstance, hash_dict
-
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityResultTable, AirQualityModelTable
 
@@ -103,6 +101,7 @@ def main():  # pylint: disable=R0914
     parser = ModelFitParser(description="Run model fitting")
     kwargs = parser.parse_kwargs()
     secretfile = kwargs.get("secretfile")
+    predict_training = kwargs.get("predict_training")
 
     # get the model config from the parser arguments
     data_config = parser.generate_data_config()
@@ -117,12 +116,10 @@ def main():  # pylint: disable=R0914
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = kwargs.pop("maxiter")
 
-    # get the training and test dictionaries
+    # get the training dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
-    predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
     x_train = training_data_dict["X"]
     y_train = training_data_dict["Y"]
-    x_test = predict_data_dict["X"]
 
     fit_start_time = datetime.now()
     print(
@@ -132,21 +129,29 @@ def main():  # pylint: disable=R0914
     )
     print("Start training at", fit_start_time.isoformat())
     validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
-    # print("X hexgrid test shape:", x_test["hexgrid"].shape)
     model_fitter.fit(x_train, y_train)
     print("Training completed at", datetime.now().isoformat())
 
+    # TODO predict at both the training and test set!
+    # predict either at the training or test set
+    if predict_training:
+        x_test = x_train.copy()
+    else:
+        predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+        x_test = predict_data_dict["X"]
+
     # Do prediction
     print("Predicting at ", datetime.now().isoformat())
-    y_test_pred = model_fitter.predict(x_test)
-    if kwargs.get("predict_training"):
-        x_train_pred = x_train.copy()
-        y_train_pred = model_fitter.predict(x_train_pred)
-
+    y_pred = model_fitter.predict(x_test)
     print("Finished predicting at ", datetime.now().isoformat())
 
     # Internally update the model results in the ModelData object
-    model_data.update_test_df_with_preds(y_test_pred, fit_start_time)
+    if predict_training:
+        model_data.update_training_df_with_preds(y_pred, fit_start_time)
+        result_df = model_data.normalised_training_data_df
+    else:
+        model_data.update_test_df_with_preds(y_pred, fit_start_time)
+        result_df = model_data.normalised_pred_data_df
 
     aq_model_params = AirQualityModelParams(
         secretfile, "svgp", model_fitter.model_params
@@ -163,17 +168,10 @@ def main():  # pylint: disable=R0914
 
     # Write the model results to the database
     # see issue 103: generalise for multiple pollutants
-    model_data.normalised_pred_data_df[
-        "predict_mean"
-    ] = model_data.normalised_pred_data_df["NO2_mean"]
-    model_data.normalised_pred_data_df[
-        "predict_var"
-    ] = model_data.normalised_pred_data_df["NO2_var"]
+    # result_df["predict_mean"] = result_df["NO2_mean"]
+    # result_df["predict_var"] = result_df["NO2_var"]
     result = AirQualityResult(
-        secretfile,
-        model_data.normalised_pred_data_df,
-        svgp_instance.instance_id,
-        svgp_instance.data_id,
+        secretfile, result_df, svgp_instance.instance_id, svgp_instance.data_id,
     )
     # insert records into database - data & model go first, then instance, then result
     model_data.update_remote_tables()
