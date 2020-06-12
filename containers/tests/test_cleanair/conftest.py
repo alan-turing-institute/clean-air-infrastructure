@@ -12,8 +12,8 @@ from cleanair.models import DataConfig, ModelParamSVGP
 from cleanair.instance import AirQualityInstance, hash_dict
 
 @pytest.fixture(scope="module")
-def base_aq_data_config() -> DataConfig:
-    """An air quality data config dictionary with basic settings."""
+def no_features_data_config() -> DataConfig:
+    """Data config with no features."""
     return {
         "train_start_date": "2020-01-01",
         "train_end_date": "2020-01-02",
@@ -27,16 +27,23 @@ def base_aq_data_config() -> DataConfig:
         "train_satellite_interest_points": "all",
         "pred_interest_points": "all",
         "species": ["NO2"],
-        "features": [
-            "value_1000_total_a_road_length",
-            "value_500_total_a_road_length",
-            "value_500_total_a_road_primary_length",
-            "value_500_total_b_road_length",
-        ],
+        "features": [],
         "norm_by": "laqn",
         "model_type": "svgp",
         "tag": "test",
     }
+
+@pytest.fixture(scope="module")
+def road_features_data_config(no_features_data_config) -> DataConfig:
+    """An air quality data config dictionary with basic settings."""
+    data_config = no_features_data_config.copy()
+    data_config["features"] = [
+        "value_1000_total_a_road_length",
+        "value_500_total_a_road_length",
+        "value_500_total_a_road_primary_length",
+        "value_500_total_b_road_length",
+    ]
+    return data_config
 
 @pytest.fixture(scope="module")
 def base_aq_preprocessing() -> Dict:

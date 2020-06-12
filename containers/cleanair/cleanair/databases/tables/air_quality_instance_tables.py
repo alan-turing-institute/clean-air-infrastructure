@@ -3,7 +3,7 @@
 from sqlalchemy import ForeignKeyConstraint, Column
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from ..base import Base
-from ..instance_tables_mixin import (
+from ..mixins.instance_tables_mixin import (
     InstanceTableMixin,
     ModelTableMixin,
     DataTableMixin,

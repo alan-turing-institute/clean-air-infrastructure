@@ -1,7 +1,7 @@
 """Mixins for databases and tables."""
 
 from .instance_tables_mixin import (
-    DataConfigMixin,
+    DataTableMixin,
     InstanceTableMixin,
     ModelTableMixin,
 )
