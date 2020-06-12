@@ -2,7 +2,7 @@
 
 from cleanair.decorators import db_query
 from cleanair.mixins import InstanceQueryMixin
-from ..tables import TrafficMetricTable
+from cleanair.databases.tables import TrafficMetricTable
 
 
 class TrafficMetricQueryMixin(InstanceQueryMixin):

@@ -41,6 +41,6 @@ class ScootPercentChange(Base):
     removed_anomaly_from_comparison = Column(BOOLEAN, nullable=False)
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootPercentChange(" + ", ".join(vals) + ")>"

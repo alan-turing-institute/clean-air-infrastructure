@@ -3,6 +3,7 @@ Mixin for useful database queries
 """
 from typing import Any
 from datetime import datetime
+from typing import Iterable, List
 import pandas as pd
 from sqlalchemy import and_, or_, func, literal, null
 from ..decorators import db_query
@@ -279,21 +280,16 @@ class ScootQueryMixin:
     dbcnxn: Any  # TODO what is the type of this?
 
     @db_query
-    def get_scoot_with_location(self, start_time, end_time=None, detectors=None):
+    def get_scoot_with_location(
+        self, start_time: str, end_time: str = None, detectors: List = None
+    ):
         """
         Get scoot data with lat and long positions.
 
-        Parameters
-        ___
-
-        start_time : str
-            Start datetime.
-
-        end_time : str, optional
-            End datetime (exclusive).
-
-        detectors : list, optional
-            Subset of detectors to get readings for.
+        Args:
+            start_time: Start datetime.
+            end_time: End datetime (exclusive).
+            detectors: Subset of detectors to get readings for.
         """
 
         with self.dbcnxn.open_session() as session:
@@ -326,47 +322,57 @@ class ScootQueryMixin:
 
             return scoot_readings
 
-    @db_query
-    def get_scoot_by_dow(self, day_of_week, start_time, end_time=None, detectors=None):
+    @staticmethod
+    def create_day_of_week_daterange(
+        day_of_week: int, start_date: str, end_date: str
+    ) -> Iterable:
+        """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
+
+        Args:
+            day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
+            start_date: ISO formatted date. All dates in returned list will be at least this date.
+            end_date: ISO formatted date. All dates in the returned list will be at most this date.
+
+        Returns
+            List of date tuples. The first item in the tuple will be exactly one day before the last item in the tuple.
         """
-        Get scoot readings for days between start_time and end_time filtered by day_of_week.
-
-        Parameters
-        ___
-
-        day_of_week : int
-            Day of the week. 0=Mon, 1=Tue, etc.
-
-        start_time : str
-            Start datetime.
-
-        end_time : str, optional
-            End datetime (exclusive).
-
-        detectors : list, optional
-            Subset of detectors to get readings for.
-        """
-        if not end_time:
-            end_time = datetime.now().strftime("%Y-%m-%d")
-
         # get list of start times that match the weekday within the timerange
-        starts = pd.date_range(start_time, end_time).to_series()
+        starts = pd.date_range(start_date, end_date, closed="left").to_series()
         starts = (
-            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_time)]
+            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_date)]
             .dt.strftime("%Y-%m-%d")
             .to_list()
         )
 
         # get list of end times that match the weekday within the timerange
-        ends = pd.date_range(start_time, end_time).to_series()
+        ends = pd.date_range(start_date, end_date, closed="left").to_series()
         ends = (
-            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (ends > start_time)]
+            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (start_date < ends)]
             .dt.strftime("%Y-%m-%d")
             .to_list()
         )
 
-        # check lists are the same length
-        assert len(starts) == len(ends)
+        return zip(starts, ends)
+
+    @db_query
+    def get_scoot_by_dow(
+        self,
+        day_of_week: int,
+        start_date: str,
+        end_date: str = None,
+        detectors: List = None,
+    ):
+        """
+        Get scoot readings for days between start_date and end_date filtered by day_of_week.
+
+        Args:
+            day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
+            start_date: Start datetime.
+            end_date: End datetime (exclusive).
+            detectors: Subset of detectors to get readings for.
+        """
+        if not end_date:
+            end_date = datetime.now().strftime("%Y-%m-%d")
 
         with self.dbcnxn.open_session() as session:
             scoot_readings = (
@@ -385,7 +391,9 @@ class ScootQueryMixin:
             )
             # get a list of or statements
             or_statements = []
-            for start, end in zip(starts, ends):
+            for start, end in self.create_day_of_week_daterange(
+                day_of_week, start_date, end_date
+            ):
                 # append AND statement
                 or_statements.append(
                     and_(

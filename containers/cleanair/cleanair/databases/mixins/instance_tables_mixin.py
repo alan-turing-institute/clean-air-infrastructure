@@ -9,8 +9,6 @@ from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
 class InstanceTableMixin:
     """Table of Instances."""
 
-    __tablename__ = "instance"
-
     instance_id = Column(String(64), primary_key=True, nullable=False)
     tag = Column(String(64), nullable=False, index=False)
     git_hash = Column(String(40), nullable=False, index=False)
@@ -29,14 +27,12 @@ class InstanceTableMixin:
 class ModelTableMixin:
     """Table of model parameters."""
 
-    __tablename__ = "model"
-
     model_name = Column(String(64), primary_key=True, nullable=False)
     param_id = Column(String(64), primary_key=True, nullable=False)
     model_param = Column(JSONB, nullable=False, index=True)
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<" + self.__tablename__ + "(" + ", ".join(vals)
 
@@ -44,15 +40,13 @@ class ModelTableMixin:
 class DataTableMixin:
     """Table of model parameters."""
 
-    __tablename__ = "data_config"
-
     data_id = Column(String(64), primary_key=True, nullable=False)
     # we might be able to build an index on certain keys, but not the whole column :(
     data_config = Column(JSONB, nullable=False, index=False)
     preprocessing = Column(JSONB, nullable=False, index=False)
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<" + self.__tablename__ + "(" + ", ".join(vals)
 

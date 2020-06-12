@@ -30,6 +30,12 @@ from .scoot_tables import (
     ScootRoadMatch,
 )
 from .street_canyon_tables import StreetCanyon
+from .traffic_modelling_tables import (
+    TrafficDataTable,
+    TrafficInstanceTable,
+    TrafficMetricTable,
+    TrafficModelTable,
+)
 from .ukmap_tables import UKMap
 from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
@@ -66,6 +72,10 @@ __all__ = [
     "ScootPercentChange",
     "StaticFeature",
     "StreetCanyon",
+    "TrafficDataTable",
+    "TrafficInstanceTable",
+    "TrafficMetricTable",
+    "TrafficModelTable",
     "UrbanVillage",
     "UKMap",
 ]

@@ -41,6 +41,14 @@ class InstanceQueryMixin:
     ):
         """
         Get traffic instances and optionally filter by parameters.
+
+        Args:
+            tag: String to group model fits, e.g. 'test', 'validation'.
+            instance_ids: Filter by instance ids in the list.
+            data_ids: Filter by data ids in the list.
+            param_ids: Filter by model parameter ids in the list.
+            models: Filter by names of models in the list.
+            fit_start_time: Filter by models that were fit on or after this timestamp.
         """
         with self.dbcnxn.open_session() as session:
             readings = session.query(self.instance_table)
@@ -61,10 +69,10 @@ class InstanceQueryMixin:
             # filter by model names
             if models:
                 readings = readings.filter(self.instance_table.model_name.in_(models))
-            # get all instances that were fit after the given date
+            # get all instances that were fit on or after the given date
             if fit_start_time:
                 readings = readings.filter(
-                    self.instance_table.fit_start_time > fit_start_time
+                    self.instance_table.fit_start_time >= fit_start_time
                 )
             return readings
 
@@ -80,6 +88,14 @@ class InstanceQueryMixin:
     ):
         """
         Get all traffic instances and join the json parameters.
+
+        Args:
+            tag: String to group model fits, e.g. 'test', 'validation'.
+            instance_ids: Filter by instance ids in the list.
+            data_ids: Filter by data ids in the list.
+            param_ids: Filter by model parameter ids in the list.
+            models: Filter by names of models in the list.
+            fit_start_time: Filter by models that were fit on or after this timestamp.
         """
         instance_subquery = self.get_instances(
             tag=tag,

@@ -4,9 +4,13 @@ Class for querying traffic and scoot data.
 
 
 from cleanair.databases import DBReader
+from cleanair.databases.tables import (
+    TrafficInstanceTable,
+    TrafficDataTable,
+    TrafficModelTable,
+)
 from cleanair.mixins import ScootQueryMixin, InstanceQueryMixin
 from .mixins import TrafficDataQueryMixin
-from .tables import TrafficInstanceTable, TrafficDataTable, TrafficModelTable
 
 
 class TrafficQuery(DBReader, ScootQueryMixin):
