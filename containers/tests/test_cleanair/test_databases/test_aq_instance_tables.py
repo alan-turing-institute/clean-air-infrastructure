@@ -15,7 +15,7 @@ def test_insert_laqn_data_table(
     secretfile: str,
     connection: Any,    # TODO what type is this?
     base_data_id: int,
-    base_aq_data_config: DataConfig,
+    no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
 ):
     """Test data is inserted into the air quality data config table.
@@ -30,7 +30,7 @@ def test_insert_laqn_data_table(
     )
     records = [dict(
         data_id=base_data_id,
-        data_config=base_aq_data_config,
+        data_config=no_features_data_config,
         preprocessing=base_aq_preprocessing,
     )]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
@@ -63,7 +63,7 @@ def test_insert_instance(
     secretfile: str,
     connection: Any,    # TODO what type is this?
     svgp_instance: AirQualityInstance,
-    base_aq_data_config: DataConfig,
+    no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
     svgp_model_params: ModelParamSVGP,
 ):
@@ -83,7 +83,7 @@ def test_insert_instance(
     # insert data
     records = [dict(
         data_id=svgp_instance.data_id,
-        data_config=base_aq_data_config,
+        data_config=no_features_data_config,
         preprocessing=base_aq_preprocessing,
     )]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")

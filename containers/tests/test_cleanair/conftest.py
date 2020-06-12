@@ -51,9 +51,9 @@ def base_aq_preprocessing() -> Dict:
     return dict()
 
 @pytest.fixture(scope="module")
-def base_data_id(base_aq_data_config: DataConfig, base_aq_preprocessing: Dict) -> str:
+def base_data_id(no_features_data_config: DataConfig, base_aq_preprocessing: Dict) -> str:
     """Data id of base data config & preprocessing."""
-    return hash_dict(dict(base_aq_data_config, **base_aq_preprocessing))
+    return hash_dict(dict(no_features_data_config, **base_aq_preprocessing))
 
 @pytest.fixture(scope="module")
 def svgp_model_params() -> ModelParamSVGP:
