@@ -139,6 +139,10 @@ class SVGP(Model):
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = self.model_params["jitter"]
         with settings.temp_settings(custom_config), get_session().as_default():
+            # 1. multiple RBF with Periodic (not expected to work)
+            # 2. RBF on all inputs. Periodic on time only.
+            # 3. RBF on space only. Periodic on time only.
+            # 4. Sum up multiple of 3.
             kern = gpflow.kernels.RBF(
                 input_dim=num_input_dimensions,
                 lengthscales=self.model_params["kernel"]["lengthscale"],
