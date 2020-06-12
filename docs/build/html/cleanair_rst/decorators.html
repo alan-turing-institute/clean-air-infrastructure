@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cleanair.decorators module &#8212; cleanair 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cleanair.features module" href="features.html" />
+    <link rel="prev" title="cleanair.databases module" href="databases.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cleanair.decorators">
+<span id="cleanair-decorators-module"></span><h1>cleanair.decorators module<a class="headerlink" href="#module-cleanair.decorators" title="Permalink to this headline">¶</a></h1>
+<p>Module for interacting with the Azure Postgres database</p>
+<dl class="py class">
+<dt id="cleanair.decorators.SuppressStdoutStderr">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.decorators.</code><code class="sig-name descname">SuppressStdoutStderr</code><a class="headerlink" href="#cleanair.decorators.SuppressStdoutStderr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A context manager for doing a “deep suppression” of stdout and stderr in
+Python, i.e. will suppress all print, even if the print originates in a
+compiled C/Fortran sub-function.</p>
+<p>This will not suppress raised exceptions, since exceptions are printed
+to stderr just before a script exits, and after the context manager has
+exited (at least, I think that is why it lets exceptions through).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cleanair.decorators.db_query">
+<code class="sig-prename descclassname">cleanair.decorators.</code><code class="sig-name descname">db_query</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">query_f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.decorators.db_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for functions that return an sqlalchemy query object.
+kwargs:</p>
+<blockquote>
+<div><p>output_type: Either ‘query’, ‘subquery’, ‘df’ or ‘list’. list returns the first column of the query</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cleanair.decorators.robust_api">
+<code class="sig-prename descclassname">cleanair.decorators.</code><code class="sig-name descname">robust_api</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">api_call</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.decorators.robust_api" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper function for making multiple calls to the same API endpoint to overcome server errors
+kwargs:</p>
+<blockquote>
+<div><p>n_repeat: Maximum number of calls to the API that can be made
+sleep_time: Time to sleep between api calls in seconds</p>
+</div></blockquote>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">cleanair</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="cleanair.html">cleanair package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-dashboard-module">cleanair.dashboard module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-databases-module">cleanair.databases module</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cleanair.html#cleanair-decorators-module">cleanair.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-features-module">cleanair.features module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-inputs-module">cleanair.inputs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-loggers-module">cleanair.loggers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-metrics-module">cleanair.metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-mixins-module">cleanair.mixins module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-models-module">cleanair.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-parsers-module">cleanair.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-processors-module">cleanair.processors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-timestamps-module">cleanair.timestamps module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="cleanair.html">cleanair package</a><ul>
+      <li>Previous: <a href="databases.html" title="previous chapter">cleanair.databases module</a></li>
+      <li>Next: <a href="features.html" title="next chapter">cleanair.features module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Oscar Giles.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/cleanair_rst/decorators.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

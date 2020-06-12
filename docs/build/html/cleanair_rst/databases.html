@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cleanair.databases module &#8212; cleanair 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cleanair.decorators module" href="decorators.html" />
+    <link rel="prev" title="cleanair.dashboard module" href="dashboard.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cleanair.databases">
+<span id="cleanair-databases-module"></span><h1>cleanair.databases module<a class="headerlink" href="#module-cleanair.databases" title="Permalink to this headline">¶</a></h1>
+<p>Module for interacting with the Azure Postgres database</p>
+<dl class="py class">
+<dt id="cleanair.databases.Base">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">Base</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Base" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The most base type</p>
+<dl class="py attribute">
+<dt id="cleanair.databases.Base.metadata">
+<code class="sig-name descname">metadata</code><em class="property"> = MetaData(bind=None)</em><a class="headerlink" href="#cleanair.databases.Base.metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.databases.Connector">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">Connector</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">secretfile</span></em>, <em class="sig-param"><span class="n">connection</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.db_connection_mixin.DBConnectionMixin</span></code></p>
+<p>Base class for connecting to databases with sqlalchemy</p>
+<dl class="py method">
+<dt id="cleanair.databases.Connector.check_internet_connection">
+<code class="sig-name descname">check_internet_connection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">url</span><span class="o">=</span><span class="default_value">'http://www.google.com/'</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">interval</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.check_internet_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the internet is accessible
+Repeated checks within <cite>interval</cite> seconds will be skipped</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.check_schema_exists">
+<code class="sig-name descname">check_schema_exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">schema_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.check_schema_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a schema exists</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.engine">
+<em class="property">property </em><code class="sig-name descname">engine</code><a class="headerlink" href="#cleanair.databases.Connector.engine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access the class-level sqlalchemy engine</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.ensure_database_exists">
+<code class="sig-name descname">ensure_database_exists</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.ensure_database_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure the database exists</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.ensure_extensions">
+<code class="sig-name descname">ensure_extensions</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.ensure_extensions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure required extensions are installed publicly</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.ensure_schema">
+<code class="sig-name descname">ensure_schema</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">schema_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.ensure_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure that requested schema exists</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.initialise_tables">
+<code class="sig-name descname">initialise_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.initialise_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ensure that all table connections exist</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.open_session">
+<code class="sig-name descname">open_session</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwds</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.Connector.open_session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a session as a context manager which will thereby self-close</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.Connector.sessionfactory">
+<em class="property">property </em><code class="sig-name descname">sessionfactory</code><a class="headerlink" href="#cleanair.databases.Connector.sessionfactory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Access the class-level sqlalchemy sessionfactory</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.databases.DBConfig">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">DBConfig</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_file</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.connector.Connector</span></code></p>
+<p>Class to manage database configuration</p>
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_connect">
+<code class="sig-name descname">assign_role_connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow a role to connect to the database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>role_name</strong> (<em>str</em>) – Role name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_schema_default_privilege">
+<code class="sig-name descname">assign_role_schema_default_privilege</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em>, <em class="sig-param"><span class="n">schema_name</span></em>, <em class="sig-param"><span class="n">privileges</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_schema_default_privilege" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a role default privilegs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>role_name</strong> (<em>str</em>) – Role name</p></li>
+<li><p><strong>schema_name</strong> (<em>str</em>) – Schema name</p></li>
+<li><p><strong>privileges</strong> (<em>Lis</em><em>[</em><em>str</em><em>]</em>) – A list of privileges to assign</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_schema_default_sequences">
+<code class="sig-name descname">assign_role_schema_default_sequences</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em>, <em class="sig-param"><span class="n">schema_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_schema_default_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a role default sequences on a schema</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>role_name</strong> (<em>str</em>) – Role name</p></li>
+<li><p><strong>schema_name</strong> (<em>str</em>) – Schema name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_schema_privilege">
+<code class="sig-name descname">assign_role_schema_privilege</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em>, <em class="sig-param"><span class="n">schema_name</span></em>, <em class="sig-param"><span class="n">privileges</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_schema_privilege" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a role a list of privileges</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>role_name</strong> (<em>str</em>) – Role name</p></li>
+<li><p><strong>schema_name</strong> (<em>str</em>) – Schema name</p></li>
+<li><p><strong>privileges</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A list of privileges to assign</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_schema_sequences">
+<code class="sig-name descname">assign_role_schema_sequences</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em>, <em class="sig-param"><span class="n">schema_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_schema_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a role to all sequences on schema</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>role_name</strong> (<em>str</em>) – Role name</p></li>
+<li><p><strong>schema_name</strong> (<em>str</em>) – Schema name</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.assign_role_schema_usage">
+<code class="sig-name descname">assign_role_schema_usage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em>, <em class="sig-param"><span class="n">schema_name</span></em>, <em class="sig-param"><span class="n">create</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.assign_role_schema_usage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a role to all schemas</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>role_name</strong> (<em>str</em>) – Role name</p></li>
+<li><p><strong>schema_name</strong> (<em>str</em>) – Schema name</p></li>
+<li><p><strong>create</strong> (<em>bool</em>) – Give the user CREATE on the schema (i.e. they can create objects)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.configure_all_roles">
+<code class="sig-name descname">configure_all_roles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.configure_all_roles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure roles as defined in the configuration file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.create_role">
+<code class="sig-name descname">create_role</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">role_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.create_role" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new role</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>role_name</strong> (<em>str</em>) – Role name</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.create_schema">
+<code class="sig-name descname">create_schema</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.create_schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create schemas on database</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.create_user">
+<code class="sig-name descname">create_user</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">username</span></em>, <em class="sig-param"><span class="n">password</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.create_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new user and assign to a role</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>) – A username</p></li>
+<li><p><strong>password</strong> (<em>str</em>) – A user’s password</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.database_name">
+<em class="property">property </em><code class="sig-name descname">database_name</code><a class="headerlink" href="#cleanair.databases.DBConfig.database_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return name of database in config file</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.grant_role_to_user">
+<code class="sig-name descname">grant_role_to_user</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">username</span></em>, <em class="sig-param"><span class="n">role</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.grant_role_to_user" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>username</strong> (<em>str</em>) – A username</p></li>
+<li><p><strong>roles</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – A list of roles to assign a user to</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.list_roles">
+<code class="sig-name descname">list_roles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.list_roles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of existing database roles</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.read_config">
+<em class="property">static </em><code class="sig-name descname">read_config</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">config_file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBConfig.read_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a database configuration file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>config_file</strong> (<em>str</em>) – Location of configuration file</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dictionary of the required configuration</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.roles">
+<em class="property">property </em><code class="sig-name descname">roles</code><a class="headerlink" href="#cleanair.databases.DBConfig.roles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of roles</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBConfig.schema">
+<em class="property">property </em><code class="sig-name descname">schema</code><a class="headerlink" href="#cleanair.databases.DBConfig.schema" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of schemas from the database</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.databases.DBInteractor">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">DBInteractor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">secretfile</span></em>, <em class="sig-param"><span class="n">initialise_tables</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">connection</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">secret_dict</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBInteractor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for interacting with tables in the Azure database</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.databases.DBReader">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">DBReader</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_interactor.DBInteractor</span></code></p>
+<p>Base class for reading from the Azure database</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.databases.DBWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.databases.</code><code class="sig-name descname">DBWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_interactor.DBInteractor</span></code></p>
+<p>Base class for writing to the Azure database</p>
+<dl class="py method">
+<dt id="cleanair.databases.DBWriter.commit_records">
+<code class="sig-name descname">commit_records</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">records</span></em>, <em class="sig-param"><span class="n">on_conflict</span></em>, <em class="sig-param"><span class="n">table</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBWriter.commit_records" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commit records to the database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> – a session object</p></li>
+<li><p><strong>records</strong> – Either a list of sqlalchemy records, list of dictionaries (table arg must be provided)
+or an sqlalchemy subquery object (table arg must be provided)</p></li>
+<li><p><strong>on_conflict</strong> – “overwrite” or “ignore”.</p></li>
+<li><p><strong>table</strong> – Optional. sqlalchemy table. If table provide sqlalchemy core used for insert</p></li>
+</ul>
+</dd>
+</dl>
+<p>If table is provided it will insert using sqlalchemy’s core rather than the ORM.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.databases.DBWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.databases.DBWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update all relevant tables on the remote database</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">cleanair</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="cleanair.html">cleanair package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-dashboard-module">cleanair.dashboard module</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cleanair.html#cleanair-databases-module">cleanair.databases module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-decorators-module">cleanair.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-features-module">cleanair.features module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-inputs-module">cleanair.inputs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-loggers-module">cleanair.loggers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-metrics-module">cleanair.metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-mixins-module">cleanair.mixins module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-models-module">cleanair.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-parsers-module">cleanair.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-processors-module">cleanair.processors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-timestamps-module">cleanair.timestamps module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="cleanair.html">cleanair package</a><ul>
+      <li>Previous: <a href="dashboard.html" title="previous chapter">cleanair.dashboard module</a></li>
+      <li>Next: <a href="decorators.html" title="next chapter">cleanair.decorators module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Oscar Giles.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/cleanair_rst/databases.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

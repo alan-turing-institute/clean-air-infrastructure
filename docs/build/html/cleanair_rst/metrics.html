@@ -1,0 +1,254 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cleanair.metrics module &#8212; cleanair 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cleanair.mixins module" href="mixins.html" />
+    <link rel="prev" title="cleanair.loggers module" href="loggers.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cleanair.metrics">
+<span id="cleanair-metrics-module"></span><h1>cleanair.metrics module<a class="headerlink" href="#module-cleanair.metrics" title="Permalink to this headline">¶</a></h1>
+<p>Methods for evaluating metrics of a model fit.</p>
+<dl class="py function">
+<dt id="cleanair.metrics.evaluate_model_data">
+<code class="sig-prename descclassname">cleanair.metrics.</code><code class="sig-name descname">evaluate_model_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_data</span></em>, <em class="sig-param"><span class="n">metric_methods</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.metrics.evaluate_model_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a model data object, evaluate the predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_data</strong> (<em>ModelData</em>) – A model data object with updated predictions.</p></li>
+<li><p><strong>metric_methods</strong> (<em>dict</em>) – A dictionary where keys are the name of a metric and values
+are a function that takes two numpy arrays of the same shape.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – See Other Parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>sensor_scores_df</strong> (<em>pd.DataFrame</em>) – For every instance of the experiment, we calculate the score
+of a sensor over the whole prediction time period.</p></li>
+<li><p><strong>temporal_scores_df</strong> (<em>pd.DataFrame</em>) – For every instance of an experiment, we calculate the scores
+over all sensors given a slice in time.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Other Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>evaluate_testing</strong> (<em>bool, optional</em>) – If true, this function will evaluate the predictions made
+on the testing set of data.</p></li>
+<li><p><strong>evaluate_training</strong> (<em>bool, optional</em>) – If true, this function will evaluate the predictions made
+on the training set of data.</p></li>
+<li><p><strong>pred_cols</strong> (<em>list, optional</em>) – Columns containing predictions.
+Default is [“NO2_mean”].</p></li>
+<li><p><strong>test_cols</strong> (<em>list, optional</em>) – Columns containing observations during prediction period.
+Default is [“NO2”].</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If value of kwargs are not valid values.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cleanair.metrics.get_metric_methods">
+<code class="sig-prename descclassname">cleanair.metrics.</code><code class="sig-name descname">get_metric_methods</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">r2_score</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">mae</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">mse</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.metrics.get_metric_methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dictionary of metric keys and methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>r2_score</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use the r2_score score.</p></li>
+<li><p><strong>mae</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use the mae score.</p></li>
+<li><p><strong>mse</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use mean squared error.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keys are names of metrics, values are a function that takes
+two numpy arrays of the same shape.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Key is a string of the metric name.
+Value is a metric evaluation function that takes
+two equally sized numpy arrays as parameters.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cleanair.metrics.measure_scores_by_hour">
+<code class="sig-prename descclassname">cleanair.metrics.</code><code class="sig-name descname">measure_scores_by_hour</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pred_df</span></em>, <em class="sig-param"><span class="n">metric_methods</span></em>, <em class="sig-param"><span class="n">datetime_col</span><span class="o">=</span><span class="default_value">'measurement_start_utc'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.metrics.measure_scores_by_hour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Measure metric scores for each hour of prediction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred_df</strong> (<em>DataFrame</em>) – Indexed by datetime. Must have a column of testing data and
+a column from the predicted air quality at the same points
+as the testing data.</p></li>
+<li><p><strong>metric_methods</strong> (<em>dict</em>) – Keys are name of metric.
+Values are functions that take in two numpy/series and compute the score.</p></li>
+<li><p><strong>datetime_col</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the datetime columns in the dataframe.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>scores</strong> – Indexed by datetime.
+Each column is a metric in metric_methods.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DataFrame</p>
+</dd>
+<dt class="field-even">Other Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>pred_cols</strong> (<em>list, optional</em>) – Names of the column that are predictions.
+Length must match <cite>test_cols</cite>.</p></li>
+<li><p><strong>test_cols</strong> (<em>list, optional</em>) – Names of columns in the dataframe that are the true observations.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cleanair.metrics.measure_scores_by_sensor">
+<code class="sig-prename descclassname">cleanair.metrics.</code><code class="sig-name descname">measure_scores_by_sensor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pred_df</span></em>, <em class="sig-param"><span class="n">metric_methods</span></em>, <em class="sig-param"><span class="n">groupby_col</span><span class="o">=</span><span class="default_value">'point_id'</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.metrics.measure_scores_by_sensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Group the pred_df by sensor then measure scores on each sensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred_df</strong> (<em>DataFrame</em>) – Indexed by datetime. Must have a column of testing data and
+a column from the predicted air quality at the same points
+as the testing data.</p></li>
+<li><p><strong>metric_methods</strong> (<em>dict</em>) – Keys are name of metric.
+Values are functions that take in two numpy/series and compute the score.</p></li>
+<li><p><strong>groupby_col</strong> (<em>str</em>) – Name of the column containing the sensor ids.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataframe of scores by sensor.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Other Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>pred_cols</strong> (<em>list, optional</em>) – Names of the column that are predictions.
+Length must match <cite>test_cols</cite>.</p></li>
+<li><p><strong>test_cols</strong> (<em>list, optional</em>) – Names of columns in the dataframe that are the true observations.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">cleanair</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="cleanair.html">cleanair package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-dashboard-module">cleanair.dashboard module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-databases-module">cleanair.databases module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-decorators-module">cleanair.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-features-module">cleanair.features module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-inputs-module">cleanair.inputs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-loggers-module">cleanair.loggers module</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cleanair.html#cleanair-metrics-module">cleanair.metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-mixins-module">cleanair.mixins module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-models-module">cleanair.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-parsers-module">cleanair.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-processors-module">cleanair.processors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-timestamps-module">cleanair.timestamps module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="cleanair.html">cleanair package</a><ul>
+      <li>Previous: <a href="loggers.html" title="previous chapter">cleanair.loggers module</a></li>
+      <li>Next: <a href="mixins.html" title="next chapter">cleanair.mixins module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Oscar Giles.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/cleanair_rst/metrics.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

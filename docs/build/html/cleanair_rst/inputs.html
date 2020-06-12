@@ -1,0 +1,415 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cleanair.inputs module &#8212; cleanair 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="cleanair.loggers module" href="loggers.html" />
+    <link rel="prev" title="cleanair.features module" href="features.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cleanair.inputs">
+<span id="cleanair-inputs-module"></span><h1>cleanair.inputs module<a class="headerlink" href="#module-cleanair.inputs" title="Permalink to this headline">¶</a></h1>
+<p>Module for input datasources</p>
+<dl class="py class">
+<dt id="cleanair.inputs.AQEWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">AQEWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.date_range_mixin.DateRangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.api_request_mixin.APIRequestMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code></p>
+<p>Manage interactions with the AQE table on Azure</p>
+<dl class="py attribute">
+<dt id="cleanair.inputs.AQEWriter.reading_keys">
+<code class="sig-name descname">reading_keys</code><em class="property"> = ['SiteCode', 'SpeciesCode', 'MeasurementStartUTC', 'MeasurementEndUTC']</em><a class="headerlink" href="#cleanair.inputs.AQEWriter.reading_keys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.AQEWriter.request_site_entries">
+<code class="sig-name descname">request_site_entries</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter.request_site_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request all AQE sites
+Remove any that do not have an opening date</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.AQEWriter.request_site_readings">
+<code class="sig-name descname">request_site_readings</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">end_date</span></em>, <em class="sig-param"><span class="n">site_code</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter.request_site_readings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request all readings for {site_code} between {start_date} and {end_date}
+Remove duplicates and add the site_code</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.AQEWriter.update_reading_table">
+<code class="sig-name descname">update_reading_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">usecore</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter.update_reading_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the readings table with new sensor readings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.AQEWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update all relevant tables on the remote database</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.AQEWriter.update_site_list_table">
+<code class="sig-name descname">update_site_list_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.AQEWriter.update_site_list_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the aqe_site table</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.inputs.LAQNWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">LAQNWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.date_range_mixin.DateRangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.api_request_mixin.APIRequestMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code></p>
+<p>Get data from the LAQN network via the API maintained by Kings College London:
+(<a class="reference external" href="https://www.londonair.org.uk/Londonair/API/">https://www.londonair.org.uk/Londonair/API/</a>)</p>
+<dl class="py method">
+<dt id="cleanair.inputs.LAQNWriter.request_site_entries">
+<code class="sig-name descname">request_site_entries</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter.request_site_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request all LAQN sites
+Remove any that do not have an opening date</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.LAQNWriter.request_site_readings">
+<code class="sig-name descname">request_site_readings</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">end_date</span></em>, <em class="sig-param"><span class="n">site_code</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter.request_site_readings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request all readings for {site_code} between {start_date} and {end_date}
+Remove duplicates and add the site_code</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.LAQNWriter.update_reading_table">
+<code class="sig-name descname">update_reading_table</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">usecore</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter.update_reading_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the readings table with new sensor readings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.LAQNWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update all relevant tables on the remote database</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.LAQNWriter.update_site_list_table">
+<code class="sig-name descname">update_site_list_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.LAQNWriter.update_site_list_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the laqn_site table</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.inputs.RectGridWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">RectGridWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.RectGridWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code></p>
+<p>Manage interactions with the RectGrid table on Azure</p>
+<dl class="py method">
+<dt id="cleanair.inputs.RectGridWriter.build_cell">
+<code class="sig-name descname">build_cell</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">latitude</span></em>, <em class="sig-param"><span class="n">longitude</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.RectGridWriter.build_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a rectangular cell around a given latitude and longitude</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.RectGridWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.RectGridWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload grid data</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.inputs.SatelliteWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">SatelliteWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">copernicus_key</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.date_range_mixin.DateRangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code></p>
+<p>Get Satellite data from
+(<a class="reference external" href="https://download.regional.atmosphere.copernicus.eu/services/CAMS50">https://download.regional.atmosphere.copernicus.eu/services/CAMS50</a>)
+API INFO:
+<a class="reference external" href="https://www.regional.atmosphere.copernicus.eu/doc/Guide_Numerical_Data_CAMS_new.pdf">https://www.regional.atmosphere.copernicus.eu/doc/Guide_Numerical_Data_CAMS_new.pdf</a>
+IMPORTANT:
+Satellite forecast data should become available on API at:</p>
+<blockquote>
+<div><p>06:30 UTC for 0-48 hours.
+08:30 UTC for 49-72 hours.</p>
+</div></blockquote>
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.build_satellite_grid">
+<code class="sig-name descname">build_satellite_grid</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">satellite_boxes_df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.build_satellite_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build a dataframe of satellite grid points given a dataframe of satellite boxes</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.get_response">
+<em class="property">static </em><code class="sig-name descname">get_response</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">n_repeat</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">sleep_time</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.get_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the response from an API</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.grib_to_df">
+<code class="sig-name descname">grib_to_df</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">satellite_bytes</span></em>, <em class="sig-param"><span class="n">period</span></em>, <em class="sig-param"><span class="n">species</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.grib_to_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take satellite bytes and load into a pandas dataframe, converting NO2 units if required</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cleanair.inputs.SatelliteWriter.half_grid">
+<code class="sig-name descname">half_grid</code><em class="property"> = 0.05</em><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.half_grid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="cleanair.inputs.SatelliteWriter.n_points_lat">
+<code class="sig-name descname">n_points_lat</code><em class="property"> = 12</em><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.n_points_lat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="cleanair.inputs.SatelliteWriter.n_points_lon">
+<code class="sig-name descname">n_points_lon</code><em class="property"> = 8</em><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.n_points_lon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="cleanair.inputs.SatelliteWriter.periods">
+<code class="sig-name descname">periods</code><em class="property"> = ['0H24H', '25H48H', '49H72H']</em><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.periods" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.read_grib_file">
+<code class="sig-name descname">read_grib_file</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filecontent</span></em>, <em class="sig-param"><span class="n">period</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.read_grib_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a grib file into a pandas dataframe</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.request_satellite_data">
+<code class="sig-name descname">request_satellite_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_date</span></em>, <em class="sig-param"><span class="n">period</span></em>, <em class="sig-param"><span class="n">pollutant</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.request_satellite_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request satellite data. Will make multiple attempts to read data and raise an
+exception if it fails</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start_date</strong> – Date to collect data from</p></li>
+<li><p><strong>period</strong> – The time periods to request data for: 0H24H, 25H48H, 49H72H</p></li>
+<li><p><strong>pollutant</strong> – ‘NO2’, ‘PM25’, ‘PM10’, ‘O3’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="cleanair.inputs.SatelliteWriter.species">
+<code class="sig-name descname">species</code><em class="property"> = ['NO2', 'PM25', 'PM10', 'O3']</em><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.species" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.update_interest_points">
+<code class="sig-name descname">update_interest_points</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.update_interest_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create interest points and insert into the database</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.update_reading_table">
+<code class="sig-name descname">update_reading_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.update_reading_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the satellite reading table</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.SatelliteWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.SatelliteWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update all relevant tables on the remote database</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.inputs.ScootWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">ScootWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">aws_key_id</span></em>, <em class="sig-param"><span class="n">aws_key</span></em>, <em class="sig-param"><span class="n">detector_ids</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.date_range_mixin.DateRangeMixin</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.mixins.database_query_mixin.DBQueryMixin</span></code></p>
+<p>Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
+(<a class="reference external" href="https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk">https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk</a>)</p>
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.aggregate_scoot_data">
+<code class="sig-name descname">aggregate_scoot_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df_readings</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.aggregate_scoot_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate scoot data by detector ID into hourly chunks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.combine_by_detector_id">
+<code class="sig-name descname">combine_by_detector_id</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">input_df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.combine_by_detector_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Aggregate measurements by detector ID across several readings</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.get_existing_scoot_data">
+<code class="sig-name descname">get_existing_scoot_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">output_type</span><span class="o">=</span><span class="default_value">'query'</span></em>, <em class="sig-param"><span class="n">limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">error_empty</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.get_existing_scoot_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all the SCOOT readings already in the database for the given time range and set of detector IDs</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.get_remote_filenames">
+<em class="property">static </em><code class="sig-name descname">get_remote_filenames</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_datetime</span></em>, <em class="sig-param"><span class="n">end_datetime</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.get_remote_filenames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get all possible remote file details for the period in question</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.request_remote_data">
+<code class="sig-name descname">request_remote_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">start_datetime</span></em>, <em class="sig-param"><span class="n">end_datetime</span></em>, <em class="sig-param"><span class="n">detector_ids</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.request_remote_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Request all readings between {start_date} and {end_date}.
+Remove readings with unknown detector ID or detector faults.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.request_site_entries">
+<code class="sig-name descname">request_site_entries</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.request_site_entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get list of known detectors</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.ScootWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.ScootWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the database with new Scoot traffic data.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cleanair.inputs.StaticWriter">
+<em class="property">class </em><code class="sig-prename descclassname">cleanair.inputs.</code><code class="sig-name descname">StaticWriter</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">target_file</span></em>, <em class="sig-param"><span class="n">schema</span></em>, <em class="sig-param"><span class="n">table</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.StaticWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">cleanair.databases.db_writer.DBWriter</span></code></p>
+<p>Manage interactions with the static database on Azure</p>
+<dl class="py method">
+<dt id="cleanair.inputs.StaticWriter.configure_tables">
+<code class="sig-name descname">configure_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.StaticWriter.configure_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tidy up the databases by doing the following:</p>
+<p>Ensuring there is an index on the geometry column
+Dropping (some) duplicate rows
+Dropping duplicate/unnecessary columns
+Converting some column types
+Adding a primary key</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.StaticWriter.schema_table">
+<em class="property">property </em><code class="sig-name descname">schema_table</code><a class="headerlink" href="#cleanair.inputs.StaticWriter.schema_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get schema and table where the current dataset will live</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.StaticWriter.update_remote_tables">
+<code class="sig-name descname">update_remote_tables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.StaticWriter.update_remote_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attempt to upload static files and configure the tables if successful</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cleanair.inputs.StaticWriter.upload_static_files">
+<code class="sig-name descname">upload_static_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cleanair.inputs.StaticWriter.upload_static_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload static data to the inputs database</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">cleanair</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="cleanair.html">cleanair package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-dashboard-module">cleanair.dashboard module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-databases-module">cleanair.databases module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-decorators-module">cleanair.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-features-module">cleanair.features module</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="cleanair.html#cleanair-inputs-module">cleanair.inputs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-loggers-module">cleanair.loggers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-metrics-module">cleanair.metrics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-mixins-module">cleanair.mixins module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-models-module">cleanair.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-parsers-module">cleanair.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-processors-module">cleanair.processors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cleanair.html#cleanair-timestamps-module">cleanair.timestamps module</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="cleanair.html">cleanair package</a><ul>
+      <li>Previous: <a href="features.html" title="previous chapter">cleanair.features module</a></li>
+      <li>Next: <a href="loggers.html" title="next chapter">cleanair.loggers module</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Oscar Giles.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/cleanair_rst/inputs.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
