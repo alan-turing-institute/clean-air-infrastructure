@@ -7,7 +7,7 @@ from .instance_tables_mixin import (
 )
 
 __all__ = [
-    "DataConfigMixin",
+    "DataTableMixin",
     "InstanceTableMixin",
     "ModelTableMixin",
 ]
