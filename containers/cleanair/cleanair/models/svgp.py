@@ -147,7 +147,7 @@ class SVGP(Model):
                 input_dim=num_input_dimensions,
                 lengthscales=self.model_params["kernel"]["lengthscale"],
                 ARD=True,
-            ) + gpflow.kernels.Periodic(input_dim=num_input_dimensions,)
+            ) * gpflow.kernels.Periodic(input_dim=num_input_dimensions,)
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,

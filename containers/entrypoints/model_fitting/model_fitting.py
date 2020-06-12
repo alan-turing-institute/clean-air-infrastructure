@@ -104,43 +104,18 @@ def main():  # pylint: disable=R0914
     kwargs = parser.parse_kwargs()
     secretfile = kwargs.get("secretfile")
 
-    # Extract arguments that should not be passed onwards
-    logger = initialise_logging(kwargs.pop("verbose", 0))
-    no_db_write = kwargs.pop("no_db_write")
-    local_write = kwargs.pop("local_write")
-    local_read = kwargs.pop("local_read")
-    predict_write = kwargs.pop("predict_write")
-    results_dir = kwargs.pop("results_dir")
-    model_dir = kwargs.pop("model_dir")
-    predict_training = kwargs.pop("predict_training")
-
     # get the model config from the parser arguments
     data_config = parser.generate_data_config()
-
-    if "aqe" in data_config["train_sources"] + data_config["pred_sources"]:
-        raise NotImplementedError("AQE cannot currently be run. Coming soon")
-
     if data_config["species"] != ["NO2"]:
         raise NotImplementedError(
             "The only pollutant we can model right now is NO2. Coming soon"
         )
+    print("Reading from database using data config.")
+    model_data = ModelData(config=data_config, secretfile=secretfile)
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = kwargs.pop("maxiter")
-    model_fitter.model_params["model_state_fp"] = model_dir
-
-    # Get the model data
-    if local_read:
-        logger.info("Reading local data")
-        model_data = ModelData(**kwargs)
-    else:
-        print("Reading from database using data config.")
-        model_data = ModelData(config=data_config, **kwargs)
-
-    # write model results to file
-    if local_write:
-        model_data.save_config_state(kwargs["config_dir"])
 
     # get the training and test dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
@@ -149,10 +124,6 @@ def main():  # pylint: disable=R0914
     y_train = training_data_dict["Y"]
     x_test = predict_data_dict["X"]
 
-    # Fit the model
-    logger.info(
-        "Training the model for %s iterations.", model_fitter.model_params["maxiter"]
-    )
     fit_start_time = datetime.now()
     print(
         "Fitting model. Training for {m} iterations".format(
@@ -165,16 +136,11 @@ def main():  # pylint: disable=R0914
     model_fitter.fit(x_train, y_train)
     print("Training completed at", datetime.now().isoformat())
 
-    # Get info about the model fit
-    # model_fit_info = model_fitter.fit_info()
-
     # Do prediction
     print("Predicting at ", datetime.now().isoformat())
     y_test_pred = model_fitter.predict(x_test)
-    if predict_training:
+    if kwargs.get("predict_training"):
         x_train_pred = x_train.copy()
-        if "satellite" in x_train:
-            x_train_pred.pop("satellite")
         y_train_pred = model_fitter.predict(x_train_pred)
 
     print("Finished predicting at ", datetime.now().isoformat())
@@ -190,38 +156,31 @@ def main():  # pylint: disable=R0914
         param_id=aq_model_params.param_id,
         data_id=model_data.data_id,
         cluster_id="laptop",
-        tag="test",
+        tag=kwargs.get("tag"),
         fit_start_time=fit_start_time,
         secretfile=secretfile,
     )
 
     # Write the model results to the database
-    if not no_db_write:
-        # see issue 103: generalise for multiple pollutants
-        model_data.normalised_pred_data_df[
-            "predict_mean"
-        ] = model_data.normalised_pred_data_df["NO2_mean"]
-        model_data.normalised_pred_data_df[
-            "predict_var"
-        ] = model_data.normalised_pred_data_df["NO2_var"]
-        result = AirQualityResult(
-            secretfile,
-            model_data.normalised_pred_data_df,
-            svgp_instance.instance_id,
-            svgp_instance.data_id,
-        )
-        # insert records into database - data & model go first, then instance, then result
-        model_data.update_remote_tables()
-        aq_model_params.update_remote_tables()
-        svgp_instance.update_remote_tables()
-        result.update_remote_tables()
-        print("Instance id:", svgp_instance.instance_id)
-
-    # Write the model results to file
-    if predict_write:
-        write_predictions_to_file(y_test_pred, results_dir, "test_pred.pickle")
-        if predict_training:
-            write_predictions_to_file(y_train_pred, results_dir, "train_pred.pickle")
+    # see issue 103: generalise for multiple pollutants
+    model_data.normalised_pred_data_df[
+        "predict_mean"
+    ] = model_data.normalised_pred_data_df["NO2_mean"]
+    model_data.normalised_pred_data_df[
+        "predict_var"
+    ] = model_data.normalised_pred_data_df["NO2_var"]
+    result = AirQualityResult(
+        secretfile,
+        model_data.normalised_pred_data_df,
+        svgp_instance.instance_id,
+        svgp_instance.data_id,
+    )
+    # insert records into database - data & model go first, then instance, then result
+    model_data.update_remote_tables()
+    aq_model_params.update_remote_tables()
+    svgp_instance.update_remote_tables()
+    result.update_remote_tables()
+    print("Instance id:", svgp_instance.instance_id)
 
 
 if __name__ == "__main__":
