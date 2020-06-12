@@ -24,10 +24,3 @@ async def info(settings: Settings = Depends(get_settings)):
         "admin_email": settings.admin_email,
         "secrets": settings.database_secret_file,
     }
-
-
-@app.get("/testdb")
-async def info(db: Session = Depends(get_db)):
-
-    print(db.query(StreetCanyon).limit(10).all())
-    return "hi"
