@@ -7,7 +7,7 @@ import pickle
 import pandas as pd
 from sqlalchemy import inspect
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
-from cleanair.parsers import ModelFitParser
+from cleanair.parsers import ModelFittingParser
 from cleanair.instance import AirQualityInstance, hash_dict
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityResultTable, AirQualityModelTable
@@ -98,23 +98,21 @@ def main():  # pylint: disable=R0914
     Run model fitting
     """
     # Parse and interpret command line arguments
-    parser = ModelFitParser(description="Run model fitting")
-    kwargs = parser.parse_kwargs()
-    secretfile = kwargs.get("secretfile")
-    predict_training = kwargs.get("predict_training")
+    parser = ModelFittingParser(description="Run model fitting")
+    args = parser.parse_args()
 
-    # get the model config from the parser arguments
-    data_config = parser.generate_data_config()
+    # get the data config from the parser arguments
+    data_config = ModelFittingParser.generate_data_config(args)
     if data_config["species"] != ["NO2"]:
         raise NotImplementedError(
             "The only pollutant we can model right now is NO2. Coming soon"
         )
     print("Reading from database using data config.")
-    model_data = ModelData(config=data_config, secretfile=secretfile)
+    model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
-    model_fitter.model_params["maxiter"] = kwargs.pop("maxiter")
+    model_fitter.model_params["maxiter"] = args.maxiter
 
     # get the training dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
@@ -124,7 +122,7 @@ def main():  # pylint: disable=R0914
     fit_start_time = datetime.now()
     print(
         "Fitting model. Training for {m} iterations".format(
-            m=model_fitter.model_params["maxiter"]
+            m=args.maxiter
         )
     )
     print("Start training at", fit_start_time.isoformat())
@@ -134,7 +132,7 @@ def main():  # pylint: disable=R0914
 
     # TODO predict at both the training and test set!
     # predict either at the training or test set
-    if predict_training:
+    if args.predict_training:
         x_test = x_train.copy()
     else:
         predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
@@ -146,7 +144,7 @@ def main():  # pylint: disable=R0914
     print("Finished predicting at ", datetime.now().isoformat())
 
     # Internally update the model results in the ModelData object
-    if predict_training:
+    if args.predict_training:
         model_data.update_training_df_with_preds(y_pred, fit_start_time)
         result_df = model_data.normalised_training_data_df
     else:
@@ -154,16 +152,16 @@ def main():  # pylint: disable=R0914
         result_df = model_data.normalised_pred_data_df
 
     aq_model_params = AirQualityModelParams(
-        secretfile, "svgp", model_fitter.model_params
+        args.secretfile, "svgp", model_fitter.model_params
     )
     svgp_instance = AirQualityInstance(
         model_name=aq_model_params.model_name,
         param_id=aq_model_params.param_id,
         data_id=model_data.data_id,
         cluster_id="laptop",
-        tag=kwargs.get("tag"),
+        tag=args.tag,
         fit_start_time=fit_start_time,
-        secretfile=secretfile,
+        secretfile=args.secretfile,
     )
 
     # Write the model results to the database
@@ -171,7 +169,7 @@ def main():  # pylint: disable=R0914
     # result_df["predict_mean"] = result_df["NO2_mean"]
     # result_df["predict_var"] = result_df["NO2_var"]
     result = AirQualityResult(
-        secretfile, result_df, svgp_instance.instance_id, svgp_instance.data_id,
+        args.secretfile, result_df, svgp_instance.instance_id, svgp_instance.data_id,
     )
     # insert records into database - data & model go first, then instance, then result
     model_data.update_remote_tables()

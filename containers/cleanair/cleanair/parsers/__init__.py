@@ -4,12 +4,11 @@ Module for cleanair parsers.
 from .complex import (
     DataBaseRoleParser,
     DatabaseSetupParser,
-    ModelFitParser,
-    ModelValidationParser,
     SatelliteArgumentParser,
     ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
 )
+from .model_fitting_parser import ModelFittingParser
 from .simple import (
     AQEReadingArgumentParser,
     LAQNReadingArgumentParser,
@@ -26,8 +25,7 @@ __all__ = [
     "DatabaseSetupParser",
     "AQEReadingArgumentParser",
     "LAQNReadingArgumentParser",
-    "ModelFitParser",
-    "ModelValidationParser",
+    "ModelFittingParser",
     "OsHighwayFeatureArgumentParser",
     "SatelliteArgumentParser",
     "ScootForecastFeatureArgumentParser",
