@@ -81,10 +81,10 @@ class ModelFittingParser(SecretFileParserMixin, VerbosityMixin, argparse.Argumen
 
         # Generate and return the config dictionary
         data_config = {
-            "train_start_date": as_datetime(args.trainend) - timedelta(args.trainhours),
+            "train_start_date": as_datetime(args.trainend) - timedelta(hours=args.trainhours),
             "train_end_date": as_datetime(args.trainend),
             "pred_start_date": as_datetime(args.predstart),
-            "pred_end_date": as_datetime(args.predstart) + timedelta(args.predhours),
+            "pred_end_date": as_datetime(args.predstart) + timedelta(hours=args.predhours),
             "include_satellite": args.include_satellite,
             "include_prediction_y": False,  # TODO update with parser
             "train_sources": ["laqn"],
