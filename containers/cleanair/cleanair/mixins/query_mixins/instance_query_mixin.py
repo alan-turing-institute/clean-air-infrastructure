@@ -2,8 +2,8 @@
 
 from typing import Any
 from sqlalchemy import and_
-from ..decorators import db_query
-from ..databases.mixins import (
+from ...decorators import db_query
+from ...databases.mixins import (
     DataTableMixin,
     InstanceTableMixin,
     ModelTableMixin,
