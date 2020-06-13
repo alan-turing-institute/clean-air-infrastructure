@@ -2,7 +2,7 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
-from typing import Dict, Union
+from typing import Dict, Union, Optional
 import logging
 import os
 import numpy as np
@@ -26,7 +26,7 @@ class SVGP(Model):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params: ModelParamSVGP = dict(), tasks=None, **kwargs):
+    def __init__(self, model_params: Optional[ModelParamSVGP] = None, tasks=None, **kwargs):
         """
         SVGP.
 

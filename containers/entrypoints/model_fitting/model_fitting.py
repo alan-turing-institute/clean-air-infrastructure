@@ -107,12 +107,13 @@ def main():  # pylint: disable=R0914
         raise NotImplementedError(
             "The only pollutant we can model right now is NO2. Coming soon"
         )
-    print("Reading from database using data config.")
-    model_data = ModelData(config=data_config, secretfile=args.secretfile)
-
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = args.maxiter
+
+    # read data from db
+    print("Reading from database using data config.")
+    model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
     # get the training dictionaries
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
