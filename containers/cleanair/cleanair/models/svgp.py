@@ -143,11 +143,21 @@ class SVGP(Model):
             # 2. RBF on all inputs. Periodic on time only.
             # 3. RBF on space only. Periodic on time only.
             # 4. Sum up multiple of 3.
-            kern = gpflow.kernels.RBF(
+            # kern = gpflow.kernels.RBF(
+            #     input_dim=num_input_dimensions,
+            #     lengthscales=self.model_params["kernel"]["lengthscale"],
+            #     ARD=True,
+            # ) + gpflow.kernels.Periodic(input_dim=num_input_dimensions)
+            #rbf kernel on space time
+            rbf_kern = gpflow.kernels.RBF(
                 input_dim=num_input_dimensions,
                 lengthscales=self.model_params["kernel"]["lengthscale"],
                 ARD=True,
-            ) * gpflow.kernels.Periodic(input_dim=num_input_dimensions,)
+            )
+            #periodic kernel only on time
+            base_kernel = gpflow.kernels.RBF(input_dim=1, active_dims=[0])
+            per_kern = gpflow.kernels.Periodic(base=base_kernel, active_dims=[0])
+            kern = rbf_kern*per_kern
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
