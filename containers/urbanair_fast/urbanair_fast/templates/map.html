@@ -83,21 +83,10 @@
                     console.log(result.map(({video_upload_datetime}) => video_upload_datetime))
 
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
-                    console.log(detection_classes)
-                    
-                    let dates = result.map(({video_upload_datetime}) => {return (new Date(video_upload_datetime))})
-                    
-
-                    // config.data.labels = result.dates.map(d => {
-                    //     return (new Date(d))
-                    // });
-                    // console.log(config.data.labels)
-                    // config.data.datasets = [];
                     for (type of detection_classes) {
                         // console.log(type)
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        let counts =  subdat.map(({video_upload_datetime, counts}) => ({video_upload_datetime, counts}))
-                        console.log(counts)
+                        let counts =  subdat.map(({video_upload_datetime, counts}) => ({t:  new Date(video_upload_datetime), y: counts})) 
                     
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
@@ -112,7 +101,7 @@
                             // console.log(config.data.datasets)
                     }
                     config.options.title.text = 'Counts for camera ' + this.options.id.replace("JamCams_", "") + ' (last 12 hrs)';
-        //             window.myChart.update()
+                    window.myChart.update()
                 });
             });
     }
