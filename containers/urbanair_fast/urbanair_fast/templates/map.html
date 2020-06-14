@@ -79,12 +79,9 @@
         fetch('api/v1/cams/recent?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
-                    console.log(result);
-                    console.log(result.map(({video_upload_datetime}) => video_upload_datetime))
 
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
-                        // console.log(type)
                         let subdat = result.filter(function(item){return item.detection_class == type})
                         let counts =  subdat.map(({video_upload_datetime, counts}) => ({t:  new Date(video_upload_datetime), y: counts})) 
                     
