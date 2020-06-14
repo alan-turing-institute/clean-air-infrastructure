@@ -1,42 +1,42 @@
 from fastapi import APIRouter, Depends
 from typing import List
-from sqlalchemy.orm import Session
-from sqlalchemy import func
+from enum import Enum
 from datetime import datetime
-from cleanair.databases.tables import JamCamVideoStats
+from sqlalchemy.orm import Session
 from ..databases import get_db
 from ..databases import schemas
 
 router = APIRouter()
 
 
+class DetectionClass(str, Enum):
+
+    all_classes = "all"
+    truck = "truck"
+    person = "person"
+    car = "car"
+    motorbike = "motorbike"
+    bus = "bus"
+
+
 @router.get("/recent", response_model=List[schemas.JamCamVideo])
 async def cam_recent(
-    id: str, starttime: datetime, endtime: datetime, db: Session = Depends(get_db),
+    camera_id: str,
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    starttime: datetime = None,
+    endtime: datetime = None,
+    db: Session = Depends(get_db),
 ):
 
-    max_video_upload_datetime = db.query(
-        func.max(JamCamVideoStats.video_upload_datetime).label(
-            "max_video_upload_datetime"
+    print(
+        schemas.get_jamcam_recent(
+            db, camera_id, detection_class, starttime, endtime, output_type="sql"
         )
-    ).subquery()
-
-    res = db.query(
-        JamCamVideoStats.counts,
-        JamCamVideoStats.detection_class,
-        JamCamVideoStats.creation_datetime,
-    ).filter(
-        JamCamVideoStats.camera_id == id_ + ".mp4",
-        JamCamVideoStats.video_upload_datetime
-        > max_video_upload_datetime.c.max_video_upload_datetime - TWELVE_HOUR_INTERVAL,
     )
 
-    if starttime:
-        res = res.filter(JamCamVideoStats.creation_datetime >= starttime)
-    if endtime:
-        res = res.filter(JamCamVideoStats.creation_datetime < endtime)
-
-    return res.order_by(JamCamVideoStats.creation_datetime).all()
+    return schemas.get_jamcam_recent(
+        db, camera_id, detection_class, starttime, endtime
+    ).all()
 
 
 @router.get("/snapshot")
