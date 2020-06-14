@@ -4,26 +4,16 @@ from sqlalchemy import func, text
 from datetime import datetime
 from cleanair.databases.tables import JamCamVideoStats
 from cleanair.decorators import db_query
-
+from ...types import DetectionClass
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
-
-
-class JamCamVideo(BaseModel):
-
-    counts: int
-    detection_class: str
-    creation_datetime: datetime = None
-
-    class Config:
-        orm_mode = True
 
 
 @db_query
 def get_jamcam_recent(
     db,
-    camera_id: str,
-    detection_class="all",
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
     starttime: Optional[datetime] = None,
     endtime: Optional[datetime] = None,
 ):
@@ -35,16 +25,22 @@ def get_jamcam_recent(
     ).subquery()
 
     res = db.query(
+        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
         JamCamVideoStats.counts,
         JamCamVideoStats.detection_class,
-        JamCamVideoStats.creation_datetime,
-    ).filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
+        JamCamVideoStats.video_upload_datetime,
+    )
+
+    if camera_id:
+        res = res.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
 
     # Filter by time
     if endtime:
-        res = res.filter(JamCamVideoStats.creation_datetime < endtime.isoformat())
+        res = res.filter(JamCamVideoStats.video_upload_datetime < endtime.isoformat())
     if starttime:
-        res = res.filter(JamCamVideoStats.creation_datetime >= starttime.isoformat())
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat()
+        )
     else:
         res = res.filter(
             JamCamVideoStats.video_upload_datetime
@@ -53,7 +49,10 @@ def get_jamcam_recent(
         )
 
     # Filter by detection class
-    if detection_class != "all":
-        res = res.filter(JamCamVideoStats.detection_class == detection_class)
+    if detection_class.value != "all":
+        res = res.filter(
+            JamCamVideoStats.detection_class
+            == DetectionClass.map_detection_class(detection_class)
+        )
 
-    return res.order_by(JamCamVideoStats.creation_datetime)
+    return res
