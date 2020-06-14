@@ -67,35 +67,52 @@
     };
 
     function updateGraph(e) {
+        let camera_id = this.options.id.replace("JamCams_", "")
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + this.options.id.replace("JamCams_", "") + "...";
         config.data.labels = [];
         config.data.datasets = [];
         window.myChart.update();
         // https://urbanair.turing.ac.uk/
-        fetch('api/v1/cams/recent?id=' + this.options.id.replace("JamCams_", ""))
+
+        console.log(camera_id)
+        fetch('api/v1/cams/recent?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
-                    // console.log(result);
-                    config.data.labels = result.dates.map(d => {
-                        return (new Date(d))
-                    });
+                    console.log(result);
+                    console.log(result.map(({video_upload_datetime}) => video_upload_datetime))
+
+                    let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
+                    console.log(detection_classes)
+                    
+                    let dates = result.map(({video_upload_datetime}) => {return (new Date(video_upload_datetime))})
+                    
+
+                    // config.data.labels = result.dates.map(d => {
+                    //     return (new Date(d))
+                    // });
                     // console.log(config.data.labels)
-                    config.data.datasets = [];
-                    for (type in result.counts) {
-                        zeroIdxs = result.counts[type].filter(i => i > 0);
+                    // config.data.datasets = [];
+                    for (type of detection_classes) {
+                        // console.log(type)
+                        let subdat = result.filter(function(item){return item.detection_class == type})
+                        let counts =  subdat.map(({video_upload_datetime, counts}) => ({video_upload_datetime, counts}))
+                        console.log(counts)
+                    
+                    //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
                                     label: type,
                                     backgroundColor: COLORS[type],
                                     borderColor: COLORS[type],
-                                    data: result.counts[type].map(x => (x > 0 ? x : undefined)),
+                                    data: counts,
                                     fill: false,
                                 }
                             )
+                            // console.log(config.data.datasets)
                     }
                     config.options.title.text = 'Counts for camera ' + this.options.id.replace("JamCams_", "") + ' (last 12 hrs)';
-                    window.myChart.update()
+        //             window.myChart.update()
                 });
             });
     }
@@ -133,7 +150,7 @@
         let colour = VIRIDIS[0];
         if(activity !== undefined){
             let max = markerType == 'all' ? 150 : 50;
-            colour = VIRIDIS[Math.floor(Math.min(parseInt(activity)/max, 1) * 255)];
+            colour = VIRIDIS[Math.floor(Math.min(parseInt(activity.counts)/max, 1) * 255)];
         }
         const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
 
@@ -169,16 +186,16 @@
                 fetch('api/v1/cams/snapshot?detection_class=' + type).then(function (response2) {
                     response2.json().then(function (result2) {
                         
+                        const activities = result2;
                         
-                        console.log(result2)
-                        const activities = JSON.parse(result2);
-                        // console.log(typeof result2)
-
                         for (let c of cameras) {
-                        // console.log(c)
+                            
+                            let camera_id = c.id.replace("JamCams_", "")
+                            let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
+                          
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(activities['sum_counts'][activities['camera_id'].findIndex(i => i === c.id.replace("JamCams_", "") + '.mp4')])
+                                'icon': generateIcon2(counts)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
