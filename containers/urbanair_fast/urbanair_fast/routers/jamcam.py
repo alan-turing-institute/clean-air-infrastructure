@@ -28,12 +28,6 @@ async def cam_recent(
     db: Session = Depends(get_db),
 ):
 
-    print(
-        schemas.get_jamcam_recent(
-            db, camera_id, detection_class, starttime, endtime, output_type="sql"
-        )
-    )
-
     return schemas.get_jamcam_recent(
         db, camera_id, detection_class, starttime, endtime
     ).all()
