@@ -35,18 +35,19 @@ def get_jamcam_recent(
         res = res.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
 
     # Filter by time
-    if endtime:
-        res = res.filter(JamCamVideoStats.video_upload_datetime < endtime.isoformat())
-    if starttime:
+    if starttime and endtime:
         res = res.filter(
-            JamCamVideoStats.video_upload_datetime >= starttime.isoformat()
+            JamCamVideoStats.video_upload_datetime < endtime.isoformat(),
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat(),
         )
-    else:
+    elif (not endtime) and (not starttime):
         res = res.filter(
             JamCamVideoStats.video_upload_datetime
             > max_video_upload_datetime.c.max_video_upload_datetime
             - TWELVE_HOUR_INTERVAL
         )
+    else:
+        return None
 
     # Filter by detection class
     if detection_class.value != "all":
