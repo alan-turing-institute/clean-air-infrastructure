@@ -28,7 +28,7 @@ def get_jamcam_recent(
         func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
         JamCamVideoStats.counts,
         JamCamVideoStats.detection_class,
-        JamCamVideoStats.video_upload_datetime,
+        JamCamVideoStats.video_upload_datetime.label("measurement_start_utc"),
     )
 
     if camera_id:

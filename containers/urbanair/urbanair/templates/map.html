@@ -83,7 +83,7 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        let counts =  subdat.map(({video_upload_datetime, counts}) => ({t:  new Date(video_upload_datetime), y: counts})) 
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
                     
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(

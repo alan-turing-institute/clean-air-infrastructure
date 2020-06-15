@@ -23,4 +23,4 @@ class JamCamVideo(JamCamBase):
     camera_id: str
     counts: int
     detection_class: str
-    video_upload_datetime: datetime
+    measurement_start_utc: datetime
