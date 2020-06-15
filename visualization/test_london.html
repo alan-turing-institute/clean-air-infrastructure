@@ -37,9 +37,10 @@
         center: [-0.127872, 51.503890],
         zoom: 13
     });
+
+    var features;
   
  	map.on('load', function() {
-       
 	    map.addLayer({
 	       	id: 'example_nested',
 	        type: 'fill',
@@ -65,16 +66,19 @@
 	    	    'fill-opacity': 0.7
             }
         
-    	});
-      
+    	});    
     });
+
+    map.on('render',function(){
+        features = map.querySourceFeatures('example_nested', {
+        sourceLayer: 'original'
+        }); 
+    });
+    
 
     document.getElementById('slider').addEventListener('input', function(e) {
         var hour = e.target.value;
-        console.log(hour)
-        var features = map.querySourceFeatures('example_nested', {
-        sourceLayer: 'original'
-        });          
+        console.log(hour)          
         var list= features[0].properties[hour];
         var myObj = JSON.parse(list);
         console.log(myObj["measurement_start_utc"])
