@@ -12,6 +12,7 @@ Welcome to cleanair's documentation!
    :caption: Contents:
    
    cleanair_rst/cleanair
+   guide
 
 
 Indices and tables

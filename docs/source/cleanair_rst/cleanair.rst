@@ -1,91 +1,92 @@
-cleanair package
+Cleanair Package
 ==================
 
 Contents:
 
-cleanair.dashboard module
+Dashboard module
+------------------------------
+.. automodule:: cleanair.dashboard
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Databases module
+----------------------------
+.. automodule:: cleanair.databases
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Decorators module
 -----------------------------
-.. toctree::
-   :maxdepth: 2
-   
-   dashboard
+.. automodule:: cleanair.decorators
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-
-cleanair.databases module
------------------------------
-.. toctree::
-   :maxdepth: 2
-   
-   databases
-
-cleanair.decorators module
------------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   decorators
-
-cleanair.features module
+Features module
 -----------------------------    
-.. toctree::
-   :maxdepth: 2 
-   
-   features
+.. automodule:: cleanair.features
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.inputs module
+Inputs module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   inputs
+.. automodule:: cleanair.inputs
+    :members:  
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.loggers module
+Loggers module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   loggers
+.. automodule:: cleanair.loggers
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.metrics module
+Metrics module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   metrics
+.. automodule:: cleanair.metrics
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.mixins module
+Mixins module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   mixins
+.. automodule:: cleanair.mixins
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.models module
+Models module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   models
+.. automodule:: cleanair.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.parsers module
+
+Parsers module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   parsers
+.. automodule:: cleanair.parsers
+    :members: 
+    :undoc-members:
+    :show-inheritance:
 
-cleanair.processors module
+Processors module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   processors
+.. automodule:: cleanair.processors
+    :members: 
+    :undoc-members:
+    :show-inheritance:
 
 
-cleanair.timestamps module
+Timestamps module
 -----------------------------
-.. toctree::
-   :maxdepth: 2 
-   
-   timestamps
+.. automodule:: cleanair.timestamps
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
