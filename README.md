@@ -483,25 +483,19 @@ docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:
 
 # UrbanAir API
 
-The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+The UrbanAir RESTFUL API is a [Fast API](https://fastapi.tiangolo.com/) application. To run it in locally you must configure the following steps:
 
 ### Configure CleanAir database secrets
-Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environment variable](#entry-point-with-production-database)
+Ensure you have configured a secrets file for the CleanAir database 
 
 ```bash
-export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-### Enable Flask development server
+### Run the application
 
-```bash
-export FLASK_ENV=development 
-```
-
-You can now run the API
-
-```bash
-python containers/urbanair/wsgi.py
+```bash 
+DATABASE_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
 ```
 
 # Developer guide
