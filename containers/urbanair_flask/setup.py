@@ -14,6 +14,15 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["cleanair", "odysseus", "fastapi[all]", "aiofiles"],
+    install_requires=[
+        "cleanair",
+        "odysseus",
+        "flask",
+        "flask-marshmallow",
+        "flasgger",
+        "webargs",
+        "flask_httpauth",
+        "uwsgi",
+    ],
     python_requires=">=3.7",
 )
