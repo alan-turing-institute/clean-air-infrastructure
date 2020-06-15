@@ -110,6 +110,7 @@ def main():  # pylint: disable=R0914
     # initialise the model
     model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = args.maxiter
+    model_fitter.model_params["kernel"]["name"] = "matern32"
 
     # read data from db
     print("Reading from database using data config.")
