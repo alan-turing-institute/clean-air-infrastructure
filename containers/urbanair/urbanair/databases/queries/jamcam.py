@@ -1,7 +1,11 @@
+from fastapi import HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 from sqlalchemy import func, text
+from sqlalchemy.orm import Session
 from datetime import datetime
+from geojson import Feature, Point, FeatureCollection
+import requests
 from cleanair.databases.tables import JamCamVideoStats
 from cleanair.decorators import db_query
 from ...types import DetectionClass
@@ -9,9 +13,37 @@ from ...types import DetectionClass
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
 
+def get_jamcam_info(jamcam_url: str = "https://api.tfl.gov.uk/Place/Type/JamCam/"):
+    "Request jamcam camera information and write to geoJSON"
+
+    cam_req = requests.get(jamcam_url)
+    if cam_req.status_code != 200:
+        raise HTTPException(
+            status_code=404,
+            detail="Could not get jamcam info. Please contact API administrator",
+        )
+
+    cam_data = cam_req.json()
+
+    output = list(
+        map(
+            lambda x: Feature(
+                id=x["id"].split("_")[1],
+                geometry=Point((x["lon"], x["lat"])),
+                properties={"camera_id": x["id"].split("_")[1]},
+            ),
+            cam_data,
+        )
+    )
+
+    out = FeatureCollection(output)
+
+    return out
+
+
 @db_query
 def get_jamcam_recent(
-    db,
+    db: Session,
     camera_id: Optional[str],
     detection_class: DetectionClass = DetectionClass.all_classes,
     starttime: Optional[datetime] = None,
@@ -57,3 +89,33 @@ def get_jamcam_recent(
         )
 
     return res
+
+
+def get_jamcam_snapshot(db: Session, detection_class: DetectionClass):
+
+    if detection_class == DetectionClass.person:
+        res = db.execute(
+            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour_people"""
+        )
+    elif detection_class == DetectionClass.car:
+        res = db.execute(
+            "select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour_cars"
+        )
+    elif detection_class == DetectionClass.bus:
+        res = db.execute(
+            "select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour_buses"
+        )
+    elif detection_class == DetectionClass.truck:
+        res = db.execute(
+            "select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour_trucks"
+        )
+    elif detection_class == DetectionClass.motorbike:
+        res = db.execute(
+            "select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour_motorbikes"
+        )
+    else:
+        res = db.execute(
+            "select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts from jamcam.sum_counts_last_hour"
+        )
+
+    return [dict(row) for row in res]

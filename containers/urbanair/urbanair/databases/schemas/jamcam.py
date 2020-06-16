@@ -41,36 +41,29 @@ class JamCamVideo(JamCamCounts):
     measurement_start_utc: datetime
 
 
+# GeoJson Types
+
+
 @dataclass
-class Properties:
+class JamCamProperties:
     camera_id: str
 
 
 @dataclass
-class Geometry:
+class JamCamGeometry:
     type: str
-    coordinates: List[Union[Tuple[float, float], Tuple[float, float, float]]]
+    coordinates: Tuple[float, float]
 
 
 @dataclass
-class Feature:
+class JamCamFeature:
     type: str
-    geometry: Geometry
-    properties: Properties
+    id: str
+    geometry: JamCamGeometry
+    properties: JamCamProperties
 
 
 @dataclass
-class FeatureCollectionPy:
+class JamCamFeatureCollection(BaseModel):
     type: str
-    features: List[Feature]
-
-
-# # print(Geometry(type="Polygon", coordinates=[[0, 0], [10, 10], [10, 0, 0.5]]))
-# geom = Geometry(type="Polygon", coordinates=[[0, 0], [10, 10], [10, 0, 0.5]])
-# prop = Properties(camera_id="swsdf")
-
-# print(geom)
-# print(prop)
-# print(Feature(type="Feature", geometry=geom, properties=prop))
-
-# print(Properties(camera_id="swsdf"))
+    features: List[JamCamFeature]
