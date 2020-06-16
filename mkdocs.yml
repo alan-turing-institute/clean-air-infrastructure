@@ -1,0 +1,71 @@
+# Project information
+site_name: Urbanair
+site_description: Documentation for the UrbanAir project
+site_author: Oscar Giles etc
+site_url: https://urbanair.turing.ac.uk/docs
+
+# Repository
+repo_name: alan-turing-institute/clean-air-infrastructure
+repo_url: https://github.com/alan-turing-institute/clean-air-infrastructure
+
+# Copyright
+copyright: Copyright &copy; 2019-2020 Alan Turing Institute
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Extras
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/alan-turing-institute/clean-air-infrastructure
+    - icon: fontawesome/brands/twitter
+      link: https://www.turing.ac.uk/research/research-projects/london-air-quality
+
+# Google Analytics
+google_analytics:
+  - UA-XXXXXXXX-X
+  - auto
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+      watch:
+        - containers/cleanair
+        - containers/odysseus
+
+nav:
+- Cleanair: index.md
+- User Guide:
+  - Setup:
+    - non-infrastructure-dependencies.md
+  - Useage:
+    - database.md
+
+- API: 
+  - Cleanair: 
+    - API/databases.md
+    - API/inputs.md
+  - Odysseus:
+    - API/test_types.md
