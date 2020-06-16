@@ -6,7 +6,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     app_name: str = "Urban Air API"
     admin_email: str = "ogiles@turing.ac.uk"
-    database_secret_file: str = "db_secrets.json"
+    database_secret_file: str = ".db_secrets.json"
 
 
 @lru_cache()
