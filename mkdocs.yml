@@ -59,7 +59,10 @@ nav:
 - Cleanair: index.md
 - User Guide:
   - Setup:
-    - non-infrastructure-dependencies.md
+    - setup/non-infrastructure-dependencies.md
+    - setup/infrastructure-dependencies.md
+    - setup/configure-local-database.md
+    
   - Useage:
     - database.md
 
