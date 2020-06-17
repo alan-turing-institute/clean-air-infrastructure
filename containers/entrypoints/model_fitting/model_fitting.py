@@ -4,7 +4,6 @@ Model fitting
 from datetime import datetime
 import os
 import pickle
-import pandas as pd
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
 from cleanair.parsers import ModelFittingParser
 from cleanair.instance import (
@@ -13,7 +12,7 @@ from cleanair.instance import (
     hash_dict,
 )
 from cleanair.databases import DBWriter
-from cleanair.databases.tables import AirQualityResultTable, AirQualityModelTable
+from cleanair.databases.tables import AirQualityModelTable
 
 
 class AirQualityModelParams(DBWriter):
@@ -135,10 +134,11 @@ def main():  # pylint: disable=R0914
 
     # Write the model results to the database
     # see issue 103: generalise for multiple pollutants
-    # result_df["predict_mean"] = result_df["NO2_mean"]
-    # result_df["predict_var"] = result_df["NO2_var"]
     result = AirQualityResult(
-        args.secretfile, result_df, svgp_instance.instance_id, svgp_instance.data_id,
+        instance_id=svgp_instance.instance_id,
+        data_id=svgp_instance.data_id,
+        secretfile=args.secretfile,
+        result_df=result_df
     )
     # insert records into database - data & model go first, then instance, then result
     model_data.update_remote_tables()

@@ -6,11 +6,18 @@ from typing import Dict, Union, Optional
 import logging
 import os
 import numpy as np
+from scipy.cluster.vq import kmeans2
+import tensorflow as tf
+
+# disable tensorflow warning, only enable errors
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
+# pylint: disable=wrong-import-position
 import gpflow
 from gpflow import settings
 from gpflow.session_manager import get_session
-from scipy.cluster.vq import kmeans2
-import tensorflow as tf
+
 from ..loggers import get_logger
 from .model import Model
 
