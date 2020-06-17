@@ -1,4 +1,4 @@
-## Configure a local database
+# Configure a local database
 In production we use a managed [PostgreSQL database](https://docs.microsoft.com/en-us/azure/postgresql/). However, it is useful to have a local copy to run tests and for development. To set up a local version start a local postgres server:
 
 ```bash 

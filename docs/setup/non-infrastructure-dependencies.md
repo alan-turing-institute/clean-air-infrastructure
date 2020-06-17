@@ -1,4 +1,4 @@
-## Non-infrastructure dependencies 
+# Non-infrastructure dependencies 
 
 To contribute as a non-infrastructure developer you will need the following:
 

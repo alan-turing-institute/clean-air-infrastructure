@@ -59,6 +59,7 @@ nav:
 - Cleanair: index.md
 - User Guide:
   - Setting up a developmet environment:
+    - setup/azure-account.md
     - setup/non-infrastructure-dependencies.md
     - setup/infrastructure-dependencies.md
     - setup/configure-local-database.md

@@ -1,5 +1,5 @@
 
-## Infrastructure dependencies
+# Infrastructure dependencies
 Cloud infrastructure developers will require the following in addition to the [non-infrastructure dependencies](#Non-infrastructure-development-:sparkles:).
 
 ### Infrastructure development
@@ -77,3 +77,24 @@ gem install  travis -no-rdoc -no-ri
 conda_env=$(conda info --json | grep -w "active_prefix" | awk '{print $2}'| sed -e 's/,//' -e 's/"//g')
 ln -s $(find $conda_env -iname 'travis' | grep bin) $conda_env/bin/
 ```
+
+## Login to Azure
+
+To start working with `Azure`, you must first login to your account from the terminal:
+```bash
+az login
+```
+
+### Infrastructure developers
+
+Infrastructure developers should additionally check which `Azure` subscriptions you have access to by running
+```bash
+az account list --output table --refresh
+```
+
+Then set your default subscription to the Clean Air project (if you cannot see it in the output generated from the last line you do not have access):
+```bash
+az account set --subscription "CleanAir"
+```
+
+If you don't have access this is ok. You only need it to deploy and manage infrastructure. 
