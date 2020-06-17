@@ -8,7 +8,7 @@ from cleanair.mixins import DBConnectionMixin
 from ..config import get_settings
 
 
-DB_SECRETS_FILE = get_settings().database_secret_file
+DB_SECRETS_FILE = get_settings().db_secret_file
 DB_CONNECTION_STRING = DBConnectionMixin(DB_SECRETS_FILE)
 DB_ENGINE = create_engine(DB_CONNECTION_STRING.connection_string, convert_unicode=True)
 DeferredReflection.prepare(DB_ENGINE)
