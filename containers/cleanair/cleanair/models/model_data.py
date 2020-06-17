@@ -965,20 +965,12 @@ class ModelData(DBWriter, DBQueryMixin):
         new_df["tag"] = self.config["tag"]
         return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
+    def update_test_df_with_preds(self, test_pred_dict: dict, fit_start_time: datetime):
         """Update the normalised_pred_data_df with predictions for all pred sources.
 
-        Parameters
-        ___
-
-        test_pred_dict : dict
-            Dictionary with first level keys for pred_sources (e.g. 'laqn', 'aqe').
-            Second level keys are species (e.g. 'NO2', 'PM10').
-            Third level keys are either 'mean' or 'var'.
-            Values are numpy arrays of predictions for a source and specie.
-
-        fit_start_time : datetime
-            Start time of the model fit.
+        Args:
+            test_pred_dict: Dictionary of model predictions.
+            fit_start_time: Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
             self.normalised_pred_data_df,
@@ -998,14 +990,13 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-        records = [
-            dict(
-                data_id=self.data_id,
-                data_config=ModelData.make_data_config_json_serializable(self.config),
-                preprocessing=self.preprocessing,  # TODO when we start using preprocessing dict update this
-            )
-        ]
-        self.logger.info(
-            "Writing the model settings to the air quality modelling data table."
+        data_config = ModelData.make_data_config_json_serializable(self.config)
+        row = dict(
+            data_id=self.data_id,
+            data_config=data_config,
+            preprocessing=self.preprocessing,
         )
+        records = [row]
+
+        self.logger.info("Writing data settings to air quality modelling data table.")
         self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

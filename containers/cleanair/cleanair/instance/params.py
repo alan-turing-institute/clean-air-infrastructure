@@ -1,9 +1,14 @@
 """Generalised mixin for model parameters."""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from abc import abstractmethod
 from .hashing import hash_dict
 from ..databases.mixins import ModelTableMixin
-from ..models import ModelParamSVGP
+
+if TYPE_CHECKING:
+    from ..models import ModelParamSVGP
+
 
 class ModelParamsMixin:
     """Parameters of an air quality model."""
@@ -20,8 +25,8 @@ class ModelParamsMixin:
         """Parameter id of the hashed model params dict."""
         return hash_dict(self.model_params)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def model_table(self) -> ModelTableMixin:
         """The model table to read and write from.
 

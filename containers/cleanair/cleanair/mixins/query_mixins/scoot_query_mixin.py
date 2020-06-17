@@ -12,6 +12,7 @@ from ...databases.tables import (
 )
 from ...decorators import db_query
 
+
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 

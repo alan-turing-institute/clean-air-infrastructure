@@ -9,7 +9,7 @@ from .query_mixins import (
     DBQueryMixin,
     InstanceQueryMixin,
     ResultQueryMixin,
-    ScootQueryMixin
+    ScootQueryMixin,
 )
 from .parser_mixins import (
     DurationParserMixin,

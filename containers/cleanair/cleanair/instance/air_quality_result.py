@@ -6,6 +6,7 @@ from ..databases import DBWriter
 from ..mixins import ResultMixin
 from ..databases.tables import AirQualityResultTable
 
+
 class AirQualityResult(ResultMixin, DBWriter):
     """Air quality predictions from a trained model."""
 
@@ -14,14 +15,14 @@ class AirQualityResult(ResultMixin, DBWriter):
         instance_id: str,
         data_id: str,
         secretfile: str,
-        result_df: Optional(pd.DataFrame),
+        result_df: Optional[pd.DataFrame],
         **kwargs,
     ):
         super().__init__(
             instance_id=instance_id,
             data_id=data_id,
             secretfile=secretfile,
-            result_df=result_df
+            result_df=result_df,
         )
 
     @property

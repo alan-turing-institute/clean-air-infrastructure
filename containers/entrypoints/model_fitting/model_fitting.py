@@ -8,9 +8,8 @@ from cleanair.parsers import ModelFittingParser
 from cleanair.instance import (
     AirQualityInstance,
     AirQualityModelParams,
-    AirQualityResult
+    AirQualityResult,
 )
-
 
 
 def main():  # pylint: disable=R0914
@@ -86,7 +85,7 @@ def main():  # pylint: disable=R0914
         instance_id=svgp_instance.instance_id,
         data_id=svgp_instance.data_id,
         secretfile=args.secretfile,
-        result_df=result_df
+        result_df=result_df,
     )
     # insert records into database - data & model go first, then instance, then result
     logging.info("Writing results to the databases.")

@@ -1,9 +1,14 @@
 """Class for writing model params to the DB."""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from .params import ModelParamsMixin
 from ..databases import DBWriter
 from ..databases.tables import AirQualityModelTable
-from ..models import ModelParamSVGP
+
+if TYPE_CHECKING:
+    from ..models import ModelParamSVGP
+
 
 class AirQualityModelParams(ModelParamsMixin, DBWriter):
     """Model parameters for an air quality model"""
@@ -15,7 +20,7 @@ class AirQualityModelParams(ModelParamsMixin, DBWriter):
             secretfile=secretfile,
             model_name=model_name,
             model_params=model_params,
-            **kwargs
+            **kwargs,
         )
 
     @property

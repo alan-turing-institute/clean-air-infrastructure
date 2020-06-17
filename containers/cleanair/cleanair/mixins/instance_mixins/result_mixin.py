@@ -5,6 +5,7 @@ import pandas as pd
 from sqlalchemy import inspect
 from ..query_mixins import ResultQueryMixin
 
+
 class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
     """The predictions from an air quality model.
 

@@ -9,6 +9,7 @@ from ..tables import (
 )
 from ...mixins import InstanceQueryMixin, ResultQueryMixin
 
+
 class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):
     """Query parameters from the air quality modelling instance tables."""
 
@@ -17,6 +18,7 @@ class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):
         self.data_table = AirQualityDataTable
         self.instance_table = AirQualityInstanceTable
         self.model_table = AirQualityModelTable
+
 
 class AirQualityResultQuery(DBReader, ResultQueryMixin):
     """Query class for the air quality modelling schema."""

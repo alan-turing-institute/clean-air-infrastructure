@@ -21,9 +21,6 @@ from gpflow.session_manager import get_session
 from ..loggers import get_logger
 from .model import Model
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
 ModelParamSVGP = Dict[str, Union[float, bool, int, Dict, None]]
 
 
@@ -32,7 +29,9 @@ class SVGP(Model):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(self, model_params: Optional[ModelParamSVGP] = None, tasks=None, **kwargs):
+    def __init__(
+        self, model_params: Optional[ModelParamSVGP] = None, tasks=None, **kwargs
+    ):
         """
         SVGP.
 
@@ -161,10 +160,10 @@ class SVGP(Model):
                     lengthscales=self.model_params["kernel"]["lengthscale"],
                     ARD=True,
                 )
-                #periodic kernel only on time
+                # periodic kernel only on time
                 base_kernel = gpflow.kernels.RBF(input_dim=1, active_dims=[0])
                 per_kern = gpflow.kernels.Periodic(base=base_kernel, active_dims=[0])
-                kern = rbf_kern*per_kern
+                kern = rbf_kern * per_kern
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,

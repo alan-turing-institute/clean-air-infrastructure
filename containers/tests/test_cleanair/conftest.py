@@ -11,6 +11,7 @@ import pandas as pd
 from cleanair.models import DataConfig, ModelParamSVGP
 from cleanair.instance import AirQualityInstance, hash_dict
 
+
 @pytest.fixture(scope="module")
 def no_features_data_config() -> DataConfig:
     """Data config with no features."""
@@ -33,6 +34,7 @@ def no_features_data_config() -> DataConfig:
         "tag": "test",
     }
 
+
 @pytest.fixture(scope="module")
 def road_features_data_config(no_features_data_config) -> DataConfig:
     """An air quality data config dictionary with basic settings."""
@@ -45,15 +47,20 @@ def road_features_data_config(no_features_data_config) -> DataConfig:
     ]
     return data_config
 
+
 @pytest.fixture(scope="module")
 def base_aq_preprocessing() -> Dict:
     """An air quality dictionary for preprocessing settings."""
     return dict()
 
+
 @pytest.fixture(scope="module")
-def base_data_id(no_features_data_config: DataConfig, base_aq_preprocessing: Dict) -> str:
+def base_data_id(
+    no_features_data_config: DataConfig, base_aq_preprocessing: Dict
+) -> str:
     """Data id of base data config & preprocessing."""
     return hash_dict(dict(no_features_data_config, **base_aq_preprocessing))
+
 
 @pytest.fixture(scope="module")
 def svgp_model_params() -> ModelParamSVGP:
@@ -70,26 +77,32 @@ def svgp_model_params() -> ModelParamSVGP:
         "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
     }
 
+
 @pytest.fixture(scope="module")
 def svgp_param_id(svgp_model_params: ModelParamSVGP) -> str:
     """Param id of svgp model params"""
     return hash_dict(svgp_model_params)
 
+
 @pytest.fixture(scope="module")
 def production_tag() -> str:
     return "production"
+
 
 @pytest.fixture(scope="module")
 def test_tag() -> str:
     return "test"
 
+
 @pytest.fixture(scope="module")
 def cluster_id() -> str:
     return "local_test"
 
+
 @pytest.fixture(scope="module")
 def fit_start_time() -> str:
     return datetime(2020, 1, 1, 0, 0, 0).isoformat()
+
 
 @pytest.fixture(scope="module")
 def svgp_instance(
@@ -110,6 +123,7 @@ def svgp_instance(
         fit_start_time=fit_start_time,
         secretfile=secretfile,
     )
+
 
 @pytest.fixture(scope="module")
 def svgp_result(svgp_instance) -> pd.DataFrame:

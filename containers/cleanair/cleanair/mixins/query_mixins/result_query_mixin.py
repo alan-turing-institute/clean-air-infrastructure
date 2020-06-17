@@ -11,7 +11,8 @@ from ...decorators import db_query
 
 class ResultQueryMixin:
     """Mixin for querying results."""
-    dbcnxn: Any     # TODO what is this type?
+
+    dbcnxn: Any  # TODO what is this type?
 
     @property
     @abstractmethod
