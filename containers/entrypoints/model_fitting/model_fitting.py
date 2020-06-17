@@ -3,6 +3,7 @@ Model fitting
 """
 from datetime import datetime
 import os
+import logging
 import pickle
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
 from cleanair.parsers import ModelFittingParser
@@ -42,23 +43,6 @@ class AirQualityModelParams(DBWriter):
         self.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
 
 
-def write_predictions_to_file(y_pred, results_dir, filename):
-    """Write a prediction dict to pickle."""
-    pred_filepath = os.path.join(results_dir, filename)
-    with open(pred_filepath, "wb") as handle:
-        pickle.dump(y_pred, handle)
-
-
-# TODO: make this into a nice re-usable function somewhere
-def validate_shapes(x_array, y_array):
-    """Check the shapes of x and y are correct."""
-    assert x_array.shape[0] == y_array.shape[0]
-    assert x_array.shape[0] > 0
-    assert y_array.shape[0] > 0
-    assert y_array.shape[1] == 1  # just one task
-    assert x_array.shape[1] >= 3  # at least 3 features
-
-
 def main():  # pylint: disable=R0914
     """
     Run model fitting
@@ -79,7 +63,7 @@ def main():  # pylint: disable=R0914
     model_fitter.model_params["kernel"]["name"] = "matern32"
 
     # read data from db
-    print("Reading from database using data config.")
+    logging.info("Reading from database using data config.")
     model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
     # get the training dictionaries
@@ -88,15 +72,13 @@ def main():  # pylint: disable=R0914
     y_train = training_data_dict["Y"]
 
     fit_start_time = datetime.now()
-    print(
-        "Fitting model. Training for {m} iterations".format(
-            m=args.maxiter
-        )
+    logging.info(
+        "Training model for %s iterations. Start training at %s",
+        args.maxiter,
+        fit_start_time.strftime("%H:%M:%S")
     )
-    print("Start training at", fit_start_time.isoformat())
-    validate_shapes(x_train["laqn"], y_train["laqn"]["NO2"])
     model_fitter.fit(x_train, y_train)
-    print("Training completed at", datetime.now().isoformat())
+    logging.info("Training completed at %s", datetime.now().strftime("%H:%M:%S"))
 
     # TODO predict at both the training and test set!
     # predict either at the training or test set

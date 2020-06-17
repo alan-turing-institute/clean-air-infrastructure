@@ -109,7 +109,8 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             preprocessing: Settings for preprocessing and normalising the traffic data.
 
         Raises:
-            AssertionError: If the dictionary is not valid.
+            KeyError: If one of the dictionary keys are missing.
+            TypeError: If the type of the values are invalid.
         """
         value_types = [list, list, bool, str]
         min_keys = ["features", "target", "median", "normaliseby"]
