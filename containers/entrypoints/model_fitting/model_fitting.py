@@ -2,45 +2,15 @@
 Model fitting
 """
 from datetime import datetime
-import os
 import logging
-import pickle
-from cleanair.models import ModelData, SVGP, ModelParamSVGP
+from cleanair.models import ModelData, SVGP
 from cleanair.parsers import ModelFittingParser
 from cleanair.instance import (
     AirQualityInstance,
-    AirQualityResult,
-    hash_dict,
+    AirQualityModelParams,
+    AirQualityResult
 )
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import AirQualityModelTable
 
-
-class AirQualityModelParams(DBWriter):
-    """Parameters of an air quality model."""
-
-    def __init__(
-        self, secretfile: str, model_name: str, model_params: ModelParamSVGP, **kwargs,
-    ):
-        super().__init__(secretfile=secretfile, **kwargs)
-        self.model_name = model_name
-        self.model_params = model_params
-
-    @property
-    def param_id(self) -> str:
-        """Parameter id of the hashed model params dict."""
-        return hash_dict(self.model_params)
-
-    def update_remote_tables(self):
-        """Write the air quality model parameters to the database."""
-        records = [
-            dict(
-                model_name=self.model_name,
-                model_param=self.model_params,
-                param_id=self.param_id,
-            )
-        ]
-        self.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
 
 
 def main():  # pylint: disable=R0914
@@ -71,14 +41,11 @@ def main():  # pylint: disable=R0914
     x_train = training_data_dict["X"]
     y_train = training_data_dict["Y"]
 
+    # train model
     fit_start_time = datetime.now()
-    logging.info(
-        "Training model for %s iterations. Start training at %s",
-        args.maxiter,
-        fit_start_time.strftime("%H:%M:%S")
-    )
+    logging.info("Training model for %s iterations.", args.maxiter)
     model_fitter.fit(x_train, y_train)
-    logging.info("Training completed at %s", datetime.now().strftime("%H:%M:%S"))
+    logging.info("Training completed")
 
     # TODO predict at both the training and test set!
     # predict either at the training or test set
@@ -89,11 +56,11 @@ def main():  # pylint: disable=R0914
         x_test = predict_data_dict["X"]
 
     # Do prediction
-    print("Predicting at ", datetime.now().isoformat())
+    logging.info("Started predicting")
     y_pred = model_fitter.predict(x_test)
-    print("Finished predicting at ", datetime.now().isoformat())
+    logging.info("Finished predicting")
 
-    # Internally update the model results in the ModelData object
+    # Create a results dataframe
     if args.predict_training:
         model_data.update_training_df_with_preds(y_pred, fit_start_time)
         result_df = model_data.normalised_training_data_df
@@ -115,7 +82,6 @@ def main():  # pylint: disable=R0914
     )
 
     # Write the model results to the database
-    # see issue 103: generalise for multiple pollutants
     result = AirQualityResult(
         instance_id=svgp_instance.instance_id,
         data_id=svgp_instance.data_id,
@@ -123,11 +89,12 @@ def main():  # pylint: disable=R0914
         result_df=result_df
     )
     # insert records into database - data & model go first, then instance, then result
+    logging.info("Writing results to the databases.")
     model_data.update_remote_tables()
     aq_model_params.update_remote_tables()
     svgp_instance.update_remote_tables()
     result.update_remote_tables()
-    print("Instance id:", svgp_instance.instance_id)
+    logging.info("Instance id is %s", svgp_instance.instance_id)
 
 
 if __name__ == "__main__":

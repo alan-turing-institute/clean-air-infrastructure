@@ -13,13 +13,13 @@ class ResultQueryMixin:
     """Mixin for querying results."""
     dbcnxn: Any     # TODO what is this type?
 
-    @abstractmethod
     @property
+    @abstractmethod
     def result_table(self) -> ResultTableMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     @db_query
-    def query_results(self, instance_id: str, data_id: Optional(str)):
+    def query_results(self, instance_id: str, data_id: Optional[str]):
         """Get the predictions from a model given an instance and data id.
 
         Args:
