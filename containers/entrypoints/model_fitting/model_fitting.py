@@ -46,7 +46,6 @@ def main():  # pylint: disable=R0914
     model_fitter.fit(x_train, y_train)
     logging.info("Training completed")
 
-    # TODO predict at both the training and test set!
     # predict either at the training or test set
     if args.predict_training:
         x_test = x_train.copy()

@@ -27,7 +27,7 @@ class InstanceQueryMixin:
     data_table: DataTableMixin
     instance_table: InstanceTableMixin
     model_table: ModelTableMixin
-    dbcnxn: Any  # TODO what is the type of this?
+    dbcnxn: Any
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments

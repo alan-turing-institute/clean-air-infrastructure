@@ -15,7 +15,7 @@ from ...decorators import db_query
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
-    dbcnxn: Any  # TODO what is the type of this?
+    dbcnxn: Any
 
     @db_query
     def get_scoot_with_location(
