@@ -48,14 +48,12 @@ class ModelData(DBWriter, DBQueryMixin):
                 "Either config or config_dir must be supplied as arguments"
             )
 
-        self.preprocessing: Dict = dict()  # TODO initialise this with preprocessing settings
+        self.preprocessing: Dict = dict()
 
         if config:
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
-            # TODO remove print statement
-            print("Data id:", self.data_id)
 
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
@@ -98,12 +96,12 @@ class ModelData(DBWriter, DBQueryMixin):
         return hash_dict(data_config)
 
     @staticmethod
-    def make_data_config_json_serializable(data_config: DataConfig):
+    def make_config_json_serializable(data_config: DataConfig):
         """Converts any date or datetime values to a string formatted to ISO.
 
         Args:
             data_config: Contains some values with datetimes or dates.
- 
+
         Returns:
             New data config with date/datetime values changed to ISO strings.
             Note the returned data config is a NEW object, i.e. we copy the `data_config` parameter.
@@ -990,13 +988,12 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-        data_config = ModelData.make_data_config_json_serializable(self.config)
+        data_config = ModelData.make_config_json_serializable(self.config)
         row = dict(
             data_id=self.data_id,
             data_config=data_config,
             preprocessing=self.preprocessing,
         )
         records = [row]
-
         self.logger.info("Writing data settings to air quality modelling data table.")
         self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

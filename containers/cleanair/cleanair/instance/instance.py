@@ -2,11 +2,10 @@
 Instances of models and data.
 """
 import abc
-import json
 import logging
 import git
 from ..databases import DBWriter
-from .hashing import hash_dict, hash_fn
+from .hashing import hash_fn
 
 
 class Instance(DBWriter):

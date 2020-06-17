@@ -146,7 +146,11 @@ class SVGP(Model):
         with settings.temp_settings(custom_config), get_session().as_default():
             kernel_name = self.model_params["kernel"]["name"]
             if kernel_name == "rbf":
-                raise NotImplementedError()
+                kern = gpflow.kernels.RBF(
+                    input_dim=num_input_dimensions,
+                    lengthscales=self.model_params["kernel"]["lengthscale"],
+                    ARD=True,
+                )
             elif kernel_name == "matern32":
                 kern = gpflow.kernels.Matern32(
                     input_dim=num_input_dimensions,
@@ -154,16 +158,7 @@ class SVGP(Model):
                     lengthscales=[0.1 for i in range(num_input_dimensions)],
                     ARD=True,
                 )
-            elif kernel_name == "periodic":
-                rbf_kern = gpflow.kernels.RBF(
-                    input_dim=num_input_dimensions,
-                    lengthscales=self.model_params["kernel"]["lengthscale"],
-                    ARD=True,
-                )
-                # periodic kernel only on time
-                base_kernel = gpflow.kernels.RBF(input_dim=1, active_dims=[0])
-                per_kern = gpflow.kernels.Periodic(base=base_kernel, active_dims=[0])
-                kern = rbf_kern * per_kern
+
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
@@ -234,7 +229,6 @@ class SVGP(Model):
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
-        # TODO need a better fix for inducing point validation
         if self.model_params["n_inducing_points"] > x_array.shape[0]:
             self.model_params["n_inducing_points"] = x_array.shape[0]
 

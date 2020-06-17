@@ -1,8 +1,7 @@
 """Queries for the scoot dataset."""
 
-from typing import Any
+from typing import Any, Iterable, List
 from datetime import datetime
-from typing import Iterable, List
 from sqlalchemy import func, or_, and_
 import pandas as pd
 from ...databases.tables import (

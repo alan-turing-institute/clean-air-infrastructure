@@ -25,4 +25,8 @@ class AirQualityResultQuery(DBReader, ResultQueryMixin):
 
     def __init__(self, secretfile: str = None, **kwargs):
         super().__init__(secretfile=secretfile, **kwargs)
-        self.result_table = AirQualityResultTable
+
+    @property
+    def result_table(self) -> AirQualityResultTable:
+        """Air quality result table."""
+        return AirQualityResultTable
