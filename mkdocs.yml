@@ -79,7 +79,6 @@ nav:
     - API/cleanair/mixins.md
     - API/cleanair/models.md
     - API/cleanair/parsers.md
-    - API/cleanair/processors.md
     - API/cleanair/timestamps.md
   - Odysseus:
     - API/odysseus/databases.md
