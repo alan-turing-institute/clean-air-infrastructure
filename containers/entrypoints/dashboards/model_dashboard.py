@@ -27,7 +27,9 @@ def main():  # pylint: disable=too-many-locals
 
     # Get data config
     logger.info("Querying the air quality modelling instance table.")
-    instance_df = instance_query.get_instances_with_params(instance_ids=[args.instance_id], output_type="df")
+    instance_df = instance_query.get_instances_with_params(
+        instance_ids=[args.instance_id], output_type="df"
+    )
     data_id = instance_df["data_id"].iloc[0]
     data_config = instance_df["data_config"].iloc[0]
     logger.info("Data id is %s", data_id)
@@ -63,10 +65,7 @@ def main():  # pylint: disable=too-many-locals
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data,
-        sensor_scores_df,
-        temporal_scores_df,
-        args.mapbox_token,
+        model_data, sensor_scores_df, temporal_scores_df, args.mapbox_token,
     )
     model_data_fit_app.run_server(debug=True)
 

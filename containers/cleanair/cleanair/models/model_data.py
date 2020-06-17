@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 # pylint: disable=too-many-lines
 
+
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
