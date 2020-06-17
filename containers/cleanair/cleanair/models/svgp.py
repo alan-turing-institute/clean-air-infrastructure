@@ -2,7 +2,8 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
-from typing import Dict, Union, Optional
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
 import logging
 import os
 import numpy as np
@@ -17,12 +18,10 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow
 from gpflow import settings
 from gpflow.session_manager import get_session
-
 from ..loggers import get_logger
 from .model import Model
-
-ModelParamSVGP = Dict[str, Union[float, bool, int, Dict, None]]
-
+if TYPE_CHECKING:
+    from ..types import ParamsSVGP
 
 class SVGP(Model):
     """
@@ -30,7 +29,7 @@ class SVGP(Model):
     """
 
     def __init__(
-        self, model_params: Optional[ModelParamSVGP] = None, tasks=None, **kwargs
+        self, model_params: Optional[ParamsSVGP] = None, tasks=None, **kwargs
     ):
         """
         SVGP.

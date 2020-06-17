@@ -91,7 +91,7 @@ class ModelFittingParser(
             "pred_end_date": as_datetime(args.predstart)
             + timedelta(hours=args.predhours),
             "include_satellite": args.include_satellite,
-            "include_prediction_y": False,  # TODO update with parser
+            "include_prediction_y": False,
             "train_sources": ["laqn"],
             "pred_sources": ["laqn"],
             "train_interest_points": "all",

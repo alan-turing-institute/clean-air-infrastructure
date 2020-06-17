@@ -7,14 +7,14 @@ from ..databases import DBWriter
 from ..databases.tables import AirQualityModelTable
 
 if TYPE_CHECKING:
-    from ..models import ModelParamSVGP
+    from ..types import ParamsSVGP
 
 
 class AirQualityModelParams(ModelParamsMixin, DBWriter):
     """Model parameters for an air quality model"""
 
     def __init__(
-        self, secretfile: str, model_name: str, model_params: ModelParamSVGP, **kwargs,
+        self, secretfile: str, model_name: str, model_params: ParamsSVGP, **kwargs,
     ):
         super().__init__(
             secretfile=secretfile,

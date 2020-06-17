@@ -1,7 +1,8 @@
 """
 Vizualise available sensor data for a model fit
 """
-from typing import Dict, List, Union
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict
 from datetime import date, datetime
 import json
 import os
@@ -20,9 +21,8 @@ from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 from ..instance import hash_dict
-
-DataConfig = Dict[str, Union[str, bool, List[str]]]
-
+if TYPE_CHECKING:
+    from ..types import DataConfig
 
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
@@ -92,7 +92,7 @@ class ModelData(DBWriter, DBQueryMixin):
     @property
     def data_id(self) -> str:
         """Hash of the data config dictionary."""
-        data_config = ModelData.make_data_config_json_serializable(self.config)
+        data_config = ModelData.make_config_json_serializable(self.config)
         return hash_dict(data_config)
 
     @staticmethod
@@ -108,7 +108,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """
         new_config = data_config.copy()
         for key, value in data_config.items():
-            if isinstance(value, date) or isinstance(value, datetime):
+            if isinstance(value, (date, datetime)):
                 new_config[key] = value.isoformat()
         return new_config
 

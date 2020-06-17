@@ -8,12 +8,12 @@ from cleanair.databases.tables import (
     AirQualityModelTable,
     AirQualityResultTable,
 )
-from cleanair.models import DataConfig, ModelParamSVGP
+from cleanair.types import DataConfig, ParamsSVGP
 
 
 def test_insert_laqn_data_table(
     secretfile: str,
-    connection: Any,  # TODO what type is this?
+    connection: Any,
     base_data_id: int,
     no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
@@ -40,8 +40,8 @@ def test_insert_laqn_data_table(
 
 def test_insert_svgp(
     secretfile: str,
-    connection: Any,  # TODO what type is this?
-    svgp_model_params: ModelParamSVGP,
+    connection: Any,
+    svgp_model_params: ParamsSVGP,
     svgp_param_id: str,
 ):
     """Test data is inserted into the air quality model table.
@@ -67,11 +67,11 @@ def test_insert_svgp(
 
 def test_insert_instance(
     secretfile: str,
-    connection: Any,  # TODO what type is this?
+    connection: Any,
     svgp_instance: AirQualityInstance,
     no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
-    svgp_model_params: ModelParamSVGP,
+    svgp_model_params: ParamsSVGP,
 ):
     """Insert instance into database."""
     conn = DBWriter(
@@ -104,7 +104,7 @@ def test_insert_instance(
 
 def test_insert_result_table(
     secretfile: str,
-    connection: Any,  # TODO what type is this?
+    connection: Any,
     svgp_result: pd.DataFrame,
 ):
     """Insert fake results into the results air quality table."""
