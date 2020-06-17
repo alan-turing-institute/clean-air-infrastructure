@@ -8,6 +8,7 @@ from .complex import (
     ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
 )
+from .dashboard_parser import DashboardParser
 from .model_fitting_parser import ModelFittingParser
 from .simple import (
     AQEReadingArgumentParser,
@@ -21,6 +22,7 @@ from .simple import (
 )
 
 __all__ = [
+    "DashboardParser",
     "DataBaseRoleParser",
     "DatabaseSetupParser",
     "AQEReadingArgumentParser",
