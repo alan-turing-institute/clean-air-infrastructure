@@ -80,7 +80,7 @@ jobs:
         - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/* 
         - mypy containers/urbanair
     
-    - name: "code_style"
+    - name: "code_style_formatting"
       install:
         - pip install -r containers/requirements.txt
 
