@@ -1,9 +1,9 @@
-from fastapi import HTTPException, Response
-from typing import Union, Any, List, Dict, Optional
+"""UrbanAir API database interactions"""
+from typing import List, Dict, Optional
+from fastapi import HTTPException
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker, query, Session
+from sqlalchemy.orm import sessionmaker, Query, Session
 from sqlalchemy.ext.declarative import DeferredReflection
-from cleanair.databases.base import Base
 from cleanair.mixins import DBConnectionMixin
 from ..config import get_settings
 
@@ -17,6 +17,7 @@ SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 # Dependency
 def get_db() -> Session:
+    "Get a database session"
     db = SESSION_LOCAL()
     try:
         yield db
@@ -24,7 +25,7 @@ def get_db() -> Session:
         db.close()
 
 
-def all_or_404(query: query) -> Optional[List[Dict]]:
+def all_or_404(query: Query) -> Optional[List[Dict]]:
     """
     Return all rows from a query and raise a 404 if empty
     """
@@ -33,5 +34,5 @@ def all_or_404(query: query) -> Optional[List[Dict]]:
 
     if len(data) > 0:
         return data
-    else:
-        raise HTTPException(404, detail="No data was found")
+
+    raise HTTPException(404, detail="No data was found")

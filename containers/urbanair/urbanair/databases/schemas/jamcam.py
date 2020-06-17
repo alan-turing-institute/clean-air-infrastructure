@@ -1,10 +1,10 @@
-from typing import List, Optional, Tuple, Union, Dict
+"""Return Schemas for JamCam routes"""
+# pylint: disable=C0115
+from typing import List, Tuple
+from datetime import datetime
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
-from sqlalchemy import func, text
-from datetime import datetime
-from cleanair.databases.tables import JamCamVideoStats
-from cleanair.decorators import db_query
+from sqlalchemy import text
 
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
@@ -21,15 +21,6 @@ class JamCamBase(BaseModel):
 class JamCamCounts(JamCamBase):
 
     counts: int
-
-    class Config:
-        orm_mode = True
-
-
-class JamCamLoc(JamCamBase):
-
-    lon: float
-    lat: float
 
     class Config:
         orm_mode = True

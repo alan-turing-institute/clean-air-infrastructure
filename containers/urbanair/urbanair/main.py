@@ -1,11 +1,11 @@
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
+"""UrbanAir API"""
 import os
-from sqlalchemy.orm import Session
-from .config import get_settings, Settings
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from .routers import jamcam, static
-from .databases import get_db
 
+
+# pylint
 app = FastAPI(
     title="UrbanAir API",
     description="High resolution air polution forecasts",

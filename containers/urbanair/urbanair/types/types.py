@@ -1,7 +1,9 @@
+"""Misc types"""
 from enum import Enum
 
 
 class DetectionClass(str, Enum):
+    """Possible JamCam detection Types"""
 
     all_classes = "all"
     truck = "trucks"
@@ -12,7 +14,7 @@ class DetectionClass(str, Enum):
 
     @classmethod
     def map_detection_class(cls, detection_class: str) -> str:
-
+        """Map a API name to a database entry"""
         map_classes = {
             "all": "all",
             "trucks": "trucks",

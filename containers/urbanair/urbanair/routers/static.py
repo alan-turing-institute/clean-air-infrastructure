@@ -1,8 +1,8 @@
 """Static routes"""
+# pylint: disable=C0116
+import os
 from fastapi import APIRouter, Request, Response
 from fastapi.templating import Jinja2Templates
-
-import os
 
 router = APIRouter()
 

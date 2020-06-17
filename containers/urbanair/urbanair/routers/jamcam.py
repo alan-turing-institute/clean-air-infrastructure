@@ -1,16 +1,16 @@
-from fastapi import APIRouter, Depends, Query, Response
+"""JamCam API routes"""
+# pylint: disable=C0116
 from typing import List, Dict, Optional
 from datetime import datetime
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 from ..databases import get_db, all_or_404
 from ..databases.schemas.jamcam import (
     JamCamVideo,
     JamCamCounts,
-    JamCamLoc,
     JamCamFeatureCollection,
 )
-from ..databases.queries.jamcam import (
+from ..databases.queries import (
     get_jamcam_recent,
     get_jamcam_info,
     get_jamcam_snapshot,
@@ -26,7 +26,7 @@ router = APIRouter()
     response_model=JamCamFeatureCollection,
 )
 async def camera_info() -> Response:
-
+    "Get camera info"
     return get_jamcam_info()
 
 
@@ -43,7 +43,8 @@ async def cam_recent(
     ),
     starttime: datetime = Query(
         None,
-        description="ISO UTC datetime to request data from. If no starttime or endtime provided will return the last 12 hours of availble data",
+        description="""ISO UTC datetime to request data from.
+        If no starttime or endtime provided will return the last 12 hours of availble data""",
     ),
     endtime: datetime = Query(
         None,
