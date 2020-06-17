@@ -11,6 +11,7 @@ from cleanair.decorators import db_query
 from ...types import DetectionClass
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
 def get_jamcam_info(
@@ -93,37 +94,57 @@ def get_jamcam_recent(
     return res
 
 
-def get_jamcam_snapshot(db: Session, detection_class: DetectionClass) -> List[Dict]:
-    """Get recent camera  snapshot"""
-    if detection_class == DetectionClass.person:
-        res = db.execute(
-            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour_people"""
+@db_query
+def get_jamcam_snapshot(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    starttime: Optional[datetime] = None,
+    endtime: Optional[datetime] = None,
+) -> Query:
+    """Get hourly aggregates"""
+
+    max_video_upload_datetime = db.query(
+        func.max(JamCamVideoStats.video_upload_datetime).label(
+            "max_video_upload_datetime"
         )
-    elif detection_class == DetectionClass.car:
-        res = db.execute(
-            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour_cars"""
+    ).subquery()
+
+    res = db.query(
+        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
+        func.sum(JamCamVideoStats.counts).label("counts"),
+        JamCamVideoStats.detection_class,
+        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
+            "measurement_start_utc"
+        ),
+    ).group_by(
+        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
+        JamCamVideoStats.camera_id,
+        JamCamVideoStats.detection_class,
+    )
+
+    # Filter by time
+    if starttime and endtime:
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime < endtime.isoformat(),
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat(),
         )
-    elif detection_class == DetectionClass.bus:
-        res = db.execute(
-            """"select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour_buses"""
-        )
-    elif detection_class == DetectionClass.truck:
-        res = db.execute(
-            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour_trucks"""
-        )
-    elif detection_class == DetectionClass.motorbike:
-        res = db.execute(
-            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour_motorbikes"""
+    elif (not endtime) and (not starttime):
+        res = res.filter(
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime)
+            > func.date_trunc(
+                "hour", max_video_upload_datetime.c.max_video_upload_datetime
+            )
+            - ONE_HOUR_INTERVAL
         )
     else:
-        res = db.execute(
-            """select split_part(camera_id, '.mp4', 1) AS camera_id, sum_counts as counts
-            from jamcam.sum_counts_last_hour"""
+        return None
+
+    # Filter by detection class
+    if detection_class.value != "all":
+        res = res.filter(
+            JamCamVideoStats.detection_class
+            == DetectionClass.map_detection_class(detection_class)
         )
 
-    return [dict(row) for row in res]
+    return res

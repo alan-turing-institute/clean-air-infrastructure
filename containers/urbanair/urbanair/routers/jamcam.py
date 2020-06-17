@@ -58,10 +58,24 @@ async def cam_recent(
     return all_or_404(data)
 
 
-@router.get("/snapshot", response_model=List[JamCamCounts])
+@router.get("/snapshot", response_model=List[JamCamVideo])
 async def cam_snapshot(
-    detection_class: DetectionClass = DetectionClass.all_classes,
+    camera_id: str = Query(None, description="A unique JamCam id"),
+    detection_class: DetectionClass = Query(
+        DetectionClass.all_classes, description="Class of object"
+    ),
+    starttime: datetime = Query(
+        None,
+        description="""ISO UTC datetime to request data from.
+        If no starttime or endtime provided will return the last 12 hours of availble data""",
+    ),
+    endtime: datetime = Query(
+        None,
+        description="ISO UTC datetime to request data up to (not including this datetime)",
+    ),
     db: Session = Depends(get_db),
-) -> List[Dict]:
+) -> Optional[List[Dict]]:
 
-    return get_jamcam_snapshot(db, detection_class)
+    data = get_jamcam_snapshot(db, camera_id, detection_class, starttime, endtime)
+
+    return all_or_404(data)
