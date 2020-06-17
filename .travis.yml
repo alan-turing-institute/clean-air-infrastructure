@@ -27,8 +27,8 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_cleanair
-        - python -m pytest containers/tests/test_database_init
+        - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+        - python -m pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
@@ -52,7 +52,7 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_odysseus
+        - python -m pytest containers/tests/test_odysseus --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
@@ -73,7 +73,7 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_urbanair
+        - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
