@@ -56,4 +56,4 @@ class JamCamVideoStats(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<JamCamFrameStats(" + ", ".join(vals) + ")>"
+        return "<JamCamVideoStats(" + ", ".join(vals) + ")>"
