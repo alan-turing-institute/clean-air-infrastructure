@@ -48,8 +48,8 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
 
-### UrbanAir Flask API
-- [Running the UrbanAir API](#urbanAir-API)
+### Running the UrbanAir API
+- [Running the UrbanAir API](#urbanair-api)
 
 ### Developer guide
 - [Style guide](#style-guide)
@@ -495,7 +495,7 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 ### Run the application
 
 ```bash 
-DATABASE_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
 ```
 
 # Developer guide
