@@ -1,6 +1,4 @@
-"""
-Vizualise available sensor data for a model fit
-"""
+"""Vizualise available sensor data for a model fit"""
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 from datetime import date, datetime
@@ -21,10 +19,12 @@ from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 from ..instance import hash_dict
+from ..timestamps import as_datetime
 
 if TYPE_CHECKING:
     from ..types import DataConfig
 
+# pylint: disable=too-many-lines
 
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
@@ -113,6 +113,22 @@ class ModelData(DBWriter, DBQueryMixin):
             if isinstance(value, (date, datetime)):
                 new_config[key] = value.isoformat()
         return new_config
+
+    @staticmethod
+    def config_to_datetime(data_config: DataConfig) -> DataConfig:
+        """The values of keys that have 'data' or 'time' in the name
+        are converted to a datetime object from a string.
+
+        Args:
+            data_config: Config settings for a model data object.
+
+        Returns:
+            New data config dictionary with same keys and datetime values where appropriate.
+        """
+        for key, value in data_config.items():
+            if "date" in key or "time" in key:
+                data_config[key] = as_datetime(value)
+        return data_config
 
     def __validate_config(self, config):
 

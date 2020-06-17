@@ -1,7 +1,6 @@
 """
 Visualise and run metrics for a single model data fit.
 """
-import os
 import pandas as pd
 from cleanair import metrics
 from cleanair.dashboard import apps
@@ -21,7 +20,6 @@ def main():  # pylint: disable=too-many-locals
 
     # Extract arguments that should not be passed onwards
     logger = initialise_logging(args.verbose)
-    secrets_dir = os.path.dirname(args.secretfile)
 
     # Get query objects
     instance_query = queries.AirQualityInstanceQuery(secretfile=args.secretfile)
@@ -30,14 +28,18 @@ def main():  # pylint: disable=too-many-locals
     # Get data config
     logger.info("Querying the air quality modelling instance table.")
     instance_df = instance_query.get_instances_with_params(instance_ids=[args.instance_id], output_type="df")
+    data_id = instance_df["data_id"].iloc[0]
     data_config = instance_df["data_config"].iloc[0]
+    logger.info("Data id is %s", data_id)
 
     # Get the results
     logger.info("Querying the air quality modelling results table.")
-    results_df = result_query.query_results(args.instance_id, output_type="df")
+    results_df = result_query.query_results(args.instance_id, data_id, output_type="df")
 
     # Get the data
     logger.info("Querying the database of input data.")
+    data_config = ModelData.config_to_datetime(data_config)
+    data_config["include_prediction_y"] = True
     model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
     # change datetime to be the same format
@@ -51,16 +53,7 @@ def main():  # pylint: disable=too-many-locals
         how="inner",
         on=["point_id", "measurement_start_utc"],
     )
-
-    # get the mapbox api key
-    try:
-        mapbox_filepath = os.path.join(secrets_dir, ".mapbox_token")
-        mapbox_access_token = open(mapbox_filepath).read()
-    except FileNotFoundError:
-        error_message = "Could not find ../../terraform/.secrets/.mapbox_token."
-        error_message += "Have you got a Mapbox token and put it in this file?"
-        error_message += "See the cleanair README for more details."
-        raise FileNotFoundError(error_message)
+    print(model_data.normalised_pred_data_df.columns)
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
@@ -73,7 +66,7 @@ def main():  # pylint: disable=too-many-locals
         model_data,
         sensor_scores_df,
         temporal_scores_df,
-        mapbox_access_token,
+        args.mapbox_token,
     )
     model_data_fit_app.run_server(debug=True)
 

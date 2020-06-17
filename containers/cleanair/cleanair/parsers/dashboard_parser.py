@@ -14,3 +14,8 @@ class DashboardParser(SecretFileParserMixin, VerbosityMixin, argparse.ArgumentPa
             type=str,
             help="Id of the instance to show the dashboard for.",
         )
+        self.add_argument(
+            "--mapbox_token",
+            type=str,
+            help="Mapbox api token.",
+        )
