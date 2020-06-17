@@ -59,13 +59,33 @@ nav:
 - Cleanair: index.md
 - User Guide:
   - Setup:
-    - non-infrastructure-dependencies.md
+    - setup/non-infrastructure-dependencies.md
+    - setup/infrastructure-dependencies.md
+    - setup/configure-local-database.md
+    
   - Useage:
     - database.md
 
 - API: 
   - Cleanair: 
-    - API/databases.md
-    - API/inputs.md
+    - API/cleanair/dashboard.md
+    - API/cleanair/databases.md
+    - API/cleanair/decorators.md
+    - API/cleanair/features.md
+    - API/cleanair/inputs.md
+    - API/cleanair/instance.md
+    - API/cleanair/loggers.md
+    - API/cleanair/metrics.md
+    - API/cleanair/mixins.md
+    - API/cleanair/models.md
+    - API/cleanair/parsers.md
+    - API/cleanair/processors.md
+    - API/cleanair/timestamps.md
   - Odysseus:
-    - API/test_types.md
+    - API/odysseus/databases.md
+    - API/odysseus/test_types.md
+    - API/odysseus/dates.md
+    - API/odysseus/metric.md
+    - API/odysseus/parsers.md
+    - API/odysseus/preprocess.md
+    - API/odysseus/scoot_processing.md
