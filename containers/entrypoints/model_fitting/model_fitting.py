@@ -5,48 +5,15 @@ from datetime import datetime
 import os
 import pickle
 import pandas as pd
-from sqlalchemy import inspect
 from cleanair.models import ModelData, SVGP, ModelParamSVGP
 from cleanair.parsers import ModelFittingParser
-from cleanair.instance import AirQualityInstance, hash_dict
+from cleanair.instance import (
+    AirQualityInstance,
+    AirQualityResult,
+    hash_dict,
+)
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityResultTable, AirQualityModelTable
-
-
-class AirQualityResult(DBWriter):
-    """The predictions from an air quality model."""
-
-    def __init__(
-        self,
-        secretfile: str,
-        result_df: pd.DataFrame,
-        instance_id: str,
-        data_id: str,
-        **kwargs,
-    ):
-        super().__init__(secretfile=secretfile, **kwargs)
-        self.result_df = result_df
-        self.instance_id = instance_id
-        self.data_id = data_id
-        if "instance_id" not in self.result_df:
-            self.result_df["instance_id"] = self.instance_id
-        if "data_id" not in self.result_df:
-            self.result_df["data_id"] = self.data_id
-
-    def update_remote_tables(self):
-        """Write air quality results to the database."""
-        # get column names of result table
-        inst = inspect(AirQualityResultTable)
-        record_cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
-
-        # filter dataframe by selecting only columns that will be commited to db
-        # then convert to records
-        records = self.result_df.loc[
-            :, self.result_df.columns.isin(record_cols)
-        ].to_dict("records")
-
-        # commit the records to the air quality results table
-        self.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")
 
 
 class AirQualityModelParams(DBWriter):
