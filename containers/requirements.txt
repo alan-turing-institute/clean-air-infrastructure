@@ -10,3 +10,5 @@ python-dotenv==0.13.0
 azure-storage-blob==12.3.0
 azure-mgmt-storage==9.0.0
 azure-common==1.1.25
+mkdocs-material==5.3.0
+mkdocsstring==0.12.0

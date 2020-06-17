@@ -1,4 +1,4 @@
-# Type hints
+# Test Types
 
 ::: odysseus.dataset
     rendering:
