@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import List
+from fastapi import APIRouter, Depends, Query, Response
+from typing import List, Dict, Optional
 from datetime import datetime
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from ..databases import get_db
+from ..databases import get_db, all_or_404
 from ..databases.schemas.jamcam import (
     JamCamVideo,
     JamCamCounts,
@@ -21,11 +21,11 @@ router = APIRouter()
 
 
 @router.get(
-    "/camera_info/geoJSON",
+    "/camera_info",
     description="GeoJSON: JamCam camera locations",
     response_model=JamCamFeatureCollection,
 )
-async def camera_info():
+async def camera_info() -> Response:
 
     return get_jamcam_info()
 
@@ -50,14 +50,17 @@ async def cam_recent(
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
     db: Session = Depends(get_db),
-):
-    return get_jamcam_recent(db, camera_id, detection_class, starttime, endtime).all()
+) -> Optional[List[Dict]]:
+
+    data = get_jamcam_recent(db, camera_id, detection_class, starttime, endtime)
+
+    return all_or_404(data)
 
 
 @router.get("/snapshot", response_model=List[JamCamCounts])
 async def cam_snapshot(
     detection_class: DetectionClass = DetectionClass.all_classes,
     db: Session = Depends(get_db),
-):
+) -> List[Dict]:
 
     return get_jamcam_snapshot(db, detection_class)

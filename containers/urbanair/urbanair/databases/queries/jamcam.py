@@ -1,8 +1,8 @@
 from fastapi import HTTPException
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel
 from sqlalchemy import func, text
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, Query
 from datetime import datetime
 from geojson import Feature, Point, FeatureCollection
 import requests
@@ -13,7 +13,9 @@ from ...types import DetectionClass
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
 
-def get_jamcam_info(jamcam_url: str = "https://api.tfl.gov.uk/Place/Type/JamCam/"):
+def get_jamcam_info(
+    jamcam_url: str = "https://api.tfl.gov.uk/Place/Type/JamCam/",
+) -> FeatureCollection:
     "Request jamcam camera information and write to geoJSON"
 
     cam_req = requests.get(jamcam_url)
@@ -48,7 +50,7 @@ def get_jamcam_recent(
     detection_class: DetectionClass = DetectionClass.all_classes,
     starttime: Optional[datetime] = None,
     endtime: Optional[datetime] = None,
-):
+) -> Query:
 
     max_video_upload_datetime = db.query(
         func.max(JamCamVideoStats.video_upload_datetime).label(
@@ -91,7 +93,7 @@ def get_jamcam_recent(
     return res
 
 
-def get_jamcam_snapshot(db: Session, detection_class: DetectionClass):
+def get_jamcam_snapshot(db: Session, detection_class: DetectionClass) -> List[Dict]:
 
     if detection_class == DetectionClass.person:
         res = db.execute(

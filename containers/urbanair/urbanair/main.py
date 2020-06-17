@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 from sqlalchemy.orm import Session
 from .config import get_settings, Settings
-from .routers import jamcam, scoot, static
+from .routers import jamcam, static
 from .databases import get_db
 
 app = FastAPI(
@@ -24,4 +24,3 @@ app.mount(
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/cams", tags=["jamcam"])
-# app.include_router(scoot.router, prefix="/scoot", tags=["scoot"])

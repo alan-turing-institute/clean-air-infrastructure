@@ -11,7 +11,7 @@ class DetectionClass(str, Enum):
     bus = "buses"
 
     @classmethod
-    def map_detection_class(cls, detection_class):
+    def map_detection_class(cls, detection_class: str) -> str:
 
         map_classes = {
             "all": "all",

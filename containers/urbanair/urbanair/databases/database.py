@@ -1,5 +1,7 @@
+from fastapi import HTTPException, Response
+from typing import Union, Any, List, Dict, Optional
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, query, Session
 from sqlalchemy.ext.declarative import DeferredReflection
 from cleanair.databases.base import Base
 from cleanair.mixins import DBConnectionMixin
@@ -14,9 +16,22 @@ SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 
 # Dependency
-def get_db():
+def get_db() -> Session:
     db = SESSION_LOCAL()
     try:
         yield db
     finally:
         db.close()
+
+
+def all_or_404(query: query) -> Optional[List[Dict]]:
+    """
+    Return all rows from a query and raise a 404 if empty
+    """
+
+    data = query.all()
+
+    if len(data) > 0:
+        return data
+    else:
+        raise HTTPException(404, detail="No data was found")
