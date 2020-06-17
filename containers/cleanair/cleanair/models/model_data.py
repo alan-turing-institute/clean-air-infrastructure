@@ -21,8 +21,10 @@ from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
 from ..instance import hash_dict
+
 if TYPE_CHECKING:
     from ..types import DataConfig
+
 
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""

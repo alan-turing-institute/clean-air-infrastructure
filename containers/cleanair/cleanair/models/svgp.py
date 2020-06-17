@@ -20,17 +20,17 @@ from gpflow import settings
 from gpflow.session_manager import get_session
 from ..loggers import get_logger
 from .model import Model
+
 if TYPE_CHECKING:
     from ..types import ParamsSVGP
+
 
 class SVGP(Model):
     """
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(
-        self, model_params: Optional[ParamsSVGP] = None, tasks=None, **kwargs
-    ):
+    def __init__(self, model_params: Optional[ParamsSVGP] = None, tasks=None, **kwargs):
         """
         SVGP.
 

@@ -3,13 +3,15 @@ Fixtures for the cleanair module.
 """
 
 import uuid
+import random
 from datetime import datetime, timedelta
 from typing import Dict
 import pytest
-import random
 import pandas as pd
 from cleanair.types import DataConfig, ParamsSVGP
 from cleanair.instance import AirQualityInstance, hash_dict
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="module")
@@ -86,21 +88,25 @@ def svgp_param_id(svgp_model_params: ParamsSVGP) -> str:
 
 @pytest.fixture(scope="module")
 def production_tag() -> str:
+    """Production tag."""
     return "production"
 
 
 @pytest.fixture(scope="module")
 def test_tag() -> str:
+    """Test tag."""
     return "test"
 
 
 @pytest.fixture(scope="module")
 def cluster_id() -> str:
+    """Cluster id."""
     return "local_test"
 
 
 @pytest.fixture(scope="module")
 def fit_start_time() -> str:
+    """Datetime for when model started fitting."""
     return datetime(2020, 1, 1, 0, 0, 0).isoformat()
 
 

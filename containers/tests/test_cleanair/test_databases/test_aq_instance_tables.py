@@ -39,10 +39,7 @@ def test_insert_laqn_data_table(
 
 
 def test_insert_svgp(
-    secretfile: str,
-    connection: Any,
-    svgp_model_params: ParamsSVGP,
-    svgp_param_id: str,
+    secretfile: str, connection: Any, svgp_model_params: ParamsSVGP, svgp_param_id: str,
 ):
     """Test data is inserted into the air quality model table.
 
@@ -103,9 +100,7 @@ def test_insert_instance(
 
 
 def test_insert_result_table(
-    secretfile: str,
-    connection: Any,
-    svgp_result: pd.DataFrame,
+    secretfile: str, connection: Any, svgp_result: pd.DataFrame,
 ):
     """Insert fake results into the results air quality table."""
     conn = DBWriter(
