@@ -19,7 +19,7 @@ def main():
     # Update the SCOOT reading table on the database, logging any unhandled exceptions
     try:
         scoot_writer = ScootWriter(
-            end=args.end,
+            end=args.upto,
             aws_key_id=args.aws_key_id,
             aws_key=args.aws_key,
             nhours=args.nhours,

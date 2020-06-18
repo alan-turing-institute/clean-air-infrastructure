@@ -7,7 +7,7 @@ import tensorflow as tf
 import pandas as pd
 from cleanair.databases import DBReader
 from cleanair.databases.tables import TrafficDataTable
-from cleanair.instance import Instance
+from cleanair.instance import hash_dict
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
 
@@ -109,7 +109,8 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             preprocessing: Settings for preprocessing and normalising the traffic data.
 
         Raises:
-            AssertionError: If the dictionary is not valid.
+            KeyError: If one of the dictionary keys are missing.
+            TypeError: If the type of the values are invalid.
         """
         value_types = [list, list, bool, str]
         min_keys = ["features", "target", "median", "normaliseby"]
@@ -235,7 +236,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
                 "Data config and preprocessing dictionaries should not have overlapping keys."
             )
         merged_dict = {**data_config, **preprocessing}
-        return Instance.hash_dict(merged_dict)
+        return hash_dict(merged_dict)
 
     def update_remote_tables(self):
         """Update the data config table for traffic."""
