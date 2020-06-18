@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 
-from odysseus.parsers import TrainTrafficModelParser
+from odysseus.parsers import TrainLockdownModelParser
 from odysseus.experiment import TrafficInstance
 from odysseus.databases import TrafficQuery
 from odysseus.dates import (
@@ -38,7 +38,7 @@ def create_directories(root, experiment):
 
 def main():
 
-    parser = TrainTrafficModelParser()
+    parser = TrainLockdownModelParser()
     parser.add_custom_subparsers()
     args = parser.parse_args()
 
@@ -69,19 +69,8 @@ def main():
     # create an object for querying from DB
     traffic_query = TrafficQuery(secretfile=args.secretfile)
 
-    # get list of scoot detectors
-    if args.command == "batch":
-        detector_df = traffic_query.get_scoot_detectors(
-            start=args.batch_start,
-            end=args.batch_start + args.batch_size,
-            output_type="df",
-        )
-        detectors = list(detector_df["detector_id"].unique())
-    elif args.command == "test":
-        detectors = args.detectors
-    else:
-        detector_df = traffic_query.get_scoot_detectors(output_type="df")
-        detectors = list(detector_df["detector_id"].unique())
+    # get list of detectors
+    detectors = TrainLockdownModelParser.detectors_from_args(traffic_query, args)
 
     logging.info("Training model on %s detectors.", len(detectors))
 
