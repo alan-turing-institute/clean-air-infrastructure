@@ -61,10 +61,23 @@ def main():  # pylint: disable=too-many-locals
         results_df.measurement_start_utc.min(),
         results_df.measurement_start_utc.max(),
     )
-    if len(set(model_data.normalised_pred_data_df.measurement_start_utc) & set(results_df.measurement_start_utc)) == 0:
-        raise ValueError("There are no matching datetimes in the dataset and the result dataframes.")
-    if len(set(model_data.normalised_pred_data_df.point_id) & set(results_df.point_id)) == 0:
-        raise ValueError("There are no matching point ids in the dataset and the result dataframes.")
+    if (
+        len(
+            set(model_data.normalised_pred_data_df.measurement_start_utc)
+            & set(results_df.measurement_start_utc)
+        )
+        == 0
+    ):
+        raise ValueError(
+            "There are no matching datetimes in the dataset and the result dataframes."
+        )
+    if (
+        len(set(model_data.normalised_pred_data_df.point_id) & set(results_df.point_id))
+        == 0
+    ):
+        raise ValueError(
+            "There are no matching point ids in the dataset and the result dataframes."
+        )
     # merge on point_id and datetime
     model_data.normalised_pred_data_df = pd.merge(
         model_data.normalised_pred_data_df,
@@ -72,7 +85,9 @@ def main():  # pylint: disable=too-many-locals
         how="inner",
         on=["point_id", "measurement_start_utc"],
     )
-    logger.debug("%s rows in merged dataframe.", len(model_data.normalised_pred_data_df))
+    logger.debug(
+        "%s rows in merged dataframe.", len(model_data.normalised_pred_data_df)
+    )
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()

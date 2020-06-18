@@ -8,6 +8,7 @@ from ...databases.mixins import ResultTableMixin
 from ...databases.tables import MetaPoint
 from ...decorators import db_query
 
+
 class ResultQueryMixin:
     """Mixin for querying results."""
 
@@ -19,7 +20,12 @@ class ResultQueryMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     @db_query
-    def query_results(self, instance_id: str, data_id: Optional[str] = None, join_metapoint: Optional[bool] = False):
+    def query_results(
+        self,
+        instance_id: str,
+        data_id: Optional[str] = None,
+        join_metapoint: Optional[bool] = False,
+    ):
         """Get the predictions from a model given an instance and data id.
 
         Args:
@@ -36,13 +42,14 @@ class ResultQueryMixin:
                 func.ST_Y(MetaPoint.location).label("lat"),
             ]
         with self.dbcnxn.open_session() as session:
-            readings = (
-                session.query(*base_query)
-                .filter(self.result_table.instance_id == instance_id)
+            readings = session.query(*base_query).filter(
+                self.result_table.instance_id == instance_id
             )
             # join on metapoint
             if join_metapoint:
-                readings = readings.join(MetaPoint, self.result_table.point_id == MetaPoint.id)
+                readings = readings.join(
+                    MetaPoint, self.result_table.point_id == MetaPoint.id
+                )
             # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
