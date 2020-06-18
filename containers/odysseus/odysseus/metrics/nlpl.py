@@ -12,7 +12,7 @@ def nlpl(
     model: gpflow.models.GPModel,
     x_test: tf.Tensor,
     y_test: tf.Tensor,
-    num_pertubations: int = 1000
+    num_pertubations: int = 1000,
 ) -> float:
     """
     Negative log predicted likelihood (NLPL).
@@ -27,15 +27,19 @@ def nlpl(
         The negativate log predicted likelihood.
     """
     # draw samples from predictive intensity
-    intensity_sample = np.exp(model.predict_f_samples(x_test, num_pertubations))   # (S, N, 1)
-    
+    intensity_sample = np.exp(
+        model.predict_f_samples(x_test, num_pertubations)
+    )  # (S, N, 1)
+
     # sum the intensity and divide by N (number of observations)
-    sum_intensity = sum([
-        np.sum(poisson.logpmf(y_test, y_pred))/y_pred.shape[0]
-        for y_pred in intensity_sample
-    ])
+    sum_intensity = sum(
+        [
+            np.sum(poisson.logpmf(y_test, y_pred)) / y_pred.shape[0]
+            for y_pred in intensity_sample
+        ]
+    )
     # divide by number of samples
-    total = - sum_intensity/ num_pertubations
+    total = -sum_intensity / num_pertubations
     logging.debug("Total intensity: %s", sum_intensity)
     logging.debug("Num samples: %s", num_pertubations)
     logging.debug("nlpl: %s", total)

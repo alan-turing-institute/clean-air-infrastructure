@@ -28,5 +28,7 @@ def load_models_from_file(instances: Iterable, path_to_models: str) -> dict:
             missing_files += 1
 
     if missing_files:
-        logging.error("%s missing model files out of %s.", missing_files, len(instances))
+        logging.error(
+            "%s missing model files out of %s.", missing_files, len(instances)
+        )
     return models

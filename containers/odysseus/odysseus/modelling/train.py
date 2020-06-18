@@ -6,6 +6,7 @@ import gpflow
 import tensorflow as tf
 import numpy as np
 
+
 def train_sensor_model(
     x_train: tf.Tensor,
     y_train: tf.Tensor,
@@ -14,7 +15,7 @@ def train_sensor_model(
     max_iterations: int = 2000,
     logging_freq: int = 10,
     n_inducing_points: int = None,
-    inducing_point_method: str = "random"
+    inducing_point_method: str = "random",
 ) -> gpflow.models.GPModel:
     """
     Setup the training of the model.
@@ -32,7 +33,9 @@ def train_sensor_model(
     # TODO: generalise for multiple features
     num_features = x_train.shape[1]
     if num_features > 1:
-        raise NotImplementedError("We are only using one feature - upgrade coming soon.")
+        raise NotImplementedError(
+            "We are only using one feature - upgrade coming soon."
+        )
 
     # choose inducing points
     if not n_inducing_points or n_inducing_points == x_train.shape[0]:
@@ -45,16 +48,17 @@ def train_sensor_model(
         # ToDo: double check this line
         ind_points = tf.expand_dims(
             tf.linspace(
-                np.min(x_train[:, 0]),
-                np.max(x_train[:, 0]),
-                n_inducing_points
-            ), 1
+                np.min(x_train[:, 0]), np.max(x_train[:, 0]), n_inducing_points
+            ),
+            1,
         )
 
     lik = gpflow.likelihoods.Poisson()
 
     # initialise model with Poisson likelihood and incuding variables
-    model = gpflow.models.SVGP(kernel=kernel, likelihood=lik, inducing_variable=ind_points)
+    model = gpflow.models.SVGP(
+        kernel=kernel, likelihood=lik, inducing_variable=ind_points
+    )
 
     simple_training_loop(
         x_train,
@@ -62,10 +66,11 @@ def train_sensor_model(
         model,
         optimizer,
         max_iterations=max_iterations,
-        logging_freq=logging_freq
+        logging_freq=logging_freq,
     )
 
     return model
+
 
 def simple_training_loop(
     x_train: tf.Tensor,

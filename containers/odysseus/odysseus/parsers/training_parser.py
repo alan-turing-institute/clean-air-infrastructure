@@ -15,6 +15,7 @@ from .parser_mixins import (
     PreprocessingParserMixin,
 )
 
+
 class TrainTrafficModelParser(  # pylint: disable=too-many-ancestors
     BaselineParserMixin,
     InstanceParserMixin,
@@ -23,30 +24,22 @@ class TrainTrafficModelParser(  # pylint: disable=too-many-ancestors
     PreprocessingParserMixin,
     SecretFileParserMixin,
     VerbosityMixin,
-    ArgumentParser
+    ArgumentParser,
 ):
     """Parser for running lockdown models."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.add_argument(
-            "-x",
-            "--experiment",
-            default="daily",
-            help="Name of the experiment.",
+            "-x", "--experiment", default="daily", help="Name of the experiment.",
         )
         self.add_argument(
-            "--root",
-            default="../experiments",
-            help="Root to experiments directory."
+            "--root", default="../experiments", help="Root to experiments directory."
         )
 
     def add_custom_subparsers(
-        self,
-        dest: str = "command",
-        batch: bool = True,
-        test: bool = True,
-        **kwargs,
+        self, dest: str = "command", batch: bool = True, test: bool = True, **kwargs,
     ):
         """
         Add subparsers including test, batch.
@@ -66,10 +59,7 @@ class TrainTrafficModelParser(  # pylint: disable=too-many-ancestors
                 help="Index of detector to start at during batching.",
             )
             batch_parser.add_argument(
-                "--batch_size",
-                default=None,
-                type=int,
-                help="Size of the batch.",
+                "--batch_size", default=None, type=int, help="Size of the batch.",
             )
         if test:
             test_parser = subparsers.add_parser("test")
@@ -83,5 +73,5 @@ class TrainTrafficModelParser(  # pylint: disable=too-many-ancestors
             test_parser.add_argument(
                 "--dryrun",
                 action="store_true",
-                help="Log how the model would train without executing."
+                help="Log how the model would train without executing.",
             )

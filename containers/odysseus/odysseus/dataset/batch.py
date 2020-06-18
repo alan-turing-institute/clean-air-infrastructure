@@ -4,10 +4,8 @@ from typing import List
 import pandas as pd
 from .traffic_dataset import TrafficDataset
 
-def prepare_batch(
-    instance_df: pd.DataFrame,
-    secretfile: str,
-) -> List[TrafficDataset]:
+
+def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[TrafficDataset]:
     """
     Given a dataframe of instances, return a list of models, x_tests and y_tests.
 

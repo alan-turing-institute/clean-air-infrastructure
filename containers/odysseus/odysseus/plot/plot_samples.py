@@ -50,13 +50,13 @@ def filled_sample_traces(
     mean = go.Scatter(
         x=x_test[:, 0],
         y=sample_mean[:, 0],
-        mode='lines',
+        mode="lines",
         name="{n} predictions".format(n=name),
-        fill='tonexty',
+        fill="tonexty",
         fillcolor=fillcolor,
         line=dict(color=linecolor),
     )
-    
+
     lower_sigma = go.Scatter(
         name=r"{n} $\mu - 2 \sigma$",
         x=x_test[:, 0],
@@ -67,6 +67,7 @@ def filled_sample_traces(
         showlegend=False,
     )
     return [lower_sigma, mean, upper_sigma]
+
 
 def gp_sampled_traces(
     model: gpflow.models.GPModel,
@@ -99,29 +100,29 @@ def gp_sampled_traces(
     count_mean, count_var = sample_n(model, x_test, num_samples)
 
     traces = []
-    traces.extend(filled_sample_traces(
-        "Counts",
-        x_test,
-        count_mean,
-        count_var,
-        num_sigmas=num_sigmas,
-        fillcolor="rgba(255,0,0,0.3)",
-        linecolor="rgb(255,0,0)",
-    ))
-    traces.extend(filled_sample_traces(
-        "Intensity",
-        x_test,
-        intensity_mean,
-        intensity_var,
-        num_sigmas=num_sigmas,
-    ))
-    traces.append(go.Scatter(
-        name="Actual observations",
-        x=x_test[:, 0],
-        y=y_test[:, 0],
-        mode="markers",
-        marker=dict(
-            color=marker_color,
-        ),
-    ))
+    traces.extend(
+        filled_sample_traces(
+            "Counts",
+            x_test,
+            count_mean,
+            count_var,
+            num_sigmas=num_sigmas,
+            fillcolor="rgba(255,0,0,0.3)",
+            linecolor="rgb(255,0,0)",
+        )
+    )
+    traces.extend(
+        filled_sample_traces(
+            "Intensity", x_test, intensity_mean, intensity_var, num_sigmas=num_sigmas,
+        )
+    )
+    traces.append(
+        go.Scatter(
+            name="Actual observations",
+            x=x_test[:, 0],
+            y=y_test[:, 0],
+            mode="markers",
+            marker=dict(color=marker_color,),
+        )
+    )
     return traces

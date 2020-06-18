@@ -30,10 +30,11 @@ def create_directories(root, experiment):
 
     # make directories
     Path(os.path.join(root, experiment)).mkdir(exist_ok=True, parents=True)
-    Path(data_dir).mkdir(exist_ok=True)         # input data and processed training data
-    Path(results_dir).mkdir(exist_ok=True)      # predictions from model
-    Path(models_dir).mkdir(exist_ok=True)       # saving model status
-    Path(settings_dir).mkdir(exist_ok=True)     # for storing parameters
+    Path(data_dir).mkdir(exist_ok=True)  # input data and processed training data
+    Path(results_dir).mkdir(exist_ok=True)  # predictions from model
+    Path(models_dir).mkdir(exist_ok=True)  # saving model status
+    Path(settings_dir).mkdir(exist_ok=True)  # for storing parameters
+
 
 def main():
 
@@ -61,8 +62,8 @@ def main():
         raise NotImplementedError("Only normal and lockdown baselines are available.")
 
     # calculate number of weeks between start and end
-    monday1 = (start - timedelta(days=start.weekday()))
-    monday2 = (baseline_end - timedelta(days=baseline_end.weekday()))
+    monday1 = start - timedelta(days=start.weekday())
+    monday2 = baseline_end - timedelta(days=baseline_end.weekday())
     nweeks = (monday2 - monday1).days / 7
 
     # create an object for querying from DB
@@ -70,7 +71,11 @@ def main():
 
     # get list of scoot detectors
     if args.command == "batch":
-        detector_df = traffic_query.get_scoot_detectors(start=args.batch_start, end=args.batch_start + args.batch_size, output_type="df")
+        detector_df = traffic_query.get_scoot_detectors(
+            start=args.batch_start,
+            end=args.batch_start + args.batch_size,
+            output_type="df",
+        )
         detectors = list(detector_df["detector_id"].unique())
     elif args.command == "test":
         detectors = args.detectors
@@ -83,10 +88,7 @@ def main():
     # get the parameters for the kernel and the model
     kernel_dict = dict(
         name=args.kernel,
-        hyperparameters=dict(
-            lengthscales=args.lengthscales,
-            variance=args.variance,
-        )
+        hyperparameters=dict(lengthscales=args.lengthscales, variance=args.variance,),
     )
     model_params = {key: vars(args)[key] for key in parser.MODEL_GROUP}
     model_params["kernel"] = kernel_dict
@@ -137,7 +139,7 @@ def main():
             instance_rows.append(instance_dict)
 
             if getattr(args, "dryrun"):
-                continue        # skip DB update on dry run
+                continue  # skip DB update on dry run
 
             instance.update_data_table(data_config, preprocessing)
             instance.update_model_table(model_params)
@@ -148,16 +150,13 @@ def main():
         end = end + timedelta(hours=nhours)
 
     # setup parameters
-    logging_freq = 10000      # essentially turn of logging
+    logging_freq = 10000  # essentially turn of logging
 
     # dataframe of instances
     instance_df = pd.DataFrame(instance_rows)
 
     # get an array of tensors ready for training
-    datasets = prepare_batch(
-        instance_df,
-        args.secretfile,
-    )
+    datasets = prepare_batch(instance_df, args.secretfile,)
     # iterate through instances training the model
     for instance, dataset in zip(instance_array, datasets):
         logging.info("Training model on instance %s", instance.instance_id)
@@ -165,7 +164,7 @@ def main():
         if getattr(args, "dryrun"):
             continue
         optimizer = tf.keras.optimizers.Adam(0.001)
-        kernel = parse_kernel(kernel_dict)      # returns gpflow kernel
+        kernel = parse_kernel(kernel_dict)  # returns gpflow kernel
         model = train_sensor_model(
             dataset.features_tensor,
             dataset.target_tensor,
@@ -178,9 +177,9 @@ def main():
         )
         # TODO: write models to blob storage
         instance.save_model(
-            model,
-            os.path.join(args.root, args.experiment, "models"),
+            model, os.path.join(args.root, args.experiment, "models"),
         )
+
 
 if __name__ == "__main__":
     main()

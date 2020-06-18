@@ -1,29 +1,14 @@
 import gpflow
 
 KERNELS = [
-    dict(
-        name="matern32",
-        hyperparameters=dict(
-            lengthscale=0.1,
-            variance=0.1,
-        )
-    ),
-    dict(
-        name="rbf",
-        hyperparameters=dict(
-            lengthscale=0.1,
-            variance=0.1,
-        )
-    ),
+    dict(name="matern32", hyperparameters=dict(lengthscale=0.1, variance=0.1,)),
+    dict(name="rbf", hyperparameters=dict(lengthscale=0.1, variance=0.1,)),
     dict(
         name="periodic",
-        hyperparameters=dict(
-            period=0.5,
-            lengthscale=0.7,
-            variance=4.5,
-        )
-    )
+        hyperparameters=dict(period=0.5, lengthscale=0.7, variance=4.5,),
+    ),
 ]
+
 
 def parse_kernel_token(next_token, kernel_map):
     """
@@ -41,7 +26,11 @@ def parse_kernel_token(next_token, kernel_map):
                 kernel = kernel * parse_kernel_token(item, kernel_map)
         return kernel
     # add kernels together
-    if isinstance(next_token, dict) and "+" in next_token and isinstance(next_token["+"], list):
+    if (
+        isinstance(next_token, dict)
+        and "+" in next_token
+        and isinstance(next_token["+"], list)
+    ):
         for item in next_token["+"]:
             if not kernel:
                 kernel = parse_kernel_token(item, kernel_map)
@@ -51,11 +40,10 @@ def parse_kernel_token(next_token, kernel_map):
     # get kernel with hyperparameters
     if isinstance(next_token, dict):
         params = next_token["hyperparameters"].copy()
-        return kernel_map[
-            next_token["name"]
-        ](**params)
+        return kernel_map[next_token["name"]](**params)
     # no matches for tokens
     raise TypeError("Token was not a list or dict.")
+
 
 def parse_kernel(token):
     """
@@ -63,6 +51,10 @@ def parse_kernel(token):
     """
     mod = gpflow.kernels
     kernel_map = dict(
-        [(name.lower(), cls) for name, cls in mod.__dict__.items() if isinstance(cls, type)]
+        [
+            (name.lower(), cls)
+            for name, cls in mod.__dict__.items()
+            if isinstance(cls, type)
+        ]
     )
     return parse_kernel_token(token, kernel_map)

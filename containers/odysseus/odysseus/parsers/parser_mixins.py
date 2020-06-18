@@ -2,6 +2,7 @@
 Mixins for traffic parsers.
 """
 
+
 class BaselineParserMixin:
     """Arguments for baseline periods."""
 
@@ -15,6 +16,7 @@ class BaselineParserMixin:
             choices=["normal", "lockdown"],
             help="The name of the baseline period.",
         )
+
 
 class InstanceParserMixin:
     """Arguments for creating/selecting an instance."""
@@ -35,11 +37,9 @@ class InstanceParserMixin:
             help="A custom tag to identify model fits.",
         )
         instance_group.add_argument(
-            "-c",
-            "--cluster_id",
-            choices=["local", "pearl", "azure"],
-            default="local",
+            "-c", "--cluster_id", choices=["local", "pearl", "azure"], default="local",
         )
+
 
 class PreprocessingParserMixin:
     """Parser options for preprocessing and normalising data."""
@@ -78,6 +78,7 @@ class PreprocessingParserMixin:
             help="The names of the target variables.",
         )
 
+
 class ModellingParserMixin:
     """Parser options for modelling."""
 
@@ -95,7 +96,7 @@ class ModellingParserMixin:
             "--n_inducing_points",
             default=None,
             type=int,
-            help="Number of inducing points. If not set then no inducing points are used."
+            help="Number of inducing points. If not set then no inducing points are used.",
         )
         modelling_group.add_argument(
             "--inducing_point_method",
@@ -110,11 +111,9 @@ class ModellingParserMixin:
             help="Max number of iterations to train model.",
         )
         modelling_group.add_argument(
-            "-m",
-            "--model_name",
-            default="svgp",
-            help="Name of the model to run.",
+            "-m", "--model_name", default="svgp", help="Name of the model to run.",
         )
+
 
 class KernelParserMixin:
     """Parser mixin for choosing the kernel and params."""
@@ -123,7 +122,7 @@ class KernelParserMixin:
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        kernel_group = self.add_argument_group("kernels") 
+        kernel_group = self.add_argument_group("kernels")
         kernel_group.add_argument(
             "-k",
             "--kernel",
@@ -138,8 +137,5 @@ class KernelParserMixin:
             help="Value for lengthscale (note ARD not supported).",
         )
         kernel_group.add_argument(
-            "--variance",
-            type=float,
-            default=1.0,
-            help="Initial value for variance.",
+            "--variance", type=float, default=1.0, help="Initial value for variance.",
         )

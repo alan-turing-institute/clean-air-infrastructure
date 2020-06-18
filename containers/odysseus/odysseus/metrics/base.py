@@ -16,6 +16,7 @@ from .coverage import percent_coverage
 from .nlpl import nlpl
 from ..dataset import TrafficDataset
 
+
 class TrafficMetric(DBWriter):
     """
     The base class for metrics.
@@ -43,9 +44,15 @@ class TrafficMetric(DBWriter):
             Dictionary where keys are the name of a metric and values are the evaluated metric.
         """
         return dict(
-            coverage95=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.95),
-            coverage75=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.75),
-            coverage50=percent_coverage(model, dataset.features_tensor, dataset.target_tensor, quantile=0.50),
+            coverage95=percent_coverage(
+                model, dataset.features_tensor, dataset.target_tensor, quantile=0.95
+            ),
+            coverage75=percent_coverage(
+                model, dataset.features_tensor, dataset.target_tensor, quantile=0.75
+            ),
+            coverage50=percent_coverage(
+                model, dataset.features_tensor, dataset.target_tensor, quantile=0.50
+            ),
             nlpl=nlpl(model, dataset.features_tensor, dataset.target_tensor),
         )
 
@@ -74,8 +81,7 @@ class TrafficMetric(DBWriter):
         with futures.ThreadPoolExecutor() as executor:
             tasks = {
                 executor.submit(TrafficMetric.evaluate_model, model, dataset): dict(
-                    instance_id=instance_id,
-                    data_id=dataset.data_id,
+                    instance_id=instance_id, data_id=dataset.data_id,
                 )
                 for instance_id, model, dataset in zip(
                     instance_ids, gp_models, traffic_datasets
@@ -93,9 +99,22 @@ class TrafficMetric(DBWriter):
         Save the metrics dataframe to the database.
         """
         if len(self.metric_df) == 0:
-            self.logger.warning("No metrics will be commited to the traffic metrics table - metric_df is empty.")
+            self.logger.warning(
+                "No metrics will be commited to the traffic metrics table - metric_df is empty."
+            )
         # upload metrics to DB
-        logging.info("Inserting %s records into the traffic metrics table.", len(self.metric_df))
-        record_cols = ["instance_id", "data_id", "coverage50", "coverage75", "coverage95", "nlpl"]
+        logging.info(
+            "Inserting %s records into the traffic metrics table.", len(self.metric_df)
+        )
+        record_cols = [
+            "instance_id",
+            "data_id",
+            "coverage50",
+            "coverage75",
+            "coverage95",
+            "nlpl",
+        ]
         upload_records = self.metric_df[record_cols].to_dict("records")
-        self.commit_records(upload_records, on_conflict="overwrite", table=TrafficMetricTable)
+        self.commit_records(
+            upload_records, on_conflict="overwrite", table=TrafficMetricTable
+        )
