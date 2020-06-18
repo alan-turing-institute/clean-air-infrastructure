@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from odysseus import metric
+from odysseus import metrics
 from ..data_generators import scoot_generator
 
 # pylint: disable=redefined-outer-name
@@ -57,17 +57,17 @@ def one_scoot_df() -> pd.DataFrame:
 
 def test_percent_of_baseline_counts():
     """Test that the percent of baseline calculation works."""
-    assert metric.percent_of_baseline_counts(100, 100) == 100
-    assert metric.percent_of_baseline_counts(100, 50) == 50
-    assert metric.percent_of_baseline_counts(100, 150) == 150
-    assert metric.percent_of_baseline_counts(0, 100) is np.nan
-    assert metric.percent_of_baseline_counts(100, 0) == 0
-    assert metric.percent_of_baseline_counts(0, 0) == 0
+    assert metrics.percent_of_baseline_counts(100, 100) == 100
+    assert metrics.percent_of_baseline_counts(100, 50) == 50
+    assert metrics.percent_of_baseline_counts(100, 150) == 150
+    assert metrics.percent_of_baseline_counts(0, 100) is np.nan
+    assert metrics.percent_of_baseline_counts(100, 0) == 0
+    assert metrics.percent_of_baseline_counts(0, 0) == 0
 
 
 def test_percent_of_baseline(baseline_df: pd.DataFrame, comparison_df: pd.DataFrame):
     """Test percent of baseline works on dataframes without anomalies."""
-    percent_df = metric.percent_of_baseline(baseline_df, comparison_df)
+    percent_df = metrics.percent_of_baseline(baseline_df, comparison_df)
 
     # five detectors should have readings
     assert len(percent_df["detector_id"].unique()) == 5
@@ -77,7 +77,7 @@ def test_percent_of_baseline(baseline_df: pd.DataFrame, comparison_df: pd.DataFr
 
 def __test_percent_df(percent_df: pd.DataFrame):
     """Test a percent of baseline dataframe with no missing values."""
-    # all metric values should be strictly positive
+    # all metrics values should be strictly positive
     assert percent_df["percent_of_baseline"].map(lambda x: x > 0).all()
 
     # check all flags are false
@@ -96,9 +96,9 @@ def test_missing_baseline(
     missing_baseline_df: pd.DataFrame, comparison_df: pd.DataFrame,
 ):
     """Test the percent of baseline correctly handles a missing detector in the baseline dataframe."""
-    percent_df = metric.percent_of_baseline(missing_baseline_df, comparison_df)
+    percent_df = metrics.percent_of_baseline(missing_baseline_df, comparison_df)
 
-    # check missing detectors are not in the metrics dataframe
+    # check missing detectors are not in the metricss dataframe
     missing = set(comparison_df["detector_id"]) - set(
         missing_baseline_df["detector_id"]
     )
@@ -114,7 +114,7 @@ def test_missing_comparison(
     baseline_df: pd.DataFrame, missing_comparison_df: pd.DataFrame,
 ):
     """Test the percent of baseline correctly handles a missing detector in the comparison dataframe."""
-    percent_df = metric.percent_of_baseline(baseline_df, missing_comparison_df)
+    percent_df = metrics.percent_of_baseline(baseline_df, missing_comparison_df)
 
     # check missing detectors are not in the metrics dataframe
     missing = set(baseline_df["detector_id"]) - set(
@@ -132,7 +132,7 @@ def test_no_traffic_in_baseline(
     zero_scoot_df: pd.DataFrame, one_scoot_df: pd.DataFrame
 ):
     """Check the no_traffic_in_baseline flag is raises when there's no traffic in the baseline."""
-    percent_df = metric.percent_of_baseline(zero_scoot_df, one_scoot_df)
+    percent_df = metrics.percent_of_baseline(zero_scoot_df, one_scoot_df)
 
     assert len(percent_df["detector_id"].unique()) == 1
 
@@ -149,7 +149,7 @@ def test_no_traffic_in_comparison(
     one_scoot_df: pd.DataFrame, zero_scoot_df: pd.DataFrame
 ):
     """Check the no_traffic_in_comparison flag is raised when there's no traffic in the comparison."""
-    percent_df = metric.percent_of_baseline(one_scoot_df, zero_scoot_df)
+    percent_df = metrics.percent_of_baseline(one_scoot_df, zero_scoot_df)
 
     assert len(percent_df["detector_id"].unique()) == 1
 

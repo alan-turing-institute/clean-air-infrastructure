@@ -9,11 +9,11 @@ import pandas as pd
 import gpflow
 
 from cleanair.databases import DBWriter
+from cleanair.databases.tables import TrafficMetricTable
 from cleanair.loggers import get_logger
 
 from .coverage import percent_coverage
 from .nlpl import nlpl
-from ..databases.tables import TrafficMetricTable
 from ..dataset import TrafficDataset
 
 class TrafficMetric(DBWriter):
