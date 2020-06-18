@@ -20,13 +20,13 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         instance_id: str,
         data_id: str,
         secretfile: str,
-        result_df: Optional[pd.DataFrame],
+        result_df: Optional[pd.DataFrame] = None,
         **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
         self.instance_id = instance_id
         self.data_id = data_id
-        if result_df:
+        if not result_df is None:
             self.result_df = result_df
             if "instance_id" not in self.result_df:
                 self.result_df["instance_id"] = self.instance_id

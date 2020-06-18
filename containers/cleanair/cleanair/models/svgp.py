@@ -4,25 +4,20 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
-import logging
 import os
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-
-# disable tensorflow warning, only enable errors
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-# pylint: disable=wrong-import-position
-import gpflow
-from gpflow import settings
-from gpflow.session_manager import get_session
 from ..loggers import get_logger
 from .model import Model
 
 if TYPE_CHECKING:
     from ..types import ParamsSVGP
+
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
 class SVGP(Model):
@@ -63,21 +58,9 @@ class SVGP(Model):
         self.refresh = 10 if "refresh" not in kwargs else kwargs["refresh"]
         self.epoch = 0
 
-        # warnings
-        if "disable_tf_warnings" not in kwargs:
-            disable_tf_warnings = True
-        else:
-            disable_tf_warnings = kwargs["disable_tf_warnings"]
-
         # Ensure logging is available
         if self.log and not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-
-        # disable TF warnings
-        if disable_tf_warnings:
-            logging.disable(logging.WARNING)
-            os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-            tf.logging.set_verbosity(tf.logging.ERROR)
 
         self.minimum_param_keys = [
             "likelihood_variance",
@@ -142,7 +125,9 @@ class SVGP(Model):
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
         custom_config.jitter = self.model_params["jitter"]
-        with settings.temp_settings(custom_config), get_session().as_default():
+        with gpflow.settings.temp_settings(
+            custom_config
+        ), gpflow.session_manager.get_session().as_default():
             kernel_name = self.model_params["kernel"]["name"]
             if kernel_name == "rbf":
                 kern = gpflow.kernels.RBF(
