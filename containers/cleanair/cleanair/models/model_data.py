@@ -1,6 +1,7 @@
-"""
-Vizualise available sensor data for a model fit
-"""
+"""Vizualise available sensor data for a model fit"""
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict
+from datetime import date, datetime
 import json
 import os
 import pickle
@@ -11,18 +12,25 @@ from dateutil.relativedelta import relativedelta
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
-    ModelResult,
+    AirQualityDataTable,
     SatelliteGrid,
 )
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
+from ..instance import hash_dict
+from ..timestamps import as_datetime
+
+if TYPE_CHECKING:
+    from ..types import DataConfig
+
+# pylint: disable=too-many-lines
 
 
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, config=None, config_dir=None, **kwargs):
+    def __init__(self, config: DataConfig, config_dir=None, **kwargs):
         """
         Initialise the ModelData object with a config file
         args:
@@ -42,6 +50,8 @@ class ModelData(DBWriter, DBQueryMixin):
             raise ValueError(
                 "Either config or config_dir must be supplied as arguments"
             )
+
+        self.preprocessing: Dict = dict()
 
         if config:
             # Validate the configuration
@@ -81,6 +91,45 @@ class ModelData(DBWriter, DBQueryMixin):
 
         else:
             self.restore_config_state(config_dir)
+
+    @property
+    def data_id(self) -> str:
+        """Hash of the data config dictionary."""
+        data_config = ModelData.make_config_json_serializable(self.config)
+        return hash_dict(data_config)
+
+    @staticmethod
+    def make_config_json_serializable(data_config: DataConfig):
+        """Converts any date or datetime values to a string formatted to ISO.
+
+        Args:
+            data_config: Contains some values with datetimes or dates.
+
+        Returns:
+            New data config with date/datetime values changed to ISO strings.
+            Note the returned data config is a NEW object, i.e. we copy the `data_config` parameter.
+        """
+        new_config = data_config.copy()
+        for key, value in data_config.items():
+            if isinstance(value, (date, datetime)):
+                new_config[key] = value.isoformat()
+        return new_config
+
+    @staticmethod
+    def config_to_datetime(data_config: DataConfig) -> DataConfig:
+        """The values of keys that have 'data' or 'time' in the name
+        are converted to a datetime object from a string.
+
+        Args:
+            data_config: Config settings for a model data object.
+
+        Returns:
+            New data config dictionary with same keys and datetime values where appropriate.
+        """
+        for key, value in data_config.items():
+            if "date" in key or "time" in key:
+                data_config[key] = as_datetime(value)
+        return data_config
 
     def __validate_config(self, config):
 
@@ -338,7 +387,7 @@ class ModelData(DBWriter, DBQueryMixin):
             A list of interest point sources, e.g. 'laqn', 'satellite'.
 
         species : list
-            Pollutants to get data for, e.g. 'no2', 'o3'.
+            Pollutants to get data for, e.g. 'NO2', 'o3'.
 
         Returns
         ___
@@ -367,7 +416,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         The returned dictionary includes index to allow model predictions
         to be appended to dataframes (required when dropna is used).
-        At the moment, `laqn_no2_index` and `laqn_pm10_index` will be the same.
+        At the moment, `laqn_NO2_index` and `laqn_pm10_index` will be the same.
         But in the future if we want to drop some rows for specific pollutants
         then these indices may be different.
         """
@@ -933,20 +982,12 @@ class ModelData(DBWriter, DBQueryMixin):
         new_df["tag"] = self.config["tag"]
         return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
+    def update_test_df_with_preds(self, test_pred_dict: dict, fit_start_time: datetime):
         """Update the normalised_pred_data_df with predictions for all pred sources.
 
-        Parameters
-        ___
-
-        test_pred_dict : dict
-            Dictionary with first level keys for pred_sources (e.g. 'laqn', 'aqe').
-            Second level keys are species (e.g. 'NO2', 'PM10').
-            Third level keys are either 'mean' or 'var'.
-            Values are numpy arrays of predictions for a source and specie.
-
-        fit_start_time : datetime
-            Start time of the model fit.
+        Args:
+            test_pred_dict: Dictionary of model predictions.
+            fit_start_time: Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
             self.normalised_pred_data_df,
@@ -966,24 +1007,12 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-        record_cols = [
-            "tag",
-            "fit_start_time",
-            "point_id",
-            "measurement_start_utc",
-            "predict_mean",
-            "predict_var",
-        ]
-        df_cols = self.normalised_pred_data_df
-        for col in record_cols:
-            if col not in df_cols:
-                msg = "The data frame must contain the following columns: {}."
-                msg += "You passed these columns: {}."
-                msg += (
-                    "Ensure model results have been passed to update_model_results_df()"
-                )
-                raise AttributeError(msg.format(record_cols, list(df_cols.columns)))
-        upload_records = self.normalised_pred_data_df[record_cols].to_dict("records")
-        self.logger.info("Inserting %s records into the database", len(upload_records))
-
-        self.commit_records(upload_records, table=ModelResult, on_conflict="overwrite")
+        data_config = ModelData.make_config_json_serializable(self.config)
+        row = dict(
+            data_id=self.data_id,
+            data_config=data_config,
+            preprocessing=self.preprocessing,
+        )
+        records = [row]
+        self.logger.info("Writing data settings to air quality modelling data table.")
+        self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

@@ -2,11 +2,10 @@
 Instances of models and data.
 """
 import abc
-import json
 import logging
-import hashlib
 import git
 from ..databases import DBWriter
+from .hashing import hash_fn
 
 
 class Instance(DBWriter):
@@ -81,7 +80,7 @@ class Instance(DBWriter):
     @model_name.setter
     def model_name(self, value: str):
         self._model_name = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def param_id(self) -> str:
@@ -91,7 +90,7 @@ class Instance(DBWriter):
     @param_id.setter
     def param_id(self, value: str):
         self._param_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def data_id(self) -> str:
@@ -101,7 +100,7 @@ class Instance(DBWriter):
     @data_id.setter
     def data_id(self, value: str):
         self._data_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def instance_id(self) -> str:
@@ -129,7 +128,7 @@ class Instance(DBWriter):
     @git_hash.setter
     def git_hash(self, value: str):
         self._git_hash = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def tag(self) -> str:
@@ -139,7 +138,7 @@ class Instance(DBWriter):
     @tag.setter
     def tag(self, value: str):
         self._tag = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def cluster_id(self) -> str:
@@ -149,7 +148,7 @@ class Instance(DBWriter):
     @cluster_id.setter
     def cluster_id(self, value: str):
         self._cluster_id = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     @property
     def fit_start_time(self) -> str:
@@ -159,27 +158,13 @@ class Instance(DBWriter):
     @fit_start_time.setter
     def fit_start_time(self, value: str):
         self._fit_start_time = value
-        self.instance_id = None  # this will update in setter
+        self._instance_id = self.hash()
 
     def hash(self) -> str:
         """Hash the model name, param id, data id and git hash return a unique id."""
         hash_string = self.model_name + str(self.param_id)
         hash_string += self.git_hash + str(self.data_id)
-        return Instance.hash_fn(hash_string)
-
-    @staticmethod
-    def hash_fn(hash_string: str) -> str:
-        """Uses sha256 to hash the given string.
-
-        Args:
-            hash_string: The string to hash.
-
-        Returns:
-            The hash of the given string.
-        """
-        sha_fn = hashlib.sha256()
-        sha_fn.update(bytearray(hash_string, "utf-8"))
-        return sha_fn.hexdigest()
+        return hash_fn(hash_string)
 
     def to_dict(self) -> dict:
         """Returns a dictionary of the attributes of the Instance.
@@ -204,28 +189,3 @@ class Instance(DBWriter):
         """
         Update the instance table in the database.
         """
-
-    @staticmethod
-    def hash_dict(value: dict) -> str:
-        """Dumps a dictionary to json string then hashes that string.
-
-        Args:
-            value: A dictionary to hash. Keys and values must be compliant with json types.
-
-        Returns:
-            The hash of dictionary.
-
-        Notes:
-            Any lists within the dictionary are sorted.
-            This means the following two dictionaries `A` and `B` will be hashed to the same string:
-
-            >>> A = dict(key=["a", "b"])
-            >>> B = dict(key=["b", "a"])
-        """
-        # it is ESSENTIAL to sort by keys when creating hashes!
-        sorted_values = value.copy()
-        for key in sorted_values:
-            if isinstance(sorted_values[key], list):
-                sorted_values[key].sort()
-        hash_string = json.dumps(sorted_values, sort_keys=True)
-        return Instance.hash_fn(hash_string)
