@@ -2,7 +2,7 @@
 Table that summerises an instance (model + data + result).
 """
 
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
 
 
@@ -54,8 +54,6 @@ class DataTableMixin:
 class MetricsTableMixin:
     """Table for model metrics."""
 
-    __tablename__ = "metrics"
-
     instance_id = Column(String(64), primary_key=True, nullable=False)
     data_id = Column(String(64), primary_key=True, nullable=False)
 
@@ -68,12 +66,15 @@ class MetricsTableMixin:
 class ResultTableMixin:
     """Table mixin for model results."""
 
-    __tablename__ = "result"
-
     instance_id = Column(String(64), primary_key=True, nullable=False)
     data_id = Column(String(64), primary_key=True, nullable=False)
 
-    point_id = Column(UUID, primary_key=True, nullable=False)
+    point_id = Column(
+        UUID,
+        ForeignKey("interest_points.meta_point.id"),
+        primary_key=True,
+        nullable=False
+    )
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
 
     def __repr__(self):
