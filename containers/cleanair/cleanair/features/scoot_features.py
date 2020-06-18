@@ -46,7 +46,7 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
 
     @property
     def table(self):
-        """featre table"""
+        """feature table"""
         return OSHighway
 
     @property
