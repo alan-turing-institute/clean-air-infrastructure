@@ -1,9 +1,10 @@
 """UrbanAir API"""
 import os
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from .routers import jamcam, static
-
+import pkg_resources
 
 # pylint
 app = FastAPI(
@@ -13,20 +14,21 @@ app = FastAPI(
 )
 
 
-# app.mount(
-#     "/static",
-#     StaticFiles(
-#         directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-#     ),
-#     name="static",
-# )
+app.mount(
+    "/static",
+    StaticFiles(
+        directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+    ),
+    name="static",
+)
 
 app.mount(
-    "/packages/docs",
+    "/package/docs",
     StaticFiles(
-        directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "package_docs")
+        directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "packages"),
+        html=True,
     ),
-    name="package_docs",
+    name="pakage_docs",
 )
 
 app.include_router(static.router)
