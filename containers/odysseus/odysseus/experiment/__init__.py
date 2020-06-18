@@ -1,7 +1,7 @@
 """Experiments and instances."""
 
 from .experiment import Experiment
-from .instance import TrafficInstance
+from .traffic_instance import TrafficInstance
 
 __all__ = [
     "Experiment",

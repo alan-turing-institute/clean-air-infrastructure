@@ -4,8 +4,9 @@ Experiments summerise multiple instances.
 
 import pandas as pd
 from cleanair.databases import DBWriter
-from .instance import TrafficInstance
-from ..databases.tables import TrafficInstanceTable
+from cleanair.databases.tables import TrafficInstanceTable
+from .traffic_instance import TrafficInstance
+
 
 class Experiment(DBWriter):
     """
