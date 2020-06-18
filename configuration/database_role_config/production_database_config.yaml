@@ -15,6 +15,8 @@ schema:
   - processed_data
   - static_data
   - static_features
+  - traffic_modelling
+  - jamcam
 
 roles:
   - role: readonly
@@ -56,7 +58,14 @@ roles:
         create: False
         privileges: 
           - SELECT
-      
+      - name: traffic_modelling
+        create: False
+        privileges: 
+          - SELECT
+      - name: jamcam
+        create: False
+        privileges:
+          - SELECT
 
   - role: readwrite
     create_schema: False
@@ -96,6 +105,14 @@ roles:
       - name: static_features
         create: False
         privileges: 
+          - ALL
+      - name: traffic_modelling
+        create: False
+        privileges: 
+          - ALL
+      - name: jamcam
+        create: False
+        privileges:
           - ALL
 
   - role: readwritecreate
@@ -137,3 +154,75 @@ roles:
         create: True
         privileges: 
           - ALL
+      - name: traffic_modelling
+        create: True
+        privileges: 
+          - ALL
+      - name: jamcam
+        create: True
+        privileges:
+          - ALL
+
+  - role: readwrite
+    create_schema: False
+    schema: 
+      - name: dynamic_data 
+        create: False
+        privileges: 
+          - ALL
+      - name: dynamic_features 
+        create: False
+        privileges: 
+          - ALL
+      - name: gla_traffic
+        create: False
+        privileges: 
+          - ALL
+      - name: interest_points
+        create: False
+        privileges: 
+          - ALL
+      - name: model_features
+        create: False
+        privileges: 
+          - ALL
+      - name: model_results
+        create: False
+        privileges: 
+          - ALL
+      - name: processed_data
+        create: False
+        privileges: 
+          - ALL
+      - name: static_data
+        create: False
+        privileges: 
+          - ALL
+      - name: static_features
+        create: False
+        privileges: 
+          - ALL
+      - name: traffic_modelling
+        create: False
+        privileges: 
+          - ALL
+      - name: jamcam
+        create: False
+        privileges:
+          - ALL
+
+  - role: jamcamreadwrite
+    create_schema: False
+    schema:
+      - name: jamcam
+        create: True
+        privileges:
+          - ALL
+
+  - role: jamcamread
+    create_schema: False
+    schema:
+      - name: jamcam
+        create: False
+        privileges:
+          - SELECT

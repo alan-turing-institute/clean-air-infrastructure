@@ -99,7 +99,7 @@ class DynamicFeature(Base):
     point = relationship("MetaPoint")
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<DynamicFeature(" + ", ".join(vals) + ")>"
 

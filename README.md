@@ -18,12 +18,13 @@ A list of key developers on the project. A good place to start if you wish to co
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
-| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)        | <cnakou@turing.ac.uk>     | 
+| Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
+| Christy Nakou      | [@ChristyNou](https://github.com/ChristyNou)         | <cnakou@turing.ac.uk>     | 
 | Patrick O'Hara     | [@PatrickOHara](https://github.com/PatrickOHara)     | <pohara@turing.ac.uk>     | 
-| David Perez-Suarez  | [@dpshelio](https://github.com/dpshelio)            | <d.perez-suarez@ucl.ac.uk>|
+| David Perez-Suarez | [@dpshelio](https://github.com/dpshelio)             | <d.perez-suarez@ucl.ac.uk>|
 | James Robinson     | [@jemrobinson](https://github.com/jemrobinson)       | <jrobinson@turing.ac.uk>  | 
-| Tim Spain  | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>       |
-
+| Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>       |
+| Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>|
 
 # Contents
 
@@ -47,10 +48,16 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
 
+### UrbanAir Flask API
+- [Running the UrbanAir API](#urbanAir-API)
+
 ### Developer guide
 - [Style guide](#style-guide)
 - [Running tests](#running-tests)
 - [Writing tests](#writing-tests)
+
+### Researcher guide
+- [Setup notebooks](#setup-notebook)
 
 ### Infrastructure
 
@@ -79,8 +86,10 @@ To contribute as a non-infrastructure developer you will need the following:
 - `GDAL` (For inserting static datasets)
 
 The instructions below are to install the dependencies system-wide, however you can
-follow the [instructions at the end if you wish to use an anaconda environment](#With-a-Conda-environment)
+follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
 if you want to keep it all separated from your system.
+
+Windows is not supported. However, you may use [Windows Subsystem for Linux 2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) and then install dependencies with [conda](#with-a-conda-environment).
 
 ### Azure CLI
 If you have not already installed the command line interface for `Azure`, please [`follow the procedure here`](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) to get started
@@ -210,16 +219,16 @@ versions of software around in your machine. All the steps above can be done wit
 # Non-infrastructure dependencies
 
 conda create -n busyness python=3.7
-conda install -c conda-forge gdal postgis uwsgi
 conda activate busyness
+conda install -c anaconda postgresql
+conda install -c conda-forge gdal postgis uwsgi
 pip install azure-cli
 pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-# This will fail on building fbprohet, but it installs it after.
-pip install -e 'containers/cleanair[models, traffic, dashboard]'
-pip install -e 'containers/uatraffic'
+pip install -e 'containers/cleanair[models, dashboard]'
+pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
 ## Infrastructure dependencies
@@ -296,7 +305,7 @@ echo '{
     "port": 5432,
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
-}' >> .secrets/db_secrets_offline.json
+}' >> .secrets/.db_secrets_offline.json
 ```
 
 N.B In some cases your default username may be your OS user. Change the username in the file above if this is the case.
@@ -312,7 +321,7 @@ We must now setup the database schema. This also creates a number of roles on th
 Create a variable with the location of your secrets file
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
@@ -472,6 +481,29 @@ docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:
 ```
 
 
+# UrbanAir API
+
+The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+
+### Configure CleanAir database secrets
+Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environment variable](#entry-point-with-production-database)
+
+```bash
+export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+```
+
+### Enable Flask development server
+
+```bash
+export FLASK_ENV=development 
+```
+
+You can now run the API
+
+```bash
+python containers/urbanair/wsgi.py
+```
+
 # Developer guide
 
 ## Style guide
@@ -507,7 +539,10 @@ All tests can be found in the [`containers/tests/`](containers/tests) directory.
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/db_secrets_offline.json
+SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+```
+
+```bash
 pytest containers --secretfile $SECRETS
 ```
 
@@ -532,6 +567,65 @@ It uses the `DBWriter` class to  connect to the database. In general when intera
 
 This fixture ensures that all interactions with the database take place within a `transaction`. At the end of the test the transaction is rolled back leaving the database in the same state it was in before the test was run, even if `commit` is called on the database. 
 
+# Researcher guide
+
+*The following steps provide useful tools for researchers to use, for example jupyter notebooks.*
+
+## Setup notebook
+
+First install jupyter with conda (you can also use pip).
+
+```bash
+pip install jupyter
+```
+
+You can start the notebook:
+
+```bash
+jupyter notebook
+```
+
+### Environment variables
+
+To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
+It is also recommended to set the `SECRETS` variable.
+We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
+
+> **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
+
+Run the below command to create a `.env` file, replacing `path/to/secretfile` with the path to your `db_secrets`.
+
+```bash
+echo '
+SECRETS="path/to/secretfile"
+PGPASSWORD=
+' > path/to/notebook/.env
+```
+
+To set the `PGPASSWORD`, run the following command.
+This will create a new password using the azure cli and replace the line in `.env` that contains `PGPASSWORD` with the new password.
+Remember to replace `path/to/notebook` with the path to your notebook directory.
+
+```bash
+sed -i '' "s/.*PGPASSWORD.*/PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)/g" path/to/notebook/.env
+```
+
+If you need to store other environment variables and access them in your notebook, simply add them to the `.env` file.
+
+To access the environment variables, include the following lines at the top of your jupyter notebook:
+
+```python
+%load_ext dotenv
+%dotenv
+```
+
+You can now access the value of these variables as follows:
+
+```python
+secretfile = os.getenv("SECRETS", None)
+```
+
+Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
@@ -624,7 +718,7 @@ Terraform created a DNS Zone in the kubernetes cluster resource group (`RG_CLEAN
 4. We can now set up Azure pipelines. Once the cleanair api has been deployed on kubernetes you can update the alias record to point to the ip address of the cleanair-api on the cluster.
 
 
-# Initialising the input databases
+## Initialising the input databases
 Terraform will now have created a number of databases. We need to add the datasets to the database.
 This is done using Docker images from the Azure container registry.
 You will need the username, password and server name for the Azure container registry.
@@ -657,10 +751,14 @@ To add static datasets follow the [Static data insert](#static-data-insert) inst
 The live datasets (like LAQN or AQE) are populated using regular jobs that create an Azure container instance and add the most recent data to the database.
 These are run automatically through Kubernetes and the Azure pipeline above is used to keep track of which version of the code to use.
 
-## Database user management
+## Kubernetes deployment with GPU support
 
-Terraform will have created a password and username for the cluster and stored them on the keyvault. Sign into the database as an adminstrator and create a user with this username and password and assign read-write credentials.
+The [azure pipeline](#setting-up-azure-pipelines) will deploy the cleanair helm chart to the azure kubernetes cluster we deployed with terraform. If you deployed GPU enabled machines on Azure (current default in the terraform script) then you need to install the nvidia device plugin daemonset. The manifest for this is [adapted from the Azure docs](https://docs.microsoft.com/en-us/azure/aks/gpu-cluster). However, as our GPU machines have [taints](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/#:~:text=Taints%20are%20the%20opposite%20%E2%80%93%20they,not%20scheduled%20onto%20inappropriate%20nodes.) applied we have to add tolerations to the manifest, otherwise the nodes will block the daemonset. To install the custom manifest run,
 
+
+```bash
+kubectl apply -f kubernetes/gpu_resources/nvidia-device-plugin-ds.yaml
+```
 
 <!-- 
 ## Configure certificates

@@ -25,6 +25,6 @@ class ModelResult(Base):
     predict_var = Column(DOUBLE_PRECISION, nullable=False)
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ModelResults(" + ", ".join(vals) + ")>"

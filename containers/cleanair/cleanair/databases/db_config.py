@@ -75,6 +75,7 @@ class DBConfig(Connector):
         """Configure roles as defined in the configuration file
         """
 
+        # Create Schema
         self.create_schema()
 
         for role in self.roles:
