@@ -2,6 +2,7 @@
 Experiments summerise multiple instances.
 """
 
+from typing import Optional
 import pandas as pd
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficInstanceTable
@@ -13,7 +14,7 @@ class Experiment(DBWriter):
     An experiment contains multiple instances.
     """
 
-    def __init__(self, frame: pd.DataFrame = None, secretfile: str = None, **kwargs):
+    def __init__(self, frame: Optional[pd.DataFrame] = None, secretfile: Optional[str] = None, **kwargs):
         super().__init__(secretfile=secretfile, **kwargs)
         if frame:
             self._frame = pd.DataFrame(
@@ -38,7 +39,7 @@ class Experiment(DBWriter):
     def frame(self):
         """Information about the instances"""
         return self._frame
-    
+
     def add_instance(self, instance: TrafficInstance):
         """ToDo."""
 
