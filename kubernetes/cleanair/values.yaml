@@ -1,116 +1,99 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: b8d2e1f225aea7a600103845d4ab64936a652198
+imageTag: d09e02b8037cd3b5af70032655f6cd7d7a587443
 
 jobs:
 
-#   - name: feature_oshighway
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_oshighway
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: static-features-oshighway
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["fill", "--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: feature_streetcanyon
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_streetcanyon
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: static-features-ukmap
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["fill", "--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: feature_ukmap
-#     image:
-#       repository: cleanairdocker.azurecr.io/feature_ukmap
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 1
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-#   - name: input_satellite_backdate
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_satellite
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     args: ['--nhours', 720]
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
-#   - name: input_scoot_backdate
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_scoot
-#       imagePullPolicy: Always
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     args: ['--nhours', 720]
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-
+  - name: static-features-street-canyon
+    image:
+        repository: cleanairdocker.azurecr.io/feature_static
+        imagePullPolicy: Always
+    args: ["fill",  "--feature-source", "streetcanyon", "--sources", "laqn", "aqe", "hexgrid"]
+    restartPolicy: OnFailure
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
 cronjobs:
 
-#   - name: input-aqe
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_aqe
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 10
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
+  - name: input-aqe
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/input_aqe
+        imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: input-laqn
-#     image:
-#         repository: cleanairdocker.azurecr.io/input_laqn
-#         imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumeMounts:
-#     - name: secrets
-#       mountPath: "/secrets/"
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
-#     imagePullSecrets:
-#         - name: regcred
+  - name: input-laqn
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/input_laqn
+        imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
  
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
@@ -236,33 +219,44 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-#   - name: input-satellite
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_satellite
-#       imagePullPolicy: Always
-#     schedule: "30 10 * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 3
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: input-satellite
+    schedule: "30 10 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/input_satellite
+      imagePullPolicy: IfNotPresent
+    args: ["fill", "--ndays", "30", "-k", ""]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
-#   - name: input-scoot
-#     image:
-#       repository: cleanairdocker.azurecr.io/input_scoot
-#       imagePullPolicy: Always
-#     schedule: "5 * * * *"
-#     failedJobsHistoryLimit: 1
-#     successfulJobsHistoryLimit: 10
-#     concurrencyPolicy: Forbid
-#     restartPolicy: OnFailure
-#     volumes:
-#     - name: secrets
-#       secret:
-#         secretName: secrets
+  - name: input-scoot
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/input_scoot
+      imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
 #   - name: feature_scoot_forecasts
 #     image:

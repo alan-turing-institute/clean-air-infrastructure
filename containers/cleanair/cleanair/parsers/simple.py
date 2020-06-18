@@ -5,10 +5,59 @@ Simple per-entrypoint argument parsers
 from argparse import ArgumentParser
 from ..mixins import (
     SecretFileParserMixin,
-    SourcesMixin,
     DurationParserMixin,
+    InsertMethodMixin,
     VerbosityMixin,
+    SourcesMixin,
+    WebMixin,
 )
+
+
+class SecretFileParser(SecretFileParserMixin, ArgumentParser):
+    """
+    Parser for any entrypoint which needs a secrets file
+    """
+
+
+class VerbosityParser(VerbosityMixin, ArgumentParser):
+    """
+    Parser for any entrypoint which allows verbosity to be set
+    """
+
+
+class SourcesParser(SecretFileParserMixin, ArgumentParser):
+    """
+    Parser for any entrypoint which allows verbosity to be set
+    """
+
+
+class DurationParser(DurationParserMixin, ArgumentParser):
+
+    """
+    Parser for any entrypoint which needs a duration
+    """
+
+
+class WebParser(WebMixin, ArgumentParser):
+    """
+    Parser for any entrypoint which allows verbosity to be set
+    """
+
+
+class InsertMethodParser(InsertMethodMixin, ArgumentParser):
+    """
+    Parser for any entrypoint that requires an insert method
+    """
+
+
+class StaticFeatureArgumentParser(
+    SecretFileParserMixin, VerbosityMixin, ArgumentParser,
+):
+    """Static feature Parser"""
+
+
+class SourceParser(SourcesMixin, ArgumentParser):
+    """Sources Parser"""
 
 
 class AQEReadingArgumentParser(
@@ -21,12 +70,6 @@ class LAQNReadingArgumentParser(
     DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
 ):
     """Argument parsing for LAQN readings"""
-
-
-class OsHighwayFeatureArgumentParser(
-    SourcesMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
-):
-    """Argument parsing for OS highway features"""
 
 
 class ScootReadingFeatureArgumentParser(
