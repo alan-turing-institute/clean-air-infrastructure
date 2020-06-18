@@ -1,9 +1,10 @@
 """Mixin for querying from the result table."""
 
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Optional
 from sqlalchemy import func
 
+from ...databases import Connector
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import MetaPoint
 from ...decorators import db_query
@@ -12,7 +13,7 @@ from ...decorators import db_query
 class ResultQueryMixin:
     """Mixin for querying results."""
 
-    dbcnxn: Any
+    dbcnxn: Connector
 
     @property
     @abstractmethod
@@ -20,25 +21,31 @@ class ResultQueryMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     @db_query
-    def query_results(self, instance_id: str, data_id: Optional[str]):
+    def query_results(self, instance_id: str, data_id: Optional[str] = None, join_metapoint: Optional[bool] = False):
         """Get the predictions from a model given an instance and data id.
 
         Args:
             instance_id: The id of the trained model instance.
             data_id: The id of the dataset the model predicted on.
+            join_metapoint: If true, join the result table with the metapoint table on the point_id column.
+                The returned query will also have 'lat', 'lon' and 'source'.
         """
+        base_query = [self.result_table]
+        if join_metapoint:
+            base_query += [
+                MetaPoint.source,
+                func.ST_X(MetaPoint.location).label("lon"),
+                func.ST_Y(MetaPoint.location).label("lat"),
+            ]
         with self.dbcnxn.open_session() as session:
             readings = (
-                session.query(
-                    self.result_table,
-                    MetaPoint.source,
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                )
+                session.query(*base_query)
                 .filter(self.result_table.instance_id == instance_id)
-                .join(MetaPoint, self.result_table.point_id == MetaPoint.id)
             )
-            # filter by data id too
+            # join on metapoint
+            if join_metapoint:
+                readings = readings.join(MetaPoint, self.result_table.point_id == MetaPoint.id)
+            # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
             return readings

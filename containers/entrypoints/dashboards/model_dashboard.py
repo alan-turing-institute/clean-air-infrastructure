@@ -20,6 +20,7 @@ def main():  # pylint: disable=too-many-locals
 
     # Extract arguments that should not be passed onwards
     logger = initialise_logging(args.verbose)
+    logger.debug("In debugging mode.")
 
     # Get query objects
     instance_query = queries.AirQualityInstanceQuery(secretfile=args.secretfile)
@@ -43,6 +44,7 @@ def main():  # pylint: disable=too-many-locals
     data_config = ModelData.config_to_datetime(data_config)
     data_config["include_prediction_y"] = True
     model_data = ModelData(config=data_config, secretfile=args.secretfile)
+    logger.debug("%s rows in test dataframe.", len(model_data.normalised_pred_data_df))
 
     # change datetime to be the same format
     model_data.normalised_pred_data_df["measurement_start_utc"] = pd.to_datetime(
@@ -62,6 +64,8 @@ def main():  # pylint: disable=too-many-locals
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
         model_data, metric_methods
     )
+    logger.debug("%s rows in sensor scores.", len(sensor_scores_df))
+    logger.debug("%s rows in temporal scores.", len(temporal_scores_df))
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
