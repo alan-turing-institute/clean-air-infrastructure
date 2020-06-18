@@ -11,7 +11,37 @@ from ..mixins import (
     DurationParserMixin,
     VerbosityMixin,
     SourcesMixin,
+    CopernicusMixin,
 )
+
+
+class FeatureSourceParser(ArgumentParser):
+    """Sources Parser"""
+
+    def __init__(self, feature_sources, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-source",
+            type=str,
+            required=True,
+            choices=feature_sources,
+            help="Source of features to process. Can only process one at a time",
+        )
+
+
+class FeatureNameParser(ArgumentParser):
+    """Parser arguments for choosing which features to process"""
+
+    def __init__(self, feature_names, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-name",
+            required=False,
+            nargs="+",
+            choices=feature_names,
+            help="Specify feature names to run. If not provided will process all feature names",
+            type=str,
+        )
 
 
 class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
@@ -32,39 +62,8 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     """Argument parsing for inserting static datafiles"""
 
 
-class SatelliteArgumentParser(
-    DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
-):
+class SatelliteArgumentParser(CopernicusMixin, ArgumentParser):
     """Argument parsing for Satellite readings"""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "-k",
-            "--copernicus-key",
-            type=str,
-            default="",
-            help="copernicus key for accessing satellite data.",
-        )
-
-    def parse_args(self, args=None, namespace=None):
-        """
-        Check whether we have the Copernicus key and try to retrieve it from a local
-        secrets file if not
-        """
-        args = super().parse_args(args, namespace)
-        if not args.copernicus_key:
-            try:
-                with open(
-                    os.path.abspath(
-                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                    )
-                ) as f_secret:
-                    data = json.load(f_secret)
-                    args.copernicus_key = data["copernicus_key"]
-            except json.decoder.JSONDecodeError:
-                raise ArgumentTypeError("Could not determine copernicus_key")
-        return args
 
 
 class ScootReadingArgumentParser(
