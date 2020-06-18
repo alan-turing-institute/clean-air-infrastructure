@@ -48,8 +48,8 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
 
-### UrbanAir Flask API
-- [Running the UrbanAir API](#urbanAir-API)
+### Running the UrbanAir API
+- [Running the UrbanAir API](#urbanair-api)
 
 ### Developer guide
 - [Style guide](#style-guide)
@@ -318,14 +318,14 @@ createdb cleanair_test_db
 
 We must now setup the database schema. This also creates a number of roles on the database.
 
-Create a variable with the location of your secrets file
+Create a variable with the location of your secrets file and set as an environment variable
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml   
 ```
 
 ### Static data insert
@@ -349,13 +349,13 @@ SAS_TOKEN=<SAS_TOKEN>
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
 If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
 ```
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
@@ -369,7 +369,7 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/test_database_init --secretfile $SECRETS
+pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 ```
 
 
@@ -483,25 +483,19 @@ docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:
 
 # UrbanAir API
 
-The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+The UrbanAir RESTFUL API is a [Fast API](https://fastapi.tiangolo.com/) application. To run it in locally you must configure the following steps:
 
 ### Configure CleanAir database secrets
-Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environment variable](#entry-point-with-production-database)
+Ensure you have configured a secrets file for the CleanAir database 
 
 ```bash
-export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-### Enable Flask development server
+### Run the application
 
-```bash
-export FLASK_ENV=development 
-```
-
-You can now run the API
-
-```bash
-python containers/urbanair/wsgi.py
+```bash 
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
 ```
 
 # Developer guide
@@ -539,11 +533,11 @@ All tests can be found in the [`containers/tests/`](containers/tests) directory.
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-pytest containers --secretfile $SECRETS
+pytest containers --secretfile $DB_SECRET_FILE
 ```
 
 ## Writing tests
@@ -588,7 +582,7 @@ jupyter notebook
 ### Environment variables
 
 To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
-It is also recommended to set the `SECRETS` variable.
+It is also recommended to set the `DB_SECRET_FILE` variable.
 We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
 
 > **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
@@ -597,7 +591,7 @@ Run the below command to create a `.env` file, replacing `path/to/secretfile` wi
 
 ```bash
 echo '
-SECRETS="path/to/secretfile"
+DB_SECRET_FILE="path/to/secretfile"
 PGPASSWORD=
 ' > path/to/notebook/.env
 ```
@@ -622,7 +616,7 @@ To access the environment variables, include the following lines at the top of y
 You can now access the value of these variables as follows:
 
 ```python
-secretfile = os.getenv("SECRETS", None)
+secretfile = os.getenv("DB_SECRET_FILE", None)
 ```
 
 Remember that the `PGPASSWORD` token will only be valid for ~1h.

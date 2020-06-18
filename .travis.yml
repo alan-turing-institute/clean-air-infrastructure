@@ -27,8 +27,8 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_cleanair
-        - python -m pytest containers/tests/test_database_init
+        - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
+        - python -m pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
@@ -37,6 +37,7 @@ jobs:
         # pylint --rcfile=.pylintrc containers/urbanair/*
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
     # separate parallel job for odysseus
+
     - name: "odysseus" 
       before_install:
         - sh .travis/before_install.sh
@@ -51,13 +52,35 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        - python -m pytest containers/tests/test_odysseus
+        - python -m pytest containers/tests/test_odysseus --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
     
-    - name: "code_style"
+    - name: "urbanair" 
+      before_install:
+        - sh .travis/before_install.sh
+
+      install:
+        - pip install -r containers/requirements.txt
+        - pip install 'containers/cleanair'
+        - pip install 'containers/odysseus'
+        - pip install 'containers/urbanair'
+
+      before_script:
+        - sh .travis/before_script.sh
+
+      script:
+        # Run all pytest unit tests
+        - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
+
+        # Run pylint for stricter error checking.
+        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+        - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/* 
+        - mypy containers/urbanair
+    
+    - name: "code_style_formatting"
       install:
         - pip install -r containers/requirements.txt
 
