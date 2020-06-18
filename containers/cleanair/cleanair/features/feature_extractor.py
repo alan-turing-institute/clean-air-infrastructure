@@ -92,22 +92,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             q_source = q_source.filter(*filter_list)
         return q_source
 
-    @db_query
-    def get_static_processed(self, feature_name):
-        """Return the features which have already been processed for a given feature name
-
-        args:
-            feature_name: string
-                Name of the feature to check for
-        """
-
-        with self.dbcnxn.open_session() as session:
-            already_processed_q = session.query(
-                StaticFeature.point_id, StaticFeature.feature_name
-            ).filter(StaticFeature.feature_name == feature_name)
-
-            return already_processed_q
-
     # @db_query
     # def get_dynamic_processed(self, feature_name):
     #     """Return the features which have already been processed for a given feature name between
