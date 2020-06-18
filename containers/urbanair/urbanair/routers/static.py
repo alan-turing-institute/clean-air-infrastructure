@@ -19,5 +19,6 @@ async def home(request: Request) -> Response:
 
 
 @router.get("/map", include_in_schema=False)
-async def read_item(request: Request) -> Response:
+async def map(request: Request) -> Response:
     return templates.TemplateResponse("map.html", {"request": request})
+
