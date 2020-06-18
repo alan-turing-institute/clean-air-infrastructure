@@ -16,6 +16,7 @@ from .parser_mixins import (
     PreprocessingParserMixin,
     ScootModellingSubParserMixin,
 )
+
 # pylint: disable=too-many-ancestors
 
 
@@ -41,6 +42,7 @@ class TrainLockdownModelParser(
         self.add_argument(
             "--root", default="../experiments", help="Root to experiments directory."
         )
+
 
 class TrainScootModelParser(
     DurationParserMixin,

@@ -3,7 +3,13 @@
 from sqlalchemy import Column, Float, Integer, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from ..base import Base
-from ..mixins import DataTableMixin, InstanceTableMixin, MetricsTableMixin, ModelTableMixin, ResultTableMixin
+from ..mixins import (
+    DataTableMixin,
+    InstanceTableMixin,
+    MetricsTableMixin,
+    ModelTableMixin,
+    ResultTableMixin,
+)
 
 
 class TrafficInstanceTable(Base, InstanceTableMixin):
@@ -44,9 +50,7 @@ class TrafficMetricTable(Base, MetricsTableMixin):
     """
 
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["data_id"], ["traffic_modelling.traffic_data.data_id"]
-        ),
+        ForeignKeyConstraint(["data_id"], ["traffic_modelling.traffic_data.data_id"]),
         ForeignKeyConstraint(
             ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
         ),
@@ -59,15 +63,14 @@ class TrafficMetricTable(Base, MetricsTableMixin):
     coverage95 = Column(Float, nullable=False, index=False)
     nlpl = Column(Float, nullable=False, index=False)
 
+
 class TrafficResultTable(Base, ResultTableMixin):
     """A table for storing the results of a traffic model prediction."""
 
     __tablename__ = "traffic_result"
 
     __table_args__ = (
-        ForeignKeyConstraint(
-            ["data_id"], ["traffic_modelling.traffic_data.data_id"]
-        ),
+        ForeignKeyConstraint(["data_id"], ["traffic_modelling.traffic_data.data_id"]),
         ForeignKeyConstraint(
             ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
         ),

@@ -61,12 +61,7 @@ def train_sensor_model(
     )
 
     simple_training_loop(
-        x_train,
-        y_train,
-        model,
-        optimizer,
-        maxiter=maxiter,
-        logging_freq=logging_freq,
+        x_train, y_train, model, optimizer, maxiter=maxiter, logging_freq=logging_freq,
     )
 
     return model

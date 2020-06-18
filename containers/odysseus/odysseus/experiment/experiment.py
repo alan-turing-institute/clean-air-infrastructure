@@ -55,7 +55,6 @@ class ExperimentMixin:
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
-
     def add_instance(self, instance: TrafficInstance):
         """ToDo."""
 

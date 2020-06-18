@@ -9,8 +9,10 @@ from cleanair.mixins import ScootQueryMixin
 from ..dataset import TrafficDataset
 from .experiment import ExperimentMixin
 from ..modelling import parse_kernel, train_sensor_model
+
 if TYPE_CHECKING:
     import gpflow
+
 
 class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     """Experiment for scoot modelling."""
@@ -26,28 +28,27 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         return TrafficModelTable
 
     def load_datasets(
-        self,
-        detectors: List,
-        start_date: str,
-        end_date: Optional[str] = None,
+        self, detectors: List, start_date: str, end_date: Optional[str] = None,
     ) -> List[tf.data.Dataset]:
         """Load the data and train the models."""
-        self.logger.info("Querying the scoot database for readings on %s detectors.", len(detectors))
+        self.logger.info(
+            "Querying the scoot database for readings on %s detectors.", len(detectors)
+        )
         scoot_df = self.get_scoot_with_location(
-            start_date,
-            end_time=end_date,
-            detectors=detectors,
-            output_type="df"
+            start_date, end_time=end_date, detectors=detectors, output_type="df"
         )
         # list of scoot datasets
         datasets = [
             TrafficDataset.from_dataframe(
-                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])], preprocessing
+                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])],
+                preprocessing,
             )
-            for data_config, preprocessing in self.frame[["data_config", "preprocessing"]]
+            for data_config, preprocessing in self.frame[
+                ["data_config", "preprocessing"]
+            ]
         ]
         return datasets
-    
+
     def train_models(
         self,
         datasets: List[tf.data.Dataset],

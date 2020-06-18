@@ -78,7 +78,7 @@ class ResultTableMixin:
             UUID,
             ForeignKey("interest_points.meta_point.id"),
             primary_key=True,
-            nullable=False
+            nullable=False,
         )
 
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)

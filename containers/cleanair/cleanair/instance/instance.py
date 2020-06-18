@@ -5,6 +5,7 @@ import abc
 from ..databases import DBWriter
 from .utilities.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
+
 class Instance(DBWriter):
     """
     An instance is one model trained and fitted on some data.
@@ -53,7 +54,6 @@ class Instance(DBWriter):
         else:
             self._git_hash = get_git_hash()
 
-
         self._fit_start_time = fit_start_time
         self._instance_id = self.hash()
 
@@ -90,7 +90,9 @@ class Instance(DBWriter):
     @property
     def instance_id(self) -> str:
         """A unique id created by hashing the model_name, param_id, data_id and git_hash"""
-        return instance_id_from_hash(self.model_name, self.param_id, self.data_id, self.git_hash)
+        return instance_id_from_hash(
+            self.model_name, self.param_id, self.data_id, self.git_hash
+        )
 
     @property
     def git_hash(self) -> str:

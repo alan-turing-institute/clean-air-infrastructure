@@ -4,6 +4,7 @@ import logging
 import hashlib
 import git
 
+
 def get_git_hash() -> str:
     """Get the hex hash of the git repo.
 
@@ -14,19 +15,15 @@ def get_git_hash() -> str:
         return git.Repo(search_parent_directories=True).head.object.hexsha
     except git.InvalidGitRepositoryError as error:
         # catch exception and set to empty string
-        error_message = (
-            "Could not find a git repository in the parent directory."
-        )
+        error_message = "Could not find a git repository in the parent directory."
         error_message += "Setting git_hash to empty string."
         logging.error(error_message)
         logging.error(error.__traceback__)
         return ""
 
+
 def instance_id_from_hash(
-    model_name: str,
-    param_id: str,
-    data_id: str,
-    git_hash: str,
+    model_name: str, param_id: str, data_id: str, git_hash: str,
 ) -> str:
     """Return an instance id by hashing the arguments.
 
@@ -42,6 +39,7 @@ def instance_id_from_hash(
     hash_string = model_name + str(param_id)
     hash_string += git_hash + str(data_id)
     return hash_fn(hash_string)
+
 
 def hash_dict(value: dict) -> str:
     """Dumps a dictionary to json string then hashes that string.

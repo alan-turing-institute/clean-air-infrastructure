@@ -5,17 +5,20 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 from cleanair.instance.utilities import get_git_hash, instance_id_from_hash, hash_dict
+from cleanair.loggers import get_logger
 from cleanair.timestamps import as_datetime
 
 from odysseus.parsers import TrainScootModelParser
 from odysseus.databases import TrafficQuery
 from odysseus.experiment import ScootExperiment
 
+
 def main():
     """Main entrypoint function."""
     parser = TrainScootModelParser()
     parser.add_custom_subparsers()
     args = parser.parse_args()
+    logger = get_logger("Scoot model fit.")
 
     # get start and end time
     fmt = "%Y-%m-%dT%H:%M:%S"
@@ -39,9 +42,10 @@ def main():
 
     # create rows ready for dataframe
     frame = pd.DataFrame()
-    frame["data_config"] = [dict(
-        detectors=[d], start_time=start_time, end_time=upto_time
-    ) for d in detectors]
+    frame["data_config"] = [
+        dict(detectors=[d], start_time=start_time, end_time=upto_time)
+        for d in detectors
+    ]
     frame["preprocessing"] = preprocessing
     frame["model_param"] = model_params
     frame["model_name"] = args.model_name
@@ -50,12 +54,16 @@ def main():
     frame["param_id"] = frame["model_param"].apply(hash_dict)
     frame["data_id"] = frame["data_config"].apply(hash_dict)
     frame["git_hash"] = get_git_hash()
-    frame["instance_id"] = frame[["model_name", "param_id", "data_id", "git_hash"]].apply(instance_id_from_hash)
+    frame["instance_id"] = frame[
+        ["model_name", "param_id", "data_id", "git_hash"]
+    ].apply(instance_id_from_hash)
 
     # create an experiment (xp)
     scoot_xp = ScootExperiment(frame=frame, secretfile=args.secretfile)
     datasets = scoot_xp.load_datasets(detectors, start_time, upto_time)
     models = scoot_xp.train_models(datasets, args.dryrun, args.logging_freq)
+    logger.info("%s models finished training.", len(models))
+
 
 if __name__ == "__main__":
     main()

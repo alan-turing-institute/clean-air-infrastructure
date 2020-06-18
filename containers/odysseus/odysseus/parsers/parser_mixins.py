@@ -4,9 +4,11 @@ Mixins for traffic parsers.
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from argparse import Namespace
     from cleanair.mixins import ScootQueryMixin
+
 
 class BaselineParserMixin:
     """Arguments for baseline periods."""
@@ -144,6 +146,7 @@ class KernelParserMixin:
         kernel_group.add_argument(
             "--variance", type=float, default=1.0, help="Initial value for variance.",
         )
+
 
 class ScootModellingSubParserMixin:
     """Add custom subparsers for batch and testing scoot models."""

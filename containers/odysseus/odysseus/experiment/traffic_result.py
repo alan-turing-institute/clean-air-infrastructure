@@ -4,6 +4,7 @@ from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficResultTable
 from cleanair.mixins import ResultMixin
 
+
 class TrafficResult(ResultMixin, DBWriter):
     """A traffic model prediction."""
 
