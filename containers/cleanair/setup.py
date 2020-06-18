@@ -16,7 +16,10 @@ setuptools.setup(
     ],
     install_requires=[
         "boto3==1.10.37",
+        "cdsapi==0.2.8",
+        "cfgrib==0.9.8.1",
         "colorlog==4.0.2",
+        "pyeccodes==0.1.1",
         "geoalchemy2==0.6.3",
         "geopandas==0.6.2",
         "gitpython==3.1.0",
@@ -33,8 +36,10 @@ setuptools.setup(
         "sqlalchemy==1.3.11",
         "sqlalchemy-utils==0.36.3",
         "sklearn==0.0",
+        "tabulate==0.8.7",
         "termcolor==1.1.0",
         "uuid==1.30",
+        "xarray==0.15.1",
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.4", "pathos==0.2.5"],

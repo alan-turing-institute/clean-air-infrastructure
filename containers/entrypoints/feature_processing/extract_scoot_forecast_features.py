@@ -27,7 +27,7 @@ def main():
         # Fit SCOOT readings using Prophet and forecast `args.forecasthrs` into the future
         scoot_forecaster = ScootPerDetectorForecaster(
             nhours=args.nhours,
-            end=args.end,
+            end=args.upto,
             forecast_length_hrs=args.forecasthrs,
             detector_ids=detector_ids,
             secretfile=args.secretfile,

@@ -1,7 +1,31 @@
 """
 Mixins which are used by multiple argument parsers
 """
+import os
+import json
 from argparse import ArgumentTypeError, Action
+from dateutil.parser import isoparse
+
+
+class LoadCopernicusKey(Action):
+    "Attempt to load a copernicus key for a secret directory if not key provided"
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        "Load copernicus key if missing"
+
+        if values == "":
+            try:
+                with open(
+                    os.path.abspath(
+                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
+                    )
+                ) as f_secret:
+                    data = json.load(f_secret)
+                    values = data["copernicus_key"]
+            except (json.decoder.JSONDecodeError, FileNotFoundError):
+                values = None
+
+        setattr(namespace, self.dest, values)
 
 
 class ParseSecretDict(Action):
@@ -27,6 +51,15 @@ class ParseSecretDict(Action):
                 output_dict[key] = value
 
         setattr(namespace, self.dest, output_dict)
+
+
+class ParseNHours(Action):
+    "Parse ndays into nhours"
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        "Replace nhours with ndays*24"
+
+        setattr(namespace, "nhours", values * 24)
 
 
 class SecretFileParserMixin:
@@ -58,18 +91,20 @@ class DurationParserMixin:
     Parser for any entrypoint which needs a duration
     """
 
-    def __init__(self, nhours=48, end="lasthour", **kwargs):
+    def __init__(self, nhours=48, ndays=2, end="lasthour", **kwargs):
         super().__init__(**kwargs)
         self.add_argument(
-            "-e",
-            "--end",
-            type=str,
+            "-u",
+            "--upto",
+            type=self.check_upto,
             default=end,
-            help="The last time point to get data for in iso format (default: {}).".format(
-                end
-            ),
+            help="Time point to get data up to in iso format."
+            "Or one of: 'lasthour', 'now', 'today', 'tomorrow', 'yesterday'. (default: {})."
+            "To get data that includes today you would use 'tomorrow'"
+            "to specify all data up to but not including tomorrows date".format(end),
         )
-        self.add_argument(
+        time_group = self.add_mutually_exclusive_group()
+        time_group.add_argument(
             "-n",
             "--nhours",
             type=int,
@@ -78,13 +113,39 @@ class DurationParserMixin:
                 nhours
             ),
         )
+        time_group.add_argument(
+            "--ndays",
+            type=int,
+            help="The number of days to request data for (default: {}).".format(ndays),
+            action=ParseNHours,
+        )
 
-    def parse_args(self, args=None, namespace=None):
-        """Raise an exception if the provided arguments are invalid"""
-        args = super().parse_args(args, namespace)
-        if args.nhours < 1:
-            raise ArgumentTypeError("Argument --nhours must be greater than 0")
-        return args
+    @staticmethod
+    def is_iso_string(isostring):
+        """Check if isostring is a valid iso string
+
+        Arguments:
+            isostring (str): An iso string
+        """
+        try:
+            isoparse(isostring)
+        except ValueError:
+            return False
+
+        return True
+
+    def check_upto(self, value):
+        "validate the upto argument"
+
+        acceptable_values = ["lasthour", "now", "today", "tomorrow", "yesterday"]
+
+        if not isinstance(value, str):
+            raise ArgumentTypeError("%s is not of type str" % value)
+
+        if (value in acceptable_values) or self.is_iso_string(value):
+            return value
+
+        raise ArgumentTypeError("%s is not a valid argument" % value)
 
 
 class VerbosityMixin:
@@ -109,4 +170,49 @@ class SourcesMixin:
             nargs="+",
             default=sources,
             help="List of sources to process, (default: {}).".format(",".join(sources)),
+        )
+
+
+class WebMixin:
+    """Parser for any entrypoint which needs to display sqlquery results
+    as an html table"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-w",
+            "--web",
+            default=False,
+            action="store_true",
+            help="Open a browser to show available data. Else print to console",
+        )
+
+
+class InsertMethodMixin:
+    """Parser for any entrypoint which needs to set a insert method
+    when inserting data into a database.
+    Missing means only process and insert data that is known to be missing from the database
+    All means insert all data even if it isnt missing. Can be used to overwrite existing data
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-m", "--method", default="missing", type=str, choices=["missing", "all"]
+        )
+
+
+class CopernicusMixin:
+    """Argument parsing for Satellite readings"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "-k",
+            "--copernicus-key",
+            type=str,
+            action=LoadCopernicusKey,
+            required=True,
+            help="""copernicus key for accessing satellite data.
+If provided with no value will try to load from 'secrets/copernicus_secrets.json'""",
         )

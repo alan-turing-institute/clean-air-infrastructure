@@ -10,3 +10,4 @@ python-dotenv==0.13.0
 azure-storage-blob==12.3.0
 azure-mgmt-storage==9.0.0
 azure-common==1.1.25
+jupyter
