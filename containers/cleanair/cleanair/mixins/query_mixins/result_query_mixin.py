@@ -1,23 +1,16 @@
 """Mixin for querying from the result table."""
 
-# from __future__ import annotations
 from abc import abstractmethod
-from typing import Optional, TYPE_CHECKING, Any
+from typing import Optional, Any
 from sqlalchemy import func
 
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import MetaPoint
 from ...decorators import db_query
-# from ...databases import connector
-
-# if TYPE_CHECKING:
-# from ...databases import Connector
-# TODO tidy this up
 
 class ResultQueryMixin:
     """Mixin for querying results."""
 
-    # dbcnxn: connector.Connector
     dbcnxn: Any
 
     @property
