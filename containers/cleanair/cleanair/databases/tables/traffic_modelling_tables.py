@@ -1,6 +1,6 @@
 """Tables for the traffic modelling schema."""
 
-from sqlalchemy import Column, Float, Integer, String, ForeignKeyConstraint
+from sqlalchemy import Column, Float, Integer, ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from ..base import Base
 from ..mixins import DataTableMixin, InstanceTableMixin, MetricsTableMixin, ModelTableMixin, ResultTableMixin
@@ -44,13 +44,13 @@ class TrafficMetricTable(Base, MetricsTableMixin):
     """
 
     __table_args__ = (
-        {"schema": "traffic_modelling"},
         ForeignKeyConstraint(
             ["data_id"], ["traffic_modelling.traffic_data.data_id"]
         ),
         ForeignKeyConstraint(
             ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
         ),
+        {"schema": "traffic_modelling"},
     )
     __tablename__ = "traffic_metric"
 
@@ -62,16 +62,17 @@ class TrafficMetricTable(Base, MetricsTableMixin):
 class TrafficResultTable(Base, ResultTableMixin):
     """A table for storing the results of a traffic model prediction."""
 
+    __tablename__ = "traffic_result"
+
     __table_args__ = (
-        {"schema": "traffic_modelling"},
         ForeignKeyConstraint(
             ["data_id"], ["traffic_modelling.traffic_data.data_id"]
         ),
         ForeignKeyConstraint(
             ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
         ),
+        {"schema": "traffic_modelling"},
     )
-    __tablename__ = "traffic_result"
 
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)

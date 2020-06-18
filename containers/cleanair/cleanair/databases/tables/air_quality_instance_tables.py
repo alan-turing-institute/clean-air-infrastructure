@@ -98,7 +98,6 @@ class AirQualityResultTable(Base, ResultTableMixin):
         ForeignKeyConstraint(
             ["instance_id"], ["air_quality_modelling.air_quality_instance.instance_id"]
         ),
-        ForeignKeyConstraint(["point_id"], ["interest_points.meta_point.id"]),
         {"schema": "air_quality_modelling"},
     )
 

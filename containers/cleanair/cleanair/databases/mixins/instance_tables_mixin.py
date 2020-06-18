@@ -3,6 +3,7 @@ Table that summerises an instance (model + data + result).
 """
 
 from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
 
 
@@ -69,12 +70,17 @@ class ResultTableMixin:
     instance_id = Column(String(64), primary_key=True, nullable=False)
     data_id = Column(String(64), primary_key=True, nullable=False)
 
-    point_id = Column(
-        UUID,
-        ForeignKey("interest_points.meta_point.id"),
-        primary_key=True,
-        nullable=False
-    )
+    @classmethod
+    @declared_attr
+    def point_id(cls):
+        """Point id of the meta point schema."""
+        return Column(
+            UUID,
+            ForeignKey("interest_points.meta_point.id"),
+            primary_key=True,
+            nullable=False
+        )
+
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
 
     def __repr__(self):
