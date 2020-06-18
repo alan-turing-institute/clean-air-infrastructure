@@ -1,32 +1,26 @@
 """Training scoot models for the air quality project."""
 
-import os
-import logging
+
 from datetime import datetime, timedelta
-from pathlib import Path
 import pandas as pd
-import tensorflow as tf
 
 from cleanair.instance.utilities import get_git_hash, instance_id_from_hash, hash_dict
+from cleanair.timestamps import as_datetime
+
 from odysseus.parsers import TrainScootModelParser
-from odysseus.experiment import TrafficInstance
 from odysseus.databases import TrafficQuery
-from odysseus.dates import (
-    NORMAL_BASELINE_START,
-    NORMAL_BASELINE_END,
-    LOCKDOWN_BASELINE_START,
-    LOCKDOWN_BASELINE_END,
-)
-from odysseus.dataset import prepare_batch, TrafficDataset
 from odysseus.experiment import ScootExperiment
-from odysseus.modelling import parse_kernel
-from odysseus.modelling import train_sensor_model
 
 def main():
     """Main entrypoint function."""
     parser = TrainScootModelParser()
     parser.add_custom_subparsers()
     args = parser.parse_args()
+
+    # get start and end time
+    fmt = "%Y-%m-%dT%H:%M:%S"
+    upto_time = as_datetime(args.upto).strftime(fmt)
+    start_time = (as_datetime(args.upto) - timedelta(hours=args.nhours)).strftime(fmt)
 
     # get a list of detectors
     traffic_query = TrafficQuery(secretfile=args.secretfile)
@@ -43,8 +37,25 @@ def main():
     # dictionary of preprocessing parameters
     preprocessing = {key: vars(args)[key] for key in parser.PREPROCESSING_GROUP}
 
+    # create rows ready for dataframe
+    frame = pd.DataFrame()
+    frame["data_config"] = [dict(
+        detectors=[d], start_time=start_time, end_time=upto_time
+    ) for d in detectors]
+    frame["preprocessing"] = preprocessing
+    frame["model_param"] = model_params
+    frame["model_name"] = args.model_name
+    frame["fit_start_time"] = datetime.now().strftime(fmt)
+    frame["cluster_id"] = args.cluster_id
+    frame["param_id"] = frame["model_param"].apply(hash_dict)
+    frame["data_id"] = frame["data_config"].apply(hash_dict)
+    frame["git_hash"] = get_git_hash()
+    frame["instance_id"] = frame[["model_name", "param_id", "data_id", "git_hash"]].apply(instance_id_from_hash)
+
     # create an experiment (xp)
-    scoot_xp = ScootExperiment(secretfile=args.secretfile)
+    scoot_xp = ScootExperiment(frame=frame, secretfile=args.secretfile)
+    datasets = scoot_xp.load_datasets(detectors, start_time, upto_time)
+    models = scoot_xp.train_models(datasets, args.dryrun, args.logging_freq)
 
 if __name__ == "__main__":
     main()
