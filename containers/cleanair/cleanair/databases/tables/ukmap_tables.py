@@ -25,8 +25,6 @@ class UKMap(Base):
     geom = Column(Geometry(srid=4326, spatial_index=True))
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<UKMap(" + ", ".join(vals) + ")>"
