@@ -61,7 +61,7 @@ class StaticFeature(Base):
 class DynamicFeature(Base):
     """Any model features that vary over time (and therefore need a start-time column)"""
 
-    __tablename__ = "dynamic_feature2"
+    __tablename__ = "dynamic_feature"
     __table_args__ = (
         Index("dynamic_feature_id_idx2", "point_id"),
         Index(
