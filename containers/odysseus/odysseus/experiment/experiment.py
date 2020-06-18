@@ -2,14 +2,14 @@
 Experiments summerise multiple instances.
 """
 
+from abc import abstractmethod
 from typing import Optional
 import pandas as pd
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import TrafficInstanceTable
+from cleanair.databases.mixins import InstanceTableMixin, ModelTableMixin
 from .traffic_instance import TrafficInstance
 
 
-class Experiment(DBWriter):
+class ExperimentMixin:
     """
     An experiment contains multiple instances.
     """
@@ -45,6 +45,17 @@ class Experiment(DBWriter):
         """Information about the instances"""
         return self._frame
 
+    @property
+    @abstractmethod
+    def instance_table(self) -> InstanceTableMixin:
+        """The instance table."""
+
+    @property
+    @abstractmethod
+    def model_table(self) -> ModelTableMixin:
+        """The modelling table."""
+
+
     def add_instance(self, instance: TrafficInstance):
         """ToDo."""
 
@@ -52,5 +63,5 @@ class Experiment(DBWriter):
         """Update the instance, data and model tables."""
         site_records = self.frame.to_dict("records")
         self.commit_records(
-            site_records, on_conflict="overwrite", table=TrafficInstanceTable,
+            site_records, on_conflict="overwrite", table=self.instance_table,
         )
