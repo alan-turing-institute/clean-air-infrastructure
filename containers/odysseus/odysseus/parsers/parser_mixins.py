@@ -90,7 +90,7 @@ class ModellingParserMixin:
     MODEL_GROUP = [
         "n_inducing_points",
         "inducing_point_method",
-        "max_iterations",
+        "maxiter",
         "model_name",
     ]
 
@@ -110,7 +110,7 @@ class ModellingParserMixin:
             help="Method for optimizing inducing points.",
         )
         modelling_group.add_argument(
-            "--max_iterations",
+            "--maxiter",
             type=int,
             default=2000,
             help="Max number of iterations to train model.",

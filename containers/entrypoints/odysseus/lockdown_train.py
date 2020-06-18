@@ -159,7 +159,7 @@ def main():
             dataset.target_tensor,
             kernel,
             optimizer,
-            max_iterations=args.max_iterations,
+            maxiter=args.maxiter,
             logging_freq=logging_freq,
             n_inducing_points=args.n_inducing_points,
             inducing_point_method=args.inducing_point_method,
