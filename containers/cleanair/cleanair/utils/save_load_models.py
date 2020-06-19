@@ -4,6 +4,7 @@ from typing import Optional
 import os
 from pathlib import Path
 import tensorflow as tf
+from .azure.blob_storage import download_blob
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -39,20 +40,30 @@ def save_model(
 
     # try saving to blob storage first
     try:
-        pass
+        saver = gpflow.saver.Saver()
+        saver.save(os.path.join(model_dir, instance_id, ".h5"), model)
 
     except:  # TODO what type of exception is thrown? should we catch it or just log error?
         pass
 
 
 def load_model(
-    instance_id: str, model_dir: Optional[str] = None,
-    sas_token: Optional[str] = None
+    instance_id: str,
+    model_dir: Optional[str] = None,
+    sas_token: Optional[str] = None,
 ) -> gpflow.models.GPModel:
     """Try to load the model from blob storage."""
     # try loading from blob storage
     try:
-        pass
-    except:  # TODO what type of exception is thrown if we can't read from blob storage?
+        # TODO what should these be set to?
+        resource_group = ""
+        storage_container_name = ""
+        blob_name = ""
+        account_url = ""
+        target_file = instance_id + ".h5"
+        download_blob(resource_group, storage_container_name, blob_name, account_url, target_file, sas_token)
+        model = gpflow.saver.Saver().load(os.path.join(model_dir, target_file))
+        return model
+    except Exception:  # TODO what type of exception is thrown if we can't read from blob storage?
         # try reading from local file using model_dir
         pass
