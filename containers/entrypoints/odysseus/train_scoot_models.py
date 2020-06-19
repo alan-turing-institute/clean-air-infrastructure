@@ -26,8 +26,10 @@ def main():
     start_time = (as_datetime(args.upto) - timedelta(hours=args.nhours)).strftime(fmt)
 
     # get a list of detectors
+    logger.info("Getting scoot detectors from database.")
     traffic_query = TrafficQuery(secretfile=args.secretfile)
     detectors = TrainScootModelParser.detectors_from_args(traffic_query, args)
+    num_detectors = len(detectors)
 
     # get the parameters for the kernel and the model
     kernel_dict = dict(
@@ -60,7 +62,9 @@ def main():
 
     # create an experiment (xp)
     scoot_xp = ScootExperiment(frame=frame, secretfile=args.secretfile)
+    logger.info("Loading datasets.")
     datasets = scoot_xp.load_datasets(detectors, start_time, upto_time)
+    logger.info("Training models on %s scoot detectors.", num_detectors)
     models = scoot_xp.train_models(datasets, args.dryrun, args.logging_freq)
     logger.info("%s models finished training.", len(models))
 
