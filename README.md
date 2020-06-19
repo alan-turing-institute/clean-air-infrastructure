@@ -494,12 +494,6 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 ### Run the application
 
-Set variables:
-
-```bash
-export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
-```
-
 ### On development server
 ```bash 
 DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
