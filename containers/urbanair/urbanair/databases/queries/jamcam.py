@@ -45,6 +45,45 @@ def get_jamcam_info(
 
 
 @db_query
+def get_jamcam_available(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    starttime: Optional[datetime] = None,
+    endtime: Optional[datetime] = None,
+) -> Query:
+    """Get camera data availability"""
+
+    agg_func = func.distinct(
+        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
+            "measurement_start_utc"
+        ),
+    ).label("measurement_start_utc")
+
+    res = db.query(agg_func).order_by(agg_func)
+
+    if camera_id:
+        res = res.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
+
+    # Filter by time
+    if starttime:
+        res = res.filter(
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat(),
+        )
+    if endtime:
+        res = res.filter(JamCamVideoStats.video_upload_datetime < endtime.isoformat(),)
+
+    # Filter by detection class
+    if detection_class.value != "all":
+        res = res.filter(
+            JamCamVideoStats.detection_class
+            == DetectionClass.map_detection_class(detection_class)
+        )
+
+    return res
+
+
+@db_query
 def get_jamcam_recent(
     db: Session,
     camera_id: Optional[str],

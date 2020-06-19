@@ -9,8 +9,10 @@ from ..databases.schemas.jamcam import (
     JamCamVideo,
     JamCamCounts,
     JamCamFeatureCollection,
+    JamCamAvailable,
 )
 from ..databases.queries import (
+    get_jamcam_available,
     get_jamcam_recent,
     get_jamcam_info,
     get_jamcam_snapshot,
@@ -22,7 +24,7 @@ router = APIRouter()
 
 @router.get(
     "/camera_info",
-    description="GeoJSON: JamCam camera locations",
+    description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
 )
 async def camera_info() -> Response:
@@ -31,20 +33,52 @@ async def camera_info() -> Response:
 
 
 @router.get(
-    "/raw",
-    description="""Request counts of objects at jamcam cameras
-""",
-    response_model=List[JamCamVideo],
+    "/available",
+    description="""Check what jamcam data is available by hour
+    If no camera_id is provided returns entry if data is available at any camera
+    If starttime and endtime are not provided checks all availability""",
+    response_model=List[JamCamAvailable],
 )
-async def cam_raw(
+async def camera_available(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
     starttime: datetime = Query(
+        None, description="""ISO UTC datetime to request data from""",
+    ),
+    endtime: datetime = Query(
         None,
-        description="""ISO UTC datetime to request data from.
-        If no starttime or endtime provided will return the last 12 hours of availble data""",
+        description="ISO UTC datetime to request data up to (not including this datetime)",
+    ),
+    db: Session = Depends(get_db),
+) -> Optional[List[Dict]]:
+
+    print(
+        get_jamcam_available(
+            db, camera_id, detection_class, starttime, endtime, output_type="sql"
+        )
+    )
+    data = get_jamcam_available(db, camera_id, detection_class, starttime, endtime)
+
+    return all_or_404(data)
+
+
+@router.get(
+    "/raw",
+    description="""Request counts of objects at jamcam cameras. 
+    If no camera_id is provided returns data for all cameras (slow).
+    If not starttime and endtime are provided returns the last 12 hours of available data.
+""",
+    response_model=List[JamCamVideo],
+)
+async def camera_raw(
+    camera_id: str = Query(None, description="A unique JamCam id"),
+    detection_class: DetectionClass = Query(
+        DetectionClass.all_classes, description="Class of object"
+    ),
+    starttime: datetime = Query(
+        None, description="""ISO UTC datetime to request data from""",
     ),
     endtime: datetime = Query(
         None,
@@ -58,8 +92,13 @@ async def cam_raw(
     return all_or_404(data)
 
 
-@router.get("/hourly", response_model=List[JamCamVideo])
-async def cam_snapshot(
+@router.get(
+    "/hourly",
+    response_model=List[JamCamVideo],
+    description="""Request counts of objects at jamcam cameras aggregated by hour
+""",
+)
+async def camera_hourly(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
