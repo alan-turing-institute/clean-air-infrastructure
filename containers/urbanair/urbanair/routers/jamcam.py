@@ -54,11 +54,6 @@ async def camera_available(
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
-    print(
-        get_jamcam_available(
-            db, camera_id, detection_class, starttime, endtime, output_type="sql"
-        )
-    )
     data = get_jamcam_available(db, camera_id, detection_class, starttime, endtime)
 
     return all_or_404(data)
