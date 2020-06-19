@@ -60,7 +60,7 @@ def main():
         ["model_name", "param_id", "data_id", "git_hash"]
     ].apply(instance_id_from_hash)
 
-    # create an experiment (xp)
+    # create an experiment (xp), load datasets and train models
     scoot_xp = ScootExperiment(frame=frame, secretfile=args.secretfile)
     logger.info("Loading datasets.")
     datasets = scoot_xp.load_datasets(detectors, start_time, upto_time)
@@ -68,6 +68,9 @@ def main():
     models = scoot_xp.train_models(datasets, args.dryrun, args.logging_freq)
     logger.info("%s models finished training.", len(models))
 
+    # TODO update database table
+    # TODO save models to blob storage
+    scoot_xp.update_remote_tables()
 
 if __name__ == "__main__":
     main()

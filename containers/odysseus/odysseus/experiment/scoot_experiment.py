@@ -5,6 +5,7 @@ from typing import List, Optional, TYPE_CHECKING
 import tensorflow as tf
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficInstanceTable, TrafficModelTable
+from cleanair.instance.utilities import save_model
 from cleanair.mixins import ScootQueryMixin
 from ..dataset import TrafficDataset
 from .experiment import ExperimentMixin
@@ -88,9 +89,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
                 inducing_point_method=model_params["inducing_point_method"],
             )
             # TODO: write models to blob storage
-            # instance.save_model(
-            #     model, os.path.join(args.root, args.experiment, "models"),
-            # )
+            # save_model(row["instance_id"], model)
             model_list.append(model)
         return model_list
 
