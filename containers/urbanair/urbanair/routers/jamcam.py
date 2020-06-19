@@ -34,8 +34,8 @@ async def camera_info() -> Response:
 
 @router.get(
     "/available",
-    description="""Check what jamcam data is available by hour
-    If no camera_id is provided returns entry if data is available at any camera
+    description="""Check what jamcam data is available by hour.
+    If no camera_id is provided returns entry if data is available at any camera.
     If starttime and endtime are not provided checks all availability""",
     response_model=List[JamCamAvailable],
 )
@@ -95,7 +95,7 @@ async def camera_raw(
 @router.get(
     "/hourly",
     response_model=List[JamCamVideo],
-    description="""Request counts of objects at jamcam cameras aggregated by hour
+    description="""Request counts of objects at jamcam cameras aggregated by hour.
 """,
 )
 async def camera_hourly(
