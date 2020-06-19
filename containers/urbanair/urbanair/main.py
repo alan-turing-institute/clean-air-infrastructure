@@ -28,7 +28,7 @@ app.mount(
         directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "packages"),
         html=True,
     ),
-    name="pakage_docs",
+    name="package_docs",
 )
 
 app.include_router(static.router)
