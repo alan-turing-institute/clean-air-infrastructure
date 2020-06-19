@@ -1,4 +1,0 @@
-cleanair
-fastapi[all]
-aiofiles
-geojson

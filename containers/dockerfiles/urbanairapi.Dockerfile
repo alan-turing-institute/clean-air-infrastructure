@@ -6,9 +6,10 @@ RUN pip install mkdocs-material==5.3.0 mkdocstrings==0.12.0
 COPY cleanair /apps/cleanair
 RUN pip install /apps/cleanair
 
-# Copy the API into the container
-COPY urbanair/requirements.txt /app
-RUN pip install -r /app/requirements.txt
+# Install package
+COPY urbanair /urbanair_package
+RUN pip install /urbanair_package
+
+# But copy the contents to here as we only install package to get dependencies
 COPY urbanair/urbanair /app/app
 
-RUN ls /app
