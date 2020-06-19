@@ -7,7 +7,7 @@ from .routers import jamcam, static
 from .config import get_settings
 import pkg_resources
 
-# pylint
+
 app = FastAPI(
     title="UrbanAir API",
     description="High resolution air polution forecasts",
