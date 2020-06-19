@@ -4,15 +4,18 @@ from typing import Optional
 import os
 from pathlib import Path
 import tensorflow as tf
+
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
+
 def save_model(
     model: gpflow.models.GPModel,
     instance_id: str,
-    model_dir: Optional[str] = ".tmp_model_backup",    
+    sas_token: Optional[str] = None,
+    model_dir: Optional[str] = None,
 ) -> None:
     """Save a model to blob storage.
 
@@ -37,13 +40,14 @@ def save_model(
     # try saving to blob storage first
     try:
         pass
-    
-    except: # TODO what type of exception is thrown? should we catch it or just log error?
+
+    except:  # TODO what type of exception is thrown? should we catch it or just log error?
         pass
 
+
 def load_model(
-    instance_id: str,
-    model_dir: Optional[str] = ".tmp_model_backup",
+    instance_id: str, model_dir: Optional[str] = None,
+    sas_token: Optional[str] = None
 ) -> gpflow.models.GPModel:
     """Try to load the model from blob storage."""
     # try loading from blob storage
