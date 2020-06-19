@@ -31,12 +31,12 @@ async def camera_info() -> Response:
 
 
 @router.get(
-    "/recent",
+    "/raw",
     description="""Request counts of objects at jamcam cameras
 """,
     response_model=List[JamCamVideo],
 )
-async def cam_recent(
+async def cam_raw(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
@@ -58,7 +58,7 @@ async def cam_recent(
     return all_or_404(data)
 
 
-@router.get("/snapshot", response_model=List[JamCamVideo])
+@router.get("/hourly", response_model=List[JamCamVideo])
 async def cam_snapshot(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
