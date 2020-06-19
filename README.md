@@ -494,8 +494,30 @@ export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --quer
 
 ### Run the application
 
+Set variables:
+
+```bash
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
+```
+
+### On development server
 ```bash 
 DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
+```
+
+### In a docker image
+
+To build the API docker image
+```bash
+docker build -t fastapi:test -f containers/dockerfiles/urbanairapi.Dockerfile 'containers'
+```
+
+The run the docker image:
+
+```bash
+DB_SECRET_FILE='.db_secrets_ad.json'
+SECRET_DIR=$(pwd)/.secrets  
+docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
 
 # Developer guide
