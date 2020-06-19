@@ -5,13 +5,13 @@ from .complex import (
     DataBaseRoleParser,
     DatabaseSetupParser,
     FeatureNameParser,
-    ModelFitParser,
-    ModelValidationParser,
     SatelliteArgumentParser,
     ScootReadingArgumentParser,
     ScootForecastFeatureArgumentParser,
     FeatureSourceParser,
 )
+from .dashboard_parser import DashboardParser
+from .model_fitting_parser import ModelFittingParser
 from .simple import (
     InsertMethodParser,
     WebParser,
@@ -30,6 +30,7 @@ from .simple import (
 )
 
 __all__ = [
+    "DashboardParser",
     "InsertMethodParser",
     "WebParser",
     "SecretFileParser",
@@ -40,8 +41,7 @@ __all__ = [
     "DatabaseSetupParser",
     "AQEReadingArgumentParser",
     "LAQNReadingArgumentParser",
-    "ModelFitParser",
-    "ModelValidationParser",
+    "ModelFittingParser",
     "StaticFeatureArgumentParser",
     "SatelliteArgumentParser",
     "ScootForecastFeatureArgumentParser",

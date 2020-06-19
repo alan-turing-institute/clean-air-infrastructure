@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
 from ..base import Base
-from ..mixins import DataConfigMixin, InstanceTableMixin, ModelTableMixin
+from ..mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
 
 
 class TrafficInstanceTable(Base, InstanceTableMixin):
@@ -23,7 +23,7 @@ class TrafficInstanceTable(Base, InstanceTableMixin):
     )
 
 
-class TrafficDataTable(Base, DataConfigMixin):
+class TrafficDataTable(Base, DataTableMixin):
     """Storing settings for traffic data."""
 
     __tablename__ = "traffic_data"

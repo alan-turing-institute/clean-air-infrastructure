@@ -1,4 +1,7 @@
-"""Copernicus data types"""
-from .copernicus_types import Species
+"""Types for the cleanair package."""
 
-__all__ = ["Species"]
+from .copernicus_types import Species
+from .dataset_types import DataConfig
+from .model_types import ParamsSVGP
+
+__all__ = ["DataConfig", "ParamsSVGP", "Species"]
