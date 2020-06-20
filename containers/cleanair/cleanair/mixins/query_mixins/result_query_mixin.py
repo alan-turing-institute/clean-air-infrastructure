@@ -59,7 +59,9 @@ class ResultQueryMixin:
                 )
             # join on hexgrid
             if join_hexgrid:
-                readings = readings.join(HexGrid, self.result_table.point_id == HexGrid.point_id)
+                readings = readings.join(
+                    HexGrid, self.result_table.point_id == HexGrid.point_id
+                )
             # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
