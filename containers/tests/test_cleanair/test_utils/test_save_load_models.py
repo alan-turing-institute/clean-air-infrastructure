@@ -23,6 +23,7 @@ def save_load_instance_id() -> str:
     """Test id for instance."""
     return "model_save_load_test"
 
+# TODO use tmp directories in pytest: https://docs.pytest.org/en/stable/tmpdir.html
 def test_save_model(save_load_instance_id, model_dir) -> None:
     """Test models are saved correctly."""
 
