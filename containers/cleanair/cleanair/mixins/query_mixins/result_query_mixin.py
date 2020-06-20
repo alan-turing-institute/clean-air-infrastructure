@@ -5,7 +5,7 @@ from typing import Optional, Any
 from sqlalchemy import func
 
 from ...databases.mixins import ResultTableMixin
-from ...databases.tables import MetaPoint
+from ...databases.tables import HexGrid, MetaPoint
 from ...decorators import db_query
 
 
@@ -25,6 +25,7 @@ class ResultQueryMixin:
         instance_id: str,
         data_id: Optional[str] = None,
         join_metapoint: Optional[bool] = False,
+        join_hexgrid: Optional[bool] = False,
     ):
         """Get the predictions from a model given an instance and data id.
 
@@ -35,12 +36,18 @@ class ResultQueryMixin:
                 The returned query will also have 'lat', 'lon' and 'source'.
         """
         base_query = [self.result_table]
+        # select the source (laqn, hexgrid, etc.), lat and lon
         if join_metapoint:
             base_query += [
                 MetaPoint.source,
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
             ]
+        # select the hexgrid columns
+        if join_hexgrid:
+            base_query += [HexGrid.col_id, HexGrid.row_id, HexGrid.geom]
+
+        # open connection and start the query
         with self.dbcnxn.open_session() as session:
             readings = session.query(*base_query).filter(
                 self.result_table.instance_id == instance_id
@@ -50,6 +57,9 @@ class ResultQueryMixin:
                 readings = readings.join(
                     MetaPoint, self.result_table.point_id == MetaPoint.id
                 )
+            # join on hexgrid
+            if join_hexgrid:
+                readings = readings.join(HexGrid, self.result_table.point_id == HexGrid.point_id)
             # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
