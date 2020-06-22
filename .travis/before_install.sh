@@ -16,5 +16,3 @@ echo '{
     "db_name": "cleanair_test_db",
     "ssl_mode": "prefer"
 }' >> .secrets/db_secrets_offline.json
-
-export DB_SECRET_FILE='.secrets/db_secrets_offline.json'

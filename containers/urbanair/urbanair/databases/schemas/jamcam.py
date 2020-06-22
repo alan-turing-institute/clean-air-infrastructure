@@ -10,6 +10,14 @@ from sqlalchemy import text
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
 
+class JamCamAvailable(BaseModel):
+
+    measurement_start_utc: datetime
+
+    class Config:
+        orm_mode = True
+
+
 class JamCamBase(BaseModel):
 
     camera_id: str

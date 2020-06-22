@@ -1,7 +1,13 @@
 """Mixin class for querying instances."""
 
+from typing import Any
 from sqlalchemy import and_
-from ..decorators import db_query
+from ...decorators import db_query
+from ...databases.mixins import (
+    DataTableMixin,
+    InstanceTableMixin,
+    ModelTableMixin,
+)
 
 
 class InstanceQueryMixin:
@@ -16,6 +22,12 @@ class InstanceQueryMixin:
     Notes:
         Any object that inherits this mixin must assign the above attributes.
     """
+
+    # declaring these attributes prevents mypy errors
+    data_table: DataTableMixin
+    instance_table: InstanceTableMixin
+    model_table: ModelTableMixin
+    dbcnxn: Any
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments

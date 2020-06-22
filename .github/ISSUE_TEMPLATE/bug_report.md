@@ -16,7 +16,7 @@ assignees: ''
 <!-- 3. Assign yourself to the issue when you are working on it. Leave blank or assign someone else if you are not working on it-->
 
 **Describe the bug**
-<!-- A clear and concise description of what the bug is. ->
+<!-- A clear and concise description of what the bug is. -->
 
 
 
@@ -30,10 +30,10 @@ assignees: ''
 <!-- 4. See error -->
 
 **Expected behavior**
-<!-- A clear and concise description of what you expected to happen. ->
+<!-- A clear and concise description of what you expected to happen. -->
 
 **Screenshots** 
-<!-- If applicable, add screenshots to help explain your problem.  ->
+<!-- If applicable, add screenshots to help explain your problem.  -->
 
 **Your environment:**
 <!-- Describe your environment -->

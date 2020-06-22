@@ -7,10 +7,8 @@ RUN python3.7 -m pip install mkdocstrings
 COPY cleanair /apps/cleanair
 RUN pip install -e '/apps/cleanair[models, dashboard]'
 
-# Install traffic app
-COPY odysseus /apps/odysseus
-RUN pip install /apps/odysseus
+#  Install urbanair.  Have to make editable for static files to work
+COPY urbanair/ /modules/urbanair/
+RUN pip install -e /modules/urbanair/
 
-# Copy the API into the container
-COPY urbanair /apps/urbanair
-RUN pip install /apps/urbanair
+
