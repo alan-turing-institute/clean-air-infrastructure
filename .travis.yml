@@ -17,7 +17,7 @@ jobs:
 
       before_install:
         - sh .travis/before_install.sh
-        - source /travis/env.sh
+        - source .travis/env.sh
 
       install:
         - pip install -r containers/requirements.txt
@@ -42,7 +42,7 @@ jobs:
     - name: "odysseus" 
       before_install:
         - sh .travis/before_install.sh
-        - source /travis/env.sh
+        - source .travis/env.sh
 
       install:
         - pip install -r containers/requirements.txt
@@ -63,7 +63,7 @@ jobs:
     - name: "urbanair" 
       before_install:
         - sh .travis/before_install.sh
-        - source /travis/env.sh
+        - source .travis/env.sh
 
       install:
         - pip install -r containers/requirements.txt
