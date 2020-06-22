@@ -1,6 +1,7 @@
 """
 Scoot feature extraction
 """
+# pylint: skip-file
 from sqlalchemy import func
 from .feature_extractor import FeatureExtractor
 from ..databases.tables import OSHighway, ScootRoadForecast, ScootRoadReading
@@ -11,10 +12,10 @@ from ..mixins import DateRangeMixin
 class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
     """Process SCOOT values into model features"""
 
-    def __init__(self, table_class, value_type, **kwargs):
+    def __init__(self, table_class, value_type, batch_size, **kwargs):
         # Initialise parent classes
         # Use a large batch size as there are around 1 million records to insert
-        super().__init__(dynamic=True, batch_size=10000, **kwargs)
+        super().__init__(dynamic=True, batch_size=batch_size, **kwargs)
 
         # Ensure logging is available
         if not hasattr(self, "logger"):
@@ -30,31 +31,23 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
             green(self.start_datetime),
             green(self.end_datetime),
         )
-        with self.dbcnxn.open_session() as session:
-            self.logger.info(
-                "There are %i per-road SCOOT %s in this time range",
-                session.query(self.table_class)
-                .filter(
-                    self.table_class.measurement_start_utc >= self.start_datetime,
-                    self.table_class.measurement_start_utc < self.end_datetime,
-                )
-                .count(),
-                self.value_type,
-            )
+
+        # with self.dbcnxn.open_session() as session:
+        #     self.logger.info(
+        #         "There are %i per-road SCOOT %s in this time range",
+        #         session.query(self.table_class)
+        #         .filter(
+        #             self.table_class.measurement_start_utc >= self.start_datetime,
+        #             self.table_class.measurement_start_utc < self.end_datetime,
+        #         )
+        #         .count(),
+        #         self.value_type,
+        #     )
 
     @property
     def table(self):
-        """Join the geometry column from OSHighway onto the relevant SCOOT table for feature extraction"""
-        with self.dbcnxn.open_session() as session:
-            return (
-                session.query(self.table_class, OSHighway.geom,)
-                .join(OSHighway, self.table_class.road_toid == OSHighway.toid)
-                .filter(
-                    self.table_class.measurement_start_utc >= self.start_datetime,
-                    self.table_class.measurement_start_utc < self.end_datetime,
-                )
-                .subquery()
-            )
+        """feature table"""
+        return OSHighway
 
     @property
     def features(self):
@@ -105,12 +98,12 @@ class ScootFeaturesBase(DateRangeMixin, FeatureExtractor):
 class ScootReadingFeatures(ScootFeaturesBase):
     """Process SCOOT readings into model features"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, batch_size, **kwargs):
         # Initialise parent classes
         super().__init__(
             table_class=ScootRoadReading,
             value_type="readings",
-            # sources=["aqe", "laqn"],
+            sources=["aqe", "laqn"],
             **kwargs
         )
 

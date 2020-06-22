@@ -14,6 +14,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=["cleanair", "odysseus", "fastapi[all]", "aiofiles", "geojson"],
+    install_requires=["cleanair", "fastapi[all]", "aiofiles", "geojson"],
     python_requires=">=3.7",
 )

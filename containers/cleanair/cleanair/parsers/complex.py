@@ -5,13 +5,42 @@ Complex per-entrypoint argument parsers
 from argparse import ArgumentParser, ArgumentTypeError
 import json
 import os
-from .model import BaseModelParser
 from ..mixins import (
     SecretFileParserMixin,
     DurationParserMixin,
     VerbosityMixin,
     SourcesMixin,
+    CopernicusMixin,
 )
+
+
+class FeatureSourceParser(ArgumentParser):
+    """Sources Parser"""
+
+    def __init__(self, feature_sources, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-source",
+            type=str,
+            required=True,
+            choices=feature_sources,
+            help="Source of features to process. Can only process one at a time",
+        )
+
+
+class FeatureNameParser(ArgumentParser):
+    """Parser arguments for choosing which features to process"""
+
+    def __init__(self, feature_names, **kwargs):
+        super().__init__(**kwargs)
+        self.add_argument(
+            "--feature-name",
+            required=False,
+            nargs="+",
+            choices=feature_names,
+            help="Specify feature names to run. If not provided will process all feature names",
+            type=str,
+        )
 
 
 class DataBaseRoleParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser):
@@ -32,39 +61,8 @@ class DatabaseSetupParser(SecretFileParserMixin, VerbosityMixin, ArgumentParser)
     """Argument parsing for inserting static datafiles"""
 
 
-class SatelliteArgumentParser(
-    DurationParserMixin, SecretFileParserMixin, VerbosityMixin, ArgumentParser
-):
+class SatelliteArgumentParser(CopernicusMixin, ArgumentParser):
     """Argument parsing for Satellite readings"""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "-k",
-            "--copernicus-key",
-            type=str,
-            default="",
-            help="copernicus key for accessing satellite data.",
-        )
-
-    def parse_args(self, args=None, namespace=None):
-        """
-        Check whether we have the Copernicus key and try to retrieve it from a local
-        secrets file if not
-        """
-        args = super().parse_args(args, namespace)
-        if not args.copernicus_key:
-            try:
-                with open(
-                    os.path.abspath(
-                        os.path.join(os.sep, "secrets", "copernicus_secrets.json")
-                    )
-                ) as f_secret:
-                    data = json.load(f_secret)
-                    args.copernicus_key = data["copernicus_key"]
-            except json.decoder.JSONDecodeError:
-                raise ArgumentTypeError("Could not determine copernicus_key")
-        return args
 
 
 class ScootReadingArgumentParser(
@@ -135,62 +133,3 @@ class ScootForecastFeatureArgumentParser(
             default=[],
             help="List of SCOOT detectors to forecast for, (default: all of them).",
         )
-
-
-class ModelValidationParser(BaseModelParser):
-    """
-    A parser for model validation.
-    """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.add_argument(
-            "--predict-read-local",
-            action="store_true",
-            help="Read predictions from a local file.",
-        )
-
-
-class ModelFitParser(BaseModelParser):
-    """
-    A parser for the model fitting entrypoint.
-    """
-
-    def __init__(self, **kwargs):
-        """
-        Should be able to:
-            - read training/test data from DB (default)
-            - read training/test data from directory
-            - write training/test data to directory
-            - write result to DB (default)
-            - turn off writing to DB (overwrite default)
-            - write results to file
-        """
-        super().__init__(**kwargs)
-        self.add_argument(
-            "--local-write",
-            action="store_true",
-            help="Write training/test data to config_dir.",
-        )
-        self.add_argument(
-            "--no-db-write",
-            action="store_true",
-            help="Do not write result to database.",
-        )
-        self.add_argument(
-            "--predict-write",
-            action="store_true",
-            help="Write a prediction to the results_dir.",
-        )
-        self.add_argument(
-            "--model-dir",
-            type=str,
-            default="CONFIG_DIR",
-            help="Filepath to the directory where the model is (re-)stored.",
-        )
-
-    def parse_kwargs(self):
-        kwargs = super().parse_kwargs()
-        if kwargs["model_dir"] == "CONFIG_DIR":
-            kwargs["model_dir"] = kwargs["model_dir"]
-        return kwargs

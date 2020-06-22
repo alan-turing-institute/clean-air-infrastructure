@@ -19,6 +19,6 @@ async def home(request: Request) -> Response:
 
 
 @router.get("/map", include_in_schema=False)
-async def map(request: Request) -> Response:
+async def jamcam_map(request: Request) -> Response:
     return templates.TemplateResponse("map.html", {"request": request})
 

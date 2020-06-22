@@ -13,6 +13,7 @@ from ..databases.tables import (
 )
 from ..loggers import duration, get_logger, green
 from ..mixins import DateRangeMixin
+from ..decorators import db_query
 
 
 class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
@@ -38,6 +39,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             green(self.end_datetime),
         )
 
+    @db_query
     def update_remote_tables(self):
         session_start = time.time()
         with self.dbcnxn.open_session() as session:
@@ -47,53 +49,55 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 self.value_type,
                 self.value_type,
             )
+
+            road_match_cte = session.query(ScootRoadMatch).cte("road_match")
+
             q_per_road_forecasts = (
                 session.query(
-                    ScootRoadMatch.road_toid,
+                    road_match_cte.c.road_toid,
                     self.table_per_detector.measurement_start_utc,
-                    self.table_per_detector.measurement_end_utc,
                     (
                         func.sum(
                             self.table_per_detector.n_vehicles_in_interval
-                            * ScootRoadMatch.weight
+                            * road_match_cte.c.weight
                         )
-                        / func.sum(ScootRoadMatch.weight)
+                        / func.sum(road_match_cte.c.weight)
                     ).label("n_vehicles_in_interval"),
                     (
                         func.sum(
                             self.table_per_detector.occupancy_percentage
-                            * ScootRoadMatch.weight
+                            * road_match_cte.c.weight
                         )
-                        / func.sum(ScootRoadMatch.weight)
+                        / func.sum(road_match_cte.c.weight)
                     ).label("occupancy_percentage"),
                     (
                         func.sum(
                             self.table_per_detector.congestion_percentage
-                            * ScootRoadMatch.weight
+                            * road_match_cte.c.weight
                         )
-                        / func.sum(ScootRoadMatch.weight)
+                        / func.sum(road_match_cte.c.weight)
                     ).label("congestion_percentage"),
                     (
                         func.sum(
                             self.table_per_detector.saturation_percentage
-                            * ScootRoadMatch.weight
+                            * road_match_cte.c.weight
                         )
-                        / func.sum(ScootRoadMatch.weight)
+                        / func.sum(road_match_cte.c.weight)
                     ).label("saturation_percentage"),
                 )
                 .join(
                     self.table_per_detector,
-                    ScootRoadMatch.detector_n == self.table_per_detector.detector_id,
+                    road_match_cte.c.detector_n == self.table_per_detector.detector_id,
                 )
                 .filter(
                     self.table_per_detector.measurement_start_utc
-                    >= self.start_datetime,
-                    self.table_per_detector.measurement_end_utc < self.end_datetime,
+                    >= self.start_datetime.isoformat(),
+                    self.table_per_detector.measurement_start_utc
+                    < self.end_datetime.isoformat(),
                 )
                 .group_by(
-                    ScootRoadMatch.road_toid,
+                    road_match_cte.c.road_toid,
                     self.table_per_detector.measurement_start_utc,
-                    self.table_per_detector.measurement_end_utc,
                 )
             )
 

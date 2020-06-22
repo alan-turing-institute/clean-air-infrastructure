@@ -76,7 +76,7 @@
         // https://urbanair.turing.ac.uk/
 
         console.log(camera_id)
-        fetch('api/v1/cams/recent?camera_id=' + camera_id)
+        fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
 
@@ -169,10 +169,14 @@
         fetch('https://api.tfl.gov.uk/Place/Type/JamCam/').then(function (response) {
             response.json().then(function (result) {
                 const cameras = result;
-                fetch('api/v1/cams/snapshot?detection_class=' + type).then(function (response2) {
+                fetch('api/v1/jamcams/hourly?detection_class=' + type).then(function (response2) {
+                    
                     response2.json().then(function (result2) {
                         
+                        console.log(result2.status)
                         const activities = result2;
+
+                        // console.log(activities)
                         
                         for (let c of cameras) {
                             
@@ -219,7 +223,7 @@
 
     var ctx = document.getElementById('myChart').getContext('2d');
     var config = {
-        type: 'scatter',
+        type: 'line',
         data: {
             labels: ['None'],
             datasets: []
@@ -231,7 +235,7 @@
                 text: 'Click on a camera to see counts within last 12 hrs'
             },
             tooltips: {
-                mode: 'index',
+                mode: 'x',
                 intersect: false,
                 bodyFontColor: '#fff',
                 titleFontColor: '#fff',
