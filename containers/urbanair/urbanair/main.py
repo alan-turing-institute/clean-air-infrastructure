@@ -5,10 +5,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from .routers import jamcam, static
 from .config import get_settings
-<<<<<<< HEAD
-import pkg_resources
-=======
->>>>>>> 4c2b9fa46f73f5114d7943f60e2e8bd5e31d370c
 
 
 app = FastAPI(
