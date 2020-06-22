@@ -36,7 +36,7 @@ async def common_jamcam_params(
         None,
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
-):
+) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
        If no camera_id is provided request up to 24 hours of data
