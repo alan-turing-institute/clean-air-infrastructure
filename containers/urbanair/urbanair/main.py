@@ -36,4 +36,3 @@ if not get_settings().docker:
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
-
