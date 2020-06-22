@@ -1,9 +1,11 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
 
-RUN pip install mkdocs-material==5.3.0 mkdocsstring==0.12.0
+RUN pip install mkdocs-material 
+RUN python3.7 -m pip install mkdocstrings
+
 # Copy the cleanair package into the container and install
 COPY cleanair /apps/cleanair
-RUN pip install /apps/cleanair
+RUN pip install -e '/apps/cleanair[models, dashboard]'
 
 # Install traffic app
 COPY odysseus /apps/odysseus
