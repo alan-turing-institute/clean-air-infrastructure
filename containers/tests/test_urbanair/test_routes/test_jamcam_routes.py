@@ -1,9 +1,10 @@
 """JamCam API route tests"""
 import pytest
-from requests import HTTPError
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
 from urbanair.types import DetectionClass
+
+# pylint: disable=C0115,R0201
 
 
 class TestBasic:
@@ -28,7 +29,7 @@ class TestBasic:
 
 
 class TestRaw:
-    def test_recent_200_setup(self, secretfile, connection_class, video_stat_records):
+    def test_setup(self, secretfile, connection_class, video_stat_records):
         """Insert test data"""
 
         # Insert data
@@ -38,7 +39,7 @@ class TestRaw:
             video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
         )
 
-    def test_recent_200(self, client_class, video_stat_records):
+    def test_12_hours(self, client_class, video_stat_records):
         """Test 12 hour request starttime"""
 
         # Check response
@@ -50,7 +51,7 @@ class TestRaw:
         data = response.json()
         assert len(data) == len(video_stat_records) / 2
 
-    def test_recent_200_24(self, client_class, video_stat_records):
+    def test_24_hours(self, client_class, video_stat_records):
         """Test 12 hour request startime/endtime"""
 
         # Check response
@@ -76,7 +77,7 @@ class TestRaw:
             DetectionClass.bus,
         ],
     )
-    def test_recent_200_24_dect(self, client_class, video_stat_records, detc):
+    def test_24_hours_detc(self, client_class, video_stat_records, detc):
         """Test 12 hour request detection class"""
 
         # Check response
@@ -92,12 +93,12 @@ class TestRaw:
 
         data = response.json()
 
-        unique_detections = list(set([x["detection_class"] for x in data]))
+        unique_detections = list({x["detection_class"] for x in data})
 
         assert len(unique_detections) == 1
         assert len(data) == len(video_stat_records) / 5
 
-    def test_recent_200_24_use_start_or_end(self, client_class):
+    def test_12_hours_equivilant(self, client_class):
         """Test /api/v1/jamcams/raw returns 12 hours"""
 
         # Check response
@@ -125,8 +126,8 @@ class TestRaw:
         assert response.status_code == 404
         assert response.json()["detail"] == "No data was found"
 
-    def test_request_404_request_too_large(self, client_class):
-        """Requst when no data is available"""
+    def test_request_404_48h(self, client_class):
+        """Request more than 48 hours"""
 
         response = client_class.get(
             "/api/v1/jamcams/raw/",
@@ -139,10 +140,8 @@ class TestRaw:
         assert response.status_code == 422
         assert "Cannot request more than two days" in response.json()["detail"]
 
-    def test_request_404_request_too_large2_fail(
-        self, client_class, video_stat_records
-    ):
-        """Requst when no data is available"""
+    def test_request_404_2w(self, client_class, video_stat_records):
+        """Request more than 2 weeks hours"""
 
         camera_id = video_stat_records[0].camera_id.split(".mp4")[0]
         response = client_class.get(
@@ -157,9 +156,7 @@ class TestRaw:
         assert response.status_code == 422
         assert "Cannot request more than one week" in response.json()["detail"]
 
-    def test_request_404_request_too_large2_pass(
-        self, client_class, video_stat_records
-    ):
+    def test_request_404_1_week(self, client_class, video_stat_records):
         """Requst when no data is available"""
 
         camera_id = video_stat_records[0].camera_id.split(".mp4")[0]
@@ -173,4 +170,3 @@ class TestRaw:
         )
 
         assert response.status_code == 200
-

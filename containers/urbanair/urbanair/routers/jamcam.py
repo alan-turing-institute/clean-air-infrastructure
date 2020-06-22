@@ -41,7 +41,7 @@ async def common_jamcam_params(
        If a camera_id is provided request up to 1 week of data
        If no camera_id is provided request up to 24 hours of data
     """
-
+    # pylint: disable=C0301
     if starttime and endtime:
         seconds_requested = (endtime - starttime).total_seconds()
 
