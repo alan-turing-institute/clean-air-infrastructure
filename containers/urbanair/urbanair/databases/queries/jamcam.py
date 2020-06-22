@@ -84,7 +84,7 @@ def get_jamcam_available(
 
 
 @db_query
-def get_jamcam_recent(
+def get_jamcam_raw(
     db: Session,
     camera_id: Optional[str],
     detection_class: DetectionClass = DetectionClass.all_classes,
@@ -92,6 +92,7 @@ def get_jamcam_recent(
     endtime: Optional[datetime] = None,
 ) -> Query:
     """Get jamcam counts"""
+    
     max_video_upload_datetime = db.query(
         func.max(JamCamVideoStats.video_upload_datetime).label(
             "max_video_upload_datetime"
@@ -134,7 +135,7 @@ def get_jamcam_recent(
 
 
 @db_query
-def get_jamcam_snapshot(
+def get_jamcam_hourly(
     db: Session,
     camera_id: Optional[str],
     detection_class: DetectionClass = DetectionClass.all_classes,
@@ -151,7 +152,7 @@ def get_jamcam_snapshot(
 
     res = db.query(
         func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
-        func.sum(JamCamVideoStats.counts).label("counts"),
+        func.avg(JamCamVideoStats.counts).label("counts"),
         JamCamVideoStats.detection_class,
         func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
             "measurement_start_utc"
