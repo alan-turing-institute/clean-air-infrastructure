@@ -1,4 +1,5 @@
-import pytest
+"JamCam API route tests"
+
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
 
@@ -11,7 +12,7 @@ def test_index(client):
 
 
 def test_camera_info(client):
-
+    "Test camera info API"
     response = client.get("/api/v1/cams/camera_info")
     assert response.status_code == 200
 

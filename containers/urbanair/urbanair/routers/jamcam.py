@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from ..databases import get_db, all_or_404
 from ..databases.schemas.jamcam import (
     JamCamVideo,
-    JamCamCounts,
     JamCamFeatureCollection,
     JamCamAvailable,
 )
@@ -102,9 +101,7 @@ async def camera_available(
 
 @router.get(
     "/raw",
-    description="""Request counts of objects at jamcam cameras. 
-    
-""",
+    description="Request counts of objects at jamcam cameras.",
     response_model=List[JamCamVideo],
 )
 async def camera_raw_counts(

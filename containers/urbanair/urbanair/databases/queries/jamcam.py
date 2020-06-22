@@ -1,5 +1,5 @@
 """Jamcam database queries and external api calls"""
-from typing import List, Optional, Dict
+from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from sqlalchemy import func, text
@@ -35,51 +35,50 @@ def start_end_filter(
         )
 
     # 12 hours from starttime
-    elif starttime:
+    if starttime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime >= starttime,
             JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=12),
         )
 
     # 12 hours before endtime
-    elif endtime:
+    if endtime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime < endtime,
             JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=12),
         )
 
     # Last available 12 hours
-    else:
-        return query.filter(
-            JamCamVideoStats.video_upload_datetime
-            > max_video_upload_time_sq.c.max_video_upload_datetime
-            - TWELVE_HOUR_INTERVAL
-        )
+    return query.filter(
+        JamCamVideoStats.video_upload_datetime
+        > max_video_upload_time_sq.c.max_video_upload_datetime - TWELVE_HOUR_INTERVAL
+    )
 
 
 def detection_class_filter(query: Query, detection_class: DetectionClass) -> Query:
     """Filter by detection class. If detection_class == DetectionClass.all then filter
     by remaining detection class options
     """
-    
     if detection_class == DetectionClass.all_classes:
         return query.filter(
             JamCamVideoStats.detection_class.in_(DetectionClass.map_all())
         )
 
-    else:
-        return query.filter(
-            JamCamVideoStats.detection_class
-            == DetectionClass.map_detection_class(detection_class)
-        )
+    return query.filter(
+        JamCamVideoStats.detection_class
+        == DetectionClass.map_detection_class(detection_class)
+    )
+
 
 def camera_id_filter(query: Query, camera_id: Optional[str]) -> Query:
-
+    "Filter by camera_id"
     if camera_id:
         return query.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
-    
-def max_video_upload_q(db: Session) -> Query:
+    return query
 
+
+def max_video_upload_q(db: Session) -> Query:
+    "Max video upload time"
     return db.query(
         func.max(JamCamVideoStats.video_upload_datetime).label(
             "max_video_upload_datetime"
@@ -140,9 +139,7 @@ def get_jamcam_available(
 
     # Filter by time
     if starttime:
-        res = res.filter(
-            JamCamVideoStats.video_upload_datetime >= starttime,
-        )
+        res = res.filter(JamCamVideoStats.video_upload_datetime >= starttime,)
     if endtime:
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime)
 
@@ -210,7 +207,7 @@ def get_jamcam_hourly(
 
     # Filter by camera_id
     res = camera_id_filter(res, camera_id)
-    
+
     # Filter by time
     res = start_end_filter(res, starttime, endtime, max_video_upload_datetime_sq)
 
