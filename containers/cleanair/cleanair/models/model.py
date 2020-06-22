@@ -107,11 +107,11 @@ class Model(ABC):
         }
         >>> y_train = {
             'laqn' : {
-                'NO2' : y_laqn_no2,
+                'NO2' : y_laqn_NO2,
                 'PM10' : y_laqn_pm10
             },
             'satellite' : {
-                'NO2' : y_satellite_no2,
+                'NO2' : y_satellite_NO2,
                 'PM10' : y_satellite_pm10
             }
         }
@@ -120,7 +120,7 @@ class Model(ABC):
         Notes
         ___
 
-        Every value (e.g. `x_laqn`, `y_satellite_no2`, etc) is a numpy array.
+        Every value (e.g. `x_laqn`, `y_satellite_NO2`, etc) is a numpy array.
         The shapes are given in the table below:
 
         +-------------------+---------+

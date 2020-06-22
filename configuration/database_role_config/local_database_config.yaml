@@ -11,7 +11,7 @@ schema:
   - gla_traffic
   - interest_points
   - model_features
-  - model_results
+  - air_quality_modelling
   - processed_data
   - static_data
   - static_features
@@ -42,7 +42,7 @@ roles:
         create: False
         privileges: 
           - SELECT
-      - name: model_results
+      - name: air_quality_modelling
         create: False
         privileges: 
           - SELECT
@@ -90,7 +90,7 @@ roles:
         create: False
         privileges: 
           - ALL
-      - name: model_results
+      - name: air_quality_modelling
         create: False
         privileges: 
           - ALL
@@ -138,7 +138,7 @@ roles:
         create: True
         privileges: 
           - ALL
-      - name: model_results
+      - name: air_quality_modelling
         create: True
         privileges: 
           - ALL

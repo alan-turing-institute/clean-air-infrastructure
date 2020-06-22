@@ -1,13 +1,17 @@
 """Mixins for databases and tables."""
 
 from .instance_tables_mixin import (
-    DataConfigMixin,
+    DataTableMixin,
     InstanceTableMixin,
+    MetricsTableMixin,
     ModelTableMixin,
+    ResultTableMixin,
 )
 
 __all__ = [
-    "DataConfigMixin",
+    "DataTableMixin",
     "InstanceTableMixin",
+    "MetricsTableMixin",
     "ModelTableMixin",
+    "ResultTableMixin",
 ]
