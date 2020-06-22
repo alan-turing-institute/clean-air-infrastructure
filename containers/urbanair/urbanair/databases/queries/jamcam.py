@@ -74,7 +74,10 @@ def get_jamcam_available(
         res = res.filter(JamCamVideoStats.video_upload_datetime < endtime.isoformat(),)
 
     # Filter by detection class
-    if detection_class.value != "all":
+    if detection_class == DetectionClass.all_classes:
+        res = res.filter(JamCamVideoStats.detection_class.in_(DetectionClass.map_all()))
+
+    else:
         res = res.filter(
             JamCamVideoStats.detection_class
             == DetectionClass.map_detection_class(detection_class)
@@ -125,11 +128,15 @@ def get_jamcam_raw(
         return None
 
     # Filter by detection class
-    if detection_class.value != "all":
+    if detection_class == DetectionClass.all_classes:
+        res = res.filter(JamCamVideoStats.detection_class.in_(DetectionClass.map_all()))
+        
+    else:
         res = res.filter(
             JamCamVideoStats.detection_class
             == DetectionClass.map_detection_class(detection_class)
         )
+
 
     return res
 
@@ -181,7 +188,10 @@ def get_jamcam_hourly(
         return None
 
     # Filter by detection class
-    if detection_class.value != "all":
+    if detection_class == DetectionClass.all_classes:
+        res = res.filter(JamCamVideoStats.detection_class.in_(DetectionClass.map_all()))
+        
+    else:
         res = res.filter(
             JamCamVideoStats.detection_class
             == DetectionClass.map_detection_class(detection_class)

@@ -1,7 +1,8 @@
 """Misc types"""
-from enum import Enum
+from enum import Enum, unique
+from typing import List
 
-
+@unique
 class DetectionClass(str, Enum):
     """Possible JamCam detection Types"""
 
@@ -25,3 +26,9 @@ class DetectionClass(str, Enum):
         }
 
         return map_classes[detection_class]
+
+    @classmethod
+    def map_all(cls) -> List[str]:
+        """Return a list of 'all' types mapped"""
+        
+        return [cls.map_detection_class(i) for i in cls if i != cls.all_classes]
