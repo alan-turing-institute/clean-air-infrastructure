@@ -48,15 +48,13 @@ async def common_jamcam_params(
         if camera_id and (seconds_requested > ONE_WEEK_SECONDS):
             raise HTTPException(
                 422,
-                detail="""Cannot request more than one week of data in a single call when camera_id is provided.
-            Check startime and endtime parameters""",
+                detail="""Cannot request more than one week of data in a single call when camera_id is provided. Check startime and endtime parameters""",
             )
 
         if not camera_id and (seconds_requested > ONE_DAYS_SECONDS):
             raise HTTPException(
                 422,
-                detail="""Cannot request more than two days of data in a single call when no camera_id is provided.
-            Check startime and endtime parameters""",
+                detail="""Cannot request more than two days of data in a single call when no camera_id is provided. Check startime and endtime parameters""",
             )
 
     return {

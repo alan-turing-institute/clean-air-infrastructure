@@ -40,7 +40,23 @@ def secretfile(request, tmpdir_factory):
 
 @pytest.fixture(scope="function")
 def engine(secretfile):
-    """Create and engine fixture"""
+    """Create an engine fixture with function scope"""
+    connection_str = DBConnectionMixin(secretfile).connection_string
+
+    return create_engine(connection_str)
+
+
+@pytest.fixture(scope="module")
+def engine_module(secretfile):
+    """Create an engine fixture with module scopee"""
+    connection_str = DBConnectionMixin(secretfile).connection_string
+
+    return create_engine(connection_str)
+
+
+@pytest.fixture(scope="class")
+def engine_class(secretfile):
+    """Create an engine fixture with class scope"""
     connection_str = DBConnectionMixin(secretfile).connection_string
 
     return create_engine(connection_str)
@@ -57,17 +73,19 @@ def connection(engine):
 
 
 @pytest.fixture(scope="module")
-def engine_module(secretfile):
-    """Create and engine fixture"""
-    connection_str = DBConnectionMixin(secretfile).connection_string
-
-    return create_engine(connection_str)
-
-
-@pytest.fixture(scope="module")
 def connection_module(engine_module):
     """Create a connection fixture"""
     conn = engine_module.connect()
+    transaction = conn.begin()
+    yield conn
+    transaction.rollback()
+    conn.close()
+
+
+@pytest.fixture(scope="class")
+def connection_class(engine_class):
+    """Create a connection fixture"""
+    conn = engine_class.connect()
     transaction = conn.begin()
     yield conn
     transaction.rollback()
