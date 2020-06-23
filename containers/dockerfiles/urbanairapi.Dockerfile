@@ -1,11 +1,10 @@
 FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
 
-RUN pip install mkdocs-material 
-RUN python3.7 -m pip install mkdocstrings
+RUN pip install mkdocs-material==5.3.0 mkdocstrings==0.12.0
 
 # Copy the cleanair package into the container and install
 COPY cleanair /apps/cleanair
-RUN pip install -e '/apps/cleanair[models, mixins, dashboard]'
+RUN pip install '/apps/cleanair[models, dashboard]'
 
 #  Install urbanair.  Have to make editable for static files to work
 COPY urbanair/ /modules/urbanair/

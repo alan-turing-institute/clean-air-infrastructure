@@ -19,7 +19,7 @@ class DetectionClass(str, Enum):
         """Map a API name to a database entry"""
         map_classes = {
             "all": "all",
-            "trucks": "trucks",
+            "trucks": "truck",
             "people": "person",
             "cars": "car",
             "motorbikes": "motorbike",
