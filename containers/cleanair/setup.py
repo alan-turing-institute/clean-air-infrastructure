@@ -50,4 +50,5 @@ setuptools.setup(
         ],
     },
     python_requires=">=3.6",
+    scripts=["cli/urbanair"],
 )
