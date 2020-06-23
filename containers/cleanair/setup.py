@@ -36,6 +36,7 @@ setuptools.setup(
         "sklearn==0.0",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
+        "typer==0.2.1",
         "uuid==1.30",
         "xarray==0.15.1",
     ],
