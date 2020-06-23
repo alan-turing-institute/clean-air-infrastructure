@@ -11,7 +11,7 @@ state = {"verbose": False, "secretfile": ""}
 def main(
     verbose: bool = False,
     secretfile: str = typer.Option("", help="json file containing database secrets"),
-):
+) -> None:
     """
     Manage the CleanAir infrastructure
     """
