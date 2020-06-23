@@ -19,14 +19,6 @@ class TestBasic:
         response = client_class.get("/api/v1/jamcams/camera_info/")
         assert response.status_code == 200
 
-    def test_recent_404(self, client_class):
-        """Test /api/v1/jamcams/raw returns 404 when no data available"""
-        response = client_class.get(
-            "/api/v1/jamcams/raw/", params={"camera_id": "5555.3333"}
-        )
-        assert response.status_code == 404
-        assert response.json()["detail"] == "No data was found"
-
 
 class TestRaw:
     def test_setup(self, secretfile, connection_class, video_stat_records):
