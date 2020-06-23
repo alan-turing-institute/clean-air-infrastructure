@@ -33,6 +33,10 @@ spec:
           volumeMounts:
 {{ toYaml . | indent 10 }}
         {{- end }}
+        {{- with $deployment.env }}
+          env:
+{{ toYaml . | indent 10 }}
+        {{- end }}
         imagePullSecrets:
         - name: regcred
         restartPolicy: {{ $deployment.restartPolicy }}
