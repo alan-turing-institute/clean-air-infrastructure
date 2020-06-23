@@ -69,7 +69,7 @@ jobs:
         - pip install -r containers/requirements.txt
         - pip install 'containers/cleanair'
         - pip install 'containers/odysseus'
-        - pip install 'containers/urbanair'
+        - pip install -e 'containers/urbanair'
 
       before_script:
         - sh .travis/before_script.sh
