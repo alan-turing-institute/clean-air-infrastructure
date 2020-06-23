@@ -6,6 +6,10 @@ RUN pip install mkdocs-material==5.3.0 mkdocstrings==0.12.0
 COPY cleanair /apps/cleanair
 RUN pip install '/apps/cleanair[models, dashboard]'
 
+# Copy the odysseus package into the container and install
+COPY odysseus /apps/odysseus
+RUN pip install '/apps/odysseus'
+
 #  Install urbanair.  Have to make editable for static files to work
 COPY urbanair/ /modules/urbanair/
 RUN pip install -e /modules/urbanair/
