@@ -118,7 +118,47 @@ async def camera_raw_counts(
 
     return all_or_404(data)
 
+def csv_headers(query):
+    return [i["name"] for i in query.column_descriptions]
 
+@router.get(
+    "/raw/csv",
+    description="Request counts of objects at jamcam cameras as CSV data files.",
+    response_model=None,
+    )
+async def camera_raw_csv(
+        commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+        ) -> Optional[List[Dict]]:
+
+    filename = "jamcam_raw"
+    
+    data = get_jamcam_raw(
+        db,
+        commons["camera_id"],
+        commons["detection_class"],
+        commons["starttime"],
+        commons["endtime"],
+    )
+    text = ",".join(csv_headers(data)) + "\n"
+
+    all_data = all_or_404(data)
+
+    for row in all_data:
+        str_row = []
+        for r in row:
+            if isinstance(r, str):
+                str_row.append(r)
+            elif isinstance(r, datetime):
+                str_row.append(r.isoformat())
+            else:
+                str_row.append(str(r))
+
+        text += (",".join(str_row) + "\n")
+
+    response = Response(text, media_type="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"
+    return response
+    
 @router.get(
     "/hourly",
     response_model=List[JamCamVideo],
