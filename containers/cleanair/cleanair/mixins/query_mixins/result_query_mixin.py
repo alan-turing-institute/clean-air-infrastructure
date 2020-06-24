@@ -1,13 +1,13 @@
 """Mixin for querying from the result table."""
 
 from abc import abstractmethod
-from typing import Optional, Any
-from sqlalchemy import func
+from typing import Optional, Any, List
+from sqlalchemy import func, Column
 
 from ...databases.mixins import ResultTableMixin
-from ...databases.tables import HexGrid, MetaPoint
+from ...databases.tables import HexGrid, MetaPoint, RectGrid, RectGrid100
 from ...decorators import db_query
-
+from ...types import Source
 
 class ResultQueryMixin:
     """Mixin for querying results."""
@@ -23,45 +23,65 @@ class ResultQueryMixin:
     def query_results(
         self,
         instance_id: str,
+        source: Source,
         data_id: Optional[str] = None,
-        join_metapoint: Optional[bool] = False,
-        join_hexgrid: Optional[bool] = False,
+        with_location: Optional[bool] = True,
+        columns: Optional[List[Column]] = None,
     ):
         """Get the predictions from a model given an instance and data id.
 
         Args:
             instance_id: The id of the trained model instance.
+            source: The type of source, e.g. Source.laqn, Source.hexgrid.
             data_id: The id of the dataset the model predicted on.
-            join_metapoint: If true, join the result table with the metapoint table on the point_id column.
-                The returned query will also have 'lat', 'lon' and 'source'.
+            with_location: If true, return a lat, lon & geom column.
+            columns: A subset of columns to return. Columns must be in the result table.
         """
-        base_query = [self.result_table]
-        # select the source (laqn, hexgrid, etc.), lat and lon
-        if join_metapoint:
+        if columns is None:
+            base_query = [self.result_table]
+        else:
+            base_query = columns
+
+        # list of tables with polygon geom columns
+        polygon_geoms = dict(
+            hexgrid=HexGrid,
+            rectgrid=RectGrid,
+            rectgrid100=RectGrid100,
+        )
+
+        # get lon, lat and geom columns from polygon geometries
+        if with_location and source.value in polygon_geoms:
+            # get the table with polygons in the geom column
+            polygon_table = polygon_geoms[source.value]
+
+            # get lon, lat of center of polygon + the geom itself
             base_query += [
-                MetaPoint.source,
+                func.ST_X(func.ST_Centroid(polygon_table.geom)).label("lon"),
+                func.ST_Y(func.ST_Centroid(polygon_table.geom)).label("lat"),
+                func.ST_GeometryN(polygon_table.geom, 1).label("geom")
+            ]
+        # else if we are just looking at point locations query metapoint
+        elif with_location:
+            base_query += [
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
+                MetaPoint.location.label("geom")
             ]
-        # select the hexgrid columns
-        if join_hexgrid:
-            base_query += [HexGrid.col_id, HexGrid.row_id, HexGrid.geom]
 
         # open connection and start the query
         with self.dbcnxn.open_session() as session:
             readings = session.query(*base_query).filter(
                 self.result_table.instance_id == instance_id
             )
-            # join on metapoint
-            if join_metapoint:
+            if with_location and source.value in polygon_geoms:
+                readings = readings.join(
+                    polygon_table, self.result_table.point_id == polygon_table.point_id
+                )
+            elif with_location:
                 readings = readings.join(
                     MetaPoint, self.result_table.point_id == MetaPoint.id
                 )
-            # join on hexgrid
-            if join_hexgrid:
-                readings = readings.join(
-                    HexGrid, self.result_table.point_id == HexGrid.point_id
-                )
+
             # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
