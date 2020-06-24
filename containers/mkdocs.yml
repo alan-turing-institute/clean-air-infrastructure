@@ -78,7 +78,6 @@ nav:
     - API/cleanair/databases.md
     - API/cleanair/decorators.md
     - API/cleanair/features.md
-    - API/cleanair/inputs.md
     - API/cleanair/instance.md
     - API/cleanair/loggers.md
     - API/cleanair/metrics.md
