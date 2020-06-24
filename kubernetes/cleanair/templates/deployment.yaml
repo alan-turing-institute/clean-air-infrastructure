@@ -37,6 +37,10 @@ spec:
           env:
 {{ toYaml . | indent 10 }}
         {{- end }}
+        {{- with $deployment.resources }}
+          resources:
+{{ toYaml . | indent 12 }}
+        {{- end }}
         imagePullSecrets:
         - name: regcred
         restartPolicy: {{ $deployment.restartPolicy }}

@@ -334,6 +334,12 @@ deployments:
       - name: secrets
         secret:
             secretName: secrets
+      resources:
+        limits:
+            cpu: "8"
+        requests:
+            cpu: "2"
+            memory: "5Gi"
 
 services:
     - name: cleanair-api
