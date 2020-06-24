@@ -118,7 +118,7 @@ async def camera_raw_counts(
 
     return all_or_404(data)
 
-async def csv_from_json_query(*args, filename="", function=None, **kwargs):
+async def csv_from_json_query(*args, filename="", function=None, **kwargs) -> Response:
 
     all_data = await function(*args)
 
