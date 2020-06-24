@@ -316,11 +316,13 @@ deployments:
     - name: cleanair-api
       replicas: 2
       image:
-        repository: cleanairdocker.azurecr.io/urbanairapi_v2
+        repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
       env:
         - name: APP_MODULE
           value: "urbanair.main:app"
+        - name: DB_SECRET_FILE
+          value: 'db_secrets.json'
       ports:
         containerPort: 80
       restartPolicy: Always
