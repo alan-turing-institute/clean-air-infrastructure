@@ -22,6 +22,8 @@ def main():
         secretfile=args.secretfile,
         secret_dict=args.secret_dict,
     )
+
+    # db_config.initialise_tables()
     db_config.configure_all_roles()
 
 
