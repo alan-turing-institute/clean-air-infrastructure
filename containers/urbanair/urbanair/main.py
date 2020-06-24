@@ -21,7 +21,8 @@ app.mount(
     name="static",
 )
 
-app.mount(
+if get_settings().is_docker:
+    app.mount(
         "/package/docs",
         StaticFiles(
             directory=os.path.join(
@@ -30,7 +31,7 @@ app.mount(
             html=True,
         ),
         name="packages",
-)
+    )
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])

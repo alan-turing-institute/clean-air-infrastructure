@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     app_name: str = "Urban Air API"
     admin_email: str = "ogiles@turing.ac.uk"
     db_secret_file: str = ".db_secrets.json"
-    docker: bool = True
+    is_docker: bool = False
 
 
 @lru_cache()
