@@ -515,7 +515,7 @@ The run the docker image:
 ```bash
 DB_SECRET_FILE='.db_secrets_ad.json'
 SECRET_DIR=$(pwd)/.secrets  
-docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
+docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -e IS_DOCKER=true -v $SECRET_DIR:/secrets fastapi:test
 ```
 
 # Developer guide
