@@ -69,7 +69,7 @@
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
         document.getElementById("chart").style.display = "block";
-        config.options.title.text = 'Loading ' + this.options.id.replace("JamCams_", "") + "...";
+        config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
         config.data.datasets = [];
         window.myChart.update();
@@ -97,7 +97,7 @@
                             )
                             // console.log(config.data.datasets)
                     }
-                    config.options.title.text = 'Counts for camera ' + this.options.id.replace("JamCams_", "") + ' (last 12 hrs)';
+                    config.options.title.text = 'Counts for camera ' + camera_id + ' (last 12 hrs)';
                     window.myChart.update()
                 });
             });
