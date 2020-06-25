@@ -24,17 +24,20 @@ resource "azurerm_resource_group" "this" {
 # Deploy a Kubernetes cluster
 # ---------------------------
 resource "azurerm_kubernetes_cluster" "this" {
-  name                = "${var.cluster_name}"
+  name                = var.cluster_name
   location            = "${module.configuration.location}"
   resource_group_name = "${azurerm_resource_group.this.name}"
-  dns_prefix          = "${var.cluster_name}"
+  dns_prefix          = var.cluster_name
   node_resource_group = "${var.node_resource_group}"
 
   default_node_pool {
-    name            = "default"
-    node_count      = 1
-    vm_size         = "Standard_D2_v2"
-    os_disk_size_gb = 30
+    name                = "default"
+    enable_auto_scaling = true
+    max_count           = 6
+    min_count           = 1
+    node_count          = 1
+    vm_size             = "Standard_B8ms"
+    os_disk_size_gb     = 30
   }
 
   service_principal {
@@ -56,6 +59,18 @@ resource "azurerm_kubernetes_cluster" "this" {
     environment = "Terraform Clean Air"
     segment     = "Input data / Kubernetes"
   }
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
+  name                  = "jamcam"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+  vm_size               = "Standard_NC24"
+  enable_auto_scaling   = true
+  max_count             = 4
+  min_count             = 1
+  node_count            = 1
+  os_disk_size_gb       = 100
+  node_taints           = ["group=gpu:NoSchedule"]
 }
 
 # Set permissions for the pre-existing service principal
@@ -97,4 +112,10 @@ resource "azurerm_key_vault_access_policy" "allow_service_principal" {
     "get",
     "list",
   ]
+}
+
+# Add a DNS Zone for the api service
+resource "azurerm_dns_zone" "cleanair_api_service" {
+    name                = "${var.service_hostname}"
+    resource_group_name = "${azurerm_resource_group.this.name}"
 }

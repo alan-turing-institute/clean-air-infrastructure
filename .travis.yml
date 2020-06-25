@@ -1,17 +1,68 @@
 language: python
+python:
+  - "3.7"
+cache: pip
 
-install:
-  - pip install -r containers/requirements.txt
+addons:
+  postgresql: '11'
+  apt:
+    packages:
+      - postgresql-11-postgis-3
+      - postgresql-11-postgis-3-scripts
 
-script:
-  # # Run all pytest unit tests
-  # - python -m pytest -v tests --cov containers --cov-report term-missing
+jobs:
+  include:
+    - stage: "Tests"                # naming the Tests stage
+      name: "cleanair"
 
-  # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
-  - flake8 --ignore=E203, W503
+      before_install:
+        - sh .travis/before_install.sh
 
-  # Check black formatting would not make any chages
-  - black --check */
+      install:
+        - pip install -r containers/requirements.txt
+        - pip install 'containers/cleanair[models,traffic,dashboard]'
 
-  # Run pylint for stricter error checking
-  - pylint */
+      before_script:
+        - sh .travis/before_script.sh
+
+      script:
+        # Run all pytest unit tests
+        - python -m pytest containers/tests/test_cleanair
+        - python -m pytest containers/tests/test_database_init
+
+        # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
+        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+        - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
+        - pylint --rcfile=.pylintrc containers/cleanair/*
+        # pylint --rcfile=.pylintrc containers/urbanair/*
+        - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
+    # separate parallel job for odysseus
+    - name: "odysseus" 
+      before_install:
+        - sh .travis/before_install.sh
+
+      install:
+        - pip install -r containers/requirements.txt
+        - pip install 'containers/cleanair'
+        - pip install 'containers/odysseus'
+
+      before_script:
+        - sh .travis/before_script.sh
+
+      script:
+        # Run all pytest unit tests
+        - python -m pytest containers/tests/test_odysseus
+
+        # Run pylint for stricter error checking.
+        # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
+        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
+    
+    - name: "code_style"
+      install:
+        - pip install -r containers/requirements.txt
+
+      script:
+        # Check black formatting would not make any chages
+        - black --check */
+        # Flake8 performs pyflakes, pycodestyle and McCabe complexity checks
+        - flake8 --ignore=E203, W503

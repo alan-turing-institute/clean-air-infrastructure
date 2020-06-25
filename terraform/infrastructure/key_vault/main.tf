@@ -18,25 +18,25 @@ resource "azurerm_key_vault" "this" {
   }
 }
 
-# Allow members of the Azure group full access
-# --------------------------------------------
-resource "azurerm_key_vault_access_policy" "allow_group" {
-  key_vault_id = "${azurerm_key_vault.this.id}"
-  tenant_id    = "${module.configuration.tenant_id}"
-  object_id    = "${module.configuration.azure_group_id}"
-  key_permissions = [
-    "create",
-    "delete",
-    "get",
-    "list",
-  ]
-  secret_permissions = [
-    "set",
-    "delete",
-    "get",
-    "list",
-  ]
-}
+# # Allow members of the Azure group full access
+# # --------------------------------------------
+# resource "azurerm_key_vault_access_policy" "allow_group" {
+#   key_vault_id = "${azurerm_key_vault.this.id}"
+#   tenant_id    = "${module.configuration.tenant_id}"
+#   object_id    = "${module.configuration.azure_group_id}"
+#   key_permissions = [
+#     "create",
+#     "delete",
+#     "get",
+#     "list",
+#   ]
+#   secret_permissions = [
+#     "set",
+#     "delete",
+#     "get",
+#     "list",
+#   ]
+# }
 
 # Write SCOOT AWS secrets to the keyvault
 # ---------------------------------------
