@@ -4,7 +4,6 @@ from geoalchemy2.shape import to_shape
 from shapely.geometry import Polygon
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityDataTable
-from cleanair.decorators import db_query
 from cleanair.types import Source
 
 

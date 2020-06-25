@@ -1,11 +1,10 @@
 """An air quality result."""
 
-from typing import Optional, Union, List
+from typing import Optional
 import pandas as pd
 from ..databases import DBWriter
 from ..mixins import ResultMixin
 from ..databases.tables import AirQualityResultTable
-from ..types import Source
 
 
 class AirQualityResult(ResultMixin, DBWriter):

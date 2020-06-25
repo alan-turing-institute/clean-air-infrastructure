@@ -1,6 +1,7 @@
-from typing import Any, Dict, Union
+"""Tests for air quality instance tables."""
+
+from typing import Any, Dict
 import pandas as pd
-from sqlalchemy import inspect
 from cleanair.databases import DBWriter
 from cleanair.instance import AirQualityInstance
 from cleanair.databases.tables import (
