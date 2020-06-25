@@ -2,6 +2,8 @@
 Given a model data object, check that the data matches the config.
 """
 
+from cleanair.types import Species, TargetDict
+
 
 def test_training_dicts(model_data):
     """Check the shape of all the numpy arrays are correct."""
@@ -33,11 +35,8 @@ def test_training_dicts(model_data):
 
         # check y_train
         for pollutant in model_data.config["species"]:
-            assert pollutant in y_train[source]
-
-            # check the shapes of y_train
-            assert y_train[source][pollutant].shape[1] == 1  # shape should be (N, 1)
             assert y_train[source][pollutant].shape[0] == x_train[source].shape[0]
+        validate_target(y_train[source])
 
 
 def test_pred_dict(model_data):
@@ -50,6 +49,20 @@ def test_pred_dict(model_data):
     assert "satellite" not in x_test
 
     for source in model_data.config["pred_sources"]:
+        # check x test
         assert source in x_test
         assert len(x_test[source].shape) == 2
         assert x_test[source].shape[1] == len(model_data.config["x_names"])
+
+        # check y test
+        assert source in y_test
+        assert len(model_data.config["species"]) == len(y_test[source])
+        validate_target(y_test[source])
+
+
+def validate_target(Y: TargetDict) -> bool:
+    for pollutant, array in Y.items():
+        print(pollutant)
+        assert Species.has_key(pollutant)
+        assert len(array.shape) == 2
+        assert array.shape[1] == 1

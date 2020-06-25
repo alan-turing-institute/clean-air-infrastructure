@@ -1,6 +1,6 @@
 """Fixtures for the model data class."""
 
-from typing import Any, Dict
+from typing import Any
 import pytest
 import uuid
 import numpy as np
@@ -8,6 +8,8 @@ import pandas as pd
 from sqlalchemy.engine import Connection
 from cleanair.models import ModelData
 from cleanair.types import DataConfig, FeaturesDict, TargetDict
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="function")
@@ -49,6 +51,7 @@ class MockModelData:
         self.training_df = training_df
 
     def mock_validate_config(self, config) -> bool:
+        assert config["include_satellite"] == False
         return True
 
     def mock_generate_full_config(self, config) -> DataConfig:
