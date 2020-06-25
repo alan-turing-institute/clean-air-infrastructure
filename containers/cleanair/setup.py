@@ -33,7 +33,7 @@ setuptools.setup(
         "scipy==1.4.1",
         "sqlalchemy==1.3.11",
         "sqlalchemy-utils==0.36.3",
-        "sklearn==0.0",
+        "scikit_learn-0.23.1",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
         "uuid==1.30",
@@ -41,7 +41,7 @@ setuptools.setup(
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.4", "pathos==0.2.5"],
-        "models": ["gpflow==1.5.1", "tensorflow==1.15.0", "scikit-learn==0.22.1"],
+        "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
         "dashboard": [
             "dash-bootstrap-components==0.8.2",
             "dash==1.8.0",

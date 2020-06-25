@@ -8,7 +8,8 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[models]'
+RUN pip install gpflow==1.5.1
+RUN pip install '/app/cleanair'
 
 # Copy the run script into the container
 COPY entrypoints/model_fitting/model_fitting.py /app
