@@ -17,17 +17,33 @@ spec:
         spec:
             containers:
             - name: {{ $job.name }}
+              {{- if $job.image.tag}}
+              image: "{{ $job.image.repository }}:{{ $job.image.tag }}"
+              {{else}}
               image: "{{ $job.image.repository }}:{{ $tag }}"
+              {{- end }}
               imagePullPolicy: {{ $job.image.imagePullPolicy }}
-              volumeMounts:
-               - name: secrets
-                 mountPath: "/secrets/"
-                 readOnly: true
-              args: {{ $job.args }}
-            imagePullSecrets:
-            - name: regcred
-            restartPolicy: {{ $job.restartPolicy }}
+              {{- with $job.command }}
+              command:
+{{ toYaml . | indent 16 }}
+              {{- end }}
+              {{- with $job.args }}
+              args:
+{{ toYaml . | indent 16 }}     
+              {{- end }}
+              {{- with $job.resources }}
+              resources:
+{{ toYaml . | indent 16 }}
+              {{- end }}
 
+            {{- with $job.volumeMounts }}
+              volumeMounts:
+{{ toYaml . | indent 14 }}
+            {{- end }}
+            {{- with $job.imagePullSecrets }}
+            imagePullSecrets:
+{{ toYaml . | indent 12 }}
+            {{- end }}
             {{- with $job.volumes }}
             volumes:
 {{ toYaml . | indent 12 }}
@@ -36,21 +52,18 @@ spec:
             env:
 {{ toYaml . | indent 12 }}
             {{- end }}
-            {{- with $job.volumeMounts }}
-            volumeMounts:
-{{ toYaml . | indent 12 }}
-            {{- end }}
             {{- with $job.nodeSelector }}
-          nodeSelector:
-{{ toYaml . | indent 12 }}
-          {{- end }}
+            nodeSelector:
+{{ toYaml . | indent 14 }}
+            {{- end }}
           {{- with $job.affinity }}
-          affinity:
-{{ toYaml . | indent 12 }}
+            affinity:
+{{ toYaml . | indent 14 }}
           {{- end }}
           {{- with $job.tolerations }}
-          tolerations:
-{{ toYaml . | indent 12 }}
+            tolerations:
+{{ toYaml . | indent 14 }}
           {{- end }}
+            restartPolicy: {{ $job.restartPolicy }}
     
 {{- end }}

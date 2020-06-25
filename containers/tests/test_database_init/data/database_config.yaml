@@ -1,0 +1,39 @@
+database: cleanair_test_db
+
+schema: 
+  - static_data
+  - interest_points
+  - dynamic_data 
+  - dynamic_features 
+  - interest_points
+  - model_features
+  - model_results
+  - processed_data
+  - static_data
+  - static_features
+  - gla_traffic
+  - not_real_schema
+
+roles:
+  - role: readonly
+    create_schema: False
+    schema: 
+      - name: static_data
+        create: False
+        privileges: 
+          - SELECT
+      - name: interest_points
+        create: False
+        privileges: 
+          - SELECT
+  - role: readwrite
+    create_schema: False
+    schema: 
+      - name: static_data
+        create: True
+        privileges: 
+          - ALL
+      - name: interest_points
+        create: False
+        privileges: 
+          - All

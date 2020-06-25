@@ -40,4 +40,8 @@ spec:
         volumes:
 {{ toYaml . | indent 8 }}
         {{- end }}
+        {{- with $deployment.nodeSelector }}
+        nodeSelector:
+{{ toYaml . | indent 8 }}
+        {{- end }}
 {{- end }}

@@ -1,6 +1,7 @@
 """
 Flask webhook app
 """
+# pylint: skip-file
 import hashlib
 import hmac
 import json

@@ -6,11 +6,12 @@
 terraform/backend_config.tf
 *.tfstate
 *.tfstate.backup
-
+.secrets
 # VS
 .vscode/
 *.secrets/
 *.tgz
+.mypy_*
 
 # pyenv
 .python-version
@@ -18,12 +19,18 @@ python-virtual-environments/
 
 # Python
 *__pycache__
+.mypy_cache
 
 # Python package
 *.egg-info
 
-# Jupyter notebooks/lab
-.ipynb_checkpoints
+# Notebooks
+notebooks/
+*.cfg
 
 # Misc
 images/
+
+# database
+mylocal_db/
+logfile
