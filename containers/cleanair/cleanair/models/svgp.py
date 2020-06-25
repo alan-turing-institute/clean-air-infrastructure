@@ -177,7 +177,7 @@ class SVGP(Model):
 
         Other Parameters
         ___
-        
+
         save_model_state : bool, optional
             Save the model to file so that it can be restored at a later date.
             Default is False.

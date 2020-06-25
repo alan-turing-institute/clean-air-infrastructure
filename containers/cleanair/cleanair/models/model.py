@@ -4,7 +4,6 @@ The interface for London air quality models.
 
 from abc import ABC, abstractmethod
 import numpy as np
-from ..metrics.evaluate import pop_kwarg
 from ..loggers import get_logger
 
 
