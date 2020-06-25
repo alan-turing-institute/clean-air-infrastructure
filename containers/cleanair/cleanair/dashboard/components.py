@@ -5,7 +5,6 @@ Meta components that make up the dashboard.
 import dash_core_components as dcc
 import plotly.express as px
 from . import timeseries
-from ..metrics import pop_kwarg
 
 METRIC_NAMES = {
     "mae": "Mean absolute error",
@@ -40,19 +39,19 @@ class ModelFitComponent:
         self.model_data = model_data
         self.sensor_scores_df = sensor_scores_df
         self.temporal_scores_df = temporal_scores_df
-        self.evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
-        self.evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
-        self.interest_points_map_id = pop_kwarg(
-            kwargs, "interest_points_map_id", "interest-points-map"
+        self.evaluate_training = kwargs.pop("evaluate_training", False)
+        self.evaluate_testing = kwargs.pop("evaluate_testing", True)
+        self.interest_points_map_id = kwargs.pop(
+            "interest_points_map_id", "interest-points-map"
         )
-        self.interest_points_timeseries_id = pop_kwarg(
-            kwargs, "interest_points_timeseries_id", "interest-points-timeseries"
+        self.interest_points_timeseries_id = kwargs.pop(
+            "interest_points_timeseries_id", "interest-points-timeseries"
         )
-        self.temporal_metrics_timeseries_id = pop_kwarg(
-            kwargs, "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
+        self.temporal_metrics_timeseries_id = kwargs.pop(
+            "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
         )
-        self.features_scatter_id = pop_kwarg(
-            kwargs, "features_scatter_id", "features_scatter"
+        self.features_scatter_id = kwargs.pop(
+            "features_scatter_id", "features_scatter"
         )
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
@@ -139,8 +138,6 @@ class ModelFitComponent:
                 dict(
                     x=self.point_groupby[x_feature].mean(),
                     y=self.point_groupby[y_feature].mean(),
-                    # x = self.sensor_scores_df[x_feature],
-                    # y = self.sensor_scores_df[y_feature],
                     mode="markers",
                     marker=dict(
                         color=self.sensor_scores_df[col],
