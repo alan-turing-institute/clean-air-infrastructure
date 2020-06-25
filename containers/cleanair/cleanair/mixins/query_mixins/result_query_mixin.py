@@ -45,8 +45,7 @@ class ResultQueryMixin:
         # list of tables with polygon geom columns
         polygon_geoms = dict(
             hexgrid=HexGrid,
-            rectgrid=RectGrid,
-            rectgrid100=RectGrid100,
+            grid_100=RectGrid100,
         )
 
         # get lon, lat and geom columns from polygon geometries

@@ -9,6 +9,5 @@ class Source(Enum):
     aqe: str = "aqe"
     hexgrid: str = "hexgrid"
     laqn: str = "laqn"
-    rectgrid: str = "rectgrid"
-    rectgrid100: str = "rectgrid100"
+    grid_100: str = "grid_100"
     scoot: str = "scoot"

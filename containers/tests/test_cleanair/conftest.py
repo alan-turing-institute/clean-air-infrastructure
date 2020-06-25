@@ -9,12 +9,12 @@ from typing import Dict
 import pytest
 import pandas as pd
 from cleanair.types import DataConfig, ParamsSVGP
-from cleanair.instance import AirQualityInstance, hash_dict
+from cleanair.instance import AirQualityInstance, AirQualityResult, hash_dict
 
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def no_features_data_config() -> DataConfig:
     """Data config with no features."""
     return {
@@ -37,7 +37,7 @@ def no_features_data_config() -> DataConfig:
     }
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def road_features_data_config(no_features_data_config) -> DataConfig:
     """An air quality data config dictionary with basic settings."""
     data_config = no_features_data_config.copy()
@@ -50,13 +50,13 @@ def road_features_data_config(no_features_data_config) -> DataConfig:
     return data_config
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def base_aq_preprocessing() -> Dict:
     """An air quality dictionary for preprocessing settings."""
     return dict()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def base_data_id(
     no_features_data_config: DataConfig, base_aq_preprocessing: Dict
 ) -> str:
@@ -64,7 +64,7 @@ def base_data_id(
     return hash_dict(dict(no_features_data_config, **base_aq_preprocessing))
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def svgp_model_params() -> ParamsSVGP:
     """SVGP model parameter fixture."""
     return {
@@ -80,37 +80,37 @@ def svgp_model_params() -> ParamsSVGP:
     }
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def svgp_param_id(svgp_model_params: ParamsSVGP) -> str:
     """Param id of svgp model params"""
     return hash_dict(svgp_model_params)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def production_tag() -> str:
     """Production tag."""
     return "production"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def test_tag() -> str:
     """Test tag."""
     return "test"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def cluster_id() -> str:
     """Cluster id."""
     return "local_test"
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def fit_start_time() -> str:
     """Datetime for when model started fitting."""
     return datetime(2020, 1, 1, 0, 0, 0).isoformat()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def svgp_instance(
     svgp_param_id: str,
     base_data_id: str,
@@ -130,14 +130,17 @@ def svgp_instance(
         secretfile=secretfile,
     )
 
+@pytest.fixture(scope="function")
+def hexgrid_point_id() -> str:
+    """A hexgrid point."""
+    return "643a4318-27e3-44f4-aafc-f58c5dcdc61a"
 
-@pytest.fixture(scope="module")
-def svgp_result(svgp_instance) -> pd.DataFrame:
-    """Predictions from an svgp model."""
+@pytest.fixture(scope="function")
+def svgp_result_df(svgp_instance, hexgrid_point_id) -> pd.DataFrame:
+    """Prediction dataframe from an svgp model."""
     start = datetime(2020, 1, 1, 0, 0, 0)
     nhours = 24
     end = start + timedelta(hours=nhours)
-    point_id = uuid.uuid1().hex
     random.seed(0)
     data = dict(
         measurement_start_utc=pd.date_range(start, end, freq="H", closed="left"),
@@ -145,7 +148,12 @@ def svgp_result(svgp_instance) -> pd.DataFrame:
         NO2_var=[10 * random.random() for i in range(nhours)],
     )
     result_df = pd.DataFrame(data)
-    result_df["point_id"] = point_id
+    result_df["point_id"] = hexgrid_point_id
     result_df["instance_id"] = svgp_instance.instance_id
     result_df["data_id"] = svgp_instance.data_id
     return result_df
+
+@pytest.fixture(scope="function")
+def svgp_result(secretfile, connection, svgp_instance, svgp_result_df):
+    """AQ result object."""
+    return AirQualityResult(svgp_instance.instance_id, svgp_instance.data_id, secretfile=secretfile, result_df=svgp_result_df, connection=connection)

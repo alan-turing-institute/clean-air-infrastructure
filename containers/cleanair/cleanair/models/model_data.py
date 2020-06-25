@@ -27,7 +27,8 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-lines
 
 
-class ModelData(DBWriter, DBQueryMixin):
+class ModelData(DBWriter, DBQueryMixin):    # TODO Satellite Availibility Mixin & Satellite Query Mixin
+    # TODO each source should have an availibity & a query mixin
     """Read data from multiple database tables in order to get data for model fitting"""
 
     def __init__(self, config: DataConfig, config_dir=None, **kwargs):
@@ -67,7 +68,8 @@ class ModelData(DBWriter, DBQueryMixin):
             self.pred_data_df = self.get_pred_data_inputs()
             self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
-            # Process satellite data
+            # Process satellite data - # TODO make sure in_london filter/flag works
+            # TODO bool flag for each (satellite) interest point if its inside London or not
             if self.config["include_satellite"]:
                 (
                     self.training_satellite_data_x,
