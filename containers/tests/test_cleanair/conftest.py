@@ -136,7 +136,7 @@ def fit_start_time() -> str:
 
 
 @pytest.fixture(scope="function")
-def svgp_instance(
+def svgp_instance(  #pylint: disable=too-many-arguments
     svgp_param_id: str,
     base_data_id: str,
     cluster_id: str,
