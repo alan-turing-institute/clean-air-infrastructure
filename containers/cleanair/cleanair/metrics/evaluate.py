@@ -9,11 +9,6 @@ from sklearn import metrics
 from . import precision
 
 
-def pop_kwarg(kwargs, key, default):
-    """Pop the value of key if its in kwargs, else use the default value."""
-    return default if key not in kwargs else kwargs.pop(key)
-
-
 def evaluate_model_data(model_data, metric_methods, **kwargs):
     """
     Given a model data object, evaluate the predictions.
@@ -78,12 +73,12 @@ def evaluate_model_data(model_data, metric_methods, **kwargs):
     ValueError
         If value of kwargs are not valid values.
     """
-    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
-    evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
-    evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
-    pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
-    test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
-    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
+    precision_methods = kwargs.pop("precision_methods", dict())
+    evaluate_training = kwargs.pop("evaluate_training", False)
+    evaluate_testing = kwargs.pop("evaluate_testing", True)
+    pred_cols = kwargs.pop("pred_cols", ["NO2_mean"])
+    test_cols = kwargs.pop("test_cols", ["NO2"])
+    var_cols = kwargs.pop("var_cols", ["NO2_var"])
 
     if len(pred_cols) != len(test_cols):
         raise ValueError("pred_cols and test_cols must be the same length.")
@@ -152,11 +147,11 @@ def evaluate_spatio_temporal_scores(
     Given a prediction dataframe, measure scores over sensors and time.
     """
     # get keyword arguments
-    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
-    pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
-    test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
-    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
-    features = pop_kwarg(kwargs, "features", [])
+    precision_methods = kwargs.pop("precision_methods", dict())
+    pred_cols = kwargs.pop("pred_cols", ["NO2_mean"])
+    test_cols = kwargs.pop("test_cols", ["NO2"])
+    var_cols = kwargs.pop("var_cols", ["NO2_var"])
+    features = kwargs.pop("features", [])
 
     # measure scores by sensor and by hour
     sensor_scores_df = measure_scores_on_groupby(
@@ -326,10 +321,10 @@ def measure_scores_on_groupby(pred_df, metric_methods, groupby_col, **kwargs):
     var_cols : list, optional
         Names of columns containing the variance of predictions.
     """
-    precision_methods = pop_kwarg(kwargs, "precision_methods", dict())
-    pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
-    test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
-    var_cols = pop_kwarg(kwargs, "var_cols", ["NO2_var"])
+    precision_methods = kwargs.pop("precision_methods", dict())
+    pred_cols = kwargs.pop("pred_cols", ["NO2_mean"])
+    test_cols = kwargs.pop("test_cols", ["NO2"])
+    var_cols = kwargs.pop("var_cols", ["NO2_var"])
 
     # remove nans from rows
     pred_df = __remove_rows_with_nans(pred_df, pred_cols=pred_cols, test_cols=test_cols)
@@ -383,8 +378,8 @@ def concat_features(scores_df, pred_df, features):
 
 def __remove_rows_with_nans(pred_df, **kwargs):
     """Remove rows with NaN as an observation."""
-    pred_cols = pop_kwarg(kwargs, "pred_cols", ["NO2_mean"])
-    test_cols = pop_kwarg(kwargs, "test_cols", ["NO2"])
+    pred_cols = kwargs.pop("pred_cols", ["NO2_mean"])
+    test_cols = kwargs.pop("test_cols", ["NO2"])
     cols_to_check = pred_cols.copy()
     cols_to_check.extend(test_cols)
     return pred_df.loc[pred_df[cols_to_check].dropna().index]

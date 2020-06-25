@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from pandas import Timestamp
 
 
-def timeseries_prediction_trace(
+def timeseries_prediction_trace(    #pylint: disable=too-many-arguments
     x_test: Sequence[Union[float, int, Timestamp, datetime]],
     y_test: Sequence[Union[float, int]],
     y_mean: Sequence[Union[float, int]],

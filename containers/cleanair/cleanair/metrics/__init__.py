@@ -6,7 +6,6 @@ from .evaluate import evaluate_model_data
 from .evaluate import get_metric_methods
 from .evaluate import get_precision_methods
 from .evaluate import measure_scores_on_groupby
-from .evaluate import pop_kwarg
 from .precision import probable_error
 from .precision import confidence_interval
 from .precision import confidence_interval_50

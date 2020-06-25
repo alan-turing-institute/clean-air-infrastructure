@@ -62,12 +62,12 @@ class Model(ABC):
                 "Multiple pollutants not supported. Use only NO2."
             )
         # other misc arguments
-        self.log = pop_kwarg(kwargs, "log", True)
+        self.log = kwargs.pop("log", True)
         self.model = None
         self.minimum_param_keys = []
         self.epoch = 0
-        self.batch_size = pop_kwarg(kwargs, "batchsize", 100)
-        self.refresh = pop_kwarg(kwargs, "refresh", 10)
+        self.batch_size = kwargs.pop("batchsize", 100)
+        self.refresh = kwargs.pop("refresh", 10)
         # Ensure logging is available
         if self.log and not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
