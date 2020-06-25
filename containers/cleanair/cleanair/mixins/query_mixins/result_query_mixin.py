@@ -5,7 +5,7 @@ from typing import Optional, Any, List
 from sqlalchemy import func, Column
 
 from ...databases.mixins import ResultTableMixin
-from ...databases.tables import HexGrid, MetaPoint, RectGrid, RectGrid100
+from ...databases.tables import HexGrid, MetaPoint, RectGrid100
 from ...decorators import db_query
 from ...types import Source
 
@@ -64,7 +64,7 @@ class ResultQueryMixin:
             base_query += [
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom")
+                MetaPoint.location.label("geom")    # TODO how to transform this?
             ]
 
         # open connection and start the query
@@ -73,13 +73,15 @@ class ResultQueryMixin:
                 self.result_table.instance_id == instance_id
             )
             if with_location and source.value in polygon_geoms:
+                # inner join on polygon table (hexgrid, grid100)
                 readings = readings.join(
                     polygon_table, self.result_table.point_id == polygon_table.point_id
                 )
             elif with_location:
+                # inner join on point id and filter by source
                 readings = readings.join(
                     MetaPoint, self.result_table.point_id == MetaPoint.id
-                )
+                ).filter(MetaPoint.source == source.value)
 
             # filter by data id
             if data_id:

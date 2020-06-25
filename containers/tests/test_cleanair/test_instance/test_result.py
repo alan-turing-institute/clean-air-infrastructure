@@ -1,32 +1,12 @@
 """Test that results are queried and commited to database correctly."""
 
-import numpy as np
-import pandas as pd
-import pytest
-from shapely.wkb import loads
-from shapely.geometry import MultiPolygon
+from geoalchemy2.shape import to_shape
+from shapely.geometry import Polygon
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import AirQualityDataTable
 from cleanair.decorators import db_query
 from cleanair.types import Source
 
-
-def test_update_result_tables(svgp_result):
-    """Test inserting air quality results to the DB."""
-    svgp_result.update_remote_tables()
-
-
-@db_query
-def get_data_table(conn):
-    with conn.dbcnxn.open_session() as session:
-        readings = session.query(AirQualityDataTable)
-        return readings
-
-@db_query
-def get_model_table(conn):
-    with conn.dbcnxn.open_session() as session:
-        readings = session.query(AirQualityDataTable)
-        return readings
 
 def test_air_quality_result_query(
     secretfile,
@@ -54,10 +34,6 @@ def test_air_quality_result_query(
     ]
     conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
 
-    data_df = get_data_table(conn, output_type="df")
-    assert len(data_df) > 0
-    assert svgp_instance.data_id in data_df["data_id"].to_list()
-
     # update model and instance tables
     svgp_model_params.update_remote_tables()
     svgp_instance.update_remote_tables()
@@ -73,11 +49,13 @@ def test_air_quality_result_query(
         with_location=True,
         output_type="df"
     )
+    assert len(result_df) == 24     # 24 hours of predictions
     # check that correct columns are returned
-    assert len(result_df) > 0
     assert svgp_result.result_df.columns.isin(result_df.columns).all()
     assert set(["lon", "lat", "geom"]).issubset(set(result_df.columns))
 
     # get a geometry and check its a polygon
-    hex_geom = loads(result_df.iloc[0]["geom"])
-    assert isinstance(hex_geom, MultiPolygon)
+    print("Type of geom in df:", type(result_df.iloc[0]["geom"]))
+    hex_geom = to_shape(result_df.iloc[0]["geom"])
+    print("Type of converted geom:", type(hex_geom))
+    assert isinstance(hex_geom, Polygon)
