@@ -1,6 +1,7 @@
 """
 Create dash apps.
 """
+from typing import List, Optional
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
@@ -9,11 +10,13 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 from . import components
 from . import callbacks
-from ..metrics import pop_kwarg
 
 
 def get_model_data_fit_app(
-    model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token, **kwargs,
+    model_data, sensor_scores_df, temporal_scores_df, mapbox_access_token,
+    evaluate_testing: bool = True,
+    evaluate_training: bool = False,
+    all_metrics: Optional[List] = None,
 ):
     """
     Return an app showing the scores for a model data fit.
@@ -51,12 +54,10 @@ def get_model_data_fit_app(
         Show the metrics over the testing period.
 
     all_metrics : list, optional
-        List of metrics to show in the dashboard, e.g. r2_score, mae.
+        List of metrics to show in the dashboard. Default is r2, mae, mse.
     """
-    # get key word arguments
-    evaluate_training = pop_kwarg(kwargs, "evaluate_training", False)
-    evaluate_testing = pop_kwarg(kwargs, "evaluate_testing", True)
-    all_metrics = pop_kwarg(kwargs, "all_metrics", ["r2_score", "mae", "mse"])
+    if not all_metrics:
+        all_metrics = ["r2_score", "mae", "mse"]
 
     # get a model fit component object
     instance_id = 0
