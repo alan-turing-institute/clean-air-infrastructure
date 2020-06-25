@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
 
-# Install any needed packages specified in requirements.txt
+# Install any needed packages - note tensorflow-gpu 1.15.0 is already installed
 RUN pip install gpflow==1.5.1
 RUN pip install '/app/cleanair'
 
