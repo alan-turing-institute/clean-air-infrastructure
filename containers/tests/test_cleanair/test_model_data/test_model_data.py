@@ -2,10 +2,8 @@
 Given a model data object, check that the data matches the config.
 """
 
-def check_training_set(model_data):
-    """
-    Check the shape of all the numpy arrays are correct.
-    """
+def test_training_dicts(model_data):
+    """Check the shape of all the numpy arrays are correct."""
     # load the dicts from modeldata
     training_data_dict = model_data.get_training_data_arrays(dropna=False)
     x_train = training_data_dict['X']
@@ -36,15 +34,17 @@ def check_training_set(model_data):
             assert y_train[source][pollutant].shape[1] == 1     # shape should be (N, 1)
             assert y_train[source][pollutant].shape[0] == x_train[source].shape[0]
 
-def check_test_set(model_data):
+def test_pred_dict(model_data):
     """
     Check the test set is in the right format.
     """
     predict_data_dict = model_data.get_pred_data_arrays(dropna=False, return_y=True)
     x_test = predict_data_dict['X']
+    y_test = predict_data_dict["Y"]
     assert 'satellite' not in x_test
 
 
     for source in model_data.config['pred_sources']:
         assert source in x_test
-        assert len(x_test[source]) == 2
+        assert len(x_test[source].shape) == 2
+        assert x_test[source].shape[1] == len(model_data.config["x_names"])
