@@ -9,7 +9,12 @@ import pytest
 import pandas as pd
 from cleanair.types import DataConfig, ParamsSVGP
 from cleanair.models import ModelData
-from cleanair.instance import AirQualityInstance, AirQualityModelParams, AirQualityResult, hash_dict
+from cleanair.instance import (
+    AirQualityInstance,
+    AirQualityModelParams,
+    AirQualityResult,
+    hash_dict,
+)
 
 # pylint: disable=redefined-outer-name
 
@@ -36,14 +41,16 @@ def no_features_data_config() -> DataConfig:
         "tag": "test",
     }
 
+
 @pytest.fixture(scope="function")
 def no_features_model_data(
-    secretfile: str,
-    connection: Any,
-    no_features_data_config: DataConfig
+    secretfile: str, connection: Any, no_features_data_config: DataConfig
 ) -> ModelData:
     """A model data object with no features, only laqn readings."""
-    return ModelData(config=no_features_data_config, secretfile=secretfile, connection=connection)
+    return ModelData(
+        config=no_features_data_config, secretfile=secretfile, connection=connection
+    )
+
 
 @pytest.fixture(scope="function")
 def road_features_data_config(no_features_data_config) -> DataConfig:
@@ -87,15 +94,16 @@ def svgp_params_dict() -> ParamsSVGP:
         "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
     }
 
+
 @pytest.fixture(scope="function")
-def svgp_model_params(secretfile, connection, svgp_params_dict) -> AirQualityModelParams:
+def svgp_model_params(
+    secretfile, connection, svgp_params_dict
+) -> AirQualityModelParams:
     """Class to read and write from the database."""
     return AirQualityModelParams(
-        secretfile,
-        "svgp",
-        svgp_params_dict,
-        connection=connection,
+        secretfile, "svgp", svgp_params_dict, connection=connection,
     )
+
 
 @pytest.fixture(scope="function")
 def svgp_param_id(svgp_params_dict: ParamsSVGP) -> str:
@@ -149,10 +157,12 @@ def svgp_instance(
         connection=connection,
     )
 
+
 @pytest.fixture(scope="function")
 def hexgrid_point_id() -> str:
     """A hexgrid point."""
     return "643a4318-27e3-44f4-aafc-f58c5dcdc61a"
+
 
 @pytest.fixture(scope="function")
 def svgp_result_df(svgp_instance, hexgrid_point_id) -> pd.DataFrame:
@@ -172,7 +182,14 @@ def svgp_result_df(svgp_instance, hexgrid_point_id) -> pd.DataFrame:
     result_df["data_id"] = svgp_instance.data_id
     return result_df
 
+
 @pytest.fixture(scope="function")
 def svgp_result(secretfile, connection, svgp_instance, svgp_result_df):
     """AQ result object."""
-    return AirQualityResult(svgp_instance.instance_id, svgp_instance.data_id, secretfile=secretfile, result_df=svgp_result_df, connection=connection)
+    return AirQualityResult(
+        svgp_instance.instance_id,
+        svgp_instance.data_id,
+        secretfile=secretfile,
+        result_df=svgp_result_df,
+        connection=connection,
+    )

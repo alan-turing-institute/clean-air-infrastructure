@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 # pylint: disable=too-many-lines
 
 
-class ModelData(DBWriter, DBQueryMixin):    # TODO Satellite Availibility Mixin & Satellite Query Mixin
+class ModelData(
+    DBWriter, DBQueryMixin
+):  # TODO Satellite Availibility Mixin & Satellite Query Mixin
     # TODO each source should have an availibity & a query mixin
     """Read data from multiple database tables in order to get data for model fitting"""
 

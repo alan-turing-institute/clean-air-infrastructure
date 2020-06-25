@@ -7,6 +7,7 @@ from ..mixins import ResultMixin
 from ..databases.tables import AirQualityResultTable
 from ..types import Source
 
+
 class AirQualityResult(ResultMixin, DBWriter):
     """Air quality predictions from a trained model."""
 
@@ -23,7 +24,7 @@ class AirQualityResult(ResultMixin, DBWriter):
             data_id=data_id,
             secretfile=secretfile,
             result_df=result_df,
-            **kwargs
+            **kwargs,
         )
 
     @property

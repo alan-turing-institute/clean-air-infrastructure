@@ -54,9 +54,7 @@ def test_insert_svgp(
     model_name = "svgp"
     records = [
         dict(
-            model_name=model_name,
-            param_id=svgp_param_id,
-            model_param=svgp_params_dict,
+            model_name=model_name, param_id=svgp_param_id, model_param=svgp_params_dict,
         )
     ]
     conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")

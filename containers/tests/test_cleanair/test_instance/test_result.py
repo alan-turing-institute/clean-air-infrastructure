@@ -15,7 +15,7 @@ def test_air_quality_result_query(
     no_features_data_config,
     base_aq_preprocessing,
     svgp_model_params,
-    svgp_result
+    svgp_result,
 ):
     """Test that the result query operates correctly."""
     # write to tables that result has a foreign key referencing
@@ -47,9 +47,9 @@ def test_air_quality_result_query(
         Source.hexgrid,
         data_id=svgp_result.data_id,
         with_location=True,
-        output_type="df"
+        output_type="df",
     )
-    assert len(result_df) == 24     # 24 hours of predictions
+    assert len(result_df) == 24  # 24 hours of predictions
     # check that correct columns are returned
     assert svgp_result.result_df.columns.isin(result_df.columns).all()
     assert set(["lon", "lat", "geom"]).issubset(set(result_df.columns))

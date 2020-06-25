@@ -9,6 +9,7 @@ from ...databases.tables import HexGrid, MetaPoint, RectGrid100
 from ...decorators import db_query
 from ...types import Source
 
+
 class ResultQueryMixin:
     """Mixin for querying results."""
 
@@ -43,10 +44,7 @@ class ResultQueryMixin:
             base_query = columns
 
         # list of tables with polygon geom columns
-        polygon_geoms = dict(
-            hexgrid=HexGrid,
-            grid_100=RectGrid100,
-        )
+        polygon_geoms = dict(hexgrid=HexGrid, grid_100=RectGrid100,)
 
         # get lon, lat and geom columns from polygon geometries
         if with_location and source.value in polygon_geoms:
@@ -57,14 +55,14 @@ class ResultQueryMixin:
             base_query += [
                 func.ST_X(func.ST_Centroid(polygon_table.geom)).label("lon"),
                 func.ST_Y(func.ST_Centroid(polygon_table.geom)).label("lat"),
-                func.ST_GeometryN(polygon_table.geom, 1).label("geom")
+                func.ST_GeometryN(polygon_table.geom, 1).label("geom"),
             ]
         # else if we are just looking at point locations query metapoint
         elif with_location:
             base_query += [
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom")    # TODO how to transform this?
+                MetaPoint.location.label("geom"),  # TODO how to transform this?
             ]
 
         # open connection and start the query

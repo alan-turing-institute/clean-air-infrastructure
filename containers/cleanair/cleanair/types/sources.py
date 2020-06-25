@@ -2,6 +2,7 @@
 
 from enum import Enum, unique
 
+
 @unique
 class Source(Enum):
     """Different types of source for metapoints."""
