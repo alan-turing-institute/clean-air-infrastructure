@@ -66,6 +66,15 @@
         'person': 'rgba(255, 159, 64, 0.7)'
     };
 
+    function convertUTCDateToLocalDate(date) {
+        var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
+        var offset = date.getTimezoneOffset() / 60;
+        var hours = date.getHours();
+
+        newDate.setHours(hours - offset);
+        return newDate;   
+    }
+      
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
         document.getElementById("chart").style.display = "block";
@@ -83,8 +92,10 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
-                    
+                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
+                        // console.log(date.toString())
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
+                       
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
