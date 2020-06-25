@@ -3,6 +3,7 @@ Instances of models and data.
 """
 import abc
 import logging
+import os
 import git
 from ..databases import DBWriter
 from .hashing import hash_fn
@@ -60,14 +61,15 @@ class Instance(DBWriter):
                     search_parent_directories=True
                 ).head.object.hexsha
             except git.InvalidGitRepositoryError as error:
-                # catch exception and set to empty string
-                error_message = (
-                    "Could not find a git repository in the parent directory."
-                )
-                error_message += "Setting git_hash to empty string."
-                logging.error(error_message)
-                logging.error(error.__traceback__)
-                self._git_hash = ""
+                # catch exception and try to get environment variable
+                self._git_hash = os.getenv("GIT_HASH", "")
+                if isinstance(self._git_hash, str) and len(self._git_hash) == 0:
+                    error_message = (
+                        "Could not find a git repository in the parent directory."
+                    )
+                    error_message += "Setting git_hash to empty string."
+                    logging.error(error_message)
+                    logging.error(error.__traceback__)
 
         self._fit_start_time = fit_start_time
         self._instance_id = self.hash()
