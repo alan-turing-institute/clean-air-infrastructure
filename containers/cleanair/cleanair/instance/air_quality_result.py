@@ -23,6 +23,7 @@ class AirQualityResult(ResultMixin, DBWriter):
             data_id=data_id,
             secretfile=secretfile,
             result_df=result_df,
+            **kwargs
         )
 
     @property

@@ -135,6 +135,7 @@ def svgp_instance(
     test_tag: str,
     fit_start_time: str,
     secretfile: str,
+    connection: Any,
 ) -> AirQualityInstance:
     """SVGP air quality instance on simple LAQN data."""
     return AirQualityInstance(
@@ -145,6 +146,7 @@ def svgp_instance(
         tag=test_tag,
         fit_start_time=fit_start_time,
         secretfile=secretfile,
+        connection=connection,
     )
 
 @pytest.fixture(scope="function")
