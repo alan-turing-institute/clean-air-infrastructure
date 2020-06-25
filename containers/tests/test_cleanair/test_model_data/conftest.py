@@ -1,8 +1,8 @@
 """Fixtures for the model data class."""
 
+import uuid
 from typing import Any
 import pytest
-import uuid
 import numpy as np
 import pandas as pd
 from sqlalchemy.engine import Connection
@@ -47,21 +47,26 @@ def training_df() -> pd.DataFrame:
 
 
 class MockModelData:
+    """Mocking the model data class."""
     def __init__(self, training_df):
         self.training_df = training_df
 
     def mock_validate_config(self, config) -> bool:
-        assert config["include_satellite"] == False
+        """Mocks the validate config method of ModelData."""
+        assert not config["include_satellite"]
         return True
 
     def mock_generate_full_config(self, config) -> DataConfig:
+        """Mocks the generate full config method of ModelData."""
         config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
         return config
 
     def mock_get_training_data_inputs(self) -> pd.DataFrame:
+        """Mocks the get training data inputs method of ModelData."""
         return self.training_df
 
     def mock_get_pred_data_inputs(self) -> pd.DataFrame:
+        """Mocks the get pred data inputs method of ModelData."""
         return self.training_df
 
 

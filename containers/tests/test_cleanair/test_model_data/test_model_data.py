@@ -61,6 +61,7 @@ def test_pred_dict(model_data):
 
 
 def validate_target(Y: TargetDict) -> bool:
+    """Check the shapes and structure of Y."""
     for pollutant, array in Y.items():
         print(pollutant)
         assert Species.has_key(pollutant)
