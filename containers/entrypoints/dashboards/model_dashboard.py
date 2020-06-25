@@ -101,7 +101,10 @@ def main():  # pylint: disable=too-many-locals
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data, sensor_scores_df, temporal_scores_df, args.mapbox_token,
+        model_data,
+        sensor_scores_df,
+        temporal_scores_df,
+        args.mapbox_token,
         all_metrics=list(metric_methods.keys()) + list(precision_methods.keys()),
     )
     model_data_fit_app.run_server(debug=True)
