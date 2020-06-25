@@ -1,6 +1,7 @@
 """Vizualise available sensor data for a model fit"""
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict
+# from typing import TYPE_CHECKING, Dict
+from typing import Dict
 from datetime import date, datetime
 import json
 import os

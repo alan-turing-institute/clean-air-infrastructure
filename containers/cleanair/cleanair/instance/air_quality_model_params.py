@@ -1,7 +1,7 @@
 """Class for writing model params to the DB."""
 
 # from __future__ import annotations
-from typing import TYPE_CHECKING
+# from typing import TYPE_CHECKING
 from .params import ModelParamsMixin
 from ..databases import DBWriter
 from ..databases.tables import AirQualityModelTable

@@ -28,4 +28,4 @@ ENTRYPOINT ["python", "model_fitting.py"]
 # docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
 
 # To run the latest version of this entrypoint:
-# docker run -it --rm cleanairdocker.azurecr.io/mf:latest
+# docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json

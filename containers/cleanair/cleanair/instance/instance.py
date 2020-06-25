@@ -70,6 +70,8 @@ class Instance(DBWriter):
                     error_message += "Setting git_hash to empty string."
                     logging.error(error_message)
                     logging.error(error.__traceback__)
+                else:
+                    logging.info("Using environment variable GITHASH: %s", self._git_hash)
 
         self._fit_start_time = fit_start_time
         self._instance_id = self.hash()
