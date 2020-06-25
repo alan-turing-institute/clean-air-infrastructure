@@ -50,9 +50,7 @@ class ModelFitComponent:
         self.temporal_metrics_timeseries_id = kwargs.pop(
             "temporal_metrics_timeseries_id", "temporal_metrics_timeseries"
         )
-        self.features_scatter_id = kwargs.pop(
-            "features_scatter_id", "features_scatter"
-        )
+        self.features_scatter_id = kwargs.pop("features_scatter_id", "features_scatter")
         # execute and store the group bys
         if self.evaluate_training and self.evaluate_testing:
             # append train and test dfs then group by point id

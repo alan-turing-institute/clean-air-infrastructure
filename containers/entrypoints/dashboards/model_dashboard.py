@@ -38,7 +38,9 @@ def main():  # pylint: disable=too-many-locals
 
     # Get the results
     logger.info("Querying the air quality modelling results table.")
-    results_df = result_query.query_results(args.instance_id, data_id=data_id, output_type="df")
+    results_df = result_query.query_results(
+        args.instance_id, data_id=data_id, output_type="df"
+    )
 
     # Get the data
     logger.info("Querying the database of input data.")
