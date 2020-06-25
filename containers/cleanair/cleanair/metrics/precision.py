@@ -7,23 +7,6 @@ import numpy as np
 from scipy.stats import norm
 
 
-def circular_error_probable(y_test, y_pred, y_var, boundary_percent=0.5):
-    """
-    The radius of the circle, centered on the mean, whose boundary is expected
-    to include the landing points of `p`% of the rounds.
-
-    Notes
-    ___
-
-    This may be a good measure for evaluating multiple pollutants.
-    We will need to take into account the fact that pollutants are not
-    independent Guassians.
-    Its origins are from the mililary science of ballistics
-    (https://en.m.wikipedia.org/wiki/Circular_error_probable).
-    """
-    raise NotImplementedError()
-
-
 def probable_error(y_test, y_mean, y_var, k=1):
     """
     The percentage of test points that lie within k standard deviations
