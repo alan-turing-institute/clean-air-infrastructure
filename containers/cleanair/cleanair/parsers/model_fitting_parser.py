@@ -75,7 +75,9 @@ class ModelFittingParser(
         self.add_argument(
             "--maxiter", default=2000, type=int, help="Number of training iterations.",
         )
-        self.add_argument("--git_hash", default=None, type=str, help="Hex string of git repo.")
+        self.add_argument(
+            "--git_hash", default=None, type=str, help="Hex string of git repo."
+        )
 
     @staticmethod
     def generate_data_config(args):
