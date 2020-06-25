@@ -39,14 +39,14 @@ def test_insert_laqn_data_table(
 
 
 def test_insert_svgp(
-    secretfile: str, connection: Any, svgp_model_params: ParamsSVGP, svgp_param_id: str,
+    secretfile: str, connection: Any, svgp_params_dict: ParamsSVGP, svgp_param_id: str,
 ):
     """Test data is inserted into the air quality model table.
 
     Args:
         secretfile: The fixture for secretfiles.
         connection: The fixture for DB connection.
-        svgp_model_params: Simple model parameters for an SVGP.
+        svgp_params_dict: Simple model parameters for an SVGP.
     """
     conn = DBWriter(
         secretfile=secretfile, initialise_tables=True, connection=connection
@@ -56,7 +56,7 @@ def test_insert_svgp(
         dict(
             model_name=model_name,
             param_id=svgp_param_id,
-            model_param=svgp_model_params,
+            model_param=svgp_params_dict,
         )
     ]
     conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")
@@ -68,7 +68,7 @@ def test_insert_instance(
     svgp_instance: AirQualityInstance,
     no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
-    svgp_model_params: ParamsSVGP,
+    svgp_params_dict: ParamsSVGP,
 ):
     """Insert instance into database."""
     conn = DBWriter(
@@ -80,7 +80,7 @@ def test_insert_instance(
         dict(
             model_name=model_name,
             param_id=svgp_instance.param_id,
-            model_param=svgp_model_params,
+            model_param=svgp_params_dict,
         )
     ]
     conn.commit_records(records, table=AirQualityModelTable, on_conflict="ignore")

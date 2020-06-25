@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from shapely.wkb import loads
 from shapely.geometry import MultiPolygon
+from cleanair.databases import DBWriter
+from cleanair.databases.tables import AirQualityDataTable
 from cleanair.types import Source
 
 
@@ -13,9 +15,37 @@ def test_update_result_tables(svgp_result):
     svgp_result.update_remote_tables()
 
 
-def test_air_quality_result_query(svgp_result):
+def test_air_quality_result_query(
+    secretfile,
+    connection,
+    svgp_instance,
+    no_features_data_config,
+    base_aq_preprocessing,
+    svgp_model_params,
+    svgp_result
+):
     """Test that the result query operates correctly."""
-    # write to result table first
+    # write to tables that result has a foreign key referencing
+    assert svgp_instance.data_id == svgp_result.data_id
+
+    # temp solution until we can test model data
+    conn = DBWriter(
+        secretfile=secretfile, initialise_tables=True, connection=connection
+    )
+    records = [
+        dict(
+            data_id=svgp_instance.data_id,
+            data_config=no_features_data_config,
+            preprocessing=base_aq_preprocessing,
+        )
+    ]
+    conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
+
+    # update model and instance tables
+    svgp_model_params.update_remote_tables()
+    svgp_instance.update_remote_tables()
+
+    # write to result table
     svgp_result.update_remote_tables()
 
     # then query the same result

@@ -2,14 +2,14 @@
 Fixtures for the cleanair module.
 """
 
-import uuid
 import random
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Any
 import pytest
 import pandas as pd
 from cleanair.types import DataConfig, ParamsSVGP
-from cleanair.instance import AirQualityInstance, AirQualityResult, hash_dict
+from cleanair.models import ModelData
+from cleanair.instance import AirQualityInstance, AirQualityModelParams, AirQualityResult, hash_dict
 
 # pylint: disable=redefined-outer-name
 
@@ -36,6 +36,14 @@ def no_features_data_config() -> DataConfig:
         "tag": "test",
     }
 
+@pytest.fixture(scope="function")
+def no_features_model_data(
+    secretfile: str,
+    connection: Any,
+    no_features_data_config: DataConfig
+) -> ModelData:
+    """A model data object with no features, only laqn readings."""
+    return ModelData(config=no_features_data_config, secretfile=secretfile, connection=connection)
 
 @pytest.fixture(scope="function")
 def road_features_data_config(no_features_data_config) -> DataConfig:
@@ -65,7 +73,7 @@ def base_data_id(
 
 
 @pytest.fixture(scope="function")
-def svgp_model_params() -> ParamsSVGP:
+def svgp_params_dict() -> ParamsSVGP:
     """SVGP model parameter fixture."""
     return {
         "jitter": 1e-5,
@@ -79,11 +87,20 @@ def svgp_model_params() -> ParamsSVGP:
         "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
     }
 
+@pytest.fixture(scope="function")
+def svgp_model_params(secretfile, connection, svgp_params_dict) -> AirQualityModelParams:
+    """Class to read and write from the database."""
+    return AirQualityModelParams(
+        secretfile,
+        "svgp",
+        svgp_params_dict,
+        connection=connection,
+    )
 
 @pytest.fixture(scope="function")
-def svgp_param_id(svgp_model_params: ParamsSVGP) -> str:
+def svgp_param_id(svgp_params_dict: ParamsSVGP) -> str:
     """Param id of svgp model params"""
-    return hash_dict(svgp_model_params)
+    return hash_dict(svgp_params_dict)
 
 
 @pytest.fixture(scope="function")
