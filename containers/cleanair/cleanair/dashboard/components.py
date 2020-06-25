@@ -93,15 +93,16 @@ class ModelFitComponent:
         """
         Get a map with interest points plotted.
         """
+        point_df = self.point_groupby.get_group(point_id)
         return dict(
-            data=[
-                timeseries.get_pollutant_point_trace(
-                    self.point_groupby.get_group(point_id), col=pollutant
-                ),
-                timeseries.get_pollutant_point_trace(
-                    self.point_groupby.get_group(point_id), col=pollutant + "_mean"
-                ),
-            ],
+            data=timeseries.timeseries_prediction_trace(
+                point_df["measurement_start_utc"],
+                point_df[pollutant],
+                point_df[pollutant + "_mean"],
+                point_df[pollutant + "_var"],
+                line_name=pollutant + " prediction",
+                marker_name=pollutant + " observations",
+            ),
             layout=dict(title="Prediction for point {id}".format(id=point_id)),
         )
 

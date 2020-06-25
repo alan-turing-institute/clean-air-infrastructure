@@ -9,13 +9,16 @@ def ip_timeseries_callback(hover_data, point_groupby, pollutant="NO2"):
     When hovering over a point, update the timeseries showing the prediction.
     """
     point_id = hover_data["points"][0]["hovertext"]
-    point_pred_df = point_groupby.get_group(point_id)
-    mean_trace = timeseries.get_pollutant_point_trace(
-        point_pred_df, col=pollutant + "_mean"
-    )
-    actual_trace = timeseries.get_pollutant_point_trace(point_pred_df, col=pollutant)
+    point_df = point_groupby.get_group(point_id)
     return dict(
-        data=[mean_trace, actual_trace],
+        data=timeseries.timeseries_prediction_trace(
+            point_df["measurement_start_utc"],
+            point_df[pollutant],
+            point_df[pollutant + "_mean"],
+            point_df[pollutant + "_var"],
+            line_name=pollutant + " prediction",
+            marker_name=pollutant + " observations",
+        ),
         layout=dict(title="Prediction for point {id}".format(id=point_id)),
     )
 
