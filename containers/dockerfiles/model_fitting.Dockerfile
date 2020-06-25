@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7
+# Use an official tensorflow gpu runtime as a parent image
+FROM tensorflow/tensorflow:1.15.0-gpu-py3
 
 # Set the working directory to /app
 WORKDIR /app
