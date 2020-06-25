@@ -91,8 +91,10 @@ def main():  # pylint: disable=too-many-locals
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
+    precision_methods = metrics.get_precision_methods(pe1=metrics.probable_error)
+
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods
+        model_data, metric_methods, precision_methods=precision_methods,
     )
     logger.debug("%s rows in sensor scores.", len(sensor_scores_df))
     logger.debug("%s rows in temporal scores.", len(temporal_scores_df))
@@ -100,6 +102,7 @@ def main():  # pylint: disable=too-many-locals
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
         model_data, sensor_scores_df, temporal_scores_df, args.mapbox_token,
+        all_metrics=list(metric_methods.keys()) + list(precision_methods.keys()),
     )
     model_data_fit_app.run_server(debug=True)
 
