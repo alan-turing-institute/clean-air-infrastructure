@@ -14,7 +14,7 @@
 <link href="{{ url_for('static', path='css/map.css') }}" rel="stylesheet">
 
 <a class="logo" href="https://www.turing.ac.uk/research/research-projects/project-odysseus-understanding-london-busyness-and-exiting-lockdown"></a>
-<div id="controls">
+<div id="controls" style="height: fit-content;">
     <div class="controls-options">Options</div>
     <div class="controls-container">
     <label for="controls">Activity snapshot</label><br>
@@ -30,7 +30,10 @@
     <select id="mySelect2" onchange="setGroundEstimates()">
       <option value="show">Shown</option>
       <option value="hide">Hidden</option>
-    </select>
+    </select> <br>
+    <label for="controls">Date</label><br>
+    <input type="date" id="myDate" value="2020-06-25">
+    <button onclick="setDate()">Go</button>
         <span style="color: red;">(experimental)</span>
     </div>
 </div>
@@ -38,6 +41,7 @@
     <canvas id="myChart" width="400" height="250"></canvas>
 </div>
 <div id="mapid"></div>
+
 
 <script type="text/javascript" src="{{ url_for('static', path='js/viridis.js') }}"></script>
 <script type="text/javascript">
@@ -65,6 +69,11 @@
         'bus': 'rgba(153, 102, 255, 0.7)',
         'person': 'rgba(255, 159, 64, 0.7)'
     };
+    
+    function setDate() {
+        var x = document.getElementById("myDate").value;
+        console.log(x)
+    }
 
     function convertUTCDateToLocalDate(date) {
         var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
@@ -77,6 +86,7 @@
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
+        let starttime =  "2020-06-25T0:0:0"
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
@@ -85,6 +95,7 @@
         // https://urbanair.turing.ac.uk/
 
         console.log(camera_id)
+        console.log(starttime)
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
@@ -92,8 +103,8 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
-                        // console.log(date.toString())
+                        let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
+                       //  console.log(date.toString())
                         let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
                        
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
@@ -112,6 +123,8 @@
                     window.myChart.update()
                 });
             });
+
+            
     }
 
     function generateIcon(activity) {
