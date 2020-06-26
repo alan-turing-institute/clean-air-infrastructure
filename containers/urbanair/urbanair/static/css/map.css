@@ -16,15 +16,16 @@ html, body, #mapid {
     width: 400px;
     height: 250px;
 }
+
 #controls{
     z-index: 99999;
     position: absolute;
     top: 30px;
     right: 10px;
-    background: #ffffff;
+    background-color: #ffffff;
     border-radius: 10px;
     width: 200px;
-    height: 130px;
+    height: fit-content;
 }
 .controls-options{
     font-family: 'Roboto', sans-serif;
