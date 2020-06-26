@@ -1,6 +1,6 @@
 """JamCam API routes"""
 # pylint: disable=C0116
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, Callable
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
@@ -118,7 +118,7 @@ async def camera_raw_counts(
 
     return all_or_404(data)
 
-async def csv_from_json_query(*args, filename="", function=None, **kwargs) -> Response:
+async def csv_from_json_query(*args: Optional[Any], filename: str = "", function: Callable, **kwargs: Optional[Any]) -> Response:
 
     all_data = await function(*args)
 
@@ -150,7 +150,7 @@ async def csv_from_json_query(*args, filename="", function=None, **kwargs) -> Re
     )
 async def camera_raw_csv(
         commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-        ) -> Optional[List[Dict]]:
+        ) -> Response:
     return await csv_from_json_query(commons, db, function = camera_raw_counts, filename = "jamcam_raw")
 
 @router.get(
