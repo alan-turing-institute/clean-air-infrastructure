@@ -32,7 +32,7 @@
       <option value="hide">Hidden</option>
     </select> <br>
     <label for="controls">Date</label><br>
-    <input type="date" id="myDate" value="2020-06-25">
+    <input type="date" id="myDate">
     <button onclick="setDate()">Go</button>
         <span style="color: red;">(experimental)</span>
     </div>
@@ -61,7 +61,7 @@
 
 // var marker = L.marker([51.5, -0.09]).addTo(mymap);
 // marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
-
+    document.getElementById('myDate').valueAsDate = new Date();
     const COLORS = {
         'truck': 'rgba(255, 99, 132, 0.7)',
         'car': 'rgba(255, 206, 86, 0.7)',
@@ -72,7 +72,7 @@
     
     function setDate() {
         var x = document.getElementById("myDate").value;
-        console.log(x)
+        return x;
     }
 
     function convertUTCDateToLocalDate(date) {
@@ -86,7 +86,7 @@
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
-        let starttime =  "2020-06-25T0:0:0"
+        let starttime = setDate() + "T0:0:0"
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
@@ -103,7 +103,7 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
+                      //  let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
                        //  console.log(date.toString())
                         let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
                        
