@@ -58,6 +58,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
+- [Training models](#training-models)
 
 ### Infrastructure
 
@@ -573,7 +574,7 @@ This fixture ensures that all interactions with the database take place within a
 
 # Researcher guide
 
-*The following steps provide useful tools for researchers to use, for example jupyter notebooks.*
+*The following steps provide useful tools for researchers to use, for example setting up jupyter notebooks and running models using a GPU.*
 
 ## Setup notebook
 
@@ -630,6 +631,34 @@ secretfile = os.getenv("SECRETS", None)
 ```
 
 Remember that the `PGPASSWORD` token will only be valid for ~1h.
+
+## Training models
+
+To train a model you can run a model fitting entrypoint:
+
+```bash
+python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+```
+
+You can adjust the model parameters and data settings by changing the command line arguments.
+Use the `--help` flag to see available options.
+
+### GPU support
+
+For GPU support we strongly recommend using our docker image to run the entrypoint.
+This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
+
+You can build our custom GPU dockerfile with the following command:
+
+```bash
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+```
+
+To run the latest version of this entrypoint:
+
+```bash
+docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+```
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
