@@ -202,7 +202,7 @@ def svgp_result(secretfile, connection, svgp_instance, svgp_result_df):
 def training_df() -> pd.DataFrame:
     """Simple dataframe of training data."""
     timerange = pd.date_range("2020-01-01", "2020-01-02", freq="H", closed="left")
-    point_id = uuid.uuid4()
+    point_id = str(uuid.uuid4())
     lat = np.random.rand()
     lon = np.random.rand()
     assert len(timerange) == 24
@@ -218,18 +218,22 @@ def training_df() -> pd.DataFrame:
 
 
 class MockModelData:
-    """Mocking the model data class."""
+    """Mocking the model data class. The training and pred data are identical."""
     def __init__(self, training_df):
         self.training_df = training_df
+        self.pred_df = training_df
 
-    def mock_validate_config(self, config) -> bool:
+    def mock_validate_config(self, config) -> None:
         """Mocks the validate config method of ModelData."""
         assert not config["include_satellite"]
-        return True
+        assert config["train_sources"] == list(self.training_df["source"].unique())
+        assert config["pred_sources"] == list(self.pred_df["source"].unique())
 
     def mock_generate_full_config(self, config) -> DataConfig:
         """Mocks the generate full config method of ModelData."""
         config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
+        config["train_sources"] = list(self.training_df["point_id"].unique())
+        config["pred_sources"] = list(self.pred_df["point_id"].unique())
         return config
 
     def mock_get_training_data_inputs(self) -> pd.DataFrame:

@@ -8,8 +8,6 @@ from cleanair.types import Source
 
 
 def test_air_quality_result_query(
-    secretfile,
-    connection,
     svgp_instance,
     model_data,
     svgp_model_params,
@@ -19,20 +17,8 @@ def test_air_quality_result_query(
     # write to tables that result has a foreign key referencing
     assert svgp_instance.data_id == svgp_result.data_id
 
-    # temp solution until we can test model data
-    conn = DBWriter(
-        secretfile=secretfile, initialise_tables=True, connection=connection
-    )
-    records = [
-        dict(
-            data_id=svgp_instance.data_id,
-            data_config=no_features_data_config,
-            preprocessing=base_aq_preprocessing,
-        )
-    ]
-    conn.commit_records(records, table=AirQualityDataTable, on_conflict="ignore")
-
     # update model and instance tables
+    model_data.update_remote_tables()
     svgp_model_params.update_remote_tables()
     svgp_instance.update_remote_tables()
 

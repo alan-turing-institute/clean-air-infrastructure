@@ -1,10 +1,8 @@
 """Fixtures for the model data class."""
 
-import uuid
-from typing import Any
 import pytest
 import numpy as np
-import pandas as pd
+from cleanair.types import FeaturesDict, TargetDict
 
 
 # pylint: disable=redefined-outer-name
