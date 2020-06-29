@@ -326,7 +326,7 @@ deployments:
         - name: GUNICORN_CONF
           value: "/modules/urbanair/gunicorn_conf.py"
       ports:
-        containerPort: 443
+        containerPort: 80
       restartPolicy: Always
       volumeMounts:
       - name: secrets
@@ -348,10 +348,10 @@ services:
       ports:
         - name: http
           port: 80
-          targetPort: 443
+          targetPort: 80
         - name: https
           port: 443
-          targetPort: 443
+          targetPort: 80
 
 tls:
     - host: urbanair.turing.ac.uk
