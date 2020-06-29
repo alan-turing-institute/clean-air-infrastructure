@@ -5,7 +5,7 @@
 database: cleanair_test_db
 
 schema: 
- 
+
   - dynamic_data 
   - dynamic_features 
   - gla_traffic

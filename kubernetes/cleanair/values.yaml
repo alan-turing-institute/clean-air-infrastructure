@@ -318,8 +318,13 @@ deployments:
       image:
         repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
+      env:
+        - name: APP_MODULE
+          value: "urbanair.main:app"
+        - name: DB_SECRET_FILE
+          value: 'db_secrets.json'
       ports:
-        containerPort: 8080
+        containerPort: 80
       restartPolicy: Always
       volumeMounts:
       - name: secrets
@@ -329,16 +334,22 @@ deployments:
       - name: secrets
         secret:
             secretName: secrets
+      resources:
+        limits:
+            cpu: "8"
+        requests:
+            cpu: "2"
+            memory: "5Gi"
 
 services:
     - name: cleanair-api
       ports:
         - name: http
           port: 80
-          targetPort: 8080
+          targetPort: 80
         - name: https
           port: 443
-          targetPort: 8080
+          targetPort: 80
 
 tls:
     - host: urbanair.turing.ac.uk

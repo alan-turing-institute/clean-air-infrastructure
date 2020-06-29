@@ -1,7 +1,6 @@
 <!doctype html>
 <title>Odysseus Camera Demo Map</title>
 
-<!--<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">-->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
       integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
       crossorigin=""/>
@@ -12,7 +11,7 @@
         integrity="sha256-8zyeSXm+yTvzUN1VgAOinFgaVFEFTyYzWShOy9w7WoQ=" crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-<link href="{{ url_for('static', filename='css/map.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', path='css/map.css') }}" rel="stylesheet">
 
 <a class="logo" href="https://www.turing.ac.uk/research/research-projects/project-odysseus-understanding-london-busyness-and-exiting-lockdown"></a>
 <div id="controls">
@@ -40,7 +39,7 @@
 </div>
 <div id="mapid"></div>
 
-<script type="text/javascript" src="{{ url_for('static', filename='js/viridis.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', path='js/viridis.js') }}"></script>
 <script type="text/javascript">
     var mymap = L.map('mapid').setView([51.505, -0.09], 13);
     mymap.on('popupclose', function(e) {
@@ -68,32 +67,35 @@
     };
 
     function updateGraph(e) {
+        let camera_id = this.options.id.replace("JamCams_", "")
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + this.options.id.replace("JamCams_", "") + "...";
         config.data.labels = [];
         config.data.datasets = [];
         window.myChart.update();
         // https://urbanair.turing.ac.uk/
-        fetch('api/v1/cams/recent?id=' + this.options.id.replace("JamCams_", ""))
+
+        console.log(camera_id)
+        fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
-                    // console.log(result);
-                    config.data.labels = result.dates.map(d => {
-                        return (new Date(d))
-                    });
-                    // console.log(config.data.labels)
-                    config.data.datasets = [];
-                    for (type in result.counts) {
-                        zeroIdxs = result.counts[type].filter(i => i > 0);
+
+                    let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
+                    for (type of detection_classes) {
+                        let subdat = result.filter(function(item){return item.detection_class == type})
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
+                    
+                    //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
                                     label: type,
                                     backgroundColor: COLORS[type],
                                     borderColor: COLORS[type],
-                                    data: result.counts[type].map(x => (x > 0 ? x : undefined)),
+                                    data: counts,
                                     fill: false,
                                 }
                             )
+                            // console.log(config.data.datasets)
                     }
                     config.options.title.text = 'Counts for camera ' + this.options.id.replace("JamCams_", "") + ' (last 12 hrs)';
                     window.myChart.update()
@@ -134,7 +136,7 @@
         let colour = VIRIDIS[0];
         if(activity !== undefined){
             let max = markerType == 'all' ? 150 : 50;
-            colour = VIRIDIS[Math.floor(Math.min(parseInt(activity)/max, 1) * 255)];
+            colour = VIRIDIS[Math.floor(Math.min(parseInt(activity.counts)/max, 1) * 255)];
         }
         const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
 
@@ -167,17 +169,23 @@
         fetch('https://api.tfl.gov.uk/Place/Type/JamCam/').then(function (response) {
             response.json().then(function (result) {
                 const cameras = result;
-                fetch('api/v1/cams/snapshot?type=' + type).then(function (response2) {
+                fetch('api/v1/jamcams/hourly?detection_class=' + type).then(function (response2) {
+                    
                     response2.json().then(function (result2) {
-                        test = JSON.parse(result2);
-                        const activities = JSON.parse(result2);
-                        // console.log(typeof result2)
+                        
+                        console.log(result2.status)
+                        const activities = result2;
 
+                        // console.log(activities)
+                        
                         for (let c of cameras) {
-                        // console.log(c)
+                            
+                            let camera_id = c.id.replace("JamCams_", "")
+                            let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
+                          
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(activities['sum_counts'][activities['camera_id'].findIndex(i => i === c.id.replace("JamCams_", "") + '.mp4')])
+                                'icon': generateIcon2(counts)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
@@ -215,7 +223,7 @@
 
     var ctx = document.getElementById('myChart').getContext('2d');
     var config = {
-        type: 'scatter',
+        type: 'line',
         data: {
             labels: ['None'],
             datasets: []
@@ -227,7 +235,7 @@
                 text: 'Click on a camera to see counts within last 12 hrs'
             },
             tooltips: {
-                mode: 'index',
+                mode: 'x',
                 intersect: false,
                 bodyFontColor: '#fff',
                 titleFontColor: '#fff',
