@@ -11,8 +11,7 @@ def test_air_quality_result_query(
     secretfile,
     connection,
     svgp_instance,
-    no_features_data_config,
-    base_aq_preprocessing,
+    model_data,
     svgp_model_params,
     svgp_result,
 ):

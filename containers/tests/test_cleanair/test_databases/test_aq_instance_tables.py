@@ -3,7 +3,7 @@
 from typing import Any, Dict
 import pandas as pd
 from cleanair.databases import DBWriter
-from cleanair.instance import AirQualityInstance
+from cleanair.instance import AirQualityInstance, AirQualityResult
 from cleanair.databases.tables import (
     AirQualityDataTable,
     AirQualityModelTable,
@@ -96,14 +96,3 @@ def test_insert_instance(
 
     # insert instance
     svgp_instance.update_remote_tables()
-
-
-def test_insert_result_table(
-    secretfile: str, connection: Any, svgp_result: pd.DataFrame,
-):
-    """Insert fake results into the results air quality table."""
-    conn = DBWriter(
-        secretfile=secretfile, initialise_tables=True, connection=connection
-    )
-    records = svgp_result.to_dict("records")
-    conn.commit_records(records, table=AirQualityResultTable, on_conflict="ignore")
