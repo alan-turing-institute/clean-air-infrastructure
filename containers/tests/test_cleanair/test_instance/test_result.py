@@ -6,10 +6,7 @@ from cleanair.types import Source
 
 
 def test_air_quality_result_query(
-    svgp_instance,
-    model_data,
-    svgp_model_params,
-    svgp_result,
+    svgp_instance, model_data, svgp_model_params, svgp_result,
 ):
     """Test that the result query operates correctly."""
     # write to tables that result has a foreign key referencing
@@ -42,11 +39,9 @@ def test_air_quality_result_query(
     print("Type of converted geom:", type(hex_geom))
     assert isinstance(hex_geom, Polygon)
 
+
 def test_simple_result_query(
-    svgp_instance,
-    model_data,
-    svgp_model_params,
-    svgp_result,
+    svgp_instance, model_data, svgp_model_params, svgp_result,
 ) -> None:
     """Test a simple result query without bells and whistles."""
     # write to tables that result has a foreign key referencing
@@ -63,10 +58,7 @@ def test_simple_result_query(
     # run simple query
     # then query the same result
     result_df = svgp_result.query_results(
-        svgp_result.instance_id,
-        Source.hexgrid,
-        with_location=False,
-        output_type="df",
+        svgp_result.instance_id, Source.hexgrid, with_location=False, output_type="df",
     )
     assert len(result_df) == 24  # 24 hours of predictions
     # check that correct columns are returned

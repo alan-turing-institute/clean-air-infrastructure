@@ -121,7 +121,7 @@ def fit_start_time() -> str:
 
 
 @pytest.fixture(scope="function")
-def svgp_instance(  #pylint: disable=too-many-arguments
+def svgp_instance(  # pylint: disable=too-many-arguments
     svgp_param_id: str,
     model_data: ModelData,
     cluster_id: str,
@@ -201,6 +201,7 @@ def training_df() -> pd.DataFrame:
 
 class MockModelData:
     """Mocking the model data class. The training and pred data are identical."""
+
     def __init__(self, training_df):
         self.training_df = training_df
         self.pred_df = training_df

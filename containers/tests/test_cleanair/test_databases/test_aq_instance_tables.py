@@ -4,7 +4,6 @@ from cleanair.instance import AirQualityInstance, AirQualityModelParams
 from cleanair.models import ModelData
 
 
-
 def test_insert_laqn_data_table(model_data: ModelData) -> None:
     """Test data is inserted into the air quality data config table."""
     model_data.update_remote_tables()
