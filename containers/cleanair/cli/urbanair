@@ -2,15 +2,14 @@
 import typer
 from cleanair.parsers.urbanair_parser import inputs
 from cleanair.parsers.urbanair_parser import features
+from cleanair.parsers.urbanair_parser.state import state
 
 app = typer.Typer()
-state = {"verbose": False, "secretfile": ""}
-
 
 @app.callback()
 def main(
     verbose: bool = False,
-    secretfile: str = typer.Option("", help="json file containing database secrets"),
+    secretfile: str = typer.Option(..., help="json file containing database secrets"),
 ) -> None:
     """
     Manage the CleanAir infrastructure
