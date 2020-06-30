@@ -7,6 +7,7 @@ from cleanair.metrics import (
     confidence_interval_50,
     confidence_interval_75,
     confidence_interval_95,
+    probable_error,
 )
 
 def test_confidence_interval(
@@ -44,3 +45,33 @@ def test_confidence_interval(
     assert confidence_interval_50(ones, threes, ones) == 0
     assert confidence_interval_75(ones, threes, ones) == 0
     assert confidence_interval_95(ones, threes, ones) == 0
+
+def test_probable_error() -> None:
+    """Test the probable error metric."""
+    # setup basic values
+    n_observations = 3
+    zeros = np.zeros(n_observations)
+    ones = np.ones(n_observations)
+    twos = np.repeat(2, n_observations)
+    threes = np.repeat(3, n_observations)
+
+    # at one standard deviation
+    k = 1
+    assert probable_error(ones, ones, zeros, k) == 0
+    assert probable_error(ones, ones, ones, k) == 100
+    assert probable_error(ones, twos, ones, k) == 0
+    assert probable_error(ones, threes, ones, k) == 0
+
+    # at two standard deviations
+    k = 2
+    assert probable_error(ones, ones, zeros, k) == 0
+    assert probable_error(ones, ones, ones, k) == 100
+    assert probable_error(ones, twos, ones, k) == 100
+    assert probable_error(ones, threes, ones, k) == 0
+
+    # at three standard deviations
+    k = 3
+    assert probable_error(ones, ones, zeros, k) == 0
+    assert probable_error(ones, ones, ones, k) == 100
+    assert probable_error(ones, twos, ones, k) == 100
+    assert probable_error(ones, threes, ones, k) == 100
