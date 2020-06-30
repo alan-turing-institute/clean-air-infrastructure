@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from sqlalchemy.engine import Connection
-from cleanair.types import DataConfig, ParamsSVGP, FeaturesDict, TargetDict
+from cleanair.types import DataConfig, ParamsSVGP
 from cleanair.models import ModelData
 from cleanair.instance import (
     AirQualityInstance,

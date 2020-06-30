@@ -34,6 +34,8 @@ class ResultQueryMixin:
         Args:
             instance_id: The id of the trained model instance.
             source: The type of source, e.g. Source.laqn, Source.hexgrid.
+
+        Keyword args:
             data_id: The id of the dataset the model predicted on.
             with_location: If true, return a lat, lon & geom column.
             columns: A subset of columns to return. Columns must be in the result table.
@@ -62,7 +64,7 @@ class ResultQueryMixin:
             base_query += [
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom"),  # TODO how to transform this?
+                MetaPoint.location.label("geom"),
             ]
 
         # open connection and start the query
