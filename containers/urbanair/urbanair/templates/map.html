@@ -32,8 +32,7 @@
       <option value="hide">Hidden</option>
     </select> <br>
     <label for="controls">Date</label><br>
-    <input type="date" id="myDate" min="2019-05-01">
-    <button onclick="getDate()">Go</button>
+    <input type="date" id="myDate" min="2020-05-01" onchange="getDate();setGroundEstimates()">
         <span style="color: red;">(experimental)</span>
     </div>
 </div>
@@ -62,7 +61,8 @@
 // var marker = L.marker([51.5, -0.09]).addTo(mymap);
 // marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
     document.getElementById('myDate').valueAsDate = new Date();
-   // document.getElementById('max').valueAsDate = new Date();
+    myDate.max = new Date().toISOString().split("T")[0];
+    
     const COLORS = {
         'truck': 'rgba(255, 99, 132, 0.7)',
         'car': 'rgba(255, 206, 86, 0.7)',
@@ -70,7 +70,11 @@
         'bus': 'rgba(153, 102, 255, 0.7)',
         'person': 'rgba(255, 159, 64, 0.7)'
     };
-    
+
+    function getDate() {
+        var x = document.getElementById("myDate").value;
+        return x;
+    }
 
     function convertUTCDateToLocalDate(date) {
         var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
@@ -83,6 +87,7 @@
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
+        let starttime = getDate() + "T00%3A00%3A00";
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
@@ -92,15 +97,15 @@
 
         console.log(camera_id)
         console.log(starttime)
-        fetch('api/v1/jamcams/raw?camera_id=' + camera_id /*+ '&starttime=' + starttime*/)
+        fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
             .then(function (response) {
                 response.json().then(function (result) {
 
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                      //  let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
-                       //  console.log(date.toString())
+                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
+                       // console.log(date.toString())
                         let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
                        
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
@@ -115,7 +120,7 @@
                             )
                             // console.log(config.data.datasets)
                     }
-                    config.options.title.text = 'Counts for camera ' + camera_id + ' (last 12 hrs)';
+                    config.options.title.text = 'Counts for camera ' + camera_id + ' on ' + getDate();
                     window.myChart.update()
                 });
             });
@@ -158,14 +163,11 @@
         if(activity !== undefined){
             
           //  let max = markerType == 'all' ? 150 : 50;
-         // console.log("max "+max)
-            colour = VIRIDIS[Math.floor(Math.min(activity.counts/max, 1) * 255)];
+           colour = VIRIDIS[Math.floor(Math.min(activity.counts/max, 1) * 255)];
         //   console.log("result="+ Math.min(activity.counts/max, 1))    
-          const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
-
         }
         const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
-       // console.log(myCustomColour)
+      
         const markerHtmlStyles = `
           background-color: ${myCustomColour};
           width: 1rem;
@@ -190,12 +192,14 @@
 
     let test = undefined;
     let markers = L.layerGroup().addTo(mymap);
+    
     function updateMarkers(type){
         markers.clearLayers();
+        let starttime = getDate() + "T00%3A00%3A00";
         fetch('https://api.tfl.gov.uk/Place/Type/JamCam/').then(function (response) {
             response.json().then(function (result) {
                 const cameras = result;
-                fetch('api/v1/jamcams/hourly?detection_class=' + type).then(function (response2) {
+                fetch('api/v1/jamcams/hourly?detection_class=' + type + '&starttime=' + starttime).then(function (response2) {
                     
                     response2.json().then(function (result2) {
                         
