@@ -5,6 +5,8 @@ from .shared_args import (
     CopernicusKey,
     Web,
     InsertMethod,
+    AWSId,
+    AWSKey,
     ValidInsertMethods,
 )
 

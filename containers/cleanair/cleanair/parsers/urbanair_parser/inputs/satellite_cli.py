@@ -67,14 +67,14 @@ def fill(
     insert_method: ValidInsertMethods = InsertMethod,
 ) -> None:
 
-    typer.echo("Fill satellite data")
+    typer.echo(f"Fill satellite data using '{insert_method.value}' insert method")
 
     satellite_writer = SatelliteWriter(
         copernicus_key=copernicus_key,
         end=upto,
         nhours=nhours + ndays,
         secretfile=state["secretfile"],
-        method=insert_method,
+        method=insert_method.value,
     )
 
     satellite_writer.update_remote_tables()

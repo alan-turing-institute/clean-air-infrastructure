@@ -4,6 +4,8 @@ from enum import Enum
 import typer
 from dateutil.parser import isoparse
 
+UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
+
 
 class ValidInsertMethods(str, Enum):
 
@@ -11,7 +13,7 @@ class ValidInsertMethods(str, Enum):
     all = "all"
 
 
-def is_iso_string(isostring: str):
+def is_iso_string(isostring: str) -> bool:
     """Check if isostring is a valid iso string
 
         Arguments:
@@ -25,24 +27,22 @@ def is_iso_string(isostring: str):
     return True
 
 
-def UpTo_callback(value: str):
+def UpTo_callback(value: str) -> str:
 
-    acceptable_values = ["lasthour", "now", "today", "tomorrow", "yesterday"]
-
-    if (value in acceptable_values) or is_iso_string(value):
+    if (value in UP_TO_VALUES) or is_iso_string(value):
         return value
 
     raise typer.BadParameter(
-        f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {acceptable_values}"
+        f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {UP_TO_VALUES}"
     )
 
 
-def NDays_callback(value: int):
+def NDays_callback(value: int) -> int:
     "convert days to hours"
     return value * 24
 
 
-def CopernicusKey_callback(value: str):
+def CopernicusKey_callback(value: str) -> str:
 
     if value == "":
         try:
@@ -61,14 +61,53 @@ def CopernicusKey_callback(value: str):
     return value
 
 
+def AWSID_callback(value: str) -> str:
+
+    if value == "":
+        try:
+            with open(
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+            ) as f_secret:
+                data = json.load(f_secret)
+                return data["aws_key_id"]
+        except (json.decoder.JSONDecodeError, FileNotFoundError):
+            raise typer.BadParameter(
+                "aws-key-id not provided and could not be found in 'secrets/aws_secrets.json'"
+            )
+
+    return value
+
+
+def AWSKey_callback(value: str) -> str:
+
+    if value == "":
+        try:
+            with open(
+                os.path.abspath(os.path.join(os.sep, "secrets", "aws_secrets.json"))
+            ) as f_secret:
+                data = json.load(f_secret)
+                return data["aws_key"]
+        except (json.decoder.JSONDecodeError, FileNotFoundError):
+            raise typer.BadParameter(
+                "aws-key not provided and could not be found in 'secrets/aws_secrets.json'"
+            )
+    return value
+
+
 UpTo = typer.Option(
-    "tomorrow", help="up to what datetime to process data", callback=UpTo_callback
+    "tomorrow",
+    help=f"up to what datetime to process data. Must be iso datetime or in {UP_TO_VALUES}",
+    callback=UpTo_callback,
+    show_default=True,
 )
 
-NHours = typer.Option(0, help="Number of hours of data to process")
+NHours = typer.Option(0, help="Number of hours of data to process", show_default=True)
 
 NDays = typer.Option(
-    1, help="Number of days of data to process", callback=NDays_callback
+    1,
+    help="Number of days of data to process",
+    callback=NDays_callback,
+    show_default=True,
 )
 
 CopernicusKey = typer.Option(
@@ -77,8 +116,19 @@ CopernicusKey = typer.Option(
     callback=CopernicusKey_callback,
 )
 
-Web = typer.Option(False, help="Show outputs in browser")
+Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
 
 InsertMethod = typer.Option(
-    ValidInsertMethods, help="Insert only missing data or process all data"
+    ValidInsertMethods.all,
+    help="Insert only missing data or process all data",
+    show_default=True,
 )
+
+AWSId = typer.Option(
+    "", help="AWS key ID for accessing TfL SCOOT data", callback=AWSID_callback
+)
+
+AWSKey = typer.Option(
+    "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
+)
+
