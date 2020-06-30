@@ -16,13 +16,23 @@ html, body, #mapid {
     width: 400px;
     height: 250px;
 }
+#histogram{
+    z-index: 99999;
+    position: absolute;
+    bottom: 30px;
+    left: 10px;
+    background: #ffffff;
+    border-radius: 10px;
+    width: 400px;
+    height: 250px;
+}
 
 #controls{
     z-index: 99999;
     position: absolute;
     top: 30px;
     right: 10px;
-    background-color: #ffffff;
+    background-color:#ffffff;
     border-radius: 10px;
     width: 200px;
     height: fit-content;

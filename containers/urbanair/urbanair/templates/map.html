@@ -37,6 +37,9 @@
 <div id="chart" style="display: none">
     <canvas id="myChart" width="400" height="250"></canvas>
 </div>
+<div id="histogram" >
+    <canvas id="myBar" width="400" height="250"></canvas>
+</div>
 <div id="mapid"></div>
 
 
@@ -199,7 +202,7 @@
                         const activities = result2;
                     
                         let  all_counts = result2.map(({counts}) => (counts)) 
-                       
+                        
                         let max=0
                         for (let m of all_counts){
                             if (max<m) 
