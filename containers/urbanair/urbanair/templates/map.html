@@ -32,8 +32,8 @@
       <option value="hide">Hidden</option>
     </select> <br>
     <label for="controls">Date</label><br>
-    <input type="date" id="myDate">
-    <button onclick="setDate()">Go</button>
+    <input type="date" id="myDate" min="2019-05-01">
+    <button onclick="getDate()">Go</button>
         <span style="color: red;">(experimental)</span>
     </div>
 </div>
@@ -62,6 +62,7 @@
 // var marker = L.marker([51.5, -0.09]).addTo(mymap);
 // marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
     document.getElementById('myDate').valueAsDate = new Date();
+   // document.getElementById('max').valueAsDate = new Date();
     const COLORS = {
         'truck': 'rgba(255, 99, 132, 0.7)',
         'car': 'rgba(255, 206, 86, 0.7)',
@@ -96,7 +97,7 @@
 
         console.log(camera_id)
         console.log(starttime)
-        fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
+        fetch('api/v1/jamcams/raw?camera_id=' + camera_id /*+ '&starttime=' + starttime*/)
             .then(function (response) {
                 response.json().then(function (result) {
 
