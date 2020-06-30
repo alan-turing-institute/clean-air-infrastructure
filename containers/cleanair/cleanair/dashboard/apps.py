@@ -12,7 +12,7 @@ from . import components
 from . import callbacks
 
 
-def get_model_data_fit_app(
+def get_model_data_fit_app(  # pylint: disable=too-many-arguments
     model_data,
     sensor_scores_df,
     temporal_scores_df,

@@ -334,6 +334,7 @@ def measure_scores_on_groupby(pred_df, metric_methods, groupby_col, **kwargs):
     for key, meth in metric_methods.items():
         for i, pollutant in enumerate(test_cols):
             pred_col = pred_cols[i]
+            # pylint: disable=undefined-loop-variable
             pollutant_metrics = pred_gb.apply(lambda x: meth(x[pollutant], x[pred_col]))
             pollutant_metrics_series = pd.Series(
                 pollutant_metrics,
@@ -362,14 +363,21 @@ def concat_features(scores_df, pred_df, features):
     Concatenate the sensor scores dataframe with static features of the sensor.
     """
     point_df = pd.DataFrame(index=list(scores_df.index))
+    pred_gb = pred_df.groupby("point_id")
     all_columns = features + ["lat", "lon"]
     for feature in all_columns:
         feature_list = []
+        feature_name = feature
         for pid in point_df.index:
-            # ToDo: take mean of features column
-            value = pred_df[pred_df["point_id"] == pid].iloc[0][feature]
+            # NOTE we could extend this to be any static feature, not just lat & lon
+            if feature in ["lat", "lon"]:
+                value = pred_df[pred_df["point_id"] == pid].iloc[0][feature]
+            else:
+                point_group = pred_gb.get_group(pid)
+                value = point_group[feature].mean()
+                feature_name = feature + "_mean"
             feature_list.append(value)
-        point_df[feature] = pd.Series(feature_list, index=point_df.index)
+        point_df[feature_name] = pd.Series(feature_list, index=point_df.index)
     return pd.concat([scores_df, point_df], axis=1, ignore_index=False)
 
 
