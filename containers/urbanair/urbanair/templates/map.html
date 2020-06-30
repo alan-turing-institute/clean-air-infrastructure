@@ -31,9 +31,6 @@
       <option value="show">Shown</option>
       <option value="hide">Hidden</option>
     </select> <br>
-    <label for="controls">Date</label><br>
-    <input type="date" id="myDate">
-    <button onclick="setDate()">Go</button>
         <span style="color: red;">(experimental)</span>
     </div>
 </div>
@@ -61,7 +58,7 @@
 
 // var marker = L.marker([51.5, -0.09]).addTo(mymap);
 // marker.bindPopup("<b>Hello world!</b><br>I am a popup.");
-    document.getElementById('myDate').valueAsDate = new Date();
+   
     const COLORS = {
         'truck': 'rgba(255, 99, 132, 0.7)',
         'car': 'rgba(255, 206, 86, 0.7)',
@@ -70,10 +67,6 @@
         'person': 'rgba(255, 159, 64, 0.7)'
     };
     
-    function getDate() {
-        var x = document.getElementById("myDate").value;
-        return x;
-    }
 
     function convertUTCDateToLocalDate(date) {
         var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
@@ -86,7 +79,6 @@
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
-        let starttime = getDate() + "T00:00:00"
         document.getElementById("chart").style.display = "block";
         config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
@@ -95,7 +87,7 @@
         // https://urbanair.turing.ac.uk/
 
         console.log(camera_id)
-        console.log(starttime)
+     
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
             .then(function (response) {
                 response.json().then(function (result) {
