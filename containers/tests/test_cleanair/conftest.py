@@ -9,6 +9,7 @@ from typing import Dict, Any
 import pytest
 import numpy as np
 import pandas as pd
+from sqlalchemy.engine import Connection
 from cleanair.types import DataConfig, ParamsSVGP, FeaturesDict, TargetDict
 from cleanair.models import ModelData
 from cleanair.instance import (
@@ -17,7 +18,6 @@ from cleanair.instance import (
     AirQualityResult,
     hash_dict,
 )
-from sqlalchemy.engine import Connection
 
 # pylint: disable=redefined-outer-name
 
@@ -46,16 +46,6 @@ def no_features_data_config() -> DataConfig:
 
 
 @pytest.fixture(scope="function")
-def no_features_model_data(
-    secretfile: str, connection: Any, no_features_data_config: DataConfig
-) -> ModelData:
-    """A model data object with no features, only laqn readings."""
-    return ModelData(
-        config=no_features_data_config, secretfile=secretfile, connection=connection
-    )
-
-
-@pytest.fixture(scope="function")
 def road_features_data_config(no_features_data_config) -> DataConfig:
     """An air quality data config dictionary with basic settings."""
     data_config = no_features_data_config.copy()
@@ -72,14 +62,6 @@ def road_features_data_config(no_features_data_config) -> DataConfig:
 def base_aq_preprocessing() -> Dict:
     """An air quality dictionary for preprocessing settings."""
     return dict()
-
-
-@pytest.fixture(scope="function")
-def base_data_id(
-    no_features_data_config: DataConfig, base_aq_preprocessing: Dict
-) -> str:
-    """Data id of base data config & preprocessing."""
-    return hash_dict(dict(no_features_data_config, **base_aq_preprocessing))
 
 
 @pytest.fixture(scope="function")
@@ -141,7 +123,7 @@ def fit_start_time() -> str:
 @pytest.fixture(scope="function")
 def svgp_instance(  #pylint: disable=too-many-arguments
     svgp_param_id: str,
-    base_data_id: str,
+    model_data: ModelData,
     cluster_id: str,
     test_tag: str,
     fit_start_time: str,
@@ -152,7 +134,7 @@ def svgp_instance(  #pylint: disable=too-many-arguments
     return AirQualityInstance(
         model_name="svgp",
         param_id=svgp_param_id,
-        data_id=base_data_id,
+        data_id=model_data.data_id,
         cluster_id=cluster_id,
         tag=test_tag,
         fit_start_time=fit_start_time,
