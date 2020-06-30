@@ -249,10 +249,8 @@ class SVGP(Model):
             See `Model.predict` for further details.
             The shape for each pollutant will be (n, 1).
         """
-
-        predict_fn = lambda x: self.model.predict_y(
-            x
-        )  # pylint: disable=unnecessary-lambda
+        # pylint: disable=unnecessary-lambda
+        predict_fn = lambda x: self.model.predict_y(x)
         y_dict = self.predict_srcs(x_test, predict_fn)
 
         return y_dict
