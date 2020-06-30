@@ -23,6 +23,7 @@ setuptools.setup(
         "geoalchemy2==0.6.3",
         "gitpython==3.1.0",
         "holidays==0.9.8",
+        "nptyping==1.2.0",
         "numpy==1.18.5",
         "pandas==1.0.5",
         "python-dateutil==2.8.1",
