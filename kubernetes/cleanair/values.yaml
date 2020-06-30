@@ -1,59 +1,59 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: d09e02b8037cd3b5af70032655f6cd7d7a587443
+imageTag: 089bacc2ec600659d20ceb61f4900e5c28442114
 
-jobs:
+# jobs:
 
-  - name: static-features-oshighway
-    image:
-        repository: cleanairdocker.azurecr.io/feature_static
-        imagePullPolicy: Always
-    args: ["fill", "--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: OnFailure
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
+#   - name: static-features-oshighway
+#     image:
+#         repository: cleanairdocker.azurecr.io/feature_static
+#         imagePullPolicy: Always
+#     args: ["fill", "--feature-source", "oshighway", "--sources", "laqn", "aqe", "hexgrid"]
+#     restartPolicy: OnFailure
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#       readOnly: true
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     imagePullSecrets:
+#         - name: regcred
 
-  - name: static-features-ukmap
-    image:
-        repository: cleanairdocker.azurecr.io/feature_static
-        imagePullPolicy: Always
-    args: ["fill", "--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: OnFailure
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
+#   - name: static-features-ukmap
+#     image:
+#         repository: cleanairdocker.azurecr.io/feature_static
+#         imagePullPolicy: Always
+#     args: ["fill", "--feature-source", "ukmap", "--sources", "laqn", "aqe", "hexgrid"]
+#     restartPolicy: OnFailure
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#       readOnly: true
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     imagePullSecrets:
+#         - name: regcred
 
-  - name: static-features-street-canyon
-    image:
-        repository: cleanairdocker.azurecr.io/feature_static
-        imagePullPolicy: Always
-    args: ["fill",  "--feature-source", "streetcanyon", "--sources", "laqn", "aqe", "hexgrid"]
-    restartPolicy: OnFailure
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
+#   - name: static-features-street-canyon
+#     image:
+#         repository: cleanairdocker.azurecr.io/feature_static
+#         imagePullPolicy: Always
+#     args: ["fill",  "--feature-source", "streetcanyon", "--sources", "laqn", "aqe", "hexgrid"]
+#     restartPolicy: OnFailure
+#     volumeMounts:
+#     - name: secrets
+#       mountPath: "/secrets/"
+#       readOnly: true
+#     volumes:
+#     - name: secrets
+#       secret:
+#         secretName: secrets
+#     imagePullSecrets:
+#         - name: regcred
 
 cronjobs:
 
@@ -322,7 +322,9 @@ deployments:
         - name: APP_MODULE
           value: "urbanair.main:app"
         - name: DB_SECRET_FILE
-          value: 'db_secrets.json'
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
       ports:
         containerPort: 80
       restartPolicy: Always
