@@ -10,13 +10,14 @@ from cleanair.metrics import (
     probable_error,
 )
 
+
 def test_confidence_interval(
-    y_test: NDArray[Float64],
-    y_pred: NDArray[Float64],
-    y_var: NDArray[Float64],
+    y_test: NDArray[Float64], y_pred: NDArray[Float64], y_var: NDArray[Float64],
 ) -> None:
     """Test the confidence intervals metrics."""
-    assert confidence_interval(y_test, y_pred, y_var) == confidence_interval_95(y_test, y_pred, y_var)
+    assert confidence_interval(y_test, y_pred, y_var) == confidence_interval_95(
+        y_test, y_pred, y_var
+    )
     assert confidence_interval_95(y_test, y_pred, y_var) == 40
     assert confidence_interval_75(y_test, y_pred, y_var) == 40
     assert confidence_interval_50(y_test, y_pred, y_var) == 20
@@ -46,6 +47,7 @@ def test_confidence_interval(
     assert confidence_interval_75(ones, threes, ones) == 0
     assert confidence_interval_95(ones, threes, ones) == 0
 
+
 def test_probable_error() -> None:
     """Test the probable error metric."""
     # setup basic values
@@ -69,7 +71,7 @@ def test_probable_error() -> None:
     assert probable_error(ones, twos, ones, k) == 100
     assert probable_error(ones, threes, ones, k) == 0
 
-    # at three standard deviations
+    #  at three standard deviations
     k = 3
     assert probable_error(ones, ones, zeros, k) == 0
     assert probable_error(ones, ones, ones, k) == 100
