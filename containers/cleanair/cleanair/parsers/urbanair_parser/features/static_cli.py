@@ -1,15 +1,135 @@
+from enum import Enum
+from typing import List
+import webbrowser
+import tempfile
+import time
 import typer
-from datetime import datetime
-from ..shared_args import UpTo, NDays, NHours
+from cleanair.features import FeatureExtractor, FEATURE_CONFIG, ALL_FEATURES
+from cleanair.parsers.entrypoint_parsers import create_static_feature_parser
+
+from ..shared_args import (
+    UpTo,
+    NDays,
+    NHours,
+    Web,
+    InsertMethod,
+    ValidInsertMethods,
+    ValidFeatureSources,
+    FeatureSources,
+    Sources,
+    ValidSources,
+)
+from ..state import state
 
 app = typer.Typer()
 
 
-@app.command()
-def check(upto: datetime = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
-    typer.echo("Not Yet Implimented")
+# Dynamically create subcommands for each feature source (e.g. ukmap)
+valid_features = list(ValidFeatureSources)
+valid_feature_names = []
+for i in range(len(valid_features)):
 
+    feature_source = valid_features[i]
+    sub_app = typer.Typer()
+    feature_names = list(FEATURE_CONFIG[valid_features[i].value]["features"].keys())
+    valid_feature_names.append(
+        Enum("ValidFeatureNames", zip(feature_names, feature_names))
+    )
 
-@app.command()
-def fill(upto: datetime = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
-    typer.echo("Not Yet Implimented")
+    @sub_app.command()
+    def check(
+        feature_name: List[valid_feature_names[i]] = typer.Option(
+            None, help="Features to process. If non given will process all",
+        ),
+        source: List[ValidSources] = Sources,
+        only_missing: bool = typer.Option(False, help="Only show missing data",),
+        web: bool = Web,
+        i: int = typer.Option(i, hidden=True),
+    ) -> None:
+
+        # Get all sources to process
+        all_sources = [src.value for src in source]
+
+        # Get all features to process
+        if feature_name:
+            all_feature_names = [fname.value for fname in feature_name]
+        else:
+            # Note: had to set i in the function call else looks up i global at runtime
+            all_feature_names = [fname.value for fname in valid_feature_names[i]]
+
+        # CLI Message
+        typer.echo(f"Checking features: {all_feature_names} for sources {all_sources}")
+
+        # Set up feature extractor
+        static_feature_extractor = FeatureExtractor(
+            feature_source=valid_features[i].value,
+            table=FEATURE_CONFIG[valid_features[i].value]["table"],
+            features=FEATURE_CONFIG[valid_features[i].value]["features"],
+            secretfile=state["secretfile"],
+            sources=all_sources,
+        )
+
+        # Set up features to check
+        if web:
+            # show in browser
+            available_data = static_feature_extractor.get_static_feature_availability(
+                all_feature_names, all_sources, only_missing, output_type="html"
+            )
+
+            with tempfile.NamedTemporaryFile(suffix=".html", mode="w") as tmp:
+                tmp.write(
+                    "<h1>Feature availability. Feature={}</h1>".format(
+                        feature_source.value
+                    )
+                )
+                tmp.write(available_data)
+                tmp.write("<p>Where has_data = False there is missing data</p>")
+                tmp.seek(0)
+                webbrowser.open("file://" + tmp.name, new=2)
+                time.sleep(1)
+        else:
+            available_data = static_feature_extractor.get_static_feature_availability(
+                all_feature_names, all_sources, only_missing, output_type="tabulate"
+            )
+
+            print(available_data)
+
+    @sub_app.command()
+    def fill(
+        feature_name: List[valid_feature_names[i]] = typer.Option(
+            None, help="Features to process. If non given will process all",
+        ),
+        source: List[ValidSources] = Sources,
+        insert_method: ValidInsertMethods = InsertMethod,
+        i: int = typer.Option(i, hidden=True),
+    ) -> None:
+
+        # Get all sources to process
+        all_sources = [src.value for src in source]
+
+        # Get all features to process
+        if feature_name:
+            all_feature_names = [fname.value for fname in feature_name]
+        else:
+            # Note: had to set i in the function call else looks up i global at runtime
+            all_feature_names = [fname.value for fname in valid_feature_names[i]]
+
+        # CLI Message
+        typer.echo(
+            f"Processing features: {all_feature_names} for sources {all_sources}"
+        )
+
+        # Set up feature extractor
+        static_feature_extractor = FeatureExtractor(
+            feature_source=valid_features[i].value,
+            table=FEATURE_CONFIG[valid_features[i].value]["table"],
+            features=FEATURE_CONFIG[valid_features[i].value]["features"],
+            secretfile=state["secretfile"],
+            sources=all_sources,
+            insert_method=insert_method.value,
+        )
+
+        static_feature_extractor.update_remote_tables()
+
+    app.add_typer(sub_app, name=feature_source.value)
+

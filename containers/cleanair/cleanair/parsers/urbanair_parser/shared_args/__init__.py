@@ -8,6 +8,10 @@ from .shared_args import (
     AWSId,
     AWSKey,
     ValidInsertMethods,
+    ValidFeatureSources,
+    FeatureSources,
+    Sources,
+    ValidSources,
 )
 
 __all__ = [
@@ -18,5 +22,9 @@ __all__ = [
     "Web",
     "InsertMethod",
     "ValidInsertMethod",
+    "ValidFeatureSources",
+    "FeatureSources",
+    "Sources",
+    "ValidSources",
 ]
 

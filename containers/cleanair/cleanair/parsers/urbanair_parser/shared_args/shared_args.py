@@ -3,8 +3,25 @@ import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
+from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
+
+ValidFeatureSources = Enum(
+    "ValidFeatureSources", dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
+)
+
+ValidFeatureNames = Enum("ValidFeatureNames", dict(zip(ALL_FEATURES, ALL_FEATURES)))
+
+
+class ValidSources(str, Enum):
+    laqn = "laqn"
+    aqe = "aqe"
+    satellite = "satellite"
+    hexgrid = "hexgrid"
+
+
+DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
 
 
 class ValidInsertMethods(str, Enum):
@@ -119,8 +136,8 @@ CopernicusKey = typer.Option(
 Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
 
 InsertMethod = typer.Option(
-    ValidInsertMethods.all,
-    help="Insert only missing data or process all data",
+    ValidInsertMethods.missing,
+    help="Only missing data or process all data",
     show_default=True,
 )
 
@@ -132,3 +149,6 @@ AWSKey = typer.Option(
     "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
 )
 
+FeatureSources = typer.Option(..., help="A feature source to process")
+
+Sources = typer.Option(..., help="List sources to process")
