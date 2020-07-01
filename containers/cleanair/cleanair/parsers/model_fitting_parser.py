@@ -75,39 +75,3 @@ class ModelFittingParser(
         self.add_argument(
             "--maxiter", default=2000, type=int, help="Number of training iterations.",
         )
-
-    @staticmethod
-    def generate_data_config(args):
-        """
-        Return a dictionary of model data configs
-        """
-
-        # Generate and return the config dictionary
-        data_config = {
-            "train_start_date": as_datetime(args.trainend)
-            - timedelta(hours=args.trainhours),
-            "train_end_date": as_datetime(args.trainend),
-            "pred_start_date": as_datetime(args.predstart),
-            "pred_end_date": as_datetime(args.predstart)
-            + timedelta(hours=args.predhours),
-            "include_satellite": args.include_satellite,
-            "include_prediction_y": False,
-            "train_sources": ["laqn"],
-            "pred_sources": ["laqn"],
-            "train_interest_points": "all",
-            "train_satellite_interest_points": "all",
-            "pred_interest_points": "all",
-            "species": ["NO2"],
-            "features": [
-                "value_1000_total_a_road_length",
-                "value_500_total_a_road_length",
-                "value_500_total_a_road_primary_length",
-                "value_500_total_b_road_length",
-            ],
-            "norm_by": "laqn",
-            "model_type": "svgp",
-            "tag": args.tag,
-        }
-        if args.hexgrid:
-            data_config["pred_sources"].append("hexgrid")
-        return data_config

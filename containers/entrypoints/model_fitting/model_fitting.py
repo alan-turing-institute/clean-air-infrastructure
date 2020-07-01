@@ -37,35 +37,9 @@ def main():  # pylint: disable=R0914
     model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
     # get the training dictionaries
-    training_data_dict = model_data.get_training_data_arrays(dropna=False)
-    x_train = training_data_dict["X"]
-    y_train = training_data_dict["Y"]
 
-    # train model
-    fit_start_time = datetime.now()
-    logger.info("Training model for %s iterations.", args.maxiter)
-    model_fitter.fit(x_train, y_train)
-    logger.info("Training completed")
 
-    # predict either at the training or test set
-    if args.predict_training:
-        x_test = x_train.copy()
-    else:
-        predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
-        x_test = predict_data_dict["X"]
 
-    # Do prediction
-    logger.info("Started predicting")
-    y_pred = model_fitter.predict(x_test)
-    logger.info("Finished predicting")
-
-    # Create a results dataframe
-    if args.predict_training:
-        model_data.update_training_df_with_preds(y_pred, fit_start_time)
-        result_df = model_data.normalised_training_data_df
-    else:
-        model_data.update_test_df_with_preds(y_pred, fit_start_time)
-        result_df = model_data.normalised_pred_data_df
 
     aq_model_params = AirQualityModelParams(
         args.secretfile, "svgp", model_fitter.model_params

@@ -14,8 +14,8 @@ class AirQualityResult(ResultMixin, DBWriter):
         self,
         instance_id: str,
         data_id: str,
-        secretfile: str,
         result_df: Optional[pd.DataFrame],
+        secretfile: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(
@@ -23,6 +23,7 @@ class AirQualityResult(ResultMixin, DBWriter):
             data_id=data_id,
             secretfile=secretfile,
             result_df=result_df,
+            **kwargs
         )
 
     @property

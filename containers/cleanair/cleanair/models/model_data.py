@@ -1,7 +1,7 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import json
 import os
 import pickle
@@ -84,11 +84,6 @@ class ModelData(DBWriter, DBQueryMixin):
                     ["box_id", "measurement_start_utc"]
                 )
 
-            if self.config["tag"] == "validation":
-                self.config["include_prediction_y"] = True
-                self.training_dict = self.get_training_data_arrays()
-                self.test_dict = self.get_pred_data_arrays()
-
         else:
             self.restore_config_state(config_dir)
 
@@ -131,6 +126,59 @@ class ModelData(DBWriter, DBQueryMixin):
                 data_config[key] = as_datetime(value)
         return data_config
 
+    @staticmethod
+    def generate_data_config(
+        trainupto: str,
+        hexgrid: bool = False,
+        include_satellite: bool = False,
+        predhours: int = 48,
+        trainhours: int = 48,
+    ) -> DataConfig:
+        """Return a dictionary of model data settings.
+
+        Args:
+            trainupto: Get training data upto (but not including) this datetime.
+                ISO datetime string.
+
+        Keyword Args:
+            hexgrid: If true add hexgrid to the list of prediction sources.
+            include_satellite: If true modeldata will train on satellite data.
+            predhours: Number of hours in the prediction period.
+            trainhours: Number of hours to train the model for.
+
+        Returns:
+            A dictionary of data settings generated from the arguments.
+        """
+
+        # Generate and return the config dictionary
+        data_config = {
+            "train_start_date": as_datetime(trainupto)
+            - timedelta(hours=trainhours),
+            "train_end_date": as_datetime(trainupto),
+            "pred_start_date": as_datetime(trainupto),
+            "pred_end_date": as_datetime(trainupto)
+            + timedelta(hours=predhours),
+            "include_satellite": include_satellite,
+            "include_prediction_y": False,
+            "train_sources": ["laqn"],
+            "pred_sources": ["laqn"],
+            "train_interest_points": "all",
+            "train_satellite_interest_points": "all",
+            "pred_interest_points": "all",
+            "species": ["NO2"],
+            "features": [
+                "value_1000_total_a_road_length",
+                "value_500_total_a_road_length",
+                "value_500_total_a_road_primary_length",
+                "value_500_total_b_road_length",
+            ],
+            "norm_by": "laqn",
+            "model_type": "svgp",
+        }
+        if hexgrid:
+            data_config["pred_sources"].append("hexgrid")
+        return data_config
+
     def __validate_config(self, config):
 
         config_keys = [
@@ -149,7 +197,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "features",
             "norm_by",
             "model_type",
-            "tag",
         ]
 
         valid_models = ["svgp"]
@@ -330,7 +377,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 index_col=0,
             )
 
-        if self.config["tag"] == "validation":
+        if self.config["tag"] == "validation":  # TODO replace with flag for loading data
             # load train and test dicts from pickle
             with open(os.path.join(dir_path, "train.pickle"), "rb") as handle:
                 self.training_dict = pickle.load(handle)
@@ -943,8 +990,6 @@ class ModelData(DBWriter, DBQueryMixin):
         predict_df = pd.DataFrame(index=predict_data_dict["index"])
         predict_df["predict_mean"] = y_pred[:, 0]
         predict_df["predict_var"] = y_pred[:, 1]
-        predict_df["fit_start_time"] = model_fit_info["fit_start_time"]
-        predict_df["tag"] = self.config["tag"]
 
         # Concat the predictions with the predict_df
         self.normalised_pred_data_df = pd.concat(
@@ -952,7 +997,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
     def get_df_from_pred_dict(
-        self, data_df, data_dict, pred_dict, fit_start_time, **kwargs,
+        self, data_df, data_dict, pred_dict, **kwargs,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
         sources = kwargs["sources"] if "sources" in kwargs else "all"
@@ -978,31 +1023,26 @@ class ModelData(DBWriter, DBQueryMixin):
                 predict_df[pollutant + "_" + pred_type] = column
         # add predict_df as new columns to data_df - they should share an index
         new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
-        new_df["fit_start_time"] = fit_start_time
-        new_df["tag"] = self.config["tag"]
         return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict: dict, fit_start_time: datetime):
+    def update_test_df_with_preds(self, test_pred_dict: dict):
         """Update the normalised_pred_data_df with predictions for all pred sources.
 
         Args:
             test_pred_dict: Dictionary of model predictions.
-            fit_start_time: Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
             self.normalised_pred_data_df,
             self.get_pred_data_arrays(),
             test_pred_dict,
-            fit_start_time,
         )
 
-    def update_training_df_with_preds(self, training_pred_dict, fit_start_time):
+    def update_training_df_with_preds(self, training_pred_dict):
         """Updated the normalised_training_data_df with predictions on the training set."""
         self.normalised_training_data_df = self.get_df_from_pred_dict(
             self.normalised_training_data_df,
             self.get_training_data_arrays(),
             training_pred_dict,
-            fit_start_time,
         )
 
     def update_remote_tables(self):

@@ -6,6 +6,7 @@ import logging
 import git
 from ..databases import DBWriter
 from .hashing import hash_fn
+from ..loggers import get_logger
 
 
 class Instance(DBWriter):
@@ -43,6 +44,10 @@ class Instance(DBWriter):
         """
         # if the database is not available try and use local files
         super().__init__(secretfile=secretfile)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         self._model_name = model_name
         self._param_id = param_id
