@@ -1,3 +1,4 @@
+"""Inputs parser"""
 import typer
 from . import aqe_cli
 from . import laqn_cli

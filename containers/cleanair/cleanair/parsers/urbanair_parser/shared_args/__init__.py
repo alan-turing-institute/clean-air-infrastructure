@@ -1,3 +1,4 @@
+"""Shared arguments"""
 from .shared_args import (
     UpTo,
     NHours,
@@ -9,7 +10,6 @@ from .shared_args import (
     AWSKey,
     ValidInsertMethods,
     ValidFeatureSources,
-    FeatureSources,
     Sources,
     ValidSources,
 )
@@ -21,9 +21,8 @@ __all__ = [
     "CopernicusKey",
     "Web",
     "InsertMethod",
-    "ValidInsertMethod",
+    "ValidInsertMethods",
     "ValidFeatureSources",
-    "FeatureSources",
     "Sources",
     "ValidSources",
 ]

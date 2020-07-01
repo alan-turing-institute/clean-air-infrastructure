@@ -1,3 +1,4 @@
+"""Shared CLI arguments"""
 import os
 import json
 from enum import Enum
@@ -7,14 +8,15 @@ from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
+# pylint: disable=C0103
 ValidFeatureSources = Enum(
     "ValidFeatureSources", dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
 )
-
 ValidFeatureNames = Enum("ValidFeatureNames", dict(zip(ALL_FEATURES, ALL_FEATURES)))
 
 
 class ValidSources(str, Enum):
+    "Valid sources"
     laqn = "laqn"
     aqe = "aqe"
     satellite = "satellite"
@@ -25,7 +27,7 @@ DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
 
 
 class ValidInsertMethods(str, Enum):
-
+    "Valid insert methods"
     missing = "missing"
     all = "all"
 
@@ -45,7 +47,7 @@ def is_iso_string(isostring: str) -> bool:
 
 
 def UpTo_callback(value: str) -> str:
-
+    "process UpTo arg"
     if (value in UP_TO_VALUES) or is_iso_string(value):
         return value
 
@@ -60,7 +62,7 @@ def NDays_callback(value: int) -> int:
 
 
 def CopernicusKey_callback(value: str) -> str:
-
+    "Process CopernicusKey arg"
     if value == "":
         try:
             with open(
@@ -79,7 +81,7 @@ def CopernicusKey_callback(value: str) -> str:
 
 
 def AWSID_callback(value: str) -> str:
-
+    "Process AWSID arg"
     if value == "":
         try:
             with open(
@@ -96,7 +98,7 @@ def AWSID_callback(value: str) -> str:
 
 
 def AWSKey_callback(value: str) -> str:
-
+    "Process AWSKey arg"
     if value == "":
         try:
             with open(
@@ -148,7 +150,5 @@ AWSId = typer.Option(
 AWSKey = typer.Option(
     "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
 )
-
-FeatureSources = typer.Option(..., help="A feature source to process")
 
 Sources = typer.Option(..., help="List sources to process")
