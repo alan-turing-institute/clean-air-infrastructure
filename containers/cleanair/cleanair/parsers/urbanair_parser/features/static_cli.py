@@ -5,7 +5,7 @@ import tempfile
 import time
 import typer
 from cleanair.features import FeatureExtractor, FEATURE_CONFIG, ALL_FEATURES
-from cleanair.parsers.entrypoint_parsers import create_static_feature_parser
+
 
 from ..shared_args import (
     UpTo,
