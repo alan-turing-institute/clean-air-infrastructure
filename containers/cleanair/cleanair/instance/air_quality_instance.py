@@ -54,8 +54,21 @@ class AirQualityInstance(Instance):
 
         dataset.update_test_df_with_preds(y_pred, self.fit_start_time)
         result_df = dataset.normalised_pred_data_df
-    
+
+        # create a results object
+        # TODO check that passing a connection instead of a secretfile is ok?
+        return AirQualityResult(self.instance_id, dataset.data_id, result_df, connection=self.dbcnxn.connection)
+
     def predict_on_training_set(self, model: Model, dataset: ModelData) -> AirQualityResult:
+        """Predict on the training set using the model.
+
+        Args:
+            model: An instantiated air quality model.
+            dataset: Training dataset for air quality.
+
+        Returns:
+            An air quality result with predictions from the model.
+        """
         # get the training dataset
         training_data_dict = dataset.get_training_data_arrays(dropna=False)
         x_train = training_data_dict["X"]
@@ -68,4 +81,5 @@ class AirQualityInstance(Instance):
         result_df = dataset.normalised_training_data_df
 
         # create a results object
-        AirQualityResult(self.instance_id, self.data_id, connection=self.dbcnxn.connection)
+        # TODO check that passing a connection instead of a secretfile is ok?
+        return AirQualityResult(self.instance_id, dataset.data_id, result_df, connection=self.dbcnxn.connection)
