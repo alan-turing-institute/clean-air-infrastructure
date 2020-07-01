@@ -196,6 +196,44 @@
     let test = undefined;
     let markers = L.layerGroup().addTo(mymap);
     
+    function updateBar(camera_id) {
+        let starttime = getDate() + "T00%3A00%3A00";
+        config1.options.title.text = 'Loading data' + "...";
+        config1.data.labels = [];
+        config1.data.datasets = [];
+        myBar.update();
+        // https://urbanair.turing.ac.uk/
+
+        console.log(camera_id)
+        console.log(starttime)
+        fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
+            .then(function (response) {
+                response.json().then(function (result) {
+
+                    let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
+                    for (type of detection_classes) {
+                        let subdat = result.filter(function(item){return item.detection_class == type})
+                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
+                       // console.log(date.toString())
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
+                       
+                    //     zeroIdxs = result.counts[type].filter(i => i > 0);
+                        config1.data.datasets.push(
+                            {
+                                label: type,
+                                backgroundColor: COLORS[type],
+                                borderColor: COLORS[type],
+                                data: max,
+                                fill: true,
+                            }
+                        )
+                    }
+                        config1.options.title.text = 'Average activity on ' + getDate() + ' by Type (all cameras)';
+                        myBar.update()
+                });
+            });
+    }
+
     function updateMarkers(type){
         markers.clearLayers();
         let starttime = getDate() + "T00%3A00%3A00";
@@ -222,7 +260,7 @@
                             
                             let camera_id = c.id.replace("JamCams_", "")
                             let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
-                          
+                            updateBar(camera_id);
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
                                 'icon': generateIcon2(counts,max)
@@ -239,7 +277,7 @@
                                 "S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA): </div>"
                             ).on('click', updateGraph).addTo(markers);
                         }
-                        // mymap.addLayer(markers);
+                       // mymap.addLayer(markers);
                     });
                 });
             });
@@ -262,6 +300,7 @@
 
 
     var ctx = document.getElementById('myChart').getContext('2d');
+    var ctx1 = document.getElementById('myBar').getContext('2d');
     var config = {
         type: 'line',
         data: {
@@ -318,6 +357,64 @@
             }
         }
     };
+    var config1 = {
+        type: 'bar',
+        data: {
+            labels: ['None'],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Average activity by Type (all cameras)'
+            },
+            tooltips: {
+                mode: 'x',
+                intersect: false,
+                bodyFontColor: '#fff',
+                titleFontColor: '#fff',
+            },
+            hover: {
+                mode: 'nearest',
+                intersect: true
+            },
+            scales: {
+                xAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Time'
+                    },
+                    type: 'time',
+                    // distribution: 'linear',
+                    time: {
+                        parser: 'MM/DD/YYYY HH:mm',
+                        tooltipFormat: 'll HH:mm',
+                        unit: 'hour',
+                        unitStepSize: 1,
+                        displayFormats: {
+                            'hour': 'HH:mm'
+                        }
+                    }
+                }],
+                yAxes: [{
+                    display: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Counts'
+                    },
+                    ticks: {
+                        min: 0,
+                        beginAtZero: true,
+                        stepSize: 1,
+                    }
+                }]
+            }
+        }
+    };
+    var myBar = new Chart(ctx1,config1);
     window.myChart = new Chart(ctx, config);
+
 </script>
 <!--</section>-->
