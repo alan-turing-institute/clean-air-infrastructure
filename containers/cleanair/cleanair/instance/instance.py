@@ -3,7 +3,7 @@ Instances of models and data.
 """
 import abc
 from ..databases import DBWriter
-from .utilities.hashing import hash_fn, instance_id_from_hash, get_git_hash
+from ..utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
 
 class Instance(DBWriter):
