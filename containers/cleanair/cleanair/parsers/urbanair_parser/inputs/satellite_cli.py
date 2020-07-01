@@ -4,6 +4,7 @@ import tempfile
 import time
 import typer
 from cleanair.inputs import SatelliteWriter
+from cleanair.loggers import initialise_logging
 from ..shared_args import (
     UpTo,
     NDays,
@@ -24,6 +25,9 @@ def check(
 ) -> None:
     "Check what satellite data is in the database"
     typer.echo("Check satellite data")
+
+    # Set logging verbosity
+    default_logger = initialise_logging(state["verbose"])
 
     satellite_writer = SatelliteWriter(
         copernicus_key=None,
@@ -67,6 +71,9 @@ def fill(
 ) -> None:
     "Query satellite API and insert into database"
     typer.echo(f"Fill satellite data using '{insert_method.value}' insert method")
+
+    # Set logging verbosity
+    default_logger = initialise_logging(state["verbose"])
 
     satellite_writer = SatelliteWriter(
         copernicus_key=copernicus_key,

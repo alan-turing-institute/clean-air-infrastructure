@@ -6,6 +6,7 @@ from cleanair.parsers.urbanair_parser.state import state
 
 app = typer.Typer()
 
+
 @app.callback()
 def main(
     verbose: bool = False,
