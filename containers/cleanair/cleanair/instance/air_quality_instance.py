@@ -1,5 +1,6 @@
 """Air quality instance."""
 
+from typing import Optional
 from datetime import datetime
 from .air_quality_result import AirQualityResult
 from .instance import Instance
@@ -33,7 +34,7 @@ class AirQualityInstance(Instance):
         model.fit(x_train, y_train)
         self.logger.info("Training completed")
 
-    def forecast(self, model: Model, dataset: ModelData) -> AirQualityResult:
+    def forecast(self, model: Model, dataset: ModelData, secretfile: Optional[str] = None) -> AirQualityResult:
         """Predict using the model on the test dataset.
 
         Args:
@@ -52,14 +53,13 @@ class AirQualityInstance(Instance):
         y_pred = model.predict(x_test)
         self.logger.info("Finished predicting")
 
-        dataset.update_test_df_with_preds(y_pred, self.fit_start_time)
+        dataset.update_test_df_with_preds(y_pred)
         result_df = dataset.normalised_pred_data_df
 
         # create a results object
-        # TODO check that passing a connection instead of a secretfile is ok?
-        return AirQualityResult(self.instance_id, dataset.data_id, result_df, connection=self.dbcnxn.connection)
+        return AirQualityResult(self.instance_id, dataset.data_id, result_df, secretfile=secretfile)
 
-    def predict_on_training_set(self, model: Model, dataset: ModelData) -> AirQualityResult:
+    def predict_on_training_set(self, model: Model, dataset: ModelData, secretfile: Optional[str] = None) -> AirQualityResult:
         """Predict on the training set using the model.
 
         Args:
@@ -77,9 +77,8 @@ class AirQualityInstance(Instance):
         y_pred = model.predict(x_train)
 
         # update the test dataframe and use this as a result dataframe
-        dataset.update_training_df_with_preds(y_pred, self.fit_start_time)
+        dataset.update_training_df_with_preds(y_pred)
         result_df = dataset.normalised_training_data_df
 
         # create a results object
-        # TODO check that passing a connection instead of a secretfile is ok?
-        return AirQualityResult(self.instance_id, dataset.data_id, result_df, connection=self.dbcnxn.connection)
+        return AirQualityResult(self.instance_id, dataset.data_id, result_df, secretfile=secretfile)

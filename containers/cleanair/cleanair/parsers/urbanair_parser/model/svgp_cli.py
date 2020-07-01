@@ -16,6 +16,7 @@ app = typer.Typer()
 # TODO add option for loading dataset from local filepath
 # TODO add option for predicting on training set
 # TODO how do we use preddays & predhours here?
+# TODO default for trainhours & predhours is zero - needs to be increased
 @app.command()
 def fit(
     cluster_id: str = ClusterId,
@@ -63,9 +64,10 @@ def fit(
         fit_start_time=datetime.now().isoformat(),
         secretfile=secretfile,
     )
-    svgp_instance.update_remote_tables()    # write the instance to the DB
 
     # train and forecast the model
     svgp_instance.train(model, dataset)
-    result = svgp_instance.forecast(model, dataset)
+    result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
+
+    svgp_instance.update_remote_tables()    # write the instance to the DB
     result.update_remote_tables()           # write results to DB
