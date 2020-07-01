@@ -12,6 +12,7 @@ from .shared_args import (
     FeatureSources,
     Sources,
     ValidSources,
+    Tag,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "FeatureSources",
     "Sources",
     "ValidSources",
+    "Tag",
 ]

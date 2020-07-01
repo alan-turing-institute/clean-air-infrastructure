@@ -2,6 +2,7 @@
 import typer
 from cleanair.parsers.urbanair_parser import inputs
 from cleanair.parsers.urbanair_parser import features
+from cleanair.parsers.urbanair_parser import model
 from cleanair.parsers.urbanair_parser.state import state
 
 app = typer.Typer()
@@ -24,6 +25,7 @@ def main(
 
 app.add_typer(inputs.app, name="inputs")
 app.add_typer(features.app, name="features")
+app.add_typer(model.app, name="model")
 
 if __name__ == "__main__":
 

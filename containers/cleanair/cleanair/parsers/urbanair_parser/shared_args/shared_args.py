@@ -152,3 +152,5 @@ AWSKey = typer.Option(
 FeatureSources = typer.Option(..., help="A feature source to process")
 
 Sources = typer.Option(..., help="List sources to process")
+
+Tag = typer.Option("test", help="A word to tag the mode with.", show_default=True)
