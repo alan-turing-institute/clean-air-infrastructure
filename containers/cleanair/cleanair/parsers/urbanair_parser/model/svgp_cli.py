@@ -17,7 +17,7 @@ app = typer.Typer()
 # TODO add option for predicting on training set
 # TODO how do we use preddays & predhours here?
 @app.command()
-def train(
+def fit(
     cluster_id: str = ClusterId,
     hexgrid: bool = HexGrid,
     maxiter: int = MaxIter,
