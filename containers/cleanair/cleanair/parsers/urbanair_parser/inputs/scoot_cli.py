@@ -1,7 +1,4 @@
 """Scoot CLI"""
-import webbrowser
-import tempfile
-import time
 import typer
 from cleanair.inputs import ScootWriter
 from cleanair.loggers import initialise_logging
@@ -15,6 +12,7 @@ app = typer.Typer()
 def check(
     upto: str = UpTo, nhours: int = NHours, ndays: int = NDays, web: bool = Web
 ) -> None:
+    """Check what Scoot data is in the database"""
 
     typer.echo("Check scoot data")
 
@@ -27,7 +25,7 @@ def fill(
     aws_key_id: str = AWSId,
     aws_key: str = AWSKey,
 ) -> None:
-
+    """Query the Scoot S3 bucket and insert into the database"""
     typer.echo("Fill scoot data")
 
     # Set logging verbosity
