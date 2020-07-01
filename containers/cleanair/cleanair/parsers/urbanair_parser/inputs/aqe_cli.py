@@ -1,20 +1,22 @@
+"""AQE input CLI"""
 import typer
 from cleanair.inputs import AQEWriter
 from cleanair.loggers import initialise_logging
-from datetime import datetime
 from ..shared_args import UpTo, NDays, NHours
 from ..state import state
 
 app = typer.Typer()
 
-
+# pylint: disable=W0613
 @app.command()
 def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
+    """Check what AQE data is in the database"""
     typer.echo("Not Yet Implimented")
 
 
 @app.command()
 def fill(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
+    """Query the AQE API and insert into the database"""
 
     typer.echo("Fill AQE inputs")
 

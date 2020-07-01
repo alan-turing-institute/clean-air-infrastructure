@@ -1,21 +1,18 @@
+"""Static features CLI"""
 from enum import Enum
 from typing import List
 import webbrowser
 import tempfile
 import time
 import typer
-from cleanair.features import FeatureExtractor, FEATURE_CONFIG, ALL_FEATURES
+from cleanair.features import FeatureExtractor, FEATURE_CONFIG
 
 
 from ..shared_args import (
-    UpTo,
-    NDays,
-    NHours,
     Web,
     InsertMethod,
     ValidInsertMethods,
     ValidFeatureSources,
-    FeatureSources,
     Sources,
     ValidSources,
 )
@@ -23,7 +20,7 @@ from ..state import state
 
 app = typer.Typer()
 
-
+# pylint: disable=C0103,C0200,W0640
 # Dynamically create subcommands for each feature source (e.g. ukmap)
 valid_features = list(ValidFeatureSources)
 valid_feature_names = []
@@ -44,9 +41,9 @@ for i in range(len(valid_features)):
         source: List[ValidSources] = Sources,
         only_missing: bool = typer.Option(False, help="Only show missing data",),
         web: bool = Web,
-        i: int = typer.Option(i, hidden=True),
+        it: int = typer.Option(i, hidden=True),
     ) -> None:
-
+        "Check which static features have been processed"
         # Get all sources to process
         all_sources = [src.value for src in source]
 
@@ -55,16 +52,16 @@ for i in range(len(valid_features)):
             all_feature_names = [fname.value for fname in feature_name]
         else:
             # Note: had to set i in the function call else looks up i global at runtime
-            all_feature_names = [fname.value for fname in valid_feature_names[i]]
+            all_feature_names = [fname.value for fname in valid_feature_names[it]]
 
         # CLI Message
         typer.echo(f"Checking features: {all_feature_names} for sources {all_sources}")
 
         # Set up feature extractor
         static_feature_extractor = FeatureExtractor(
-            feature_source=valid_features[i].value,
-            table=FEATURE_CONFIG[valid_features[i].value]["table"],
-            features=FEATURE_CONFIG[valid_features[i].value]["features"],
+            feature_source=valid_features[it].value,
+            table=FEATURE_CONFIG[valid_features[it].value]["table"],
+            features=FEATURE_CONFIG[valid_features[it].value]["features"],
             secretfile=state["secretfile"],
             sources=all_sources,
         )
@@ -101,9 +98,9 @@ for i in range(len(valid_features)):
         ),
         source: List[ValidSources] = Sources,
         insert_method: ValidInsertMethods = InsertMethod,
-        i: int = typer.Option(i, hidden=True),
+        it: int = typer.Option(i, hidden=True),
     ) -> None:
-
+        "Process static features and insert into the database"
         # Get all sources to process
         all_sources = [src.value for src in source]
 
@@ -112,7 +109,7 @@ for i in range(len(valid_features)):
             all_feature_names = [fname.value for fname in feature_name]
         else:
             # Note: had to set i in the function call else looks up i global at runtime
-            all_feature_names = [fname.value for fname in valid_feature_names[i]]
+            all_feature_names = [fname.value for fname in valid_feature_names[it]]
 
         # CLI Message
         typer.echo(
@@ -121,9 +118,9 @@ for i in range(len(valid_features)):
 
         # Set up feature extractor
         static_feature_extractor = FeatureExtractor(
-            feature_source=valid_features[i].value,
-            table=FEATURE_CONFIG[valid_features[i].value]["table"],
-            features=FEATURE_CONFIG[valid_features[i].value]["features"],
+            feature_source=valid_features[it].value,
+            table=FEATURE_CONFIG[valid_features[it].value]["table"],
+            features=FEATURE_CONFIG[valid_features[it].value]["features"],
             secretfile=state["secretfile"],
             sources=all_sources,
             insert_method=insert_method.value,

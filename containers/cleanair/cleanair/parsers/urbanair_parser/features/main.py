@@ -1,3 +1,4 @@
+"""Features CLI"""
 import typer
 from . import static_cli
 from . import dynamic_cli

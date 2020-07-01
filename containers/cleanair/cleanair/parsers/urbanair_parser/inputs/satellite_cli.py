@@ -1,10 +1,9 @@
+"""Satellite input cli"""
 import webbrowser
 import tempfile
 import time
 import typer
 from cleanair.inputs import SatelliteWriter
-from cleanair.loggers import initialise_logging
-from datetime import datetime
 from ..shared_args import (
     UpTo,
     NDays,
@@ -23,7 +22,7 @@ app = typer.Typer()
 def check(
     upto: str = UpTo, nhours: int = NHours, ndays: int = NDays, web: bool = Web
 ) -> None:
-
+    "Check what satellite data is in the database"
     typer.echo("Check satellite data")
 
     satellite_writer = SatelliteWriter(
@@ -66,7 +65,7 @@ def fill(
     copernicus_key: str = CopernicusKey,
     insert_method: ValidInsertMethods = InsertMethod,
 ) -> None:
-
+    "Query satellite API and insert into database"
     typer.echo(f"Fill satellite data using '{insert_method.value}' insert method")
 
     satellite_writer = SatelliteWriter(

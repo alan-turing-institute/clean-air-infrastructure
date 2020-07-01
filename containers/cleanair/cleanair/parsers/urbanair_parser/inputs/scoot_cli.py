@@ -1,16 +1,16 @@
+"""Scoot CLI"""
 import webbrowser
 import tempfile
 import time
 import typer
 from cleanair.inputs import ScootWriter
 from cleanair.loggers import initialise_logging
-from datetime import datetime
 from ..shared_args import UpTo, NDays, NHours, Web, AWSId, AWSKey
 from ..state import state
 
 app = typer.Typer()
 
-
+# pylint: disable=W0613
 @app.command()
 def check(
     upto: str = UpTo, nhours: int = NHours, ndays: int = NDays, web: bool = Web
