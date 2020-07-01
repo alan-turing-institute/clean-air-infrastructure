@@ -9,7 +9,8 @@ from typing import Dict
 import pytest
 import pandas as pd
 from cleanair.types import DataConfig, ParamsSVGP
-from cleanair.instance import AirQualityInstance, hash_dict
+from cleanair.instance import AirQualityInstance
+from cleanair.utils import hash_dict
 
 # pylint: disable=redefined-outer-name
 
