@@ -132,4 +132,3 @@ for i in range(len(valid_features)):
         static_feature_extractor.update_remote_tables()
 
     app.add_typer(sub_app, name=feature_source.value)
-
