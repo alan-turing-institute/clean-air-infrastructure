@@ -18,7 +18,7 @@ from ..databases.tables import (
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
-from ..instance import hash_dict
+from ..utils import hash_dict
 from ..timestamps import as_datetime
 
 if TYPE_CHECKING:
