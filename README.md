@@ -59,6 +59,8 @@ A list of key developers on the project. A good place to start if you wish to co
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
 - [Training models](#training-models)
+- [GPU support with Docker](#gpu-support-with-docker)
+- [Singularity for HPC](#singularity-for-hpc)
 
 ### Infrastructure
 
@@ -634,7 +636,7 @@ Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 ## Training models
 
-To train a model you can run a model fitting entrypoint:
+To train a model on your local machine you can run a model fitting entrypoint:
 
 ```bash
 python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
@@ -643,7 +645,7 @@ python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRE
 You can adjust the model parameters and data settings by changing the command line arguments.
 Use the `--help` flag to see available options.
 
-### GPU support
+## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.
 This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
@@ -658,6 +660,58 @@ To run the latest version of this entrypoint:
 
 ```bash
 docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+```
+
+## Singularity for HPC
+
+Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).
+This software means you can [import and run Docker images](https://singularity.lbl.gov/docs-docker) without having Docker installed or being a superuser.
+Scientific clusters are often a pain to setup, so we strongly recommend using Singularity & Docker to avoid a painful experience.
+
+First login to your HPC and ensure singularity is installed:
+
+```bash
+singularity --version
+```
+
+Now we will need to pull the Docker image from our Docker container registry on Azure.
+Since our docker images are private you will need to login to the container registry.
+1. Go to [portal.azure.com](https://portal.azure.com).
+2. Search for the `CleanAirDocker` container registry.
+3. Go to `Access keys`.
+4. The username is `CleanAirDocker`. Copy the password.
+
+```bash
+singularity pull --docker-login docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+Then build the singularity image to a `.sif` file.
+We recommend you store all of your singularity images in a directory called `containers`.
+
+```bash
+singularity build --docker-login containers/model_fitting.sif docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+To test everything has built correctly, spawn a shell and run python:
+
+```bash
+singularity shell containers/model_fitting.sif
+python
+```
+
+Then try importing tensorflow and cleanair:
+
+```python
+import tensorflow as tf
+tf.__version__
+import cleanair
+cleanair.__version__
+```
+
+Finally your can run the singularity image, passing any arguments you see fit:
+
+```bash
+singularity run containers/model_fitting.sif --secretfile $SECRETS
 ```
 
 # Infrastructure Deployment
