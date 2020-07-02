@@ -3,7 +3,7 @@
 from typing import List, Dict, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session # type: ignore
 from ..databases import get_db, all_or_404
 from ..databases.schemas.jamcam import (
     JamCamVideo,

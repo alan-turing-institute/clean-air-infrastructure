@@ -3,7 +3,8 @@ Central management of logger settings
 """
 import logging
 import os
-import colorlog
+import colorlog # type: ignore
+from typing import Int
 
 
 def initialise_logging(verbosity):
