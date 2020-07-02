@@ -19,7 +19,7 @@ jupyter notebook
 ### Environment variables
 
 To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
-It is also recommended to set the `SECRETS` variable.
+It is also recommended to set the `DB_SECRET_FILE` variable.
 We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
 
 > **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
@@ -28,7 +28,7 @@ Run the below command to create a `.env` file, replacing `path/to/secretfile` wi
 
 ```bash
 echo '
-SECRETS="path/to/secretfile"
+DB_SECRET_FILE="path/to/secretfile"
 PGPASSWORD=
 ' > path/to/notebook/.env
 ```
@@ -53,7 +53,7 @@ To access the environment variables, include the following lines at the top of y
 You can now access the value of these variables as follows:
 
 ```python
-secretfile = os.getenv("SECRETS", None)
+secretfile = os.getenv("DB_SECRET_FILE", None)
 ```
 
 Remember that the `PGPASSWORD` token will only be valid for ~1h.

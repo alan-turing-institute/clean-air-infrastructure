@@ -33,11 +33,11 @@ All tests can be found in the [`containers/tests/`](containers/tests) directory.
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-pytest containers --secretfile $SECRETS
+pytest containers --secretfile $DB_SECRET_FILE
 ```
 
 ## Writing tests

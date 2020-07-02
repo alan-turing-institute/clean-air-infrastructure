@@ -1,6 +1,6 @@
 # Infrastructure Deployment
 
-**The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
+ **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
 
 ## Login to Travis CLI
 Login to Travis with your github credentials, making sure you are in the Clean Air repository (Travis automatically detects your repository):
@@ -203,3 +203,154 @@ You can check everything was removed on the Azure portal.
 Then login to TravisCI and delete the Azure Container repo environment variables.
 
 
+
+<!-- Open the file and replace the <> with the secret values which can be found in the keyvault in the `RG_CLEANAIR_INFRASTRUCTURE` Azure resource group.
+
+## Build and run docker images locally
+**AQE - Download AQE data**
+```bash
+docker build -t cleanairdocker.azurecr.io/aqe -f containers/dockerfiles/add_aqe_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/aqe
+```
+
+**LAQN - Download LAQN data**
+```bash
+docker build -t cleanairdocker.azurecr.io/laqn -f containers/dockerfiles/add_laqn_readings.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/laqn
+```
+
+**UKMAP feature extraction**
+```bash
+docker build -t cleanairdocker.azurecr.io/ukmap -f containers/dockerfiles/extract_ukmap_features.Dockerfile containers && docker run -v <repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/ukmap
+```
+
+**OSHighway feature extraction**
+```
+docker build -t cleanairdocker.azurecr.io/osh -f containers/dockerfiles/extract_oshighway_features.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/osh
+```
+
+**Model fitting**
+```bash
+docker build -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/run_model_fitting.Dockerfile containers && docker run -v /<repo-dir>/clean-air-infrastructure/terraform/.secrets:/secrets cleanairdocker.azurecr.io/mf
+``` -->
+
+<!-- ## The cleanair parser
+
+A `CleanAirParser` class has been created for interacting with `run_model_fitting.py`. Run the following command to see available options:
+
+```bash
+python run_model_fitting.py -h
+```
+
+By passing no arguments, `run_model_fitting.py` will read data from the DB and write the results to the DB using the default data_config.
+Reading and writing data/results is all made possible through the command line. Different arguments are available for `run_dashboard.py`. -->
+
+<!-- ### Parser config
+
+If you frequently run model fitting locally, then you may wish to store some of your common settings into the `parser_config.json` file. For example, if you always want to `return_y` and `predict_training`, then your parser config file would look like:
+
+```json
+{
+    "return_y": true,
+    "predict_training": true 
+}
+```
+
+By passing the `-c` flag, the parser will use the json file to overwrite the default parser values. -->
+
+<!-- ## Running with local database
+
+### Install postgres and upload static datasets
+
+It is possible to test code without the Azure infrastructure. This can be achieved by creating databases on your local machine. Ensure you install the following:
+
+- Install postgres and start it running
+```bash
+brew install postgresql postgis
+brew services start postgres
+```
+
+- Create a database called 'cleanair_inputs_db'. In a terminal run:
+```bash
+psql postgres
+```
+
+and then create the database:
+```bash
+CREATE DATABASE cleanair_inputs_db;
+```
+
+- Create a local secrets file following the instructions above
+
+- Follow all instructions above as per cloud until add static datasets.
+
+- Download static data and insert into the database:
+```
+python cleanair_setup/insert_static_datasets.py -l terraform/.secrets/.db_secrets.json
+``` -->
+
+
+<!-- ## Dashboard
+
+The dashboard lets you see the predictions and validation scores of a model fit on the LAQN sensors. To run the dashboard you must have a [mapbox API key](https://account.mapbox.com/auth/signup/) and sign up to their account.
+
+Once you have the key, use the following command to place the key in the .secrets folder:
+
+```bash
+echo "API_KEY" > terraform/.secrets/.mapbox_token
+```
+
+At the moment you can only run the dashboard locally:
+```bash
+python run_dashboard.py
+```
+
+By default the dashboard will try to load a model fit from the DB, but you can pass command line arguments to load a locally stored model fit.
+ -->
+
+<!-- 
+## Configure Kubernetes Cluster:
+
+### Local cluster
+You can set up a local cluster on your machine. To do this install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+
+To start the cluster run:
+```
+minikube start --vm-driver=virtualbox
+```
+
+Start the cluster dashboard with:
+```
+minikube dashboard
+```
+
+Next follow these instruction to [install helm](https://helm.sh/docs/using_helm/).
+
+### Adding secrets
+The cluster requires secrets in order to pull images from the azure container repository and to connect to databases. When terraform provisioned the azure infrastructure it creates a folder called `.secrets/` which contains a number of files. We need to add these to the Kubernetes cluster.
+
+The ACR login details are in a file called .regcred_secret.json
+```
+kubectl create secret docker-registry regcred --docker-server=<servername> --docker-username=<username>--docker-password=<password> --docker-email=<your-email>
+```
+
+Next create a secret for each database secret file:
+```
+kubectl create secret generic secrets --from-file=<path_to_aws_secret>aws_secrets.json --from-file=<path_to_db_secret>/db_secrets.json
+```
+
+
+### Configure the cluster with Helm
+Go to the `/kubernetes` directory and run:
+
+```
+helm install kubernetes/cleanair
+```
+
+Now you to the minikube dashboard and you can see everything that was installed.
+
+## How to create a new model
+
+Look at the `model.py`. You will need to extend the `Model` class (or an existing model) using your new model class you are about to create. The `Model` class contains information about the shapes and the expected parameters/returns of functions for a model. We recommend you read this file closely before implementing your model.
+
+The `SVGP` class is an example of a `Model` that uses only laqn data and some features. We recommend you look through this class before implementing your model.
+
+All model parameters should be contained within the `model_params` dictionary. -->

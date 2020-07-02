@@ -52,14 +52,14 @@ createdb cleanair_test_db
 
 We must now setup the database schema. This also creates a number of roles on the database.
 
-Create a variable with the location of your secrets file
+Create a variable with the location of your secrets file and set as an environment variable
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml   
 ```
 
 ### Static data insert
@@ -83,13 +83,13 @@ SAS_TOKEN=<SAS_TOKEN>
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
 If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
 ```
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
@@ -103,6 +103,7 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/test_database_init --secretfile $SECRETS
+pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 ```
+
 

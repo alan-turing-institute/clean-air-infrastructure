@@ -1,6 +1,6 @@
 # Entry points
 
-### Running entry points
+## Running entry points
 
 The directory [containers/entrypoints](containers/entrypoints) contains Python scripts which are then built into Docker images in  [containers/dockerfiles](containers/dockerfiles). You can run them locally. 
 

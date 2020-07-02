@@ -7,6 +7,7 @@ To contribute as a non-infrastructure developer you will need the following:
 - `postgreSQL` (command-line tool for interacting with db)
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
+- `eccodes` (For reading GRIB files)
 
 The instructions below are to install the dependencies system-wide, however you can
 follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
@@ -39,9 +40,12 @@ brew install postgresql postgis
 ```bash
 brew install gdal
 ```
-
 or any of the [binaries](https://gdal.org/download.html#binaries) provided for different platforms.
 
+### Eccodes
+```bash
+brew install eccodes
+```
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
