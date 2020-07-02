@@ -72,5 +72,6 @@ def main():
     # TODO save models to blob storage
     scoot_xp.update_remote_tables()
 
+
 if __name__ == "__main__":
     main()

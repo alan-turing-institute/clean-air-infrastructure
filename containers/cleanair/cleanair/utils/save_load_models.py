@@ -48,9 +48,7 @@ def save_model(
 
 
 def load_model(
-    instance_id: str,
-    model_dir: Optional[str] = None,
-    sas_token: Optional[str] = None,
+    instance_id: str, model_dir: Optional[str] = None, sas_token: Optional[str] = None,
 ) -> gpflow.models.GPModel:
     """Try to load the model from blob storage."""
     # try loading from blob storage
@@ -61,7 +59,14 @@ def load_model(
         blob_name = ""
         account_url = ""
         target_file = instance_id + ".h5"
-        download_blob(resource_group, storage_container_name, blob_name, account_url, target_file, sas_token)
+        download_blob(
+            resource_group,
+            storage_container_name,
+            blob_name,
+            account_url,
+            target_file,
+            sas_token,
+        )
         model = gpflow.saver.Saver().load(os.path.join(model_dir, target_file))
         return model
     except Exception:  # TODO what type of exception is thrown if we can't read from blob storage?
