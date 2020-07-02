@@ -153,7 +153,7 @@
         if(activity !== undefined){
             
           //  let max = markerType == 'all' ? 150 : 50;
-           colour = VIRIDIS[Math.floor(Math.min(activity.counts/max, 1) * 255)];
+           colour = VIRIDIS[Math.floor(Math.min(activity/max, 1) * 255)];
         //   console.log("result="+ Math.min(activity.counts/max, 1))    
         }
         const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
@@ -193,7 +193,6 @@
                     
                     response2.json().then(function (result2) {
                         
-                        // console.log(result2.status)
                         const activities = result2;
                     
                         let all_counts = result2.map(({counts}) => (counts)) 
@@ -203,11 +202,18 @@
                         for (let c of cameras) {
                             
                             let camera_id = c.id.replace("JamCams_", "")
-                            let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
+                            
+                            let items = activities.filter(function(item){return item.camera_id == camera_id})
+
+                            let  max_at_camera = 0
+                            if (items.length > 0){
+                                max_at_camera = Math.max(...items.map(({counts}) => (counts)))
+                            } 
+
                           
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(counts,max)
+                                'icon': generateIcon2(max_at_camera, max)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
