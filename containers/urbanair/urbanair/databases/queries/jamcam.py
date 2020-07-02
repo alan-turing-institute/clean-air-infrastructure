@@ -23,9 +23,9 @@ def start_end_filter(
 ) -> Query:
     """Create an sqlalchemy filter which implements the following:
         If starttime and endtime are given filter between them.
-        If only starttime filter 12 hours including starttime
-        If only endtime  filter 12 hours proceeding endtime
-        If not starttime and endtime get the last 12 hours available
+        If only starttime filter 24 hours including starttime
+        If only endtime  filter 24 hours proceeding endtime
+        If not starttime and endtime get the last day of available data
     """
 
     if starttime and endtime:
@@ -38,20 +38,20 @@ def start_end_filter(
     if starttime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime >= starttime,
-            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=12),
+             JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
         )
 
     # 12 hours before endtime
     if endtime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime < endtime,
-            JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=12),
+            JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=24),
         )
 
     # Last available 12 hours
     return query.filter(
         JamCamVideoStats.video_upload_datetime
-        > max_video_upload_time_sq.c.max_video_upload_datetime - TWELVE_HOUR_INTERVAL
+        >= func.date_trunc("day", max_video_upload_time_sq.c.max_video_upload_datetime)
     )
 
 

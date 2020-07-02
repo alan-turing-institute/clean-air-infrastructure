@@ -32,7 +32,7 @@
       <option value="hide">Hidden</option>
     </select> <br>
     <label for="controls">Date</label><br>
-    <input type="date" id="myDate" min="2020-05-01" onchange="getDate();setGroundEstimates()">
+    <input type="date" id="myDate" min="2020-05-29" onchange="updateMarkersByDate()">
         <span style="color: red;">(experimental)</span>
     </div>
 </div>
@@ -78,15 +78,6 @@
         var x = document.getElementById("myDate").value;
         return x;
     }
-
-    function convertUTCDateToLocalDate(date) {
-        var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
-        var offset = date.getTimezoneOffset() / 60;
-        var hours = date.getHours();
-
-        newDate.setHours(hours - offset);
-        return newDate;   
-    }
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
@@ -98,8 +89,8 @@
         window.myChart.update();
         // https://urbanair.turing.ac.uk/
 
-        console.log(camera_id)
-        console.log(starttime)
+        // console.log(camera_id)
+        // console.log(starttime)
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
             .then(function (response) {
                 response.json().then(function (result) {
@@ -107,10 +98,9 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
-                       // console.log(date.toString())
-                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
-                       
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
+                        
+              
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
@@ -166,7 +156,7 @@
         if(activity !== undefined){
             
           //  let max = markerType == 'all' ? 150 : 50;
-           colour = VIRIDIS[Math.floor(Math.min(activity.counts/max, 1) * 255)];
+           colour = VIRIDIS[Math.floor(Math.min(activity/max, 1) * 255)];
         //   console.log("result="+ Math.min(activity.counts/max, 1))    
         }
         const myCustomColour = 'rgba('+255*colour[0]+','+255*colour[1]+','+255*colour[2]+',0.5)';
@@ -206,25 +196,27 @@
                     
                     response2.json().then(function (result2) {
                         
-                        console.log(result2.status)
                         const activities = result2;
                     
-                        let  all_counts = result2.map(({counts}) => (counts)) 
+                        let all_counts = result2.map(({counts}) => (counts)) 
+                       
+                        let max=Math.max(...all_counts)
                         
-                        let max=0
-                        for (let m of all_counts){
-                            if (max<m) 
-                                max=m
-                        }
-                        console.log(max)                     
                         for (let c of cameras) {
                             
                             let camera_id = c.id.replace("JamCams_", "")
-                            let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
+                            
+                            let items = activities.filter(function(item){return item.camera_id == camera_id})
+
+                            let  max_at_camera = 0
+                            if (items.length > 0){
+                                max_at_camera = Math.max(...items.map(({counts}) => (counts)))
+                            } 
+
                           
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(counts,max)
+                                'icon': generateIcon2(max_at_camera, max)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
@@ -271,6 +263,9 @@
         updateMarkers(document.getElementById("mySelect").value);
     }
 
+    function updateMarkersByDate(){
+        updateMarkers(document.getElementById("mySelect").value);
+    }
 
     var ctx = document.getElementById('myChart').getContext('2d');
     var ctx1 = document.getElementById('myBar').getContext('2d');
