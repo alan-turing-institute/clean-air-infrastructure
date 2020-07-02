@@ -1,3 +1,5 @@
+"""Parser for model fitting."""
+
 import typer
 from . import svgp_cli
 

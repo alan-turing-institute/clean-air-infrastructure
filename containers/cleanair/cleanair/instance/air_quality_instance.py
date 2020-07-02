@@ -7,6 +7,7 @@ from .instance import Instance
 from ..databases.tables import AirQualityInstanceTable
 from ..models import ModelData, Model
 
+
 class AirQualityInstance(Instance):
     """A model instance on air quality data."""
 
@@ -29,12 +30,16 @@ class AirQualityInstance(Instance):
         y_train = training_data_dict["Y"]
 
         # train model
-        self.logger.info("Training model for %s iterations.", model.model_params["maxiter"])
+        self.logger.info(
+            "Training model for %s iterations.", model.model_params["maxiter"]
+        )
         self.fit_start_time = datetime.now().isoformat()
         model.fit(x_train, y_train)
         self.logger.info("Training completed")
 
-    def forecast(self, model: Model, dataset: ModelData, secretfile: Optional[str] = None) -> AirQualityResult:
+    def forecast(
+        self, model: Model, dataset: ModelData, secretfile: Optional[str] = None
+    ) -> AirQualityResult:
         """Predict using the model on the test dataset.
 
         Args:
@@ -57,9 +62,13 @@ class AirQualityInstance(Instance):
         result_df = dataset.normalised_pred_data_df
 
         # create a results object
-        return AirQualityResult(self.instance_id, dataset.data_id, result_df, secretfile=secretfile)
+        return AirQualityResult(
+            self.instance_id, dataset.data_id, result_df, secretfile=secretfile
+        )
 
-    def predict_on_training_set(self, model: Model, dataset: ModelData, secretfile: Optional[str] = None) -> AirQualityResult:
+    def predict_on_training_set(
+        self, model: Model, dataset: ModelData, secretfile: Optional[str] = None
+    ) -> AirQualityResult:
         """Predict on the training set using the model.
 
         Args:
@@ -81,4 +90,6 @@ class AirQualityInstance(Instance):
         result_df = dataset.normalised_training_data_df
 
         # create a results object
-        return AirQualityResult(self.instance_id, dataset.data_id, result_df, secretfile=secretfile)
+        return AirQualityResult(
+            self.instance_id, dataset.data_id, result_df, secretfile=secretfile
+        )

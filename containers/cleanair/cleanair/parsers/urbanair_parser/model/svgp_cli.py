@@ -12,6 +12,7 @@ from ....models import ModelData, SVGP
 
 app = typer.Typer()
 
+# pylint: disable=too-many-arguments
 
 # TODO add option for loading dataset from local filepath
 # TODO add option for predicting on training set
@@ -49,9 +50,7 @@ def fit(
     model.model_params["kernel"]["name"] = "matern32"
 
     # object for inserting model parameters into the database
-    aq_model_params = AirQualityModelParams(
-        secretfile, "svgp", model.model_params
-    )
+    aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
     aq_model_params.update_remote_tables()  # write model name, id & params to DB
 
     # instance for training and forecasting air quality
@@ -69,5 +68,5 @@ def fit(
     svgp_instance.train(model, dataset)
     result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
 
-    svgp_instance.update_remote_tables()    # write the instance to the DB
-    result.update_remote_tables()           # write results to DB
+    svgp_instance.update_remote_tables()  # write the instance to the DB
+    result.update_remote_tables()  # write results to DB

@@ -152,12 +152,10 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Generate and return the config dictionary
         data_config = {
-            "train_start_date": as_datetime(trainupto)
-            - timedelta(hours=trainhours),
+            "train_start_date": as_datetime(trainupto) - timedelta(hours=trainhours),
             "train_end_date": as_datetime(trainupto),
             "pred_start_date": as_datetime(trainupto),
-            "pred_end_date": as_datetime(trainupto)
-            + timedelta(hours=predhours),
+            "pred_end_date": as_datetime(trainupto) + timedelta(hours=predhours),
             "include_satellite": include_satellite,
             "include_prediction_y": False,
             "train_sources": ["laqn"],
@@ -377,7 +375,9 @@ class ModelData(DBWriter, DBQueryMixin):
                 index_col=0,
             )
 
-        if self.config["tag"] == "validation":  # TODO replace with flag for loading data
+        if (
+            self.config["tag"] == "validation"
+        ):  # TODO replace with flag for loading data
             # load train and test dicts from pickle
             with open(os.path.join(dir_path, "train.pickle"), "rb") as handle:
                 self.training_dict = pickle.load(handle)
@@ -1020,9 +1020,7 @@ class ModelData(DBWriter, DBQueryMixin):
             test_pred_dict: Dictionary of model predictions.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df,
-            self.get_pred_data_arrays(),
-            test_pred_dict,
+            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
         )
 
     def update_training_df_with_preds(self, training_pred_dict):
