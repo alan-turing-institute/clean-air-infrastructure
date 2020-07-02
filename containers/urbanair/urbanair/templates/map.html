@@ -196,14 +196,9 @@
                         // console.log(result2.status)
                         const activities = result2;
                     
-                        let  all_counts = result2.map(({counts}) => (counts)) 
+                        let all_counts = result2.map(({counts}) => (counts)) 
                        
-                        let max=0
-                        for (let m of all_counts){
-                            if (max<m) 
-                                max=m
-                        }
-                        // console.log(max)
+                        let max=Math.max(...all_counts)
                         
                         for (let c of cameras) {
                             
