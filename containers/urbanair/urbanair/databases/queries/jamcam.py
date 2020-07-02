@@ -2,13 +2,13 @@
 from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException
-from sqlalchemy import func, text
-from sqlalchemy.orm import Session, Query
-from sqlalchemy.sql.selectable import Alias
-from geojson import Feature, Point, FeatureCollection
+from sqlalchemy import func, text # type: ignore
+from sqlalchemy.orm import Session, Query  # type: ignore
+from sqlalchemy.sql.selectable import Alias  # type: ignore
+from geojson import Feature, Point, FeatureCollection  # type: ignore
 import requests
-from cleanair.databases.tables import JamCamVideoStats
-from cleanair.decorators import db_query
+from cleanair.databases.tables import JamCamVideoStats # type: ignore
+from cleanair.decorators import db_query # type: ignore
 from ...types import DetectionClass
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")

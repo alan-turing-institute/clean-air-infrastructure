@@ -4,7 +4,7 @@ from typing import List, Tuple
 from datetime import datetime
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
-from sqlalchemy import text
+from sqlalchemy import text # type: ignore
 
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")

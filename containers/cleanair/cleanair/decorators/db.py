@@ -1,6 +1,6 @@
 """DB decorators"""
 import functools
-import pandas as pd
+import pandas as pd # type: ignore
 from tabulate import tabulate
 
 

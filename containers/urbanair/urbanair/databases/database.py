@@ -1,10 +1,10 @@
 """UrbanAir API database interactions"""
 from typing import List, Dict, Optional
 from fastapi import HTTPException
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Query, Session
-from sqlalchemy.ext.declarative import DeferredReflection
-from cleanair.mixins import DBConnectionMixin
+from sqlalchemy import create_engine # type: ignore
+from sqlalchemy.orm import sessionmaker, Query, Session # type: ignore
+from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
+from cleanair.mixins import DBConnectionMixin # type: ignore
 from ..config import get_settings
 
 
