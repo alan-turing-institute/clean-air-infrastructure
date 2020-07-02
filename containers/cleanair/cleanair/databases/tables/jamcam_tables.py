@@ -44,7 +44,7 @@ class JamCamVideoStats(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     camera_id = Column(VARCHAR(20))
-    video_upload_datetime = Column(TIMESTAMP)
+    video_upload_datetime = Column(TIMESTAMP, index=True)
     detection_class = Column(String(20))
     counts = Column(REAL)
     stops = Column(REAL)
@@ -56,4 +56,4 @@ class JamCamVideoStats(Base):
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
         ]
-        return "<JamCamFrameStats(" + ", ".join(vals) + ")>"
+        return "<JamCamVideoStats(" + ", ".join(vals) + ")>"
