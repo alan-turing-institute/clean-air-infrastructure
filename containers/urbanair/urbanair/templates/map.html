@@ -75,15 +75,6 @@
         var x = document.getElementById("myDate").value;
         return x;
     }
-
-    function convertUTCDateToLocalDate(date) {
-        var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
-        var offset = date.getTimezoneOffset() / 60;
-        var hours = date.getHours();
-
-        newDate.setHours(hours - offset);
-        return newDate;   
-    }
       
     function updateGraph(e) {
         let camera_id = this.options.id.replace("JamCams_", "")
@@ -95,8 +86,8 @@
         window.myChart.update();
         // https://urbanair.turing.ac.uk/
 
-        console.log(camera_id)
-        console.log(starttime)
+        // console.log(camera_id)
+        // console.log(starttime)
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
             .then(function (response) {
                 response.json().then(function (result) {
@@ -104,10 +95,9 @@
                     let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                     for (type of detection_classes) {
                         let subdat = result.filter(function(item){return item.detection_class == type})
-                        // let date = subdat.map(({measurement_start_utc}) => convertUTCDateToLocalDate(new Date(measurement_start_utc)))
-                       // console.log(date.toString())
-                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  convertUTCDateToLocalDate(new Date(measurement_start_utc)), y: counts})) 
-                       
+                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
+                        
+              
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
@@ -203,7 +193,7 @@
                     
                     response2.json().then(function (result2) {
                         
-                        console.log(result2.status)
+                        // console.log(result2.status)
                         const activities = result2;
                     
                         let  all_counts = result2.map(({counts}) => (counts)) 
@@ -213,7 +203,7 @@
                             if (max<m) 
                                 max=m
                         }
-                        console.log(max)
+                        // console.log(max)
                         
                         for (let c of cameras) {
                             
