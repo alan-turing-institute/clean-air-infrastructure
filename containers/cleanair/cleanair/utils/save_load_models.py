@@ -39,36 +39,45 @@ def save_model(
     # NOTE the name of the model should be INSTANCE_ID.ext where ext is the extension
 
     # try saving to blob storage first
-    try:
-        saver = gpflow.saver.Saver()
-        saver.save(os.path.join(model_dir, instance_id, ".h5"), model)
+    # try:
+    tf_session = model.enquire_session()
+    saver_context = gpflow.saver.SaverContext(session=tf_session)
+    saver = gpflow.saver.Saver()
 
-    except:  # TODO what type of exception is thrown? should we catch it or just log error?
-        pass
+    fp = os.path.join(model_dir, instance_id)
+    saver.save(fp + ".h5", model, context=saver_context)
+    tf_saver = tf.train.Saver()
+    tf_saver.save(tf_session, fp)
+
+    # except e:  # TODO what type of exception is thrown? should we catch it or just log error?
+
 
 
 def load_model(
-    instance_id: str, model_dir: Optional[str] = None, sas_token: Optional[str] = None,
+    instance_id: str, model_dir: Optional[str] = None, sas_token: Optional[str] = None, session = None,
 ) -> gpflow.models.GPModel:
     """Try to load the model from blob storage."""
     # try loading from blob storage
-    try:
-        # TODO what should these be set to?
-        resource_group = ""
-        storage_container_name = ""
-        blob_name = ""
-        account_url = ""
-        target_file = instance_id + ".h5"
-        download_blob(
-            resource_group,
-            storage_container_name,
-            blob_name,
-            account_url,
-            target_file,
-            sas_token,
-        )
-        model = gpflow.saver.Saver().load(os.path.join(model_dir, target_file))
-        return model
-    except Exception:  # TODO what type of exception is thrown if we can't read from blob storage?
-        # try reading from local file using model_dir
-        pass
+    # TODO what should these be set to?
+    # resource_group = ""
+    # storage_container_name = ""
+    # blob_name = ""
+    # account_url = ""
+    # download_blob(
+    #     resource_group,
+    #     storage_container_name,
+    #     blob_name,
+    #     account_url,
+    #     target_file,
+    #     sas_token,
+    # )
+    filepath = os.path.join(model_dir, instance_id)
+    model = gpflow.saver.Saver().load(filepath + ".h5")
+    assert model.name == "helloworld"
+    # tf_session = model.enquire_session()
+    tf_session = session
+    print("TF session:", tf_session)
+    tf_saver = tf.train.Saver(allow_empty=True)
+    tf_saver.restore(tf_session, filepath)
+    model.compile(tf_session)
+    return model
