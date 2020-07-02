@@ -984,18 +984,6 @@ class ModelData(DBWriter, DBQueryMixin):
         # Get satellite data
         return all_features, satellite_readings
 
-    def update_model_results_df(self, predict_data_dict, y_pred, model_fit_info):
-        """Update the model results data frame with model predictions."""
-        # Create new dataframe with predictions
-        predict_df = pd.DataFrame(index=predict_data_dict["index"])
-        predict_df["predict_mean"] = y_pred[:, 0]
-        predict_df["predict_var"] = y_pred[:, 1]
-
-        # Concat the predictions with the predict_df
-        self.normalised_pred_data_df = pd.concat(
-            [self.normalised_pred_data_df, predict_df], axis=1, ignore_index=False
-        )
-
     def get_df_from_pred_dict(
         self, data_df, data_dict, pred_dict, **kwargs,
     ):
