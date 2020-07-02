@@ -16,8 +16,6 @@ app = typer.Typer()
 
 # TODO add option for loading dataset from local filepath
 # TODO add option for predicting on training set
-# TODO how do we use preddays & predhours here?
-# TODO default for trainhours & predhours is zero - needs to be increased
 @app.command()
 def fit(
     cluster_id: str = ClusterId,
@@ -31,14 +29,15 @@ def fit(
     trainupto: str = UpTo,
 ) -> None:
     """Commands for training the SVGP model"""
-    secretfile = state["secretfile"]
+
+    secretfile: str = state["secretfile"]
     # create a dictionary of data settings
     data_config = ModelData.generate_data_config(
         trainupto,
         hexgrid=hexgrid,
         include_satellite=False,
-        predhours=predhours,
-        trainhours=trainhours,
+        predhours=predhours + preddays,
+        trainhours=trainhours + traindays,
     )
     # load the dataset
     dataset = ModelData(data_config, secretfile=secretfile)

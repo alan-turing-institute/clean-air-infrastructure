@@ -5,6 +5,7 @@ from enum import Enum
 import typer
 from dateutil.parser import isoparse
 from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
+from cleanair.timestamps import day_to_iso
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
@@ -48,7 +49,12 @@ def is_iso_string(isostring: str) -> bool:
 
 def UpTo_callback(value: str) -> str:
     "process UpTo arg"
-    if (value in UP_TO_VALUES) or is_iso_string(value):
+
+    if value in UP_TO_VALUES:
+
+        return day_to_iso(value)
+
+    elif is_iso_string(value):
         return value
 
     raise typer.BadParameter(
@@ -123,10 +129,7 @@ UpTo = typer.Option(
 NHours = typer.Option(0, help="Number of hours of data to process", show_default=True)
 
 NDays = typer.Option(
-    1,
-    help="Number of days of data to process",
-    callback=NDays_callback,
-    show_default=True,
+    ..., help="Number of days of data to process", callback=NDays_callback,
 )
 
 CopernicusKey = typer.Option(

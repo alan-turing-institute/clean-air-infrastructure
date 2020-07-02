@@ -1,3 +1,5 @@
 """CLI state"""
+from typing import Dict, Union
+
 # pylint: disable=C0103
-state = {"verbose": False, "secretfile": ""}
+state: Dict[str, Union[bool, str]] = {"verbose": False, "secretfile": ""}
