@@ -2,7 +2,6 @@
 
 
 import os
-import pytest
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -15,31 +14,8 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-@pytest.fixture(scope="session")
-def model_dir(tmpdir_factory) -> str:
-    """Path to temporary model directory."""
-    return tmpdir_factory.mktemp(".tmp")
-
-@pytest.fixture
-def save_load_instance_id() -> str:
-    """Test id for instance."""
-    return "fake_instance_id"
-
-@pytest.fixture(scope="function")
-def session():
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        yield sess
-
-@pytest.fixture(autouse=True)
-def init_graph():
-    """Initialise a tensorflow graph."""
-    with tf.Graph().as_default():
-        yield
-
-# TODO use tmp directories in pytest: https://docs.pytest.org/en/stable/tmpdir.html
 def test_save_model(session, save_load_instance_id, model_dir) -> None:
-    """Test models are saved correctly."""
+    """Test gpflow models are saved correctly."""
 
     # train model on basic sine curve
     X = np.arange(0, 90).astype(np.float64)
@@ -47,32 +23,39 @@ def test_save_model(session, save_load_instance_id, model_dir) -> None:
     X = np.reshape(X, (X.shape[0], 1))
     Y = np.reshape(Y, (Y.shape[0], 1))
 
+    # wait to compile to model
     with gpflow.defer_build():
         kern = gpflow.kernels.RBF(input_dim=1)
         model = gpflow.models.GPR(X, Y, kern=kern, mean_function=None, name="helloworld")
-        # context = gpflow.get_session(model)
-        # TODO create a monkey patch for blobs
 
     tf.local_variables_initializer()
     tf.global_variables_initializer()
 
     model.compile(session)
 
+    # train the model
     gpflow.train.ScipyOptimizer().minimize(model)
 
+    # save the model
     save_model(model, save_load_instance_id, model_dir=str(model_dir))
-    assert os.path.exists(str(model_dir))
-    filepath = os.path.join(str(model_dir), save_load_instance_id)
-    assert os.path.exists(filepath + ".h5")     # model saved with gpflow
-    # assert os.path.exists(filepath + ".ckpt")   # tf session
+
+    assert os.path.exists(str(model_dir))   # check the directory is created
+    filepath = os.path.join(str(model_dir), save_load_instance_id, "model.h5")
+    assert os.path.exists(filepath)         # model saved with gpflow
+
+    # save the dataframe to the temp directory - we can compare the variable values
     model_df = model.as_pandas_table()
     model_df.to_csv(filepath + ".csv", index_label="variable_name")
 
 def test_load_model(session, save_load_instance_id, model_dir) -> None:
     """Test models are loaded correctly."""
+    # check the directory where models are stored still exists
     assert os.path.exists(str(model_dir))
+
     filepath = os.path.join(str(model_dir), save_load_instance_id)
-    assert os.path.exists(filepath + ".h5")
+    model_fp = os.path.join(filepath, "model.h5")
+    session_fp = os.path.join(filepath, )
+    assert os.path.exists(model_fp)
     # assert os.path.exists(filepath + ".ckpt.index")
     model = load_model(save_load_instance_id, str(model_dir), session=session)
     assert isinstance(model, gpflow.models.GPR)

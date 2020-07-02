@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tensorflow as tf
 from .azure.blob_storage import download_blob
+from ..loggers import get_logger
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -17,46 +18,77 @@ def save_model(
     instance_id: str,
     sas_token: Optional[str] = None,
     model_dir: Optional[str] = None,
+    model_name: Optional[str] = "model",
 ) -> None:
     """Save a model to blob storage.
 
     Args:
         model: A gpflow model.
         instance_id: A unique identifier for the model.
-        model_dir: A directory to store the model inside. Used as cache.
+        model_dir: A root directory to store the models inside.
+        model_name: Name of the model.
+
+    Notes:
+        The file structure is as follows:
+
+        model_dir/
+            instance_id/
+                model_name.h5       # the model itself
+                checkpoint          # checkpoint for TF session
+                model_name.*        # multiple files for TF sessions
     """
-    # Patrick's comment:
-    # Not sure how writing to blob works from python, but I guess we need to
-    # 1. create a file with the model stored inside
-    # 2. copy that file to blob storage
+    logger = get_logger("Save model")
+    # 1. create a directory containing the model and the TF session
+    # 2. copy that directory to blob storage
 
-    # NOTE I strongly recommend that we also save to file - don't want to train a model
-    #       for 4 hours only to lose it due to e.g. bad internet connection
+    # create a local directory
+    logger.info("Creating directory to save model (if it doesn't exist).")
+    filepath = os.path.join(model_dir, instance_id)
+    Path(filepath).mkdir(exist_ok=True)
+    logger.info("Saving model to %s", filepath)
+    filepath = os.path.join(filepath, model_name)
 
-    # write to local directory
-    Path(model_dir).mkdir(exist_ok=True)
-    # TODO write model - should we use pickle or tensorflow/gpflow package?
-    # NOTE the name of the model should be INSTANCE_ID.ext where ext is the extension
-
-    # try saving to blob storage first
-    # try:
+    # get the tensorflow session
     tf_session = model.enquire_session()
+
+    # save the model using gpflow
     saver_context = gpflow.saver.SaverContext(session=tf_session)
     saver = gpflow.saver.Saver()
+    saver.save(filepath + ".h5", model, context=saver_context)
 
-    fp = os.path.join(model_dir, instance_id)
-    saver.save(fp + ".h5", model, context=saver_context)
+    # save the tensorflow session as well
     tf_saver = tf.train.Saver()
-    tf_saver.save(tf_session, fp)
+    saved_path = tf_saver.save(tf_session, filepath)
+    logger.info("Tensorflow session saved to %s", saved_path)
 
-    # except e:  # TODO what type of exception is thrown? should we catch it or just log error?
-
+    # TODO try saving to blob storage - should send the whole directory
+    # TODO what type of exception is thrown if blob storage fails? should we catch it or just log error?
 
 
 def load_model(
-    instance_id: str, model_dir: Optional[str] = None, sas_token: Optional[str] = None, session = None,
+    instance_id: str,
+    model_dir: Optional[str] = None,
+    model_name: Optional[str] = "model",
+    sas_token: Optional[str] = None,
+    tf_session: Optional[tf.Session] = None,
 ) -> gpflow.models.GPModel:
-    """Try to load the model from blob storage."""
+    """Try to load the model from blob storage.
+
+    Args:
+        instance_id: A unique identifier for the model.
+
+    Keyword args:
+        model_dir: A root directory to store the models inside.
+        model_name: Name of the model.
+        sas_token: To load from Blob storage.
+        tf_session: Load the TF session into this session.
+
+    Returns:
+        A gpflow model.
+    """
+    # filepath to dump model & session inside
+    filepath = os.path.join(model_dir, instance_id)
+
     # try loading from blob storage
     # TODO what should these be set to?
     # resource_group = ""
@@ -71,11 +103,17 @@ def load_model(
     #     target_file,
     #     sas_token,
     # )
-    filepath = os.path.join(model_dir, instance_id)
+
+    # TODO dump the model to filepath
+
+
+    # load the model from the filepath
+    filepath = os.path.join(filepath, model_name)
+
+    # load the mode using gpflow
     model = gpflow.saver.Saver().load(filepath + ".h5")
-    assert model.name == "helloworld"
-    # tf_session = model.enquire_session()
-    tf_session = session
+    if tf_session is None:
+        tf_session = tf.compat.v1.get_default_session()
     print("TF session:", tf_session)
     tf_saver = tf.train.Saver(allow_empty=True)
     tf_saver.restore(tf_session, filepath)
