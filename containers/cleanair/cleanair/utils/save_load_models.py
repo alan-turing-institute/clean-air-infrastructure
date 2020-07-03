@@ -57,7 +57,7 @@ def save_model(
     saver.save(filepath + ".h5", model, context=saver_context)
 
     # save the tensorflow session as well
-    tf_saver = tf.train.Saver()
+    tf_saver = tf.compat.v1.train.Saver()
     saved_path = tf_saver.save(tf_session, filepath)
     logger.info("Tensorflow session saved to %s", saved_path)
 
@@ -71,7 +71,7 @@ def load_model(
     model_dir: Optional[str] = None,
     model_name: str = "model",
     sas_token: Optional[str] = None,
-    tf_session: Optional[tf.Session] = None,
+    tf_session: Optional[tf.compat.v1.Session] = None,
 ) -> gpflow.models.GPModel:
     """Try to load the model from blob storage.
 
