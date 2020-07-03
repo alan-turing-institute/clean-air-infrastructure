@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from abc import abstractmethod
-from .hashing import hash_dict
+from ..utils.hashing import hash_dict
 from ..databases.mixins import ModelTableMixin
 
 if TYPE_CHECKING:
