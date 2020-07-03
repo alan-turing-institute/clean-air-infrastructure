@@ -2,10 +2,8 @@
 Instances of models and data.
 """
 import abc
-import logging
-import git
 from ..databases import DBWriter
-from .hashing import hash_fn
+from ..utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
 
 class Instance(DBWriter):
@@ -55,20 +53,7 @@ class Instance(DBWriter):
             # get git hash from parameter
             self._git_hash = git_hash
         else:
-            try:
-                # get the hash of the git repository
-                self._git_hash = git.Repo(
-                    search_parent_directories=True
-                ).head.object.hexsha
-            except git.InvalidGitRepositoryError as error:
-                # catch exception and set to empty string
-                error_message = (
-                    "Could not find a git repository in the parent directory."
-                )
-                error_message += "Setting git_hash to empty string."
-                logging.error(error_message)
-                logging.error(error.__traceback__)
-                self._git_hash = ""
+            self._git_hash = get_git_hash()
 
         self._fit_start_time = fit_start_time
         self._instance_id = self.hash()
@@ -106,17 +91,9 @@ class Instance(DBWriter):
     @property
     def instance_id(self) -> str:
         """A unique id created by hashing the model_name, param_id, data_id and git_hash"""
-        return self._instance_id
-
-    @instance_id.setter
-    def instance_id(self, value: str):
-        hash_value = self.hash()
-        if not value or value == hash_value:
-            self._instance_id = hash_value
-        else:
-            raise ValueError(
-                "The instance id you passed does not match the hash of the instance."
-            )
+        return instance_id_from_hash(
+            self.model_name, self.param_id, self.data_id, self.git_hash
+        )
 
     @property
     def git_hash(self) -> str:

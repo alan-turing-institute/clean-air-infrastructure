@@ -16,8 +16,8 @@ from cleanair.instance import (
     AirQualityInstance,
     AirQualityModelParams,
     AirQualityResult,
-    hash_dict,
 )
+from cleanair.utils import hash_dict
 
 # pylint: disable=redefined-outer-name
 
