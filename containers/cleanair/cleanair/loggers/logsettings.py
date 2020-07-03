@@ -4,10 +4,8 @@ Central management of logger settings
 import logging
 import os
 import colorlog # type: ignore
-from typing import Int
 
-
-def initialise_logging(verbosity):
+def initialise_logging(verbosity: int) -> logging.Logger:
     """
     Initialise logging for this process
     """
@@ -21,7 +19,7 @@ def initialise_logging(verbosity):
     return get_logger("default")
 
 
-def get_logger(name):
+def get_logger(name: str) -> logging.Logger:
     """Return a logger with the appropriate name"""
     logger = logging.getLogger(name)
     # See whether we are using coloured logs or not
