@@ -14,8 +14,6 @@ app = typer.Typer()
 
 # pylint: disable=too-many-arguments
 
-# TODO add option for loading dataset from local filepath
-# TODO add option for predicting on training set
 @app.command()
 def fit(
     cluster_id: str = ClusterId,
