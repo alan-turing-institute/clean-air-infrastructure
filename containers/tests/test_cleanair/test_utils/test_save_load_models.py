@@ -61,7 +61,7 @@ def test_load_model(tf_session, save_load_instance_id, model_dir, model_name) ->
     instance_dir = os.path.join(str(model_dir), save_load_instance_id)
     assert os.path.exists(instance_dir)
 
-    model = load_model(save_load_instance_id, str(model_dir), model_name=model_name, tf_session=tf_session)
+    model = load_model(save_load_instance_id, model_dir=str(model_dir), model_name=model_name, tf_session=tf_session)
     assert isinstance(model, gpflow.models.GPR)
 
     print("FROM MODEL")
