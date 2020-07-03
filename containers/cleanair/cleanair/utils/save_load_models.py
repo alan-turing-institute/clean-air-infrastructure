@@ -86,36 +86,50 @@ def load_model(
     Returns:
         A gpflow model.
     """
+    logger = get_logger("Load model")
+
     # filepath to dump model & session inside
     filepath = os.path.join(model_dir, instance_id)
 
     # try loading from blob storage
     # TODO what should these be set to?
-    # resource_group = ""
-    # storage_container_name = ""
-    # blob_name = ""
-    # account_url = ""
-    # download_blob(
-    #     resource_group,
-    #     storage_container_name,
-    #     blob_name,
-    #     account_url,
-    #     target_file,
-    #     sas_token,
-    # )
+    resource_group = ""
+    storage_container_name = ""
+    blob_name = ""
+    account_url = ""
+    target_file = filepath  # TODO check this is correct
 
-    # TODO dump the model to filepath
-
+    # TODO dump the model from blob storage to filepath (directory)
+    # TODO may need to create a directory for filepath
+    try:
+        download_blob(
+            resource_group,
+            storage_container_name,
+            blob_name,
+            account_url,
+            target_file,
+            sas_token,
+        )
+    except Exception:
+        pass    # TODO what exception should be caught?
 
     # load the model from the filepath
     filepath = os.path.join(filepath, model_name)
 
     # load the mode using gpflow
+    logger.info("Loading model and tensorflow session from %s", filepath)
     model = gpflow.saver.Saver().load(filepath + ".h5")
+
+    # create a tensorflow session if one doesn't already exist
     if tf_session is None:
         tf_session = tf.compat.v1.get_default_session()
-    print("TF session:", tf_session)
+    logger.debug("TF session: %s", tf_session)
+
+    # load the tensorflow session
+    logger.info("Restoring tensorflow session.")
     tf_saver = tf.train.Saver(allow_empty=True)
     tf_saver.restore(tf_session, filepath)
+
+    logger.info("Compiling loaded GP model using loaded TF session.")
     model.compile(tf_session)
     return model
