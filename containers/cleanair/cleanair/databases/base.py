@@ -1,7 +1,7 @@
 """Declarative base class and table initialisation"""
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.expression import FromClause
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.compiler import compiles # type: ignore
+from sqlalchemy.sql.expression import FromClause # type: ignore
+from sqlalchemy.ext.declarative import declarative_base # type: ignore
 
 Base = declarative_base()  # pylint: disable=invalid-name
 

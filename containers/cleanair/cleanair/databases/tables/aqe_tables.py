@@ -1,9 +1,9 @@
 """
 Tables for AQE data source
 """
-from sqlalchemy import Column, ForeignKey, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, String # type: ignore
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID # type: ignore
+from sqlalchemy.orm import relationship # type: ignore
 from ..base import Base
 
 

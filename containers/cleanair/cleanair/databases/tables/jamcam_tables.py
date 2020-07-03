@@ -1,6 +1,6 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text
-from sqlalchemy.dialects.postgresql import (
+from sqlalchemy import Column, String, BigInteger # type: ignore
+from sqlalchemy.dialects.postgresql import ( # type: ignore
     TIMESTAMP,
     SMALLINT,
     REAL,

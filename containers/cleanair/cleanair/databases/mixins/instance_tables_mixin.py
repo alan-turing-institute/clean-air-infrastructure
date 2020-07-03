@@ -2,8 +2,8 @@
 Table that summerises an instance (model + data + result).
 """
 
-from sqlalchemy import Column, String
-from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
+from sqlalchemy import Column, String # type: ignore
+from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID # type: ignore
 
 
 class InstanceTableMixin:

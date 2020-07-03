@@ -1,9 +1,9 @@
 """
 Table for UKMap static data
 """
-from sqlalchemy import Column, String, Integer
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE
-from geoalchemy2 import Geometry
+from sqlalchemy import Column, String, Integer # type: ignore
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE # type: ignore
+from geoalchemy2 import Geometry # type: ignore
 from ..base import Base
 
 

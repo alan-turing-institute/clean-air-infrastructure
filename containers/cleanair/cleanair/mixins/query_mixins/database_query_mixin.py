@@ -2,7 +2,7 @@
 Mixin for useful database queries
 """
 
-from sqlalchemy import and_, func, literal, null
+from sqlalchemy import and_, func, literal, null # type: ignore
 from ...decorators import db_query
 from ...databases.tables import (
     AQEReading,

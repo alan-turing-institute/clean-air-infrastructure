@@ -1,7 +1,7 @@
 """
 Table for HexGrid static data
 """
-from sqlalchemy.ext.declarative import DeferredReflection
+from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
 from ..base import Base
 
 

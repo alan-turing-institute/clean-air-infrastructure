@@ -1,8 +1,8 @@
 """Mixin for querying from the result table."""
 
 from abc import abstractmethod
-from typing import Optional, Any, List
-from sqlalchemy import func, Column
+from typing import Optional, Any
+from sqlalchemy import func, Column # type: ignore
 
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import HexGrid, MetaPoint, RectGrid100

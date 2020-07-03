@@ -1,7 +1,7 @@
 """Mixin class for querying instances."""
 
 from typing import Any
-from sqlalchemy import and_
+from sqlalchemy import and_ # type: ignore
 from ...decorators import db_query
 from ...databases.mixins import (
     DataTableMixin,

@@ -1,10 +1,10 @@
 """
 Tables for SCOOT data source
 """
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
-from sqlalchemy.ext.declarative import DeferredReflection
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, Integer, String # type: ignore
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP # type: ignore
+from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
+from sqlalchemy.orm import relationship # type: ignore
 from ..base import Base
 
 
