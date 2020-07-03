@@ -2,9 +2,9 @@
 Table for interest points
 """
 import uuid
-from geoalchemy2 import Geometry
-from sqlalchemy import Column, String
-from sqlalchemy.dialects.postgresql import UUID
+from geoalchemy2 import Geometry # type: ignore
+from sqlalchemy import Column, String # type: ignore
+from sqlalchemy.dialects.postgresql import UUID # type: ignore
 from ..base import Base
 
 

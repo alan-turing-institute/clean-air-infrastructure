@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from typing import Optional, Any
-from sqlalchemy import func
+from sqlalchemy import func # type: ignore
 
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import MetaPoint

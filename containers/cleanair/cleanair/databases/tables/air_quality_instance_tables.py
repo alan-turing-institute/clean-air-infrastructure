@@ -1,7 +1,7 @@
 """Tables for air quality instances, models, data, metrics and results."""
 
-from sqlalchemy import ForeignKeyConstraint, Column
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
+from sqlalchemy import ForeignKeyConstraint, Column # type: ignore
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION # type: ignore
 from ..base import Base
 from ..mixins.instance_tables_mixin import (
     InstanceTableMixin,

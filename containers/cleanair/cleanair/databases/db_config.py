@@ -1,7 +1,7 @@
 """Class for configuring database schema"""
 from yaml import load, Loader
-from sqlalchemy.sql import text
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.sql import text # type: ignore
+from sqlalchemy.exc import ProgrammingError # type: ignore
 from .connector import Connector
 from ..loggers import get_logger
 

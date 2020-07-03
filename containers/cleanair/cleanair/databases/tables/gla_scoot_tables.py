@@ -1,8 +1,8 @@
 """
 Tables for GLA lockdown scoot
 """
-from sqlalchemy import Column, ForeignKey, String, Integer, Enum
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN
+from sqlalchemy import Column, ForeignKey, String, Integer, Enum # type: ignore
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN # type: ignore
 from ..base import Base
 
 

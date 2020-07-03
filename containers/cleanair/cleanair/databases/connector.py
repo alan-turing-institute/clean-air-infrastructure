@@ -4,13 +4,13 @@ Class for connecting to Azure databases
 from contextlib import contextmanager
 import time
 import requests
-from sqlalchemy import create_engine, event
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.declarative import DeferredReflection
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.schema import CreateSchema
-from sqlalchemy.sql import text
-from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy import create_engine, event # type: ignore
+from sqlalchemy.exc import SQLAlchemyError # type: ignore
+from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
+from sqlalchemy.orm import sessionmaker # type: ignore
+from sqlalchemy.schema import CreateSchema # type: ignore
+from sqlalchemy.sql import text # type: ignore
+from sqlalchemy_utils import database_exists, create_database # type: ignore
 from .base import Base
 from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin

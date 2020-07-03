@@ -3,7 +3,7 @@ Instances of models and data.
 """
 import abc
 import logging
-import git
+import git # type: ignore
 from ..databases import DBWriter
 from .hashing import hash_fn
 

@@ -1,9 +1,9 @@
 """
 Tables for intersection between datasource and interest points
 """
-from sqlalchemy import Column, ForeignKey, String, Float, Index
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, ForeignKey, String, Float, Index # type: ignore
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP # type: ignore
+from sqlalchemy.orm import relationship # type: ignore
 from ..base import Base
 
 
