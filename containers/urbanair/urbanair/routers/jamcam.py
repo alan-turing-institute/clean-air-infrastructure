@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ..databases import get_db, all_or_404
 from ..databases.schemas.jamcam import (
     JamCamVideo,
+    JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
 )
@@ -119,7 +120,7 @@ async def camera_raw_counts(
 
 @router.get(
     "/hourly",
-    response_model=List[JamCamVideo],
+    response_model=List[JamCamVideoAverage],
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
 async def camera_hourly_average(

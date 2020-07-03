@@ -21,7 +21,7 @@ def start_end_filter(
     endtime: Optional[datetime],
     max_video_upload_time_sq: Alias,
 ) -> Query:
-    """Create an sqlalchemy filter which impliments the following:
+    """Create an sqlalchemy filter which implements the following:
         If starttime and endtime are given filter between them.
         If only starttime filter 12 hours including starttime
         If only endtime  filter 12 hours proceeding endtime

@@ -34,7 +34,21 @@ class JamCamCounts(JamCamBase):
         orm_mode = True
 
 
+class JamCamAverageCounts(JamCamBase):
+
+    counts: float
+
+    class Config:
+        orm_mode = True
+
+
 class JamCamVideo(JamCamCounts):
+
+    detection_class: str
+    measurement_start_utc: datetime
+
+
+class JamCamVideoAverage(JamCamAverageCounts):
 
     detection_class: str
     measurement_start_utc: datetime

@@ -68,7 +68,6 @@ jobs:
       install:
         - pip install -r containers/requirements.txt
         - pip install 'containers/cleanair'
-        - pip install 'containers/odysseus'
         - pip install -e 'containers/urbanair'
 
       before_script:

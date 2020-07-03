@@ -4,9 +4,9 @@ import pytest
 from dateutil import rrule, parser
 from sqlalchemy.orm import sessionmaker
 import numpy as np
+from cleanair.databases.tables import JamCamVideoStats
 from urbanair import main, databases
 from urbanair.types import DetectionClass
-from cleanair.databases.tables import JamCamVideoStats
 
 
 @pytest.fixture()
