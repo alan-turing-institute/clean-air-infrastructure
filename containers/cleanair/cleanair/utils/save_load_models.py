@@ -113,7 +113,7 @@ def load_model(
             sas_token,
         )
     except Exception:
-        pass    # TODO what exception should be caught?
+        pass  # TODO what exception should be caught?
 
     # load the model from the filepath
     filepath = os.path.join(filepath, model_name)
