@@ -8,6 +8,11 @@ def model_dir(tmpdir_factory) -> str:
     """Path to temporary model directory."""
     return tmpdir_factory.mktemp(".tmp")
 
+@pytest.fixture(scope="function")
+def model_name() -> str:
+    """Name of model for testing utils."""
+    return "test_model"
+
 @pytest.fixture
 def save_load_instance_id() -> str:
     """Test id for instance."""
