@@ -82,7 +82,6 @@ nav:
     - API/cleanair/instance.md
     - API/cleanair/loggers.md
     - API/cleanair/metrics.md
-    - API/cleanair/mixins.md
     - API/cleanair/models.md
     - API/cleanair/parsers.md
     - API/cleanair/timestamps.md
