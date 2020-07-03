@@ -67,8 +67,9 @@ def save_model(
 
 def load_model(
     instance_id: str,
+    compile_model: bool = True,
     model_dir: Optional[str] = None,
-    model_name: Optional[str] = "model",
+    model_name: str = "model",
     sas_token: Optional[str] = None,
     tf_session: Optional[tf.Session] = None,
 ) -> gpflow.models.GPModel:
@@ -78,6 +79,7 @@ def load_model(
         instance_id: A unique identifier for the model.
 
     Keyword args:
+        compile_model: If true compile the GPflow model.
         model_dir: A root directory to store the models inside.
         model_name: Name of the model.
         sas_token: To load from Blob storage.
@@ -127,9 +129,10 @@ def load_model(
 
     # load the tensorflow session
     logger.info("Restoring tensorflow session.")
-    tf_saver = tf.train.Saver(allow_empty=True)
+    tf_saver = tf.compat.v1.train.Saver(allow_empty=True)
     tf_saver.restore(tf_session, filepath)
 
-    logger.info("Compiling loaded GP model using loaded TF session.")
-    model.compile(tf_session)
+    if compile_model:
+        logger.info("Compiling loaded GP model using loaded TF session.")
+        model.compile(tf_session)
     return model
