@@ -15,7 +15,6 @@ from cleanair.utils import hash_dict
 # pylint: disable=redefined-outer-name
 
 
-
 @pytest.fixture(scope="module")
 def no_features_data_config() -> DataConfig:
     """Data config with no features."""
@@ -39,8 +38,6 @@ def no_features_data_config() -> DataConfig:
     }
 
 
-<<<<<<< HEAD
-=======
 @pytest.fixture(scope="module")
 def road_features_data_config(no_features_data_config) -> DataConfig:
     """An air quality data config dictionary with basic settings."""
@@ -54,7 +51,6 @@ def road_features_data_config(no_features_data_config) -> DataConfig:
     return data_config
 
 
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 @pytest.fixture(scope="module")
 def base_aq_preprocessing() -> Dict:
     """An air quality dictionary for preprocessing settings."""

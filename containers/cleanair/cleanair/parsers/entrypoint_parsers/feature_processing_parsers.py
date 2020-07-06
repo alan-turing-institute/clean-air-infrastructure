@@ -8,19 +8,12 @@ from cleanair.parsers import (
     DurationParser,
     WebParser,
     InsertMethodParser,
-<<<<<<< HEAD
-)
-
-
-def create_satellite_input_parser(check, fill):
-=======
     FeatureNameParser,
     FeatureSourceParser,
 )
 
 
 def create_static_feature_parser(check, fill, all_source_names, all_features):
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
     """
     Create a parser for the static feature processor
 
@@ -32,30 +25,6 @@ def create_static_feature_parser(check, fill, all_source_names, all_features):
     # Parser parent mixins
     secret_parser = SecretFileParser(add_help=False)
     verbosity_parser = VerbosityParser(add_help=False)
-<<<<<<< HEAD
-    source_parser = SourceParser(sources=["laqn", "aqe"], add_help=False)
-    duration_parser = DurationParser(ndays=5, end="tomorrow", add_help=False)
-    web_parser = WebParser(add_help=False)
-    insert_method_parser = InsertMethodParser(add_help=False)
-    copernicus_key_parser = SatelliteArgumentParser(add_help=False)
-
-    # Define parsers with arguments that apply to all commands
-    main_parser = ArgumentParser()
-
-    # Subparsers
-    subparsers = main_parser.add_subparsers(required=True, dest="command")
-    parser_check = subparsers.add_parser(
-        "check",
-        help="Check what satellite readings are available in the cleanair database",
-        parents=[
-            secret_parser,
-            verbosity_parser,
-            source_parser,
-            duration_parser,
-            web_parser,
-        ],
-        add_help=False,
-=======
     web_parser = WebParser(add_help=False)
     insert_method_parser = InsertMethodParser(add_help=False)
     source_parser = SourceParser(sources=["laqn", "aqe"], add_help=False)
@@ -130,7 +99,6 @@ def create_satellite_input_parser(check, fill):
         "check",
         help="Check what satellite readings are available in the cleanair database",
         parents=[secret_parser, verbosity_parser, duration_parser, web_parser],
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
     )
     parser_insert = subparsers.add_parser(
         "fill",
@@ -139,17 +107,9 @@ def create_satellite_input_parser(check, fill):
             secret_parser,
             verbosity_parser,
             copernicus_key_parser,
-<<<<<<< HEAD
-            source_parser,
             duration_parser,
             insert_method_parser,
         ],
-        add_help=False,
-=======
-            duration_parser,
-            insert_method_parser,
-        ],
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
     )
 
     # Link to programs

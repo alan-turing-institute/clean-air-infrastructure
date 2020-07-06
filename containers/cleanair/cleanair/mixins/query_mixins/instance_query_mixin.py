@@ -27,11 +27,7 @@ class InstanceQueryMixin:
     data_table: DataTableMixin
     instance_table: InstanceTableMixin
     model_table: ModelTableMixin
-<<<<<<< HEAD:containers/cleanair/cleanair/mixins/instance_query_mixin.py
-    dbcnxn: Any  # TODO what is the type of this?
-=======
     dbcnxn: Any
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843:containers/cleanair/cleanair/mixins/query_mixins/instance_query_mixin.py
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments

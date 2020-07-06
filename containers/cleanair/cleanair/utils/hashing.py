@@ -41,7 +41,6 @@ def instance_id_from_hash(
     return hash_fn(hash_string)
 
 
-
 def hash_dict(value: dict) -> str:
     """Dumps a dictionary to json string then hashes that string.
 

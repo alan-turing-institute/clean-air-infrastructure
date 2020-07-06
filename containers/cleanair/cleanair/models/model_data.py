@@ -52,11 +52,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 "Either config or config_dir must be supplied as arguments"
             )
 
-<<<<<<< HEAD
-        self.preprocessing: Dict = dict()  # TODO initialise this with preprocessing settings
-=======
         self.preprocessing: Dict = dict()
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 
         if config:
             # Validate the configuration
@@ -1012,18 +1008,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
-<<<<<<< HEAD
-        records = [
-            dict(
-                data_id=self.data_id,
-                data_config=ModelData.make_data_config_json_serializable(self.config),
-                preprocessing=self.preprocessing,  # TODO when we start using preprocessing dict update this
-            )
-        ]
-        self.logger.info(
-            "Writing the model settings to the air quality modelling data table."
-        )
-=======
         data_config = ModelData.make_config_json_serializable(self.config)
         row = dict(
             data_id=self.data_id,
@@ -1032,5 +1016,4 @@ class ModelData(DBWriter, DBQueryMixin):
         )
         records = [row]
         self.logger.info("Writing data settings to air quality modelling data table.")
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
         self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

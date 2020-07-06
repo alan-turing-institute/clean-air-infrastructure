@@ -8,13 +8,6 @@ import os
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-<<<<<<< HEAD
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-=======
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 from ..loggers import get_logger
 from .model import Model
 

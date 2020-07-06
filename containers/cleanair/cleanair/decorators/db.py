@@ -1,12 +1,8 @@
 """DB decorators"""
 import functools
-import pandas as pd
-<<<<<<< HEAD
-import geopandas as gpd
-=======
+import pandas as pandas
 from tabulate import tabulate
 
->>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 
 class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
