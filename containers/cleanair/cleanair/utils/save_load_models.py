@@ -61,7 +61,7 @@ def save_model(
 
 def load_model(
     instance_id: str,
-    load_fn: Callable[str, gpflow.models.GPModel],
+    load_fn: Callable[[str], gpflow.models.GPModel],
     compile_model: bool = True,
     model_dir: Optional[str] = None,
     model_name: str = "model",

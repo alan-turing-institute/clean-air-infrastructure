@@ -5,8 +5,8 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from cleanair.utils import save_model
-from cleanair.utils import load_model
+from cleanair.utils import load_model, save_model
+from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -38,7 +38,7 @@ def test_save_model(tf_session, save_load_instance_id, model_dir, model_name) ->
 
     # save the model
     save_model(
-        model, save_load_instance_id, model_dir=str(model_dir), model_name=model_name
+        model, save_load_instance_id, save_gpflow1_model_to_file, model_dir=str(model_dir), model_name=model_name
     )
 
     # check filepaths exist
@@ -66,6 +66,7 @@ def test_load_model(tf_session, save_load_instance_id, model_dir, model_name) ->
 
     model = load_model(
         save_load_instance_id,
+        load_gpflow1_model_from_file,
         model_dir=str(model_dir),
         model_name=model_name,
         tf_session=tf_session,
