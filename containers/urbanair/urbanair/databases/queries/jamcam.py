@@ -11,7 +11,7 @@ from cleanair.databases.tables import JamCamVideoStats
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
-TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
+# TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 

@@ -44,7 +44,7 @@ class TestRaw:
     #     assert len(data) == len(video_stat_records) / 2
 
     def test_24_hours(self, client_class, video_stat_records):
-        """Test 12 hour request startime/endtime"""
+        """Test 24 hour request startime/endtime"""
 
         # Check response
         response = client_class.get(
@@ -70,7 +70,7 @@ class TestRaw:
         ],
     )
     def test_24_hours_detc(self, client_class, video_stat_records, detc):
-        """Test 12 hour request detection class"""
+        """Test 24 hour request detection class"""
 
         # Check response
         response = client_class.get(
@@ -91,7 +91,7 @@ class TestRaw:
         assert len(data) == len(video_stat_records) / 5
 
     def test_24_hours_equivilant(self, client_class):
-        """Test /api/v1/jamcams/raw returns 12 hours"""
+        """Test /api/v1/jamcams/raw returns 24 hours"""
 
         # Check response
         response1 = client_class.get(
