@@ -1,7 +1,7 @@
 """Mixin for querying from the result table."""
 
 from abc import abstractmethod
-from typing import Optional, Any
+from typing import Optional, Any, Type
 from sqlalchemy import func, Column # type: ignore
 
 from ...databases.mixins import ResultTableMixin
@@ -17,7 +17,7 @@ class ResultQueryMixin:
 
     @property
     @abstractmethod
-    def result_table(self) -> ResultTableMixin:
+    def result_table(self) -> Type[ResultTableMixin]:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
     @db_query

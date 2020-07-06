@@ -1,7 +1,7 @@
 """Class for writing model params to the DB."""
 
-# from __future__ import annotations
-# from typing import TYPE_CHECKING
+from __future__ import annotations
+from typing import TYPE_CHECKING, Type
 from .params import ModelParamsMixin
 from ..databases import DBWriter
 from ..databases.tables import AirQualityModelTable
@@ -24,6 +24,6 @@ class AirQualityModelParams(ModelParamsMixin, DBWriter):
         )
 
     @property
-    def model_table(self) -> AirQualityModelTable:
+    def model_table(self) -> Type[AirQualityModelTable]:
         """The air quality model table."""
         return AirQualityModelTable
