@@ -322,7 +322,7 @@ deployments:
         - name: APP_MODULE
           value: "urbanair.main:app"
         - name: DB_SECRET_FILE
-        value: "db_secrets.json"
+          value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
       ports:
