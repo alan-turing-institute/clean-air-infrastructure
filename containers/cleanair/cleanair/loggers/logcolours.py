@@ -10,7 +10,7 @@ except KeyError:
     DISABLE_COLOURS = False
 
 
-def bold(text):
+def bold(text: str) -> str:
     """
     Make text bold
     """
@@ -19,7 +19,7 @@ def bold(text):
     return termcolor.colored(text, attrs=["bold"])
 
 
-def green(text):
+def green(text: str) -> str:
     """
     Make text green
     """
@@ -28,7 +28,7 @@ def green(text):
     return termcolor.colored(text, "cyan")
 
 
-def red(text):
+def red(text: str) -> str:
     """
     Make text red
     """

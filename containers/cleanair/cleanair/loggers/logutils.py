@@ -3,7 +3,7 @@ Useful logging utilities
 """
 
 
-def duration_from_seconds(seconds):
+def duration_from_seconds(seconds: float) -> str:
     """Get a human-readable duration from a number of seconds"""
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
@@ -17,7 +17,7 @@ def duration_from_seconds(seconds):
     return "%ds" % (seconds,)
 
 
-def duration(start_time, end_time):
+def duration(start_time: float, end_time: float) -> str:
     """Get a human-readable duration from a start and end time in seconds"""
     seconds = int(end_time - start_time)
     return duration_from_seconds(seconds)
