@@ -18,16 +18,12 @@ def get_git_hash() -> str:
         # catch exception and try to get environment variable
         git_hash = os.getenv("GIT_HASH", "")
         if len(git_hash) == 0:
-            error_message = (
-                "Could not find a git repository in the parent directory."
-            )
+            error_message = "Could not find a git repository in the parent directory."
             error_message += "Setting git_hash to empty string."
             logging.error(error_message)
             logging.error(error.__traceback__)
         else:
-            logging.info(
-                "Using environment variable GITHASH: %s", git_hash
-            )
+            logging.info("Using environment variable GITHASH: %s", git_hash)
         return git_hash
 
 
