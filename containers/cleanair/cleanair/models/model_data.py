@@ -1,6 +1,7 @@
 """Vizualise available sensor data for a model fit"""
-from __future__ import annotations
-from typing import TYPE_CHECKING, Dict
+# from __future__ import annotations
+# from typing import TYPE_CHECKING, Dict
+from typing import Dict
 from datetime import date, datetime
 import json
 import os
@@ -21,8 +22,8 @@ from ..loggers import get_logger
 from ..utils import hash_dict
 from ..timestamps import as_datetime
 
-if TYPE_CHECKING:
-    from ..types import DataConfig
+# if TYPE_CHECKING:
+from ..types import DataConfig
 
 # pylint: disable=too-many-lines
 
