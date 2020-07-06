@@ -11,7 +11,6 @@ from cleanair.databases.tables import (
 from cleanair.types import DataConfig, ParamsSVGP
 
 
-
 def test_insert_laqn_data_table(
     secretfile: str,
     connection: Any,

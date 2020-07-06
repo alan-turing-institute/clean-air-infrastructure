@@ -14,7 +14,6 @@ from cleanair.utils import hash_dict
 
 # pylint: disable=redefined-outer-name
 
-
 @pytest.fixture(scope="module")
 def no_features_data_config() -> DataConfig:
     """Data config with no features."""

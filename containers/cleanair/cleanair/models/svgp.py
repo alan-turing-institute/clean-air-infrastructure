@@ -20,7 +20,6 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-
 class SVGP(Model):
     """
     Sparse Variational Gaussian Process for air quality.
