@@ -47,6 +47,7 @@ for i in range(len(valid_features)):
 
         # Set logging verbosity
         default_logger = initialise_logging(state["verbose"])
+
         # Get all sources to process
         all_sources = [src.value for src in source]
 
