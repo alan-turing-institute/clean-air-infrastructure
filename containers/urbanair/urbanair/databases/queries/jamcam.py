@@ -38,7 +38,7 @@ def start_end_filter(
     if starttime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime >= starttime,
-            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
+             JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
         )
 
     # 12 hours before endtime
