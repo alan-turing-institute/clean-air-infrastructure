@@ -1,6 +1,6 @@
 """Functions for saving and loading models from blob storage or local storage."""
 
-from typing import Optional
+from typing import Callable, Optional
 import os
 from pathlib import Path
 import tensorflow as tf
@@ -16,6 +16,7 @@ import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 def save_model(
     model: gpflow.models.GPModel,
     instance_id: str,
+    save_fn: Optional[Callable[[gpflow.models.GPModel, str], None]],
     sas_token: Optional[str] = None,
     model_dir: Optional[str] = None,
     model_name: Optional[str] = "model",
@@ -25,6 +26,10 @@ def save_model(
     Args:
         model: A gpflow model.
         instance_id: A unique identifier for the model.
+        save_fn: A callable function that takes two arguments (model, filepath) and writes the model to a file.
+
+    Keywords args:
+        sas_token: SAS token for storing in blob storage.
         model_dir: A root directory to store the models inside.
         model_name: Name of the model.
 
@@ -43,23 +48,12 @@ def save_model(
 
     # create a local directory
     logger.info("Creating directory to save model (if it doesn't exist).")
-    filepath = os.path.join(model_dir, instance_id)
-    Path(filepath).mkdir(exist_ok=True)
-    logger.info("Saving model to %s", filepath)
-    filepath = os.path.join(filepath, model_name)
+    export_dir = os.path.join(model_dir, instance_id)
+    Path(export_dir).mkdir(exist_ok=True)
+    logger.info("Saving model to %s", export_dir)
 
-    # get the tensorflow session
-    tf_session = model.enquire_session()
-
-    # save the model using gpflow
-    saver_context = gpflow.saver.SaverContext(session=tf_session)
-    saver = gpflow.saver.Saver()
-    saver.save(filepath + ".h5", model, context=saver_context)
-
-    # save the tensorflow session as well
-    tf_saver = tf.compat.v1.train.Saver()
-    saved_path = tf_saver.save(tf_session, filepath)
-    logger.info("Tensorflow session saved to %s", saved_path)
+    # call the save function to write the model to a file
+    save_fn(model, export_dir, model_name=model_name)
 
     # TODO try saving to blob storage - should send the whole directory
     # TODO what type of exception is thrown if blob storage fails? should we catch it or just log error?
@@ -67,6 +61,7 @@ def save_model(
 
 def load_model(
     instance_id: str,
+    load_fn: Callable[str, gpflow.models.GPModel],
     compile_model: bool = True,
     model_dir: Optional[str] = None,
     model_name: str = "model",
@@ -77,6 +72,7 @@ def load_model(
 
     Args:
         instance_id: A unique identifier for the model.
+        load_fn: Loads a gpflow model from a filepath. See `cleanair.utils.tf1.load_gpflow1_model_from_file`.
 
     Keyword args:
         compile_model: If true compile the GPflow model.
@@ -91,7 +87,7 @@ def load_model(
     logger = get_logger("Load model")
 
     # filepath to dump model & session inside
-    filepath = os.path.join(model_dir, instance_id)
+    export_dir = os.path.join(model_dir, instance_id)
 
     # try loading from blob storage
     # TODO what should these be set to?
@@ -99,11 +95,12 @@ def load_model(
     storage_container_name = ""
     blob_name = ""
     account_url = ""
-    target_file = filepath  # TODO check this is correct
+    target_file = export_dir  # TODO check this is correct
 
     # TODO dump the model from blob storage to filepath (directory)
     # TODO may need to create a directory for filepath
     try:
+        logger.info("Loading model from blob storage and writing files locally to %s", export_dir)
         download_blob(
             resource_group,
             storage_container_name,
@@ -115,24 +112,7 @@ def load_model(
     except Exception:
         pass  # TODO what exception should be caught?
 
-    # load the model from the filepath
-    filepath = os.path.join(filepath, model_name)
+    # use the load function to get the model from the filepath
+    model = load_fn(export_dir, compile_model=compile_model, model_name=model_name, tf_session=tf_session)
 
-    # load the mode using gpflow
-    logger.info("Loading model and tensorflow session from %s", filepath)
-    model = gpflow.saver.Saver().load(filepath + ".h5")
-
-    # create a tensorflow session if one doesn't already exist
-    if tf_session is None:
-        tf_session = tf.compat.v1.get_default_session()
-    logger.debug("TF session: %s", tf_session)
-
-    # load the tensorflow session
-    logger.info("Restoring tensorflow session.")
-    tf_saver = tf.compat.v1.train.Saver(allow_empty=True)
-    tf_saver.restore(tf_session, filepath)
-
-    if compile_model:
-        logger.info("Compiling loaded GP model using loaded TF session.")
-        model.compile(tf_session)
     return model

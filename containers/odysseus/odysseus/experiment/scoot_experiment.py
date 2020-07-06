@@ -5,11 +5,12 @@ from typing import List, Optional, TYPE_CHECKING
 import tensorflow as tf
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficInstanceTable, TrafficModelTable
-from cleanair.instance.utilities import save_model
+from cleanair.utils import save_model
 from cleanair.mixins import ScootQueryMixin
 from ..dataset import TrafficDataset
 from .experiment import ExperimentMixin
 from ..modelling import parse_kernel, train_sensor_model
+from .utils import save_gpflow2_model_to_file
 
 if TYPE_CHECKING:
     import gpflow
@@ -88,8 +89,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
                 n_inducing_points=model_params["n_inducing_points"],
                 inducing_point_method=model_params["inducing_point_method"],
             )
-            # TODO: write models to blob storage
-            # save_model(row["instance_id"], model)
+            save_model(row["instance_id"], model, save_gpflow2_model_to_file)
             model_list.append(model)
         return model_list
 

@@ -4,7 +4,7 @@
 from datetime import datetime, timedelta
 import pandas as pd
 
-from cleanair.instance.utilities import get_git_hash, instance_id_from_hash, hash_dict
+from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict
 from cleanair.loggers import get_logger
 from cleanair.timestamps import as_datetime
 
