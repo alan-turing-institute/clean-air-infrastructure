@@ -37,7 +37,7 @@ def test_air_quality_result_query(
     print("Type of geom in df:", type(result_df.iloc[0]["geom"]))
     hex_geom = to_shape(result_df.iloc[0]["geom"])
     print("Type of converted geom:", type(hex_geom))
-    assert isinstance(hex_geom, Polygon)
+    assert isinstance(hex_geom, Polygon)    # may need to install shapely from requirements
 
 
 def test_simple_result_query(
