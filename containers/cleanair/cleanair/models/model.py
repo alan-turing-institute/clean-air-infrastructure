@@ -43,7 +43,11 @@ class ModelMixin:
 
         # get filepaths and other configs
         default_config = dict(
-            name="model", restore=False, model_state_fp="./", save_model_state=False, train=False,
+            name="model",
+            restore=False,
+            model_state_fp="./",
+            save_model_state=False,
+            train=False,
         )
         self.experiment_config = (
             default_config if experiment_config is None else experiment_config

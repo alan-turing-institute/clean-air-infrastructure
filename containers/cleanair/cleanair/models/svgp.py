@@ -46,7 +46,13 @@ class SVGP(ModelMixin):
             kernel=dict(name="mat32+linear", variance=0.1, lengthscale=0.1),
         )
 
-    def setup_model(self, x_array: FeaturesDict, y_array: TargetDict, inducing_locations: NDArray[Float64], num_input_dimensions: int) -> None:
+    def setup_model(
+        self,
+        x_array: FeaturesDict,
+        y_array: TargetDict,
+        inducing_locations: NDArray[Float64],
+        num_input_dimensions: int,
+    ) -> None:
         """
         Create GPFlow sparse variational Gaussian Processes
 
