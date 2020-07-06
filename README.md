@@ -602,6 +602,16 @@ You can start the notebook:
 jupyter notebook
 ```
 
+Alternatively you may wish to use jupyter lab which offers more features on top of the normal notebooks.
+
+```bash
+jupyter lab
+```
+
+This will require some additional steps for [adding jupyter lab extensions for plotly](https://plotly.com/python/getting-started/#jupyterlab-support-python-35).
+
+For some notebooks you may also want to a mapbox for visualising spatial data. To do this you will need a [mapbox access token](https://docs.mapbox.com/help/how-mapbox-works/access-tokens/) which you can store inside your `.env` file (see below).
+
 ### Environment variables
 
 To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
