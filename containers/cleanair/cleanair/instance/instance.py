@@ -35,12 +35,13 @@ class Instance(DBWriter):
         fit_start_time: str,
         git_hash: str = None,
         secretfile: str = None,
+        **kwargs,
     ):
         """
         The instance id is created using the model_name, param_id, data_id and git_hash.
         """
         # if the database is not available try and use local files
-        super().__init__(secretfile=secretfile)
+        super().__init__(secretfile=secretfile, **kwargs)
 
         self._model_name = model_name
         self._param_id = param_id
