@@ -47,13 +47,7 @@ class Instance(DBWriter):
         self._data_id = data_id
         self._cluster_id = cluster_id
         self._tag = tag
-
-        if git_hash:
-            # get git hash from parameter
-            self._git_hash = git_hash
-        else:
-            self._git_hash = get_git_hash()
-
+        self._git_hash = git_hash if git_hash else get_git_hash()
         self._fit_start_time = fit_start_time
         self._instance_id = self.hash()
 
