@@ -5,8 +5,10 @@ import datetime
 from dateutil import parser
 import pytz
 
+from typing import Union
 
-def as_datetime(maybe_dt):
+
+def as_datetime(maybe_dt: Union[datetime.datetime, datetime.date, str]) -> datetime.datetime:
     """Convert an input that might be a datetime into a datetime"""
     if isinstance(maybe_dt, datetime.datetime):
         return maybe_dt
@@ -15,7 +17,7 @@ def as_datetime(maybe_dt):
     return parser.isoparse(maybe_dt)
 
 
-def safe_strptime(naive_string, format_str):
+def safe_strptime(naive_string: str, format_str: str) -> datetime.datetime:
     """Wrapper around strptime to allow for broken time strings"""
     try:
         return datetime.datetime.strptime(naive_string, format_str)
