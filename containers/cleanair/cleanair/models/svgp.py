@@ -2,14 +2,13 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
-# from __future__ import annotations
-from typing import Dict, List, Optional
 import os
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
+from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import ModelParams
+from ..types import FeaturesDict, ModelParams, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -32,47 +31,30 @@ class SVGP(ModelMixin):
         "kernel",
     ]
 
-    def get_default_model_params(self):
+    def get_default_model_params(self) -> ModelParams:
+        """The default model parameters if none are supplied.
+
+        Returns:
+            Default model parameters for SVGP.
         """
-        The default model parameters if none are supplied.
+        dict(
+            jitter=1e-5,
+            likelihood_variance=0.1,
+            minibatch_size=100,
+            n_inducing_points=2000,
+            maxiter=100,
+            kernel=dict(name="mat32+linear", variance=0.1, lengthscale=0.1),
+        )
 
-        Returns
-        ___
-
-        dict
-            Dictionary of parameters.
-        """
-        return {
-            "jitter": 1e-5,
-            "likelihood_variance": 0.1,
-            "minibatch_size": 100,
-            "n_inducing_points": 2000,
-            "restore": False,
-            "train": True,
-            "model_state_fp": None,
-            "maxiter": 100,
-            "kernel": {"name": "mat32+linear", "variance": 0.1, "lengthscale": 0.1,},
-        }
-
-    def setup_model(self, x_array, y_array, inducing_locations, num_input_dimensions):
+    def setup_model(self, x_array: FeaturesDict, y_array: TargetDict, inducing_locations: NDArray[Float64], num_input_dimensions: int) -> None:
         """
         Create GPFlow sparse variational Gaussian Processes
 
-        Parameters
-        ___
-
-        x_array : np.array
-            N x D numpy array - observations input.
-
-        y_array : np.array
-            N x 1 numpy array - observations output.
-
-        inducing_locations : np.array
-            M x D numpy array - inducing locations.
-
-        num_input_dimensions : int
-            Number of input dimensions.
-
+        Args:
+            x_array: N x D numpy array - observations input.
+            y_array: N x 1 numpy array - observations output.
+            inducing_locations: M x D numpy array - inducing locations.
+            num_input_dimensions: Number of input dimensions.
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
@@ -109,30 +91,17 @@ class SVGP(ModelMixin):
                 ),
             )
 
-    def fit(self, x_train, y_train):
-        """
-        Fit the SVGP.
+    def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
+        """Train the SVGP.
 
-        Parameters
-        ___
+        Args:
+            x_train: Only the 'laqn' key is used in this fit method, so all observations
+                come from this source. The LAQN array is NxM of N observations of M covariates.
+            y_train: Only `y_train['laqn']['NO2']` is used for fitting.
+                The size of this array is NX1 with N sensor observations from 'laqn'.
 
-        x_train : dict
+        Notes:
             See `Model.fit` method in the base class for further details.
-            NxM numpy array of N observations of M covariates.
-            Only the 'laqn' key is used in this fit method, so all observations
-            come from this source.
-
-        y_train : dict
-            Only `y_train['laqn']['NO2']` is used for fitting.
-            The size of this array is NX1 with N sensor observations from 'laqn'.
-            See `Model.fit` method in the base class for further details.
-
-        Other Parameters
-        ___
-
-        save_model_state : bool, optional
-            Save the model to file so that it can be restored at a later date.
-            Default is False.
         """
         self.check_training_set_is_valid(x_train, y_train)
 
@@ -154,52 +123,25 @@ class SVGP(ModelMixin):
         self.setup_model(x_array, y_array, z_r, x_array.shape[1])
         self.model.compile()
 
-        tf_session = self.model.enquire_session()
+        # optimize and setup elbo logging
+        opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
+        opt.minimize(
+            self.model,
+            step_callback=self.elbo_logger,
+            maxiter=self.model_params["maxiter"],
+        )
 
-        if self.experiment_config["restore"]:
-            saver = tf.train.Saver()
-            saver.restore(
-                tf_session,
-                "{filepath}.ckpt".format(
-                    filepath=self.experiment_config["model_state_fp"]
-                ),
-            )
+    def predict(self, x_test: FeaturesDict) -> TargetDict:
+        """Predict using the model at the laqn sites for NO2.
 
-        if self.model_params["train"]:
-            # optimize and setup elbo logging
-            opt = gpflow.train.AdamOptimizer()  # pylint: disable=no-member
-            opt.minimize(
-                self.model,
-                step_callback=self.elbo_logger,
-                maxiter=self.model_params["maxiter"],
-            )
+        Args:
+            x_test: Test feature dict.
 
-            # save model state
-            if self.experiment_config["save_model_state"]:
-                saver = tf.train.Saver()
-                saver.save(
-                    tf_session,
-                    "{filepath}.ckpt".format(
-                        filepath=self.experiment_config["model_state_fp"]
-                    ),
-                )
-
-    def predict(self, x_test):
-        """
-        Predict using the model at the laqn sites for NO2.
-
-        Parameters
-        ___
-
-        x_test : dict
+        Returns:
+            Predictions for the test data.
+            
+        Notes:
             See `Model.predict` for further details.
-
-        Returns
-        ___
-
-        dict
-            See `Model.predict` for further details.
-            The shape for each pollutant will be (n, 1).
         """
         # pylint: disable=unnecessary-lambda
         predict_fn = lambda x: self.model.predict_y(x)
