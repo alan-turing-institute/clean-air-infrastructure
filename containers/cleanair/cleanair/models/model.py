@@ -337,7 +337,7 @@ class ModelMixin:
         Args:
             x_array: N x D numpy array,
             y_array: N x 1 numpy array
-        
+
         Returns:
             x_array: Feature array cleaned of NaNs.
             y_array: Target array cleaned of NaNs

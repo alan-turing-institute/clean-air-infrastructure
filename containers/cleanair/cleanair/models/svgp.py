@@ -145,7 +145,7 @@ class SVGP(ModelMixin):
 
         Returns:
             Predictions for the test data.
-            
+
         Notes:
             See `Model.predict` for further details.
         """
