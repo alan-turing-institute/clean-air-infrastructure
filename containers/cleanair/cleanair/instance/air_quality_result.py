@@ -1,6 +1,6 @@
 """An air quality result."""
 
-from typing import Optional
+from typing import Optional, Type
 import pandas as pd # type: ignore
 from ..databases import DBWriter
 from ..mixins import ResultMixin
@@ -26,6 +26,6 @@ class AirQualityResult(ResultMixin, DBWriter):
         )
 
     @property
-    def result_table(self) -> AirQualityResultTable:
+    def result_table(self) -> Type[AirQualityResultTable]:
         """Air quality result table."""
         return AirQualityResultTable
