@@ -16,7 +16,7 @@ class ModelParamsMixin:
     def __init__(
         self, secretfile: str, model_name: str, model_params: ModelParams, **kwargs,
     ):
-        super().__init__(secretfile=secretfile, **kwargs)
+#        super().__init__(secretfile=secretfile, **kwargs)
         self.model_name = model_name
         self.model_params = model_params
 
