@@ -10,7 +10,6 @@ from ..loggers import get_logger
 from ..types import FeaturesDict, ModelParams, NDArrayTuple, TargetDict
 
 
-
 class ModelMixin:
     """
     A base class for models.
@@ -251,7 +250,11 @@ class ModelMixin:
             )
         self.epoch += 1
 
-    def batch_predict(self, x_array: NDArray[Float64], predict_fn: Callable[[NDArray[Float64]], NDArrayTuple]) -> NDArrayTuple:
+    def batch_predict(
+        self,
+        x_array: NDArray[Float64],
+        predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
+    ) -> NDArrayTuple:
         """Split up prediction into indepedent batches.
 
         Args:
@@ -295,7 +298,11 @@ class ModelMixin:
 
         return y_mean, y_var
 
-    def predict_srcs(self, x_test: FeaturesDict, predict_fn: Callable[[NDArray[Float64]], NDArrayTuple]) -> TargetDict:
+    def predict_srcs(
+        self,
+        x_test: FeaturesDict,
+        predict_fn: Callable[[NDArray[Float64]], NDArrayTuple],
+    ) -> TargetDict:
         """Predict using the model at the laqn sites for NO2.
 
         Args:
@@ -318,7 +325,9 @@ class ModelMixin:
         return y_dict
 
     @staticmethod
-    def clean_data(x_array: NDArray[Float64], y_array: NDArray[Float64]) -> NDArrayTuple:
+    def clean_data(
+        x_array: NDArray[Float64], y_array: NDArray[Float64]
+    ) -> NDArrayTuple:
         """Remove nans and missing data for use in GPflow
 
         Args:
