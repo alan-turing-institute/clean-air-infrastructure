@@ -1,4 +1,5 @@
 """Functions for hashing."""
+import os
 import json
 import logging
 import hashlib
@@ -14,12 +15,20 @@ def get_git_hash() -> str:
     try:
         return git.Repo(search_parent_directories=True).head.object.hexsha
     except git.InvalidGitRepositoryError as error:
-        # catch exception and set to empty string
-        error_message = "Could not find a git repository in the parent directory."
-        error_message += "Setting git_hash to empty string."
-        logging.error(error_message)
-        logging.error(error.__traceback__)
-        return ""
+        # catch exception and try to get environment variable
+        git_hash = os.getenv("GIT_HASH", "")
+        if len(git_hash) == 0:
+            error_message = (
+                "Could not find a git repository in the parent directory."
+            )
+            error_message += "Setting git_hash to empty string."
+            logging.error(error_message)
+            logging.error(error.__traceback__)
+        else:
+            logging.info(
+                "Using environment variable GITHASH: %s", git_hash
+            )
+        return git_hash
 
 
 def instance_id_from_hash(
