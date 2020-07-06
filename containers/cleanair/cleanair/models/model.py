@@ -2,11 +2,14 @@
 The interface for London air quality models.
 """
 
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 from abc import abstractmethod
 import numpy as np
+from nptyping import Float64, NDArray
 from ..loggers import get_logger
-from ..types import ModelParams
+from ..types import FeaturesDict, ModelParams, NDArrayTuple, TargetDict
+
+
 
 class ModelMixin:
     """
@@ -64,7 +67,7 @@ class ModelMixin:
             self.logger = get_logger(__name__)
 
     @abstractmethod
-    def get_default_model_params(self) -> Dict:
+    def get_default_model_params(self) -> ModelParams:
         """
         The default model parameters if none are supplied.
 
@@ -72,7 +75,7 @@ class ModelMixin:
             Default model parameters.
         """
 
-    def check_model_params_are_valid(self):
+    def check_model_params_are_valid(self) -> None:
         """
         Check the model parameters are valid for the model.
 
@@ -89,123 +92,94 @@ class ModelMixin:
             raise KeyError(error_message)
 
     @abstractmethod
-    def fit(self, x_train, y_train):
+    def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
         """
         Fit the model to some training data.
 
-        Parameters
-        ___
+        Args:
+            x_train: Keys are sources. Values are numpy arrays.
+            y_train: Keys are sources. Values are a dict of pollutants and numpys.
 
-        x_train : dict
-            Keys are sources. Values are numpy arrays.
-
-        y_train : dict
-            Keys are sources. Values are a dict of pollutants and numpys.
-
-        Examples
-        ___
-
-        >>> x_train = {
-            'laqn' : x_laqn,
-            'satellite' : x_satellite
-        }
-        >>> y_train = {
-            'laqn' : {
-                'NO2' : y_laqn_NO2,
-                'PM10' : y_laqn_pm10
-            },
-            'satellite' : {
-                'NO2' : y_satellite_NO2,
-                'PM10' : y_satellite_pm10
+        Examples:
+            >>> x_train = {
+                'laqn' : x_laqn,
+                'satellite' : x_satellite
             }
-        }
-        >>> model.fit(x_train, y_train)
+            >>> y_train = {
+                'laqn' : {
+                    'NO2' : y_laqn_NO2,
+                    'PM10' : y_laqn_pm10
+                },
+                'satellite' : {
+                    'NO2' : y_satellite_NO2,
+                    'PM10' : y_satellite_pm10
+                }
+            }
+            >>> model.fit(x_train, y_train)
 
-        Notes
-        ___
+        Notes:
+            Every value (e.g. `x_laqn`, `y_satellite_NO2`, etc) is a numpy array.
+            The shapes are given in the table below:
 
-        Every value (e.g. `x_laqn`, `y_satellite_NO2`, etc) is a numpy array.
-        The shapes are given in the table below:
+            +-------------------+---------+
+            | `x_laqn`          | (NxD) |
+            +-------------------+---------+
+            | `x_satellite`     | (MxSxD) |
+            +-------------------+---------+
+            | `y_laqn_*`        | (Nx1)   |
+            +-------------------+---------+
+            | `y_satellite_*`   | (Mx1)   |
+            +-------------------+---------+
 
-        +-------------------+---------+
-        | `x_laqn`          | (NxD) |
-        +-------------------+---------+
-        | `x_satellite`     | (MxSxD) |
-        +-------------------+---------+
-        | `y_laqn_*`        | (Nx1)   |
-        +-------------------+---------+
-        | `y_satellite_*`   | (Mx1)   |
-        +-------------------+---------+
-
-        where N is the number of laqn observations, D is the number of features,
-        S is the discretization amount,
-        M is the number of satellite observations, and * represents a pollutant name.
+            where N is the number of laqn observations, D is the number of features,
+            S is the discretization amount,
+            M is the number of satellite observations, and * represents a pollutant name.
         """
 
     @abstractmethod
-    def predict(self, x_test):
-        """
-        Predict using the model.
+    def predict(self, x_test: FeaturesDict) -> TargetDict:
+        """Predict using the model.
 
-        Parameters
-        ___
+        Args:
+            x_test: Keys are sources. Values are numpy arrays.
 
-        x_test : dict
-            Keys are sources. Values are numpy arrays.
+        Returns:
+            y_pred: Keys are sources. Values are dicts of pollutants for keys and dict for values.
 
-        Returns
-        ___
-
-        y_pred : dict
-            Keys are sources.
-            Values are dicts of pollutants for keys and dict for values.
-
-        Examples
-        ___
-
-        >>> x_test = {
-            'laqn' : np.array,
-            'satellite' : np.array
-        }
-        >>> y_pred = model.predict(x_test)
-        >>> json.dumps(y_pred)
-        {
-            'laqn' : {
-                'NO2' : {
-                    'mean' : np.array,
-                    'var' : np.array
-                },
-                'PM10' : {
-                    'mean' : np.array,
-                    'var' : np.array
+        Examples:
+            >>> x_test = {
+                'laqn' : np.array,
+                'satellite' : np.array
+            }
+            >>> y_pred = model.predict(x_test)
+            >>> json.dumps(y_pred)
+            {
+                'laqn' : {
+                    'NO2' : {
+                        'mean' : np.array,
+                        'var' : np.array
+                    },
+                    'PM10' : {
+                        'mean' : np.array,
+                        'var' : np.array
+                    }
                 }
             }
-        }
         """
         ModelMixin.check_test_set_is_valid(x_test)
 
     @staticmethod
-    def check_training_set_is_valid(x_train, y_train):
+    def check_training_set_is_valid(x_train: FeaturesDict, y_train: TargetDict) -> None:
         """
         Check the format of x_train and y_train dictionaries are correct.
 
-        Parameters
-        ___
+        Args:
+            x_train: Dictionary containing X training data.
+            y_train: Dictionary containing Y training data.
 
-        x_train : dict
-            Dictionary containing X training data.
-
-        y_train : dict
-            Dictionary containing Y training data.
-
-        Raises
-        ___
-
-        KeyError
-            If there are no keys in x_train or y_train.
-
-        ValueError
-            If the shape of x_train or y_train are incorrect.
+        Raises:
+            KeyError: If there are no keys in x_train or y_train.
+            ValueError: If the shape of x_train or y_train are incorrect.
         """
         if len(x_train) == 0:
             raise KeyError("x_train must have at least one data source.")
@@ -246,24 +220,25 @@ class ModelMixin:
                     raise ValueError(error_message)
 
     @staticmethod
-    def check_test_set_is_valid(x_test):
-        """
-        Check the format of x_test dictionary is correct.
+    def check_test_set_is_valid(x_test: FeaturesDict) -> None:
+        """Check the format of x_test dictionary is correct.
+
+        Args:
+            x_test: Features.
+
+        Raises:
+            ValueError: If x_test has no data for a source (laqn, satellite, ...)
         """
         for source in x_test:
             # no data error
             if x_test[source].shape[0] == 0:
                 raise ValueError("x_test has no data for {src}.".format(src=source))
 
-    def elbo_logger(self, logger_arg):
-        """
-        Log optimisation progress.
+    def elbo_logger(self, logger_arg) -> None:
+        """Log optimisation progress.
 
-        Parameters
-        ___
-
-        logger_arg : unknown
-            Argument passed as a callback from GPFlow optimiser.
+        Args:
+            logger_arg: Argument passed as a callback from GPFlow optimiser.
         """
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
@@ -276,27 +251,16 @@ class ModelMixin:
             )
         self.epoch += 1
 
-    def batch_predict(self, x_array, predict_fn):
-        """
-        Split up prediction into indepedent batches.
+    def batch_predict(self, x_array: NDArray[Float64], predict_fn: Callable[[NDArray[Float64]], NDArrayTuple]) -> NDArrayTuple:
+        """Split up prediction into indepedent batches.
 
-        Parameters
-        ___
+        Args:
+            x_array: N x D numpy array of locations to predict at.
+            predict_fn: Model specific function to predict at.
 
-        x_array : np.array
-            N x D numpy array of locations to predict at.
-
-        predict_fn : function
-            model spefic function to predict at.
-
-        Returns
-        ___
-
-        y_mean : np.array
-            N x D numpy array of means.
-
-        y_var : np.array
-            N x D numpy array of variances.
+        Returns:
+            y_mean: N x D numpy array of means.
+            y_var: N x D numpy array of variances.
         """
         batch_size = self.batch_size
 
@@ -331,22 +295,15 @@ class ModelMixin:
 
         return y_mean, y_var
 
-    def predict_srcs(self, x_test, predict_fn):
-        """
-        Predict using the model at the laqn sites for NO2.
+    def predict_srcs(self, x_test: FeaturesDict, predict_fn: Callable[[NDArray[Float64]], NDArrayTuple]) -> TargetDict:
+        """Predict using the model at the laqn sites for NO2.
 
-        Parameters
-        ___
+        Args:
+            x_test: Features dataset to predict upon. See `Model.predict` for further details.
+            predict_fn: Model specific function for predicting.
 
-        x_test : dict
-            See `Model.predict` for further details.
-
-        Returns
-        ___
-
-        dict
-            See `Model.predict` for further details.
-            The shape for each pollutant will be (n, 1).
+        Returns:
+            See `Model.predict` for further details. The shape for each pollutant will be (N, 1).
         """
         self.check_test_set_is_valid(x_test)
         y_dict = dict()
@@ -361,12 +318,16 @@ class ModelMixin:
         return y_dict
 
     @staticmethod
-    def clean_data(x_array, y_array):
+    def clean_data(x_array: NDArray[Float64], y_array: NDArray[Float64]) -> NDArrayTuple:
         """Remove nans and missing data for use in GPflow
 
-        args:
+        Args:
             x_array: N x D numpy array,
             y_array: N x 1 numpy array
+        
+        Returns:
+            x_array: Feature array cleaned of NaNs.
+            y_array: Target array cleaned of NaNs
         """
         idx = ~np.isnan(y_array[:, 0])
         x_array = x_array[idx, :]
