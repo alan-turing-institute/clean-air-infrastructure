@@ -14,6 +14,7 @@ from cleanair.utils import hash_dict
 
 # pylint: disable=redefined-outer-name
 
+
 @pytest.fixture(scope="module")
 def no_features_data_config() -> DataConfig:
     """Data config with no features."""
@@ -62,7 +63,6 @@ def base_data_id(
 ) -> str:
     """Data id of base data config & preprocessing."""
     return hash_dict(dict(no_features_data_config, **base_aq_preprocessing))
-
 
 
 @pytest.fixture(scope="module")
