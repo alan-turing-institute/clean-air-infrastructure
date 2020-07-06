@@ -10,6 +10,8 @@ import pytest
 import numpy as np
 import pandas as pd
 from sqlalchemy.engine import Connection
+from cleanair.databases import DBReader
+from cleanair.databases.tables import MetaPoint
 from cleanair.types import DataConfig, ParamsSVGP
 from cleanair.models import ModelData
 from cleanair.instance import (
@@ -144,9 +146,12 @@ def svgp_instance(  # pylint: disable=too-many-arguments
 
 
 @pytest.fixture(scope="function")
-def hexgrid_point_id() -> str:
+def hexgrid_point_id(secretfile, connection) -> str:
     """A hexgrid point."""
-    return "643a4318-27e3-44f4-aafc-f58c5dcdc61a"
+    reader = DBReader(secretfile=secretfile, connection=connection)
+    with reader.dbcnxn.open_session() as session:
+        reading = session.query(MetaPoint).filter(MetaPoint.source == "hexgrid").first()
+        return str(reading.id)
 
 
 @pytest.fixture(scope="function")
