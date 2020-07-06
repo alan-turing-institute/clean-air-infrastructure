@@ -1,7 +1,7 @@
 <!-- Please follow these instructions when creating a pull request -->
 
 <!-- 1. Ensure select the Odysseus project for the pull request on the right hand menu -->
-<!-- 2. Name the pull request after the issue. e.g. iss_832_add_weather_data_input ->
+<!-- 2. Name the pull request after the issue. e.g. iss_832_add_weather_data_input -->
 
 # Summary
 <!-- Please provide an overview of what this pull request does -->
@@ -51,6 +51,6 @@ Please ensure you have done the following:
 
 ## Reviewer
 
-<!-- List anything you would like the reviewer to focus on. ->
+<!-- List anything you would like the reviewer to focus on. -->
 
-<!-- - I'm not sure if my tests cover all use cases well -->
+<!-- I'm not sure if my tests cover all use cases well -->

@@ -5,7 +5,7 @@
 database: cleanair_test_db
 
 schema: 
- 
+
   - dynamic_data 
   - dynamic_features 
   - gla_traffic
@@ -15,6 +15,7 @@ schema:
   - processed_data
   - static_data
   - static_features
+  - traffic_modelling
   - jamcam
 
 roles:
@@ -54,6 +55,10 @@ roles:
         privileges: 
           - SELECT
       - name: static_features
+        create: False
+        privileges: 
+          - SELECT
+      - name: traffic_modelling
         create: False
         privileges: 
           - SELECT
@@ -101,6 +106,10 @@ roles:
         create: False
         privileges: 
           - ALL
+      - name: traffic_modelling
+        create: False
+        privileges: 
+          - ALL
       - name: jamcam
         create: False
         privileges:
@@ -142,6 +151,10 @@ roles:
         privileges: 
           - ALL
       - name: static_features
+        create: True
+        privileges: 
+          - ALL
+      - name: traffic_modelling
         create: True
         privileges: 
           - ALL

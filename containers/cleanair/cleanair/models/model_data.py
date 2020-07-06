@@ -1,7 +1,6 @@
-"""
-Vizualise available sensor data for a model fit
-"""
-from typing import Dict, List, Union
+"""Vizualise available sensor data for a model fit"""
+from __future__ import annotations
+from typing import TYPE_CHECKING, Dict
 from datetime import date, datetime
 import json
 import os
@@ -19,9 +18,14 @@ from ..databases.tables import (
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger
-from ..instance import hash_dict
+from ..utils import hash_dict
+from ..timestamps import as_datetime
 
-DataConfig = Dict[str, Union[str, bool, List[str]]]
+if TYPE_CHECKING:
+    from ..types import DataConfig
+
+# pylint: disable=too-many-lines
+
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -48,14 +52,16 @@ class ModelData(DBWriter, DBQueryMixin):
                 "Either config or config_dir must be supplied as arguments"
             )
 
+<<<<<<< HEAD
         self.preprocessing: Dict = dict()  # TODO initialise this with preprocessing settings
+=======
+        self.preprocessing: Dict = dict()
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 
         if config:
             # Validate the configuration
             self.__validate_config(config)
             self.config = self.__generate_full_config(config)
-            # TODO remove print statement
-            print("Data id:", self.data_id)
 
             # Get training and prediciton data frames
             self.training_data_df = self.get_training_data_inputs()
@@ -94,25 +100,41 @@ class ModelData(DBWriter, DBQueryMixin):
     @property
     def data_id(self) -> str:
         """Hash of the data config dictionary."""
-        data_config = ModelData.make_data_config_json_serializable(self.config)
+        data_config = ModelData.make_config_json_serializable(self.config)
         return hash_dict(data_config)
 
     @staticmethod
-    def make_data_config_json_serializable(data_config: DataConfig):
+    def make_config_json_serializable(data_config: DataConfig):
         """Converts any date or datetime values to a string formatted to ISO.
 
         Args:
             data_config: Contains some values with datetimes or dates.
- 
+
         Returns:
             New data config with date/datetime values changed to ISO strings.
             Note the returned data config is a NEW object, i.e. we copy the `data_config` parameter.
         """
         new_config = data_config.copy()
         for key, value in data_config.items():
-            if isinstance(value, date) or isinstance(value, datetime):
+            if isinstance(value, (date, datetime)):
                 new_config[key] = value.isoformat()
         return new_config
+
+    @staticmethod
+    def config_to_datetime(data_config: DataConfig) -> DataConfig:
+        """The values of keys that have 'data' or 'time' in the name
+        are converted to a datetime object from a string.
+
+        Args:
+            data_config: Config settings for a model data object.
+
+        Returns:
+            New data config dictionary with same keys and datetime values where appropriate.
+        """
+        for key, value in data_config.items():
+            if "date" in key or "time" in key:
+                data_config[key] = as_datetime(value)
+        return data_config
 
     def __validate_config(self, config):
 
@@ -965,20 +987,12 @@ class ModelData(DBWriter, DBQueryMixin):
         new_df["tag"] = self.config["tag"]
         return new_df
 
-    def update_test_df_with_preds(self, test_pred_dict, fit_start_time):
+    def update_test_df_with_preds(self, test_pred_dict: dict, fit_start_time: datetime):
         """Update the normalised_pred_data_df with predictions for all pred sources.
 
-        Parameters
-        ___
-
-        test_pred_dict : dict
-            Dictionary with first level keys for pred_sources (e.g. 'laqn', 'aqe').
-            Second level keys are species (e.g. 'NO2', 'PM10').
-            Third level keys are either 'mean' or 'var'.
-            Values are numpy arrays of predictions for a source and specie.
-
-        fit_start_time : datetime
-            Start time of the model fit.
+        Args:
+            test_pred_dict: Dictionary of model predictions.
+            fit_start_time: Start time of the model fit.
         """
         self.normalised_pred_data_df = self.get_df_from_pred_dict(
             self.normalised_pred_data_df,
@@ -998,6 +1012,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def update_remote_tables(self):
         """Update the model results table with the model results"""
+<<<<<<< HEAD
         records = [
             dict(
                 data_id=self.data_id,
@@ -1008,4 +1023,14 @@ class ModelData(DBWriter, DBQueryMixin):
         self.logger.info(
             "Writing the model settings to the air quality modelling data table."
         )
+=======
+        data_config = ModelData.make_config_json_serializable(self.config)
+        row = dict(
+            data_id=self.data_id,
+            data_config=data_config,
+            preprocessing=self.preprocessing,
+        )
+        records = [row]
+        self.logger.info("Writing data settings to air quality modelling data table.")
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
         self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

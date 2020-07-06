@@ -6,11 +6,10 @@ from typing import Collection
 import tensorflow as tf
 import pandas as pd
 from cleanair.databases import DBReader
-from cleanair.instance import Instance
+from cleanair.databases.tables import TrafficDataTable
+from cleanair.utils import hash_dict
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
-from ..databases.tables import TrafficDataTable
-from ..instance import hash_dict
 
 
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
@@ -110,7 +109,8 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
             preprocessing: Settings for preprocessing and normalising the traffic data.
 
         Raises:
-            AssertionError: If the dictionary is not valid.
+            KeyError: If one of the dictionary keys are missing.
+            TypeError: If the type of the values are invalid.
         """
         value_types = [list, list, bool, str]
         min_keys = ["features", "target", "median", "normaliseby"]

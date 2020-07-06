@@ -19,7 +19,7 @@ def main():
     # Update the AQE tables on the database, logging any unhandled exceptions
     try:
         aqe_writer = AQEWriter(
-            end=args.end,
+            end=args.upto,
             nhours=args.nhours,
             secretfile=args.secretfile,
             secret_dict=args.secret_dict,

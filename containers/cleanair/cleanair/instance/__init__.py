@@ -3,7 +3,13 @@ Instances that store models, data and parameter summeries.
 """
 
 from .air_quality_instance import AirQualityInstance
-from .hashing import hash_fn, hash_dict
+from .air_quality_model_params import AirQualityModelParams
+from .air_quality_result import AirQualityResult
 from .instance import Instance
 
-__all__ = ["AirQualityInstance", "Instance", "hash_fn", "hash_dict"]
+__all__ = [
+    "AirQualityInstance",
+    "AirQualityModelParams",
+    "AirQualityResult",
+    "Instance",
+]

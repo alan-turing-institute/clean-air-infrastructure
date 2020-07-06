@@ -1,10 +1,9 @@
 """Mixin query for traffic data config."""
 
 import json
-import typing
 from cleanair.databases import Connector
 from cleanair.decorators import db_query
-from ..tables import TrafficDataTable
+from cleanair.databases.tables import TrafficDataTable
 
 
 class TrafficDataQueryMixin:

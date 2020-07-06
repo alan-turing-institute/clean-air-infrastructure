@@ -1,20 +1,13 @@
-FROM python:3.7
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.7
+
+RUN pip install mkdocs-material==5.3.0 mkdocstrings==0.12.0
 
 # Copy the cleanair package into the container and install
-COPY cleanair /app/cleanair
-RUN pip install /app/cleanair
+COPY cleanair /apps/cleanair
+RUN pip install /apps/cleanair
 
-# Install traffic app
-COPY odysseus /app/odysseus
-RUN pip install /app/odysseus
+#  Install urbanair.  Have to make editable for static files to work
+COPY urbanair/ /modules/urbanair/
+RUN pip install -e /modules/urbanair/
 
 
-# Copy the API into the container
-COPY urbanair /var/www/html/urbanair
-
-# Install any needed packages specified in requirements.txt
-RUN pip install /var/www/html/urbanair
-
-WORKDIR /var/www/html/urbanair
-
-ENTRYPOINT ["/usr/local/bin/uwsgi", "--ini", "/var/www/html/urbanair/app_uwsgi.ini"]

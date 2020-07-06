@@ -22,9 +22,9 @@ class UKMap(Base):
     calculated_height_of_building = Column(DOUBLE_PRECISION)
     geom_length = Column(DOUBLE_PRECISION)
     geom_area = Column(DOUBLE_PRECISION)
-    geom = (Geometry(srid=4326, spatial_index=True),)
+    geom = Column(Geometry(srid=4326, spatial_index=True))
 
     def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
+        cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<UKMap(" + ", ".join(vals) + ")>"

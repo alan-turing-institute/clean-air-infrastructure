@@ -2,8 +2,10 @@
 Feature extraction Base  class
 """
 import time
+from math import ceil
 from sqlalchemy import func, literal, or_, case
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
+import numpy as np
 from ..databases import DBWriter
 from ..databases.tables import (
     StaticFeature,
@@ -11,15 +13,26 @@ from ..databases.tables import (
     UKMap,
     MetaPoint,
 )
+from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
-from ..loggers import duration, green, get_logger, duration_from_seconds
+from ..loggers import duration, green, red, get_logger
 
 
-class FeatureExtractor(DBWriter, DBQueryMixin):
+class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
-    def __init__(self, dynamic=False, batch_size=1000, sources=None, **kwargs):
+    # pylint: disable=R0913
+    def __init__(
+        self,
+        feature_source,
+        table,
+        features,
+        dynamic=False,
+        batch_size=10,
+        sources=None,
+        **kwargs
+    ):
         """Base class for extracting features.
         args:
             dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
@@ -32,6 +45,9 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+        self.feature_source = feature_source
+        self.table = table
+        self.features = features
         self.dynamic = dynamic
         self.sources = sources if sources else []
         self.batch_size = batch_size
@@ -41,25 +57,9 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             self.output_table = StaticFeature
 
     @property
-    def features(self):
-        """A dictionary of features of the kind:
-
-        {
-            "building_height": {
-                "type": "value",
-                "feature_dict": {
-                    "calculated_height_of_building": ["*"]
-                },
-                "aggfunc": max_
-            }
-        }
-        """
-        raise NotImplementedError("Must be implemented by child classes")
-
-    @property
-    def table(self):
-        """Either returns an sql table instance or a subquery"""
-        raise NotImplementedError("Must be implemented by child classes")
+    def feature_names(self):
+        """Return a list of all feature names"""
+        return self.features.keys()
 
     @db_query
     def query_input_geometries(self, feature_name):
@@ -76,11 +76,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 getattr(table, feature)
                 for feature in self.features[feature_name]["feature_dict"].keys()
             ]
-            if self.dynamic:
-                columns = columns + [table.measurement_start_utc]
-
             q_source = session.query(*columns)
-
             # Construct filters
             filter_list = []
             if (
@@ -96,14 +92,52 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             q_source = q_source.filter(*filter_list)
         return q_source
 
+    # @db_query
+    # def get_dynamic_processed(self, feature_name):
+    #     """Return the features which have already been processed for a given feature name between
+    #     a self.start_datetime and self.end_datetime. To be returned they must have as many hours as would be expected
+    #     from the difference between self.start_datetime and self.end_datetime.
+
+    #     args:
+    #         feature_name: string
+    #             Name of the feature to check for
+    #     """
+
+    #     expected_hours = int(
+    #         (self.end_datetime - self.start_datetime).total_seconds() / (60 * 60)
+    #     )
+
+    #     with self.dbcnxn.open_session() as session:
+    #         already_processed_sq = (
+    #             session.query(
+    #                 DynamicFeature.point_id,
+    #                 (
+    #                     func.count(DynamicFeature.measurement_start_utc)
+    #                     == expected_hours
+    #                 ).label("all_hours"),
+    #             )
+    #             .filter(
+    #                 DynamicFeature.feature_name == feature_name,
+    #                 DynamicFeature.measurement_start_utc
+    #                 >= self.start_datetime.isoformat(),
+    #                 DynamicFeature.measurement_start_utc
+    #                 < self.end_datetime.isoformat(),
+    #             )
+    #             .group_by(DynamicFeature.point_id)
+    #         ).subquery()
+
+    #         already_processed_q = session.query(already_processed_sq.c.point_id).filter(
+    #             already_processed_sq.c.all_hours == True
+    #         )
+
+    #         return already_processed_q
+
     @db_query
-    def query_meta_points(self):
+    def query_meta_points(self, point_ids):
         """
         Query MetaPoints, selecting all matching sources. We do not filter these in
         order to ensure that repeated calls will return the same set of points.
         """
-
-        boundary_geom = self.query_london_boundary()
 
         with self.dbcnxn.open_session() as session:
 
@@ -125,18 +159,125 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 func.Geometry(
                     func.ST_Buffer(func.Geography(MetaPoint.location), 10)
                 ).label("buff_geom_10"),
-            ).filter(MetaPoint.location.ST_Within(boundary_geom))
-
-            if self.sources:
-                self.logger.debug(
-                    "Restricting to interest points from %s", self.sources
-                )
-                q_meta_point = q_meta_point.filter(MetaPoint.source.in_(self.sources))
+            ).filter(MetaPoint.id.in_(point_ids))
 
         return q_meta_point
 
+    # @db_query
+    # def query_features_dynamic(self, feature_name, feature_dict, agg_func, batch_size):
+    #     # Get input geometries for this feature
+    #     # self.logger.debug(
+    #     #     "There are %s input geometries to consider",
+    #     #     self.query_input_geometries(feature_name).count(),
+    #     # )
+    #     # sq_source = self.query_input_geometries(feature_name, output_type="query")
+
+    #     # Get all the metapoints and buffer geometries as a common table expression
+    #     cte_buffers = self.query_meta_points(
+    #         feature_name=feature_name, exclude_processed=True, limit=batch_size
+    #     ).cte("buffers")
+
+    #     n_interest_points = self.query_meta_points(
+    #         feature_name=feature_name, exclude_processed=True, output_type="count",
+    #     )
+
+    #     if n_interest_points == 0:
+    #         self.logger.info(
+    #             "There are 0 interest points left to process for feature %s ...",
+    #             feature_name,
+    #         )
+    #         return None
+
+    #     # Output about next batch to be processed
+    #     self.logger.info(
+    #         "Preparing to analyse %s interest points of %s unprocessed...",
+    #         green(batch_size),
+    #         green(n_interest_points),
+    #     )
+
+    #     with self.dbcnxn.open_session() as session:
+
+    #         # Intersect the buffers with roads
+    #         buff_table_intersection_sq = (
+    #             session.query(
+    #                 cte_buffers.c.id,
+    #                 self.table.toid,
+    #                 func.ST_Intersects(
+    #                     cte_buffers.c.buff_geom_500, self.table.geom
+    #                 ).label("Intersects_500"),
+    #                 func.ST_Intersects(
+    #                     cte_buffers.c.buff_geom_200, self.table.geom
+    #                 ).label("Intersects_200"),
+    #                 func.ST_Intersects(
+    #                     cte_buffers.c.buff_geom_100, self.table.geom
+    #                 ).label("Intersects_100"),
+    #                 func.ST_Intersects(
+    #                     cte_buffers.c.buff_geom_10, self.table.geom
+    #                 ).label("Intersects_10"),
+    #             )
+    #             .filter(
+    #                 func.ST_Intersects(cte_buffers.c.buff_geom_1000, self.table.geom)
+    #             )
+    #             .subquery()
+    #         )
+
+    #         # Join the scoot_road_map+data and aggregate over buffers
+    #         res = (
+    #             session.query(
+    #                 buff_table_intersection_sq.c.id,
+    #                 self.table_class.measurement_start_utc,
+    #                 literal(feature_name).label("feature_name"),
+    #                 func.coalesce(
+    #                     agg_func(
+    #                         getattr(self.table_class, list(feature_dict.keys())[0])
+    #                     ),
+    #                     0.0,
+    #                 ).label("value_1000"),
+    #                 func.coalesce(
+    #                     agg_func(
+    #                         getattr(self.table_class, list(feature_dict.keys())[0])
+    #                     ).filter(buff_table_intersection_sq.c.Intersects_500),
+    #                     0.0,
+    #                 ).label("value_500"),
+    #                 func.coalesce(
+    #                     agg_func(
+    #                         getattr(self.table_class, list(feature_dict.keys())[0])
+    #                     ).filter(buff_table_intersection_sq.c.Intersects_200),
+    #                     0.0,
+    #                 ).label("value_200"),
+    #                 func.coalesce(
+    #                     agg_func(
+    #                         getattr(self.table_class, list(feature_dict.keys())[0])
+    #                     ).filter(buff_table_intersection_sq.c.Intersects_100),
+    #                     0.0,
+    #                 ).label("value_100"),
+    #                 func.coalesce(
+    #                     agg_func(
+    #                         getattr(self.table_class, list(feature_dict.keys())[0])
+    #                     ).filter(buff_table_intersection_sq.c.Intersects_10),
+    #                     0.0,
+    #                 ).label("value_10"),
+    #             )
+    #             .join(
+    #                 self.table_class,
+    #                 buff_table_intersection_sq.c.toid == self.table_class.road_toid,
+    #             )
+    #             .filter(
+    #                 self.table_class.measurement_start_utc
+    #                 >= self.start_datetime.isoformat(),
+    #                 self.table_class.measurement_start_utc
+    #                 < self.end_datetime.isoformat(),
+    #             )
+    #             .group_by(
+    #                 buff_table_intersection_sq.c.id,
+    #                 self.table_class.measurement_start_utc,
+    #             )
+    #         )
+
+    #         return res
+
     @db_query
-    def query_features(self, feature_name, feature_type, agg_func):
+    def query_features(self, point_ids, feature_name, feature_type, agg_func):
         """
         For a given features, produce a query containing the full feature processing stage.
 
@@ -147,24 +288,16 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
         As we do not filter interest points as part of the query, it will stay the same
         size on repeated calls and can therefore be sliced for batch operations.
         """
+        # # Get input geometries for this feature
+        # self.logger.debug(
+        #     "There are %s input geometries to consider",
+        #     self.query_input_geometries(feature_name).count(),
+        # )
 
-        # Get input geometries for this feature
-        self.logger.debug(
-            "There are %s input geometries to consider",
-            self.query_input_geometries(feature_name).count(),
-        )
         sq_source = self.query_input_geometries(feature_name, output_type="subquery")
 
         # Get all the metapoints and buffer geometries as a common table expression
-        cte_buffers = self.query_meta_points().cte("buffers")
-        self.logger.debug(
-            "There are %s interest points to consider", self.query_meta_points().count()
-        )
-
-        # Output about next batch to be processed
-        self.logger.info(
-            "Preparing to analyse interest points for feature %s", green(feature_name),
-        )
+        cte_buffers = self.query_meta_points(point_ids=point_ids).cte("buffers")
 
         if feature_type == "geom":
             # Use case to avoid calculating intersections if we know the geom is covered
@@ -268,30 +401,42 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
             raise TypeError("{} is not a feature type".format(feature_type))
 
         with self.dbcnxn.open_session() as session:
+
             # Set the list of columns that we will group by
             group_by_columns = [cte_buffers.c.id]
             if self.dynamic:
                 group_by_columns.append(sq_source.c.measurement_start_utc)
 
-            # Do a spatial outer-join between the q_source and q_meta_point on
-            # intersections, which means that we only join if the geometries intersect.
-            # Use coalesce to make sure we return 0 if there is no value
-            return (
+            res = (
                 session.query(
                     *group_by_columns,
-                    literal(feature_name).label("feature_name"),
-                    func.coalesce(value_1000, 0.0).label("value_1000"),
-                    func.coalesce(value_500, 0.0).label("value_500"),
-                    func.coalesce(value_200, 0.0).label("value_200"),
-                    func.coalesce(value_100, 0.0).label("value_100"),
-                    func.coalesce(value_10, 0.0).label("value_10"),
+                    value_1000.label("value_1000"),
+                    value_500.label("value_500"),
+                    value_200.label("value_200"),
+                    value_100.label("value_100"),
+                    value_10.label("value_10"),
                 )
                 .join(
                     sq_source,
                     func.ST_Intersects(sq_source.c.geom, cte_buffers.c.buff_geom_1000),
                 )
                 .group_by(*group_by_columns)
+                .subquery()
             )
+
+            # Left join with coalesce to make sure we always return a value
+            out = session.query(
+                *group_by_columns,
+                literal(feature_name).label("feature_name"),
+                literal(self.feature_source).label("feature_source"),
+                func.coalesce(res.c.value_1000, 0.0).label("value_1000"),
+                func.coalesce(res.c.value_500, 0.0).label("value_500"),
+                func.coalesce(res.c.value_200, 0.0).label("value_200"),
+                func.coalesce(res.c.value_100, 0.0).label("value_100"),
+                func.coalesce(res.c.value_10, 0.0).label("value_10"),
+            ).join(res, cte_buffers.c.id == res.c.id, isouter=True)
+
+            return out
 
     def update_remote_tables(self):
         """
@@ -303,6 +448,7 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
 
         # Iterate over each of the features and calculate the overlap with the interest points
         n_features = len(self.features)
+
         for idx_feature, feature_name in enumerate(self.features, start=1):
             feature_start = time.time()
             self.logger.info(
@@ -312,58 +458,51 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 n_features,
             )
 
-            # Create full select-and-insert query
-            q_select_and_insert = self.query_features(
-                feature_name,
-                feature_type=self.features[feature_name]["type"],
-                agg_func=self.features[feature_name]["aggfunc"],
+            missing_point_ids_df = self.get_static_feature_availability(
+                [feature_name], self.sources, exclude_has_data=True, output_type="df"
             )
 
-            # Count how many records will be inserted here
-            self.logger.debug(
-                "Determining how many records will need to be inserted..."
-            )
-            n_records = q_select_and_insert.count()
-            n_batches = round(0.5 + n_records / self.batch_size)
-
-            # Slice the main query into batches, inserting each one in turn
-            self.logger.info(
-                "Preparing to insert %s feature records in batches of %i...",
-                green(n_records),
-                self.batch_size,
-            )
-            insert_start = time.time()
-            for idx_batch, batch_start in enumerate(
-                range(0, n_records, self.batch_size), start=1
-            ):
-                batch_stop = min(batch_start + self.batch_size, n_records)
+            if missing_point_ids_df.empty:
                 self.logger.info(
-                    "Inserting %i feature records for %s [batch %i/%i]...",
-                    batch_stop - batch_start,
-                    feature_name,
-                    idx_batch,
-                    n_batches,
+                    "No interest points require processing for feature %s, sources: %s",
+                    red(feature_name),
+                    red(self.sources),
                 )
-                q_batch_insert = q_select_and_insert.slice(batch_start, batch_stop)
+                continue
 
-                # Insert from the query to reduce local memory and database round-trips
+            self.logger.info(
+                "%s interest points from sources %s require processing for feature %s",
+                green(missing_point_ids_df.shape[0]),
+                green(self.sources),
+                green(feature_name),
+            )
+
+            missing_point_ids = missing_point_ids_df["id"].astype(str).values
+            n_point_ids = missing_point_ids.size
+            batch_size = 250
+            n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
+
+            self.logger.info(
+                "Processing %s interest points in %s batches of max size %s",
+                missing_point_ids.size,
+                n_batches,
+                batch_size,
+            )
+
+            missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
+
+            for batch_no, point_id_batch in enumerate(missing_point_id_batches):
+                self.logger.info("Processing batch %s of %s", batch_no, n_batches)
+                sq_select_and_insert = self.query_features(
+                    point_id_batch,
+                    feature_name,
+                    feature_type=self.features[feature_name]["type"],
+                    agg_func=self.features[feature_name]["aggfunc"],
+                    output_type="subquery",
+                )
 
                 self.commit_records(
-                    q_batch_insert.subquery(),
-                    table=self.output_table,
-                    on_conflict="ignore",
-                )
-
-                # Log timing statistics
-                elapsed_seconds = time.time() - insert_start
-                remaining_seconds = elapsed_seconds * (n_batches / idx_batch - 1)
-                self.logger.info(
-                    "Inserted feature records for '%s' [batch %i/%i] after %s (%s remaining)",
-                    feature_name,
-                    idx_batch,
-                    n_batches,
-                    green(duration_from_seconds(elapsed_seconds)),
-                    green(duration_from_seconds(remaining_seconds)),
+                    sq_select_and_insert, on_conflict="ignore", table=self.output_table
                 )
 
             # Print a timing message at the end of each feature
@@ -373,8 +512,42 @@ class FeatureExtractor(DBWriter, DBQueryMixin):
                 green(duration(feature_start, time.time())),
             )
 
-        # Print a final timing message
         self.logger.info(
             "Finished adding records after %s",
             green(duration(update_start, time.time())),
         )
+
+        # while True:
+
+        #     if self.dynamic:
+        #         # Create full select-and-insert query
+        #         q_select_and_insert = self.query_features_dynamic(
+        #             feature_name,
+        #             feature_dict=self.features[feature_name]["feature_dict"],
+        #             agg_func=self.features[feature_name]["aggfunc"],
+        #             batch_size=self.batch_size,
+        #             output_type="query",
+        #         )
+
+        #     else:
+        #         # Create full select-and-insert query
+        #         q_select_and_insert = self.query_features(
+        #             feature_name,
+        #             feature_type=self.features[feature_name]["type"],
+        #             agg_func=self.features[feature_name]["aggfunc"],
+        #             batch_size=self.batch_size,
+        #             output_type="query",
+        #         )
+
+        #     if q_select_and_insert:
+        #         self.logger.info("Commiting to database")
+        #         with self.dbcnxn.open_session() as session:
+        #             self.commit_records(
+        #                 q_select_and_insert.subquery(),
+        #                 on_conflict="ignore",
+        #                 table=self.output_table,
+        #             )
+
+        #         quit()
+        #     else:
+        #         break

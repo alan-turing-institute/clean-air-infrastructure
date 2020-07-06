@@ -8,14 +8,19 @@ from cleanair.databases.tables import (
     AirQualityModelTable,
     AirQualityResultTable,
 )
-from cleanair.models import DataConfig, ModelParamSVGP
+from cleanair.types import DataConfig, ParamsSVGP
+
 
 
 def test_insert_laqn_data_table(
     secretfile: str,
+<<<<<<< HEAD
     connection: Any,  # TODO what type is this?
+=======
+    connection: Any,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
     base_data_id: int,
-    base_aq_data_config: DataConfig,
+    no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
 ):
     """Test data is inserted into the air quality data config table.
@@ -31,7 +36,11 @@ def test_insert_laqn_data_table(
     records = [
         dict(
             data_id=base_data_id,
+<<<<<<< HEAD
             data_config=base_aq_data_config,
+=======
+            data_config=no_features_data_config,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
             preprocessing=base_aq_preprocessing,
         )
     ]
@@ -39,10 +48,14 @@ def test_insert_laqn_data_table(
 
 
 def test_insert_svgp(
+<<<<<<< HEAD
     secretfile: str,
     connection: Any,  # TODO what type is this?
     svgp_model_params: ModelParamSVGP,
     svgp_param_id: str,
+=======
+    secretfile: str, connection: Any, svgp_model_params: ParamsSVGP, svgp_param_id: str,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 ):
     """Test data is inserted into the air quality model table.
 
@@ -67,11 +80,15 @@ def test_insert_svgp(
 
 def test_insert_instance(
     secretfile: str,
+<<<<<<< HEAD
     connection: Any,  # TODO what type is this?
+=======
+    connection: Any,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
     svgp_instance: AirQualityInstance,
-    base_aq_data_config: DataConfig,
+    no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
-    svgp_model_params: ModelParamSVGP,
+    svgp_model_params: ParamsSVGP,
 ):
     """Insert instance into database."""
     conn = DBWriter(
@@ -92,7 +109,11 @@ def test_insert_instance(
     records = [
         dict(
             data_id=svgp_instance.data_id,
+<<<<<<< HEAD
             data_config=base_aq_data_config,
+=======
+            data_config=no_features_data_config,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
             preprocessing=base_aq_preprocessing,
         )
     ]
@@ -103,9 +124,13 @@ def test_insert_instance(
 
 
 def test_insert_result_table(
+<<<<<<< HEAD
     secretfile: str,
     connection: Any,  # TODO what type is this?
     svgp_result: pd.DataFrame,
+=======
+    secretfile: str, connection: Any, svgp_result: pd.DataFrame,
+>>>>>>> 5f4663cef950153802e4469b312b64d3e8697843
 ):
     """Insert fake results into the results air quality table."""
     conn = DBWriter(

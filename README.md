@@ -48,13 +48,16 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
 
-### UrbanAir Flask API
-- [Running the UrbanAir API](#urbanAir-API)
+### Running the UrbanAir API
+- [Running the UrbanAir API](#urbanair-api)
 
 ### Developer guide
 - [Style guide](#style-guide)
 - [Running tests](#running-tests)
 - [Writing tests](#writing-tests)
+
+### Researcher guide
+- [Setup notebooks](#setup-notebook)
 
 ### Infrastructure
 
@@ -81,6 +84,7 @@ To contribute as a non-infrastructure developer you will need the following:
 - `postgreSQL` (command-line tool for interacting with db)
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
+- `eccodes` (For reading GRIB files)
 
 The instructions below are to install the dependencies system-wide, however you can
 follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
@@ -113,9 +117,12 @@ brew install postgresql postgis
 ```bash
 brew install gdal
 ```
-
 or any of the [binaries](https://gdal.org/download.html#binaries) provided for different platforms.
 
+### Eccodes
+```bash
+brew install eccodes
+```
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -315,14 +322,14 @@ createdb cleanair_test_db
 
 We must now setup the database schema. This also creates a number of roles on the database.
 
-Create a variable with the location of your secrets file
+Create a variable with the location of your secrets file and set as an environment variable
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml   
 ```
 
 ### Static data insert
@@ -346,13 +353,13 @@ SAS_TOKEN=<SAS_TOKEN>
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
 If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
 ```
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
@@ -366,7 +373,7 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/test_database_init --secretfile $SECRETS
+pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 ```
 
 
@@ -480,25 +487,35 @@ docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:
 
 # UrbanAir API
 
-The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+The UrbanAir RESTFUL API is a [Fast API](https://fastapi.tiangolo.com/) application. To run it in locally you must configure the following steps:
 
 ### Configure CleanAir database secrets
-Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environment variable](#entry-point-with-production-database)
+Ensure you have configured a secrets file for the CleanAir database 
 
 ```bash
-export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-### Enable Flask development server
+### Run the application
 
-```bash
-export FLASK_ENV=development 
+### On development server
+```bash 
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
 ```
 
-You can now run the API
+### In a docker image
+
+To build the API docker image
+```bash
+docker build -t fastapi:test -f containers/dockerfiles/urbanairapi.Dockerfile 'containers'
+```
+
+The run the docker image:
 
 ```bash
-python containers/urbanair/wsgi.py
+DB_SECRET_FILE='.db_secrets_ad.json'
+SECRET_DIR=$(pwd)/.secrets  
+docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
 
 # Developer guide
@@ -536,11 +553,11 @@ All tests can be found in the [`containers/tests/`](containers/tests) directory.
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-pytest containers --secretfile $SECRETS
+pytest containers --secretfile $DB_SECRET_FILE
 ```
 
 ## Writing tests
@@ -564,6 +581,65 @@ It uses the `DBWriter` class to  connect to the database. In general when intera
 
 This fixture ensures that all interactions with the database take place within a `transaction`. At the end of the test the transaction is rolled back leaving the database in the same state it was in before the test was run, even if `commit` is called on the database. 
 
+# Researcher guide
+
+*The following steps provide useful tools for researchers to use, for example jupyter notebooks.*
+
+## Setup notebook
+
+First install jupyter with conda (you can also use pip).
+
+```bash
+pip install jupyter
+```
+
+You can start the notebook:
+
+```bash
+jupyter notebook
+```
+
+### Environment variables
+
+To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
+It is also recommended to set the `DB_SECRET_FILE` variable.
+We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
+
+> **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
+
+Run the below command to create a `.env` file, replacing `path/to/secretfile` with the path to your `db_secrets`.
+
+```bash
+echo '
+DB_SECRET_FILE="path/to/secretfile"
+PGPASSWORD=
+' > path/to/notebook/.env
+```
+
+To set the `PGPASSWORD`, run the following command.
+This will create a new password using the azure cli and replace the line in `.env` that contains `PGPASSWORD` with the new password.
+Remember to replace `path/to/notebook` with the path to your notebook directory.
+
+```bash
+sed -i '' "s/.*PGPASSWORD.*/PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)/g" path/to/notebook/.env
+```
+
+If you need to store other environment variables and access them in your notebook, simply add them to the `.env` file.
+
+To access the environment variables, include the following lines at the top of your jupyter notebook:
+
+```python
+%load_ext dotenv
+%dotenv
+```
+
+You can now access the value of these variables as follows:
+
+```python
+secretfile = os.getenv("DB_SECRET_FILE", None)
+```
+
+Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**
