@@ -18,7 +18,7 @@ class ModelMixin:
         self,
         batch_size: int = 100,
         experiment_config: Optional[Dict] = None,
-        model_params: Optional[Dict] = None,
+        model_params: Optional[ModelParams] = None,
         refresh: int = 10,
         tasks: Optional[List] = None,
         **kwargs
