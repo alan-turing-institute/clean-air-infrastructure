@@ -42,7 +42,7 @@ def main(
     """
 
     if verbose:
-        typer.echo("Will write verbose output")
+        typer.echo("Debug verbosity")
         state["verbose"] = True
 
     if secretfile:
@@ -64,7 +64,7 @@ def init_local(
         os.mkdir(APP_DIR)
 
     # Copy secretfile over
-    typer.echo("Copy secret file to urbanair config directory")
+    typer.echo("Copy secretfile to urbanair config directory")
     shutil.copy(str(secretfile), str(CONFIG_SECRETFILE_PATH))
 
 
