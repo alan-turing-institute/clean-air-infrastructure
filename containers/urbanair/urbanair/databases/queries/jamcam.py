@@ -11,7 +11,7 @@ from cleanair.databases.tables import JamCamVideoStats
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
-TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
+# TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
@@ -34,21 +34,21 @@ def start_end_filter(
             JamCamVideoStats.video_upload_datetime < endtime,
         )
 
-    # 12 hours from starttime
+    # 24 hours from starttime
     if starttime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime >= starttime,
-             JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
+            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
         )
 
-    # 12 hours before endtime
+    # 24 hours before endtime
     if endtime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime < endtime,
             JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=24),
         )
 
-    # Last available 12 hours
+    # Last available 24 hours
     return query.filter(
         JamCamVideoStats.video_upload_datetime
         >= func.date_trunc("day", max_video_upload_time_sq.c.max_video_upload_datetime)
