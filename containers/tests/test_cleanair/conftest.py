@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import Dict
 import pytest
 import pandas as pd
-from cleanair.types import DataConfig, ParamsSVGP
+from cleanair.types import DataConfig, ModelParams
 from cleanair.instance import AirQualityInstance
 from cleanair.utils import hash_dict
 
@@ -66,7 +66,7 @@ def base_data_id(
 
 
 @pytest.fixture(scope="module")
-def svgp_model_params() -> ParamsSVGP:
+def svgp_model_params() -> ModelParams:
     """SVGP model parameter fixture."""
     return {
         "jitter": 1e-5,
@@ -82,7 +82,7 @@ def svgp_model_params() -> ParamsSVGP:
 
 
 @pytest.fixture(scope="module")
-def svgp_param_id(svgp_model_params: ParamsSVGP) -> str:
+def svgp_param_id(svgp_model_params: ModelParams) -> str:
     """Param id of svgp model params"""
     return hash_dict(svgp_model_params)
 

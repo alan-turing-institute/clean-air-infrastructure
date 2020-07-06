@@ -8,7 +8,7 @@ from cleanair.databases.tables import (
     AirQualityModelTable,
     AirQualityResultTable,
 )
-from cleanair.types import DataConfig, ParamsSVGP
+from cleanair.types import DataConfig, ModelParams
 
 
 def test_insert_laqn_data_table(
@@ -39,7 +39,7 @@ def test_insert_laqn_data_table(
 
 
 def test_insert_svgp(
-    secretfile: str, connection: Any, svgp_model_params: ParamsSVGP, svgp_param_id: str,
+    secretfile: str, connection: Any, svgp_model_params: ModelParams, svgp_param_id: str,
 ):
     """Test data is inserted into the air quality model table.
 
@@ -68,7 +68,7 @@ def test_insert_instance(
     svgp_instance: AirQualityInstance,
     no_features_data_config: DataConfig,
     base_aq_preprocessing: Dict,
-    svgp_model_params: ParamsSVGP,
+    svgp_model_params: ModelParams,
 ):
     """Insert instance into database."""
     conn = DBWriter(

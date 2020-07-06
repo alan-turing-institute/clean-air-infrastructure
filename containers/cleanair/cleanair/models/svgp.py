@@ -3,14 +3,13 @@ Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
 # from __future__ import annotations
-from typing import Optional
+from typing import Dict, List, Optional
 import os
 import numpy as np
 from scipy.cluster.vq import kmeans2
 import tensorflow as tf
-from ..loggers import get_logger
-from .model import Model
-from ..types import ParamsSVGP
+from .model import ModelMixin
+from ..types import ModelParams
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -18,65 +17,20 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-class SVGP(Model):
+class SVGP(ModelMixin):
     """
     Sparse Variational Gaussian Process for air quality.
     """
 
-    def __init__(
-        self,
-        model_params: Optional[ParamsSVGP] = None,
-        experiment_config: Dict = None,
-        tasks=None,
-        **kwargs
-    ):
-        """
-        SVGP.
-
-        Parameters
-        ___
-
-        model_params : dict, optional
-            See `get_default_model_params` for more info.
-
-        experiment_config: dict, optional
-            Filepaths, modelname and other settings for execution.
-
-        tasks : list, optional
-            See super class.
-
-        **kwargs : kwargs
-            See parent class and other parameters (below).
-
-        Other Parameters
-        ___
-
-        disable_tf_warnings : bool, optional
-            Don't print out warnings from tensorflow if True.
-        """
-        super().__init__(model_params, experiment_config, tasks, **kwargs)
-
-        # Ensure logging is available
-        if self.log and not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-
-        self.minimum_param_keys = [
-            "likelihood_variance",
-            "minibatch_size",
-            "n_inducing_points",
-            "train",
-            "jitter",
-            "model_state_fp",
-            "maxiter",
-            "kernel",
-        ]
-
-        # check model parameters
-        if not model_params:
-            self.model_params = self.get_default_model_params()
-        else:
-            self.model_params = model_params
-            super().check_model_params_are_valid()
+    minimum_param_keys = [
+        "likelihood_variance",
+        "minibatch_size",
+        "n_inducing_points",
+        "train",
+        "jitter",
+        "maxiter",
+        "kernel",
+    ]
 
     def get_default_model_params(self):
         """

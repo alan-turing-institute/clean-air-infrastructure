@@ -2,6 +2,6 @@
 
 from .copernicus_types import Species
 from .dataset_types import DataConfig
-from .model_types import ParamsSVGP
+from .model_types import ModelParams
 
-__all__ = ["DataConfig", "ParamsSVGP", "Species"]
+__all__ = ["DataConfig", "ModelParams", "Species"]

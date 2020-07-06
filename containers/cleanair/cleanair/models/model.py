@@ -2,49 +2,42 @@
 The interface for London air quality models.
 """
 
-from abc import ABC, abstractmethod
+from typing import Dict, List, Optional
+from abc import abstractmethod
 import numpy as np
 from ..loggers import get_logger
+from ..types import ModelParams
 
-
-class Model(ABC):
+class ModelMixin:
     """
     A base class for models.
     All other air quality models should extend this class.
     """
 
-    def __init__(self, model_params=None, experiment_config=None, tasks=None, **kwargs):
-        """
-        Initialise a model with parameters and settings.
+    def __init__(
+        self,
+        batch_size: int = 100,
+        experiment_config: Optional[Dict] = None,
+        model_params: Optional[Dict] = None,
+        refresh: int = 10,
+        tasks: Optional[List] = None,
+        **kwargs
+    ) -> None:
+        """Initialise a model with parameters and settings.
 
-        Parameters
-        ___
-
-        model_params : dict, optional
-            Parameters to run the model.
-            You may wish to pass parameters for the optimizer, kernel, etc.
-
-        experiment_config: dict, optional
-            Filepaths, modelname and other settings for execution.
-
-        tasks : list, optional
-            The name of the tasks (pollutants) we are modelling.
-            Default is ['NO2'].
-
-        Other Parameters
-        ___
-
-        log : bool, optional
-            Print logs. Default is True.
-
-        batch_size : int, optional
-            Default is 100.
-
-        refresh : bool, optional
-            How often to print out the ELBO.
+        Keyword args:
+            batch_size: Size of batch for prediction.
+            experiment_config: Filepaths, modelname and other settings for execution.
+            model_params: Initialising parameters of the model, kernel and optimizer.
+            refresh: How often to print out the ELBO.
+            tasks: The name of the tasks (pollutants) we are modelling. Default is ['NO2'].
         """
         # get the parameters for training the model
-        self.model_params = dict() if model_params is None else model_params
+        if not model_params:
+            self.model_params = self.get_default_model_params()
+        else:
+            self.model_params = model_params
+            self.check_model_params_are_valid()
 
         # get filepaths and other configs
         default_config = dict(
@@ -61,42 +54,30 @@ class Model(ABC):
                 "Multiple pollutants not supported. Use only NO2."
             )
         # other misc arguments
-        self.log = kwargs.pop("log", True)
         self.model = None
         self.minimum_param_keys = []
         self.epoch = 0
-        self.batch_size = kwargs.pop("batchsize", 100)
-        self.refresh = kwargs.pop("refresh", 10)
+        self.batch_size = batch_size
+        self.refresh = refresh
         # Ensure logging is available
-        if self.log and not hasattr(self, "logger"):
+        if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
     @abstractmethod
-    def get_default_model_params(self):
+    def get_default_model_params(self) -> Dict:
         """
         The default model parameters if none are supplied.
 
-        Returns
-        ___
-
-        dict
-            Dictionary of parameters.
+        Returns:
+            Default model parameters.
         """
 
     def check_model_params_are_valid(self):
         """
         Check the model parameters are valid for the model.
 
-        Parameters
-        ___
-
-        model_params : dict
-            A dictionary of model parameters.
-
-        Raises
-        ___
-        KeyError
-            If the model parameters are not sufficient.
+        Raises:
+            KeyError: If the model parameters are not sufficient.
         """
         min_keys = set(self.minimum_param_keys)
         actual_keys = set(self.model_params.keys())
@@ -201,7 +182,7 @@ class Model(ABC):
             }
         }
         """
-        Model.check_test_set_is_valid(x_test)
+        ModelMixin.check_test_set_is_valid(x_test)
 
     @staticmethod
     def check_training_set_is_valid(x_train, y_train):
@@ -287,13 +268,12 @@ class Model(ABC):
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)
-            if self.log:
-                self.logger.info(
-                    "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
-                    self.epoch,
-                    objective,
-                    logger_arg,
-                )
+            self.logger.info(
+                "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                self.epoch,
+                objective,
+                logger_arg,
+            )
         self.epoch += 1
 
     def batch_predict(self, x_array, predict_fn):
@@ -373,10 +353,9 @@ class Model(ABC):
 
         for src, x_src in x_test.items():
             for pollutant in self.tasks:
-                if self.log:
-                    self.logger.info(
-                        "Batch predicting for %s on %s", pollutant, src,
-                    )
+                self.logger.info(
+                    "Batch predicting for %s on %s", pollutant, src,
+                )
                 y_mean, y_var = self.batch_predict(x_src, predict_fn)
                 y_dict[src] = {pollutant: dict(mean=y_mean, var=y_var)}
         return y_dict
