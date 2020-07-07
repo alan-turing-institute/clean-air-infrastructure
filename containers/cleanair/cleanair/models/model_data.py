@@ -88,13 +88,15 @@ class ModelData(DBWriter, DBQueryMixin):
         # else:
         #     self.restore_config_state(config_dir)
 
-    def download_config_data(self, full_config):
+    def download_config_data(self, full_config: FullConfig):
         """Download all data specified in a validated full config file"""
 
-        self.config = full_config
+        self.config = full_config.dict()
 
         # Get training and prediciton data frames
         self.training_data_df = self.get_training_data_inputs()
+        quit()
+
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
 
         self.pred_data_df = self.get_pred_data_inputs()
@@ -928,6 +930,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
+        quit()
         # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
         all_features = self.__get_model_features(
             start_date, end_date, features, sources, point_ids

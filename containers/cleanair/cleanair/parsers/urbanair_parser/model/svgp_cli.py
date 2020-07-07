@@ -1,5 +1,5 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import List, Dict
+from typing import List, Dict, Union
 from datetime import datetime
 import typer
 import json
@@ -17,13 +17,13 @@ from ..shared_args.instance_options import ClusterId, Tag
 from ..shared_args.model_options import MaxIter
 from ....instance import AirQualityInstance, AirQualityModelParams
 from ....models import ModelData, SVGP
-from ....types import Species, Source, BaseConfig
+from ....types import Species, Source, BaseConfig, FullConfig
 from ....loggers import red, green
 
 app = typer.Typer()
 
 
-def load_config(full: bool = False) -> Dict:
+def load_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
     """Load a configuration file"""
 
     if full:
@@ -33,7 +33,10 @@ def load_config(full: bool = False) -> Dict:
 
     if config.exists():
         with config.open("r") as config_f:
-            return json.load(config_f)
+            if full:
+                return FullConfig(**json.load(config_f))
+            else:
+                return BaseConfig(**json.load(config_f))
 
     if not full:
         typer.echo(f"{red(f'A model config does not exist. Run generate-config')}")
@@ -122,7 +125,7 @@ def generate_config(
 def echo_config(full: bool = typer.Option(False, help="Full version of config")):
     """Echo the cached config file"""
 
-    config = BaseConfig(**load_config(full))
+    config = load_config(full)
     print(config.json(indent=4))
 
 
@@ -131,7 +134,7 @@ def generate_full_config():
     """Perform validation checks on a config file and generates a full config"""
 
     typer.echo("Validate the cached config file")
-    config = load_config()
+    config = dict(load_config())
     model_data = ModelData(secretfile=state["secretfile"])
     model_data.validate_config(config)
 
@@ -153,56 +156,56 @@ def download_model_data():
     model_data.download_config_data(full_config)
 
 
-@app.command()
-def fit(
-    cluster_id: str = ClusterId,
-    hexgrid: bool = HexGrid,
-    maxiter: int = MaxIter,
-    preddays: int = NDays,
-    predhours: int = NHours,
-    tag: str = Tag,
-    traindays: int = NDays,
-    trainhours: int = NHours,
-    trainupto: str = UpTo,
-) -> None:
-    """Train the SVGP model"""
+# @app.command()
+# def fit(
+#     cluster_id: str = ClusterId,
+#     hexgrid: bool = HexGrid,
+#     maxiter: int = MaxIter,
+#     preddays: int = NDays,
+#     predhours: int = NHours,
+#     tag: str = Tag,
+#     traindays: int = NDays,
+#     trainhours: int = NHours,
+#     trainupto: str = UpTo,
+# ) -> None:
+#     """Train the SVGP model"""
 
-    secretfile: str = state["secretfile"]
-    # create a dictionary of data settings
-    data_config = ModelData.generate_data_config(
-        trainupto,
-        hexgrid=hexgrid,
-        include_satellite=False,
-        predhours=predhours + preddays,
-        trainhours=trainhours + traindays,
-    )
-    # load the dataset
-    dataset = ModelData(data_config, secretfile=secretfile)
-    dataset.update_remote_tables()  # write the data id & settings to DB
+#     secretfile: str = state["secretfile"]
+#     # create a dictionary of data settings
+#     data_config = ModelData.generate_data_config(
+#         trainupto,
+#         hexgrid=hexgrid,
+#         include_satellite=False,
+#         predhours=predhours + preddays,
+#         trainhours=trainhours + traindays,
+#     )
+#     # load the dataset
+#     dataset = ModelData(data_config, secretfile=secretfile)
+#     dataset.update_remote_tables()  # write the data id & settings to DB
 
-    # create the model
-    model = SVGP(batch_size=1000)  # big batch size for the grid
-    model.model_params["maxiter"] = maxiter
-    model.model_params["kernel"]["name"] = "matern32"
+#     # create the model
+#     model = SVGP(batch_size=1000)  # big batch size for the grid
+#     model.model_params["maxiter"] = maxiter
+#     model.model_params["kernel"]["name"] = "matern32"
 
-    # object for inserting model parameters into the database
-    aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
-    aq_model_params.update_remote_tables()  # write model name, id & params to DB
+#     # object for inserting model parameters into the database
+#     aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
+#     aq_model_params.update_remote_tables()  # write model name, id & params to DB
 
-    # instance for training and forecasting air quality
-    svgp_instance = AirQualityInstance(
-        model_name="svgp",
-        param_id=aq_model_params.param_id,
-        data_id=dataset.data_id,
-        cluster_id=cluster_id,
-        tag=tag,
-        fit_start_time=datetime.now().isoformat(),
-        secretfile=secretfile,
-    )
+#     # instance for training and forecasting air quality
+#     svgp_instance = AirQualityInstance(
+#         model_name="svgp",
+#         param_id=aq_model_params.param_id,
+#         data_id=dataset.data_id,
+#         cluster_id=cluster_id,
+#         tag=tag,
+#         fit_start_time=datetime.now().isoformat(),
+#         secretfile=secretfile,
+#     )
 
-    # train and forecast the model
-    svgp_instance.train(model, dataset)
-    result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
+#     # train and forecast the model
+#     svgp_instance.train(model, dataset)
+#     result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
 
-    svgp_instance.update_remote_tables()  # write the instance to the DB
-    result.update_remote_tables()  # write results to DB
+#     svgp_instance.update_remote_tables()  # write the instance to the DB
+#     result.update_remote_tables()  # write results to DB
