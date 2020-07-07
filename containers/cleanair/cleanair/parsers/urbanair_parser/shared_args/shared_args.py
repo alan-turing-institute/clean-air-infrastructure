@@ -6,7 +6,7 @@ import typer
 from dateutil.parser import isoparse
 from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
 from cleanair.timestamps import day_to_iso
-from cleanair.types import Species as ValidSpecies
+from cleanair.types import Species as ValidSpecies, Source as ValidSources
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
@@ -15,14 +15,6 @@ ValidFeatureSources = Enum(
     "ValidFeatureSources", dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
 )
 ValidFeatureNames = Enum("ValidFeatureNames", dict(zip(ALL_FEATURES, ALL_FEATURES)))
-
-
-class ValidSources(str, Enum):
-    "Valid sources"
-    laqn = "laqn"
-    aqe = "aqe"
-    satellite = "satellite"
-    hexgrid = "hexgrid"
 
 
 DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]

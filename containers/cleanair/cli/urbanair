@@ -9,25 +9,17 @@ from cleanair.parsers.urbanair_parser import inputs
 from cleanair.parsers.urbanair_parser import features
 from cleanair.parsers.urbanair_parser import model
 from cleanair.parsers.urbanair_parser.state import state
+from cleanair.parsers.urbanair_parser.state import (
+    CONFIG_SECRETFILE_PATH,
+    APP_DIR,
+    PROD_HOST,
+    PROD_SECRET_DICT,
+    MODEL_CACHE,
+)
 from cleanair.loggers.logcolours import red, green
+from cleanair.loggers import initialise_logging
 
 app = typer.Typer()
-APP_NAME = "UrbanAir-CLI"
-
-APP_DIR = typer.get_app_dir(APP_NAME)
-CONFIG_SECRETFILE_PATH: Path = Path(APP_DIR) / ".db_secrets.json"
-
-PROD_HOST = "cleanair-inputs-server.postgres.database.azure.com"
-PROD_PORT = 5432
-PROD_DB_NAME = "cleanair_inputs_db"
-PROD_SSL_MODE = "require"
-
-PROD_SECRET_DICT = {
-    "host": PROD_HOST,
-    "port": PROD_PORT,
-    "db_name": PROD_DB_NAME,
-    "ssl_mode": PROD_SSL_MODE,
-}
 
 
 @app.callback()
@@ -42,6 +34,13 @@ def main(
     Manage the CleanAir infrastructure
     """
 
+    # Create app dir
+    if not APP_DIR.is_dir():
+        APP_DIR.mkdir()
+
+    if not MODEL_CACHE.is_dir():
+        MODEL_CACHE.mkdir()
+
     if verbose:
         typer.echo("Debug verbosity")
         state["verbose"] = True
@@ -53,16 +52,17 @@ def main(
     if CONFIG_SECRETFILE_PATH.is_file():
         state["secretfile"] = CONFIG_SECRETFILE_PATH
 
+    # Set logging verbosity
+    default_logger = initialise_logging(state["verbose"])
+
+    state["logger"] = default_logger
+
 
 @app.command()
 def init_local(
     secretfile: Path = typer.Option(..., help="Path to a database secret file (.json)")
 ) -> None:
     """Initialise the CLI to connect to a local database"""
-
-    # Create app dir
-    if not os.path.isdir(APP_DIR):
-        os.mkdir(APP_DIR)
 
     # Copy secretfile over
     typer.echo("Copy secretfile to urbanair config directory")
@@ -74,7 +74,7 @@ def remove_config():
     """Delete all CLI configutation data"""
 
     # Create app dir
-    if not os.path.isdir(APP_DIR):
+    if not APP_DIR.is_dir():
         typer.echo("Configuration does not exist")
         raise typer.Abort()
 

@@ -1,8 +1,10 @@
 """Shared arguments"""
 from .shared_args import (
     UpTo,
+    UpTo_callback,
     NHours,
     NDays,
+    NDays_callback,
     CopernicusKey,
     Web,
     InsertMethod,
@@ -17,8 +19,10 @@ from .shared_args import (
 
 __all__ = [
     "UpTo",
+    "UpTo_callback",
     "NHours",
     "NDays",
+    "NDays_callback",
     "CopernicusKey",
     "Web",
     "InsertMethod",

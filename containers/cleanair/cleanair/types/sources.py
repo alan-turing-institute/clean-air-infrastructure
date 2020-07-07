@@ -4,11 +4,12 @@ from enum import Enum, unique
 
 
 @unique
-class Source(Enum):
+class Source(str, Enum):
     """Different types of source for metapoints."""
 
-    aqe: str = "aqe"
-    hexgrid: str = "hexgrid"
-    laqn: str = "laqn"
-    grid_100: str = "grid_100"
-    scoot: str = "scoot"
+    aqe = "aqe"
+    hexgrid = "hexgrid"
+    laqn = "laqn"
+    grid_100 = "grid_100"
+    scoot = "scoot"
+    satellite = "satellite"

@@ -1,6 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 from datetime import date, datetime, timedelta
 import json
 import os
@@ -17,12 +17,12 @@ from ..databases.tables import (
 )
 from ..databases import DBWriter
 from ..mixins import DBQueryMixin
-from ..loggers import get_logger
+from ..loggers import get_logger, green, red
 from ..utils import hash_dict
 from ..timestamps import as_datetime
 
 # if TYPE_CHECKING:
-from ..types import DataConfig
+from ..types import DataConfig, Source, Species
 
 # pylint: disable=too-many-lines
 
@@ -30,7 +30,7 @@ from ..types import DataConfig
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
-    def __init__(self, config: DataConfig, config_dir=None, **kwargs):
+    def __init__(self, **kwargs):
         """
         Initialise the ModelData object with a config file
         args:
@@ -46,46 +46,76 @@ class ModelData(DBWriter, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        if not (config or config_dir):
-            raise ValueError(
-                "Either config or config_dir must be supplied as arguments"
-            )
+        # if not (config or config_dir):
+        #     raise ValueError(
+        #         "Either config or config_dir must be supplied as arguments"
+        #     )
 
         self.preprocessing: Dict = dict()
 
-        if config:
-            # Validate the configuration
-            self.__validate_config(config)
-            self.config = self.__generate_full_config(config)
+        # if config:
+        #     # Validate the configuration
+        #     self.validate_config(config)
+        #     self.config = self.generate_full_config(config)
 
-            # Get training and prediciton data frames
-            self.training_data_df = self.get_training_data_inputs()
-            self.normalised_training_data_df = self.__normalise_data(
-                self.training_data_df
+        #     # Get training and prediciton data frames
+        #     self.training_data_df = self.get_training_data_inputs()
+        #     self.normalised_training_data_df = self.__normalise_data(
+        #         self.training_data_df
+        #     )
+
+        #     self.pred_data_df = self.get_pred_data_inputs()
+        #     self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+
+        #     # Process satellite data
+        #     if self.config["include_satellite"]:
+        #         (
+        #             self.training_satellite_data_x,
+        #             self.training_satellite_data_y,
+        #         ) = self.get_training_satellite_inputs()
+
+        #         self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
+        #             ["box_id", "measurement_start_utc", "point_id"]
+        #         )
+        #         self.training_satellite_data_x = self.__normalise_data(
+        #             self.training_satellite_data_x
+        #         )
+        #         self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
+        #             ["box_id", "measurement_start_utc"]
+        #         )
+
+        # else:
+        #     self.restore_config_state(config_dir)
+
+    def download_config_data(self, full_config):
+        """Download all data specified in a validated full config file"""
+
+        self.config = full_config
+        print(self.config)
+        quit()
+        # Get training and prediciton data frames
+        self.training_data_df = self.get_training_data_inputs()
+        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+
+        self.pred_data_df = self.get_pred_data_inputs()
+        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+
+        # Process satellite data
+        if self.config["include_satellite"]:
+            (
+                self.training_satellite_data_x,
+                self.training_satellite_data_y,
+            ) = self.get_training_satellite_inputs()
+
+            self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
+                ["box_id", "measurement_start_utc", "point_id"]
             )
-
-            self.pred_data_df = self.get_pred_data_inputs()
-            self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
-
-            # Process satellite data
-            if self.config["include_satellite"]:
-                (
-                    self.training_satellite_data_x,
-                    self.training_satellite_data_y,
-                ) = self.get_training_satellite_inputs()
-
-                self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-                    ["box_id", "measurement_start_utc", "point_id"]
-                )
-                self.training_satellite_data_x = self.__normalise_data(
-                    self.training_satellite_data_x
-                )
-                self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
-                    ["box_id", "measurement_start_utc"]
-                )
-
-        else:
-            self.restore_config_state(config_dir)
+            self.training_satellite_data_x = self.__normalise_data(
+                self.training_satellite_data_x
+            )
+            self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
+                ["box_id", "measurement_start_utc"]
+            )
 
     @property
     def data_id(self) -> str:
@@ -129,10 +159,14 @@ class ModelData(DBWriter, DBQueryMixin):
     @staticmethod
     def generate_data_config(
         trainupto: str,
-        hexgrid: bool = False,
+        trainhours: int,
+        predhours: int,
+        train_sources: List[Source],
+        pred_sources: List[Source],
+        species: List[Species],
+        norm_by: str,
+        model_type: str,
         include_satellite: bool = False,
-        predhours: int = 48,
-        trainhours: int = 48,
     ) -> DataConfig:
         """Return a dictionary of model data settings.
 
@@ -152,32 +186,35 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Generate and return the config dictionary
         data_config = {
-            "train_start_date": as_datetime(trainupto) - timedelta(hours=trainhours),
-            "train_end_date": as_datetime(trainupto),
-            "pred_start_date": as_datetime(trainupto),
-            "pred_end_date": as_datetime(trainupto) + timedelta(hours=predhours),
+            "train_start_date": (
+                as_datetime(trainupto) - timedelta(hours=trainhours)
+            ).isoformat(),
+            "train_end_date": as_datetime(trainupto).isoformat(),
+            "pred_start_date": as_datetime(trainupto).isoformat(),
+            "pred_end_date": (
+                as_datetime(trainupto) + timedelta(hours=predhours)
+            ).isoformat(),
             "include_satellite": include_satellite,
             "include_prediction_y": False,
-            "train_sources": ["laqn"],
-            "pred_sources": ["laqn"],
+            "train_sources": [src.value for src in train_sources],
+            "pred_sources": [src.value for src in pred_sources],
             "train_interest_points": "all",
             "train_satellite_interest_points": "all",
             "pred_interest_points": "all",
-            "species": ["NO2"],
+            "species": [src.value for src in species],
             "features": [
                 "value_1000_total_a_road_length",
                 "value_500_total_a_road_length",
                 "value_500_total_a_road_primary_length",
                 "value_500_total_b_road_length",
             ],
-            "norm_by": "laqn",
-            "model_type": "svgp",
+            "norm_by": norm_by,
+            "model_type": model_type,
         }
-        if hexgrid:
-            data_config["pred_sources"].append("hexgrid")
+
         return data_config
 
-    def __validate_config(self, config):
+    def validate_config(self, config):
 
         config_keys = [
             "train_start_date",
@@ -208,6 +245,7 @@ class ModelData(DBWriter, DBQueryMixin):
                     config_keys
                 )
             )
+        self.logger.info(green("Config has correct keys and is syntactically valid"))
 
         # Check requested features are available
         if config["features"] == "all":
@@ -224,18 +262,21 @@ class ModelData(DBWriter, DBQueryMixin):
                 """You have selected 'all' features from the database.
                 It is strongly advised that you choose features manually"""
             )
+            self.logger.warning(red("Using all features. Not recommended"))
         else:
-            self.logger.debug("Checking requested features are availble in database")
+            self.logger.debug("Checking requested features are available in database")
             self.__check_features_available(
                 config["features"], config["train_start_date"], config["pred_end_date"]
             )
+            self.logger.info(green("Requested features are available"))
 
         # Check training sources are available
         train_sources = config["train_sources"]
         self.logger.debug(
-            "Checking requested sources for training are availble in database"
+            "Checking requested sources for training are available in database"
         )
         self.__check_sources_available(train_sources)
+        self.logger.info(green("Requested training sources are available"))
 
         # Check prediction sources are available
         pred_sources = config["pred_sources"]
@@ -243,6 +284,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "Checking requested sources for prediction are availble in database"
         )
         self.__check_sources_available(pred_sources)
+        self.logger.info(green("Requested prediction sources are available"))
 
         # Check model type is valid
         if config["model_type"] not in valid_models:
@@ -251,24 +293,27 @@ class ModelData(DBWriter, DBQueryMixin):
                     config["model_type"], valid_models
                 )
             )
+        self.logger.info(green("Model type is valid"))
 
         # Check interest points are valid
         train_interest_points = config["train_interest_points"]
         if isinstance(train_interest_points, list):
             self.__check_points_available(train_interest_points, train_sources)
+        self.logger.info(green("Requested training interest points are available"))
 
         pred_interest_points = config["pred_interest_points"]
         if isinstance(pred_interest_points, list):
             self.__check_points_available(pred_interest_points, pred_sources)
+        self.logger.info(green("Requested prediction interest points are available"))
 
         if config["include_satellite"]:
             satellite_interest_points = config["train_satellite_interest_points"]
             if isinstance(satellite_interest_points, list):
                 self.__check_points_available(pred_interest_points, ["satellite"])
-
+            self.logger.info(green("Requested satellite interest points are available"))
         self.logger.info("Validate config complete")
 
-    def __generate_full_config(self, config):
+    def generate_full_config(self, config):
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
 
