@@ -17,7 +17,7 @@ from ..shared_args.instance_options import ClusterId, Tag
 from ..shared_args.model_options import MaxIter
 from ....instance import AirQualityInstance, AirQualityModelParams
 from ....models import ModelData, SVGP
-from ....types import Species, Source
+from ....types import Species, Source, BaseConfig
 from ....loggers import red, green
 
 app = typer.Typer()
@@ -48,9 +48,7 @@ def load_config(full: bool = False) -> Dict:
 @app.command()
 def generate_config(
     trainupto: str = typer.Option(
-        "tomorrow",
-        callback=UpTo_callback,
-        help="Up to what datetime to train the model",
+        "today", callback=UpTo_callback, help="Up to what datetime to train the model",
     ),
     traindays: int = typer.Option(
         2, callback=NDays_callback, help="Number of days to train on", show_default=True
@@ -124,8 +122,8 @@ def generate_config(
 def echo_config(full: bool = typer.Option(False, help="Full version of config")):
     """Echo the cached config file"""
 
-    config = load_config(full)
-    print(json.dumps(config, indent=4))
+    config = BaseConfig(**load_config(full))
+    print(config.json(indent=4))
 
 
 @app.command()
@@ -142,7 +140,7 @@ def generate_full_config():
 
     state["logger"].info(green("Creating full config file"))
     with MODEL_CONFIG_FULL.open("w") as full_config_f:
-        json.dump(full_config, full_config_f, indent=True)
+        full_config_f.write(full_config.json(indent=4))
 
 
 @app.command()

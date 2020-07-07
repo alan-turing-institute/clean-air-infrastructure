@@ -23,26 +23,9 @@ from ..utils import hash_dict
 from ..timestamps import as_datetime
 
 # if TYPE_CHECKING:
-from ..types import DataConfig, Source, Species
+from ..types import DataConfig, Source, Species, BaseConfig, FullConfig
 
 # pylint: disable=too-many-lines
-
-
-class BaseConfig(BaseModel):
-    train_start_date: datetime
-    train_end_date: datetime
-    pred_start_date: datetime
-    pred_end_date: datetime
-    include_satellite: bool
-    include_predictions_y: bool
-    train_sources: List[Source]
-    pred_sources: List[Source]
-    train_interest_points: Union[str, List[str]] = "all"
-    train_satellite_interest_points: Union[str, List[str]] = "all"
-    pred_interest_points: Union[str, List[str]] = "all"
-    species: List[Species]
-    features: List[str]
-    norm_by: Source = Source.laqn
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -109,8 +92,7 @@ class ModelData(DBWriter, DBQueryMixin):
         """Download all data specified in a validated full config file"""
 
         self.config = full_config
-        print(self.config)
-        quit()
+
         # Get training and prediciton data frames
         self.training_data_df = self.get_training_data_inputs()
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
@@ -227,7 +209,7 @@ class ModelData(DBWriter, DBQueryMixin):
             ],
             "norm_by": norm_by,
             "model_type": model_type,
-            "include_predictions_y": False,
+            "include_prediction_y": False,
         }
 
         return BaseConfig(**data_config)
@@ -378,7 +360,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
 
-        return config
+        return FullConfig(**config)
 
     def save_config_state(self, dir_path):
         """Save the full configuration and training/prediction data to disk:
