@@ -23,6 +23,7 @@ setuptools.setup(
         "geoalchemy2==0.6.3",
         "gitpython==3.1.0",
         "holidays==0.9.8",
+        "nptyping==1.2.0",
         "numpy==1.18.5",
         "pandas==1.0.5",
         "python-dateutil==2.8.1",
@@ -33,7 +34,7 @@ setuptools.setup(
         "scipy==1.4.1",
         "sqlalchemy==1.3.11",
         "sqlalchemy-utils==0.36.3",
-        "sklearn==0.0",
+        "scikit-learn==0.23.1",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
         "typer==0.2.1",
@@ -42,7 +43,7 @@ setuptools.setup(
     ],
     extras_require={
         "traffic": ["pystan==2.19.1.1", "fbprophet==0.4", "pathos==0.2.5"],
-        "models": ["gpflow==1.5.1", "tensorflow==1.15.0", "scikit-learn==0.22.1"],
+        "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
         "dashboard": [
             "dash-bootstrap-components==0.8.2",
             "dash==1.8.0",
