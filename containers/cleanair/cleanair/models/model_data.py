@@ -21,8 +21,8 @@ from ..loggers import get_logger
 from ..utils import hash_dict
 from ..timestamps import as_datetime
 
-if TYPE_CHECKING:
-    from ..types import DataConfig
+# if TYPE_CHECKING:
+from ..types import DataConfig
 
 # pylint: disable=too-many-lines
 
