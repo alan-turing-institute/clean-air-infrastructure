@@ -5,11 +5,13 @@ import logging
 import requests
 from ..loggers import get_logger, red, green
 
+from typing import Callable, Any
+
 logging.basicConfig(level=20)
 logger = get_logger(__name__)  # pylint: disable=C0103
 
 
-def robust_api(api_call):
+def robust_api(api_call: Callable[..., Any]) -> Callable[..., Any]:
     """Wrapper function for making multiple calls to the same API endpoint to overcome server errors
        kwargs:
             n_repeat: Maximum number of calls to the API that can be made
