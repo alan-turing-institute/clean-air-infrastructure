@@ -104,14 +104,14 @@ def check(
     #     )
     # )
 
-    print(
-        laqn_writer.get_laqn_availability_daily_total(
-            start_date=laqn_writer.start_datetime.isoformat(),
-            end_date=laqn_writer.end_datetime.isoformat(),
-            species=all_species,
-            output_type="sql",
-        )
-    )
+    # print(
+    #     laqn_writer.get_laqn_availability_daily_total(
+    #         start_date=laqn_writer.start_datetime.isoformat(),
+    #         end_date=laqn_writer.end_datetime.isoformat(),
+    #         species=all_species,
+    #         output_type="sql",
+    #     )
+    # )
 
     print(
         laqn_writer.get_laqn_availability_daily_total(
