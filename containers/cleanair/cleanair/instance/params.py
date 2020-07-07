@@ -6,17 +6,21 @@ from abc import abstractmethod
 from ..utils.hashing import hash_dict
 from ..databases.mixins import ModelTableMixin
 
-# if TYPE_CHECKING:
-from ..types import ModelParams
+if TYPE_CHECKING:
+    from ..types import ModelParams, ParamsSVGP
+    from ..databases import DBWriter
+    _Base = DBWriter
+else:
+    _Base = object
 
 
-class ModelParamsMixin:
+class ModelParamsMixin(_Base):
     """Parameters of an air quality model."""
 
     def __init__(
         self, secretfile: str, model_name: str, model_params: ModelParams, **kwargs,
     ):
-#        super().__init__(secretfile=secretfile, **kwargs)
+        super().__init__(secretfile=secretfile, **kwargs)
         self.model_name = model_name
         self.model_params = model_params
 

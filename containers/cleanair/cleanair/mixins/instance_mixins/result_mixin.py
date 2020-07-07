@@ -1,12 +1,17 @@
 """Mixin class for predictions from a model."""
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 import pandas as pd # type: ignore
 from sqlalchemy import inspect # type: ignore
 from ..query_mixins import ResultQueryMixin
 
-
-class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
+if TYPE_CHECKING:
+    from ...databases import DBWriter
+    _Base = DBWriter
+else:
+    _Base = object
+    
+class ResultMixin(ResultQueryMixin, _Base):  # pylint: disable=abstract-method
     """The predictions from an air quality model.
 
     Attributes:
@@ -23,7 +28,7 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         result_df: Optional[pd.DataFrame] = None,
         **kwargs,
     ):
-        #super().__init__(secretfile=secretfile, **kwargs)
+        super().__init__(secretfile=secretfile, **kwargs)
         self.instance_id = instance_id
         self.data_id = data_id
         if not result_df is None:
