@@ -3,12 +3,13 @@ import functools
 import pandas as pd # type: ignore
 from tabulate import tabulate
 
+from typing import Callable, Any
 
 class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
 
 
-def check_empty_df(data_frame, raise_error=True):
+def check_empty_df(data_frame: pd.df, raise_error: bool=True):
     """Check a dataframe is not empty and raise and error if it is"""
     if data_frame.empty and raise_error:
         raise EmptyQueryError(
@@ -17,7 +18,7 @@ def check_empty_df(data_frame, raise_error=True):
 
 
 # pylint: disable=too-many-return-statements
-def db_query(query_f):
+def db_query(query_f: Callable[..., Any]) -> Callable[..., Any]:
     """
     Wrapper for functions that return an sqlalchemy query object.
     Args:
