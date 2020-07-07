@@ -195,25 +195,48 @@
                         
                         const activities = result2;
                     
-                        let all_counts = result2.map(({counts}) => (counts)) 
+                      //  let all_counts = result2.map(({counts}) => (counts)) 
+                     
+                        let avg_at_camera = []
+                        for (let c of cameras){
+                            
+                            let camera_id = c.id.replace("JamCams_", "")
+                            
+                            let items = activities.filter(function(item){return item.camera_id == camera_id})
                        
-                        let max=Math.max(...all_counts)
+                            if (items.length > 0){
+                                
+                                let count = items.map(({counts}) => (counts))
+                                let sum_at_camera = count.reduce((previous, current) => current += previous);
+                                avg_at_camera.push(sum_at_camera/count.length)
+                            //  console.log (avg_at_camera)
+
+                            }  
+                            
+                        }
+                       
+                        let max_average = Math.max(...avg_at_camera)
+                        console.log ("max_average" + max_average)
                         
+                        //let max=Math.max(...all_counts)
+                       
                         for (let c of cameras) {
                             
                             let camera_id = c.id.replace("JamCams_", "")
                             
                             let items = activities.filter(function(item){return item.camera_id == camera_id})
-
-                            let  max_at_camera = 0
+                           
+                            // let  max_at_camera = 0
+                            
+                            let avg = 0
                             if (items.length > 0){
-                                max_at_camera = Math.max(...items.map(({counts}) => (counts)))
-                            } 
-
-                          
+                                // max_at_camera = Math.max(...items.map(({counts}) => (counts)))
+                               avg = avg_at_camera.shift()
+                            }                           
+                            
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(max_at_camera, max)
+                                'icon': generateIcon2(avg, max_average)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
