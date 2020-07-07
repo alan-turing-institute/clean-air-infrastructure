@@ -28,7 +28,7 @@ class LAQNAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query
-    def get_open_sites(self, exclude_closed=True):
+    def get_laqn_open_sites(self, exclude_closed=True):
         """Get open LAQN sites
 
         Some LAQN sites have more than one sitecode but have the same location.
@@ -66,7 +66,7 @@ class LAQNAvailabilityMixin:
         """
 
         # print(species)
-        open_sites = self.get_open_sites(output_type="subquery")
+        open_sites = self.get_laqn_open_sites(output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
 
@@ -147,7 +147,7 @@ class LAQNAvailabilityMixin:
 
         in_data_cte = self.get_raw_data(species, start_date, end_date).cte()
 
-        open_sites_sq = self.get_open_sites(output_type="subquery")
+        open_sites_sq = self.get_laqn_open_sites(output_type="subquery")
         expected_dates = self.gen_date_range(
             species, start_date, end_date, output_type="subquery"
         )

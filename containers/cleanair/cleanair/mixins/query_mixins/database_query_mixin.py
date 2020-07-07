@@ -1,7 +1,8 @@
 """
 Mixin for useful database queries
 """
-
+from typing import List
+from datetime import datetime
 from sqlalchemy import and_, func, literal, null
 from ...decorators import db_query
 from ...databases.tables import (
@@ -17,6 +18,7 @@ from ...databases.tables import (
 )
 from ...loggers import get_logger
 from ...timestamps import as_datetime
+from ...types.copernicus_types import Species
 
 
 class DBQueryMixin:
@@ -185,36 +187,52 @@ class DBQueryMixin:
         return all_sources_q
 
     @db_query
-    def get_laqn_readings(self, start_date, end_date):
+    def get_laqn_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
         """Get LAQN readings from database"""
+
+        species = [spec.value for spec in species]
+
         with self.dbcnxn.open_session() as session:
-            laqn_reading_q = session.query(
-                LAQNReading.measurement_start_utc,
-                LAQNReading.species_code,
-                LAQNReading.value,
-                LAQNSite.point_id,
-                literal("laqn").label("source"),
-            ).join(LAQNSite)
-            laqn_reading_q = laqn_reading_q.filter(
-                LAQNReading.measurement_start_utc >= start_date,
-                LAQNReading.measurement_start_utc < end_date,
+            laqn_reading_q = (
+                session.query(
+                    LAQNSite.point_id,
+                    LAQNReading.measurement_start_utc,
+                    LAQNReading.species_code,
+                    LAQNReading.value,
+                )
+                .join(LAQNSite)
+                .filter(
+                    LAQNReading.measurement_start_utc >= start_date.isoformat(),
+                    LAQNReading.measurement_start_utc < end_date.isoformat(),
+                    LAQNReading.species_code.in_(species),
+                )
             )
             return laqn_reading_q
 
     @db_query
-    def get_aqe_readings(self, start_date, end_date):
+    def get_aqe_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
         """Get AQE readings from database"""
+
+        species = [spec.value for spec in species]
+
         with self.dbcnxn.open_session() as session:
-            aqe_reading_q = session.query(
-                AQEReading.measurement_start_utc,
-                AQEReading.species_code,
-                AQEReading.value,
-                AQESite.point_id,
-                literal("aqe").label("source"),
-            ).join(AQESite)
-            aqe_reading_q = aqe_reading_q.filter(
-                AQEReading.measurement_start_utc >= start_date,
-                AQEReading.measurement_start_utc < end_date,
+            aqe_reading_q = (
+                session.query(
+                    AQESite.point_id,
+                    AQEReading.measurement_start_utc,
+                    AQEReading.species_code,
+                    AQEReading.value,
+                )
+                .join(AQESite)
+                .filter(
+                    AQEReading.measurement_start_utc >= start_date.isoformat(),
+                    AQEReading.measurement_start_utc < end_date.isoformat(),
+                    AQEReading.species_code.in_(species),
+                )
             )
             return aqe_reading_q
 

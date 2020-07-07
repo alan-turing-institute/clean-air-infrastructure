@@ -1,6 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Union, Optional
 from datetime import date, datetime, timedelta
 import json
 import os
@@ -10,22 +10,29 @@ import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
+from sqlalchemy import func, text
+from sqlalchemy.sql.expression import Alias
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
     AirQualityDataTable,
     SatelliteGrid,
+    MetaPoint,
 )
-from ..databases import DBWriter
+from ..databases import DBWriter, Base
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger, green, red
 from ..utils import hash_dict
 from ..timestamps import as_datetime
+from ..decorators import db_query
 
 # if TYPE_CHECKING:
 from ..types import DataConfig, Source, Species, BaseConfig, FullConfig
 
 # pylint: disable=too-many-lines
+
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
+ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -91,10 +98,26 @@ class ModelData(DBWriter, DBQueryMixin):
     def download_config_data(self, full_config: FullConfig):
         """Download all data specified in a validated full config file"""
 
-        self.config = full_config.dict()
+        config = full_config.dict()
 
         # Get training and prediciton data frames
-        self.training_data_df = self.get_training_data_inputs()
+        self.training_data_laqn = self.get_training_data_inputs(
+            config, Source.laqn, output_type="sql"
+        )
+
+        self.training_data_aqe = self.get_training_data_inputs(
+            config, Source.aqe, output_type="sql"
+        )
+
+        # print(self.training_data_laqn, end="\n\n")
+        # print(self.training_data_aqe, end="\n\n")
+        # quit()
+
+        self.training_data_laqn = self.get_training_data_inputs(
+            config, Source.laqn, output_type="df", limit=50
+        )
+        
+        print(self.training_data_laqn)
         quit()
 
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
@@ -718,14 +741,21 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def __select_features(
         self,
-        feature_table,
-        features,
-        sources,
-        point_ids,
-        start_date=None,
-        end_date=None,
+        feature_table: Base,
+        features: List[str],
+        sources: List[Source],
+        point_ids: List[str],
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
     ):  # pylint: disable=too-many-arguments
         """Query features from the database. Returns a pandas dataframe if values returned, else returns None"""
+
+        # print(features)
+        # print(sources)
+        # print(point_ids)
+        # print(start_date)
+        # print(end_date)
+        # quit()
 
         with self.dbcnxn.open_session() as session:
 
@@ -748,9 +778,13 @@ class ModelData(DBWriter, DBQueryMixin):
                 feature_query.statement, feature_query.session.bind
             )
 
+            print(features_df.head())
+
             interest_point_df = pd.read_sql(
                 interest_point_query.statement, interest_point_query.session.bind
             ).set_index("point_id")
+
+            print(interest_point_df.head())
 
             # Check if returned dataframes are empty
             if interest_point_df.empty:
@@ -796,7 +830,66 @@ class ModelData(DBWriter, DBQueryMixin):
 
             # Inner join the MetaPoint and StaticFeature(Dynamic) data
             df_joined = interest_point_df.join(features_df, how="left")
+
+            print(df_joined.head())
+            quit()
             return df_joined.reset_index()
+
+    @db_query
+    def select_static_features(
+        self, features: List[str], source: Source, point_ids: List[str]
+    ):
+
+        with self.dbcnxn.open_session() as session:
+
+            return (
+                session.query(
+                    StaticFeature,
+                    MetaPoint.source,
+                    func.ST_X(MetaPoint.location).label("lat"),
+                    func.ST_Y(MetaPoint.location).label("lon"),
+                )
+                .filter(
+                    StaticFeature.feature_name.in_(features),
+                    MetaPoint.source == source,
+                )
+                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id)
+            )
+
+            # return session.query(
+            #     MetaPoint.id.label("point_id"),
+            #     MetaPoint.source,
+            #     func.ST_X(MetaPoint.location).label("lat"),
+            #     func.ST_Y(MetaPoint.location).label("lon"),
+            # ).filter(MetaPoint.source.in_(sources))
+
+            # interest_point_query = self.get_available_interest_points(
+            #     sources, point_ids
+            # )
+
+            # # Select into into dataframes
+            # features_df = pd.read_sql(
+            #     feature_query.statement, feature_query.session.bind
+            # )
+
+            # print(features_df.head())
+
+            interest_point_df = pd.read_sql(
+                interest_point_query.statement, interest_point_query.session.bind
+            ).set_index("point_id")
+
+            print(interest_point_df.head())
+
+            quit()
+
+            # Check if returned dataframes are empty
+            if interest_point_df.empty:
+                raise AttributeError(
+                    "No interest points were returned from the database. Check requested interest points are valid"
+                )
+
+            if features_df.empty:
+                return features_df
 
     def __select_dynamic_features(
         self, start_date, end_date, features, sources, point_ids
@@ -807,7 +900,9 @@ class ModelData(DBWriter, DBQueryMixin):
             DynamicFeature, features, sources, point_ids, start_date, end_date
         )
 
-    def __select_static_features(self, features, sources, point_ids):
+    def __select_static_features(
+        self, features: List[str], sources: List[Source], point_ids: List[str]
+    ):
         """Query the database for static features and join with metapoint data
 
         args:
@@ -842,7 +937,14 @@ class ModelData(DBWriter, DBQueryMixin):
         )
         return time_df_merged
 
-    def __get_sensor_readings(self, start_date, end_date, sources, species):
+    @db_query
+    def get_sensor_readings(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        sources: List[Source],
+        species: List[Species],
+    ):
         """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
 
         self.logger.debug(
@@ -888,54 +990,153 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return sensor_df[species].reset_index()
 
-    def __get_model_features(self, start_date, end_date, features, sources, point_ids):
-        """
-        Query the database for model features, only getting features in self.features
-        """
-        static_features = self.__select_static_features(features, sources, point_ids)
-        static_features_expand = self.__expand_time(
-            start_date, end_date, static_features
-        )
-        dynamic_features = self.__select_dynamic_features(
-            start_date, end_date, features, sources, point_ids
-        )
+    @db_query
+    def expand_time(self, subquery: Alias, start_date: datetime, end_date: datetime):
 
-        if dynamic_features.empty:
-            self.logger.warning(
-                """No dynamic features were returned from the database.
-                If dynamic features were not requested then ignore."""
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(
+                func.generate_series(
+                    start_date.isoformat(),
+                    (end_date - timedelta(hours=1)).isoformat(),
+                    ONE_HOUR_INTERVAL,
+                ).label("measurement_start_utc"),
+                subquery,
             )
-            return static_features_expand
 
-        return static_features_expand.merge(
-            dynamic_features,
-            how="left",
-            on=["point_id", "measurement_start_utc", "source", "lon", "lat"],
+    def get_static_features(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        features: List[str],
+        source: Source,
+        point_ids: List[str],
+        output_type="df",
+    ) -> pd.DateFrame:
+        """
+        Query the database for static features
+        """
+
+        static_features = self.select_static_features(
+            features, source, point_ids, output_type="subquery"
         )
 
-    def get_training_data_inputs(self):
+        static_features_expand = self.expand_time(
+            static_features, start_date, end_date, output_type=output_type
+        )
+
+        return static_features_expand
+
+        # print(static_features_expand)
+        # quit()
+        # dynamic_features = self.__select_dynamic_features(
+        #     start_date, end_date, features, sources, point_ids
+        # )
+
+        # if dynamic_features.empty:
+        #     self.logger.warning(
+        #         """No dynamic features were returned from the database.
+        #         If dynamic features were not requested then ignore."""
+        #     )
+        #     return static_features_expand
+
+        # return static_features_expand.merge(
+        #     dynamic_features,
+        #     how="left",
+        #     on=["point_id", "measurement_start_utc", "source", "lon", "lat"],
+        # )
+
+    @db_query
+    def get_training_data_inputs(self, config, source: Source):
         """Query the database to get inputs for model fitting."""
 
-        start_date = self.config["train_start_date"]
-        end_date = self.config["train_end_date"]
-        sources = self.config["train_sources"]
-        species = self.config["species"]
-        point_ids = self.config["train_interest_points"]
-        features = self.config["feature_names"]
+        start_date = config["train_start_date"]
+        end_date = config["train_end_date"]
+        # sources = config["train_sources"]
+        species = config["species"]
+        point_ids = config["train_interest_points"]
+        features = config["feature_names"]
 
         self.logger.info(
-            "Loading training data for species: %s from sources: %s", species, sources,
+            "Loading training data for species: %s from sources: %s",
+            [s.value for s in species],
+            source.value,
         )
         self.logger.info(
             "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
-        quit()
-        # Get sensor readings and summary of availible data from start_date (inclusive) to end_date
-        all_features = self.__get_model_features(
-            start_date, end_date, features, sources, point_ids
+        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
+        static_features = self.get_static_features(
+            start_date, end_date, features, source, point_ids, output_type="subquery"
         )
-        readings = self.__get_sensor_readings(start_date, end_date, sources, species)
+        laqn_readings = self.get_laqn_readings(
+            start_date, end_date, species, output_type="subquery"
+        )
+        aqe_readings = self.get_aqe_readings(
+            start_date, end_date, species, output_type="subquery"
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            static_with_laqn_readings = (
+                session.query(
+                    static_features, laqn_readings.c.species_code, laqn_readings.c.value
+                )
+                .join(
+                    laqn_readings,
+                    (static_features.c.point_id == laqn_readings.c.point_id)
+                    & (
+                        static_features.c.measurement_start_utc
+                        == laqn_readings.c.measurement_start_utc
+                    ),
+                    isouter=True,
+                )
+                .filter(static_features.c.source == "laqn")
+                .order_by(
+                    static_features.c.point_id,
+                    static_features.c.feature_name,
+                    static_features.c.measurement_start_utc,
+                    laqn_readings.c.species_code,
+                )
+            )
+
+            static_with_aqe_readings = (
+                session.query(
+                    static_features, aqe_readings.c.species_code, aqe_readings.c.value
+                )
+                .join(
+                    aqe_readings,
+                    (static_features.c.point_id == aqe_readings.c.point_id)
+                    & (
+                        static_features.c.measurement_start_utc
+                        == aqe_readings.c.measurement_start_utc
+                    ),
+                    isouter=True,
+                )
+                .filter(static_features.c.source == "aqe")
+                .order_by(
+                    static_features.c.point_id,
+                    static_features.c.feature_name,
+                    static_features.c.measurement_start_utc,
+                    aqe_readings.c.species_code,
+                )
+            )
+
+            if source == Source.laqn:
+                return static_with_laqn_readings
+
+            if source == Source.aqe:
+                return static_with_aqe_readings
+
+            # if "aqe" in sources:
+
+            #     static_with_readings = session.query(
+            #         static_with_readings, aqe_readings
+            #     ).join(
+            #         laqn_readings,
+            #         static_features.c.point_id == laqn_readings.c.point_id,
+            # )
 
         self.logger.debug("Merging sensor data and model features")
         model_data = pd.merge(
@@ -965,7 +1166,7 @@ class ModelData(DBWriter, DBQueryMixin):
             end_date,
         )
 
-        all_features = self.__get_model_features(
+        all_features = self.get_model_features(
             start_date, end_date, features, sources, point_ids
         )
         if self.config["include_prediction_y"]:
@@ -1008,7 +1209,7 @@ class ModelData(DBWriter, DBQueryMixin):
         )
 
         # Get model features between train_start_date and pred_end_date
-        all_features = self.__get_model_features(
+        all_features = self.get_model_features(
             train_start_date, pred_end_date, features, sources, point_ids
         )
         # Get satellite readings

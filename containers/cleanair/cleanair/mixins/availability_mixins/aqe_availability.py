@@ -28,7 +28,7 @@ class AQEAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query
-    def get_open_sites(self, with_location=False):
+    def get_aqe_open_sites(self, with_location=False):
         """Get open AQE sites
         
         Args:
@@ -117,7 +117,9 @@ class AQEAvailabilityMixin:
         """
 
         in_data_cte = self.get_in_data(start_date, end_date).cte()
-        open_sites_sq = self.get_open_sites(with_location=False, output_type="subquery")
+        open_sites_sq = self.get_aqe_open_sites(
+            with_location=False, output_type="subquery"
+        )
         expected_dates = self.gen_date_range(
             start_date, end_date, output_type="subquery"
         )
