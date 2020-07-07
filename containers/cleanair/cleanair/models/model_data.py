@@ -1,6 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Union
 from datetime import date, datetime, timedelta
 import json
 import os
@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
+from pydantic import BaseModel
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -25,6 +26,23 @@ from ..timestamps import as_datetime
 from ..types import DataConfig, Source, Species
 
 # pylint: disable=too-many-lines
+
+
+class BaseConfig(BaseModel):
+    train_start_date: datetime
+    train_end_date: datetime
+    pred_start_date: datetime
+    pred_end_date: datetime
+    include_satellite: bool
+    include_predictions_y: bool
+    train_sources: List[Source]
+    pred_sources: List[Source]
+    train_interest_points: Union[str, List[str]] = "all"
+    train_satellite_interest_points: Union[str, List[str]] = "all"
+    pred_interest_points: Union[str, List[str]] = "all"
+    species: List[Species]
+    features: List[str]
+    norm_by: Source = Source.laqn
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -167,7 +185,7 @@ class ModelData(DBWriter, DBQueryMixin):
         norm_by: str,
         model_type: str,
         include_satellite: bool = False,
-    ) -> DataConfig:
+    ) -> BaseConfig:
         """Return a dictionary of model data settings.
 
         Args:
@@ -195,7 +213,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 as_datetime(trainupto) + timedelta(hours=predhours)
             ).isoformat(),
             "include_satellite": include_satellite,
-            "include_prediction_y": False,
             "train_sources": [src.value for src in train_sources],
             "pred_sources": [src.value for src in pred_sources],
             "train_interest_points": "all",
@@ -210,9 +227,12 @@ class ModelData(DBWriter, DBQueryMixin):
             ],
             "norm_by": norm_by,
             "model_type": model_type,
+            "include_predictions_y": False,
         }
 
-        return data_config
+        return BaseConfig(**data_config)
+
+        # return data_config
 
     def validate_config(self, config):
 

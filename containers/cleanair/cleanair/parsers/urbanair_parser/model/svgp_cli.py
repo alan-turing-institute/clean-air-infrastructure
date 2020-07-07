@@ -117,7 +117,7 @@ def generate_config(
     )
 
     with MODEL_CONFIG.open("w") as config_f:
-        json.dump(data_config, config_f, indent=4)
+        config_f.write(data_config.json(indent=4))
 
 
 @app.command()
