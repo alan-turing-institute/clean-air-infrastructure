@@ -15,6 +15,8 @@ def check(
     """Check what Scoot data is in the database"""
 
     typer.echo("Check scoot data")
+    # Set logging verbosity
+    default_logger = initialise_logging(state["verbose"])
 
 
 @app.command()

@@ -6,6 +6,7 @@ import typer
 from dateutil.parser import isoparse
 from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
 from cleanair.timestamps import day_to_iso
+from cleanair.types import Species as ValidSpecies
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
@@ -155,3 +156,5 @@ AWSKey = typer.Option(
 )
 
 Sources = typer.Option(..., help="List sources to process")
+
+Species = typer.Option(..., help="Species of pollutant")

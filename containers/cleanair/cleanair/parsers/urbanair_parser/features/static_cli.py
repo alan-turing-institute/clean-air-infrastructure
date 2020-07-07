@@ -6,7 +6,7 @@ import tempfile
 import time
 import typer
 from cleanair.features import FeatureExtractor, FEATURE_CONFIG
-
+from cleanair.loggers import initialise_logging
 
 from ..shared_args import (
     Web,
@@ -44,6 +44,10 @@ for i in range(len(valid_features)):
         it: int = typer.Option(i, hidden=True),
     ) -> None:
         "Check which static features have been processed"
+
+        # Set logging verbosity
+        default_logger = initialise_logging(state["verbose"])
+
         # Get all sources to process
         all_sources = [src.value for src in source]
 
@@ -101,6 +105,9 @@ for i in range(len(valid_features)):
         it: int = typer.Option(i, hidden=True),
     ) -> None:
         "Process static features and insert into the database"
+
+        # Set logging verbosity
+        default_logger = initialise_logging(state["verbose"])
         # Get all sources to process
         all_sources = [src.value for src in source]
 
