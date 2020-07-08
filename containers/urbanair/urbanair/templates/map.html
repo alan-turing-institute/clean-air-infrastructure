@@ -73,10 +73,10 @@
 
 	mapboxgl.accessToken = 'pk.eyJ1IjoiamJyYW5kcmV0aCIsImEiOiJja2M2ZHB5eGEwcWd2Mnl0aXkzd2F4ajIwIn0.5C0L8qaycmDFzauh9kCQWw';
     let map = new mapboxgl.Map({
-        container: 'mapid', // container id
-        style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
+        container: 'mapid',
+        style: 'mapbox://styles/mapbox/dark-v10',
         center: [-0.09, 51.505], // starting position [lng, lat]
-        zoom: 9, // starting zoom
+        zoom: 10, // starting zoom
     });
 
     map.on('load', () => {
@@ -87,14 +87,13 @@
             id: 'jamcams',
             type: 'circle',
             source: 'jamcams',
+            filter: [
+                '==',
+                ['string', ['get', 'type']],
+                markerType
+            ],
             paint: {
-                'circle-radius': {
-                    'base': 1.75,
-                    'stops': [
-                        [12, 2],
-                        [22, 180]
-                    ]
-                },
+                'circle-radius': 8,
                 'circle-color': [
                     'interpolate',
                     ['linear'],
@@ -106,7 +105,9 @@
                     4, '#A2719B',
                     5, '#AA5E79'
                 ],
-                'circle-opacity': 1
+                'circle-stroke-color': 'lightgrey',
+                'circle-stroke-width': 1,
+                'circle-opacity': .8
             }
         })
     });
@@ -155,7 +156,7 @@
                     )
                 }
             }
-            map.getSource('jamcams').setData(data);
+            map.getSource('jamcams').setData(data); // This loads the data into mapbox
         })
     }
 
@@ -197,7 +198,7 @@
     // }
 
 
-    let markerType = 'people';
+    let markerType = 'person';
     let showGroundEstimates = 'show';
 
     let test = undefined;
