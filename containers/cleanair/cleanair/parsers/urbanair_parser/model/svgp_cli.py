@@ -78,7 +78,6 @@ def generate_config(
         show_default=True,
         help="Interest point sources to predict on",
     ),
-    include_satellite: bool = typer.Option(False, help="Use satellite data"),
     species: List[Species] = typer.Option(
         [Species.NO2.value], help="Pollutants to train and predict on"
     ),
@@ -155,12 +154,9 @@ def download_model_data():
     model_data = ModelData(secretfile=state["secretfile"])
 
     data_dict = model_data.download_input_config_data(full_config)
+    data_dict_norm = model_data.normalize_data(full_config, data_dict)
 
-    print(model_data.norm_stats(full_config, data_dict))
-
-    model_data.normalise_data(full_config, data_dict)
-
-    # data_dict["laqn"].to_csv("laqn_data.csv")
+    data_dict_norm["laqn"].to_csv("laqn_data.csv")
     # data_dict["aqe"].to_csv("aqe_data.csv")
 
 

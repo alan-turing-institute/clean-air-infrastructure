@@ -15,6 +15,7 @@ from ...databases.tables import (
     LondonBoundary,
     MetaPoint,
     SatelliteForecast,
+    SatelliteGrid,
 )
 from ...loggers import get_logger
 from ...timestamps import as_datetime
@@ -237,8 +238,10 @@ class DBQueryMixin:
             return aqe_reading_q
 
     @db_query
-    def get_satellite_readings_training(self, start_date, end_date, species):
-        """Get Satellite data for the training period
+    def get_satellite_readings(
+        self, start_date: datetime, end_date: datetime, species: List[Species]
+    ):
+        """Get Satellite data
            As we get 72 hours of Satellite forecast on each day,
            here we only get Satellite data where the reference date
            is the same as the forecast time.
@@ -246,14 +249,25 @@ class DBQueryMixin:
            consists of the first 24 hours of forecasts on each of those days
         """
 
+        all_species = [spc.value for spc in species]
+
         with self.dbcnxn.open_session() as session:
 
-            sat_q = session.query(SatelliteForecast).filter(
-                SatelliteForecast.measurement_start_utc >= start_date,
-                SatelliteForecast.measurement_start_utc < end_date,
-                func.date(SatelliteForecast.measurement_start_utc)
-                == func.date(SatelliteForecast.reference_start_utc),
-                SatelliteForecast.species_code.in_(species),
+            sat_q = (
+                session.query(
+                    SatelliteForecast.measurement_start_utc,
+                    SatelliteForecast.species_code,
+                    SatelliteForecast.value,
+                    SatelliteGrid.point_id,
+                )
+                .filter(
+                    SatelliteForecast.measurement_start_utc >= start_date.isoformat(),
+                    SatelliteForecast.measurement_start_utc < end_date.isoformat(),
+                    func.date(SatelliteForecast.measurement_start_utc)
+                    == func.date(SatelliteForecast.reference_start_utc),
+                    SatelliteForecast.species_code.in_(all_species),
+                )
+                .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
             )
 
             return sat_q

@@ -18,7 +18,6 @@ class BaseConfig(BaseModel):
     train_end_date: datetime
     pred_start_date: datetime
     pred_end_date: datetime
-    include_satellite: bool
     include_prediction_y: bool
     train_sources: List[Source]
     pred_sources: List[Source]

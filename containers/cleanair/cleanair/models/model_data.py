@@ -187,8 +187,6 @@ class ModelData(DBWriter, DBQueryMixin):
             data_output[source.value] = self.download_source_data(full_config, source)
         return data_output
 
-        # self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
-
         # self.pred_data_df = self.get_pred_data_inputs()
         # self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
 
@@ -253,9 +251,9 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return norm_mean, norm_std
 
-    def normalise_data(
+    def normalize_data(
         self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Dict[str, pd.DateFrame]::
+    ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
 
         norm_mean, norm_std = self.norm_stats(full_config, data_frames)
@@ -324,7 +322,6 @@ class ModelData(DBWriter, DBQueryMixin):
         species: List[Species],
         norm_by: str,
         model_type: str,
-        include_satellite: bool = False,
     ) -> BaseConfig:
         """Return a dictionary of model data settings.
 
@@ -352,7 +349,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "pred_end_date": (
                 as_datetime(trainupto) + timedelta(hours=predhours)
             ).isoformat(),
-            "include_satellite": include_satellite,
             "train_sources": [src.value for src in train_sources],
             "pred_sources": [src.value for src in pred_sources],
             "train_interest_points": "all",
@@ -381,7 +377,6 @@ class ModelData(DBWriter, DBQueryMixin):
             "train_end_date",
             "pred_start_date",
             "pred_end_date",
-            "include_satellite",
             "include_prediction_y",
             "train_sources",
             "pred_sources",
@@ -466,7 +461,7 @@ class ModelData(DBWriter, DBQueryMixin):
             self.__check_points_available(pred_interest_points, pred_sources)
         self.logger.info(green("Requested prediction interest points are available"))
 
-        if config["include_satellite"]:
+        if "satellite" in config["train_sources"]:
             satellite_interest_points = config["train_satellite_interest_points"]
             if isinstance(satellite_interest_points, list):
                 self.__check_points_available(pred_interest_points, ["satellite"])
@@ -978,8 +973,8 @@ class ModelData(DBWriter, DBQueryMixin):
                 session.query(
                     StaticFeature,
                     MetaPoint.source,
-                    func.ST_X(MetaPoint.location).label("lat"),
-                    func.ST_Y(MetaPoint.location).label("lon"),
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
                 )
                 .filter(
                     StaticFeature.feature_name.in_(features),
@@ -1179,6 +1174,48 @@ class ModelData(DBWriter, DBQueryMixin):
         # )
 
     @db_query
+    def join_features_to_sensors(
+        self, static_features: Alias, sensor_readings: Alias, source: Source
+    ):
+
+        with self.dbcnxn.open_session() as session:
+
+            static_with_sensor_readings = (
+                session.query(
+                    static_features.c.point_id,
+                    static_features.c.measurement_start_utc,
+                    static_features.c.feature_name,
+                    static_features.c.value_1000,
+                    static_features.c.value_500,
+                    static_features.c.value_200,
+                    static_features.c.value_100,
+                    static_features.c.value_10,
+                    static_features.c.lat,
+                    static_features.c.lon,
+                    sensor_readings.c.species_code,
+                    sensor_readings.c.value,
+                )
+                .join(
+                    sensor_readings,
+                    (static_features.c.point_id == sensor_readings.c.point_id)
+                    & (
+                        static_features.c.measurement_start_utc
+                        == sensor_readings.c.measurement_start_utc
+                    ),
+                    isouter=True,
+                )
+                .filter(static_features.c.source == source.value)
+                .order_by(
+                    static_features.c.point_id,
+                    static_features.c.feature_name,
+                    static_features.c.measurement_start_utc,
+                    sensor_readings.c.species_code,
+                )
+            )
+
+            return static_with_sensor_readings
+
+    @db_query
     def get_training_data_inputs(self, config, source: Source):
         """Query the database to get inputs for model fitting."""
 
@@ -1202,95 +1239,38 @@ class ModelData(DBWriter, DBQueryMixin):
         static_features = self.get_static_features(
             start_date, end_date, features, source, point_ids, output_type="subquery"
         )
-        laqn_readings = self.get_laqn_readings(
-            start_date, end_date, species, output_type="subquery"
-        )
-        aqe_readings = self.get_aqe_readings(
-            start_date, end_date, species, output_type="subquery"
-        )
 
-        with self.dbcnxn.open_session() as session:
-
-            static_with_laqn_readings = (
-                session.query(
-                    static_features.c.point_id,
-                    static_features.c.measurement_start_utc,
-                    static_features.c.feature_name,
-                    static_features.c.value_1000,
-                    static_features.c.value_500,
-                    static_features.c.value_200,
-                    static_features.c.value_100,
-                    static_features.c.value_10,
-                    static_features.c.lat,
-                    static_features.c.lon,
-                    laqn_readings.c.species_code,
-                    laqn_readings.c.value,
-                )
-                .join(
-                    laqn_readings,
-                    (static_features.c.point_id == laqn_readings.c.point_id)
-                    & (
-                        static_features.c.measurement_start_utc
-                        == laqn_readings.c.measurement_start_utc
-                    ),
-                    isouter=True,
-                )
-                .filter(static_features.c.source == "laqn")
-                .order_by(
-                    static_features.c.point_id,
-                    static_features.c.feature_name,
-                    static_features.c.measurement_start_utc,
-                    laqn_readings.c.species_code,
-                )
+        if source == Source.laqn:
+            sensor_readings = self.get_laqn_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
+        elif source == Source.aqe:
+            sensor_readings = self.get_aqe_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
+        elif source == Source.satellite:
+            sensor_readings = self.get_satellite_readings(
+                start_date, end_date, species, output_type="subquery"
             )
 
-            static_with_aqe_readings = (
-                session.query(
-                    static_features.c.point_id,
-                    static_features.c.measurement_start_utc,
-                    static_features.c.feature_name,
-                    static_features.c.value_1000,
-                    static_features.c.value_500,
-                    static_features.c.value_200,
-                    static_features.c.value_100,
-                    static_features.c.value_10,
-                    static_features.c.lat,
-                    static_features.c.lon,
-                    aqe_readings.c.species_code,
-                    aqe_readings.c.value,
-                )
-                .join(
-                    aqe_readings,
-                    (static_features.c.point_id == aqe_readings.c.point_id)
-                    & (
-                        static_features.c.measurement_start_utc
-                        == aqe_readings.c.measurement_start_utc
-                    ),
-                    isouter=True,
-                )
-                .filter(static_features.c.source == "aqe")
-                .order_by(
-                    static_features.c.point_id,
-                    static_features.c.feature_name,
-                    static_features.c.measurement_start_utc,
-                    aqe_readings.c.species_code,
-                )
-            )
+        static_with_sensors = self.join_features_to_sensors(
+            static_features, sensor_readings, source, output_type="sql"
+        )
 
-            if source == Source.laqn:
-                return static_with_laqn_readings
+        print(static_with_sensors, end="\n\n")
 
-            if source == Source.aqe:
-                return static_with_aqe_readings
+        return self.join_features_to_sensors(
+            static_features, sensor_readings, source, output_type="query"
+        )
 
-            # if "aqe" in sources:
+        # if "aqe" in sources:
 
-            #     static_with_readings = session.query(
-            #         static_with_readings, aqe_readings
-            #     ).join(
-            #         laqn_readings,
-            #         static_features.c.point_id == laqn_readings.c.point_id,
-            # )
+        #     static_with_readings = session.query(
+        #         static_with_readings, aqe_readings
+        #     ).join(
+        #         laqn_readings,
+        #         static_features.c.point_id == laqn_readings.c.point_id,
+        # )
 
         # self.logger.debug("Merging sensor data and model features")
         # model_data = pd.merge(
@@ -1386,6 +1366,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Get satellite box id for each feature interest point
         all_features = all_features.merge(sat_site_map_df, how="left", on=["point_id"])
+
         # Get satellite data
         return all_features, satellite_readings
 
