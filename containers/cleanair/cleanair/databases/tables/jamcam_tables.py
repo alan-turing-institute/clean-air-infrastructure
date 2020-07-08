@@ -1,5 +1,5 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger
+from sqlalchemy import Column, String, BigInteger, Text
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     SMALLINT,
@@ -12,7 +12,7 @@ from ..base import Base
 class JamCamFrameStats(Base):
     """Table of LAQN sites"""
 
-    __tablename__ = "frame_stats_v2"
+    __tablename__ = "frame_stats_v3"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -27,6 +27,8 @@ class JamCamFrameStats(Base):
     box_w = Column(SMALLINT)
     box_h = Column(SMALLINT)
     creation_datetime = Column(TIMESTAMP)
+    source = Column(SMALLINT, default=1, nullable=False)
+    filename = Column(Text())
 
     def __repr__(self):
         vals = [
@@ -39,7 +41,7 @@ class JamCamFrameStats(Base):
 class JamCamVideoStats(Base):
     """Table of LAQN sites"""
 
-    __tablename__ = "video_stats_v2"
+    __tablename__ = "video_stats_v3"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -50,6 +52,8 @@ class JamCamVideoStats(Base):
     stops = Column(REAL)
     starts = Column(REAL)
     creation_datetime = Column(TIMESTAMP)
+    source = Column(SMALLINT, default=1, nullable=False)
+    filename = Column(Text())
 
     def __repr__(self):
         vals = [
