@@ -73,7 +73,7 @@ def detection_class_filter(query: Query, detection_class: DetectionClass) -> Que
 def camera_id_filter(query: Query, camera_id: Optional[str]) -> Query:
     "Filter by camera_id"
     if camera_id:
-        return query.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
+        return query.filter(JamCamVideoStats.camera_id == camera_id)
     return query
 
 
@@ -162,7 +162,7 @@ def get_jamcam_raw(
     max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
 
     res = db.query(
-        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
+        JamCamVideoStats.camera_id,
         JamCamVideoStats.counts,
         JamCamVideoStats.detection_class,
         JamCamVideoStats.video_upload_datetime.label("measurement_start_utc"),
@@ -193,7 +193,7 @@ def get_jamcam_hourly(
     max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
 
     res = db.query(
-        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
+        JamCamVideoStats.camera_id,
         func.avg(JamCamVideoStats.counts).label("counts"),
         JamCamVideoStats.detection_class,
         func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
