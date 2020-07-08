@@ -204,7 +204,7 @@ def download_model_data():
 #     )
 
 #     # train and forecast the model
-#     svgp_instance.train(model, dataset)
+# svgp_instance.train(model, dataset)
 #     result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
 
 #     svgp_instance.update_remote_tables()  # write the instance to the DB

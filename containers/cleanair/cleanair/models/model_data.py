@@ -114,10 +114,47 @@ class ModelData(DBWriter, DBQueryMixin):
         # quit()
 
         self.training_data_laqn = self.get_training_data_inputs(
-            config, Source.laqn, output_type="df", limit=50
+            config, Source.laqn, output_type="df", limit=15
         )
-        
+
         print(self.training_data_laqn)
+
+        def get_val(x):
+            if len(x) == 1:
+                return x
+            raise ValueError(
+                """Pandas pivot table trying to return an array of values.
+                                Here it must only return a single value"""
+            )
+
+        # Reshape features df (make wide)
+        if start_date:
+            features_df = pd.pivot_table(
+                features_df,
+                index=["point_id", "measurement_start_utc"],
+                columns="feature_name",
+                aggfunc=get_val,
+            ).reset_index()
+            features_df.columns = ["point_id", "measurement_start_utc"] + [
+                "_".join(col).strip() for col in features_df.columns.to_numpy()[2:]
+            ]
+            features_df = features_df.set_index("point_id")
+        else:
+            features_df = features_df.pivot(
+                index="point_id", columns="feature_name"
+            ).reset_index()
+            features_df.columns = ["point_id"] + [
+                "_".join(col).strip() for col in features_df.columns.to_numpy()[1:]
+            ]
+            features_df = features_df.set_index("point_id")
+
+        # Set index types to str
+        features_df.index = features_df.index.astype(str)
+        interest_point_df.index = interest_point_df.index.astype(str)
+
+        # Inner join the MetaPoint and StaticFeature(Dynamic) data
+        df_joined = interest_point_df.join(features_df, how="left")
+
         quit()
 
         self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
@@ -1138,15 +1175,15 @@ class ModelData(DBWriter, DBQueryMixin):
             #         static_features.c.point_id == laqn_readings.c.point_id,
             # )
 
-        self.logger.debug("Merging sensor data and model features")
-        model_data = pd.merge(
-            all_features,
-            readings,
-            on=["point_id", "measurement_start_utc", "epoch", "source"],
-            how="left",
-        )
+        # self.logger.debug("Merging sensor data and model features")
+        # model_data = pd.merge(
+        #     all_features,
+        #     readings,
+        #     on=["point_id", "measurement_start_utc", "epoch", "source"],
+        #     how="left",
+        # )
 
-        return model_data
+        # return model_data
 
     def get_pred_data_inputs(self):
         """Query the database for inputs for model prediction"""
