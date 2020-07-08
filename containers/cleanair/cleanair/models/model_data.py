@@ -10,7 +10,7 @@ import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
-from sqlalchemy import func, text
+from sqlalchemy import func, text, and_, null
 from sqlalchemy.sql.expression import Alias
 from patsy import dmatrices, dmatrix
 from ..databases.tables import (
@@ -19,6 +19,9 @@ from ..databases.tables import (
     AirQualityDataTable,
     SatelliteGrid,
     MetaPoint,
+    LondonBoundary,
+    AQESite,
+    LAQNSite,
 )
 from ..databases import DBWriter, Base
 from ..mixins import DBQueryMixin
@@ -43,6 +46,443 @@ def get_val(x):
         """Pandas pivot table trying to return an array of values.
                         Here it must only return a single value"""
     )
+
+
+class ModelConfig(DBWriter):
+    """Create and validate cleanair model configurations"""
+
+    def __init__(self, **kwargs) -> None:
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+    @staticmethod
+    def generate_data_config(
+        trainupto: str,
+        trainhours: int,
+        predhours: int,
+        train_sources: List[Source],
+        pred_sources: List[Source],
+        species: List[Species],
+        norm_by: str,
+        model_type: str,
+    ) -> BaseConfig:
+        """Return a dictionary of model data settings.
+
+        Args:
+            trainupto: Get training data upto (but not including) this datetime.
+                ISO datetime string.
+
+        Keyword Args:
+            hexgrid: If true add hexgrid to the list of prediction sources.
+            include_satellite: If true modeldata will train on satellite data.
+            predhours: Number of hours in the prediction period.
+            trainhours: Number of hours to train the model for.
+
+        Returns:
+            A dictionary of data settings generated from the arguments.
+        """
+
+        # Generate and return the config dictionary
+        data_config = {
+            "train_start_date": (
+                as_datetime(trainupto) - timedelta(hours=trainhours)
+            ).isoformat(),
+            "train_end_date": as_datetime(trainupto).isoformat(),
+            "pred_start_date": as_datetime(trainupto).isoformat(),
+            "pred_end_date": (
+                as_datetime(trainupto) + timedelta(hours=predhours)
+            ).isoformat(),
+            "train_sources": [src.value for src in train_sources],
+            "pred_sources": [src.value for src in pred_sources],
+            "train_interest_points": "all",
+            "train_satellite_interest_points": "all",
+            "pred_interest_points": "all",
+            "species": [src.value for src in species],
+            "features": [
+                "value_1000_total_a_road_length",
+                "value_500_total_a_road_length",
+                "value_500_total_a_road_primary_length",
+                "value_500_total_b_road_length",
+            ],
+            "norm_by": norm_by,
+            "model_type": model_type,
+            "include_prediction_y": False,
+        }
+
+        return BaseConfig(**data_config)
+
+    def validate_config(self, config):
+
+        config_keys = [
+            "train_start_date",
+            "train_end_date",
+            "pred_start_date",
+            "pred_end_date",
+            "include_prediction_y",
+            "train_sources",
+            "pred_sources",
+            "train_interest_points",
+            "train_satellite_interest_points",
+            "pred_interest_points",
+            "species",
+            "features",
+            "norm_by",
+            "model_type",
+        ]
+
+        valid_models = ["svgp"]
+
+        self.logger.info("Validating config")
+
+        # Check required config keys present
+        if not set(config_keys).issubset(set(config.keys())):
+            raise AttributeError(
+                "Config dictionary does not contain correct keys. Must contain {}".format(
+                    config_keys
+                )
+            )
+        self.logger.info(green("Config has correct keys and is syntactically valid"))
+
+        # Check requested features are available
+        if config["features"] == "all":
+            features = self.get_available_static_features(
+                output_type="list"
+            ) + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"], output_type="list"
+            )
+            if not features:
+                raise AttributeError(
+                    "There are no features in the database. Run feature extraction first"
+                )
+            self.logger.warning(
+                """You have selected 'all' features from the database.
+                It is strongly advised that you choose features manually"""
+            )
+            self.logger.warning(red("Using all features. Not recommended"))
+        else:
+            self.logger.debug("Checking requested features are available in database")
+            self.__check_features_available(
+                config["features"], config["train_start_date"], config["pred_end_date"]
+            )
+            self.logger.info(green("Requested features are available"))
+
+        # Check training sources are available
+        train_sources = config["train_sources"]
+        self.logger.debug(
+            "Checking requested sources for training are available in database"
+        )
+        self.__check_sources_available(train_sources)
+        self.logger.info(green("Requested training sources are available"))
+
+        # Check prediction sources are available
+        pred_sources = config["pred_sources"]
+        self.logger.debug(
+            "Checking requested sources for prediction are availble in database"
+        )
+        self.__check_sources_available(pred_sources)
+        self.logger.info(green("Requested prediction sources are available"))
+
+        # Check model type is valid
+        if config["model_type"] not in valid_models:
+            raise AttributeError(
+                "{} is not a valid model type. Use one of the following: {}".format(
+                    config["model_type"], valid_models
+                )
+            )
+        self.logger.info(green("Model type is valid"))
+
+        # Check interest points are valid
+        train_interest_points = config["train_interest_points"]
+        if isinstance(train_interest_points, list):
+            self.__check_points_available(train_interest_points, train_sources)
+        self.logger.info(green("Requested training interest points are available"))
+
+        pred_interest_points = config["pred_interest_points"]
+        if isinstance(pred_interest_points, list):
+            self.__check_points_available(pred_interest_points, pred_sources)
+        self.logger.info(green("Requested prediction interest points are available"))
+
+        if "satellite" in config["train_sources"]:
+            satellite_interest_points = config["train_satellite_interest_points"]
+            if isinstance(satellite_interest_points, list):
+                self.__check_points_available(pred_interest_points, ["satellite"])
+            self.logger.info(green("Requested satellite interest points are available"))
+        self.logger.info("Validate config complete")
+
+    def generate_full_config(self, config):
+        """Generate a full config file by querying the cleanair
+           database to check available interest point sources and features"""
+
+        if config["train_interest_points"] == "all":
+            config["train_interest_points"] = self.__get_interest_point_ids(
+                config["train_sources"]
+            )
+        if config["pred_interest_points"] == "all":
+            config["pred_interest_points"] = self.__get_interest_point_ids(
+                config["pred_sources"]
+            )
+        # if config["include_satellite"] and (
+        #     config["train_satellite_interest_points"] == "all"
+        # ):
+        #     config["train_satellite_interest_points"] = self.__get_interest_point_ids(
+        #         ["satellite"]
+        #     )
+        # else:
+        #     config["train_satellite_interest_points"] = []
+
+        if config["features"] == "all":
+            feature_names = self.get_available_static_features(
+                output_type="list"
+            ) + self.get_available_dynamic_features(
+                config["train_start_date"], config["pred_end_date"], output_type="list"
+            )
+            buff_size = [1000, 500, 200, 100, 10]
+            config["features"] = [
+                "value_{}_{}".format(buff, name)
+                for buff in buff_size
+                for name in feature_names
+            ]
+            self.logger.info(
+                "Features 'all' replaced with available features: %s",
+                config["features"],
+            )
+            config["feature_names"] = feature_names
+        else:
+            config["feature_names"] = list(
+                {"".join(feature.split("_", 2)[2:]) for feature in config["features"]}
+            )
+
+        config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
+
+        return FullConfig(**config)
+
+    def __check_features_available(self, features, start_date, end_date):
+        """Check that all requested features exist in the database"""
+
+        available_features = self.get_available_static_features(
+            output_type="list"
+        ) + self.get_available_dynamic_features(
+            start_date, end_date, output_type="list"
+        )
+        unavailable_features = []
+
+        for feature in features:
+            feature_name_no_buff = "_".join(feature.split("_")[2:])
+            if feature_name_no_buff not in available_features:
+                unavailable_features.append(feature)
+
+        if unavailable_features:
+            raise AttributeError(
+                """The following features are not available the cleanair database: {}.
+                   If requesting dynamic features they may not be available for the selected dates""".format(
+                    unavailable_features
+                )
+            )
+
+    def __check_sources_available(self, sources):
+        """Check that sources are available in the database
+
+        args:
+            sources: A list of sources
+        """
+
+        available_sources = self.get_available_sources(output_type="list")
+        unavailable_sources = []
+
+        for source in sources:
+            if source not in available_sources:
+                unavailable_sources.append(source)
+
+        if unavailable_sources:
+            raise AttributeError(
+                "The following sources are not available the cleanair database: {}".format(
+                    unavailable_sources
+                )
+            )
+
+    def __get_interest_point_ids(self, sources):
+
+        return (
+            self.get_available_interest_points(sources, output_type="df")["point_id"]
+            .astype(str)
+            .to_numpy()
+            .tolist()
+        )
+
+    def __check_points_available(self, interest_points, sources):
+
+        available_interest_points = self.__get_interest_point_ids(sources)
+        unavailable_interest_points = []
+
+        for point in interest_points:
+            if point not in available_interest_points:
+                unavailable_interest_points.append(point)
+
+        if unavailable_interest_points:
+            raise AttributeError(
+                "The following interest points are not available the cleanair database: {}".format(
+                    unavailable_interest_points
+                )
+            )
+
+    @db_query
+    def get_available_static_features(self):
+        """Return available static features from the CleanAir database
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(StaticFeature.feature_name).distinct(
+                StaticFeature.feature_name
+            )
+
+            return feature_types_q
+
+    @db_query
+    def get_available_dynamic_features(self, start_date, end_date):
+        """Return a list of the available dynamic features in the database.
+            Only returns features that are available between start_date and end_date
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            available_dynamic_sq = (
+                session.query(
+                    DynamicFeature.feature_name,
+                    func.min(DynamicFeature.measurement_start_utc).label("min_date"),
+                    func.max(DynamicFeature.measurement_start_utc).label("max_date"),
+                )
+                .group_by(DynamicFeature.feature_name)
+                .subquery()
+            )
+
+            available_dynamic_q = session.query(available_dynamic_sq).filter(
+                and_(
+                    available_dynamic_sq.c["min_date"] <= start_date,
+                    available_dynamic_sq.c["max_date"] >= end_date,
+                )
+            )
+
+            return available_dynamic_q
+
+    @db_query
+    def get_available_sources(self):
+        """Return the available interest point sources in a database"""
+
+        with self.dbcnxn.open_session() as session:
+
+            feature_types_q = session.query(MetaPoint.source).distinct(MetaPoint.source)
+
+            return feature_types_q
+
+    def query_london_boundary(self):
+        """Query LondonBoundary to obtain the bounding geometry for London"""
+        with self.dbcnxn.open_session() as session:
+            hull = session.scalar(
+                func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom))
+            )
+        return hull
+
+    @db_query
+    def get_available_interest_points(self, sources, point_ids=None):
+        """Return the available interest points for a list of sources, excluding any LAQN or AQE sites that are closed.
+        Only returns points withing the London boundary
+        Satellite returns features outside of london boundary, while laqn and aqe do not.
+        args:
+            sources: A list of sources to include
+            point_ids: A list of point_ids to include. Default of None returns all points
+        """
+
+        bounded_geom = self.query_london_boundary()
+        base_query_columns = [
+            MetaPoint.id.label("point_id"),
+            MetaPoint.source.label("source"),
+            MetaPoint.location.label("location"),
+            MetaPoint.location.ST_Within(bounded_geom).label("in_london"),
+            func.ST_X(MetaPoint.location).label("lon"),
+            func.ST_Y(MetaPoint.location).label("lat"),
+        ]
+
+        with self.dbcnxn.open_session() as session:
+
+            remaining_sources_q = session.query(
+                *base_query_columns,
+                null().label("date_opened"),
+                null().label("date_closed"),
+            ).filter(
+                MetaPoint.source.in_(
+                    [
+                        source
+                        for source in sources
+                        if source not in ["laqn", "aqe", "satellite"]
+                    ]
+                ),
+                MetaPoint.location.ST_Within(bounded_geom),
+            )
+
+            # Satellite is not filtered by london boundary
+            sat_sources_q = session.query(
+                *base_query_columns,
+                null().label("date_opened"),
+                null().label("date_closed"),
+            ).filter(MetaPoint.source.in_(["satellite"]))
+
+            aqe_sources_q = (
+                session.query(
+                    *base_query_columns,
+                    func.min(AQESite.date_opened),
+                    func.min(AQESite.date_closed),
+                )
+                .join(AQESite, isouter=True)
+                .group_by(*base_query_columns)
+                .filter(
+                    MetaPoint.source.in_(["aqe"]),
+                    MetaPoint.location.ST_Within(bounded_geom),
+                )
+            )
+
+            laqn_sources_q = (
+                session.query(
+                    *base_query_columns,
+                    func.min(LAQNSite.date_opened),
+                    func.min(LAQNSite.date_closed),
+                )
+                .join(LAQNSite, isouter=True)
+                .group_by(*base_query_columns)
+                .filter(
+                    MetaPoint.source.in_(["laqn"]),
+                    MetaPoint.location.ST_Within(bounded_geom),
+                )
+            )
+
+            # if ("satellite" in sources) and (len(sources) != 1):
+            #     raise ValueError(
+            #         """Satellite can only be requested on a source on its own.
+            #         Ensure 'sources' contains no other options"""
+            #     )
+            if sources[0] == "satellite":
+                all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
+            else:
+                all_sources_sq = remaining_sources_q.union(
+                    aqe_sources_q, laqn_sources_q
+                ).subquery()
+
+            # Remove any sources where there is a closing date and filter by point_ids
+            all_sources_q = session.query(all_sources_sq).filter(
+                all_sources_sq.c.date_closed.is_(None)
+            )
+
+            if point_ids:
+                all_sources_q = all_sources_q.filter(
+                    all_sources_sq.c.point_id.in_(point_ids)
+                )
+
+        return all_sources_q
 
 
 class ModelData(DBWriter, DBQueryMixin):
@@ -312,208 +752,7 @@ class ModelData(DBWriter, DBQueryMixin):
                 data_config[key] = as_datetime(value)
         return data_config
 
-    @staticmethod
-    def generate_data_config(
-        trainupto: str,
-        trainhours: int,
-        predhours: int,
-        train_sources: List[Source],
-        pred_sources: List[Source],
-        species: List[Species],
-        norm_by: str,
-        model_type: str,
-    ) -> BaseConfig:
-        """Return a dictionary of model data settings.
-
-        Args:
-            trainupto: Get training data upto (but not including) this datetime.
-                ISO datetime string.
-
-        Keyword Args:
-            hexgrid: If true add hexgrid to the list of prediction sources.
-            include_satellite: If true modeldata will train on satellite data.
-            predhours: Number of hours in the prediction period.
-            trainhours: Number of hours to train the model for.
-
-        Returns:
-            A dictionary of data settings generated from the arguments.
-        """
-
-        # Generate and return the config dictionary
-        data_config = {
-            "train_start_date": (
-                as_datetime(trainupto) - timedelta(hours=trainhours)
-            ).isoformat(),
-            "train_end_date": as_datetime(trainupto).isoformat(),
-            "pred_start_date": as_datetime(trainupto).isoformat(),
-            "pred_end_date": (
-                as_datetime(trainupto) + timedelta(hours=predhours)
-            ).isoformat(),
-            "train_sources": [src.value for src in train_sources],
-            "pred_sources": [src.value for src in pred_sources],
-            "train_interest_points": "all",
-            "train_satellite_interest_points": "all",
-            "pred_interest_points": "all",
-            "species": [src.value for src in species],
-            "features": [
-                "value_1000_total_a_road_length",
-                "value_500_total_a_road_length",
-                "value_500_total_a_road_primary_length",
-                "value_500_total_b_road_length",
-            ],
-            "norm_by": norm_by,
-            "model_type": model_type,
-            "include_prediction_y": False,
-        }
-
-        return BaseConfig(**data_config)
-
         # return data_config
-
-    def validate_config(self, config):
-
-        config_keys = [
-            "train_start_date",
-            "train_end_date",
-            "pred_start_date",
-            "pred_end_date",
-            "include_prediction_y",
-            "train_sources",
-            "pred_sources",
-            "train_interest_points",
-            "train_satellite_interest_points",
-            "pred_interest_points",
-            "species",
-            "features",
-            "norm_by",
-            "model_type",
-        ]
-
-        valid_models = ["svgp"]
-
-        self.logger.info("Validating config")
-
-        # Check required config keys present
-        if not set(config_keys).issubset(set(config.keys())):
-            raise AttributeError(
-                "Config dictionary does not contain correct keys. Must contain {}".format(
-                    config_keys
-                )
-            )
-        self.logger.info(green("Config has correct keys and is syntactically valid"))
-
-        # Check requested features are available
-        if config["features"] == "all":
-            features = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
-            )
-            if not features:
-                raise AttributeError(
-                    "There are no features in the database. Run feature extraction first"
-                )
-            self.logger.warning(
-                """You have selected 'all' features from the database.
-                It is strongly advised that you choose features manually"""
-            )
-            self.logger.warning(red("Using all features. Not recommended"))
-        else:
-            self.logger.debug("Checking requested features are available in database")
-            self.__check_features_available(
-                config["features"], config["train_start_date"], config["pred_end_date"]
-            )
-            self.logger.info(green("Requested features are available"))
-
-        # Check training sources are available
-        train_sources = config["train_sources"]
-        self.logger.debug(
-            "Checking requested sources for training are available in database"
-        )
-        self.__check_sources_available(train_sources)
-        self.logger.info(green("Requested training sources are available"))
-
-        # Check prediction sources are available
-        pred_sources = config["pred_sources"]
-        self.logger.debug(
-            "Checking requested sources for prediction are availble in database"
-        )
-        self.__check_sources_available(pred_sources)
-        self.logger.info(green("Requested prediction sources are available"))
-
-        # Check model type is valid
-        if config["model_type"] not in valid_models:
-            raise AttributeError(
-                "{} is not a valid model type. Use one of the following: {}".format(
-                    config["model_type"], valid_models
-                )
-            )
-        self.logger.info(green("Model type is valid"))
-
-        # Check interest points are valid
-        train_interest_points = config["train_interest_points"]
-        if isinstance(train_interest_points, list):
-            self.__check_points_available(train_interest_points, train_sources)
-        self.logger.info(green("Requested training interest points are available"))
-
-        pred_interest_points = config["pred_interest_points"]
-        if isinstance(pred_interest_points, list):
-            self.__check_points_available(pred_interest_points, pred_sources)
-        self.logger.info(green("Requested prediction interest points are available"))
-
-        if "satellite" in config["train_sources"]:
-            satellite_interest_points = config["train_satellite_interest_points"]
-            if isinstance(satellite_interest_points, list):
-                self.__check_points_available(pred_interest_points, ["satellite"])
-            self.logger.info(green("Requested satellite interest points are available"))
-        self.logger.info("Validate config complete")
-
-    def generate_full_config(self, config):
-        """Generate a full config file by querying the cleanair
-           database to check available interest point sources and features"""
-
-        if config["train_interest_points"] == "all":
-            config["train_interest_points"] = self.__get_interest_point_ids(
-                config["train_sources"]
-            )
-        if config["pred_interest_points"] == "all":
-            config["pred_interest_points"] = self.__get_interest_point_ids(
-                config["pred_sources"]
-            )
-        # if config["include_satellite"] and (
-        #     config["train_satellite_interest_points"] == "all"
-        # ):
-        #     config["train_satellite_interest_points"] = self.__get_interest_point_ids(
-        #         ["satellite"]
-        #     )
-        # else:
-        #     config["train_satellite_interest_points"] = []
-
-        if config["features"] == "all":
-            feature_names = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
-            )
-            buff_size = [1000, 500, 200, 100, 10]
-            config["features"] = [
-                "value_{}_{}".format(buff, name)
-                for buff in buff_size
-                for name in feature_names
-            ]
-            self.logger.info(
-                "Features 'all' replaced with available features: %s",
-                config["features"],
-            )
-            config["feature_names"] = feature_names
-        else:
-            config["feature_names"] = list(
-                {"".join(feature.split("_", 2)[2:]) for feature in config["features"]}
-            )
-
-        config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
-
-        return FullConfig(**config)
 
     def save_config_state(self, dir_path):
         """Save the full configuration and training/prediction data to disk:
@@ -796,75 +1035,6 @@ class ModelData(DBWriter, DBQueryMixin):
             dropna=dropna,
             return_sat=False,
         )
-
-    def __check_features_available(self, features, start_date, end_date):
-        """Check that all requested features exist in the database"""
-
-        available_features = self.get_available_static_features(
-            output_type="list"
-        ) + self.get_available_dynamic_features(
-            start_date, end_date, output_type="list"
-        )
-        unavailable_features = []
-
-        for feature in features:
-            feature_name_no_buff = "_".join(feature.split("_")[2:])
-            if feature_name_no_buff not in available_features:
-                unavailable_features.append(feature)
-
-        if unavailable_features:
-            raise AttributeError(
-                """The following features are not available the cleanair database: {}.
-                   If requesting dynamic features they may not be available for the selected dates""".format(
-                    unavailable_features
-                )
-            )
-
-    def __check_sources_available(self, sources):
-        """Check that sources are available in the database
-
-        args:
-            sources: A list of sources
-        """
-
-        available_sources = self.get_available_sources(output_type="list")
-        unavailable_sources = []
-
-        for source in sources:
-            if source not in available_sources:
-                unavailable_sources.append(source)
-
-        if unavailable_sources:
-            raise AttributeError(
-                "The following sources are not available the cleanair database: {}".format(
-                    unavailable_sources
-                )
-            )
-
-    def __get_interest_point_ids(self, sources):
-
-        return (
-            self.get_available_interest_points(sources, output_type="df")["point_id"]
-            .astype(str)
-            .to_numpy()
-            .tolist()
-        )
-
-    def __check_points_available(self, interest_points, sources):
-
-        available_interest_points = self.__get_interest_point_ids(sources)
-        unavailable_interest_points = []
-
-        for point in interest_points:
-            if point not in available_interest_points:
-                unavailable_interest_points.append(point)
-
-        if unavailable_interest_points:
-            raise AttributeError(
-                "The following interest points are not available the cleanair database: {}".format(
-                    unavailable_interest_points
-                )
-            )
 
     def __select_features(
         self,

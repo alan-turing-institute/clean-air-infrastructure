@@ -4,8 +4,10 @@ from typing import Dict, List, Union
 from nptyping import NDArray, Float64
 from pydantic import BaseModel
 from datetime import datetime
-from .copernicus_types import Species
-from .sources import Source
+from . import Species
+from . import Source
+from . import FeatureNames
+from . import FeatureBufferSize
 
 DataConfig = Dict[str, Union[str, bool, List[str]]]
 FeaturesDict = Dict[str, NDArray[Float64]]
@@ -25,7 +27,8 @@ class BaseConfig(BaseModel):
     train_satellite_interest_points: Union[str, List[str]] = "all"
     pred_interest_points: Union[str, List[str]] = "all"
     species: List[Species]
-    features: List[str]
+    features: List[FeatureNames]
+    buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn
     model_type: str
 

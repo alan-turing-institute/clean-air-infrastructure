@@ -16,9 +16,17 @@ from ..shared_args.dataset_options import HexGrid
 from ..shared_args.instance_options import ClusterId, Tag
 from ..shared_args.model_options import MaxIter
 from ....instance import AirQualityInstance, AirQualityModelParams
-from ....models import ModelData, SVGP
-from ....types import Species, Source, BaseConfig, FullConfig
+from ....models import ModelData, SVGP, ModelConfig
+from ....types import (
+    Species,
+    Source,
+    BaseConfig,
+    FullConfig,
+    FeatureNames,
+    FeatureBufferSize,
+)
 from ....loggers import red, green
+
 
 app = typer.Typer()
 
@@ -81,8 +89,17 @@ def generate_config(
     species: List[Species] = typer.Option(
         [Species.NO2.value], help="Pollutants to train and predict on"
     ),
-    features: List[str] = typer.Option(
-        "value_1000_total_a_road_length", help="Features to predict on"
+    features: List[FeatureNames] = typer.Option(
+        [
+            FeatureNames.total_road_length.value,
+            FeatureNames.total_a_road_length.value,
+            FeatureNames.total_a_road_primary_length.value,
+            FeatureNames.total_b_road_length.value,
+        ],
+        help="Features to predict on",
+    ),
+    feature_buffer: List[FeatureBufferSize] = typer.Option(
+        ["1000", "500"], help="Size of buffer for features", show_default=True
     ),
     norm_by: Source = typer.Option(
         Source.laqn.value, help="Source to normalize data by", show_default=True
@@ -100,12 +117,17 @@ def generate_config(
     if run != "y":
         raise typer.Abort()
 
+    if MODEL_CONFIG_FULL.exists():
+        MODEL_CONFIG_FULL.unlink()
+
     all_train_sources = [ts for ts in train_source]
     all_pred_sources = [ps for ps in pred_source]
     all_species = [sp for sp in species]
+    all_feature_names = [fn for fn in features]
+    all_buffer_sizes = [buff for buff in feature_buffer]
 
     # create a dictionary of data settings
-    data_config = ModelData.generate_data_config(
+    data_config = ModelConfig.generate_data_config(
         trainupto,
         trainhours=trainhours + traindays,
         predhours=predhours + preddays,
@@ -114,6 +136,8 @@ def generate_config(
         species=all_species,
         norm_by="laqn",
         model_type="svgp",
+        features=all_feature_names,
+        buffer_sizes=all_buffer_sizes,
     )
 
     with MODEL_CONFIG.open("w") as config_f:
@@ -133,12 +157,12 @@ def generate_full_config():
     """Perform validation checks on a config file and generates a full config"""
 
     typer.echo("Validate the cached config file")
-    config = dict(load_config())
-    model_data = ModelData(secretfile=state["secretfile"])
-    model_data.validate_config(config)
+    config = load_config()
+    model_config = ModelConfig(secretfile=state["secretfile"])
+    model_config.validate_config(config)
 
-    # Generate a full configuration file
-    full_config = model_data.generate_full_config(config)
+    # # Generate a full configuration file
+    full_config = model_config.generate_full_config(config)
 
     state["logger"].info(green("Creating full config file"))
     with MODEL_CONFIG_FULL.open("w") as full_config_f:

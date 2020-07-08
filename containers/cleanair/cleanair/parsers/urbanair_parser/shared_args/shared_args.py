@@ -1,20 +1,19 @@
 """Shared CLI arguments"""
+from typing import Dict
 import os
 import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
-from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
-from cleanair.timestamps import day_to_iso
-from cleanair.types import Species as ValidSpecies, Source as ValidSources
+from ....features import FEATURE_CONFIG, ALL_FEATURES
+from ....timestamps import day_to_iso
+from ....types import Species as ValidSpecies, Source as ValidSources
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
 # pylint: disable=C0103
-ValidFeatureSources = Enum(
-    "ValidFeatureSources", dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
-)
-ValidFeatureNames = Enum("ValidFeatureNames", dict(zip(ALL_FEATURES, ALL_FEATURES)))
+zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
+ValidFeatureSources = Enum("ValidFeatureSources", zip_features)
 
 
 DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
