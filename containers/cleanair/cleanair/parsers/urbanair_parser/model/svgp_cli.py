@@ -156,8 +156,9 @@ def download_model_data():
     data_dict = model_data.download_input_config_data(full_config)
     data_dict_norm = model_data.normalize_data(full_config, data_dict)
 
-    data_dict_norm["laqn"].to_csv("laqn_data.csv")
-    # data_dict["aqe"].to_csv("aqe_data.csv")
+    # data_dict_norm["laqn"].to_csv("laqn_data.csv")
+    data_dict_norm["aqe"].to_csv("aqe_data.csv")
+    # data_dict["satellite"].to_csv("satellite_data.csv")
 
 
 # @app.command()

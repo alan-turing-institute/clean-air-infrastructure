@@ -480,14 +480,14 @@ class ModelData(DBWriter, DBQueryMixin):
             config["pred_interest_points"] = self.__get_interest_point_ids(
                 config["pred_sources"]
             )
-        if config["include_satellite"] and (
-            config["train_satellite_interest_points"] == "all"
-        ):
-            config["train_satellite_interest_points"] = self.__get_interest_point_ids(
-                ["satellite"]
-            )
-        else:
-            config["train_satellite_interest_points"] = []
+        # if config["include_satellite"] and (
+        #     config["train_satellite_interest_points"] == "all"
+        # ):
+        #     config["train_satellite_interest_points"] = self.__get_interest_point_ids(
+        #         ["satellite"]
+        #     )
+        # else:
+        #     config["train_satellite_interest_points"] = []
 
         if config["features"] == "all":
             feature_names = self.get_available_static_features(

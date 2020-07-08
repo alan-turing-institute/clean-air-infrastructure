@@ -163,11 +163,11 @@ class DBQueryMixin:
                 )
             )
 
-            if ("satellite" in sources) and (len(sources) != 1):
-                raise ValueError(
-                    """Satellite can only be requested on a source on its own.
-                    Ensure 'sources' contains no other options"""
-                )
+            # if ("satellite" in sources) and (len(sources) != 1):
+            #     raise ValueError(
+            #         """Satellite can only be requested on a source on its own.
+            #         Ensure 'sources' contains no other options"""
+            #     )
             if sources[0] == "satellite":
                 all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
             else:
