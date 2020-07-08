@@ -166,7 +166,7 @@ def get_jamcam_raw(
         JamCamVideoStats.counts,
         JamCamVideoStats.detection_class,
         JamCamVideoStats.video_upload_datetime.label("measurement_start_utc"),
-    )
+    ).order_by(JamCamVideoStats.camera_id, JamCamVideoStats.video_upload_datetime)
 
     # Filter by camera_id
     res = camera_id_filter(res, camera_id)
@@ -192,17 +192,24 @@ def get_jamcam_hourly(
 
     max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
 
-    res = db.query(
-        JamCamVideoStats.camera_id,
-        func.avg(JamCamVideoStats.counts).label("counts"),
-        JamCamVideoStats.detection_class,
-        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
-            "measurement_start_utc"
-        ),
-    ).group_by(
-        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
-        JamCamVideoStats.camera_id,
-        JamCamVideoStats.detection_class,
+    res = (
+        db.query(
+            JamCamVideoStats.camera_id,
+            func.avg(JamCamVideoStats.counts).label("counts"),
+            JamCamVideoStats.detection_class,
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
+                "measurement_start_utc"
+            ),
+        )
+        .group_by(
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
+            JamCamVideoStats.camera_id,
+            JamCamVideoStats.detection_class,
+        )
+        .order_by(
+            JamCamVideoStats.camera_id,
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
+        )
     )
 
     # Filter by camera_id
