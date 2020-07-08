@@ -21,11 +21,11 @@
     <div class="controls-container">
     <label for="controls">Activity snapshot</label><br>
     <select id="mySelect" onchange="changeMarkerType()">
-      <option value="people">People</option>
-      <option value="cars">Cars</option>
-      <option value="buses">Buses</option>
-      <option value="motorbikes">Motorbikes</option>
-      <option value="trucks">Trucks</option>
+      <option value="person">People</option>
+      <option value="car">Cars</option>
+      <option value="bus">Buses</option>
+      <option value="motorbike">Motorbikes</option>
+      <option value="truck">Trucks</option>
       <option value="all">All</option>
     </select><br>
     <label for="controls">Ground Estimate</label><br>
@@ -123,17 +123,14 @@
 
         fetch('https://api.tfl.gov.uk/Place/Type/JamCam/')
         .then((response) => {
-            console.log("RESP");
             return response.json();
         })
         .then((json) => {
-            console.log("JSON");
             cameras = new Map(json.map(cam => [cam.id.replace("JamCams_", ""), cam])); // Creates a list of cameras indexed by their id
             return Promise.all(DETECTION_CLASSES.map(detection_class => fetch('http://localhost:8000/api/v1/jamcams/hourly?detection_class=' + detection_class)));
         })
-        .then((activities) => {
-            console.log("ACTI");
-            return Promise.all(activities.map(act => act.json()));
+        .then((responses) => {
+            return Promise.all(responses.map(res => res.json()));
         })
         .then((detection_classes_activities) => {
             for (detection_class_activities of detection_classes_activities){
@@ -262,10 +259,16 @@
 
     // updateMarkers('people');
 
+    function setDetectionClassFilter(){
+        map.setFilter('jamcams', ['==', ['string', ['get', 'type']], markerType]);
+    }
+
     function changeMarkerType() {
         // console.log('setting to ' + document.getElementById("mySelect").value);
         markerType = document.getElementById("mySelect").value;
-        updateMarkers(document.getElementById("mySelect").value);
+        console.debug(markerType);
+        setDetectionClassFilter();
+        // updateMarkers(document.getElementById("mySelect").value);
     }
 
     function setGroundEstimates(){
