@@ -1,6 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Union, Optional
+from typing import TYPE_CHECKING, Dict, List, Union, Optional, Tuple
 from datetime import date, datetime, timedelta
 import json
 import os
@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 from sqlalchemy import func, text
 from sqlalchemy.sql.expression import Alias
+from patsy import dmatrices, dmatrix
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -35,6 +36,15 @@ ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
+def get_val(x):
+    if len(x) == 1:
+        return x
+    raise ValueError(
+        """Pandas pivot table trying to return an array of values.
+                        Here it must only return a single value"""
+    )
+
+
 class ModelData(DBWriter, DBQueryMixin):
     """Read data from multiple database tables in order to get data for model fitting"""
 
@@ -53,6 +63,23 @@ class ModelData(DBWriter, DBQueryMixin):
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
+
+        self.index_names = [
+            "point_id",
+            "measurement_start_utc",
+            "lat",
+            "lon",
+            "species_code",
+            "value",
+        ]
+        self.column_names = [
+            "feature_name",
+            "value_1000",
+            "value_500",
+            "value_200",
+            "value_100",
+            "value_10",
+        ]
 
         # if not (config or config_dir):
         #     raise ValueError(
@@ -95,89 +122,158 @@ class ModelData(DBWriter, DBQueryMixin):
         # else:
         #     self.restore_config_state(config_dir)
 
-    def download_config_data(self, full_config: FullConfig):
-        """Download all data specified in a validated full config file"""
+    @staticmethod
+    def flatten_column_names(data_frame: pd.DataFrame) -> pd.DataFrame:
+        "Flaten column names of 2D column names"
 
+        new_column_names = [
+            "_".join(col).strip() if (len(col[1]) > 0) else col[0]
+            for col in data_frame.columns.to_numpy()
+        ]
+
+        data_frame.columns = new_column_names
+
+        return data_frame
+
+    def download_source_data(
+        self, full_config: FullConfig, source: Source
+    ) -> pd.DataFrame:
+        """Download all training data (static, dynamic[not yet implimented] and sensor readings)
+        for a given source (e.g. laqn, aqe, satellite)
+        """
         config = full_config.dict()
 
         # Get training and prediciton data frames
-        self.training_data_laqn = self.get_training_data_inputs(
-            config, Source.laqn, output_type="sql"
+        self.training_data = self.get_training_data_inputs(
+            config, source, output_type="df"
         )
+        self.training_data_index = self.training_data.set_index(self.index_names)
 
-        self.training_data_aqe = self.get_training_data_inputs(
-            config, Source.aqe, output_type="sql"
-        )
+        if not set(self.training_data_index.columns) == set(self.column_names):
+            raise AttributeError("Wrong column names")
+        if not set(self.training_data_index.index.names) == set(self.index_names):
+            raise AttributeError("Wrong index names")
 
-        # print(self.training_data_laqn, end="\n\n")
-        # print(self.training_data_aqe, end="\n\n")
-        # quit()
+        features_df = pd.pivot_table(
+            self.training_data,
+            index=self.index_names,
+            columns="feature_name",
+            aggfunc=get_val,
+        ).reset_index()
 
-        self.training_data_laqn = self.get_training_data_inputs(
-            config, Source.laqn, output_type="df", limit=15
-        )
+        flattend_features_df = self.flatten_column_names(features_df)
 
-        print(self.training_data_laqn)
+        flattend_features_df["epoch"] = flattend_features_df[
+            "measurement_start_utc"
+        ].apply(lambda x: x.timestamp())
 
-        def get_val(x):
-            if len(x) == 1:
-                return x
-            raise ValueError(
-                """Pandas pivot table trying to return an array of values.
-                                Here it must only return a single value"""
+        return flattend_features_df
+
+    def download_input_config_data(
+        self, full_config: FullConfig
+    ) -> Dict[str, pd.DateFrame]:
+        """Download all input data specified in a validated full config file"""
+
+        # Get training and prediciton data frames
+        # self.training_data_laqn = self.get_training_data_inputs(
+        #     config, Source.laqn, output_type="sql"
+        # )
+        # self.training_data_aqe = self.get_training_data_inputs(
+        #     config, Source.aqe, output_type="sql"
+        # )
+
+        data_output: Dict[str, pd.DateFrame] = {}
+        for source in full_config.train_sources:
+            data_output[source.value] = self.download_source_data(full_config, source)
+        return data_output
+
+        # self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+
+        # self.pred_data_df = self.get_pred_data_inputs()
+        # self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+
+        # # Process satellite data
+        # if self.config["include_satellite"]:
+        #     (
+        #         self.training_satellite_data_x,
+        #         self.training_satellite_data_y,
+        #     ) = self.get_training_satellite_inputs()
+
+        #     self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
+        #         ["box_id", "measurement_start_utc", "point_id"]
+        #     )
+        #     self.training_satellite_data_x = self.__normalise_data(
+        #         self.training_satellite_data_x
+        #     )
+        #     self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
+        #         ["box_id", "measurement_start_utc"]
+        #     )
+
+    # @property
+    # def norm_stats(self):
+    #     """Get the mean and sd used for data normalisation"""
+
+    #     norm_mean = self.training_data_df[
+    #         self.training_data_df["source"] == self.config["norm_by"]
+    #     ][self.config["x_names"]].mean(axis=0)
+
+    #     norm_std = self.training_data_df[
+    #         self.training_data_df["source"] == self.config["norm_by"]
+    #     ][self.config["x_names"]].std(axis=0)
+
+    #     # Check for zero variance and set to 1 if found
+    #     if norm_std.eq(0).any().any():
+    #         self.logger.warning(
+    #             "No variance in feature: %s. Setting variance to 1.",
+    #             norm_std[norm_std == 0].index,
+    #         )
+    #         norm_std[norm_std == 0] = 1
+
+    #     return norm_mean, norm_std
+
+    def norm_stats(
+        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Tuple[pd.Series, pd.Series]:
+        """Normalise a dataset"""
+
+        norm_mean: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].mean(axis=0)
+
+        norm_std: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].std(axis=0)
+
+        if norm_std.eq(0).any().any():
+            self.logger.warning(
+                "No variance in feature: %s. Setting variance to 1.",
+                norm_std[norm_std == 0].index,
             )
+            norm_std[norm_std == 0] = 1
 
-        # Reshape features df (make wide)
-        if start_date:
-            features_df = pd.pivot_table(
-                features_df,
-                index=["point_id", "measurement_start_utc"],
-                columns="feature_name",
-                aggfunc=get_val,
-            ).reset_index()
-            features_df.columns = ["point_id", "measurement_start_utc"] + [
-                "_".join(col).strip() for col in features_df.columns.to_numpy()[2:]
-            ]
-            features_df = features_df.set_index("point_id")
-        else:
-            features_df = features_df.pivot(
-                index="point_id", columns="feature_name"
-            ).reset_index()
-            features_df.columns = ["point_id"] + [
-                "_".join(col).strip() for col in features_df.columns.to_numpy()[1:]
-            ]
-            features_df = features_df.set_index("point_id")
+        return norm_mean, norm_std
 
-        # Set index types to str
-        features_df.index = features_df.index.astype(str)
-        interest_point_df.index = interest_point_df.index.astype(str)
+    def normalise_data(
+        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Dict[str, pd.DateFrame]::
+        """Normalise the x columns"""
 
-        # Inner join the MetaPoint and StaticFeature(Dynamic) data
-        df_joined = interest_point_df.join(features_df, how="left")
+        norm_mean, norm_std = self.norm_stats(full_config, data_frames)
 
-        quit()
+        x_names_norm = self.x_names_norm(full_config.x_names)
 
-        self.normalised_training_data_df = self.__normalise_data(self.training_data_df)
+        data_output: Dict[str, pd.DateFrame] = {}
+        for source, data_df in data_frames.items():
 
-        self.pred_data_df = self.get_pred_data_inputs()
-        self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
+            data_df_normed = data_df.copy()
 
-        # Process satellite data
-        if self.config["include_satellite"]:
-            (
-                self.training_satellite_data_x,
-                self.training_satellite_data_y,
-            ) = self.get_training_satellite_inputs()
+            data_df_normed[x_names_norm] = (
+                data_df_normed[full_config.x_names] - norm_mean
+            ) / norm_std
 
-            self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-                ["box_id", "measurement_start_utc", "point_id"]
-            )
-            self.training_satellite_data_x = self.__normalise_data(
-                self.training_satellite_data_x
-            )
-            self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
-                ["box_id", "measurement_start_utc"]
-            )
+            data_output[source] = data_df_normed
+
+        return data_output
 
     @property
     def data_id(self) -> str:
@@ -493,32 +589,31 @@ class ModelData(DBWriter, DBQueryMixin):
             with open(os.path.join(dir_path, "test.pickle"), "rb") as handle:
                 self.test_dict = pickle.load(handle)
 
-    @property
-    def x_names_norm(self):
+    def x_names_norm(self, x_names):
         """Get the normalised x names"""
-        return [x + "_norm" for x in self.config["x_names"]]
+        return [x + "_norm" for x in x_names]
 
-    @property
-    def norm_stats(self):
-        """Get the mean and sd used for data normalisation"""
+    # @property
+    # def norm_stats(self):
+    #     """Get the mean and sd used for data normalisation"""
 
-        norm_mean = self.training_data_df[
-            self.training_data_df["source"] == self.config["norm_by"]
-        ][self.config["x_names"]].mean(axis=0)
+    #     norm_mean = self.training_data_df[
+    #         self.training_data_df["source"] == self.config["norm_by"]
+    #     ][self.config["x_names"]].mean(axis=0)
 
-        norm_std = self.training_data_df[
-            self.training_data_df["source"] == self.config["norm_by"]
-        ][self.config["x_names"]].std(axis=0)
+    #     norm_std = self.training_data_df[
+    #         self.training_data_df["source"] == self.config["norm_by"]
+    #     ][self.config["x_names"]].std(axis=0)
 
-        # Check for zero variance and set to 1 if found
-        if norm_std.eq(0).any().any():
-            self.logger.warning(
-                "No variance in feature: %s. Setting variance to 1.",
-                norm_std[norm_std == 0].index,
-            )
-            norm_std[norm_std == 0] = 1
+    #     # Check for zero variance and set to 1 if found
+    #     if norm_std.eq(0).any().any():
+    #         self.logger.warning(
+    #             "No variance in feature: %s. Setting variance to 1.",
+    #             norm_std[norm_std == 0].index,
+    #         )
+    #         norm_std[norm_std == 0] = 1
 
-        return norm_mean, norm_std
+    #     return norm_mean, norm_std
 
     def __normalise_data(self, data_df):
         """Normalise the x columns"""
@@ -911,22 +1006,22 @@ class ModelData(DBWriter, DBQueryMixin):
 
             # print(features_df.head())
 
-            interest_point_df = pd.read_sql(
-                interest_point_query.statement, interest_point_query.session.bind
-            ).set_index("point_id")
+            # interest_point_df = pd.read_sql(
+            #     interest_point_query.statement, interest_point_query.session.bind
+            # ).set_index("point_id")
 
-            print(interest_point_df.head())
+            # print(interest_point_df.head())
 
-            quit()
+            # quit()
 
-            # Check if returned dataframes are empty
-            if interest_point_df.empty:
-                raise AttributeError(
-                    "No interest points were returned from the database. Check requested interest points are valid"
-                )
+            # # Check if returned dataframes are empty
+            # if interest_point_df.empty:
+            #     raise AttributeError(
+            #         "No interest points were returned from the database. Check requested interest points are valid"
+            #     )
 
-            if features_df.empty:
-                return features_df
+            # if features_df.empty:
+            #     return features_df
 
     def __select_dynamic_features(
         self, start_date, end_date, features, sources, point_ids
@@ -1118,7 +1213,18 @@ class ModelData(DBWriter, DBQueryMixin):
 
             static_with_laqn_readings = (
                 session.query(
-                    static_features, laqn_readings.c.species_code, laqn_readings.c.value
+                    static_features.c.point_id,
+                    static_features.c.measurement_start_utc,
+                    static_features.c.feature_name,
+                    static_features.c.value_1000,
+                    static_features.c.value_500,
+                    static_features.c.value_200,
+                    static_features.c.value_100,
+                    static_features.c.value_10,
+                    static_features.c.lat,
+                    static_features.c.lon,
+                    laqn_readings.c.species_code,
+                    laqn_readings.c.value,
                 )
                 .join(
                     laqn_readings,
@@ -1140,7 +1246,18 @@ class ModelData(DBWriter, DBQueryMixin):
 
             static_with_aqe_readings = (
                 session.query(
-                    static_features, aqe_readings.c.species_code, aqe_readings.c.value
+                    static_features.c.point_id,
+                    static_features.c.measurement_start_utc,
+                    static_features.c.feature_name,
+                    static_features.c.value_1000,
+                    static_features.c.value_500,
+                    static_features.c.value_200,
+                    static_features.c.value_100,
+                    static_features.c.value_10,
+                    static_features.c.lat,
+                    static_features.c.lon,
+                    aqe_readings.c.species_code,
+                    aqe_readings.c.value,
                 )
                 .join(
                     aqe_readings,

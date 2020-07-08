@@ -153,7 +153,15 @@ def download_model_data():
     typer.echo("Validate the cached config file")
     full_config = load_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
-    model_data.download_config_data(full_config)
+
+    data_dict = model_data.download_input_config_data(full_config)
+
+    print(model_data.norm_stats(full_config, data_dict))
+
+    model_data.normalise_data(full_config, data_dict)
+
+    # data_dict["laqn"].to_csv("laqn_data.csv")
+    # data_dict["aqe"].to_csv("aqe_data.csv")
 
 
 # @app.command()
