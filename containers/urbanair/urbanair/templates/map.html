@@ -206,7 +206,7 @@
                             let camera_id = c.id.replace("JamCams_", "")
                             
                             let items = activities.filter(function(item){return item.camera_id == camera_id})
-                      // console.log(activities)
+                            //  console.log(items)
                             if (items.length > 0){
                             
                                 let count = items.map(({counts}) => (counts))
@@ -223,7 +223,7 @@
                                     let last_hour = counts.filter(function(last){return last.t == new Date(Math.max(...time)).toString()})
                                         
                                     last_hours.push(last_hour[0].y)
-                                   // console.log(last_hour)
+                                    console.log(last_hour)
                                     today = true;
                                 }
 
@@ -244,22 +244,22 @@
                             // let items = activities.filter(function(item){return item.camera_id == camera_id})
                                                        // let  max_at_camera = 0
                             
-                            let avg = 0
+                            let final_value= 0
                            
                             if (today == true ){
                                 if( last_hours.length> 0){
-                                    avg = last_hours.shift()
+                                    final_value= last_hours.shift()
                                 } 
                             }  
                             else{
                                 if (avg_at_camera.length > 0){
-                                    avg = avg_at_camera.shift()
+                                    final_value = avg_at_camera.shift()
                                 } 
                             }                        
                             // console.log(avg)
                             L.marker([c.lat, c.lon], options = {
                                 'id': c.id,
-                                'icon': generateIcon2(avg, max_final)
+                                'icon': generateIcon2(final_value, max_final)
                             }).addTo(mymap).bindPopup(
                                 "<strong>" + c.id + "</strong>" +
                                 "<br>" +
@@ -290,7 +290,7 @@
 
     function setGroundEstimates(){
         showGroundEstimates = document.getElementById("mySelect2").value;
-       // console.log(showGroundEstimates);
+        console.log(showGroundEstimates);
         updateMarkers(document.getElementById("mySelect").value);
     }
 
