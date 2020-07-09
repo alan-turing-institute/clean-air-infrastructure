@@ -1,11 +1,12 @@
 """Create grids over London."""
 
 from shapely.geometry.base import BaseGeometry
-from sqlalchemy import func
+from sqlalchemy import func, select, column
+from geoalchemy2.shape import from_shape
 from cleanair.decorators import db_query
 from cleanair.databases import Connector
 from cleanair.databases.tables import LondonBoundary
-from geoalchemy2.shape import from_shape
+
 
 class GridMixin:
     """Queries for grids."""
@@ -13,7 +14,7 @@ class GridMixin:
     dbcnxn: Connector
 
     @db_query
-    def fishnet_over_geom(self, geom: BaseGeometry, grid_resolution: int, grid_step: int = 1000, rotation: float = 0, srid: int = 4326):
+    def st_fishnet(self, geom: BaseGeometry, grid_resolution: int, grid_step: int = 1000, rotation: float = 0, srid: int = 4326):
         """Create a grid (cast a fishnet) over the geometry.
 
         Args:
@@ -31,7 +32,10 @@ class GridMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-            return session.query(func.ST_Fishnet(from_shape(geom, srid=srid), grid_resolution, grid_step, rotation, srid))
+            fishnet_fn = func.ST_Fishnet(from_shape(geom, srid=srid), grid_resolution, grid_step, rotation, srid)
+            stmt = select([column('row'), column('col'), column('geom')]).\
+            select_from(fishnet_fn).alias("fish")
+            return session.query(stmt)
 
     @db_query
     def fishnet_over_borough(self, borough: str, grid_resolution: int = 16, rotation: float = 0, srid: int = 4326):
