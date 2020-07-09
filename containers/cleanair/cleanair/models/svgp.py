@@ -2,8 +2,9 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
-from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+# from __future__ import annotations
+# from typing import TYPE_CHECKING, Optional
+from typing import Optional
 import os
 import numpy as np
 from scipy.cluster.vq import kmeans2
@@ -11,8 +12,8 @@ import tensorflow as tf
 from ..loggers import get_logger
 from .model import Model
 
-if TYPE_CHECKING:
-    from ..types import ParamsSVGP
+# if TYPE_CHECKING:
+from ..types import ParamsSVGP
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
