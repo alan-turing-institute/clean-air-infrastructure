@@ -298,6 +298,12 @@
         map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
     }
 
+    document.onkeydown = (e) => {
+        if (e.key=="Escape") {
+            hideDetailsPanel();
+        }
+    }
+
     var ctx = document.getElementById('chart').getContext('2d');
     var chartConfig = {
         type: 'line',
