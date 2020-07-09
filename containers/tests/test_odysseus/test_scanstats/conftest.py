@@ -3,6 +3,7 @@
 from typing import Any
 import pytest
 from shapely.geometry import Polygon
+from geoalchemy2.shape import from_shape
 from cleanair.databases import DBReader
 from odysseus.databases.mixins import GridMixin
 

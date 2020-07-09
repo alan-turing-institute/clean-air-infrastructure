@@ -2,7 +2,7 @@
 
 from shapely.geometry.base import BaseGeometry
 from sqlalchemy import func, select, column
-from geoalchemy2.shape import from_shape
+
 from cleanair.decorators import db_query
 from cleanair.databases import Connector
 from cleanair.databases.tables import LondonBoundary
@@ -32,7 +32,7 @@ class GridMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-            fishnet_fn = func.ST_Fishnet(from_shape(geom, srid=srid), grid_resolution, grid_step, rotation, srid)
+            fishnet_fn = func.ST_Fishnet(geom, grid_resolution, grid_step, rotation, srid)
             stmt = select([column('row'), column('col'), column('geom')]).\
             select_from(fishnet_fn).alias("fish")
             return session.query(stmt)
@@ -52,7 +52,7 @@ class GridMixin:
         """
         with self.dbcnxn.open_session() as session:            
             reading = session.query(
-                LondonBoundary,
+                LondonBoundary.geom,
                 func.ST_Distance(
                     # get the min and max for x and y and find the distance
                     func.ST_MakePoint(
@@ -67,5 +67,5 @@ class GridMixin:
             ).filter(LondonBoundary.name == borough).one()     # filter by borough name
             # calculate the size of each grid square
             grid_step = int(reading.max_distance / grid_resolution)
-            return session.query(func.ST_Fishnet(reading.geom, grid_resolution, grid_step, rotation, srid))
+            return self.st_fishnet(reading.geom, grid_resolution, grid_step, rotation, srid)
     
