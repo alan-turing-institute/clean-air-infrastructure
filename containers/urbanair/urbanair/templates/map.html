@@ -1,44 +1,65 @@
 <!doctype html>
 <title>Odysseus Camera Demo Map</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
-      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-      crossorigin=""/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"
-        integrity="sha256-8zyeSXm+yTvzUN1VgAOinFgaVFEFTyYzWShOy9w7WoQ=" crossorigin="anonymous"></script>
+<!-- Chart -->
+<script
+    src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"
+    integrity="sha256-8zyeSXm+yTvzUN1VgAOinFgaVFEFTyYzWShOy9w7WoQ="
+    crossorigin="anonymous"
+    >
+</script>
+
+<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+<!-- Style -->
 <link href="{{ url_for('static', path='css/map.css') }}" rel="stylesheet">
 
-
+<!-- Mapbox -->
 <script src='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.js'></script>
 <link href='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css' rel='stylesheet' />
 
 
-<a class="logo" href="https://www.turing.ac.uk/research/research-projects/project-odysseus-understanding-london-busyness-and-exiting-lockdown"></a>
-<div id="controls">
-    <div class="controls-options">Options</div>
-    <div class="controls-container">
-    <label for="controls">Activity snapshot</label><br>
-    <select id="mySelect" onchange="changeMarkerType()">
-      <option value="person">People</option>
-      <option value="car">Cars</option>
-      <option value="bus">Buses</option>
-      <option value="motorbike">Motorbikes</option>
-      <option value="truck">Trucks</option>
-      <option value="all">All</option>
-    </select><br>
-    <label for="controls">Ground Estimate</label><br>
-    <select id="mySelect2" onchange="setGroundEstimates()">
-      <option value="show">Shown</option>
-      <option value="hide">Hidden</option>
-    </select>
-        <span style="color: red;">(experimental)</span>
+<a class="logo"></a>
+
+<div id="sidebar">
+    <div id="controls" class="panel">
+        <div class="controls-options">Options</div>
+        <div class="controls-container">
+            <label for="controls">Detection Classs</label><br>
+            <select id="select-detection-class" onchange="changeMarkerType()">
+            <option value="person">People</option>
+            <option value="car">Cars</option>
+            <option value="bus">Buses</option>
+            <option value="motorbike">Motorbikes</option>
+            <option value="truck">Trucks</option>
+            <option value="all">All</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="detailsPanel" class="panel mono" style="visibility: hidden;">
+        <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
+        <div>
+            <strong id="panel-camera-id">CAMERA:</strong>
+            <br><br>
+            <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
+            <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
+            <br>
+            <label for="checkbox-ground-estimate">Show ground estimate</label>
+            <input type="checkbox" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" checked>
+            <br>
+            <span style='color: red'>Parameter estimation export in queue</span><br>
+            h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br>
+            phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>
+            u_0,v_0 | Vanishing point (pixels):  <br>
+            S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA):
+        </div>
+        <canvas id="chart" width="400" height="250"></canvas>
     </div>
 </div>
-<div id="chart" style="display: none">
-    <canvas id="myChart" width="400" height="250"></canvas>
-</div>
+
 <div id="mapid"></div>
 
 <script type="text/javascript" src="{{ url_for('static', path='js/viridis.js') }}"></script>
@@ -53,18 +74,17 @@
     };
 
     const DETECTION_CLASSES = [
+        'people',
         'all',
         'trucks',
         'cars',
         'motorbikes',
-        'buses',
-        'people'
+        'buses'
     ];
 
-    let state = {
-        markerType: 'people',
-        showGroundEstimates: 'show'
-    };
+    let markerType = 'person';
+    let showGroundEstimates = true;
+    let selectedCam = '';
 
     let data = {
         'type': 'FeatureCollection',
@@ -80,6 +100,9 @@
     });
 
     map.on('load', () => {
+
+        // Map setup is contained in here - as layers can only be added after loading
+
         loadData();
         console.debug(data);
         map.addSource('jamcams', { type: 'geojson', data: data }); // This can be used to update the data later
@@ -110,6 +133,57 @@
                 'circle-opacity': .8
             }
         })
+        map.addLayer({
+            id: 'jamcams-highlighted',
+            type: 'circle',
+            source: 'jamcams',
+            filter: [
+                '==',
+                ['string', ['get', 'id']],
+                selectedCam
+            ],
+            paint: {
+                'circle-radius': 8,
+                'circle-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['number', ['get', 'counts']],
+                    0, '#2DC4B2',
+                    1, '#3BB3C3',
+                    2, '#669EC4',
+                    3, '#8B88B6',
+                    4, '#A2719B',
+                    5, '#AA5E79'
+                ],
+                'circle-stroke-color': 'white',
+                'circle-stroke-width': 3,
+                'circle-opacity': 1
+            }
+        })
+
+        map.on('mouseenter', 'jamcams', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        
+        // Change it back to a pointer when it leaves.
+        map.on('mouseleave', 'jamcams', function() {
+            map.getCanvas().style.cursor = '';
+        });
+
+        map.on('click', 'jamcams', (e) => {
+            let coordinates = e.features[0].geometry.coordinates.slice();
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+            const camera = e.features[0].properties;
+
+            selectedCam = camera.id;
+            map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
+            updateGraph(camera);
+            updatePanel(camera);
+            showDetailsPanel();
+        })
+
     });
 
     function refreshMarkers() {
@@ -119,7 +193,7 @@
     function loadData(){
         console.debug("Loading data");
 
-        let cameras;
+        let cameras; // To hold the camera data in between api calls
 
         fetch('https://api.tfl.gov.uk/Place/Type/JamCam/')
         .then((response) => {
@@ -137,18 +211,19 @@
                 for (activity of detection_class_activities){
                     data.features.push(
                         {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Point',
-                            'coordinates': [
-                                cameras.get(activity.camera_id).lon,
-                                cameras.get(activity.camera_id).lat
-                            ]
-                        },
-                        'properties': {
-                            'type': activity.detection_class,
-                            'counts': activity.counts
-                        }
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'Point',
+                                'coordinates': [
+                                    cameras.get(activity.camera_id).lon,
+                                    cameras.get(activity.camera_id).lat
+                                ]
+                            },
+                            'properties': {
+                                'id': activity.camera_id,
+                                'type': activity.detection_class,
+                                'counts': activity.counts
+                            }   
                         }
                     )
                 }
@@ -157,129 +232,74 @@
         })
     }
 
-    // function updateGraph(e) {
-    //     let camera_id = this.options.id.replace("JamCams_", "")
-    //     document.getElementById("chart").style.display = "block";
-    //     config.options.title.text = 'Loading ' + this.options.id.replace("JamCams_", "") + "...";
-    //     config.data.labels = [];
-    //     config.data.datasets = [];
-    //     window.myChart.update();
-    //     // https://urbanair.turing.ac.uk/
+    function updateGraph(camera) {
+        chartConfig.options.title.text = `Loading camera ${camera.id}...`;
+        chartConfig.data.labels = [];
+        chartConfig.data.datasets = [];
+        window.myChart.update();
+        // https://urbanair.turing.ac.uk/
 
-    //     console.log(camera_id)
-    //     fetch('api/v1/jamcams/raw?camera_id=' + camera_id)
-    //         .then(function (response) {
-    //             response.json().then(function (result) {
-
-    //                 let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
-    //                 for (type of detection_classes) {
-    //                     let subdat = result.filter(function(item){return item.detection_class == type})
-    //                     let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
-                    
-    //                 //     zeroIdxs = result.counts[type].filter(i => i > 0);
-    //                         config.data.datasets.push(
-    //                             {
-    //                                 label: type,
-    //                                 backgroundColor: COLORS[type],
-    //                                 borderColor: COLORS[type],
-    //                                 data: counts,
-    //                                 fill: false,
-    //                             }
-    //                         )
-    //                         // console.log(config.data.datasets)
-    //                 }
-    //                 config.options.title.text = 'Counts for camera ' + this.options.id.replace("JamCams_", "") + ' (last 12 hrs)';
-    //                 window.myChart.update()
-    //             });
-    //         });
-    // }
-
-
-    let markerType = 'person';
-    let showGroundEstimates = 'show';
-
-    let test = undefined;
-    function updateMarkers(type){
-        console.debug("Fetching jamcams");
-        fetch('https://api.tfl.gov.uk/Place/Type/JamCam/').then(function (response) {
-            response.json().then(function (cameras) {
-
-
-                fetch('api/v1/jamcams/hourly?detection_class=' + type).then(function (response2) {
-                    
-                    response2.json().then(function (result2) {
-                        
-                        console.log(result2.status)
-                        const activities = result2;
-
-                        console.debug("Activities:")
-                        console.debug(activities)
-
-                        for (let camera of cameras) {
-                            let camera_id = camera.id.replace("JamCams_", "")
-                            let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
-                            placeMarkerIcon(camera, counts)
-                            // var marker = new mapboxgl.Marker()
-                            //     .setLngLat([c.lon, c.lat])
-                            //     .addTo(map);
-                }
-
-                        // console.log(activities)
-                        
-                        // for (let c of cameras) {
-                        //     let camera_id = c.id.replace("JamCams_", "")
-                        //     let counts = activities.filter(function(item){return item.camera_id == camera_id})[0]
-                        //     console.debug(camera_id);
-                        //     var marker = new mapboxgl.Marker()
-                        //         .setLngLat([c.lon, c.lat])
-                        //         .addTo(map);
-
-                        //     // L.marker([c.lat, c.lon], options = {
-                            //     'id': c.id,
-                            //     'icon': generateIcon2(counts)
-                            // }).addTo(mymap).bindPopup(
-                            //     "<strong>" + c.id + "</strong>" +
-                            //     "<br>" +
-                            //     (showGroundEstimates == 'show' ? "<img class='annotation' src='/static/img/annotations/" + c.id.replace("JamCams_", "").replace("0000", "") + "_annotated_image.png'>":"") +
-                            //     "<img src='https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/" + c.id.replace("JamCams_", "") + ".jpg' alr='" + c.id + "' width='281' height='230'>" +
-                            //     "<br><div class='mono'>" +
-                            //     "<span style='color: red'>Parameter estimation export in queue</span><br>" +
-                            //     "h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br>" +
-                            //     "phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>" +
-                            //     "u_0,v_0 | Vanishing point (pixels):  <br>" +
-                            //     "S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA): </div>"
-                            // ).on('click', updateGraph).addTo(markers);
-                        // }
-                        // mymap.addLayer(markers);
-                    });
-                });
-            });
+        console.log(camera.id)
+        fetch(`api/v1/jamcams/raw?camera_id=${camera.id}`)
+        .then((response) => {
+            return response.json()
+        })
+        .then((result) => {
+            let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
+            for (type of detection_classes) {
+                let subdat = result.filter(function(item){return item.detection_class == type})
+                let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
+            
+            //     zeroIdxs = result.counts[type].filter(i => i > 0);
+                    chartConfig.data.datasets.push(
+                        {
+                            label: type,
+                            backgroundColor: COLORS[type],
+                            borderColor: COLORS[type],
+                            data: counts,
+                            fill: false,
+                        }
+                    )
+                    // console.log(chartConfig.data.datasets)
+            }
+            chartConfig.options.title.text = `Counts for camera ${camera.id} (last 12 hrs)`;
+            window.myChart.update()
         });
     }
 
-    // updateMarkers('people');
+    function updatePanel(camera) {
+        document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
+        document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
+        document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
+    }
 
     function setDetectionClassFilter(){
         map.setFilter('jamcams', ['==', ['string', ['get', 'type']], markerType]);
     }
 
     function changeMarkerType() {
-        // console.log('setting to ' + document.getElementById("mySelect").value);
-        markerType = document.getElementById("mySelect").value;
+        markerType = document.getElementById("select-detection-class").value;
         console.debug(markerType);
         setDetectionClassFilter();
-        // updateMarkers(document.getElementById("mySelect").value);
     }
 
-    function setGroundEstimates(){
-        showGroundEstimates = document.getElementById("mySelect2").value;
-        console.log(showGroundEstimates);
-        updateMarkers(document.getElementById("mySelect").value);
+    function changeGroundEstimates(){
+        showGroundEstimates = document.getElementById("checkbox-ground-estimate").checked;
+        document.getElementById('img-ground-estimate').style.visibility = (showGroundEstimates ? "" : "hidden");
     }
 
+    function showDetailsPanel() {
+        document.getElementById('detailsPanel').style.visibility = "";
+    }
 
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var config = {
+    function hideDetailsPanel() {
+        document.getElementById('detailsPanel').style.visibility = "hidden";
+        selectedCam = "";
+        map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
+    }
+
+    var ctx = document.getElementById('chart').getContext('2d');
+    var chartConfig = {
         type: 'line',
         data: {
             labels: ['None'],
@@ -335,6 +355,6 @@
             }
         }
     };
-    window.myChart = new Chart(ctx, config);
+    window.myChart = new Chart(ctx, chartConfig);
 </script>
 <!--</section>-->
