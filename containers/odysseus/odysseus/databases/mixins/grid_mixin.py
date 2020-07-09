@@ -13,11 +13,15 @@ class GridMixin:
     dbcnxn: Connector
 
     @db_query
-    def fishnet_over_geom(self, geom: BaseGeometry, grid_step: int = 1000, rotation: float = 0, srid: int = 4326):
+    def fishnet_over_geom(self, geom: BaseGeometry, grid_resolution: int, grid_step: int = 1000, rotation: float = 0, srid: int = 4326):
         """Create a grid (cast a fishnet) over the geometry.
 
         Args:
             geom: The geometry to cover with a grid.
+            grid_resolution: The number of squares in the grid on one axis.
+                E.g. passing 8 would yeild an 8 by 8 grid.
+
+        Keyword args:
             grid_step: The length of each grid square in meters.
             rotation: Rotation of the grid (in degrees).
             srid: Spatial reference system ID.
@@ -27,7 +31,7 @@ class GridMixin:
         """
 
         with self.dbcnxn.open_session() as session:
-            return session.query(func.ST_Fishnet(from_shape(geom, srid=srid), grid_step, rotation, srid))
+            return session.query(func.ST_Fishnet(from_shape(geom, srid=srid), grid_resolution, grid_step, rotation, srid))
 
     @db_query
     def fishnet_over_borough(self, borough: str, grid_resolution: int = 16, rotation: float = 0, srid: int = 4326):
@@ -59,5 +63,5 @@ class GridMixin:
             ).filter(LondonBoundary.name == borough).one()     # filter by borough name
             # calculate the size of each grid square
             grid_step = int(reading.max_distance / grid_resolution)
-            return session.query(func.ST_Fishnet(reading.geom, grid_step, rotation, srid))
+            return session.query(func.ST_Fishnet(reading.geom, grid_resolution, grid_step, rotation, srid))
     
