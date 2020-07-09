@@ -5,7 +5,7 @@ from sqlalchemy import func
 from cleanair.decorators import db_query
 from cleanair.databases import Connector
 from cleanair.databases.tables import LondonBoundary
-
+from geoalchemy2.shape import from_shape
 
 class GridMixin:
     """Queries for grids."""
@@ -25,8 +25,9 @@ class GridMixin:
         Returns:
             Database query. Set output_type="df" to get a dataframe.
         """
+
         with self.dbcnxn.open_session() as session:
-            return session.query(func.ST_Fishnet(geom, grid_step, rotation, srid))
+            return session.query(func.ST_Fishnet(from_shape(geom, srid=srid), grid_step, rotation, srid))
 
     @db_query
     def fishnet_over_borough(self, borough: str, grid_resolution: int = 16, rotation: float = 0, srid: int = 4326):

@@ -9,10 +9,10 @@ CREATE TYPE grid_cell as (              -- a record in the returned query below
 -- and change the size of the grid cells
 CREATE OR REPLACE FUNCTION ST_Fishnet(
     bound_polygon geometry,             -- polygon to draw fishnet over
-    grid_resolution DOUBLE PRECISION,   -- number of squares
+    grid_resolution integer,   -- number of squares
     grid_step integer,                  -- size of grid cell in meters
-    rotation DOUBLE PRECISION := 0      -- the rotation of the grid in degrees
-    srid integer := 4326,               -- spatial reference id
+    rotation DOUBLE PRECISION = 0,     -- the rotation of the grid in degrees
+    srid integer = 4326               -- spatial reference id
 )
 RETURNS SETOF grid_cell                 -- return a set of grid cells
 AS $$
@@ -39,6 +39,6 @@ BEGIN
         ) AS geom
     FROM generate_series(0, grid_resolution) AS i,   -- currently creates a 16 by 16 grid
         generate_series(0, grid_resolution) AS j,
-        (SELECT ST_MakePoint(xmin, ymin) AS cell)
+        (SELECT ST_MakePoint(xmin, ymin) AS cell) as foo;
 END
 $$ LANGUAGE 'plpgsql';
