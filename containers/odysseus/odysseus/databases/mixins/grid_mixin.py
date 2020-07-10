@@ -65,7 +65,10 @@ class GridMixin:
 
         Args:
             borough: The name of the borough.
-            grid_resolution: Number of squares on each side of the grid. E.g. passing 16 would mean a 16 by 16 grid.
+
+        Keyword args:
+            grid_resolution: Number of squares on each side of the grid.
+                E.g. passing 16 would mean a 16 by 16 grid.
             rotation: Rotation of the grid (in degrees).
             srid: Spatial reference system ID for returned grid.
 

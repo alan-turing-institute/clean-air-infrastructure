@@ -3,7 +3,6 @@
 from typing import Any
 import pytest
 from shapely.geometry import Polygon
-from geoalchemy2.shape import from_shape
 from cleanair.databases import DBReader
 from odysseus.databases.mixins import GridMixin
 
@@ -11,7 +10,10 @@ from odysseus.databases.mixins import GridMixin
 @pytest.fixture(scope="function")
 def square() -> Polygon:
     """Create a simple square."""
-    return Polygon([(0, 0), (0.1, 0), (0.1, 1), (0, 1), (0, 0)])
+    xmin, xmax, ymin, ymax = 0, 4, 0, 4
+    return Polygon(
+        [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)]
+    )
 
 
 class Grid(GridMixin, DBReader):
