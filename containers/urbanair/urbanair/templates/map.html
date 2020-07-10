@@ -180,50 +180,59 @@
     let markers = L.layerGroup().addTo(mymap);
 
     function updateBar(counts, type){
-        
         config1.options.title.text = 'Loading on ' + getDate() +  " ...";
-        config1.data.labels = [];
-        config1.data.datasets = [];
-        myBar.update();
-        let max = Math.max(...counts);
-        console.log(max);
-        let domain = 0;
-        if (max>10){
-            domain = Math.ceil(Math.ceil(max) / 10);      
-        }
-        else{
-            domain = Math.ceil(Math.ceil(max) /(Math.ceil (max) -1)) ;  
-        }
-        let array = [];
-        let frequency=[];
-        array[0] = { no: 0, x: 0, y: domain};
-        frequency[0]=0;
-        for (let i = 1; i< (max / domain) ; i++){
-            frequency[i]= 0;
-            array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
-        }
-        console.log(array)
-        let number;
+
+        // config1.datasets = [];
+        // myBar.update();
+        // let max = Math.max(...counts);
+        // console.log(max);
+        // let domain = 0;
+        // if (max > 10){
+        //     domain = Math.ceil(Math.ceil(max) / 10);
+        // } else {
+        //     domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
+        // }
+        // let array = [];
+        // let frequency=[];
+        // array[0] = { no: 0, x: 0, y: domain};
+        // frequency[0]=0;
+        // for (let i = 1; i < (max / domain) ; i++){
+        //     frequency[i]= 0;
+        //     array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
+        // }
+        // console.log(array)
+        // let number;
+        // for(let count of counts){
+        //     number = array.filter(function (item){return count>=item.x & count<item.y})
+        //     // console.log(number);
+        //     frequency[parseInt(number[0].no)] +=1;
+        // }
+        // console.log(frequency);
+        // var data=[];
+        // for(let i= 0; i < frequency.length; i++){
+        //     data[i]={ x: i, y: frequency[i]};
+        // }
+        // console.log(data);
+
+        console.log(counts);
+        let cmax = Math.max(...counts);
+        let interval = cmax / 10;
+        let frequency = [0,0,0,0,0,0,0,0,0,0];
         for(let count of counts){
-            number = array.filter(function (item){return count>=item.x & count<item.y})
-            // console.log(number);
-            frequency[parseInt(number[0].no)] +=1;
-        } 
-        console.log(frequency)
-        var data=[];
-        for(let i= 0; i < frequency.length; i++){
-            data[i]={ x: i, y: frequency[i]};
+            frequency[count % interval] += 1
         }
-        console.log(data)
+
+        config1.data.labels = [0,1,2,3,4,5,6,7,8,9];
+        config1.data.datasets = [];
         config1.data.datasets.push(
-                                {
-                                    label: type,
-                                    backgroundColor: COLORS[type],
-                                    borderColor: COLORS[type],
-                                    data: data,
-                                    fill: false,
-                                }
-                            );
+            {
+                label: type,
+                backgroundColor: COLORS[type],
+                borderColor: COLORS[type],
+                data: frequency,
+                fill: false,
+            }
+        );
                             
         config1.options.title.text = 'Average activity on ' + getDate() + ' by Type (all cameras)';
         myBar.update();
@@ -240,23 +249,23 @@
                     response2.json().then(function (result2) {
                         
                         const activities = result2;
-                        let all_counts = activities.map(({counts}) => (counts))
-                       //console.log(all_counts)
-                       updateBar(all_counts, type) 
-                        let avg_at_camera = []
-                        let last_hours = []
+                        let all_counts = activities.map(({counts}) => (counts));
+                        //console.log(all_counts)
+                        updateBar(all_counts, type) ;
+                        let avg_at_camera = [];
+                        let last_hours = [];
                         let today = false;
                         for (let c of cameras){
                             
-                            let camera_id = c.id.replace("JamCams_", "")
+                            let camera_id = c.id.replace("JamCams_", "");
                             
-                            let items = activities.filter(function(item){return item.camera_id == camera_id})
+                            let items = activities.filter(function(item){return item.camera_id == camera_id});
                             //  console.log(items)
                             if (items.length > 0){
                             
-                                let count = items.map(({counts}) => (counts))
+                                let count = items.map(({counts}) => (counts));
                                 let sum_at_camera = count.reduce((previous, current) => current += previous);
-                                avg_at_camera.push(sum_at_camera/count.length)
+                                avg_at_camera.push(sum_at_camera/count.length);
                             //  console.log (avg_at_camera)
                                 
 
@@ -402,7 +411,7 @@
     var config1 = {
         type: 'bar',
         data: {
-            labels: ['None'],
+            labels: [],
             datasets: []
         },
         options: {
@@ -420,30 +429,32 @@
                 mode: 'nearest',
                 intersect: true
             },
-            scales: {
-                 xAxes: [{
-                    display: false,
-                    barPercentage: 1,
-                    ticks: {
-                        max: 10,
-                    }
-                }, {
-                    display: true,
-                    ticks: {
-                        autoSkip: false,
-                        max: 10,
-                    }
-                }],
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'Frequency'
-                    },
-                    ticks: {
-                        beginAtZero: true,
-                    }
-                }]
-            }
+            // scales: {
+            //      xAxes: [
+            //     //      {
+            //     //     display: false,
+            //     //     // barPercentage: 1,
+            //     //     ticks: {
+            //     //         max: 10,
+            //     //     }
+            //     // },
+            //     {
+            //         display: true,
+            //         ticks: {
+            //             autoSkip: false,
+            //             max: 10,
+            //         }
+            //     }],
+            //     yAxes: [{
+            //         scaleLabel: {
+            //             display: true,
+            //             labelString: 'Frequency'
+            //         },
+            //         ticks: {
+            //             beginAtZero: true,
+            //         }
+            //     }]
+            // }
         }
     };
     var myBar = new Chart(ctx1,config1);
