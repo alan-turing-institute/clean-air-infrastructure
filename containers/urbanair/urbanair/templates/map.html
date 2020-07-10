@@ -71,7 +71,8 @@
         'car': 'rgba(255, 206, 86, 0.7)',
         'motorbike': 'rgba(75, 192, 192, 0.7)',
         'bus': 'rgba(153, 102, 255, 0.7)',
-        'person': 'rgba(255, 159, 64, 0.7)'
+        'person': 'rgba(255, 159, 64, 0.7)',
+        'all': 'rgba(51, 84, 255, 0.7)'
     };
 
     function getDate() {
@@ -98,7 +99,6 @@
                         let subdat = result.filter(function(item){return item.detection_class == type})
                         let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
                         
-              console.log(counts)
                     //     zeroIdxs = result.counts[type].filter(i => i > 0);
                             config.data.datasets.push(
                                 {
@@ -180,49 +180,47 @@
     let markers = L.layerGroup().addTo(mymap);
 
     function updateBar(counts, type){
-        config1.options.title.text = 'Loading on ' + getDate() +  " ...";
-
-        // config1.datasets = [];
-        // myBar.update();
-        // let max = Math.max(...counts);
-        // console.log(max);
-        // let domain = 0;
-        // if (max > 10){
-        //     domain = Math.ceil(Math.ceil(max) / 10);
-        // } else {
-        //     domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
-        // }
-        // let array = [];
-        // let frequency=[];
-        // array[0] = { no: 0, x: 0, y: domain};
-        // frequency[0]=0;
-        // for (let i = 1; i < (max / domain) ; i++){
-        //     frequency[i]= 0;
-        //     array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
-        // }
-        // console.log(array)
-        // let number;
-        // for(let count of counts){
-        //     number = array.filter(function (item){return count>=item.x & count<item.y})
-        //     // console.log(number);
-        //     frequency[parseInt(number[0].no)] +=1;
-        // }
-        // console.log(frequency);
-        // var data=[];
-        // for(let i= 0; i < frequency.length; i++){
-        //     data[i]={ x: i, y: frequency[i]};
-        // }
-        // console.log(data);
-
-        console.log(counts);
-        let cmax = Math.max(...counts);
-        let interval = cmax / 10;
-        let frequency = [0,0,0,0,0,0,0,0,0,0];
-        for(let count of counts){
-            frequency[count % interval] += 1
+        
+        let max = Math.max(...counts);
+        console.log(max);
+        let domain = 0;
+        if (max > 10){
+            domain = Math.ceil(Math.ceil(max) / 10);
+        } else {
+            domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
         }
+        let array = [];
+        let frequency=[];
+        array[0] = { no: 0, x: 0, y: domain};
+        frequency[0]=0;
+        for (let i = 1; i < (max / domain) ; i++){
+            frequency[i]= 0;
+            array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
+        }
+        console.log(array)
+        let number;
+        for(let count of counts){
+            number = array.filter(function (item){return count>=item.x & count<item.y})
+            // console.log(number);
+            frequency[parseInt(number[0].no)] +=1;
+        }
+        console.log(frequency);
+        var data=[];
+        for(let i= 0; i < frequency.length; i++){
+            data[i]= array[i].x +"-" + (array[i].y);
+        }
+       // console.log(data);
 
-        config1.data.labels = [0,1,2,3,4,5,6,7,8,9];
+        // console.log(counts);
+        // let cmax = Math.max(...counts);
+        // let interval = cmax / 10;
+        // let frequency = [0,0,0,0,0,0,0,0,0,0];
+        // for(let count of counts){
+        //     frequency[count % interval] += 1
+        // }
+        
+        
+        config1.data.labels = data;
         config1.data.datasets = [];
         config1.data.datasets.push(
             {
@@ -250,8 +248,13 @@
                         
                         const activities = result2;
                         let all_counts = activities.map(({counts}) => (counts));
+                        let one_type = activities[0].detection_class;
+                        if (type == 'all'){
+                            one_type ='all';
+                        }
+                        console.log(one_type)
                         //console.log(all_counts)
-                        updateBar(all_counts, type) ;
+                        updateBar(all_counts, one_type) ;
                         let avg_at_camera = [];
                         let last_hours = [];
                         let today = false;
@@ -429,32 +432,7 @@
                 mode: 'nearest',
                 intersect: true
             },
-            // scales: {
-            //      xAxes: [
-            //     //      {
-            //     //     display: false,
-            //     //     // barPercentage: 1,
-            //     //     ticks: {
-            //     //         max: 10,
-            //     //     }
-            //     // },
-            //     {
-            //         display: true,
-            //         ticks: {
-            //             autoSkip: false,
-            //             max: 10,
-            //         }
-            //     }],
-            //     yAxes: [{
-            //         scaleLabel: {
-            //             display: true,
-            //             labelString: 'Frequency'
-            //         },
-            //         ticks: {
-            //             beginAtZero: true,
-            //         }
-            //     }]
-            // }
+            
         }
     };
     var myBar = new Chart(ctx1,config1);
