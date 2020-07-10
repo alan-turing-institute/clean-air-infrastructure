@@ -1,6 +1,6 @@
 """Queries for the scoot dataset."""
 
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, Optional
 from datetime import datetime
 from sqlalchemy import func, or_, and_
 import pandas as pd
@@ -18,37 +18,43 @@ class ScootQueryMixin:
     dbcnxn: Any
 
     @db_query
-    def get_scoot_with_location(
-        self, start_time: str, end_time: str = None, detectors: List = None
+    def scoot_readings(
+        self, start_time: str, end_time: Optional[str] = None, detectors: Optional[List] = None, with_location: bool = True
     ):
         """
         Get scoot data with lat and long positions.
 
         Args:
             start_time: Start datetime.
+
+        Keyword args:
             end_time: End datetime (exclusive).
             detectors: Subset of detectors to get readings for.
+            with_location: If true return the lat, lon and geom columns for the location of the scoot detectors.
         """
-
+        cols = [
+            ScootReading.detector_id,
+            ScootReading.measurement_start_utc,
+            ScootReading.measurement_end_utc,
+            ScootReading.n_vehicles_in_interval,
+        ]
+        if with_location:
+            cols.extend([
+                func.ST_X(MetaPoint.location).label("lon"),
+                func.ST_Y(MetaPoint.location).label("lat"),
+                MetaPoint.location.label("geom"),
+            ])
         with self.dbcnxn.open_session() as session:
             scoot_readings = (
-                session.query(
-                    ScootReading.detector_id,
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                    ScootReading.measurement_start_utc,
-                    ScootReading.measurement_end_utc,
-                    ScootReading.n_vehicles_in_interval,
-                )
-                .join(
-                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
-                )
-                .join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                session.query(cols)
                 .filter(ScootReading.measurement_start_utc >= start_time)
             )
+            if with_location:
+                readings = readings.join(
+                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             # get readings upto but not including end_time
             if end_time:
-
                 scoot_readings = scoot_readings.filter(
                     ScootReading.measurement_start_utc < end_time
                 )

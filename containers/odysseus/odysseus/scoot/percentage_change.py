@@ -100,7 +100,7 @@ class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
             output_type="df",
             error_empty=True,
         )
-        comparison_df = self.get_scoot_with_location(
+        comparison_df = self.scoot_readings(
             start_time=comparison_start_date.isoformat(),
             end_time=comparison_end_date.isoformat(),
             output_type="df",
