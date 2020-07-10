@@ -28,10 +28,10 @@ BEGIN
             ST_Project(                 -- translate in the y axis
                 ST_Project(             -- translate in the x axis
                     cell,
-                    j * grid_step,
+                    (j - 1) * grid_step,
                     radians(rotation + 90)
                 ),
-                i * grid_step,
+                (i - 1) * grid_step,
                 radians(rotation)
             ),
             grid_step,

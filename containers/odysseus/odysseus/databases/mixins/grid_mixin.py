@@ -52,20 +52,24 @@ class GridMixin:
         """
         with self.dbcnxn.open_session() as session:            
             reading = session.query(
-                LondonBoundary.geom,
+                func.ST_Transform(LondonBoundary.geom, srid),
                 func.ST_Distance(
                     # get the min and max for x and y and find the distance
-                    func.ST_MakePoint(
+                    func.Geography(func.ST_SetSRID(func.ST_MakePoint(
                         func.ST_XMin(LondonBoundary.geom),
                         func.ST_YMin(LondonBoundary.geom),
-                    ),
-                    func.ST_MakePoint(
+                    ), srid)),
+                    func.Geography(func.ST_SetSRID(func.ST_MakePoint(
                         func.ST_XMax(LondonBoundary.geom),
                         func.ST_YMax(LondonBoundary.geom),
-                    )
+                    ), srid)),
                 ).label("max_distance")
             ).filter(LondonBoundary.name == borough).one()     # filter by borough name
             # calculate the size of each grid square
             grid_step = int(reading.max_distance / grid_resolution)
-            return self.st_fishnet(reading.geom, grid_resolution, grid_step, rotation, srid)
+            print("GRID STEP:", grid_step)
+            print("MAX DISTANCE:", reading.max_distance)
+            assert reading.max_distance > 0
+            assert grid_step > 0
+            return self.st_fishnet(reading[0], grid_resolution, grid_step, rotation, srid)
     

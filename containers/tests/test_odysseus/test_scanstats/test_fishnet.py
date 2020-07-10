@@ -24,9 +24,9 @@ def fishnet_checks(fishnet_df: pd.DataFrame, geom: Union[Polygon, MultiPolygon],
     nodes = []
     fishnet_df["geom"].apply(lambda x: nodes.extend([Point(y) for y in wkb.loads(x, hex=True).exterior.coords]))
     multi_points = MultiPoint(nodes)
-    assert isinstance(geom, (Polygon, MultiPolygon))
     assert len(nodes) == grid_resolution ** 2 * 5
-    assert not geom is None
+    assert multi_points.bounds[0] < geom.bounds[0]
+    assert multi_points.intersects(geom)
     assert multi_points.convex_hull.buffer(1e-10).contains(geom)
 
 def test_fishnet_over_square(grid, square) -> None:
@@ -47,5 +47,6 @@ def test_fishnet_over_borough(grid) -> None:
         geom = to_shape(result.geom)
         assert isinstance(geom, MultiPolygon)
 
+    print(grid.fishnet_over_borough(borough, grid_res, output_type="sql"))
     fishnet_df = grid.fishnet_over_borough(borough, grid_res, output_type="df")
     fishnet_checks(fishnet_df, geom, grid_res)
