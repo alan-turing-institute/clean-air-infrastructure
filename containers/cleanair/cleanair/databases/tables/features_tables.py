@@ -32,7 +32,7 @@ class StaticFeature(Base):
     value_10 = Column(Float, nullable=False)
 
     # Create StaticFeature.point with no reverse relationship
-    point = relationship("MetaPoint")
+    point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         vals = [
@@ -88,7 +88,7 @@ class DynamicFeature(Base):
     value_10 = Column(Float, nullable=False)
 
     # Create DynamicFeature.point with no reverse relationship
-    point = relationship("MetaPoint")
+    point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]

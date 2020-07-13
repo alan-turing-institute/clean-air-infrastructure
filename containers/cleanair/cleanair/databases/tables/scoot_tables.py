@@ -38,7 +38,7 @@ class ScootReading(Base):
     region = Column(String(5))  # REGION
 
     # Create ScootReading.detector with no reverse relationship
-    detector = relationship("ScootDetector")
+    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         return "<ScootReading(" + ", ".join(
@@ -79,7 +79,7 @@ class ScootForecast(Base):
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     # Create ScootForecast.detector with no reverse relationship
-    detector = relationship("ScootDetector")
+    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         return "<ScootForecast(" + ", ".join(
@@ -129,7 +129,7 @@ class ScootRoadMatch(Base):
     weight = Column(DOUBLE_PRECISION, nullable=False)
 
     # Create ScootRoadMatch.detector with no reverse relationship
-    detector = relationship("ScootDetector")
+    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]

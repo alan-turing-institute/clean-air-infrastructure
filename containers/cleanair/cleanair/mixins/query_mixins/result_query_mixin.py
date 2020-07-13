@@ -23,7 +23,7 @@ class ResultQueryMixin:
     @db_query
     def query_results(
         self,
-        instance_id: str,
+        instance_id, # type: ignore # sqlalchemy.Column
         source: Source,
         data_id: Optional[str] = None,
         with_location: Optional[bool] = True,

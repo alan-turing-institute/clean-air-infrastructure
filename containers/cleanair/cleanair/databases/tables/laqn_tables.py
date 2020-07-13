@@ -20,10 +20,10 @@ class LAQNSite(Base):
     date_closed = Column(TIMESTAMP)
 
     # Create LAQNSite.readings and LAQNReading.site
-    readings = relationship("LAQNReading", backref="site")
+    readings = relationship("LAQNReading", backref="site") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     # Create LAQNSite.point with no reverse relationship
-    point = relationship("MetaPoint")
+    point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         return (
