@@ -23,6 +23,7 @@ def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
     detector_df["geom"] = detector_df["geom"].apply(lambda x: wkb.loads(x, hex=True))
     print(type(detector_df.at[0, "location"]))
     detector_df["location"] = detector_df["location"].apply(to_shape)
-    assert detector_df.dtypes["geom"] is Polygon
-    assert detector_df["location"].dtype is Point
-    assert detector_df[["geom", "location"]].apply(lambda x, y: x.contains(y))
+    # assert detector_df.dtypes["geom"] is Polygon
+    assert isinstance(detector_df.at[0, "location"], Point)
+    assert isinstance(detector_df.at[0, "geom"], Polygon)
+    assert detector_df.apply(lambda x: x["geom"].contains(x["location"]), axis=1).all()
