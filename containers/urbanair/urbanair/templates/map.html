@@ -200,7 +200,7 @@
         console.log(array)
         let number;
         for(let count of counts){
-            number = array.filter(function (item){return count>=item.x & count<item.y})
+            number = array.filter(function (item){return count<item.y})
             // console.log(number);
             frequency[parseInt(number[0].no)] +=1;
         }
