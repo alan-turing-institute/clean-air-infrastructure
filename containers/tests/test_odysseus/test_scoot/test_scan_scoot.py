@@ -36,3 +36,9 @@ def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
 
     # check each detector is contained by the grid square it has been mapped to
     assert detector_df.apply(lambda x: x["geom"].contains(x["location"]), axis=1).all()
+
+def test_scoot_fishnet_readings(scoot_writer, scan_scoot) -> None:
+    """Test that the scoot readings are mapped to a fishnet over a borough."""
+    scoot_writer.update_remote_tables()
+    readings = scan_scoot.scoot_fishnet_readings(borough="Westminster", output_type="df")
+    assert len(readings) > 0

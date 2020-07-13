@@ -25,16 +25,14 @@ def scoot_end() -> str:
     return "2020-01-31"
 
 @pytest.fixture(scope="function")
-def scoot_df(secretfile: str, connection: Connector):
+def scoot_df() -> pd.DataFrame:
     """Fake dataframe of realistic scoot data."""
     return generate_scoot_df(end_date="2020-01-03", num_detectors=2)
 
-
-class MockScootReader(ScootQueryMixin, DBWriter):
+class ScootWriter(ScootQueryMixin, DBWriter):
     """Read scoot queries."""
 
-
-    def update_remote_tables(self, scoot_start, scoot_end, offset: int = 0, limit: int = 100):    #pylint: disable=arguments-differ
+    def update_remote_tables(self, scoot_start, scoot_end, offset: int = 0, limit: int = 100) -> None:    #pylint: disable=arguments-differ
         # Theres no scoot readings in the DB - lets put in some fake ones
         start = pd.date_range(scoot_start, scoot_end, freq="H")
         end = start + pd.DateOffset(hours=1)
@@ -67,3 +65,8 @@ class MockScootReader(ScootQueryMixin, DBWriter):
         readings = pd.DataFrame(data)
         records = readings.to_records()
         self.commit_records(records, on_conflict="ignore", table=ScootReading)
+
+@pytest.fixture(scope="function")
+def scoot_writer(secretfile: str, connection: Connector) -> ScootWriter:
+    """Initialise a scoot writer."""
+    return ScootWriter(secretfile=secretfile, connection=connection)
