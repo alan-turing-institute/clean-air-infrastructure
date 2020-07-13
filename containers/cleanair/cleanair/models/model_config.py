@@ -10,7 +10,7 @@ import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
-from sqlalchemy import func, text, and_, null
+from sqlalchemy import func, text, and_, null, cast, String
 from sqlalchemy.sql.expression import Alias
 from patsy import dmatrices, dmatrix
 from ..databases.tables import (
@@ -22,10 +22,16 @@ from ..databases.tables import (
     LondonBoundary,
     AQESite,
     LAQNSite,
+    HexGrid,
 )
 
 from ..databases import DBWriter, Base
 from ..mixins import DBQueryMixin
+from ..mixins.availability_mixins import (
+    LAQNAvailabilityMixin,
+    AQEAvailabilityMixin,
+    SatelliteAvailabilityMixin,
+)
 from ..loggers import get_logger, green, red
 from ..utils import hash_dict
 from ..timestamps import as_datetime
@@ -40,6 +46,7 @@ from ..types import (
     BaseConfig,
     FullConfig,
     FeatureBufferSize,
+    InterestPointDict,
 )
 
 
@@ -47,7 +54,9 @@ ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
-class ModelConfig(DBWriter):
+class ModelConfig(
+    LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBWriter
+):
     """Create and validate cleanair model configurations"""
 
     def __init__(self, **kwargs) -> None:
@@ -86,9 +95,8 @@ class ModelConfig(DBWriter):
             ).isoformat(),
             train_sources=[src.value for src in train_sources],
             pred_sources=[src.value for src in pred_sources],
-            train_interest_points="all",
-            train_satellite_interest_points="all",
-            pred_interest_points="all",
+            train_interest_points={src: "all" for src in train_sources},
+            pred_interest_points={src: "all" for src in pred_sources},
             species=[src.value for src in species],
             features=[ftr for ftr in features],
             buffer_sizes=[buff for buff in buffer_sizes],
@@ -141,30 +149,21 @@ class ModelConfig(DBWriter):
         #     self.logger.info(green("Requested satellite interest points are available"))
         self.logger.info("Validate config complete")
 
-    def generate_full_config(self, config):
+    def generate_full_config(self, config: BaseConfig):
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
 
-        if config.train_interest_points == "all":
-            config.train_interest_points = self.__get_interest_point_ids(
-                config.train_sources
-            )
-        if config.pred_interest_points == "all":
-            config.pred_interest_points = self.__get_interest_point_ids(
-                config.pred_sources
-            )
+        interest_point_dict = config.train_interest_points
 
-        print(config.train_interest_points)
+        # Expand interest points
+        config.train_interest_points = self.get_interest_point_ids(
+            config.train_interest_points
+        )
+        config.pred_interest_points = self.get_interest_point_ids(
+            config.pred_interest_points
+        )
+
         quit()
-        # if config["include_satellite"] and (
-        #     config["train_satellite_interest_points"] == "all"
-        # ):
-        #     config["train_satellite_interest_points"] = self.__get_interest_point_ids(
-        #         ["satellite"]
-        #     )
-        # else:
-        #     config["train_satellite_interest_points"] = []
-
         if config["features"] == "all":
             feature_names = self.get_available_static_features(
                 output_type="list"
@@ -235,14 +234,31 @@ class ModelConfig(DBWriter):
                 )
             )
 
-    def __get_interest_point_ids(self, sources):
+    def get_interest_point_ids(self, interest_point_dict: InterestPointDict):
 
-        return (
-            self.get_available_interest_points(sources, output_type="df")["point_id"]
-            .astype(str)
-            .to_numpy()
-            .tolist()
-        )
+        output_dict: InterestPointDict = {}
+
+        for key in interest_point_dict:
+
+            if (
+                isinstance(interest_point_dict[key], str)
+                and interest_point_dict[key] == "all"
+            ):
+
+                output_dict[key] = self.get_available_interest_points(key)
+
+            else:
+                output_dict[key] = interest_point_dict[key]
+
+        return output_dict
+
+    # ...
+    #         return (
+    #             self.get_available_interest_points(sources, output_type="df")["point_id"]
+    #             .astype(str)
+    #             .to_numpy()
+    #             .tolist()
+    #         )
 
     def __check_points_available(
         self, interest_points: List[str], sources: List[Source]
@@ -312,106 +328,47 @@ class ModelConfig(DBWriter):
 
             return feature_types_q
 
+    @db_query
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London"""
         with self.dbcnxn.open_session() as session:
-            hull = session.scalar(
-                func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom))
+
+            hull = session.query(
+                func.ST_MakePolygon(
+                    func.ST_Boundary((func.ST_Dump(func.ST_Union(HexGrid.geom))).geom)
+                ).label("geom")
             )
+
         return hull
 
     @db_query
-    def get_available_interest_points(self, sources, point_ids=None):
-        """Return the available interest points for a list of sources, excluding any LAQN or AQE sites that are closed.
-        Only returns points withing the London boundary
-        Satellite returns features outside of london boundary, while laqn and aqe do not.
-        args:
-            sources: A list of sources to include
-            point_ids: A list of point_ids to include. Default of None returns all points
-        """
-
-        bounded_geom = self.query_london_boundary()
-        base_query_columns = [
-            MetaPoint.id.label("point_id"),
-            MetaPoint.source.label("source"),
-            MetaPoint.location.label("location"),
-            MetaPoint.location.ST_Within(bounded_geom).label("in_london"),
-            func.ST_X(MetaPoint.location).label("lon"),
-            func.ST_Y(MetaPoint.location).label("lat"),
-        ]
+    def get_meta_point_ids(self, source: Source):
 
         with self.dbcnxn.open_session() as session:
 
-            remaining_sources_q = session.query(
-                *base_query_columns,
-                null().label("date_opened"),
-                null().label("date_closed"),
-            ).filter(
-                MetaPoint.source.in_(
-                    [
-                        source
-                        for source in sources
-                        if source not in ["laqn", "aqe", "satellite"]
-                    ]
-                ),
-                MetaPoint.location.ST_Within(bounded_geom),
+            return session.query(cast(MetaPoint.id, String).label("point_id")).filter(
+                MetaPoint.source == source
             )
 
-            # Satellite is not filtered by london boundary
-            sat_sources_q = session.query(
-                *base_query_columns,
-                null().label("date_opened"),
-                null().label("date_closed"),
-            ).filter(MetaPoint.source.in_(["satellite"]))
+    @db_query
+    def get_available_interest_points(self, source: Source, point_ids=None):
+        """
+        Get available interest points for a particular source
+        """
 
-            aqe_sources_q = (
-                session.query(
-                    *base_query_columns,
-                    func.min(AQESite.date_opened),
-                    func.min(AQESite.date_closed),
-                )
-                .join(AQESite, isouter=True)
-                .group_by(*base_query_columns)
-                .filter(
-                    MetaPoint.source.in_(["aqe"]),
-                    MetaPoint.location.ST_Within(bounded_geom),
-                )
-            )
+        bounded_geom = self.query_london_boundary(output_type="subquery")
 
-            laqn_sources_q = (
-                session.query(
-                    *base_query_columns,
-                    func.min(LAQNSite.date_opened),
-                    func.min(LAQNSite.date_closed),
-                )
-                .join(LAQNSite, isouter=True)
-                .group_by(*base_query_columns)
-                .filter(
-                    MetaPoint.source.in_(["laqn"]),
-                    MetaPoint.location.ST_Within(bounded_geom),
-                )
-            )
+        if source == Source.laqn:
 
-            # if ("satellite" in sources) and (len(sources) != 1):
-            #     raise ValueError(
-            #         """Satellite can only be requested on a source on its own.
-            #         Ensure 'sources' contains no other options"""
-            #     )
-            if sources[0] == "satellite":
-                all_sources_sq = remaining_sources_q.union(sat_sources_q).subquery()
-            else:
-                all_sources_sq = remaining_sources_q.union(
-                    aqe_sources_q, laqn_sources_q
-                ).subquery()
+            return self.get_laqn_open_sites(output_type="list")
 
-            # Remove any sources where there is a closing date and filter by point_ids
-            all_sources_q = session.query(all_sources_sq).filter(
-                all_sources_sq.c.date_closed.is_(None)
-            )
+        if source == Source.aqe:
 
-            if point_ids:
-                all_sources_q = all_sources_q.filter(
-                    all_sources_sq.c.point_id.in_(point_ids)
-                )
+            return self.get_aqe_open_sites(output_type="list")
 
-        return all_sources_q
+        if source in [Source.satellite, Source.hexgrid]:
+
+            return self.get_meta_point_ids(source, output_type="list")
+
+        else:
+            raise NotImplementedError("Cannot get interest points for this source")

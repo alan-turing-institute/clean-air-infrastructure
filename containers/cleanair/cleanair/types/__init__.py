@@ -1,7 +1,14 @@
 """Types for the cleanair package."""
 
 from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
-from .dataset_types import DataConfig, FeaturesDict, TargetDict, BaseConfig, FullConfig
+from .dataset_types import (
+    DataConfig,
+    FeaturesDict,
+    TargetDict,
+    BaseConfig,
+    FullConfig,
+    InterestPointDict,
+)
 from .model_types import ParamsSVGP
 
 
@@ -11,6 +18,7 @@ __all__ = [
     "DataConfig",
     "FeaturesDict",
     "FeatureBufferSize",
+    "InterestPointDict",
     "TargetDict",
     "Source",
     "ParamsSVGP",

@@ -145,7 +145,9 @@ def generate_config(
 
 
 @app.command()
-def echo_config(full: bool = typer.Option(False, help="Full version of config")):
+def echo_config(
+    full: bool = typer.Option(False, help="Full version of config")
+) -> None:
     """Echo the cached config file"""
 
     config = load_config(full)
@@ -153,7 +155,7 @@ def echo_config(full: bool = typer.Option(False, help="Full version of config"))
 
 
 @app.command()
-def generate_full_config():
+def generate_full_config() -> None:
     """Perform validation checks on a config file and generates a full config"""
 
     typer.echo("Validate the cached config file")

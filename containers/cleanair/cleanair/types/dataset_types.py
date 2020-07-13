@@ -14,6 +14,8 @@ FeaturesDict = Dict[str, NDArray[Float64]]
 TargetDict = Dict[str, Dict[str, NDArray[Float64]]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 
+InterestPointDict = Dict[Source, Union[str, List[str]]]
+
 
 class BaseConfig(BaseModel):
     train_start_date: datetime
@@ -23,9 +25,11 @@ class BaseConfig(BaseModel):
     include_prediction_y: bool
     train_sources: List[Source]
     pred_sources: List[Source]
-    train_interest_points: Union[str, List[str]] = "all"
-    train_satellite_interest_points: Union[str, List[str]] = "all"
-    pred_interest_points: Union[str, List[str]] = "all"
+    train_interest_points: InterestPointDict = {Source.laqn: "all"}
+    pred_interest_points: InterestPointDict = {
+        Source.laqn: "all",
+        Source.hexgrid: "all",
+    }
     species: List[Species]
     features: List[FeatureNames]
     buffer_sizes: List[FeatureBufferSize]
