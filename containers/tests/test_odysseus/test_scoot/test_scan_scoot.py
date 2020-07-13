@@ -9,6 +9,7 @@ from shapely import wkb
 if TYPE_CHECKING:
     from odysseus.scoot import ScanScoot
 
+
 def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
     """Test that a fishnet is cast over a borough and detectors are mapped to grid squares."""
     detector_df = scan_scoot.scoot_fishnet("Westminster", output_type="df")

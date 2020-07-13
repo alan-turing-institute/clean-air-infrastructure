@@ -7,6 +7,7 @@ from cleanair.decorators import db_query
 from cleanair.mixins import ScootQueryMixin
 from ..databases.mixins import GridMixin
 
+
 class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
     """Reading and writing scan stats for SCOOT."""
 
@@ -22,7 +23,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
             The geometry column of the fishnet is 'geom'.
         """
         fishnet = self.fishnet_over_borough(borough, output_type="subquery")
-        detectors = self.get_scoot_detectors(output_type="subquery", geom_label="location")
+        detectors = self.get_scoot_detectors(
+            output_type="subquery", geom_label="location"
+        )
         with self.dbcnxn.open_session() as session:
             readings = session.query(detectors, fishnet).join(
                 fishnet, func.ST_Intersects(fishnet.c.geom, detectors.c.location)
@@ -30,7 +33,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
             return readings
 
     @db_query
-    def scoot_fishnet_readings(self, borough: str, start_time: str, end_time: Optional[str] = None,):
+    def scoot_fishnet_readings(
+        self, borough: str, start_time: str, end_time: Optional[str] = None,
+    ):
         """Get a grid over a borough and return all scoot readings in that grid."""
         fishnet = self.scoot_fishnet(borough, output_type="subquery")
         readings = self.scoot_readings(
@@ -41,4 +46,6 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
-            return session.query(readings).join(fishnet, readings.detector_id == fishnet.detector_id)
+            return session.query(readings).join(
+                fishnet, readings.detector_id == fishnet.detector_id
+            )

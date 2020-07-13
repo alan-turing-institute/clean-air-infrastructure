@@ -8,6 +8,7 @@ from odysseus.scoot import ScanScoot
 if TYPE_CHECKING:
     from cleanair.databases import Connector
 
+
 @pytest.fixture(scope="function")
 def scan_scoot(secretfile: str, connection: Connector) -> ScanScoot:
     """Fixture for scan scoot class."""

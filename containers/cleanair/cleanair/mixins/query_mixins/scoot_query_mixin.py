@@ -19,7 +19,11 @@ class ScootQueryMixin:
 
     @db_query
     def scoot_readings(
-        self, start_time: str, end_time: Optional[str] = None, detectors: Optional[List] = None, with_location: bool = True
+        self,
+        start_time: str,
+        end_time: Optional[str] = None,
+        detectors: Optional[List] = None,
+        with_location: bool = True,
     ):
         """
         Get scoot data with lat and long positions.
@@ -39,15 +43,16 @@ class ScootQueryMixin:
             ScootReading.n_vehicles_in_interval,
         ]
         if with_location:
-            cols.extend([
-                func.ST_X(MetaPoint.location).label("lon"),
-                func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom"),
-            ])
+            cols.extend(
+                [
+                    func.ST_X(MetaPoint.location).label("lon"),
+                    func.ST_Y(MetaPoint.location).label("lat"),
+                    MetaPoint.location.label("geom"),
+                ]
+            )
         with self.dbcnxn.open_session() as session:
-            scoot_readings = (
-                session.query(cols)
-                .filter(ScootReading.measurement_start_utc >= start_time)
+            scoot_readings = session.query(cols).filter(
+                ScootReading.measurement_start_utc >= start_time
             )
             if with_location:
                 readings = readings.join(
