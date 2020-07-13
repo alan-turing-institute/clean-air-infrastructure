@@ -25,7 +25,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
         detectors = self.get_scoot_detectors(output_type="subquery", geom_label="location")
         with self.dbcnxn.open_session() as session:
             readings = session.query(detectors, fishnet).join(
-                fishnet, func.ST_Intersects(fishnet.c.geom, detectors.c.geom)
+                fishnet, func.ST_Intersects(fishnet.c.geom, detectors.c.location)
             )
             return readings
 
