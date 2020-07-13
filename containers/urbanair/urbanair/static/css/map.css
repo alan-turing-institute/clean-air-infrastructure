@@ -11,10 +11,12 @@ html, body, #mapid {
     top: 0px;
     right: 0px;
     position: absolute;
-    display: flex;
+    /* display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
+    flex-wrap: wrap; */
     justify-content: flex-start;
+    overflow: auto;
+    height: 100%;
 }
 
 #chart{
