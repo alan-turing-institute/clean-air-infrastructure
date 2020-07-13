@@ -576,20 +576,25 @@ class ModelData(DBWriter, DBQueryMixin):
         return data_frame
 
     def download_source_data(
-        self, full_config: FullConfig, source: Source
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        species: List[Species],
+        point_ids: List[str],
+        features: List[FeatureNames],
+        source: Source,
     ) -> pd.DataFrame:
         """Download all training data (static, dynamic[not yet implimented] and sensor readings)
         for a given source (e.g. laqn, aqe, satellite)
         """
-        full_config
 
         # Get training and prediciton data frames
         self.training_data = self.get_training_data_inputs(
-            start_date=full_config.train_start_date,
-            end_date=full_config.train_end_date,
-            species=full_config.species,
-            point_ids=full_config.train_interest_points[source],
-            features=full_config.features,
+            start_date=start_date,
+            end_date=end_date,
+            species=species,
+            point_ids=point_ids,
+            features=features,
             source=source,
             output_type="df",
         )
@@ -616,35 +621,38 @@ class ModelData(DBWriter, DBQueryMixin):
 
         return flattend_features_df
 
-    def download_input_config_data(
+    def download_training_config_data(
         self, full_config: FullConfig
-    ) -> Dict[str, pd.DateFrame]:
+    ) -> Dict[Source, pd.DateFrame]:
         """Download all input data specified in a validated full config file"""
+
+        data_output: Dict[Source, pd.DateFrame] = {}
+        for source in full_config.train_sources:
+            data_output[source] = self.download_source_data(
+                start_date=full_config.train_start_date,
+                end_date=full_config.train_end_date,
+                species=full_config.species,
+                point_ids=full_config.train_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
+
+    def download_prediction_config_data(
+        self, full_config: FullConfig
+    ) -> Dict[Source, pd.DataFrame]:
 
         data_output: Dict[str, pd.DateFrame] = {}
         for source in full_config.train_sources:
-            data_output[source.value] = self.download_source_data(full_config, source)
+            data_output[source] = self.download_source_data(
+                start_date=full_config.pred_start_date,
+                end_date=full_config.pred_end_date,
+                species=full_config.species,
+                point_ids=full_config.pred_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
         return data_output
-
-        # self.pred_data_df = self.get_pred_data_inputs()
-        # self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
-
-        # # Process satellite data
-        # if self.config["include_satellite"]:
-        #     (
-        #         self.training_satellite_data_x,
-        #         self.training_satellite_data_y,
-        #     ) = self.get_training_satellite_inputs()
-
-        #     self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-        #         ["box_id", "measurement_start_utc", "point_id"]
-        #     )
-        #     self.training_satellite_data_x = self.__normalise_data(
-        #         self.training_satellite_data_x
-        #     )
-        #     self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
-        #         ["box_id", "measurement_start_utc"]
-        #     )
 
     # @property
     # def norm_stats(self):

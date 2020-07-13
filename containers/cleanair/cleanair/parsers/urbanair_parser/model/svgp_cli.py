@@ -188,12 +188,18 @@ def download_model_data():
     full_config = load_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
-    data_dict = model_data.download_input_config_data(full_config)
-    data_dict_norm = model_data.normalize_data(full_config, data_dict)
+    training_data_df = model_data.download_training_config_data(full_config)
+    training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
-    data_dict_norm["laqn"].to_csv("laqn_data.csv")
+    for key in training_data_df_norm.keys():
+        training_data_df_norm[key].to_csv(key.value + ".csv")
+
+    # prediction_data_df = model_data.download_prediction_config_data(full_config)
+    # training_data_df_norm = model_data.normalize_data(full_config, prediction_data_df)
+
+    # print(training_data_df_norm.keys())
     # data_dict_norm["aqe"].to_csv("aqe_data.csv")
-    data_dict["satellite"].to_csv("satellite_data.csv")
+    # data_dict["satellite"].to_csv("satellite_data.csv")
 
 
 # @app.command()
