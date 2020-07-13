@@ -31,7 +31,7 @@ from ..timestamps import as_datetime
 from ..decorators import db_query
 
 # if TYPE_CHECKING:
-from ..types import DataConfig, Source, Species, BaseConfig, FullConfig
+from ..types import DataConfig, Source, Species, BaseConfig, FullConfig, FeatureNames
 
 # pylint: disable=too-many-lines
 
@@ -581,12 +581,19 @@ class ModelData(DBWriter, DBQueryMixin):
         """Download all training data (static, dynamic[not yet implimented] and sensor readings)
         for a given source (e.g. laqn, aqe, satellite)
         """
-        config = full_config.dict()
+        full_config
 
         # Get training and prediciton data frames
         self.training_data = self.get_training_data_inputs(
-            config, source, output_type="df"
+            start_date=full_config.train_start_date,
+            end_date=full_config.train_end_date,
+            species=full_config.species,
+            point_ids=full_config.train_interest_points[source],
+            features=full_config.features,
+            source=source,
+            output_type="df",
         )
+
         self.training_data_index = self.training_data.set_index(self.index_names)
 
         if not set(self.training_data_index.columns) == set(self.column_names):
@@ -613,14 +620,6 @@ class ModelData(DBWriter, DBQueryMixin):
         self, full_config: FullConfig
     ) -> Dict[str, pd.DateFrame]:
         """Download all input data specified in a validated full config file"""
-
-        # Get training and prediciton data frames
-        # self.training_data_laqn = self.get_training_data_inputs(
-        #     config, Source.laqn, output_type="sql"
-        # )
-        # self.training_data_aqe = self.get_training_data_inputs(
-        #     config, Source.aqe, output_type="sql"
-        # )
 
         data_output: Dict[str, pd.DateFrame] = {}
         for source in full_config.train_sources:
@@ -1134,7 +1133,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     @db_query
     def select_static_features(
-        self, features: List[str], source: Source, point_ids: List[str]
+        self, features: List[FeatureNames], source: Source, point_ids: List[str]
     ):
 
         with self.dbcnxn.open_session() as session:
@@ -1305,7 +1304,7 @@ class ModelData(DBWriter, DBQueryMixin):
         self,
         start_date: datetime,
         end_date: datetime,
-        features: List[str],
+        features: List[FeatureNames],
         source: Source,
         point_ids: List[str],
         output_type="df",
@@ -1386,15 +1385,16 @@ class ModelData(DBWriter, DBQueryMixin):
             return static_with_sensor_readings
 
     @db_query
-    def get_training_data_inputs(self, config, source: Source):
+    def get_training_data_inputs(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        species: List[Species],
+        point_ids: List[str],
+        features: List[FeatureNames],
+        source: Source,
+    ):
         """Query the database to get inputs for model fitting."""
-
-        start_date = config["train_start_date"]
-        end_date = config["train_end_date"]
-        # sources = config["train_sources"]
-        species = config["species"]
-        point_ids = config["train_interest_points"]
-        features = config["feature_names"]
 
         self.logger.info(
             "Loading training data for species: %s from sources: %s",
@@ -1402,7 +1402,7 @@ class ModelData(DBWriter, DBQueryMixin):
             source.value,
         )
         self.logger.info(
-            "Using data from %s (inclusive) to %s (exclusive)", start_date, end_date,
+            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
         # Get sensor readings and summary of available data from start_date (inclusive) to end_date
@@ -1426,8 +1426,6 @@ class ModelData(DBWriter, DBQueryMixin):
         static_with_sensors = self.join_features_to_sensors(
             static_features, sensor_readings, source, output_type="sql"
         )
-
-        print(static_with_sensors, end="\n\n")
 
         return self.join_features_to_sensors(
             static_features, sensor_readings, source, output_type="query"

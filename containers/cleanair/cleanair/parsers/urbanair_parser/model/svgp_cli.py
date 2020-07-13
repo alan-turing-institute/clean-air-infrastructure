@@ -87,7 +87,9 @@ def generate_config(
         help="Interest point sources to predict on",
     ),
     species: List[Species] = typer.Option(
-        [Species.NO2.value], help="Pollutants to train and predict on"
+        [Species.NO2.value],
+        help="Pollutants to train and predict on",
+        show_default=True,
     ),
     features: List[FeatureNames] = typer.Option(
         [
@@ -95,6 +97,12 @@ def generate_config(
             FeatureNames.total_a_road_length.value,
             FeatureNames.total_a_road_primary_length.value,
             FeatureNames.total_b_road_length.value,
+            FeatureNames.grass.value,
+            FeatureNames.building_height.value,
+            FeatureNames.water.value,
+            FeatureNames.park.value,
+            FeatureNames.max_canyon_narrowest.value,
+            FeatureNames.max_canyon_ratio.value,
         ],
         help="Features to predict on",
     ),
@@ -183,9 +191,9 @@ def download_model_data():
     data_dict = model_data.download_input_config_data(full_config)
     data_dict_norm = model_data.normalize_data(full_config, data_dict)
 
-    # data_dict_norm["laqn"].to_csv("laqn_data.csv")
-    data_dict_norm["aqe"].to_csv("aqe_data.csv")
-    # data_dict["satellite"].to_csv("satellite_data.csv")
+    data_dict_norm["laqn"].to_csv("laqn_data.csv")
+    # data_dict_norm["aqe"].to_csv("aqe_data.csv")
+    data_dict["satellite"].to_csv("satellite_data.csv")
 
 
 # @app.command()
