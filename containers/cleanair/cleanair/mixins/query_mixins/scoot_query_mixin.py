@@ -157,21 +157,22 @@ class ScootQueryMixin:
 
     @db_query
     def get_scoot_detectors(
-        self, offset: int = None, limit: int = None,
+        self, offset: int = None, limit: int = None, geom_label: str = "geom",
     ):
         """
         Get all scoot detectors from the interest point schema.
 
-        Args:
+        Keyword args:
             offset: Start selecting detectors from this integer index.
             limit: Select at most this many detectors.
+            geom_label: Rename the geometry column with this label.
         """
         with self.dbcnxn.open_session() as session:
             readings = session.query(
                 ScootDetector.detector_n.label("detector_id"),
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom"),
+                MetaPoint.location.label(geom_label),
             ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
 
             if offset and limit:

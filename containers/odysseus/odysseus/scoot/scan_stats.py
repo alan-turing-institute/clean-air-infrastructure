@@ -12,14 +12,21 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
 
     @db_query
     def scoot_fishnet(self, borough: str):
-        """Get a grid over a borough and join on scoot detectors."""
+        """Get a grid over a borough and join on scoot detectors.
+
+        Args:
+            borough: The name of the borough to get scoot detectors for.
+
+        Notes:
+            The geometry column of the scoot detector table is renamed to 'location'.
+            The geometry column of the fishnet is 'geom'.
+        """
         fishnet = self.fishnet_over_borough(borough, output_type="subquery")
-        detectors = self.get_scoot_detectors(output_type="subquery")
+        detectors = self.get_scoot_detectors(output_type="subquery", geom_label="location")
         with self.dbcnxn.open_session() as session:
-            readings = session.query(
-                fishnet,
-                detectors
-            ).join(detectors, func.ST_Intersects(fishnet.geom, detectors.geom))
+            readings = session.query(detectors, fishnet).join(
+                fishnet, func.ST_Intersects(fishnet.c.geom, detectors.c.geom)
+            )
             return readings
 
     @db_query
@@ -34,4 +41,4 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
-            return session.query(readings, fishnet).join(fishnet, readings.detector_id == fishnet.detector_id)
+            return session.query(readings).join(fishnet, readings.detector_id == fishnet.detector_id)
