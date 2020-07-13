@@ -22,6 +22,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
             The geometry column of the scoot detector table is renamed to 'location'.
             The geometry column of the fishnet is 'geom'.
         """
+        # TODO add xmin, ymin, xmax, ymax for each grid square
         fishnet = self.fishnet_over_borough(borough, output_type="subquery")
         detectors = self.get_scoot_detectors(
             output_type="subquery", geom_label="location"
