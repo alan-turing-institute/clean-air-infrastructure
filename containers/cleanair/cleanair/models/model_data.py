@@ -504,14 +504,17 @@ class ModelData(DBWriter, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        self.index_names = [
+        self.feature_index_names = [
             "point_id",
             "measurement_start_utc",
             "lat",
             "lon",
+        ]
+        self.sensor_index_names = self.feature_index_names + [
             "species_code",
             "value",
         ]
+
         self.column_names = [
             "feature_name",
             "value_1000",
@@ -577,6 +580,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     def download_source_data(
         self,
+        with_sensor_readings: bool,
         start_date: datetime,
         end_date: datetime,
         species: List[Species],
@@ -588,29 +592,39 @@ class ModelData(DBWriter, DBQueryMixin):
         for a given source (e.g. laqn, aqe, satellite)
         """
 
-        # Get training and prediciton data frames
-        self.training_data = self.get_training_data_inputs(
-            start_date=start_date,
-            end_date=end_date,
-            species=species,
-            point_ids=point_ids,
-            features=features,
-            source=source,
-            output_type="df",
-        )
+        if with_sensor_readings:
+            # Get source dataframe
+            source_data = self.get_training_data_inputs(
+                start_date=start_date,
+                end_date=end_date,
+                species=species,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                output_type="df",
+            )
+            index_names = self.sensor_index_names
+        else:
+            # Get source dataframe
+            source_data = self.get_prediction_data_inputs(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                output_type="df",
+            )
+            index_names = self.feature_index_names
 
-        self.training_data_index = self.training_data.set_index(self.index_names)
+        source_data_index = source_data.set_index(index_names)
 
-        if not set(self.training_data_index.columns) == set(self.column_names):
+        if not set(source_data_index.columns) == set(self.column_names):
             raise AttributeError("Wrong column names")
-        if not set(self.training_data_index.index.names) == set(self.index_names):
+        if not set(source_data_index.index.names) == set(index_names):
             raise AttributeError("Wrong index names")
 
         features_df = pd.pivot_table(
-            self.training_data,
-            index=self.index_names,
-            columns="feature_name",
-            aggfunc=get_val,
+            source_data, index=index_names, columns="feature_name", aggfunc=get_val,
         ).reset_index()
 
         flattend_features_df = self.flatten_column_names(features_df)
@@ -629,6 +643,7 @@ class ModelData(DBWriter, DBQueryMixin):
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in full_config.train_sources:
             data_output[source] = self.download_source_data(
+                with_sensor_readings=True,
                 start_date=full_config.train_start_date,
                 end_date=full_config.train_end_date,
                 species=full_config.species,
@@ -642,9 +657,10 @@ class ModelData(DBWriter, DBQueryMixin):
         self, full_config: FullConfig
     ) -> Dict[Source, pd.DataFrame]:
 
-        data_output: Dict[str, pd.DateFrame] = {}
-        for source in full_config.train_sources:
+        data_output: Dict[Source, pd.DateFrame] = {}
+        for source in full_config.pred_sources:
             data_output[source] = self.download_source_data(
+                with_sensor_readings=False,
                 start_date=full_config.pred_start_date,
                 end_date=full_config.pred_end_date,
                 species=full_config.species,
@@ -1439,61 +1455,51 @@ class ModelData(DBWriter, DBQueryMixin):
             static_features, sensor_readings, source, output_type="query"
         )
 
-        # if "aqe" in sources:
-
-        #     static_with_readings = session.query(
-        #         static_with_readings, aqe_readings
-        #     ).join(
-        #         laqn_readings,
-        #         static_features.c.point_id == laqn_readings.c.point_id,
-        # )
-
-        # self.logger.debug("Merging sensor data and model features")
-        # model_data = pd.merge(
-        #     all_features,
-        #     readings,
-        #     on=["point_id", "measurement_start_utc", "epoch", "source"],
-        #     how="left",
-        # )
-
-        # return model_data
-
-    def get_pred_data_inputs(self):
-        """Query the database for inputs for model prediction"""
-
-        start_date = self.config["pred_start_date"]
-        end_date = self.config["pred_end_date"]
-        species = self.config["species"]
-        sources = self.config["pred_sources"]
-        point_ids = self.config["pred_interest_points"]
-        features = self.config["feature_names"]
+    @db_query
+    def get_prediction_data_inputs(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        point_ids: List[str],
+        features: List[FeatureNames],
+        source: Source,
+    ):
+        """Query the database to get inputs for model fitting."""
 
         self.logger.info(
-            "Getting prediction data for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
+            "Loading prediction data for source: %s", source.value,
+        )
+        self.logger.info(
+            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
-        all_features = self.get_model_features(
-            start_date, end_date, features, sources, point_ids
+        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
+        static_features = self.get_static_features(
+            start_date, end_date, features, source, point_ids, output_type="subquery"
         )
-        if self.config["include_prediction_y"]:
-            readings = self.__get_sensor_readings(
-                start_date, end_date, sources, species
-            )
-            self.logger.debug("Merging sensor data and model features")
-            model_data = pd.merge(
-                all_features,
-                readings,
-                on=["point_id", "measurement_start_utc", "epoch", "source"],
-                how="left",
-            )
 
-            return model_data
+        with self.dbcnxn.open_session() as session:
 
-        return all_features
+            return (
+                session.query(
+                    static_features.c.point_id,
+                    static_features.c.measurement_start_utc,
+                    static_features.c.feature_name,
+                    static_features.c.value_1000,
+                    static_features.c.value_500,
+                    static_features.c.value_200,
+                    static_features.c.value_100,
+                    static_features.c.value_10,
+                    static_features.c.lat,
+                    static_features.c.lon,
+                )
+                .filter(static_features.c.source == source.value)
+                .order_by(
+                    static_features.c.point_id,
+                    static_features.c.feature_name,
+                    static_features.c.measurement_start_utc,
+                )
+            )
 
     def get_training_satellite_inputs(self):
         """Get satellite inputs"""

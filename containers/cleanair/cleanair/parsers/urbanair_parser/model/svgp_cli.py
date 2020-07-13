@@ -181,21 +181,37 @@ def generate_full_config() -> None:
 
 
 @app.command()
-def download_model_data():
+def download_model_data(
+    training_data: bool = typer.Option(
+        True, help="Download training data", show_default=True
+    ),
+    prediction_data: bool = typer.Option(
+        True, help="Download prediction data", show_default=True
+    ),
+):
     """Download datasets specified by config file"""
 
     typer.echo("Validate the cached config file")
     full_config = load_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
-    training_data_df = model_data.download_training_config_data(full_config)
-    training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
+    if training_data:
+        # Get training data
+        training_data_df = model_data.download_training_config_data(full_config)
+        training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
-    for key in training_data_df_norm.keys():
-        training_data_df_norm[key].to_csv(key.value + ".csv")
+        for key in training_data_df_norm.keys():
+            training_data_df_norm[key].to_csv(key.value + ".csv")
 
-    # prediction_data_df = model_data.download_prediction_config_data(full_config)
-    # training_data_df_norm = model_data.normalize_data(full_config, prediction_data_df)
+    if prediction_data:
+        # Get prediction data
+        prediction_data_df = model_data.download_prediction_config_data(full_config)
+        prediction_data_df_norm = model_data.normalize_data(
+            full_config, prediction_data_df
+        )
+
+        for key in prediction_data_df_norm.keys():
+            prediction_data_df_norm[key].to_csv(key.value + "_pred.csv")
 
     # print(training_data_df_norm.keys())
     # data_dict_norm["aqe"].to_csv("aqe_data.csv")
