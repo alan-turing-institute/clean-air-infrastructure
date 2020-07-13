@@ -21,9 +21,9 @@ class AQESite(Base):
     date_closed = Column(TIMESTAMP)
 
     # Create AQESite.readings and AQEReading.site
-    readings = relationship("AQEReading", backref="site")
+    readings = relationship("AQEReading", backref="site") # type: ignore # sqlalchemy.orm.RelationshipProperty
     # Create AQESite.point with no reverse relationship
-    point = relationship("MetaPoint")
+    point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
     def __repr__(self):
         return (

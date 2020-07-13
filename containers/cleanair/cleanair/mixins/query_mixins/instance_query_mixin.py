@@ -58,21 +58,21 @@ class InstanceQueryMixin:
             # filter by instance ids
             if instance_ids:
                 readings = readings.filter(
-                    self.instance_table.instance_id.in_(instance_ids)
+                    self.instance_table.instance_id.in_(instance_ids) # type: ignore # sqlalchemy.Column
                 )
             # filter by data ids
             if data_ids:
-                readings = readings.filter(self.instance_table.data_id.in_(data_ids))
+                readings = readings.filter(self.instance_table.data_id.in_(data_ids)) # type: ignore # sqlalchemy.Column
             # filter by param ids and model name
             if param_ids:
-                readings = readings.filter(self.instance_table.param_id.in_(param_ids))
+                readings = readings.filter(self.instance_table.param_id.in_(param_ids)) # type: ignore # sqlalchemy.Column
             # filter by model names
             if models:
-                readings = readings.filter(self.instance_table.model_name.in_(models))
+                readings = readings.filter(self.instance_table.model_name.in_(models)) # type: ignore # sqlalchemy.Column
             # get all instances that were fit on or after the given date
             if fit_start_time:
                 readings = readings.filter(
-                    self.instance_table.fit_start_time >= fit_start_time
+                    self.instance_table.fit_start_time >= fit_start_time # type: ignore # sqlalchemy.Column
                 )
             return readings
 

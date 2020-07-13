@@ -22,7 +22,7 @@ class ResultQueryMixin:
     @db_query
     def query_results(
         self,
-        instance_id: str,
+        instance_id, # type: ignore # sqlalchemy.Column
         data_id: Optional[str] = None,
         join_metapoint: Optional[bool] = False,
     ):
@@ -37,7 +37,7 @@ class ResultQueryMixin:
         base_query = [self.result_table]
         if join_metapoint:
             base_query += [
-                MetaPoint.source,
+                MetaPoint.source, # type: ignore # sqlalchemy.Column
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
             ]

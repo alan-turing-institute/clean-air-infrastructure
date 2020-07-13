@@ -9,14 +9,14 @@ from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID # type: ignore
 class InstanceTableMixin:
     """Table of Instances."""
 
-    instance_id = Column(String(64), primary_key=True, nullable=False)
-    tag = Column(String(64), nullable=False, index=False)
-    git_hash = Column(String(40), nullable=False, index=False)
-    fit_start_time = Column(TIMESTAMP, primary_key=False, nullable=False)
-    cluster_id = Column(String(64), nullable=False, index=False)
-    model_name = Column(String(64), nullable=False, index=False)
-    param_id = Column(String(64), nullable=False, index=False)
-    data_id = Column(String(64), nullable=False, index=False)
+    instance_id = Column(String(64), primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
+    tag = Column(String(64), nullable=False, index=False) # type: ignore # sqlalchemy.Column
+    git_hash = Column(String(40), nullable=False, index=False) # type: ignore # sqlalchemy.Column
+    fit_start_time = Column(TIMESTAMP, primary_key=False, nullable=False) # type: ignore # sqlalchemy.Column
+    cluster_id = Column(String(64), nullable=False, index=False) # type: ignore # sqlalchemy.Column
+    model_name = Column(String(64), nullable=False, index=False) # type: ignore # sqlalchemy.Column
+    param_id = Column(String(64), nullable=False, index=False) # type: ignore # sqlalchemy.Column
+    data_id = Column(String(64), nullable=False, index=False) # type: ignore # sqlalchemy.Column
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
@@ -56,8 +56,8 @@ class MetricsTableMixin:
 
     __tablename__ = "metrics"
 
-    instance_id = Column(String(64), primary_key=True, nullable=False)
-    data_id = Column(String(64), primary_key=True, nullable=False)
+    instance_id = Column(String(64), primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
+    data_id = Column(String(64), primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
@@ -70,11 +70,11 @@ class ResultTableMixin:
 
     __tablename__ = "result"
 
-    instance_id = Column(String(64), primary_key=True, nullable=False)
-    data_id = Column(String(64), primary_key=True, nullable=False)
+    instance_id = Column(String(64), primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
+    data_id = Column(String(64), primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
 
-    point_id = Column(UUID, primary_key=True, nullable=False)
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    point_id = Column(UUID, primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
+    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False) # type: ignore # sqlalchemy.Column
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]  # pylint: disable=no-member
