@@ -167,6 +167,7 @@ def generate_full_config() -> None:
     full_config = model_config.generate_full_config(config)
 
     state["logger"].info(green("Creating full config file"))
+
     with MODEL_CONFIG_FULL.open("w") as full_config_f:
         full_config_f.write(full_config.json(indent=4))
 

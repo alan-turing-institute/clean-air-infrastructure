@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Union
 from nptyping import NDArray, Float64
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from datetime import datetime
 from . import Species
 from . import Source
@@ -40,3 +40,11 @@ class BaseConfig(BaseModel):
 class FullConfig(BaseConfig):
     x_names: List[str]
     feature_names: List[str]
+
+    @validator("feature_names", each_item=True)
+    def name_must_contain_space(cls, v):
+
+        parts = v.split("_")
+        if parts[0] != "value":
+            raise ValueError("must start with 'value_'")
+        return v

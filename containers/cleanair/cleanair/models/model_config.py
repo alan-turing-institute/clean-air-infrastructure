@@ -163,32 +163,22 @@ class ModelConfig(
             config.pred_interest_points
         )
 
-        quit()
-        if config["features"] == "all":
-            feature_names = self.get_available_static_features(
-                output_type="list"
-            ) + self.get_available_dynamic_features(
-                config["train_start_date"], config["pred_end_date"], output_type="list"
-            )
-            buff_size = [1000, 500, 200, 100, 10]
-            config["features"] = [
-                "value_{}_{}".format(buff, name)
-                for buff in buff_size
-                for name in feature_names
-            ]
-            self.logger.info(
-                "Features 'all' replaced with available features: %s",
-                config["features"],
-            )
-            config["feature_names"] = feature_names
-        else:
-            config["feature_names"] = list(
-                {"".join(feature.split("_", 2)[2:]) for feature in config["features"]}
-            )
+        # Create feature names from features and buffer sizes
+        feature_names = [
+            f"value_{buff.value}_{feature.name}"
+            for buff in config.buffer_sizes
+            for feature in config.features
+        ]
 
-        config["x_names"] = ["epoch", "lat", "lon"] + config["features"]
+        # Add epoch, lat and lon
+        x_names = ["epoch", "lat", "lon"] + feature_names
 
-        return FullConfig(**config)
+        # Create full config and validate
+        config_dict = config.dict()
+        config_dict["feature_names"] = feature_names
+        config_dict["x_names"] = x_names
+
+        return FullConfig(**config_dict)
 
     def __check_features_available(
         self, features: List[FeatureNames], start_date: datetime, end_date: datetime
@@ -244,8 +234,9 @@ class ModelConfig(
                 isinstance(interest_point_dict[key], str)
                 and interest_point_dict[key] == "all"
             ):
-
-                output_dict[key] = self.get_available_interest_points(key)
+                output_dict[key] = self.get_available_interest_points(
+                    key, output_type="list"
+                )
 
             else:
                 output_dict[key] = interest_point_dict[key]
@@ -346,7 +337,7 @@ class ModelConfig(
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(cast(MetaPoint.id, String).label("point_id")).filter(
+            return session.query(MetaPoint.id.label("point_id")).filter(
                 MetaPoint.source == source
             )
 
@@ -358,17 +349,34 @@ class ModelConfig(
 
         bounded_geom = self.query_london_boundary(output_type="subquery")
 
+        # ToDo: Filter by bounding geometry
+
         if source == Source.laqn:
 
-            return self.get_laqn_open_sites(output_type="list")
+            point_ids_sq = self.get_laqn_open_sites(output_type="subquery")
 
-        if source == Source.aqe:
+        elif source == Source.aqe:
 
-            return self.get_aqe_open_sites(output_type="list")
+            point_ids_sq = self.get_aqe_open_sites(output_type="subquery")
 
-        if source in [Source.satellite, Source.hexgrid]:
+        elif source in [Source.satellite, Source.hexgrid]:
 
-            return self.get_meta_point_ids(source, output_type="list")
+            point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")
 
         else:
             raise NotImplementedError("Cannot get interest points for this source")
+
+        with self.dbcnxn.open_session() as session:
+
+            # Ensure we always return a string
+            return session.query(cast(point_ids_sq.c.point_id, String))
+
+            #  (
+            #     session.query(point_ids_sq.c.point_id)
+            #     .join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
+            #     .filter(
+            #         func.ST_Within(MetaPoint.location, bounded_geom.c.geom),
+            #         MetaPoint.source == source,
+            #     )
+            # )
+
