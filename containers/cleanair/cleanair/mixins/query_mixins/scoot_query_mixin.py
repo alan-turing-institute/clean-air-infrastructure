@@ -43,11 +43,12 @@ class ScootQueryMixin:
             ScootReading.n_vehicles_in_interval,
         ]
         if with_location:
+            detector_query = self.scoot_detectors(detectors=detectors, output_type="subquery")
             cols.extend(
                 [
-                    func.ST_X(MetaPoint.location).label("lon"),
-                    func.ST_Y(MetaPoint.location).label("lat"),
-                    MetaPoint.location.label("geom"),
+                    detector_query.c.lon,
+                    detector_query.c.lat,
+                    detector_query.c.location,
                 ]
             )
         with self.dbcnxn.open_session() as session:
@@ -56,17 +57,12 @@ class ScootQueryMixin:
             )
             if with_location:
                 readings = readings.join(
-                    ScootDetector, ScootReading.detector_id == ScootDetector.detector_n
+                    detector_query, ScootReading.detector_id == detector_query.detector_id
                 ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
             # get readings upto but not including end_time
             if end_time:
                 scoot_readings = scoot_readings.filter(
                     ScootReading.measurement_start_utc < end_time
-                )
-            # get subset of detectors
-            if detectors:
-                scoot_readings = scoot_readings.filter(
-                    ScootReading.detector_id.in_(detectors)
                 )
 
             return scoot_readings
@@ -161,8 +157,8 @@ class ScootQueryMixin:
             return scoot_readings
 
     @db_query
-    def get_scoot_detectors(
-        self, offset: int = None, limit: int = None, geom_label: str = "geom",
+    def scoot_detectors(
+        self, offset: Optional[int] = None, limit: Optional[int] = None, geom_label: str = "location", detectors: Optional[List] = None,
     ):
         """
         Get all scoot detectors from the interest point schema.
@@ -171,6 +167,7 @@ class ScootQueryMixin:
             offset: Start selecting detectors from this integer index.
             limit: Select at most this many detectors.
             geom_label: Rename the geometry column with this label.
+            detectors: Only get detectors in this list.
         """
         with self.dbcnxn.open_session() as session:
             readings = session.query(
@@ -183,6 +180,11 @@ class ScootQueryMixin:
             if offset and limit:
                 readings = readings.order_by(ScootDetector.detector_n).slice(
                     offset, offset + limit
+                )
+            # get subset of detectors
+            if detectors:
+                readings = readings.filter(
+                    ScootDetector.detector_n.in_(detectors)
                 )
 
             return readings

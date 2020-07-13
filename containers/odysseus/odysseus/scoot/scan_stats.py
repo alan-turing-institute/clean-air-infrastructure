@@ -24,7 +24,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
         """
         # TODO add xmin, ymin, xmax, ymax for each grid square
         fishnet = self.fishnet_over_borough(borough, output_type="subquery")
-        detectors = self.get_scoot_detectors(
+        detectors = self.scoot_detectors(
             output_type="subquery", geom_label="location"
         )
         with self.dbcnxn.open_session() as session:
