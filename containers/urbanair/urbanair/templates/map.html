@@ -212,13 +212,14 @@
        // console.log(data);
 
         // console.log(counts);
-        // let cmax = Math.max(...counts);
-        // let interval = cmax / 10;
-        // let frequency = [0,0,0,0,0,0,0,0,0,0];
-        // for(let count of counts){
-        //     frequency[count % interval] += 1
-        // }
+        let cmax = Math.max(...counts);
+        let interval = cmax / 10;
+        let frequency1 = [0,0,0,0,0,0,0,0,0,0];
+        for(let count of counts){
+            frequency1[count % interval] += 1
+        }
         
+        console.log(frequency1)
         
         config1.data.labels = data;
         config1.data.datasets = [];
@@ -232,7 +233,7 @@
             }
         );
                             
-        config1.options.title.text = 'Average activity on ' + getDate() + ' by Type (all cameras)';
+        config1.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
         myBar.update();
     }
     
