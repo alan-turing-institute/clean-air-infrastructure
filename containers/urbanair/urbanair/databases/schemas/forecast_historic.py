@@ -7,7 +7,7 @@ from pydantic.dataclasses import dataclass
 from sqlalchemy import text
 
 
-class ForecastAvailable(BaseModel):
+class ForecastBase(BaseModel):
 
     instance_id: str
     fit_start_time: datetime
