@@ -23,15 +23,34 @@ from cleanair.utils import hash_dict
 
 # pylint: disable=redefined-outer-name
 
+@pytest.fixture(scope="function")
+def train_start() -> str:
+    """Training start date."""
+    return "2020-01-01"
 
 @pytest.fixture(scope="function")
-def no_features_data_config() -> DataConfig:
+def train_upto() -> str:
+    """Train upto this date."""
+    return "2020-01-02"
+
+@pytest.fixture(scope="fucntion")
+def pred_start() -> str:
+    """Start predicting at this date."""
+    return "2020-01-02"
+
+@pytest.fixture(scope="function")
+def pred_upto() -> str:
+    """Predict upto but not including this date."""
+    return "2020-01-03"
+
+@pytest.fixture(scope="function")
+def no_features_data_config(train_start: str, train_upto: str, pred_start: str, pred_upto: str) -> DataConfig:
     """Data config with no features."""
     return {
-        "train_start_date": "2020-01-01",
-        "train_end_date": "2020-01-02",
-        "pred_start_date": "2020-01-02",
-        "pred_end_date": "2020-01-03",
+        "train_start_date": train_start,
+        "train_end_date": train_upto,
+        "pred_start_date": pred_start,
+        "pred_end_date": pred_upto,
         "include_satellite": False,
         "include_prediction_y": False,
         "train_sources": ["laqn"],
