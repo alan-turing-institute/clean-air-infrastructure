@@ -17,6 +17,14 @@ class ForecastBase(BaseModel):
     class Config:
         orm_mode = True
 
+class ForecastResultBase(BaseModel):
+
+    instance_id: str
+    data_id: str
+    point_id: str
+
+    class Config:
+        orm_mode = True
 
 # GeoJson Types
 
