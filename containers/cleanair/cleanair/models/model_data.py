@@ -627,12 +627,27 @@ class ModelData(DBWriter, DBQueryMixin):
         features_df = pd.pivot_table(
             source_data, index=index_names, columns="feature_name", aggfunc=get_val,
         ).reset_index()
-
         flattend_features_df = self.flatten_column_names(features_df)
-
         flattend_features_df["epoch"] = flattend_features_df[
             "measurement_start_utc"
         ].apply(lambda x: x.timestamp())
+
+        # If sensor readings then make species a columns
+        if with_sensor_readings:
+
+            index_cols = [
+                col
+                for col in flattend_features_df.columns
+                if col not in ("species_code", "value")
+            ]
+
+            return pd.pivot_table(
+                flattend_features_df,
+                index=index_cols,
+                columns="species_code",
+                values="value",
+                aggfunc=get_val,
+            ).reset_index()
 
         return flattend_features_df
 
@@ -1182,41 +1197,6 @@ class ModelData(DBWriter, DBQueryMixin):
                 .join(MetaPoint, MetaPoint.id == StaticFeature.point_id)
             )
 
-            # return session.query(
-            #     MetaPoint.id.label("point_id"),
-            #     MetaPoint.source,
-            #     func.ST_X(MetaPoint.location).label("lat"),
-            #     func.ST_Y(MetaPoint.location).label("lon"),
-            # ).filter(MetaPoint.source.in_(sources))
-
-            # interest_point_query = self.get_available_interest_points(
-            #     sources, point_ids
-            # )
-
-            # # Select into into dataframes
-            # features_df = pd.read_sql(
-            #     feature_query.statement, feature_query.session.bind
-            # )
-
-            # print(features_df.head())
-
-            # interest_point_df = pd.read_sql(
-            #     interest_point_query.statement, interest_point_query.session.bind
-            # ).set_index("point_id")
-
-            # print(interest_point_df.head())
-
-            # quit()
-
-            # # Check if returned dataframes are empty
-            # if interest_point_df.empty:
-            #     raise AttributeError(
-            #         "No interest points were returned from the database. Check requested interest points are valid"
-            #     )
-
-            # if features_df.empty:
-            #     return features_df
-
     def __select_dynamic_features(
         self, start_date, end_date, features, sources, point_ids
     ):
@@ -1481,27 +1461,12 @@ class ModelData(DBWriter, DBQueryMixin):
                 start_date, end_date, species, output_type="subquery"
             )
 
-        static_with_sensors = self.join_features_to_sensors(
-            static_features, sensor_readings, source, output_type="sql"
-        )
-
-        print(
-            self.get_static_features(
-                start_date,
-                end_date,
-                features,
-                source,
-                point_ids,
-                species,
-                output_type="sql",
-            ),
-            end="\n\n",
-        )
-        print(static_with_sensors)
-        quit()
+        # static_with_sensors = self.join_features_to_sensors(
+        #     static_features, sensor_readings, source, output_type="sql"
+        # )
 
         return self.join_features_to_sensors(
-            static_features, sensor_readings, source, species, output_type="query",
+            static_features, sensor_readings, source, output_type="query",
         )
 
     @db_query
