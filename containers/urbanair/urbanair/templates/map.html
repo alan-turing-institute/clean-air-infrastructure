@@ -24,6 +24,8 @@
 <a class="logo"></a>
 
 <div id="sidebar">
+
+    <!-- SETTINGS -->
     <div id="controls" class="panel">
         <div class="controls-options">Options</div>
         <div class="controls-container">
@@ -43,10 +45,12 @@
         </div><br>
     </div>
 
+    <!-- HISTOGRAM -->
     <div id="histogramPanel" class="panel mono">
-        <canvas id="myBar" width="400" height="250"></canvas>
+        <canvas id="histogram" width="400" height="250"></canvas>
     </div>
 
+    <!-- CAMERA DETAILS -->
     <div id="detailsPanel" class="panel mono" style="visibility: hidden;">
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
@@ -102,7 +106,7 @@
     let showGroundEstimates = true;
     let selectedCam = '';
 
-    let data = {
+    let mapData = {
         'type': 'FeatureCollection',
         'features': []
     };
@@ -129,7 +133,7 @@
         config.options.title.text = 'Loading ' + camera_id + "...";
         config.data.labels = [];
         config.data.datasets = [];
-        window.myChart.update();
+        window.detailsChart.update();
         // https://urbanair.turing.ac.uk/
 
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
@@ -151,10 +155,9 @@
                                     fill: false,
                                 }
                             )
-                            // console.log(config.data.datasets)
                     }
                     config.options.title.text = 'Counts for camera ' + camera_id + ' on ' + getDate();
-                    window.myChart.update()
+                    window.detailsChart.update()
                 });
             });
     }
@@ -164,8 +167,7 @@
         // Map setup is contained in here - as layers can only be added after loading
 
         loadData(getDate());
-        console.debug(data);
-        map.addSource('jamcams', { type: 'geojson', data: data }); // This can be used to update the data later
+        map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -185,6 +187,7 @@
                 'circle-opacity': 0.7
             }
         })
+        // This just highlights the selected camera on the map:
         map.addLayer({
             id: 'jamcams-highlighted',
             type: 'circle',
@@ -202,11 +205,10 @@
             }
         })
 
+        // Make the cusor a pointer when over markers:
         map.on('mouseenter', 'jamcams', function() {
             map.getCanvas().style.cursor = 'pointer';
         });
-        
-        // Change it back to a pointer when it leaves.
         map.on('mouseleave', 'jamcams', function() {
             map.getCanvas().style.cursor = '';
         });
@@ -247,19 +249,15 @@
             return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`api/v1/jamcams/hourly?detection_class=${detection_class}&starttime=${start}`)));
         })
         .then((responses) => {
-            console.log(responses);
             return Promise.all(responses.map(res => res.json()));
         })
         .then((detection_class_json_responses) => {
             for (activities of detection_class_json_responses){
 
-                console.debug(activities);
                 let detection_class = activities[0].detection_class;
                 if (!detection_class){
                     detection_class ='all';
                 }
-
-                console.debug(detection_class);
 
                 let all_counts = activities.map(({counts}) => (counts));
                 
@@ -269,27 +267,20 @@
                 let today = false;
 
                 for (camera_id of cameras.keys()){
-                    
+
                     let items = activities.filter((item) => {return item.camera_id == camera_id});
-                    // console.log(items)
+
                     if (items.length > 0){
-                    
                         let count = items.map(({counts}) => (counts));
                         let sum_at_camera = count.reduce((previous, current) => current += previous);
                         avg_at_camera.push(sum_at_camera/count.length);
-                    //  console.log (avg_at_camera)
-                        
 
                         if (new Date(getDate()).toDateString() == new Date().toDateString()){
                             let counts =  items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
-                            
                             let time =  items.map(({measurement_start_utc}) => (new Date(measurement_start_utc + 'Z')))
-                            //   console.log(time.sort())
-                            //  console.log(new Date(Math.max(...time)).toString())
                             let last_hour = counts.filter(function(last){return last.t == new Date(Math.max(...time)).toString()})
                                 
                             last_hours.push(last_hour[0].y)
-                            //  console.log(last_hour)
                             today = true;
                         }
                     }  
@@ -303,12 +294,10 @@
                 }
 
                 for ([camera_id, camera] of cameras.entries()){
-                    // console.debug(camera);
-                    // console.debug(camera.id);
-                    let final_value= 0
-                           
+                    
+                    let final_value= 0    
                     if (today == true ){
-                        if( last_hours.length> 0){
+                        if( last_hours.length > 0){
                             final_value= last_hours.shift()
                         } 
                     }  
@@ -319,7 +308,7 @@
                     }       
 
                     const colour = VIRIDIS[Math.floor(Math.min(parseInt(final_value)/max_final, 1) * 255)];
-                    data.features.push(
+                    mapData.features.push(
                         {
                             'type': 'Feature',
                             'geometry': {
@@ -340,19 +329,18 @@
                     )
                 }
             }
-            map.getSource('jamcams').setData(data); // This loads the data into mapbox
+            map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
             setHistogramDetectionClass();
         });
     }
 
     function updateGraph(camera) {
-        chartConfig.options.title.text = `Loading camera ${camera.id}...`;
-        chartConfig.data.labels = [];
-        chartConfig.data.datasets = [];
-        window.myChart.update();
+        detailsChartConfig.options.title.text = `Loading camera ${camera.id}...`;
+        detailsChartConfig.data.labels = [];
+        detailsChartConfig.data.datasets = [];
+        window.detailsChart.update();
         // https://urbanair.turing.ac.uk/
 
-        console.log(camera.id)
         fetch(`api/v1/jamcams/raw?camera_id=${camera.id}`)
         .then((response) => {
             return response.json()
@@ -362,30 +350,24 @@
             for (type of detection_classes) {
                 let subdat = result.filter(function(item){return item.detection_class == type})
                 let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
-            
-            //     zeroIdxs = result.counts[type].filter(i => i > 0);
-                    chartConfig.data.datasets.push(
-                        {
-                            label: type,
-                            backgroundColor: COLORS[type],
-                            borderColor: COLORS[type],
-                            data: counts,
-                            fill: false,
-                        }
-                    )
-                    // console.log(chartConfig.data.datasets)
+                detailsChartConfig.data.datasets.push(
+                    {
+                        label: type,
+                        backgroundColor: COLORS[type],
+                        borderColor: COLORS[type],
+                        data: counts,
+                        fill: false,
+                    }
+                )
             }
-            chartConfig.options.title.text = `Counts for camera ${camera.id} (last 12 hrs)`;
-            window.myChart.update()
+            detailsChartConfig.options.title.text = `Counts for camera ${camera.id} (last 12 hrs)`;
+            window.detailsChart.update()
         });
     }
             
-
-
     function updateBar(counts, type){
         
         let max = Math.max(...counts);
-        console.log(max);
         let domain = 0;
         if (max > 10){
             domain = Math.ceil(Math.ceil(max) / 10);
@@ -400,33 +382,26 @@
             frequency[i]= 0;
             array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
         }
-        console.log(array)
         let number;
         for(let count of counts){
             number = array.filter(function (item){return count<item.y})
-            // console.log(number);
             frequency[parseInt(number[0].no)] +=1;
         }
-        console.log(frequency);
         var data=[];
         for(let i= 0; i < frequency.length; i++){
             data[i]= array[i].x +"-" + (array[i].y);
         }
-       // console.log(data);
 
-        // console.log(counts);
         let cmax = Math.max(...counts);
         let interval = cmax / 10;
         let frequency1 = [0,0,0,0,0,0,0,0,0,0];
         for(let count of counts){
             frequency1[count % interval] += 1
         }
-        
-        console.log(frequency1)
-        
-        config1.data.labels = data;
-        config1.data.datasets = [];
-        config1.data.datasets.push(
+                
+        histogramChartConfig.data.labels = data;
+        histogramChartConfig.data.datasets = [];
+        histogramChartConfig.data.datasets.push(
             {
                 label: type,
                 backgroundColor: COLORS[type],
@@ -436,11 +411,9 @@
             }
         );
                             
-        config1.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
-        myBar.update();
+        histogramChartConfig.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
+        histogram.update();
     }
-    
-   
 
     function updatePanel(camera) {
         document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
@@ -458,7 +431,6 @@
 
     function changeMarkerType() {
         markerType = document.getElementById("select-detection-class").value;
-        console.debug(markerType);
         setDetectionClassFilter();
         setHistogramDetectionClass();
     }
@@ -484,16 +456,11 @@
         }
     }
 
-    var ctx = document.getElementById('chart').getContext('2d');
-    var ctx1 = document.getElementById('myBar').getContext('2d');
-
     function updateMarkersByDate(){
         loadData(getDate());
-        // updateMarkers(document.getElementById("mySelect").value);
     }
 
-
-    var chartConfig = {
+    var detailsChartConfig = {
         type: 'line',
         data: {
             labels: ['None'],
@@ -549,8 +516,10 @@
             }
         }
     };
-    window.myChart = new Chart(ctx, chartConfig);
-    var config1 = {
+    var detailsChartContext = document.getElementById('chart').getContext('2d');
+    window.detailsChart = new Chart(detailsChartContext, detailsChartConfig);
+
+    var histogramChartConfig = {
         type: 'bar',
         data: {
             labels: [],
@@ -574,7 +543,8 @@
             
         }
     };
-    var myBar = new Chart(ctx1,config1);
+    var histogramContext = document.getElementById('histogram').getContext('2d');
+    var histogram = new Chart(histogramContext, histogramChartConfig);
 
 </script>
 <!--</section>-->
