@@ -1,8 +1,25 @@
 """Testing database query mixins."""
 
+from typing import Any
 from datetime import date
 from cleanair.mixins import ScootQueryMixin
 
+def test_scoot_detectors(scoot_query: Any) -> None:
+    """Test the query for getting detectors."""
+    offset = 10
+    limit = 100
+    detector_df = scoot_query.scoot_detectors(offset=offset, limit=limit, output_type="df")
+    assert len(detector_df) == limit
+    assert "detector_id" in detector_df.columns
+    assert "location" in detector_df.columns
+    assert "lon" in detector_df.columns
+    assert "lat" in detector_df.columns
+
+    # now check we can query a set of detectors
+    detector_list = detector_df["detector_id"].to_list()
+    detector_df = scoot_query.scoot_detectors(detectors=detector_list, geom_label="geom", output_type="df")
+    assert set(detector_df["detector_id"]) == set(detector_list)
+    assert "geom" in detector_df.columns
 
 def test_create_dow_daterange():
     """Test the static create day of week range method for SCOOT queries."""

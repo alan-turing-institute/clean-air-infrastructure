@@ -20,6 +20,7 @@ from cleanair.instance import (
     AirQualityResult,
 )
 from cleanair.utils import hash_dict
+from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=redefined-outer-name
 
@@ -33,7 +34,7 @@ def train_upto() -> str:
     """Train upto this date."""
     return "2020-01-02"
 
-@pytest.fixture(scope="fucntion")
+@pytest.fixture(scope="function")
 def pred_start() -> str:
     """Start predicting at this date."""
     return "2020-01-02"
@@ -282,3 +283,13 @@ def model_data(
     )
     print(dataset.normalised_training_data_df.head())
     return dataset
+
+@pytest.fixture(scope="function")
+def scoot_generator(
+    secretfile: str,
+    connection: Any,
+    train_start: str,
+    train_upto: str,
+) -> ScootGenerator:
+    """Initialise a scoot writer."""
+    return ScootGenerator(train_start, train_upto, 0, 100, secretfile=secretfile, connection=connection)
