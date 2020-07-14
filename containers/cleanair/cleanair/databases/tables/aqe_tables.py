@@ -5,7 +5,9 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from ..base import Base
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .meta_point_table import MetaPoint
 
 
 class AQESite(Base):
