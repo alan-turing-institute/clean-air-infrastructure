@@ -10,7 +10,7 @@ import numpy as np
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
-from sqlalchemy import func, text, and_, null
+from sqlalchemy import func, text, and_, null, column, String
 from sqlalchemy.sql.expression import Alias
 from patsy import dmatrices, dmatrix
 from ..databases.tables import (
@@ -24,6 +24,7 @@ from ..databases.tables import (
     LAQNSite,
 )
 from ..databases import DBWriter, Base
+from ..databases.base import Values
 from ..mixins import DBQueryMixin
 from ..loggers import get_logger, green, red
 from ..utils import hash_dict
@@ -1316,18 +1317,36 @@ class ModelData(DBWriter, DBQueryMixin):
         return sensor_df[species].reset_index()
 
     @db_query
-    def expand_time(self, subquery: Alias, start_date: datetime, end_date: datetime):
+    def expand_time_species(
+        self,
+        subquery: Alias,
+        start_date: datetime,
+        end_date: datetime,
+        species: Optional[List[Species]] = None,
+    ):
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(
+            cols = [
                 func.generate_series(
                     start_date.isoformat(),
                     (end_date - timedelta(hours=1)).isoformat(),
                     ONE_HOUR_INTERVAL,
                 ).label("measurement_start_utc"),
                 subquery,
-            )
+            ]
+
+            if species:
+
+                cols.append(
+                    Values(
+                        [column("species_code", String),],
+                        *[(polutant.value,) for polutant in species],
+                        alias_name="t2",
+                    )
+                )
+
+            return session.query(*cols)
 
     def get_static_features(
         self,
@@ -1336,6 +1355,7 @@ class ModelData(DBWriter, DBQueryMixin):
         features: List[FeatureNames],
         source: Source,
         point_ids: List[str],
+        species: Optional[List[Species]] = None,
         output_type="df",
     ) -> pd.DateFrame:
         """
@@ -1346,8 +1366,8 @@ class ModelData(DBWriter, DBQueryMixin):
             features, source, point_ids, output_type="subquery"
         )
 
-        static_features_expand = self.expand_time(
-            static_features, start_date, end_date, output_type=output_type
+        static_features_expand = self.expand_time_species(
+            static_features, start_date, end_date, species, output_type=output_type
         )
 
         return static_features_expand
@@ -1373,7 +1393,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     @db_query
     def join_features_to_sensors(
-        self, static_features: Alias, sensor_readings: Alias, source: Source
+        self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
 
         with self.dbcnxn.open_session() as session:
@@ -1399,6 +1419,9 @@ class ModelData(DBWriter, DBQueryMixin):
                     & (
                         static_features.c.measurement_start_utc
                         == sensor_readings.c.measurement_start_utc
+                    )
+                    & (
+                        static_features.c.species_code == sensor_readings.c.species_code
                     ),
                     isouter=True,
                 )
@@ -1436,7 +1459,13 @@ class ModelData(DBWriter, DBQueryMixin):
 
         # Get sensor readings and summary of available data from start_date (inclusive) to end_date
         static_features = self.get_static_features(
-            start_date, end_date, features, source, point_ids, output_type="subquery"
+            start_date,
+            end_date,
+            features,
+            source,
+            point_ids,
+            species,
+            output_type="subquery",
         )
 
         if source == Source.laqn:
@@ -1456,8 +1485,23 @@ class ModelData(DBWriter, DBQueryMixin):
             static_features, sensor_readings, source, output_type="sql"
         )
 
+        print(
+            self.get_static_features(
+                start_date,
+                end_date,
+                features,
+                source,
+                point_ids,
+                species,
+                output_type="sql",
+            ),
+            end="\n\n",
+        )
+        print(static_with_sensors)
+        quit()
+
         return self.join_features_to_sensors(
-            static_features, sensor_readings, source, output_type="query"
+            static_features, sensor_readings, source, species, output_type="query",
         )
 
     @db_query
