@@ -6,7 +6,9 @@ from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 from ..base import Base
 
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .meta_point_table import MetaPoint
 
 class StaticFeature(Base):
     """Any model features that are static (and therefore do not need a start-time column)"""

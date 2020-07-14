@@ -7,7 +7,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .meta_point_table import MetaPoint
 
 
 class RectGrid(Base):

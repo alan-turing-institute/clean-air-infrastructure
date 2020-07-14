@@ -5,7 +5,9 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from ..base import Base
-from typing import Any, Union, Dict
+from typing import Any, Union, Dict, TYPE_CHECKING
+if TYPE_CHECKING:
+    from .meta_point_table import MetaPoint
 
 
 class LAQNSite(Base):
