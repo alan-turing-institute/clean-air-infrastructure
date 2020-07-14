@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
 from geojson import Feature, Point, FeatureCollection
 import requests
-from cleanair.databases.tables import AirQualityResultTable
+from cleanair.databases.tables import AirQualityInstanceTable
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
@@ -15,12 +15,14 @@ TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
-@db_query
-def get_forecast_available(
-    db: Session, skip: int = 0, limit: int = 100
-) -> Query: 
+def get_forecast_available(db: Session, limit: int = 100) -> Query:
     """Get instance data availability"""
 
-    res = (db.Query(AirQualityResultTable)).offset(skip).limit(limit)
+    res = db.query(
+        AirQualityInstanceTable.instance_id,
+        AirQualityInstanceTable.fit_start_time,
+        AirQualityInstanceTable.tag,
+        AirQualityInstanceTable.model_name,
+    )
 
     return res
