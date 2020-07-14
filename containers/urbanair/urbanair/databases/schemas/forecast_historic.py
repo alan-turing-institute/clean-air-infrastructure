@@ -10,6 +10,9 @@ from sqlalchemy import text
 class ForecastAvailable(BaseModel):
 
     instance_id: str
+    fit_start_time: datetime
+    tag: str
+    model_name: str
 
     class Config:
         orm_mode = True

@@ -15,7 +15,7 @@ TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
-def get_forecast_available(db: Session, limit: int = 100) -> Query:
+def get_forecast_available(db: Session) -> Query:
     """Get instance data availability"""
 
     res = db.query(

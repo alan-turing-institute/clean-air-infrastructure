@@ -114,9 +114,4 @@ class AirQualityResultTable(Base, ResultTableMixin):
     O3_mean = Column(DOUBLE_PRECISION, nullable=True)
     O3_var = Column(DOUBLE_PRECISION, nullable=True)
 
-    def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
-        return "<AirQualityResultTable(" + ", ".join(vals) + ")>"
+
