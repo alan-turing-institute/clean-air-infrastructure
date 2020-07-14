@@ -1,6 +1,6 @@
 """Tables for air quality instances, models, data, metrics and results."""
 
-from sqlalchemy import ForeignKeyConstraint, Column
+from sqlalchemy import ForeignKeyConstraint, Column, String, BigInteger, Text
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from ..base import Base
 from ..mixins.instance_tables_mixin import (
@@ -113,3 +113,10 @@ class AirQualityResultTable(Base, ResultTableMixin):
     CO2_var = Column(DOUBLE_PRECISION, nullable=True)
     O3_mean = Column(DOUBLE_PRECISION, nullable=True)
     O3_var = Column(DOUBLE_PRECISION, nullable=True)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<AirQualityResultTable(" + ", ".join(vals) + ")>"
