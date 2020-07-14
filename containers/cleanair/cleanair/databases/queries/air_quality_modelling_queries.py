@@ -8,6 +8,7 @@ from ..tables import (
     AirQualityResultTable,
 )
 from ...mixins import InstanceQueryMixin, ResultQueryMixin
+from typing import Type
 
 
 class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):
@@ -27,6 +28,6 @@ class AirQualityResultQuery(DBReader, ResultQueryMixin):
         super().__init__(secretfile=secretfile, **kwargs)
 
     @property
-    def result_table(self) -> AirQualityResultTable:
+    def result_table(self) -> Type[AirQualityResultTable]:
         """Air quality result table."""
         return AirQualityResultTable
