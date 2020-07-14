@@ -1,8 +1,8 @@
 """
 Tables for GLA lockdown scoot
 """
-from sqlalchemy import Column, ForeignKey, String, Integer, Enum # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN # type: ignore
+from sqlalchemy import Column, ForeignKey, String, Integer, Enum
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN
 from ..base import Base
 
 
@@ -40,7 +40,7 @@ class ScootPercentChange(Base):
     removed_anomaly_from_baseline = Column(BOOLEAN, nullable=False)
     removed_anomaly_from_comparison = Column(BOOLEAN, nullable=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootPercentChange(" + ", ".join(vals) + ")>"

@@ -2,11 +2,12 @@
 Tables for AQE data source
 """
 from geoalchemy2 import Geometry # type: ignore
-from sqlalchemy import Column, Integer, ForeignKey # type: ignore
-from sqlalchemy.orm import relationship # type: ignore
-from sqlalchemy.dialects.postgresql import UUID # type: ignore
-from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
+from typing import Dict, Any
 
 
 class RectGrid(Base):
@@ -25,7 +26,7 @@ class RectGrid(Base):
     # Create RectGrid.point with no reverse relationship
     point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<RectGrid("
             + ", ".join(
@@ -40,7 +41,7 @@ class RectGrid(Base):
         )
 
     @staticmethod
-    def build_entry(gridcell_dict):
+    def build_entry(gridcell_dict: Dict[str, Any]) -> RectGrid:
         """Create a RectGrid entry and return it"""
         return RectGrid(
             column_id=gridcell_dict["column_id"],
@@ -56,7 +57,7 @@ class RectGrid100(DeferredReflection, Base):
     __tablename__ = "rectgrid_100"
     __table_args__ = {"schema": "interest_points"}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<RectGrid100(" + ", ".join(vals) + ")>"

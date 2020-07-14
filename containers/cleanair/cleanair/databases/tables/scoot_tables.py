@@ -1,11 +1,12 @@
 """
 Tables for SCOOT data source
 """
-from sqlalchemy import Column, ForeignKey, Integer, String # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP # type: ignore
-from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
-from sqlalchemy.orm import relationship # type: ignore
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
+from sqlalchemy.ext.declarative import DeferredReflection
+from sqlalchemy.orm import relationship
 from ..base import Base
+from typing import TYPE_CHECKING
 
 
 class ScootReading(Base):
@@ -38,9 +39,9 @@ class ScootReading(Base):
     region = Column(String(5))  # REGION
 
     # Create ScootReading.detector with no reverse relationship
-    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
+    detector = relationship("ScootDetector")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<ScootReading(" + ", ".join(
             [
                 "detector_id='{}'".format(self.detector_id),
@@ -79,9 +80,9 @@ class ScootForecast(Base):
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     # Create ScootForecast.detector with no reverse relationship
-    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
+    detector = relationship("ScootDetector")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<ScootForecast(" + ", ".join(
             [
                 "detector_id='{}'".format(self.detector_id),
@@ -101,7 +102,11 @@ class ScootDetector(DeferredReflection, Base):
     __tablename__ = "scoot_detector"
     __table_args__ = {"schema": "interest_points"}
 
-    def __repr__(self):
+    if TYPE_CHECKING:
+        detector_n = Column(String())
+        point_id = Column(Integer)
+    
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootDetector(" + ", ".join(vals)
@@ -129,9 +134,9 @@ class ScootRoadMatch(Base):
     weight = Column(DOUBLE_PRECISION, nullable=False)
 
     # Create ScootRoadMatch.detector with no reverse relationship
-    detector = relationship("ScootDetector") # type: ignore # sqlalchemy.orm.RelationshipProperty
+    detector = relationship("ScootDetector")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadMatch(" + ", ".join(vals)
@@ -156,7 +161,7 @@ class ScootRoadForecast(Base):
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
@@ -177,7 +182,7 @@ class ScootRoadReading(Base):
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"

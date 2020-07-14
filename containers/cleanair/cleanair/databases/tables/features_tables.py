@@ -1,11 +1,12 @@
 """
 Tables for intersection between datasource and interest points
 """
-from sqlalchemy import Column, ForeignKey, String, Float, Index # type: ignore
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP # type: ignore
-from sqlalchemy.orm import relationship # type: ignore
+from sqlalchemy import Column, ForeignKey, String, Float, Index
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
+from sqlalchemy.orm import relationship
 from ..base import Base
 
+from typing import Tuple
 
 class StaticFeature(Base):
     """Any model features that are static (and therefore do not need a start-time column)"""
@@ -34,7 +35,7 @@ class StaticFeature(Base):
     # Create StaticFeature.point with no reverse relationship
     point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         vals = [
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
@@ -42,7 +43,7 @@ class StaticFeature(Base):
         return "<StaticFeature" + ", ".join(vals) + ")>"
 
     @staticmethod
-    def build_entry(feature_name, feature_source, reading_tuple):
+    def build_entry(feature_name: str, feature_source:str, reading_tuple: Tuple) -> StaticFeature:
         """
         Create a StaticFeature entry and return it
         """
@@ -90,13 +91,13 @@ class DynamicFeature(Base):
     # Create DynamicFeature.point with no reverse relationship
     point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<DynamicFeature(" + ", ".join(vals) + ")>"
 
     @staticmethod
-    def build_entry(feature_name, reading_tuple):
+    def build_entry(feature_name: str, reading_tuple: Tuple) -> DynamicFeature:
         """
         Create a DynamicFeature entry and return it
         """

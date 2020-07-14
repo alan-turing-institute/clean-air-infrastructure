@@ -3,9 +3,10 @@ Table for interest points
 """
 import uuid
 from geoalchemy2 import Geometry # type: ignore
-from sqlalchemy import Column, String # type: ignore
-from sqlalchemy.dialects.postgresql import UUID # type: ignore
+from sqlalchemy import Column, String
+from sqlalchemy.dialects.postgresql import UUID
 from ..base import Base
+from typing import Union
 
 
 class MetaPoint(Base):
@@ -23,7 +24,7 @@ class MetaPoint(Base):
         UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4
     )  # pylint: disable=invalid-name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<MetaPoint("
             + ", ".join(
@@ -37,12 +38,12 @@ class MetaPoint(Base):
         )
 
     @staticmethod
-    def build_ewkt(latitude, longitude):
+    def build_ewkt(latitude: float, longitude: float) -> str:
         """Create an EWKT geometry string from latitude and longitude"""
         return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
     @staticmethod
-    def build_entry(source, latitude=None, longitude=None, geometry=None):
+    def build_entry(source: str, latitude: float=None, longitude: float=None, geometry: Geometry=None) -> Union[MetaPoint, None]:
         """Create an MetaPoint entry from a source and position details"""
         # Attempt to convert latitude and longitude to geometry
         if not geometry:

@@ -2,8 +2,8 @@
 Tables for Satellite data
 """
 import uuid
-from sqlalchemy import Column, ForeignKey, String # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID # type: ignore
+from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from geoalchemy2 import Geometry # type: ignore
 from ..base import Base
 
@@ -25,18 +25,18 @@ class SatelliteBox(Base):
         UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4
     )  # pylint: disable=invalid-name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteBox(" + ", ".join(vals) + ")>"
 
     @staticmethod
-    def build_ewkt(latitude, longitude):
+    def build_ewkt(latitude: float, longitude: float) -> str:
         """Create an EWKT geometry string from latitude and longitude"""
         return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
     @staticmethod
-    def build_box_ewkt(latitude, longitude, half_grid):
+    def build_box_ewkt(latitude: float, longitude: float, half_grid: float) -> str:
         """Create an EWKT geometry string from latitude and longitude and half the grid size"""
         return "SRID=4326;POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))".format(
             longitude - half_grid,
@@ -52,7 +52,7 @@ class SatelliteBox(Base):
         )
 
     @staticmethod
-    def build_entry(lat, lon, half_grid):
+    def build_entry(lat: float, lon: float, half_grid: float) -> SatelliteBox:
         """Create a SatelliteBox entry and return it"""
         return SatelliteBox(
             centroid=SatelliteBox.build_ewkt(lat, lon),
@@ -79,13 +79,13 @@ class SatelliteGrid(Base):
         nullable=False,
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteGrid(" + ", ".join(vals)
 
     @staticmethod
-    def build_entry(point_id, box_id):
+    def build_entry(point_id: str, box_id: str) -> SatelliteGrid:
         """Create a SatelliteGrid entry and return it"""
         return SatelliteGrid(point_id=point_id, box_id=box_id)
 
@@ -108,7 +108,7 @@ class SatelliteForecast(Base):
     )
     value = Column(DOUBLE_PRECISION, nullable=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<SatelliteForecast(" + ", ".join(vals) + ")>"

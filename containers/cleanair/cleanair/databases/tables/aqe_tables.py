@@ -1,10 +1,11 @@
 """
 Tables for AQE data source
 """
-from sqlalchemy import Column, ForeignKey, String # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID # type: ignore
-from sqlalchemy.orm import relationship # type: ignore
+from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
+from sqlalchemy.orm import relationship
 from ..base import Base
+from typing import Dict, Any, Union
 
 
 class AQESite(Base):
@@ -25,7 +26,7 @@ class AQESite(Base):
     # Create AQESite.point with no reverse relationship
     point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<AQESite("
             + ", ".join(
@@ -42,7 +43,7 @@ class AQESite(Base):
         )
 
     @staticmethod
-    def build_entry(site_dict):
+    def build_entry(site_dict: Dict[str, Any]) -> AQESite:
         """Create an AQESite entry, replacing empty strings with None"""
         # Replace empty strings
         site_dict = {k: (v if v else None) for k, v in site_dict.items()}
@@ -75,7 +76,7 @@ class AQEReading(Base):
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<AQEReading("
             + ", ".join(
@@ -91,7 +92,7 @@ class AQEReading(Base):
         )
 
     @staticmethod
-    def build_entry(reading_dict, return_dict=False):
+    def build_entry(reading_dict: Dict[str, Any], return_dict: bool =False) -> Union[AQEReading, Dict[str, Any]]:
         """
         Create an AQEReading entry, replacing empty strings with None
         If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core
