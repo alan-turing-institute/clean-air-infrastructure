@@ -1,6 +1,6 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger # type: ignore
-from sqlalchemy.dialects.postgresql import ( # type: ignore
+from sqlalchemy import Column, String, BigInteger
+from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     SMALLINT,
     REAL,
@@ -28,7 +28,7 @@ class JamCamFrameStats(Base):
     box_h = Column(SMALLINT)
     creation_datetime = Column(TIMESTAMP)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         vals = [
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]
@@ -51,7 +51,7 @@ class JamCamVideoStats(Base):
     starts = Column(REAL)
     creation_datetime = Column(TIMESTAMP)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         vals = [
             "{}='{}'".format(column, getattr(self, column))
             for column in [c.name for c in self.__table__.columns]

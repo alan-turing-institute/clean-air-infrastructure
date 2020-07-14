@@ -1,8 +1,8 @@
 """
 Table for UKMap static data
 """
-from sqlalchemy import Column, String, Integer # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE # type: ignore
+from sqlalchemy import Column, String, Integer
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE
 from geoalchemy2 import Geometry # type: ignore
 from ..base import Base
 
@@ -24,7 +24,7 @@ class UKMap(Base):
     geom_area = Column(DOUBLE_PRECISION)
     geom = Column(Geometry(srid=4326, spatial_index=True))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<UKMap(" + ", ".join(vals) + ")>"

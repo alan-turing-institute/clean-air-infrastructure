@@ -1,10 +1,11 @@
 """
 Tables for LAQN data source
 """
-from sqlalchemy import Column, ForeignKey, String # type: ignore
-from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID # type: ignore
-from sqlalchemy.orm import relationship # type: ignore
+from sqlalchemy import Column, ForeignKey, String
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
+from sqlalchemy.orm import relationship
 from ..base import Base
+from typing import Any, Union, Dict
 
 
 class LAQNSite(Base):
@@ -25,7 +26,7 @@ class LAQNSite(Base):
     # Create LAQNSite.point with no reverse relationship
     point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<LAQNSite("
             + ", ".join(
@@ -41,7 +42,7 @@ class LAQNSite(Base):
         )
 
     @staticmethod
-    def build_entry(site_dict):
+    def build_entry(site_dict: Dict[str, Any]) -> LAQNSite:
         """
         Create an LAQNSite entry, replacing empty strings with None
         """
@@ -75,7 +76,7 @@ class LAQNReading(Base):
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             "<LAQNReading("
             + ", ".join(
@@ -91,7 +92,7 @@ class LAQNReading(Base):
         )
 
     @staticmethod
-    def build_entry(reading_dict, return_dict=False):
+    def build_entry(reading_dict: Dict[str, Any], return_dict: bool=False) -> Union[Dict[str, Any], LAQNReading]:
         """
         Create an LAQNReading entry, replacing empty strings with None
         If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core

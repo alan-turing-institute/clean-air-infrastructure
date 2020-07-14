@@ -1,6 +1,6 @@
 """Tables for the traffic modelling schema."""
 
-from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint # type: ignore
+from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
 from ..base import Base
 from ..mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
 
@@ -62,7 +62,7 @@ class TrafficMetricTable(Base):
     coverage95 = Column(Float, nullable=False, index=False)
     nlpl = Column(Float, nullable=False, index=False)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cols = [c.name for c in self.__table__.columns]
         vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<Instance(" + ", ".join(vals)
