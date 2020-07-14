@@ -670,6 +670,11 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         return data_output
 
+    def get_data_arrays(self, data_frame_dict: Dict[Source, pd.DataFrame]):
+
+        print(data_frame_dict.keys())
+        return None
+
     # @property
     # def norm_stats(self):
     #     """Get the mean and sd used for data normalisation"""
