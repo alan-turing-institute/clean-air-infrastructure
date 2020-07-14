@@ -35,18 +35,21 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
 
     @db_query
     def scoot_fishnet_readings(
-        self, borough: str, start_time: str, end_time: Optional[str] = None,
+        self,
+        borough: str,
+        start_time: str,
+        end_time: Optional[str] = None,
     ):
         """Get a grid over a borough and return all scoot readings in that grid."""
         fishnet = self.scoot_fishnet(borough, output_type="subquery")
         readings = self.scoot_readings(
             start_time=start_time,
             end_time=end_time,
-            detectors=fishnet.detector_id,
+            # detectors=fishnet.c.detector_id,
             with_location=False,
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
             return session.query(readings).join(
-                fishnet, readings.detector_id == fishnet.detector_id
+                fishnet, readings.c.detector_id == fishnet.c.detector_id
             )

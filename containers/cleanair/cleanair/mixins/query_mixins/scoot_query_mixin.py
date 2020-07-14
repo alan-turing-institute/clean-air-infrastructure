@@ -24,6 +24,8 @@ class ScootQueryMixin:
         end_time: Optional[str] = None,
         detectors: Optional[List] = None,
         with_location: bool = True,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ):
         """
         Get scoot data with lat and long positions.
@@ -35,6 +37,9 @@ class ScootQueryMixin:
             end_time: End datetime (exclusive).
             detectors: Subset of detectors to get readings for.
             with_location: If true return the lat, lon and geom columns for the location of the scoot detectors.
+            offset: Start selecting detectors from this integer index.
+            limit: Select at most this many detectors.
+
         """
         cols = [
             ScootReading.detector_id,
@@ -43,7 +48,12 @@ class ScootQueryMixin:
             ScootReading.n_vehicles_in_interval,
         ]
         if with_location:
-            detector_query = self.scoot_detectors(detectors=detectors, output_type="subquery")
+            detector_query = self.scoot_detectors(
+                detectors=detectors,
+                offset=offset,
+                limit=limit,
+                output_type="subquery"
+            )
             cols.extend(
                 [
                     detector_query.c.lon,
