@@ -62,13 +62,14 @@ class ScootQueryMixin:
                 ]
             )
         with self.dbcnxn.open_session() as session:
-            scoot_readings = session.query(cols).filter(
+            scoot_readings = session.query(*cols).filter(
                 ScootReading.measurement_start_utc >= start_time
             )
             if with_location:
-                readings = readings.join(
-                    detector_query, ScootReading.detector_id == detector_query.detector_id
-                ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                scoot_readings = scoot_readings.join(
+                    detector_query, ScootReading.detector_id == detector_query.c.detector_id
+                # ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                )
             # get readings upto but not including end_time
             if end_time:
                 scoot_readings = scoot_readings.filter(
