@@ -1,8 +1,8 @@
 """Queries for the scoot dataset."""
 
-from typing import Any, Iterable, List
+from typing import Any, Iterable, List, TYPE_CHECKING
 from datetime import datetime
-from sqlalchemy import func, or_, and_ # type: ignore
+from sqlalchemy import func, or_, and_
 import pandas as pd # type: ignore
 from ...databases.tables import (
     MetaPoint,
@@ -15,7 +15,9 @@ from ...decorators import db_query
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
-    dbcnxn: Any
+    if TYPE_CHECKING:
+        from ...databases.connector import Connector
+        dbcnxn: Connector
 
     @db_query
     def get_scoot_with_location(
