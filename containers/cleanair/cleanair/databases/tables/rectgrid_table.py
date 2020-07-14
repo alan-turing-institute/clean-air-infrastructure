@@ -24,7 +24,7 @@ class RectGrid(Base):
     )
 
     # Create RectGrid.point with no reverse relationship
-    point = relationship("MetaPoint") # type: ignore # sqlalchemy.orm.RelationshipProperty
+    point = relationship("MetaPoint")
 
     def __repr__(self) -> str:
         return (

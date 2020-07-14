@@ -1,7 +1,7 @@
 """
 Table for OS highways static data
 """
-from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
+from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 
 
