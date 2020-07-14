@@ -13,6 +13,7 @@ from cleanair.mixins import ScootQueryMixin
 if TYPE_CHECKING:
     from nptyping import NDArray, Int
 
+
 class ScootGenerator(ScootQueryMixin, DBWriter):
     """Read scoot queries."""
 
@@ -29,7 +30,9 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         start = pd.date_range(self.start, self.upto, freq="H", closed="left")
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
-        detectors = self.scoot_detectors(offset=self.offset, limit=self.limit, output_type="df")["detector_id"].to_list()
+        detectors = self.scoot_detectors(
+            offset=self.offset, limit=self.limit, output_type="df"
+        )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
 
         data = dict(
@@ -51,12 +54,15 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
             data["measurement_start_utc"].extend(list(start))
             data["measurement_end_utc"].extend(list(end))
             data["n_vehicles_in_interval"].extend(
-                generate_discrete_timeseries(nreadings, constant_modifier=np.random.randint(30, 300))
+                generate_discrete_timeseries(
+                    nreadings, constant_modifier=np.random.randint(30, 300)
+                )
             )
         # create a dataframe and insert the fake records
         readings = pd.DataFrame(data)
         records = readings.to_dict("records")
         self.commit_records(records, on_conflict="ignore", table=ScootReading)
+
 
 def generate_discrete_timeseries(
     size: int,

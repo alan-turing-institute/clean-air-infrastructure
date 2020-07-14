@@ -1,6 +1,5 @@
 """Testing database query mixins."""
 
-from typing import Any
 from datetime import date, datetime
 from cleanair.mixins import ScootQueryMixin
 
@@ -9,7 +8,9 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
     """Test the query for getting detectors."""
     offset = 10
     limit = 100
-    detector_df = scoot_query.scoot_detectors(offset=offset, limit=limit, output_type="df")
+    detector_df = scoot_query.scoot_detectors(
+        offset=offset, limit=limit, output_type="df"
+    )
     assert len(detector_df) == limit
     assert "detector_id" in detector_df.columns
     assert "location" in detector_df.columns
@@ -18,18 +19,31 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
 
     # now check we can query a set of detectors
     detector_list = detector_df["detector_id"].to_list()
-    detector_df = scoot_query.scoot_detectors(detectors=detector_list, geom_label="geom", output_type="df")
+    detector_df = scoot_query.scoot_detectors(
+        detectors=detector_list, geom_label="geom", output_type="df"
+    )
     assert set(detector_df["detector_id"]) == set(detector_list)
     assert "geom" in detector_df.columns
 
-def test_scoot_readings(scoot_generator: ScootQueryMixin, train_start, train_upto) -> None:
+
+def test_scoot_readings(
+    scoot_generator: ScootQueryMixin, train_start, train_upto
+) -> None:
     """Generate some fake readings, insert into table then check they can be queried."""
     scoot_generator.update_remote_tables()
-    readings = scoot_generator.scoot_readings(start_time=train_start, end_time=train_upto, with_location=False, output_type="df")
-    nhours = (datetime.fromisoformat(train_upto) - datetime.fromisoformat(train_start)).days *24
+    readings = scoot_generator.scoot_readings(
+        start_time=train_start,
+        end_time=train_upto,
+        with_location=False,
+        output_type="df",
+    )
+    nhours = (
+        datetime.fromisoformat(train_upto) - datetime.fromisoformat(train_start)
+    ).days * 24
     ndetectors = len(readings["detector_id"].unique())
     assert ndetectors == scoot_generator.limit
     assert len(readings) == nhours * ndetectors
+
 
 def test_create_dow_daterange():
     """Test the static create day of week range method for SCOOT queries."""

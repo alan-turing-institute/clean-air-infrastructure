@@ -24,9 +24,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
         """
         # TODO add xmin, ymin, xmax, ymax for each grid square
         fishnet = self.fishnet_over_borough(borough, output_type="subquery")
-        detectors = self.scoot_detectors(
-            output_type="subquery", geom_label="location"
-        )
+        detectors = self.scoot_detectors(output_type="subquery", geom_label="location")
         with self.dbcnxn.open_session() as session:
             readings = session.query(detectors, fishnet).join(
                 fishnet, func.ST_Intersects(fishnet.c.geom, detectors.c.location)
@@ -35,10 +33,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBReader):
 
     @db_query
     def scoot_fishnet_readings(
-        self,
-        borough: str,
-        start_time: str,
-        end_time: Optional[str] = None,
+        self, borough: str, start_time: str, end_time: Optional[str] = None,
     ):
         """Get a grid over a borough and return all scoot readings in that grid."""
         fishnet = self.scoot_fishnet(borough, output_type="subquery")

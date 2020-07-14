@@ -49,17 +49,10 @@ class ScootQueryMixin:
         ]
         if with_location:
             detector_query = self.scoot_detectors(
-                detectors=detectors,
-                offset=offset,
-                limit=limit,
-                output_type="subquery"
+                detectors=detectors, offset=offset, limit=limit, output_type="subquery"
             )
             cols.extend(
-                [
-                    detector_query.c.lon,
-                    detector_query.c.lat,
-                    detector_query.c.location,
-                ]
+                [detector_query.c.lon, detector_query.c.lat, detector_query.c.location,]
             )
         with self.dbcnxn.open_session() as session:
             scoot_readings = session.query(*cols).filter(
@@ -67,8 +60,9 @@ class ScootQueryMixin:
             )
             if with_location:
                 scoot_readings = scoot_readings.join(
-                    detector_query, ScootReading.detector_id == detector_query.c.detector_id
-                # ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
+                    detector_query,
+                    ScootReading.detector_id == detector_query.c.detector_id
+                    # ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
                 )
             # get readings upto but not including end_time
             if end_time:
@@ -169,7 +163,11 @@ class ScootQueryMixin:
 
     @db_query
     def scoot_detectors(
-        self, offset: Optional[int] = None, limit: Optional[int] = None, geom_label: str = "location", detectors: Optional[List] = None,
+        self,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        geom_label: str = "location",
+        detectors: Optional[List] = None,
     ):
         """
         Get all scoot detectors from the interest point schema.
@@ -194,8 +192,6 @@ class ScootQueryMixin:
                 )
             # get subset of detectors
             if detectors:
-                readings = readings.filter(
-                    ScootDetector.detector_n.in_(detectors)
-                )
+                readings = readings.filter(ScootDetector.detector_n.in_(detectors))
 
             return readings
