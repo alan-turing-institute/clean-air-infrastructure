@@ -10,6 +10,8 @@ from ...databases.tables import (
     ScootReading,
 )
 from ...decorators import db_query
+if TYPE_CHECKING:
+    from sqlalchemy.orm.session import Session
 
 
 class ScootQueryMixin:
@@ -32,7 +34,7 @@ class ScootQueryMixin:
             detectors: Subset of detectors to get readings for.
         """
 
-        with self.dbcnxn.open_session() as session:
+        with self.dbcnxn.open_session() as session: # type: Session
             scoot_readings = (
                 session.query(
                     ScootReading.detector_id,
@@ -114,7 +116,7 @@ class ScootQueryMixin:
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
 
-        with self.dbcnxn.open_session() as session:
+        with self.dbcnxn.open_session() as session: # type: Session
             scoot_readings = (
                 session.query(
                     ScootReading.detector_id,
@@ -162,7 +164,7 @@ class ScootQueryMixin:
             offset: Start selecting detectors from this integer index.
             limit: Select at most this many detectors.
         """
-        with self.dbcnxn.open_session() as session:
+        with self.dbcnxn.open_session() as session: # type: Session
             readings = session.query(
                 ScootDetector.detector_n.label("detector_id"),
                 func.ST_X(MetaPoint.location).label("lon"),
