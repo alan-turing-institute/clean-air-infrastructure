@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 #     assert detector_df.apply(lambda x: x["geom"].contains(x["location"]), axis=1).all()
 
 
-def test_scoot_fishnet_readings(scoot_writer, scan_scoot) -> None:
+def test_scoot_fishnet_readings(scoot_writer, scan_scoot: ScanScoot) -> None:
     """Test that the scoot readings are mapped to a fishnet over a borough."""
     scoot_writer.update_remote_tables()
     readings = scan_scoot.scoot_fishnet_readings(
@@ -47,4 +47,6 @@ def test_scoot_fishnet_readings(scoot_writer, scan_scoot) -> None:
         end_time=scoot_writer.upto,
         output_type="df",
     )
+    all_readings = scan_scoot.scoot_readings(start_time=scoot_writer.start, end_time=scoot_writer.upto, output_type="df")
+    assert len(all_readings) == 10 * 24 * 7
     assert len(readings) > 0

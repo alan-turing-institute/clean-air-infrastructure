@@ -32,7 +32,7 @@ def scoot_offset() -> int:
 @pytest.fixture(scope="function")
 def scoot_limit() -> int:
     """Limit the number of detectors to this number."""
-    return 50
+    return 10
 
 
 @pytest.fixture(scope="function")
