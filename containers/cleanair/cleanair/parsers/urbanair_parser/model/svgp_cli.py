@@ -1,9 +1,18 @@
 """Commands for a Sparse Variational GP to model air quality."""
 from typing import List, Dict, Union
 from datetime import datetime
+import pickle
 import typer
 import json
-from ..state import state, MODEL_CONFIG, MODEL_CONFIG_FULL
+from pathlib import Path
+from ..state import (
+    state,
+    MODEL_CONFIG,
+    MODEL_CONFIG_FULL,
+    MODEL_DATA_CACHE,
+    MODEL_TRAINING_PICKLE,
+    MODEL_PREDICTION_PICKLE,
+)
 from ..shared_args import (
     UpTo,
     NDays,
@@ -26,7 +35,6 @@ from ....types import (
     FeatureBufferSize,
 )
 from ....loggers import red, green
-
 
 app = typer.Typer()
 
@@ -192,6 +200,7 @@ def download_model_data(
     """Download datasets specified by config file"""
 
     typer.echo("Validate the cached config file")
+
     full_config = load_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
@@ -200,10 +209,10 @@ def download_model_data(
         training_data_df = model_data.download_training_config_data(full_config)
         training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
-        for key in training_data_df_norm.keys():
-            training_data_df_norm[key].to_csv(key.value + ".csv")
+        with MODEL_TRAINING_PICKLE.open("wb") as training_pickle_f:
+            pickle.dump(training_data_df_norm, training_pickle_f)
 
-        model_data.get_data_arrays(training_data_df_norm)
+        # model_data.get_data_arrays(training_data_df_norm)
 
     if prediction_data:
         # Get prediction data
@@ -212,12 +221,68 @@ def download_model_data(
             full_config, prediction_data_df
         )
 
-        for key in prediction_data_df_norm.keys():
-            prediction_data_df_norm[key].to_csv(key.value + "_pred.csv")
+        with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
+            pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
-    # print(training_data_df_norm.keys())
-    # data_dict_norm["aqe"].to_csv("aqe_data.csv")
-    # data_dict["satellite"].to_csv("satellite_data.csv")
+
+@app.command()
+def data_to_csv(
+    output_dir: Path,
+    training_data: bool = typer.Option(
+        True, help="Download training data", show_default=True
+    ),
+    prediction_data: bool = typer.Option(
+        True, help="Download prediction data", show_default=True
+    ),
+):
+    """Write cached data to csv in OUTPUT-DIR"""
+
+    if not output_dir.exists():
+        typer.echo(f"'{output_dir}' is not a directory. Create a directory first")
+        raise typer.Abort()
+
+    if training_data:
+        if not MODEL_TRAINING_PICKLE.exists():
+            typer.echo("Training data not in cache. Please download first")
+            raise typer.Abort()
+
+        with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
+            training_data_df_norm = pickle.load(training_pickle_f)
+
+        for key in training_data_df_norm:
+            csv_file_path = output_dir / (key.value + "_training.csv")
+            training_data_df_norm[key].to_csv(csv_file_path)
+
+    if prediction_data:
+        if not MODEL_PREDICTION_PICKLE.exists():
+            typer.echo("Prediction data not in cache. Please download first")
+            raise typer.Abort()
+
+        with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
+            prediction_data_df_norm = pickle.load(prediction_pickle_f)
+
+        for key in prediction_data_df_norm:
+            csv_file_path = output_dir / (key.value + "_prediction.csv")
+            prediction_data_df_norm[key].to_csv(csv_file_path)
+
+
+@app.command()
+def get_data_arrays(
+    training_data: bool = typer.Option(
+        True, help="Download training data", show_default=True
+    ),
+    prediction_data: bool = typer.Option(
+        True, help="Download prediction data", show_default=True
+    ),
+):
+
+    typer.echo(f"Getting data arrays")
+
+    typer.echo(f"Loading data from : {MODEL_DATA_CACHE}")
+
+    existing_files = [x for x in MODEL_DATA_CACHE.iterdir()]
+
+    typer.echo(f"Found files: {existing_files}")
 
 
 # @app.command()

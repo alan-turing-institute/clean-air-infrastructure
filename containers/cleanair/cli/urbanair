@@ -15,15 +15,13 @@ from cleanair.parsers.urbanair_parser.state import (
     PROD_HOST,
     PROD_SECRET_DICT,
     MODEL_CACHE,
+    MODEL_DATA_CACHE,
 )
 from cleanair.loggers.logcolours import red, green
 from cleanair.loggers import initialise_logging
 
-app = typer.Typer()
 
-
-@app.callback()
-def main(
+def init_app(
     verbose: bool = False,
     secretfile: str = typer.Option(
         None,
@@ -34,13 +32,17 @@ def main(
     Manage the CleanAir infrastructure
     """
 
-    # Create app dir
+    # Create app directory structure
     if not APP_DIR.is_dir():
         APP_DIR.mkdir()
 
     if not MODEL_CACHE.is_dir():
         MODEL_CACHE.mkdir()
 
+    if not MODEL_DATA_CACHE.is_dir():
+        MODEL_DATA_CACHE.mkdir()
+
+    # Configure settings
     if verbose:
         typer.echo("Debug verbosity")
         state["verbose"] = True
@@ -56,6 +58,9 @@ def main(
     default_logger = initialise_logging(state["verbose"])
 
     state["logger"] = default_logger
+
+
+app = typer.Typer(callback=init_app)
 
 
 @app.command()
