@@ -17,12 +17,13 @@ if TYPE_CHECKING:
 class ScootGenerator(ScootQueryMixin, DBWriter):
     """Read scoot queries."""
 
-    def __init__(self, start: str, upto: str, offset: int, limit: int, **kwargs):
+    def __init__(self, start: str, upto: str, offset: int, limit: int, borough: str, **kwargs):
         """Initialise a synthetic scoot writer."""
         self.start = start
         self.upto = upto
         self.offset = offset
         self.limit = limit
+        self.borough = borough
         super().__init__(**kwargs)
 
     def update_remote_tables(self) -> None:
@@ -31,7 +32,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
         detectors = self.scoot_detectors(
-            offset=self.offset, limit=self.limit, output_type="df"
+            offset=self.offset, limit=self.limit, borough=self.borough, output_type="df"
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
 

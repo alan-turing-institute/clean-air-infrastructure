@@ -40,6 +40,11 @@ def scoot_df() -> pd.DataFrame:
     """Fake dataframe of realistic scoot data."""
     return generate_scoot_df(end_date="2020-01-03", num_detectors=2)
 
+@pytest.fixture(scope="function")
+def borough() -> str:
+    """Westminster"""
+    return "Westminster"
+
 
 @pytest.fixture(scope="function")
 def scoot_writer(
@@ -49,6 +54,7 @@ def scoot_writer(
     scoot_upto: str,
     scoot_offset: int,
     scoot_limit: int,
+    borough: str,
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
@@ -56,6 +62,7 @@ def scoot_writer(
         scoot_upto,
         scoot_offset,
         scoot_limit,
+        borough,
         secretfile=secretfile,
         connection=connection,
     )

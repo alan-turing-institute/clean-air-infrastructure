@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from datetime import datetime
 from shapely.geometry import Point, Polygon
 from shapely import wkb
 from geoalchemy2.shape import to_shape
@@ -47,6 +48,7 @@ def test_scoot_fishnet_readings(scoot_writer, scan_scoot: ScanScoot) -> None:
         end_time=scoot_writer.upto,
         output_type="df",
     )
-    all_readings = scan_scoot.scoot_readings(start_time=scoot_writer.start, end_time=scoot_writer.upto, output_type="df")
-    assert len(all_readings) == 10 * 24 * 7
-    assert len(readings) > 0
+    nhours = (
+        datetime.fromisoformat(scoot_writer.upto) - datetime.fromisoformat(scoot_writer.start)
+    ).days * 24
+    assert len(readings) == scoot_writer.limit * nhours
