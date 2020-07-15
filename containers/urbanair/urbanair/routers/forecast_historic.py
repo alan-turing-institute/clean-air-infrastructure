@@ -42,7 +42,7 @@ async def forecast_example(
     )
 ) -> Dict:
 
-    return {"data": "A sample route"}
+    return {"instance_id": instance_id}
 
 
 @router.get(
