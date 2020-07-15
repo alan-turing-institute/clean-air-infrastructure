@@ -5,12 +5,14 @@ from fastapi import APIRouter, Depends, Query, Response, HTTPException
 
 from ..databases.schemas.forecast_historic import (
     ForecastBase,
-    ForecastResultBase
+    ForecastResultBase,
+    ForecastGeojsonCollection
 )
 from ..databases.queries.forecast_historic import (
     get_forecast_values,
     get_forecast_available,
-    get_forecast_resultValues
+    get_forecast_resultValues,
+    get_forecast_json
 )
 from ..databases import get_db, all_or_404
 
@@ -86,5 +88,19 @@ async def forecast__model_results(
 ) -> Optional[List[Dict]]:
 
     data = get_forecast_resultValues(db, instance_id)
+
+    return all_or_404(data)
+
+@router.get(
+    "/forecast__geojson",
+    description="Geojson: Forecast models result values filter by instance_id",
+   # response_model=List[ForecastGeojsonCollection],
+)
+async def forecast__geojson(
+   instance_id: str = Query(None, description="A unique forecast id"),
+    db: Session = Depends(get_db),
+) -> Optional[List[Dict]]:
+
+    data = get_forecast_json(db, instance_id)
 
     return all_or_404(data)

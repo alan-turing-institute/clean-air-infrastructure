@@ -22,13 +22,31 @@ class ForecastResultBase(BaseModel):
     instance_id: str
     data_id: str
     point_id: str
+    measurement_start_utc: datetime
+    NO2_mean: str
 
     class Config:
         orm_mode = True
 
-# GeoJson Types
 
+# GeoJson Types
 
 @dataclass
 class ForecastProperties:
-    instance_id: str
+
+    NO2_var: str
+    NO2_mean: str
+    measurement_start_utc: datetime
+    
+@dataclass
+class ForecastGeojson:
+
+    id: str
+    type: str
+    geometry: str
+    properties: ForecastProperties
+       
+@dataclass
+class ForecastGeojsonCollection(BaseModel):
+    ForecastGeojson
+

@@ -3,11 +3,12 @@ from typing import Optional
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 from sqlalchemy import func, text
+import geopandas as gpd
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
 from geojson import Feature, Point, FeatureCollection
 import requests
-from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable
+from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable, MetaPoint, HexGrid
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
@@ -32,7 +33,7 @@ def get_forecast_values(db: Session) -> Query:
 
     return res
 
-@db_query
+
 def get_forecast_available(
     db: Session,
     starttime: Optional[datetime] ,
@@ -58,17 +59,50 @@ def get_forecast_available(
     return res
 
 
-def get_forecast_resultValues(db: Session, instance_id: Optional[str]) -> Query:
+def get_forecast_resultValues(db: Session, instance_id: Optional[str],limit: int = 100) -> Query:
     """Get instance model results"""
 
     res = db.query(
         AirQualityResultTable.instance_id,
         AirQualityResultTable.data_id,
-        AirQualityResultTable.point_id
+        AirQualityResultTable.point_id,
+        AirQualityResultTable.measurement_start_utc,
+        AirQualityResultTable.NO2_mean
     )
 
     # Filter by instance_id
-    res = instance_id_filter(res, instance_id)
+    res = instance_id_filter(res, instance_id).limit(limit)
 
 
     return res
+
+
+def get_forecast_json(db: Session, instance_id:str,limit: int = 100)-> Query:
+
+    out_sq = (
+        db.query(
+            AirQualityResultTable.point_id,
+            AirQualityResultTable.measurement_start_utc,
+            AirQualityResultTable.NO2_mean,
+            AirQualityResultTable.NO2_var,
+            func.ST_GeometryN(HexGrid.geom, 1).ST_AsGeoJSON().label("geom")
+        )
+        .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
+        .filter(AirQualityResultTable.instance_id == instance_id)
+        .limit(limit)
+    )
+    # ).subquery()
+
+    
+    # out = (
+    #     db.query(
+    #         func.jsonb_build_object('type', 'Feature', 
+    #                                 'id', out_sq.c.point_id,
+    #                                 'geometry', out_sq.c.geom,
+    #                                 'properties', func.jsonb_build_object('measurement_start_utc', out_sq.c.measurement_start_utc, 
+    #                                                                     'NO2_mean', out_sq.c.NO2_mean,
+    #                                                                     'NO2_var', out_sq.c.NO2_var) )
+    #     )
+    # )
+
+    return out_sq
