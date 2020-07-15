@@ -32,10 +32,7 @@ def test_scoot_readings(
     """Generate some fake readings, insert into table then check they can be queried."""
     scoot_generator.update_remote_tables()
     readings = scoot_generator.scoot_readings(
-        start_time=train_start,
-        end_time=train_upto,
-        with_location=False,
-        output_type="df",
+        start=train_start, upto=train_upto, with_location=False, output_type="df",
     )
     nhours = (
         datetime.fromisoformat(train_upto) - datetime.fromisoformat(train_start)

@@ -40,6 +40,7 @@ def scoot_df() -> pd.DataFrame:
     """Fake dataframe of realistic scoot data."""
     return generate_scoot_df(end_date="2020-01-03", num_detectors=2)
 
+
 @pytest.fixture(scope="function")
 def borough() -> str:
     """Westminster"""

@@ -1,7 +1,7 @@
 """Generating fake data for scoot."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import string
 import random
 import numpy as np
@@ -17,7 +17,15 @@ if TYPE_CHECKING:
 class ScootGenerator(ScootQueryMixin, DBWriter):
     """Read scoot queries."""
 
-    def __init__(self, start: str, upto: str, offset: int, limit: int, borough: str, **kwargs):
+    def __init__(
+        self,
+        start: str,
+        upto: str,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        borough: Optional[str] = None,
+        **kwargs
+    ) -> None:
         """Initialise a synthetic scoot writer."""
         self.start = start
         self.upto = upto

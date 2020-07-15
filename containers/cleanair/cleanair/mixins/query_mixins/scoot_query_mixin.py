@@ -54,7 +54,11 @@ class ScootQueryMixin:
 
             # only get detectors in this borough
             if borough:
-                borough_sq = session.query(LondonBoundary).filter(LondonBoundary.name == borough).subquery()
+                borough_sq = (
+                    session.query(LondonBoundary)
+                    .filter(LondonBoundary.name == borough)
+                    .subquery()
+                )
                 readings = readings.filter(
                     func.ST_Intersects(MetaPoint.location, borough_sq.c.geom)
                 )
@@ -103,7 +107,11 @@ class ScootQueryMixin:
         # get the location of detectors
         if with_location:
             detector_query = self.scoot_detectors(
-                detectors=detectors, offset=offset, limit=limit, borough=borough, output_type="subquery"
+                detectors=detectors,
+                offset=offset,
+                limit=limit,
+                borough=borough,
+                output_type="subquery",
             )
             cols.extend(
                 [detector_query.c.lon, detector_query.c.lat, detector_query.c.location,]
@@ -117,7 +125,7 @@ class ScootQueryMixin:
             if with_location:
                 scoot_readings = scoot_readings.join(
                     detector_query,
-                    ScootReading.detector_id == detector_query.c.detector_id
+                    ScootReading.detector_id == detector_query.c.detector_id,
                 )
             # get readings upto but not including date(time)
             if upto:
