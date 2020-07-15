@@ -62,6 +62,7 @@ class DBQueryMixin:
                     LAQNReading.measurement_start_utc >= start_date.isoformat(),
                     LAQNReading.measurement_start_utc < end_date.isoformat(),
                     LAQNReading.species_code.in_(species),
+                    LAQNReading.value.isnot(None),
                 )
             )
             return laqn_reading_q
@@ -87,6 +88,7 @@ class DBQueryMixin:
                     AQEReading.measurement_start_utc >= start_date.isoformat(),
                     AQEReading.measurement_start_utc < end_date.isoformat(),
                     AQEReading.species_code.in_(species),
+                    AQEReading.value.isnot(None),
                 )
             )
             return aqe_reading_q

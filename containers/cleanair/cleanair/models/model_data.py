@@ -524,47 +524,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "value_100",
             "value_10",
         ]
-
-        # if not (config or config_dir):
-        #     raise ValueError(
-        #         "Either config or config_dir must be supplied as arguments"
-        #     )
-
         self.preprocessing: Dict = dict()
-
-        # if config:
-        #     # Validate the configuration
-        #     self.validate_config(config)
-        #     self.config = self.generate_full_config(config)
-
-        #     # Get training and prediciton data frames
-        #     self.training_data_df = self.get_training_data_inputs()
-        #     self.normalised_training_data_df = self.__normalise_data(
-        #         self.training_data_df
-        #     )
-
-        #     self.pred_data_df = self.get_pred_data_inputs()
-        #     self.normalised_pred_data_df = self.__normalise_data(self.pred_data_df)
-
-        #     # Process satellite data
-        #     if self.config["include_satellite"]:
-        #         (
-        #             self.training_satellite_data_x,
-        #             self.training_satellite_data_y,
-        #         ) = self.get_training_satellite_inputs()
-
-        #         self.training_satellite_data_x = self.training_satellite_data_x.sort_values(
-        #             ["box_id", "measurement_start_utc", "point_id"]
-        #         )
-        #         self.training_satellite_data_x = self.__normalise_data(
-        #             self.training_satellite_data_x
-        #         )
-        #         self.training_satellite_data_y = self.training_satellite_data_y.sort_values(
-        #             ["box_id", "measurement_start_utc"]
-        #         )
-
-        # else:
-        #     self.restore_config_state(config_dir)
 
     @staticmethod
     def flatten_column_names(data_frame: pd.DataFrame) -> pd.DataFrame:
@@ -690,28 +650,6 @@ class ModelData(DBWriter, DBQueryMixin):
 
         print(data_frame_dict.keys())
         return None
-
-    # @property
-    # def norm_stats(self):
-    #     """Get the mean and sd used for data normalisation"""
-
-    #     norm_mean = self.training_data_df[
-    #         self.training_data_df["source"] == self.config["norm_by"]
-    #     ][self.config["x_names"]].mean(axis=0)
-
-    #     norm_std = self.training_data_df[
-    #         self.training_data_df["source"] == self.config["norm_by"]
-    #     ][self.config["x_names"]].std(axis=0)
-
-    #     # Check for zero variance and set to 1 if found
-    #     if norm_std.eq(0).any().any():
-    #         self.logger.warning(
-    #             "No variance in feature: %s. Setting variance to 1.",
-    #             norm_std[norm_std == 0].index,
-    #         )
-    #         norm_std[norm_std == 0] = 1
-
-    #     return norm_mean, norm_std
 
     def norm_stats(
         self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
