@@ -5,6 +5,7 @@ from sqlalchemy import Column, ForeignKey, String, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 from ..base import Base
+from ...timestamps.converters import safe_strptime
 
 from typing import Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -105,7 +106,7 @@ class DynamicFeature(Base):
         """
         return DynamicFeature(
             point_id=str(reading_tuple[0]),
-            measurement_start_utc=str(reading_tuple[1]),
+            measurement_start_utc=safe_strptime(str(reading_tuple[1]), r"%Y-%m-%d %H:%M:%S"),
             feature_name=feature_name,
             value_1000=reading_tuple[2],
             value_500=reading_tuple[3],

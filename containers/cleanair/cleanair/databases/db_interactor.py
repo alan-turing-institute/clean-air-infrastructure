@@ -1,10 +1,11 @@
 """
 Table reader/writer
 """
-from typing import TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 from .connector import Connector
 from ..loggers import get_logger
-
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection
 
 class DBInteractor:
     """
@@ -15,7 +16,7 @@ class DBInteractor:
         dbcnxn: Connector
     
     def __init__(
-        self, secretfile, initialise_tables=True, connection=None, secret_dict=None
+        self, secretfile: str, initialise_tables: bool=True, connection: Connection=None, secret_dict: Dict[str, str]=None
     ):
         """
         Init method for connecting to database

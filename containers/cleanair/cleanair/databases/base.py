@@ -1,7 +1,8 @@
 """Declarative base class and table initialisation"""
-from sqlalchemy.ext.compiler import compiles # type: ignore
-from sqlalchemy.sql.expression import FromClause # type: ignore
-from sqlalchemy.ext.declarative import declarative_base # type: ignore
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.compiler import SQLCompiler
+from sqlalchemy.sql.expression import FromClause
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()  # pylint: disable=invalid-name
 
@@ -29,7 +30,7 @@ class Values(FromClause):
 
 @compiles(Values)
 # pylint: disable=unused-argument
-def compile_values(element, compiler, asfrom=False, **kw):
+def compile_values(element: Values, compiler: SQLCompiler, asfrom: bool=False, **kw) -> str:
     """Compile values to sql"""
     # pylint: disable=invalid-name
     columns = element.columns
