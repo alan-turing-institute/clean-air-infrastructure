@@ -32,7 +32,16 @@ from ..timestamps import as_datetime
 from ..decorators import db_query
 
 # if TYPE_CHECKING:
-from ..types import DataConfig, Source, Species, BaseConfig, FullConfig, FeatureNames
+from ..types import (
+    DataConfig,
+    Source,
+    Species,
+    BaseConfig,
+    FullConfig,
+    FeatureNames,
+    FeaturesDict,
+    TargetDict,
+)
 
 # pylint: disable=too-many-lines
 
@@ -646,9 +655,32 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         return data_output
 
-    def get_data_arrays(self, data_frame_dict: Dict[Source, pd.DataFrame]):
+    def get_data_arrays(
+        self, full_config: FullConfig, data_frame_dict: Dict[Source, pd.DataFrame]
+    ):
 
-        print(data_frame_dict.keys())
+        species = full_config.species
+        x_names = full_config.x_names
+
+        X_dict: FeaturesDict = {}
+        Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
+
+        for source in data_frame_dict.keys():
+
+            data_df = data_frame_dict[source]
+
+            if source != Source.satellite:
+                X_dict[source] = data_df[x_names].to_numpy()
+
+                for spec in species:
+
+                    Y_dict[source][spec] = np.expand_dims(
+                        data_df[spec.value].to_numpy(), axis=1
+                    )
+
+            else:
+                raise NotImplementedError("Satellite array not implemented")
+
         return None
 
     def norm_stats(

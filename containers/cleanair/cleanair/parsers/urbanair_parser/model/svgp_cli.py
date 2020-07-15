@@ -212,8 +212,6 @@ def download_model_data(
         with MODEL_TRAINING_PICKLE.open("wb") as training_pickle_f:
             pickle.dump(training_data_df_norm, training_pickle_f)
 
-        # model_data.get_data_arrays(training_data_df_norm)
-
     if prediction_data:
         # Get prediction data
         prediction_data_df = model_data.download_prediction_config_data(full_config)
@@ -278,11 +276,18 @@ def get_data_arrays(
 
     typer.echo(f"Getting data arrays")
 
-    typer.echo(f"Loading data from : {MODEL_DATA_CACHE}")
+    if training_data:
+        if not MODEL_TRAINING_PICKLE.exists():
+            typer.echo("Training data not in cache. Please download first")
+            raise typer.Abort()
 
-    existing_files = [x for x in MODEL_DATA_CACHE.iterdir()]
+        with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
+            training_data_df_norm = pickle.load(training_pickle_f)
 
-    typer.echo(f"Found files: {existing_files}")
+        full_config = load_config(full=True)
+        model_data = ModelData(secretfile=state["secretfile"])
+
+        model_data.get_data_arrays(full_config, training_data_df_norm)
 
 
 # @app.command()

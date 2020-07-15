@@ -64,6 +64,13 @@ app = typer.Typer(callback=init_app)
 
 
 @app.command()
+def app_dir():
+    """Echo the application directory"""
+
+    typer.echo(f"{APP_DIR}")
+
+
+@app.command()
 def init_local(
     secretfile: Path = typer.Option(..., help="Path to a database secret file (.json)")
 ) -> None:
