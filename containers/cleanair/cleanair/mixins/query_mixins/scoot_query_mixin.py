@@ -1,7 +1,6 @@
 """Queries for the scoot dataset."""
 
 from typing import Any, Iterable, List, Optional
-from datetime import datetime
 from sqlalchemy import func, or_, and_
 import pandas as pd
 from ...databases.tables import (
@@ -17,150 +16,6 @@ class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
     dbcnxn: Any
-
-    @db_query
-    def scoot_readings(
-        self,
-        start: str,
-        upto: Optional[str] = None,
-        with_location: bool = True,
-        detectors: Optional[List] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        borough: Optional[str] = None,
-    ):
-        """Get scoot data with lat and long positions.
-
-        Args:
-            start: Get readings from (including) this date(time). ISO format.
-
-        Keyword args:
-            upto: Get readings upto but not including this date(time).
-            detectors: Subset of detectors to get readings for.
-            with_location: If true return the lat, lon and geom columns for the location of the scoot detectors.
-
-        See also:
-            `scoot_detectors` for docs on the other parameters.
-
-        Raises:
-            ValueError: If you pass `borough` without setting `with_location` to be True.
-        """
-        cols = [
-            ScootReading.detector_id,
-            ScootReading.measurement_start_utc,
-            ScootReading.measurement_end_utc,
-            ScootReading.n_vehicles_in_interval,
-        ]
-        if borough and not with_location:
-            error_message = "If passing a borough, you must set `with_location` to True. You passed borough: %s"
-            error_message = error_message.format(borough)
-            return ValueError(error_message)
-        # get the location of detectors
-        if with_location:
-            detector_query = self.scoot_detectors(
-                detectors=detectors, offset=offset, limit=limit, borough=borough, output_type="subquery"
-            )
-            cols.extend(
-                [detector_query.c.lon, detector_query.c.lat, detector_query.c.location,]
-            )
-        with self.dbcnxn.open_session() as session:
-            # query the selected columns and filter by start date(time)
-            scoot_readings = session.query(*cols).filter(
-                ScootReading.measurement_start_utc >= start
-            )
-            # add location if required
-            if with_location:
-                scoot_readings = scoot_readings.join(
-                    detector_query,
-                    ScootReading.detector_id == detector_query.c.detector_id
-                )
-            # get readings upto but not including date(time)
-            if upto:
-                scoot_readings = scoot_readings.filter(
-                    ScootReading.measurement_start_utc < upto
-                )
-            return scoot_readings
-
-    @staticmethod
-    def create_day_of_week_daterange(
-        day_of_week: int, start_date: str, end_date: str
-    ) -> Iterable:
-        """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
-
-        Args:
-            day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
-            start_date: ISO formatted date. All dates in returned list will be at least this date.
-            end_date: ISO formatted date. All dates in the returned list will be at most this date.
-
-        Returns
-            List of date tuples. The first item in the tuple will be exactly one day before the last item in the tuple.
-        """
-        # get list of start times that match the weekday within the timerange
-        starts = pd.date_range(start_date, end_date, closed="left").to_series()
-        starts = (
-            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_date)]
-            .dt.strftime("%Y-%m-%d")
-            .to_list()
-        )
-
-        # get list of end times that match the weekday within the timerange
-        ends = pd.date_range(start_date, end_date, closed="left").to_series()
-        ends = (
-            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (start_date < ends)]
-            .dt.strftime("%Y-%m-%d")
-            .to_list()
-        )
-
-        return zip(starts, ends)
-
-    @db_query
-    def day_of_week_readings(
-        self,
-        day_of_week: int,
-        start: str,
-        upto: Optional[str] = None,
-        with_location: bool = True,
-        detectors: Optional[List] = None,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-        borough: Optional[str] = None,
-    ):
-        """Get scoot readings filtered by day_of_week.
-
-        Args:
-            day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
-            start: Start date.
-
-        See also:
-            `scoot_readings` and `scoot_detectors` for docs on other keyword args.
-        """
-        # subquery of scoot readings
-        readings_sq = self.scoot_readings(
-            start,
-            upto=upto,
-            with_location=with_location,
-            detectors=detectors,
-            offset=offset,
-            limit=limit,
-            borough=borough,
-            output_type="subquery",
-        )
-        if not upto:
-            upto = datetime.now().strftime("%Y-%m-%d")
-        # get a list of or statements
-        or_statements = []
-        for start_date, upto_date in self.create_day_of_week_daterange(
-            day_of_week, start, upto
-        ):
-            # append AND statement
-            or_statements.append(
-                and_(
-                    readings_sq.c.measurement_start_utc >= start_date,
-                    readings_sq.c.measurement_start_utc < upto_date,
-                )
-            )
-        with self.dbcnxn.open_session() as session:
-            return session.query(readings_sq).filter(or_(*or_statements))
 
     @db_query
     def scoot_detectors(
@@ -205,3 +60,115 @@ class ScootQueryMixin:
                 )
 
             return readings
+
+    @db_query
+    def scoot_readings(
+        self,
+        start: str,
+        upto: Optional[str] = None,
+        with_location: bool = True,
+        day_of_week: Optional[int] = None,
+        detectors: Optional[List] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+        borough: Optional[str] = None,
+    ):
+        """Get scoot data with lat and long positions.
+
+        Args:
+            start: Get readings from (including) this date(time). ISO format.
+
+        Keyword args:
+            upto: Get readings upto but not including this date(time).
+            detectors: Subset of detectors to get readings for.
+            with_location: If true return the lat, lon and geom columns for the location of the scoot detectors.
+            day_of_week: Day of the week. 0=Mon, 1=Tue, etc.
+
+        See also:
+            `scoot_detectors` for docs on the other parameters.
+
+        Raises:
+            ValueError: If you pass `borough` without setting `with_location` to be True.
+        """
+        cols = [
+            ScootReading.detector_id,
+            ScootReading.measurement_start_utc,
+            ScootReading.measurement_end_utc,
+            ScootReading.n_vehicles_in_interval,
+        ]
+        if borough and not with_location:
+            error_message = "If passing a borough, you must set `with_location` to True. You passed borough: %s"
+            error_message = error_message.format(borough)
+            return ValueError(error_message)
+        # get the location of detectors
+        if with_location:
+            detector_query = self.scoot_detectors(
+                detectors=detectors, offset=offset, limit=limit, borough=borough, output_type="subquery"
+            )
+            cols.extend(
+                [detector_query.c.lon, detector_query.c.lat, detector_query.c.location,]
+            )
+        with self.dbcnxn.open_session() as session:
+            # query the selected columns and filter by start date(time)
+            scoot_readings = session.query(*cols).filter(
+                ScootReading.measurement_start_utc >= start
+            )
+            # add location if required
+            if with_location:
+                scoot_readings = scoot_readings.join(
+                    detector_query,
+                    ScootReading.detector_id == detector_query.c.detector_id
+                )
+            # get readings upto but not including date(time)
+            if upto:
+                scoot_readings = scoot_readings.filter(
+                    ScootReading.measurement_start_utc < upto
+                )
+            # filter by day of week
+            if day_of_week:
+                # get a list of or statements
+                or_statements = []
+                for start_date, upto_date in self.create_day_of_week_daterange(
+                    day_of_week, start, upto
+                ):
+                    # append AND statement
+                    or_statements.append(
+                        and_(
+                            scoot_readings.c.measurement_start_utc >= start_date,
+                            scoot_readings.c.measurement_start_utc < upto_date,
+                        )
+                    )
+                scoot_readings = scoot_readings.filter(or_(*or_statements))
+            return scoot_readings
+
+    @staticmethod
+    def create_day_of_week_daterange(
+        day_of_week: int, start_date: str, end_date: str
+    ) -> Iterable:
+        """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
+
+        Args:
+            
+            start_date: ISO formatted date. All dates in returned list will be at least this date.
+            end_date: ISO formatted date. All dates in the returned list will be at most this date.
+
+        Returns
+            List of date tuples. The first item in the tuple will be exactly one day before the last item in the tuple.
+        """
+        # get list of start times that match the weekday within the timerange
+        starts = pd.date_range(start_date, end_date, closed="left").to_series()
+        starts = (
+            starts[(starts.dt.dayofweek == day_of_week) & (starts < end_date)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
+
+        # get list of end times that match the weekday within the timerange
+        ends = pd.date_range(start_date, end_date, closed="left").to_series()
+        ends = (
+            ends[(ends.dt.dayofweek == (day_of_week + 1) % 7) & (start_date < ends)]
+            .dt.strftime("%Y-%m-%d")
+            .to_list()
+        )
+
+        return zip(starts, ends)
