@@ -4,16 +4,20 @@ Class for connecting to Azure databases
 from contextlib import contextmanager
 import time
 import requests
-from sqlalchemy import create_engine, event # type: ignore
-from sqlalchemy.exc import SQLAlchemyError # type: ignore
-from sqlalchemy.ext.declarative import DeferredReflection # type: ignore
-from sqlalchemy.orm import sessionmaker # type: ignore
-from sqlalchemy.schema import CreateSchema # type: ignore
-from sqlalchemy.sql import text # type: ignore
+from sqlalchemy import create_engine, event
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.declarative import DeferredReflection
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import CreateSchema
+from sqlalchemy.sql import text
 from sqlalchemy_utils import database_exists, create_database # type: ignore
 from .base import Base
 from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
+from typing import Iterator, TYPE_CHECKING
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
+    from sqlalchemy.orm.session import Session
 
 
 class Connector(DBConnectionMixin):
@@ -55,7 +59,7 @@ class Connector(DBConnectionMixin):
         Base.metadata.create_all(self.engine, checkfirst=True)
 
     @property
-    def engine(self):
+    def engine(self) -> Engine:
         """Access the class-level sqlalchemy engine"""
         # Initialise the class-level engine if it does not already exist
         if not self.__engine:
@@ -77,9 +81,9 @@ class Connector(DBConnectionMixin):
         # Return the class-level sessionfactory
         return self.__sessionfactory
 
-    def check_schema_exists(self, schema_name):
+    def check_schema_exists(self, schema_name: str) -> bool:
         """Check if a schema exists"""
-        with self.open_session() as session:
+        with self.open_session() as session: # type: Session
 
             query_schema = session.execute(
                 text(
@@ -96,16 +100,16 @@ class Connector(DBConnectionMixin):
 
             raise AttributeError("Schema query returned but schema did not match")
 
-    def ensure_schema(self, schema_name):
+    def ensure_schema(self, schema_name: str):
         """Ensure that requested schema exists"""
         if not self.check_schema_exists(schema_name):
-            with self.open_session() as session:
+            with self.open_session() as session: # type: Session
                 session.execute(CreateSchema(schema_name))
                 session.commit()
 
     def ensure_extensions(self):
         """Ensure required extensions are installed publicly"""
-        with self.open_session() as session:
+        with self.open_session() as session:  # type: Session
             self.logger.info("Ensuring database extenstions created")
             session.execute('CREATE EXTENSION IF NOT EXISTS "postgis";')
             session.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
@@ -119,7 +123,7 @@ class Connector(DBConnectionMixin):
             create_database(self.connection_string)
 
     @contextmanager
-    def open_session(self, skip_check=False):
+    def open_session(self, skip_check: bool=False) -> Iterator:
         """
         Create a session as a context manager which will thereby self-close
         """
@@ -157,7 +161,7 @@ class Connector(DBConnectionMixin):
             session.close()
 
     def check_internet_connection(
-        self, url="http://www.google.com/", timeout=5, interval=10
+        self, url: str="http://www.google.com/", timeout: int=5, interval: int=10
     ):
         """
         Check that the internet is accessible

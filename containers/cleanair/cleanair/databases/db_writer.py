@@ -2,10 +2,10 @@
 Table writer
 """
 import time
-from sqlalchemy.exc import IntegrityError # type: ignore
-from sqlalchemy.inspection import inspect # type: ignore
-from sqlalchemy.dialects.postgresql import insert # type: ignore
-from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE # type: ignore
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.inspection import inspect
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 from .db_interactor import DBInteractor
 from ..loggers import get_logger, duration
 from .base import Base
