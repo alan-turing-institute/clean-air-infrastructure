@@ -109,9 +109,11 @@ class DBQueryMixin:
 
         with self.dbcnxn.open_session() as session:
 
+            # The sort by is very important for creating numpy arrays
             sat_q = (
                 session.query(
                     SatelliteForecast.measurement_start_utc,
+                    SatelliteForecast.box_id,
                     SatelliteForecast.species_code,
                     SatelliteForecast.value,
                     SatelliteGrid.point_id,
@@ -124,6 +126,11 @@ class DBQueryMixin:
                     SatelliteForecast.species_code.in_(all_species),
                 )
                 .join(SatelliteGrid, SatelliteForecast.box_id == SatelliteGrid.box_id)
+                .order_by(
+                    SatelliteForecast.box_id,
+                    SatelliteForecast.measurement_start_utc,
+                    SatelliteGrid.point_id,
+                )
             )
 
             return sat_q

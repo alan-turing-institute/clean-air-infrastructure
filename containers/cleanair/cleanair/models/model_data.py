@@ -524,6 +524,7 @@ class ModelData(DBWriter, DBQueryMixin):
             "species_code",
             "value",
         ]
+        self.sensor_satellite_index_names = self.sensor_index_names + ["box_id"]
 
         self.column_names = [
             "feature_name",
@@ -573,7 +574,11 @@ class ModelData(DBWriter, DBQueryMixin):
                 source=source,
                 output_type="df",
             )
-            index_names = self.sensor_index_names
+            if source == Source.satellite:
+                index_names = self.sensor_satellite_index_names
+            else:
+                index_names = self.sensor_index_names
+
         else:
             # Get source dataframe
             source_data = self.get_prediction_data_inputs(
@@ -660,28 +665,75 @@ class ModelData(DBWriter, DBQueryMixin):
     ):
 
         species = full_config.species
-        x_names = full_config.x_names
-
+        x_names = self.x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
         Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
+        index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
 
         for source in data_frame_dict.keys():
 
             data_df = data_frame_dict[source]
 
             if source != Source.satellite:
+
+                # Save the index
+                index_dict[source] = data_df.index.to_numpy()
+
+                # Get the X_array
                 X_dict[source] = data_df[x_names].to_numpy()
-
                 for spec in species:
-
                     Y_dict[source][spec] = np.expand_dims(
                         data_df[spec.value].to_numpy(), axis=1
                     )
 
             else:
-                raise NotImplementedError("Satellite array not implemented")
 
-        return None
+                data_df_sorted = data_df.sort_values(
+                    ["box_id", "measurement_start_utc", "point_id"]
+                )
+
+                # Save the index
+                index_dict[source] = data_df_sorted.index.to_numpy()
+
+                # Get dimensions
+                n_boxes = data_df_sorted["box_id"].unique().size
+                n_hours = data_df_sorted["epoch"].unique().size
+                n_x_names = len(x_names)
+                interest_point_counts_all = (
+                    data_df_sorted.groupby("box_id")
+                    .apply(lambda x: x["point_id"].unique().size)
+                    .to_numpy()
+                )
+                n_interest_points = interest_point_counts_all[0]
+
+                if not np.all(n_interest_points == interest_point_counts_all):
+                    raise ValueError(
+                        "All satelllite boxes did not have an equal number of interest points"
+                    )
+
+                # Get X_array
+                sat_df = data_df_sorted[x_names]
+                X_dict[source] = sat_df.to_numpy().reshape(
+                    (n_boxes * n_hours, n_interest_points, n_x_names)
+                )
+
+                # Get Y_array
+                for spec in species:
+
+                    sat_y = (
+                        data_df_sorted[spec.value]
+                        .to_numpy()
+                        .reshape((n_boxes * n_hours, n_interest_points))
+                    )
+
+                    if not np.all(sat_y.T[0] == sat_y.T[:]):
+                        raise ValueError(
+                            "Satellite points within each box do not have matching values"
+                        )
+
+                    Y_dict[source] = np.expand_dims(sat_y[:, 0], axis=1)
+
+        return X_dict, Y_dict, index_dict
 
     def norm_stats(
         self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
@@ -1346,23 +1398,28 @@ class ModelData(DBWriter, DBQueryMixin):
         self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
 
+        columns = [
+            static_features.c.point_id,
+            static_features.c.measurement_start_utc,
+            static_features.c.feature_name,
+            static_features.c.value_1000,
+            static_features.c.value_500,
+            static_features.c.value_200,
+            static_features.c.value_100,
+            static_features.c.value_10,
+            static_features.c.lat,
+            static_features.c.lon,
+            sensor_readings.c.species_code,
+            sensor_readings.c.value,
+        ]
+
+        if source == Source.satellite:
+            columns.append(sensor_readings.c.box_id)
+
         with self.dbcnxn.open_session() as session:
 
             static_with_sensor_readings = (
-                session.query(
-                    static_features.c.point_id,
-                    static_features.c.measurement_start_utc,
-                    static_features.c.feature_name,
-                    static_features.c.value_1000,
-                    static_features.c.value_500,
-                    static_features.c.value_200,
-                    static_features.c.value_100,
-                    static_features.c.value_10,
-                    static_features.c.lat,
-                    static_features.c.lon,
-                    sensor_readings.c.species_code,
-                    sensor_readings.c.value,
-                )
+                session.query(*columns)
                 .join(
                     sensor_readings,
                     (static_features.c.point_id == sensor_readings.c.point_id)

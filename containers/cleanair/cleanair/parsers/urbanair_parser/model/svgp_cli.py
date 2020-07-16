@@ -287,7 +287,18 @@ def get_data_arrays(
         full_config = load_config(full=True)
         model_data = ModelData(secretfile=state["secretfile"])
 
-        model_data.get_data_arrays(full_config, training_data_df_norm)
+        X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+            full_config, training_data_df_norm
+        )
+
+        with Path("x_dict.pkl").open("wb") as X_pickle_f:
+            pickle.dump(X_dict, X_pickle_f)
+
+        with Path("y_dict.pkl").open("wb") as Y_pickle_f:
+            pickle.dump(Y_dict, Y_pickle_f)
+
+        with Path("index_dict.pkl").open("wb") as Y_pickle_f:
+            pickle.dump(index_dict, Y_pickle_f)
 
 
 # @app.command()
