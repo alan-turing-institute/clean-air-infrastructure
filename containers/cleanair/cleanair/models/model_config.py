@@ -243,32 +243,6 @@ class ModelConfig(
 
         return output_dict
 
-    # ...
-    #         return (
-    #             self.get_available_interest_points(sources, output_type="df")["point_id"]
-    #             .astype(str)
-    #             .to_numpy()
-    #             .tolist()
-    #         )
-
-    def __check_points_available(
-        self, interest_points: List[str], sources: List[Source]
-    ):
-
-        available_interest_points = self.__get_interest_point_ids(sources)
-        unavailable_interest_points = []
-
-        for point in interest_points:
-            if point not in available_interest_points:
-                unavailable_interest_points.append(point)
-
-        if unavailable_interest_points:
-            raise AttributeError(
-                "The following interest points are not available the cleanair database: {}".format(
-                    unavailable_interest_points
-                )
-            )
-
     @db_query
     def get_available_static_features(self):
         """Return available static features from the CleanAir database
@@ -370,13 +344,3 @@ class ModelConfig(
 
             # Ensure we always return a string
             return session.query(cast(point_ids_sq.c.point_id, String))
-
-            #  (
-            #     session.query(point_ids_sq.c.point_id)
-            #     .join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
-            #     .filter(
-            #         func.ST_Within(MetaPoint.location, bounded_geom.c.geom),
-            #         MetaPoint.source == source,
-            #     )
-            # )
-

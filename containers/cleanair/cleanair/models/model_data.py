@@ -1,12 +1,13 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Union, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Union, Optional, Tuple, overload
 from datetime import date, datetime, timedelta
 import json
 import os
 import pickle
 import pandas as pd
 import numpy as np
+from nptyping import NDArray, Float64
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
@@ -660,9 +661,86 @@ class ModelData(DBWriter, DBQueryMixin):
             )
         return data_output
 
+    @overload
+    def get_array(
+        self, data_df: pd.DataFrame, x_names, species: None
+    ) -> Tuple[pd.Index, NDArray[Float64]]:
+        ...
+
+    @overload
+    def get_array(
+        self, data_df: pd.DataFrame, x_names, species: List[Species]
+    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+        ...
+
+    def get_array(self, data_df, x_names, species):
+        """Get an array from a pandas dataframe for any Source except satellite"""
+        index = data_df.index.to_numpy()
+        X = data_df[x_names].to_numpy()
+
+        if species:
+            Y: Dict[Species, NDArray[Float64]] = {
+                spec: np.expand_dims(data_df[spec.value].to_numpy(), axis=1)
+                for spec in species
+            }
+
+            return index, X, Y
+
+        return index, X
+
+    def get_array_satellite(
+        self, data_df: pd.DataFrame, x_names, species: List[Species]
+    ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
+        """Always returns an index, X and Y"""
+
+        data_df_sorted = data_df.sort_values(
+            ["box_id", "measurement_start_utc", "point_id"]
+        )
+        # Save the index
+        index = data_df_sorted.index.to_numpy()
+
+        # Get dimensions
+        n_boxes = data_df_sorted["box_id"].unique().size
+        n_hours = data_df_sorted["epoch"].unique().size
+        n_x_names = len(x_names)
+        interest_point_counts_all = (
+            data_df_sorted.groupby("box_id")
+            .apply(lambda x: x["point_id"].unique().size)
+            .to_numpy()
+        )
+        n_interest_points = interest_point_counts_all[0]
+
+        if not np.all(n_interest_points == interest_point_counts_all):
+            raise ValueError(
+                "All satelllite boxes did not have an equal number of interest points"
+            )
+
+        # Get X_array
+        sat_df = data_df_sorted[x_names]
+        X = sat_df.to_numpy().reshape((n_boxes * n_hours, n_interest_points, n_x_names))
+        Y: Dict[Species, NDArray[Float64]] = {}
+
+        # Get Y_array
+        for spec in species:
+            sat_y = (
+                data_df_sorted[spec.value]
+                .to_numpy()
+                .reshape((n_boxes * n_hours, n_interest_points))
+            )
+            if not np.all(sat_y.T[0] == sat_y.T[:]):
+                raise ValueError(
+                    "Satellite points within each box do not have matching values"
+                )
+            Y[spec] = np.expand_dims(sat_y[:, 0], axis=1)
+
+        return index, X, Y
+
     def get_data_arrays(
-        self, full_config: FullConfig, data_frame_dict: Dict[Source, pd.DataFrame]
-    ):
+        self,
+        full_config: FullConfig,
+        data_frame_dict: Dict[Source, pd.DataFrame],
+        prediction: bool = False,
+    ) -> Tuple[FeaturesDict, TargetDict, FeaturesDict]:
 
         species = full_config.species
         x_names = self.x_names_norm(full_config.x_names)
@@ -673,65 +751,24 @@ class ModelData(DBWriter, DBQueryMixin):
         for source in data_frame_dict.keys():
 
             data_df = data_frame_dict[source]
-
             if source != Source.satellite:
-
-                # Save the index
-                index_dict[source] = data_df.index.to_numpy()
-
-                # Get the X_array
-                X_dict[source] = data_df[x_names].to_numpy()
-                for spec in species:
-                    Y_dict[source][spec] = np.expand_dims(
-                        data_df[spec.value].to_numpy(), axis=1
+                if prediction:
+                    index_dict[source], X_dict[source] = self.get_array(
+                        data_df, x_names
                     )
+                else:
+                    # Save the index
+                    index_dict[source], X_dict[source], Y_dict[source] = self.get_array(
+                        data_df, x_names, species
+                    )
+                
 
             else:
-
-                data_df_sorted = data_df.sort_values(
-                    ["box_id", "measurement_start_utc", "point_id"]
-                )
-
-                # Save the index
-                index_dict[source] = data_df_sorted.index.to_numpy()
-
-                # Get dimensions
-                n_boxes = data_df_sorted["box_id"].unique().size
-                n_hours = data_df_sorted["epoch"].unique().size
-                n_x_names = len(x_names)
-                interest_point_counts_all = (
-                    data_df_sorted.groupby("box_id")
-                    .apply(lambda x: x["point_id"].unique().size)
-                    .to_numpy()
-                )
-                n_interest_points = interest_point_counts_all[0]
-
-                if not np.all(n_interest_points == interest_point_counts_all):
-                    raise ValueError(
-                        "All satelllite boxes did not have an equal number of interest points"
-                    )
-
-                # Get X_array
-                sat_df = data_df_sorted[x_names]
-                X_dict[source] = sat_df.to_numpy().reshape(
-                    (n_boxes * n_hours, n_interest_points, n_x_names)
-                )
-
-                # Get Y_array
-                for spec in species:
-
-                    sat_y = (
-                        data_df_sorted[spec.value]
-                        .to_numpy()
-                        .reshape((n_boxes * n_hours, n_interest_points))
-                    )
-
-                    if not np.all(sat_y.T[0] == sat_y.T[:]):
-                        raise ValueError(
-                            "Satellite points within each box do not have matching values"
-                        )
-
-                    Y_dict[source] = np.expand_dims(sat_y[:, 0], axis=1)
+                (
+                    index_dict[source],
+                    X_dict[source],
+                    Y_dict[source],
+                ) = self.get_array_satellite(data_df, x_names, species)
 
         return X_dict, Y_dict, index_dict
 

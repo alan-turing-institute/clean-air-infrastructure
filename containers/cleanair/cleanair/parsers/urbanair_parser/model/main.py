@@ -1,10 +1,10 @@
 """Parser for model fitting."""
 
 import typer
-from . import svgp_cli
+from . import model_data_cli
 
 app = typer.Typer()
-app.add_typer(svgp_cli.app, name="svgp")
+app.add_typer(model_data_cli.app, name="data")
 
 if __name__ == "__main__":
     app()

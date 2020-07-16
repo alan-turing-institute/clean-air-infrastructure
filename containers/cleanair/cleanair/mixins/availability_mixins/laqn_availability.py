@@ -256,4 +256,3 @@ class LAQNAvailabilityMixin:
                 .group_by(daily_laqn_avail.c.date, daily_laqn_avail.c.species_code,)
                 .order_by(daily_laqn_avail.c.species_code, daily_laqn_avail.c.date)
             )
-

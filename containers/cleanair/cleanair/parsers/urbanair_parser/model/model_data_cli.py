@@ -12,6 +12,11 @@ from ..state import (
     MODEL_DATA_CACHE,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
+    MODEL_TRAINING_X_PICKLE,
+    MODEL_TRAINING_Y_PICKLE,
+    MODEL_PREDICTION_X_PICKLE,
+    MODEL_TRAINING_INDEX_PICKLE,
+    MODEL_PREDICTION_INDEX_PICKLE,
 )
 from ..shared_args import (
     UpTo,
@@ -36,11 +41,11 @@ from ....types import (
 )
 from ....loggers import red, green
 
-app = typer.Typer()
+app = typer.Typer(help="Get data for model fitting")
 
 
-def load_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
-    """Load a configuration file"""
+def load_model_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
+    """Load an existing configuration file"""
 
     if full:
         config = MODEL_CONFIG_FULL
@@ -61,6 +66,26 @@ def load_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
             f"{red(f'A full model config does not exist. Run generate-full-config')}"
         )
     raise typer.Abort()
+
+
+def delete_model_cache():
+    """Delete everything from the MODEL_CACHE"""
+
+    cache_content = [
+        MODEL_CONFIG,
+        MODEL_CONFIG_FULL,
+        MODEL_TRAINING_PICKLE,
+        MODEL_PREDICTION_PICKLE,
+        MODEL_TRAINING_X_PICKLE,
+        MODEL_TRAINING_Y_PICKLE,
+        MODEL_PREDICTION_X_PICKLE,
+        MODEL_TRAINING_INDEX_PICKLE,
+        MODEL_PREDICTION_INDEX_PICKLE,
+    ]
+
+    for cache_file in cache_content:
+        if cache_file.exists():
+            cache_file.unlink()
 
 
 # pylint: disable=too-many-arguments
@@ -120,21 +145,25 @@ def generate_config(
     norm_by: Source = typer.Option(
         Source.laqn.value, help="Source to normalize data by", show_default=True
     ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", help="Always overwrite cache. Don't prompt"
+    ),
 ) -> None:
     """Generate a model fitting configuration file"""
 
     secretfile = state["secretfile"]
 
-    typer.echo("Generate a model config")
+    state["logger"].info("Generate a model config")
 
-    if MODEL_CONFIG.exists():
-        run = typer.prompt(f"{red('Overwrite existing cached config?')} y/n")
+    if not overwrite:
+        if MODEL_CONFIG.exists():
+            run = typer.prompt(f"{red('Overwrite existing cached config?')} y/n")
 
-    if run != "y":
-        raise typer.Abort()
+            if run != "y":
+                raise typer.Abort()
 
-    if MODEL_CONFIG_FULL.exists():
-        MODEL_CONFIG_FULL.unlink()
+    # Delete cache
+    delete_model_cache()
 
     all_train_sources = [ts for ts in train_source]
     all_pred_sources = [ps for ps in pred_source]
@@ -166,16 +195,18 @@ def echo_config(
 ) -> None:
     """Echo the cached config file"""
 
-    config = load_config(full)
+    config = load_model_config(full)
     print(config.json(indent=4))
 
 
 @app.command()
 def generate_full_config() -> None:
-    """Perform validation checks on a config file and generates a full config"""
+    """Perform validation checks on a config file and generates a full configuration file.
+    
+    Overwrites any existing full configuration file"""
 
-    typer.echo("Validate the cached config file")
-    config = load_config()
+    state["logger"].info("Validate the cached config file")
+    config = load_model_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
     model_config.validate_config(config)
 
@@ -189,36 +220,46 @@ def generate_full_config() -> None:
 
 
 @app.command()
-def download_model_data(
+def download(
     training_data: bool = typer.Option(
-        True, help="Download training data", show_default=True
+        False, "--training-data", help="Download training data",
     ),
     prediction_data: bool = typer.Option(
-        True, help="Download prediction data", show_default=True
+        False, "--prediction-data", help="Download prediction data",
     ),
 ):
-    """Download datasets specified by config file"""
+    """Download data from the database
+    
+    Downloads data as requested in the full configuration file"""
 
-    typer.echo("Validate the cached config file")
+    if not (training_data or prediction_data):
+        state["logger"].error(
+            "Must set one or more of '--training-data' or '--prediction-data'"
+        )
+        raise typer.Abort()
 
-    full_config = load_config(full=True)
+    full_config = load_model_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
     if training_data:
         # Get training data
+        state["logger"].info("Downloading training_data")
         training_data_df = model_data.download_training_config_data(full_config)
         training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
+        state["logger"].info("Writing training data to cache")
         with MODEL_TRAINING_PICKLE.open("wb") as training_pickle_f:
             pickle.dump(training_data_df_norm, training_pickle_f)
 
     if prediction_data:
+        state["logger"].info("Downloading prediction data")
         # Get prediction data
         prediction_data_df = model_data.download_prediction_config_data(full_config)
         prediction_data_df_norm = model_data.normalize_data(
             full_config, prediction_data_df
         )
 
+        state["logger"].info("Writing prediction data to cache")
         with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
@@ -227,21 +268,23 @@ def download_model_data(
 def data_to_csv(
     output_dir: Path,
     training_data: bool = typer.Option(
-        True, help="Download training data", show_default=True
+        True, "--training-data", help="Download training data", show_default=True
     ),
     prediction_data: bool = typer.Option(
-        True, help="Download prediction data", show_default=True
+        True, "--prediction-data", help="Download prediction data", show_default=True
     ),
 ):
     """Write cached data to csv in OUTPUT-DIR"""
 
     if not output_dir.exists():
-        typer.echo(f"'{output_dir}' is not a directory. Create a directory first")
+        state["logger"].warning(
+            f"'{output_dir}' is not a directory. Check directory exists"
+        )
         raise typer.Abort()
 
     if training_data:
         if not MODEL_TRAINING_PICKLE.exists():
-            typer.echo("Training data not in cache. Please download first")
+            state["logger"].warning("Training data not in cache. Please download first")
             raise typer.Abort()
 
         with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
@@ -253,7 +296,9 @@ def data_to_csv(
 
     if prediction_data:
         if not MODEL_PREDICTION_PICKLE.exists():
-            typer.echo("Prediction data not in cache. Please download first")
+            state["logger"].warning(
+                "Prediction data not in cache. Please download first"
+            )
             raise typer.Abort()
 
         with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
@@ -265,40 +310,48 @@ def data_to_csv(
 
 
 @app.command()
-def get_data_arrays(
-    training_data: bool = typer.Option(
-        True, help="Download training data", show_default=True
-    ),
-    prediction_data: bool = typer.Option(
-        True, help="Download prediction data", show_default=True
-    ),
-):
+def get_data_arrays():
 
-    typer.echo(f"Getting data arrays")
+    state["logger"].info(f"Getting data arrays")
 
-    if training_data:
-        if not MODEL_TRAINING_PICKLE.exists():
-            typer.echo("Training data not in cache. Please download first")
-            raise typer.Abort()
+    full_config = load_model_config(full=True)
+    model_data = ModelData(secretfile=state["secretfile"])
+
+    if MODEL_TRAINING_PICKLE.exists():
 
         with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
             training_data_df_norm = pickle.load(training_pickle_f)
 
-        full_config = load_config(full=True)
-        model_data = ModelData(secretfile=state["secretfile"])
-
         X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-            full_config, training_data_df_norm
+            full_config, training_data_df_norm, prediction=False,
         )
 
-        with Path("x_dict.pkl").open("wb") as X_pickle_f:
+        with MODEL_TRAINING_X_PICKLE.open("wb") as X_pickle_f:
             pickle.dump(X_dict, X_pickle_f)
 
-        with Path("y_dict.pkl").open("wb") as Y_pickle_f:
+        with MODEL_TRAINING_Y_PICKLE.open("wb") as Y_pickle_f:
             pickle.dump(Y_dict, Y_pickle_f)
 
-        with Path("index_dict.pkl").open("wb") as Y_pickle_f:
-            pickle.dump(index_dict, Y_pickle_f)
+        with MODEL_TRAINING_INDEX_PICKLE.open("wb") as index_pickle_f:
+            pickle.dump(index_dict, index_pickle_f)
+
+    if MODEL_PREDICTION_PICKLE.exists():
+
+        with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
+            prediction_data_df_norm = pickle.load(prediction_pickle_f)
+
+        X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+            full_config, prediction_data_df_norm, prediction=True,
+        )
+
+        with MODEL_PREDICTION_X_PICKLE.open("wb") as X_pickle_f:
+            pickle.dump(X_dict, X_pickle_f)
+
+        with MODEL_PREDICTION_Y_PICKLE.open("wb") as Y_pickle_f:
+            pickle.dump(Y_dict, Y_pickle_f)
+
+        with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
+            pickle.dump(index_dict, index_pickle_f)
 
 
 # @app.command()

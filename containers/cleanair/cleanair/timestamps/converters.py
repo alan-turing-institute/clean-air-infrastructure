@@ -97,4 +97,3 @@ def day_to_iso(day: str) -> str:
         return datetime.combine(
             date.today() - timedelta(days=1), datetime.min.time()
         ).isoformat()
-
