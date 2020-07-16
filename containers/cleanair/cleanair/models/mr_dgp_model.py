@@ -1,16 +1,9 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
-import logging
 import os
 import numpy as np
 import tensorflow as tf
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-import gpflow
-from gpflow.training import AdamOptimizer
-
 from scipy.cluster.vq import kmeans2
 
 from .mr_dgp import MR_Mixture
@@ -27,37 +20,19 @@ from .mr_dgp.mr_mixing_weights import (
 from .mr_dgp.utils import set_objective
 
 from ..loggers import get_logger
-from .model import Model
+from .model import ModelMixin
+
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
+from gpflow.training import AdamOptimizer
 
 
-class MRDGP(Model):
+class MRDGP(ModelMixin):
     """
     MR-DGP for air quality.
     """
-
-    def __init__(
-        self,
-        model_params=None,
-        experiment_config=None,
-        log=True,
-        batch_size=100,
-        disable_tf_warnings=True,
-        **kwargs
-    ):
-        super().__init__(model_params=model_params, experiment_config=experiment_config, **kwargs)
-        self.batch_size = batch_size
-        self.epoch = 0
-        self.refresh = 10
-
-        # TODO: can we move into parent class?
-        # Ensure logging is available
-        if log and not hasattr(self, "logger"):
-            self.logger = get_logger(__name__)
-
-        # disable TF warnings
-        if disable_tf_warnings:
-            os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-            tf.logging.set_verbosity(tf.logging.ERROR)
 
     def get_default_model_params(self):
         """
@@ -221,8 +196,8 @@ class MRDGP(Model):
         # X = [X_laqn[:, None, :], X_sat]
         # Y = [Y_laqn, Y_sat]
 
-        x_sat, y_sat = Model.clean_data(x_sat, y_sat)
-        x_laqn, y_laqn = Model.clean_data(x_laqn, y_laqn)
+        x_sat, y_sat = ModelMixin.clean_data(x_sat, y_sat)
+        x_laqn, y_laqn = ModelMixin.clean_data(x_laqn, y_laqn)
 
         if mask:
             #remove any satellite tiles that are not fully in London
@@ -300,11 +275,12 @@ class MRDGP(Model):
         ys_mean, ys_var = get_sample_mean_var(ys_mean, ys_var)
         return ys_mean, ys_var
 
-    def predict(self, x_test, species=None, ignore=None):
+    def predict(self, x_test, species=None):
         species = species if species is not None else ["NO2"]
-        ignore = ignore if ignore is not None else None
+        # TODO there used be an ignore here? can we remove it
+        # ignore = ignore if ignore is not None else None
 
-        return self.predict_srcs(x_test, self._predict, ignore=ignore)
+        return self.predict_srcs(x_test, self._predict)
 
 
 def get_sample_mean_var(ys_mean, ys_var):

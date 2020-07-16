@@ -2,7 +2,7 @@
 Model fitting
 """
 from datetime import datetime
-from cleanair.models import ModelData, SVGP
+from cleanair.models import ModelData, MRDGP
 from cleanair.parsers import ModelFittingParser
 from cleanair.instance import (
     AirQualityInstance,
@@ -28,9 +28,8 @@ def main():  # pylint: disable=R0914
             "The only pollutant we can model right now is NO2. Coming soon"
         )
     # initialise the model
-    model_fitter = SVGP(batch_size=1000)  # big batch size for the grid
+    model_fitter = MRDGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = args.maxiter
-    model_fitter.model_params["kernel"]["name"] = "matern32"
 
     # read data from db
     logger.info("Reading from database using data config.")
