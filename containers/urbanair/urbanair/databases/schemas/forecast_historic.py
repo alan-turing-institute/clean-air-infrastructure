@@ -52,7 +52,7 @@ class AirPolutionFeature(BaseModel):
 
     id: str
     geometry: str
-    properties: dict
+    properties:ForecastProperties
 
     class Config:
         orm_mode = True
