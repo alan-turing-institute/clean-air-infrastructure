@@ -1,11 +1,10 @@
 """Return Schemas for Historic Forecast routes"""
 # pylint: disable=C0115
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from datetime import datetime
 import json
 from pydantic import BaseModel, ValidationError, conint, validator
 from pydantic.dataclasses import dataclass
-from pydantic.validators import int_validator
 from sqlalchemy import text
 
 
@@ -41,25 +40,39 @@ class ForecastProperties:
     NO2_mean: str
     NO2_var: str
 
+class ForecastGeometry(BaseModel):
+    type: str = None
+    coordinates: List[Tuple[float, float]] = []
 
-@dataclass
-class ForecastGeometry:
-    type: str
-    coordinates: List[Tuple[float, float]]
-
-
+    class Config:
+        arbitrary_types_allowed= True
+        orm_mode = True
+  
+    
+    # @validator('type', 'coordinates')
+    # def json_decode(cls, v):
+    #     try:
+    #         return json.loads(v)
+    #     except ValueError:
+    #         pass
+       
+    
+ 
 class AirPolutionFeature(BaseModel):
 
     id: str
-    geometry: str
-    properties:ForecastProperties
+    geometry: ForecastGeometry
+    properties: ForecastProperties
 
     class Config:
+        arbitrary_types_allowed= True
         orm_mode = True
 
     @validator("geometry")
-    def geom_valid(cls, v: str):
+    def geom_valid(cls, v):
         return json.loads(v)
+
+       
 
 
 class AirPolutionFeatureCollection(BaseModel):
