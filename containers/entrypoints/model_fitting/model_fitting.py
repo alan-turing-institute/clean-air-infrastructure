@@ -10,6 +10,7 @@ from cleanair.instance import (
     AirQualityResult,
 )
 from cleanair.loggers import initialise_logging
+import pickle
 
 
 def main():  # pylint: disable=R0914
@@ -31,20 +32,45 @@ def main():  # pylint: disable=R0914
     model_fitter = MRDGP(batch_size=1000)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = args.maxiter
 
-    # read data from db
-    logger.info("Reading from database using data config.")
-    model_data = ModelData(config=data_config, secretfile=args.secretfile)
+    if False:
+        # read data from db
+        logger.info("Reading from database using data config.")
+        model_data = ModelData(config=data_config, secretfile=args.secretfile)
 
-    # get the training dictionaries
-    training_data_dict = model_data.get_training_data_arrays(dropna=False)
-    x_train = training_data_dict["X"]
-    y_train = training_data_dict["Y"]
+        # get the training dictionaries
+        training_data_dict = model_data.get_training_data_arrays(dropna=False)
+        x_train = training_data_dict["X"]
+        y_train = training_data_dict["Y"]
+    if True:
+        import numpy as np
+
+        
+        tmp_data_path = '/Users/ohamelijnck/Documents/projects/clean-air-infrastructure/val/experiment_data/satellite/data/data0'
+        with open("{tmp_data_path}/train.pickle".format(tmp_data_path=tmp_data_path), "rb") as f:
+            train = pickle.load(f)
+            x_train = train['X']
+            y_train = train['Y']
+
+        features = [0, 1, 2]
+
+        for src in x_train.keys():
+            if len(x_train[src].shape) == 2:
+                x_train[src] =  x_train[src][:, features]
+            else:
+                x_train[src] =  x_train[src][:, :, features]
+
+        print(x_train['laqn'])
+        print(y_train['laqn'])
+
+
 
     # train model
     fit_start_time = datetime.now()
     logger.info("Training model for %s iterations.", args.maxiter)
     model_fitter.fit(x_train, y_train)
     logger.info("Training completed")
+
+    exit()
 
     # predict either at the training or test set
     if args.predict_training:
