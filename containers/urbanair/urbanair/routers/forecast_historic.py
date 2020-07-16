@@ -6,19 +6,21 @@ from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from ..databases.schemas.forecast_historic import (
     ForecastBase,
     ForecastResultBase,
-    AirPolutionFeatureCollection
+    AirPolutionFeatureCollection,
+    AirPolutionFeature,
 )
 from ..databases.queries.forecast_historic import (
     get_forecast_values,
     get_forecast_available,
     get_forecast_resultValues,
-    get_forecast_json
+    get_forecast_json,
 )
 from ..databases import get_db, all_or_404
 
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
 router = APIRouter()
+
 
 async def common_forecast_start_end(
     starttime: datetime = Query(
@@ -29,12 +31,11 @@ async def common_forecast_start_end(
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
 ) -> Dict:
-    
+
     return {
         "starttime": starttime,
         "endtime": endtime,
     }
-
 
 
 @router.get("/forecast_example", description="Forecast example route")
@@ -66,13 +67,10 @@ async def forecast_info(db: Session = Depends(get_db)) -> Optional[List[Dict]]:
     response_model=List[ForecastBase],
 )
 async def forecast_available(
-    commons: dict = Depends(common_forecast_start_end),
-    db: Session = Depends(get_db)
-    ) -> Optional[List[Dict]]:
+    commons: dict = Depends(common_forecast_start_end), db: Session = Depends(get_db)
+) -> Optional[List[Dict]]:
 
-    data = get_forecast_available(db,
-        commons["starttime"],
-        commons["endtime"],)
+    data = get_forecast_available(db, commons["starttime"], commons["endtime"],)
 
     return all_or_404(data)
 
@@ -83,7 +81,7 @@ async def forecast_available(
     response_model=List[ForecastResultBase],
 )
 async def forecast__model_results(
-   instance_id: str = Query(None, description="A unique forecast id"),
+    instance_id: str = Query(None, description="A unique forecast id"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
@@ -91,16 +89,21 @@ async def forecast__model_results(
 
     return all_or_404(data)
 
+
 @router.get(
-    "/forecast__geojson",
+    "/forecast_geojson",
     description="Geojson: Forecast models result values filter by instance_id",
-    # response_model=AirPolutionFeatureCollection,
+    response_model=List[AirPolutionFeature],
 )
-async def forecast__geojson(
-   instance_id: str = Query(None, description="A unique forecast id"),
+async def forecast_geojson(
+    instance_id: str = Query(None, description="A unique forecast id"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
-    data = get_forecast_json(db, instance_id)
+    data = get_forecast_json(db, instance_id).limit(10)
 
-    return all_or_404(data)
+    out = all_or_404(data)
+
+    print(out[1][0]["properties"])
+
+    return [i[0] for i in out]

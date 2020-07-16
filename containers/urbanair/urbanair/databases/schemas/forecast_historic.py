@@ -2,7 +2,8 @@
 # pylint: disable=C0115
 from typing import List, Tuple
 from datetime import datetime
-from pydantic import BaseModel,ValidationError, conint
+import json
+from pydantic import BaseModel, ValidationError, conint, validator
 from pydantic.dataclasses import dataclass
 from pydantic.validators import int_validator
 from sqlalchemy import text
@@ -18,6 +19,7 @@ class ForecastBase(BaseModel):
     class Config:
         orm_mode = True
 
+
 class ForecastResultBase(BaseModel):
 
     instance_id: str
@@ -32,6 +34,7 @@ class ForecastResultBase(BaseModel):
 
 # GeoJson Types
 
+
 @dataclass
 class ForecastProperties:
     measurement_start_utc: datetime
@@ -42,15 +45,23 @@ class ForecastProperties:
 @dataclass
 class ForecastGeometry:
     type: str
-    coordinates:List[Tuple[float, float]]
+    coordinates: List[Tuple[float, float]]
 
-@dataclass
-class ForecastGeojson:
-    point_id: str
-    geometry: ForecastGeometry
-    properties: ForecastProperties
-      
-@dataclass
+
+class AirPolutionFeature(BaseModel):
+
+    id: str
+    geometry: str
+    properties: dict
+
+    class Config:
+        orm_mode = True
+
+    @validator("geometry")
+    def geom_valid(cls, v: str):
+        return json.loads(v)
+
+
 class AirPolutionFeatureCollection(BaseModel):
-    features: List[ForecastGeojson]
 
+    out: List[AirPolutionFeature]
