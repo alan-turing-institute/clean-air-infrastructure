@@ -2,8 +2,9 @@
 # pylint: disable=C0115
 from typing import List, Tuple
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel,ValidationError, conint
 from pydantic.dataclasses import dataclass
+from pydantic.validators import int_validator
 from sqlalchemy import text
 
 
@@ -33,20 +34,23 @@ class ForecastResultBase(BaseModel):
 
 @dataclass
 class ForecastProperties:
-
-    NO2_var: str
-    NO2_mean: str
     measurement_start_utc: datetime
-    
+    NO2_mean: str
+    NO2_var: str
+
+
+@dataclass
+class ForecastGeometry:
+    type: str
+    coordinates:List[Tuple[float, float]]
+
 @dataclass
 class ForecastGeojson:
-
-    id: str
-    type: str
-    geometry: str
+    point_id: str
+    geometry: ForecastGeometry
     properties: ForecastProperties
-       
+      
 @dataclass
-class ForecastGeojsonCollection(BaseModel):
-    ForecastGeojson
+class AirPolutionFeatureCollection(BaseModel):
+    features: List[ForecastGeojson]
 

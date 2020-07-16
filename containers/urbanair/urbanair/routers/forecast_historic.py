@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from ..databases.schemas.forecast_historic import (
     ForecastBase,
     ForecastResultBase,
-    ForecastGeojsonCollection
+    AirPolutionFeatureCollection
 )
 from ..databases.queries.forecast_historic import (
     get_forecast_values,
@@ -94,7 +94,7 @@ async def forecast__model_results(
 @router.get(
     "/forecast__geojson",
     description="Geojson: Forecast models result values filter by instance_id",
-   # response_model=List[ForecastGeojsonCollection],
+    # response_model=AirPolutionFeatureCollection,
 )
 async def forecast__geojson(
    instance_id: str = Query(None, description="A unique forecast id"),
