@@ -321,18 +321,18 @@ def save_cache(
     output_dir: Path,
     output_training: bool = typer.Option(
         True,
-        "-output-training",
+        "--output-training",
         help="Assert training data is copied from cache",
         show_default=True,
     ),
     output_prediction: bool = typer.Option(
         True,
-        "-output-training",
+        "--output-prediction",
         help="Assert prediction data is copied from cache",
         show_default=True,
     ),
     output_csv: bool = typer.Option(
-        True, "-output-csv", help="Output dataframes as csv", show_default=True
+        True, "--output-csv", help="Output dataframes as csv", show_default=True
     ),
 ):
     """Copy all CACHE to OUTPUT-DIR
