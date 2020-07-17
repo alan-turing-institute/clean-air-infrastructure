@@ -86,7 +86,6 @@ async def forecast__model_results(
 ) -> Optional[List[Dict]]:
 
     data = get_forecast_resultValues(db, instance_id)
-
     return all_or_404(data)
 
 
@@ -105,5 +104,6 @@ async def forecast_geojson(
     out = all_or_404(data)
 
     print(out[1][0]["properties"])
+    # print(AirPolutionFeature.schema())
 
     return [i[0] for i in out]
