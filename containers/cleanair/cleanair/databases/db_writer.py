@@ -81,6 +81,7 @@ class DBWriter(DBInteractor):
                 self.logger.error("Failed to add rows to the database: %s", type(error))
                 self.logger.error(str(error))
                 session.rollback()
+                raise error
 
     def __commit_records_orm(self, records):
         """Add records using sqlalchemy ORM"""
