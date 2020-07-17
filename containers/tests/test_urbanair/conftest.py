@@ -77,6 +77,7 @@ def video_stat_records():
                     video_upload_datetime=vtime,
                     detection_class=dect,
                     counts=np.random.poisson(lam=10),
+                    source=0,
                 )
             )
 

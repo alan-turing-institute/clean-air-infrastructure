@@ -10,7 +10,7 @@ from ..base import Base
 
 
 class JamCamFrameStats(Base):
-    """Table of LAQN sites"""
+    """Table of detection events"""
 
     __tablename__ = "frame_stats_v3"
     __table_args__ = {"schema": "jamcam"}
@@ -39,7 +39,7 @@ class JamCamFrameStats(Base):
 
 
 class JamCamVideoStats(Base):
-    """Table of LAQN sites"""
+    """Table of detection counts"""
 
     __tablename__ = "video_stats_v3"
     __table_args__ = {"schema": "jamcam"}
