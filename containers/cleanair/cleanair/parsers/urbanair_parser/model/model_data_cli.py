@@ -370,9 +370,7 @@ def save_cache(
                 training_data_df_norm = pickle.load(training_pickle_f)
 
             for key in training_data_df_norm:
-                csv_file_path = (
-                    output_dir / "dataframes" / (key.value + "_training.csv")
-                )
+                csv_file_path = data_frame_dir / (key.value + "_training.csv")
                 training_data_df_norm[key].to_csv(csv_file_path)
 
         if MODEL_PREDICTION_PICKLE.exists():
@@ -382,7 +380,7 @@ def save_cache(
                 prediction_data_df_norm = pickle.load(prediction_pickle_f)
 
             for key in prediction_data_df_norm:
-                csv_file_path = output_dir / (key.value + "_prediction.csv")
+                csv_file_path = data_frame_dir / (key.value + "_prediction.csv")
                 prediction_data_df_norm[key].to_csv(csv_file_path)
 
 
