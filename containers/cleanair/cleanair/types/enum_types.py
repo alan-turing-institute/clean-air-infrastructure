@@ -50,7 +50,7 @@ class Source(str, Enum):
 
 
 @unique
-class Species(Enum):
+class Species(str, Enum):
     """Valid species for API"""
 
     # pylint: disable=invalid-name
