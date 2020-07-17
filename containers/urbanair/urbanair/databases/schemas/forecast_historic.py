@@ -7,6 +7,7 @@ from pydantic import BaseModel, ValidationError, conint, validator
 from pydantic.dataclasses import dataclass
 from sqlalchemy import text
 
+
 def orjson_dumps(v, *, default):
     # orjson.dumps returns bytes, to match standard json.dumps we need to decode
     return orjson.dumps(v, default=default).decode()
@@ -54,16 +55,13 @@ class ForecastGeometry(BaseModel):
     @classmethod
     def __get_validators__(cls):
         yield cls.validate
-    
+
     @classmethod
-    def validate(cls, v:str):
+    def validate(cls, v: str):
         res = json.loads(v)
-        return {
-            'type' : res.get('type'),
-            'coordinates': res.get('coordinates')
-        }
-    
- 
+        return {"type": res.get("type"), "coordinates": res.get("coordinates")}
+
+
 class AirPolutionFeature(BaseModel):
 
     id: str

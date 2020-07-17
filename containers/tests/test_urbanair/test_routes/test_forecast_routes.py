@@ -1,10 +1,7 @@
 """JamCam API route tests"""
 import pytest
 from cleanair.databases import DBWriter
-from cleanair.databases.tables import (
-    AirQualityInstanceTable, 
-    AirQualityResultTable
-)
+from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable
 from urbanair.types import DetectionClass
 
 # pylint: disable=C0115,R0201
@@ -21,6 +18,7 @@ class TestBasic:
         "Test forecast info API"
         response = client_class.get("/api/v1/forecasts/forecast_info/")
         assert response.status_code == 200
+
 
 class TestAdvanced:
     def test_24_hours(self, client_class, fit_start_time):
@@ -52,4 +50,3 @@ class TestAdvanced:
 
         assert response.status_code == 404
         assert response.json()["detail"] == "No data was found"
-
