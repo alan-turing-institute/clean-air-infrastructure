@@ -673,7 +673,7 @@ class ModelData(DBWriter, DBQueryMixin):
     ) -> Tuple[pd.Index, NDArray[Float64], Dict[Species, NDArray[Float64]]]:
         ...
 
-    def get_array(self, data_df, x_names, species):
+    def get_array(self, data_df, x_names, species=None):
         """Get an array from a pandas dataframe for any Source except satellite"""
         index = data_df.index.to_numpy()
         X = data_df[x_names].to_numpy()
@@ -761,7 +761,6 @@ class ModelData(DBWriter, DBQueryMixin):
                     index_dict[source], X_dict[source], Y_dict[source] = self.get_array(
                         data_df, x_names, species
                     )
-                
 
             else:
                 (

@@ -2,11 +2,13 @@
 from typing import List, Dict, Union
 from datetime import datetime
 import pickle
+import shutil
 import typer
 import json
 from pathlib import Path
 from ..state import (
     state,
+    MODEL_CACHE,
     MODEL_CONFIG,
     MODEL_CONFIG_FULL,
     MODEL_DATA_CACHE,
@@ -15,6 +17,7 @@ from ..state import (
     MODEL_TRAINING_X_PICKLE,
     MODEL_TRAINING_Y_PICKLE,
     MODEL_PREDICTION_X_PICKLE,
+    MODEL_PREDICTION_Y_PICKLE,
     MODEL_TRAINING_INDEX_PICKLE,
     MODEL_PREDICTION_INDEX_PICKLE,
 )
@@ -68,8 +71,17 @@ def load_model_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
     raise typer.Abort()
 
 
-def delete_model_cache():
+def delete_model_cache(overwrite: bool):
     """Delete everything from the MODEL_CACHE"""
+
+    if not overwrite:
+        if MODEL_CONFIG.exists():
+            run = typer.prompt(
+                f"{red('Overwrite cache? WARNING: This will delete the entire cache contents')} y/n"
+            )
+
+            if run != "y":
+                raise typer.Abort()
 
     cache_content = [
         MODEL_CONFIG,
@@ -155,15 +167,8 @@ def generate_config(
 
     state["logger"].info("Generate a model config")
 
-    if not overwrite:
-        if MODEL_CONFIG.exists():
-            run = typer.prompt(f"{red('Overwrite existing cached config?')} y/n")
-
-            if run != "y":
-                raise typer.Abort()
-
     # Delete cache
-    delete_model_cache()
+    delete_model_cache(overwrite)
 
     all_train_sources = [ts for ts in train_source]
     all_pred_sources = [ps for ps in pred_source]
@@ -265,52 +270,8 @@ def download(
 
 
 @app.command()
-def data_to_csv(
-    output_dir: Path,
-    training_data: bool = typer.Option(
-        True, "--training-data", help="Download training data", show_default=True
-    ),
-    prediction_data: bool = typer.Option(
-        True, "--prediction-data", help="Download prediction data", show_default=True
-    ),
-):
-    """Write cached data to csv in OUTPUT-DIR"""
-
-    if not output_dir.exists():
-        state["logger"].warning(
-            f"'{output_dir}' is not a directory. Check directory exists"
-        )
-        raise typer.Abort()
-
-    if training_data:
-        if not MODEL_TRAINING_PICKLE.exists():
-            state["logger"].warning("Training data not in cache. Please download first")
-            raise typer.Abort()
-
-        with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
-            training_data_df_norm = pickle.load(training_pickle_f)
-
-        for key in training_data_df_norm:
-            csv_file_path = output_dir / (key.value + "_training.csv")
-            training_data_df_norm[key].to_csv(csv_file_path)
-
-    if prediction_data:
-        if not MODEL_PREDICTION_PICKLE.exists():
-            state["logger"].warning(
-                "Prediction data not in cache. Please download first"
-            )
-            raise typer.Abort()
-
-        with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-            prediction_data_df_norm = pickle.load(prediction_pickle_f)
-
-        for key in prediction_data_df_norm:
-            csv_file_path = output_dir / (key.value + "_prediction.csv")
-            prediction_data_df_norm[key].to_csv(csv_file_path)
-
-
-@app.command()
-def get_data_arrays():
+def get_arrays():
+    """Get data arrays for tensorflow models"""
 
     state["logger"].info(f"Getting data arrays")
 
@@ -318,6 +279,7 @@ def get_data_arrays():
     model_data = ModelData(secretfile=state["secretfile"])
 
     if MODEL_TRAINING_PICKLE.exists():
+        state["logger"].info(f"Getting training data arrays")
 
         with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
             training_data_df_norm = pickle.load(training_pickle_f)
@@ -336,7 +298,7 @@ def get_data_arrays():
             pickle.dump(index_dict, index_pickle_f)
 
     if MODEL_PREDICTION_PICKLE.exists():
-
+        state["logger"].info(f"Getting prediction data arrays")
         with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
             prediction_data_df_norm = pickle.load(prediction_pickle_f)
 
@@ -352,6 +314,88 @@ def get_data_arrays():
 
         with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
             pickle.dump(index_dict, index_pickle_f)
+
+
+@app.command()
+def save_cache(
+    output_dir: Path,
+    output_training: bool = typer.Option(
+        True,
+        "-output-training",
+        help="Assert training data is copied from cache",
+        show_default=True,
+    ),
+    output_prediction: bool = typer.Option(
+        True,
+        "-output-training",
+        help="Assert prediction data is copied from cache",
+        show_default=True,
+    ),
+    output_csv: bool = typer.Option(
+        True, "-output-csv", help="Output dataframes as csv", show_default=True
+    ),
+):
+    """Copy all CACHE to OUTPUT-DIR
+    
+    Will create OUTPUT-DIR and any missing parent directories"""
+
+    if output_dir.exists():
+        state["logger"].warning(
+            f"'{output_dir}' already exists. 'OUTPUT-DIR' must not already exist"
+        )
+        raise typer.Abort()
+
+    if output_training and (not MODEL_TRAINING_PICKLE.exists()):
+        state["logger"].warning("Model training data not in cache. Download first")
+        raise typer.Abort()
+    if output_prediction and (not MODEL_PREDICTION_PICKLE.exists()):
+        state["logger"].warning("Model prediction data not in cache. Download first")
+        raise typer.Abort()
+
+    # Copy directory
+    state["logger"].info(f"Copying cache to {output_dir}")
+    shutil.copytree(MODEL_CACHE, output_dir)
+
+    if output_csv:
+
+        data_frame_dir = output_dir / "dataframes"
+
+        if not data_frame_dir.exists():
+            data_frame_dir.mkdir()
+
+        if MODEL_TRAINING_PICKLE.exists():
+            state["logger"].info(f"Writing training data csv to {output_dir}")
+
+            with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
+                training_data_df_norm = pickle.load(training_pickle_f)
+
+            for key in training_data_df_norm:
+                csv_file_path = (
+                    output_dir / "dataframes" / (key.value + "_training.csv")
+                )
+                training_data_df_norm[key].to_csv(csv_file_path)
+
+        if MODEL_PREDICTION_PICKLE.exists():
+            state["logger"].info(f"Writing prediction data csv to {output_dir}")
+
+            with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
+                prediction_data_df_norm = pickle.load(prediction_pickle_f)
+
+            for key in prediction_data_df_norm:
+                csv_file_path = output_dir / (key.value + "_prediction.csv")
+                prediction_data_df_norm[key].to_csv(csv_file_path)
+
+
+@app.command()
+def delete_cache(
+    overwrite: bool = typer.Option(
+        False, "--overwrite", help="Always overwrite cache. Don't prompt"
+    )
+):
+
+    """Delete the model data cache"""
+
+    delete_model_cache(overwrite)
 
 
 # @app.command()
