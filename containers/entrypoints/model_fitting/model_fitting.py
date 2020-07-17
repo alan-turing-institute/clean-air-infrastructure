@@ -29,10 +29,19 @@ def main():  # pylint: disable=R0914
             "The only pollutant we can model right now is NO2. Coming soon"
         )
     # initialise the model
-    model_fitter = MRDGP(batch_size=1000)  # big batch size for the grid
+    experiment_config = dict(
+        name="MR_DGP",
+        restore=False,
+        model_state_fp="./",
+        save_model_state=False,
+        train=True
+    )
+    model_fitter = MRDGP(batch_size=1000, experiment_config=experiment_config)  # big batch size for the grid
     model_fitter.model_params["maxiter"] = args.maxiter
 
-    if False:
+    LOAD_FROM_LOCAL = True
+
+    if not LOAD_FROM_LOCAL:
         # read data from db
         logger.info("Reading from database using data config.")
         model_data = ModelData(config=data_config, secretfile=args.secretfile)
@@ -41,7 +50,8 @@ def main():  # pylint: disable=R0914
         training_data_dict = model_data.get_training_data_arrays(dropna=False)
         x_train = training_data_dict["X"]
         y_train = training_data_dict["Y"]
-    if True:
+
+    if LOAD_FROM_LOCAL:
         import numpy as np
 
         
@@ -51,6 +61,10 @@ def main():  # pylint: disable=R0914
             x_train = train['X']
             y_train = train['Y']
 
+        with open("{tmp_data_path}/test.pickle".format(tmp_data_path=tmp_data_path), "rb") as f:
+            test = pickle.load(f)
+            x_test = test['X']
+
         features = [0, 1, 2]
 
         for src in x_train.keys():
@@ -59,10 +73,8 @@ def main():  # pylint: disable=R0914
             else:
                 x_train[src] =  x_train[src][:, :, features]
 
-        print(x_train['laqn'])
-        print(y_train['laqn'])
-
-
+        for src in x_test.keys():
+            x_test[src] = x_test[src][:, features]
 
     # train model
     fit_start_time = datetime.now()
@@ -70,19 +82,21 @@ def main():  # pylint: disable=R0914
     model_fitter.fit(x_train, y_train)
     logger.info("Training completed")
 
-    exit()
 
     # predict either at the training or test set
     if args.predict_training:
         x_test = x_train.copy()
     else:
-        predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
-        x_test = predict_data_dict["X"]
+        if not LOAD_FROM_LOCAL:
+            predict_data_dict = model_data.get_pred_data_arrays(dropna=False)
+            x_test = predict_data_dict["X"]
 
     # Do prediction
     logger.info("Started predicting")
     y_pred = model_fitter.predict(x_test)
     logger.info("Finished predicting")
+
+    exit()
 
     # Create a results dataframe
     if args.predict_training:

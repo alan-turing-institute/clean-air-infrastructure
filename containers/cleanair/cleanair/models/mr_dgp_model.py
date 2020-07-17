@@ -21,6 +21,7 @@ from .mr_dgp.utils import set_objective
 
 from ..loggers import get_logger
 from .model import ModelMixin
+from ..types import FeaturesDict, ModelParams, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -102,8 +103,6 @@ class MRDGP(ModelMixin):
             Construct the DGP multi-res mixture
         """
 
-        
-
         k_base_1 = get_kernel(self.model_params["base_laqn"]["kernel"], "base_laqn")
         k_base_2 = get_kernel(self.model_params["base_sat"]["kernel"], "base_sat")
         k_dgp_1 = get_kernel(self.model_params["dgp_sat"]["kernel"], "dgp_sat")
@@ -180,7 +179,7 @@ class MRDGP(ModelMixin):
         
         return model
 
-    def fit(self, x_train, y_train, mask=None, save_model_state=True):
+    def fit(self, x_train: FeaturesDict, y_train:TargetDict, mask: bool=None) -> None:
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
@@ -206,7 +205,8 @@ class MRDGP(ModelMixin):
             x_sat = x_sat[in_london_index]
             y_sat = y_sat[in_london_index]
         
-        if True:
+        #TODO: can remove when SAT data is stable
+        if False:
             #replace nans in x_sat with zeros
             nan_idx = np.isnan(x_sat)
             x_sat[nan_idx] = 0.0
@@ -246,14 +246,14 @@ class MRDGP(ModelMixin):
                     set_objective(AdamOptimizer, "base_elbo")
 
                     opt.minimize(
-                        self.model, step_callback=self.elbo_logger, maxiter=10000
+                        self.model, step_callback=self.elbo_logger, maxiter=self.model_params["maxiter"]
                     )
 
                     # m.disable_base_elbo()
                     # set_objective(AdamOptimizer, 'elbo')
                     # opt.minimize(m, step_callback=logger, maxiter=10)
                 else:
-                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=10000)
+                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=self.model_params["maxiter"])
 
         except KeyboardInterrupt:
             print("Ending early")
