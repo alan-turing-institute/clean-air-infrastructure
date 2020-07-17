@@ -31,13 +31,16 @@ def main():  # pylint: disable=too-many-locals
     instance_df = instance_query.get_instances_with_params(
         instance_ids=[args.instance_id], output_type="df"
     )
+    logger.debug("%s rows returned from the instance query.", len(instance_df))
     data_id = instance_df["data_id"].iloc[0]
     data_config = instance_df["data_config"].iloc[0]
     logger.info("Data id is %s", data_id)
 
     # Get the results
     logger.info("Querying the air quality modelling results table.")
-    results_df = result_query.query_results(args.instance_id, data_id, output_type="df")
+    results_df = result_query.query_results(
+        args.instance_id, data_id=data_id, output_type="df"
+    )
 
     # Get the data
     logger.info("Querying the database of input data.")
@@ -91,15 +94,21 @@ def main():  # pylint: disable=too-many-locals
 
     # evaluate the metrics
     metric_methods = metrics.get_metric_methods()
+    precision_methods = metrics.get_precision_methods(pe1=metrics.probable_error)
+
     sensor_scores_df, temporal_scores_df = metrics.evaluate_model_data(
-        model_data, metric_methods
+        model_data, metric_methods, precision_methods=precision_methods,
     )
     logger.debug("%s rows in sensor scores.", len(sensor_scores_df))
     logger.debug("%s rows in temporal scores.", len(temporal_scores_df))
 
     # see the results in dashboard
     model_data_fit_app = apps.get_model_data_fit_app(
-        model_data, sensor_scores_df, temporal_scores_df, args.mapbox_token,
+        model_data,
+        sensor_scores_df,
+        temporal_scores_df,
+        args.mapbox_token,
+        all_metrics=list(metric_methods.keys()) + list(precision_methods.keys()),
     )
     model_data_fit_app.run_server(debug=True)
 

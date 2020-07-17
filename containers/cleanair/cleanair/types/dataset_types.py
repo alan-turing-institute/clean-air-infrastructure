@@ -1,6 +1,6 @@
 """Types for datasets."""
 
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from nptyping import NDArray, Float64
 from pydantic import BaseModel, validator
 from datetime import datetime
@@ -9,9 +9,12 @@ from . import Source
 from . import FeatureNames
 from . import FeatureBufferSize
 
+# pylint: disable=invalid-name
+
 DataConfig = Dict[str, Union[str, bool, List[str]]]
 FeaturesDict = Dict[Source, NDArray[Float64]]
 TargetDict = Dict[Source, Dict[Species, NDArray[Float64]]]
+NDArrayTuple = Tuple[NDArray[Float64], NDArray[Float64]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 
 InterestPointDict = Dict[Source, Union[str, List[str]]]

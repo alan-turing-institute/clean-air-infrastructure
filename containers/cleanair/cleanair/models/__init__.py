@@ -1,12 +1,12 @@
 """Model fitting classes"""
-from .model import Model
+from .model import ModelMixin
 from .model_data import ModelData
 from .model_config import ModelConfig
 from .svgp import SVGP
 
 __all__ = [
-    "Model",
     "ModelConfig",
+    "ModelMixin",
     "ModelData",
     "SVGP",
 ]
