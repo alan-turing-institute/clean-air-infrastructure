@@ -1,5 +1,6 @@
 """JamCam API route tests"""
 import pytest
+from sqlalchemy.exc import IntegrityError
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
 from urbanair.types import DetectionClass
@@ -31,7 +32,7 @@ class TestRaw:
             writer.commit_records(
                 video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
             )
-        except Exception:
+        except IntegrityError:
             pytest.fail("Dummy data insert")
 
     def test_12_hours(self, client_class, video_stat_records):
