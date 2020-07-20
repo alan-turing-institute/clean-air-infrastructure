@@ -1,5 +1,6 @@
 """Forecast API routes"""
 # pylint: disable=C0116
+from collections.abc import Iterable
 from typing import List, Dict, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -106,5 +107,6 @@ async def forecast_geojson(
 
     # print(out[1][0]["properties"])
     # print(AirPolutionFeature.schema())
-
-    return [i[0] for i in out]
+    if isinstance(out, Iterable):
+        return [i[0] for i in out]
+    return out
