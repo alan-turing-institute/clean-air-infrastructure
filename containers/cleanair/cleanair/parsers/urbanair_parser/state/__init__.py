@@ -6,7 +6,6 @@ from .configuration import (
     CONFIG_SECRETFILE_PATH,
     PROD_SECRET_DICT,
     PROD_HOST,
-    PROD_SECRET_DICT,
     MODEL_CACHE,
     MODEL_CONFIG,
     MODEL_CONFIG_FULL,

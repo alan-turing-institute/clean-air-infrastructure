@@ -2,12 +2,12 @@
 Mixin for checking what laqn data is in database and what is missing
 """
 from typing import Optional, List
-from datetime import timedelta, datetime
-from sqlalchemy import func, text, column, String, distinct, literal
+from datetime import timedelta
+from sqlalchemy import func, text, column, String, literal
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
-from ...databases.tables import MetaPoint, LAQNSite, LAQNReading
+from ...databases.tables import LAQNSite, LAQNReading
 from ...loggers import get_logger
 from ...databases.base import Values
 
@@ -33,7 +33,6 @@ class LAQNAvailabilityMixin:
 
         Some LAQN sites have more than one sitecode but have the same location.
         Considers these as one site.
-        
         """
 
         with self.dbcnxn.open_session() as session:
@@ -65,9 +64,6 @@ class LAQNAvailabilityMixin:
         """Get raw LAQN sensor data between a start_date and end_date for a particular species
         """
 
-        # print(species)
-        open_sites = self.get_laqn_open_sites(output_type="subquery")
-
         with self.dbcnxn.open_session() as session:
 
             in_data = (
@@ -98,7 +94,7 @@ class LAQNAvailabilityMixin:
     def gen_date_range(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
     ):
-
+        "Generate a data range and cross join with species"
         with self.dbcnxn.open_session() as session:
 
             # Generate expected time series
@@ -181,20 +177,6 @@ class LAQNAvailabilityMixin:
                 )
             )
 
-            # return session.query(dates)
-            return session.query(
-                dates,
-                in_data_cte.c.n_records.isnot(None).label("has_data"),
-                in_data_cte.c.n_records,
-            ).join(
-                in_data_cte,
-                (dates.c.site_code == in_data_cte.c.site_code)
-                & (
-                    dates.c.measurement_start_utc == in_data_cte.c.measurement_start_utc
-                ),
-                isouter=True,
-            )
-
     @db_query
     def get_laqn_availability_daily(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
@@ -227,6 +209,7 @@ class LAQNAvailabilityMixin:
                 hourly_laqn_avail.c.species_code,
             )
 
+    # pylint: disable=C0103
     @db_query
     def get_laqn_availability_daily_total(
         self, species: List[str], start_date: str, end_date: Optional[str] = None

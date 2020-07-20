@@ -4,7 +4,7 @@ from enum import Enum, unique
 
 @unique
 class FeatureNames(str, Enum):
-
+    "Features"
     min_canyon_ratio = "min_canyon_ratio"
     avg_canyon_ratio = "avg_canyon_ratio"
     max_canyon_ratio = "max_canyon_ratio"
@@ -29,7 +29,7 @@ class FeatureNames(str, Enum):
 
 @unique
 class FeatureBufferSize(str, Enum):
-
+    "Buffer sizes"
     one_thousand = 1000
     five_hundred = 500
     two_hundred = 200

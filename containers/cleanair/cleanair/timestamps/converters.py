@@ -79,21 +79,23 @@ def day_to_iso(day: str) -> str:
     # Convert end argument into a datetime
     if day == "now":
         return datetime.now().replace(microsecond=0, second=0, minute=0).isoformat()
-    elif day == "lasthour":
+    if day == "lasthour":
         return (
             (datetime.now() - timedelta(hours=1))
             .replace(microsecond=0, second=0, minute=0)
             .isoformat()
         )
-    elif day == "today":
+    if day == "today":
         return datetime.combine(date.today(), datetime.min.time()).isoformat()
 
-    elif day == "tomorrow":
+    if day == "tomorrow":
         return datetime.combine(
             date.today() + timedelta(days=1), datetime.min.time()
         ).isoformat()
 
-    elif day == "yesterday":
+    if day == "yesterday":
         return datetime.combine(
             date.today() - timedelta(days=1), datetime.min.time()
         ).isoformat()
+
+    raise ValueError(f"{day} is not a valid day")

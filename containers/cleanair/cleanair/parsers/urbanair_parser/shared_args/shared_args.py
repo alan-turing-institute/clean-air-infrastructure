@@ -5,9 +5,9 @@ import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
-from ....features import FEATURE_CONFIG, ALL_FEATURES
+from ....features import FEATURE_CONFIG
 from ....timestamps import day_to_iso
-from ....types import Species as ValidSpecies, Source as ValidSources
+from ....types import Source as ValidSources
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
@@ -43,10 +43,9 @@ def UpTo_callback(value: str) -> str:
     "process UpTo arg"
 
     if value in UP_TO_VALUES:
-
         return day_to_iso(value)
 
-    elif is_iso_string(value):
+    if is_iso_string(value):
         return value
 
     raise typer.BadParameter(

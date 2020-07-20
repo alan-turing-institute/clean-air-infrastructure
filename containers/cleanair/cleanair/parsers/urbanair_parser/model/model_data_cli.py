@@ -1,17 +1,15 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import List, Dict, Union, Optional
-from datetime import datetime
+from typing import List, Union, Optional
 import pickle
 import shutil
-import typer
 import json
-from pathlib import Path, PurePath
+from pathlib import Path
+import typer
 from ..state import (
     state,
     MODEL_CACHE,
     MODEL_CONFIG,
     MODEL_CONFIG_FULL,
-    MODEL_DATA_CACHE,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
     MODEL_TRAINING_X_PICKLE,
@@ -22,18 +20,12 @@ from ..state import (
     MODEL_PREDICTION_INDEX_PICKLE,
 )
 from ..shared_args import (
-    UpTo,
-    NDays,
     NDays_callback,
-    NHours,
     ValidSources,
     UpTo_callback,
 )
-from ..shared_args.dataset_options import HexGrid
-from ..shared_args.instance_options import ClusterId, Tag
-from ..shared_args.model_options import MaxIter
-from ....instance import AirQualityInstance, AirQualityModelParams
-from ....models import ModelData, SVGP, ModelConfig
+
+from ....models import ModelData, ModelConfig
 from ....types import (
     Species,
     Source,
@@ -64,8 +56,8 @@ def load_model_config(
         with config.open("r") as config_f:
             if full:
                 return FullConfig(**json.load(config_f))
-            else:
-                return BaseConfig(**json.load(config_f))
+
+            return BaseConfig(**json.load(config_f))
 
     if not full:
         typer.echo(f"{red(f'A model config does not exist. Run generate-config')}")
@@ -168,31 +160,23 @@ def generate_config(
 ) -> None:
     """Generate a model fitting configuration file"""
 
-    secretfile = state["secretfile"]
-
     state["logger"].info("Generate a model config")
 
     # Delete cache
     delete_model_cache(overwrite)
-
-    all_train_sources = [ts for ts in train_source]
-    all_pred_sources = [ps for ps in pred_source]
-    all_species = [sp for sp in species]
-    all_feature_names = [fn for fn in features]
-    all_buffer_sizes = [buff for buff in feature_buffer]
 
     # create a dictionary of data settings
     data_config = ModelConfig.generate_data_config(
         trainupto,
         trainhours=trainhours + traindays,
         predhours=predhours + preddays,
-        train_sources=all_train_sources,
-        pred_sources=all_pred_sources,
-        species=all_species,
-        norm_by="laqn",
+        train_sources=train_source,
+        pred_sources=pred_source,
+        species=species,
+        norm_by=norm_by,
         model_type="svgp",
-        features=all_feature_names,
-        buffer_sizes=all_buffer_sizes,
+        features=features,
+        buffer_sizes=feature_buffer,
     )
 
     with MODEL_CONFIG.open("w") as config_f:
@@ -212,7 +196,7 @@ def echo_config(
 @app.command()
 def generate_full_config() -> None:
     """Perform validation checks on a config file and generates a full configuration file.
-    
+
     Overwrites any existing full configuration file"""
 
     state["logger"].info("Validate the cached config file")
@@ -239,7 +223,7 @@ def download(
     ),
 ):
     """Download data from the database
-    
+
     Downloads data as requested in the full configuration file"""
 
     if not (training_data or prediction_data):
@@ -307,7 +291,7 @@ def get_training_arrays(input_dir: Optional[Path] = None):
 
 @app.command()
 def get_prediction_arrays(input_dir: Optional[Path] = None):
-
+    """Get prediction arrays"""
     state["logger"].info(f"Getting data arrays")
 
     full_config = load_model_config(input_dir, full=True)
@@ -329,11 +313,12 @@ def get_prediction_arrays(input_dir: Optional[Path] = None):
     prediction_data_df_norm = load_prediction_data(input_dir)
 
     X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, training_data_df_norm, prediction=False,
+        full_config, prediction_data_df_norm, prediction=False,
     )
 
     if MODEL_PREDICTION_PICKLE.exists():
         state["logger"].info(f"Getting prediction data arrays")
+
         with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
             prediction_data_df_norm = pickle.load(prediction_pickle_f)
 
@@ -377,6 +362,8 @@ def load_prediction_data(input_dir: Optional[Path] = None):
     typer.echo("Not implimented")
     raise typer.Abort()
 
+    return None
+
 
 @app.command()
 def save_cache(
@@ -398,7 +385,7 @@ def save_cache(
     ),
 ):
     """Copy all CACHE to OUTPUT-DIR
-    
+
     Will create OUTPUT-DIR and any missing parent directories"""
 
     if output_dir.exists():

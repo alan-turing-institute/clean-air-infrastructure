@@ -58,7 +58,7 @@ def fit(
     """Train a model loading data from INPUT-DIR
 
     If INPUT-DIR not provided will try to load data from the urbanair CLI cache
-    
+
     INPUT-DIR should be created by running 'urbanair model data save-cache'"""
 
     # 1. Load data and configuration file
@@ -83,7 +83,6 @@ def fit(
     # dataset = ModelData(secretfile=secretfile)
 
     # instance for training and forecasting air quality
-    # TODO: Reimpliment get data_id from ModelData class
 
     fit_start_time = datetime.utcnow().isoformat()
 

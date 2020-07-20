@@ -3,17 +3,14 @@ Mixin for useful database queries
 """
 from typing import List
 from datetime import datetime
-from sqlalchemy import and_, func, literal, null
+from sqlalchemy import func
 from ...decorators import db_query
 from ...databases.tables import (
     AQEReading,
     AQESite,
-    StaticFeature,
-    DynamicFeature,
     LAQNReading,
     LAQNSite,
     LondonBoundary,
-    MetaPoint,
     SatelliteForecast,
     SatelliteGrid,
 )

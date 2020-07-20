@@ -30,7 +30,7 @@ class AQEAvailabilityMixin:
     @db_query
     def get_aqe_open_sites(self, with_location=False):
         """Get open AQE sites
-        
+
         Args:
             with_location: Return geometry
         """
