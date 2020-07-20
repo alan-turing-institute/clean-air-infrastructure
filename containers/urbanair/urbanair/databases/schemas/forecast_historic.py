@@ -3,14 +3,8 @@
 from typing import List, Tuple
 from datetime import datetime
 import json
-from pydantic import BaseModel, ValidationError, conint, validator
+from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
-from sqlalchemy import text
-
-
-def orjson_dumps(v, *, default):
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v, default=default).decode()
 
 
 class ForecastBase(BaseModel):
@@ -41,7 +35,7 @@ class ForecastResultBase(BaseModel):
 
 @dataclass
 class ForecastProperties:
-
+    # pylint: disable-msg=C0103
     measurement_start_utc: datetime
     NO2_mean: str
     NO2_var: str
@@ -70,10 +64,6 @@ class AirPolutionFeature(BaseModel):
 
     class Config:
         orm_mode = True
-
-    # @validator("geometry")
-    # def geom_valid(cls, v):
-    #     return json.loads(v)
 
 
 class AirPolutionFeatureCollection(BaseModel):

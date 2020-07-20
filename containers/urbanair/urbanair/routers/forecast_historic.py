@@ -1,24 +1,23 @@
+"""Forecast API routes"""
+# pylint: disable=C0116
 from typing import List, Dict, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, Query, Response, HTTPException
-
+from fastapi import APIRouter, Depends, Query
 from ..databases.schemas.forecast_historic import (
     ForecastBase,
     ForecastResultBase,
-    AirPolutionFeatureCollection,
     AirPolutionFeature,
 )
 from ..databases.queries.forecast_historic import (
     get_forecast_values,
     get_forecast_available,
-    get_forecast_resultValues,
+    get_forecast_resultvalues,
     get_forecast_json,
 )
 from ..databases import get_db, all_or_404
 
-ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
-ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
+
 router = APIRouter()
 
 
@@ -31,7 +30,9 @@ async def common_forecast_start_end(
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
 ) -> Dict:
+    """Common parameters in forecast routes."""
 
+    # pylint: disable=C0301
     return {
         "starttime": starttime,
         "endtime": endtime,
@@ -85,7 +86,7 @@ async def forecast__model_results(
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
-    data = get_forecast_resultValues(db, instance_id)
+    data = get_forecast_resultvalues(db, instance_id)
     return all_or_404(data)
 
 
@@ -97,13 +98,13 @@ async def forecast__model_results(
 async def forecast_geojson(
     instance_id: str = Query(None, description="A unique forecast id"),
     db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[Dict]:
 
     data = get_forecast_json(db, instance_id).limit(10)
 
     out = all_or_404(data)
 
-    print(out[1][0]["properties"])
+   # print(out[1][0]["properties"])
     # print(AirPolutionFeature.schema())
 
     return [i[0] for i in out]

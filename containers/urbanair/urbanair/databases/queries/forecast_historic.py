@@ -1,25 +1,13 @@
 """Forecast database queries and external api calls"""
 from typing import Optional
-from datetime import datetime, timedelta
-from fastapi import HTTPException
-from sqlalchemy import func, text
-import geopandas as gpd
+from datetime import datetime
+from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
-from sqlalchemy.sql.selectable import Alias
-from geojson import Feature, Point, FeatureCollection
-import requests
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
-    MetaPoint,
     HexGrid,
 )
-from cleanair.decorators import db_query
-from ...types import DetectionClass
-
-
-TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
-ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
 def instance_id_filter(query: Query, instance_id: Optional[str]) -> Query:
@@ -64,7 +52,7 @@ def get_forecast_available(
     return res
 
 
-def get_forecast_resultValues(
+def get_forecast_resultvalues(
     db: Session, instance_id: Optional[str], limit: int = 100
 ) -> Query:
     """Get instance model results"""
@@ -83,7 +71,8 @@ def get_forecast_resultValues(
     return res
 
 
-def get_forecast_json(db: Session, instance_id: str, limit: int = 100) -> Query:
+def get_forecast_json(db: Session, instance_id: str) -> Query:
+    """Get instance model geojson results"""
 
     out_sq = (
         db.query(

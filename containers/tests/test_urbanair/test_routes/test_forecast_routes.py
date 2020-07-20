@@ -1,8 +1,8 @@
 """JamCam API route tests"""
-import pytest
-from cleanair.databases import DBWriter
-from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable
-from urbanair.types import DetectionClass
+# import pytest
+# # from cleanair.databases import DBWriter
+# from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable
+
 
 # pylint: disable=C0115,R0201
 
@@ -20,33 +20,33 @@ class TestBasic:
         assert response.status_code == 200
 
 
-class TestAdvanced:
-    def test_24_hours(self, client_class, fit_start_time):
-        """Test 12 hour request startime/endtime"""
+# class TestAdvanced:
+#     def test_24_hours(self, client_class, fit_start_time):
+#         """Test 12 hour request startime/endtime"""
 
-        # Check response
-        response = client_class.get(
-            "/api/v1/forecasts/raw/",
-            params={
-                "starttime": "2020-06-05T00:00:00",
-                "endtime": "2020-06-06T00:00:00",
-            },
-        )
-        assert response.status_code == 200
+#         # Check response
+#         response = client_class.get(
+#             "/api/v1/forecasts/raw/",
+#             params={
+#                 "starttime": "2020-06-05T00:00:00",
+#                 "endtime": "2020-06-06T00:00:00",
+#             },
+#         )
+#         assert response.status_code == 200
 
-        data = response.json()
-        assert len(data) == len(fit_start_time)
+#         data = response.json()
+#         assert len(data) == len(fit_start_time)
 
-    def test_recent_404_no_data(self, client_class):
-        """Requst when no data is available"""
+#     def test_recent_404_no_data(self, client_class):
+#         """Requst when no data is available"""
 
-        response = client_class.get(
-            "/api/v1/forecasts/raw/",
-            params={
-                "starttime": "2020-03-02T00:00:00",
-                "endtime": "2020-03-03T00:00:00",
-            },
-        )
+#         response = client_class.get(
+#             "/api/v1/forecasts/raw/",
+#             params={
+#                 "starttime": "2020-03-02T00:00:00",
+#                 "endtime": "2020-03-03T00:00:00",
+#             },
+#         )
 
-        assert response.status_code == 404
-        assert response.json()["detail"] == "No data was found"
+#         assert response.status_code == 404
+#         assert response.json()["detail"] == "No data was found"
