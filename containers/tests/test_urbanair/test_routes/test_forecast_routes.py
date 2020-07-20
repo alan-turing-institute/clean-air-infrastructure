@@ -54,7 +54,7 @@ class TestAdvanced:
         assert len(data) == len(forecast_stat_records)
 
     def test_recent_404_no_data(self, client_class):
-        """Requst when no data is available"""
+        """Request when no data is available"""
 
         response = client_class.get(
             "/api/v1/forecasts/forecast_available/",

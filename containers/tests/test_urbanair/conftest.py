@@ -84,13 +84,14 @@ def video_stat_records():
             i += 1
     return records
 
+
 @pytest.fixture(scope="module")
 def forecast_stat_records():
     "Fake data for forecast routes test"
     forecast_upload_datetimes = rrule.rrule(
         rrule.HOURLY,
-        dtstart=parser.isoparse("2020-06-01T00:00:00"),
-        until=parser.isoparse("2020-06-01T23:00:00"),
+        dtstart=parser.isoparse("2020-01-01T00:00:00"),
+        until=parser.isoparse("2020-01-02T00:00:00"),
     )
 
     records = []
@@ -98,8 +99,7 @@ def forecast_stat_records():
     for vtime in forecast_upload_datetimes:
         records.append(
             AirQualityInstanceTable(
-                id=i,
-                instance_id="e9725df2c26a2a868a316fb69685e34678c2284a3c357078a62866300f6ff24b",
+                instance_id="e9725df2c26a2a7589316fb69685e34678c2284a3c357078a62866300f6ff24b",
                 fit_start_time=vtime,
             )
         )
