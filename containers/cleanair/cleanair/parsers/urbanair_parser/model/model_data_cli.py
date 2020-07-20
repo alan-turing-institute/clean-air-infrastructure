@@ -475,8 +475,6 @@ def fit(
     X_train, Y_train, _ = get_training_arrays(input_dir)
     full_config = load_model_config(input_dir, full=True)    
 
-    
-
     # Create the model
     secretfile: str = state["secretfile"]
     model = SVGP(batch_size=1000)  # big batch size for the grid
@@ -485,20 +483,22 @@ def fit(
 
     #  load the dataset
     # aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
-    # dataset = ModelData(data_config, secretfile=secretfile)
+    # dataset = ModelData(secretfile=secretfile)
 
     # instance for training and forecasting air quality
     # TODO: Reimpliment get data_id from ModelData class
+
     fit_start_time = datetime.utcnow().isoformat()
-    # svgp_instance = AirQualityInstance(
-    #     model_name="svgp",
-    #     param_id=aq_model_params.param_id,
-    #     data_id=full_config.data_id(),
-    #     cluster_id=cluster_id,
-    #     tag=tag,
-    #     fit_start_time=fit_start_time,
-    #     secretfile=secretfile,
-    # )
+
+    svgp_instance = AirQualityInstance(
+        model_name="svgp",
+        param_id=aq_model_params.param_id,
+        data_id=full_config.data_id(),
+        cluster_id=cluster_id,
+        tag=tag,
+        fit_start_time=fit_start_time,
+        secretfile=secretfile,
+    )
 
     # train and forecast the model
     # svgp_instance.train(model, dataset)
