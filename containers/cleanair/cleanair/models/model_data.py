@@ -13,7 +13,6 @@ from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 from sqlalchemy import func, text, and_, null, column, String
 from sqlalchemy.sql.expression import Alias
-from patsy import dmatrices, dmatrix
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
@@ -1676,13 +1675,15 @@ class ModelData(DBWriter, DBQueryMixin):
             training_pred_dict,
         )
 
-    def update_remote_tables(self):
+    def update_remote_tables(
+        self, full_config: FullConfig, preprocessing: Optional[Dict] = None
+    ):
         """Update the model results table with the model results"""
-        data_config = ModelData.make_config_json_serializable(self.config)
+        data_config = full_config.json(sort_keys=True)
+        data_id = full_config.data_id()
+
         row = dict(
-            data_id=self.data_id,
-            data_config=data_config,
-            preprocessing=self.preprocessing,
+            data_id=self.data_id, data_config=data_config, preprocessing=preprocessing,
         )
         records = [row]
         self.logger.info("Writing data settings to air quality modelling data table.")

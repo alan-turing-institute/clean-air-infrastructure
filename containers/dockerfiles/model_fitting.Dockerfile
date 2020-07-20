@@ -19,7 +19,7 @@ RUN pip install gpflow==1.5.1
 RUN pip install '/app/cleanair'
 
 # Copy the run script into the container
-COPY entrypoints/model_fitting/model_fitting.py /app
+# COPY entrypoints/model_fitting/model_fitting.py /app
 
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "model_fitting.py"]
+# ENTRYPOINT ["python", "model_fitting.py"]

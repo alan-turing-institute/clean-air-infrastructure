@@ -5,7 +5,7 @@ from datetime import datetime
 from .air_quality_result import AirQualityResult
 from .instance import Instance
 from ..databases.tables import AirQualityInstanceTable
-from ..models import ModelData, Model
+from ..models import ModelData, ModelMixin
 
 
 class AirQualityInstance(Instance):
@@ -18,7 +18,7 @@ class AirQualityInstance(Instance):
             records, on_conflict="ignore", table=AirQualityInstanceTable
         )
 
-    def train(self, model: Model, dataset: ModelData) -> None:
+    def train(self, model: ModelMixin, dataset: ModelData) -> None:
         """Train the model on a dataset.
 
         Args:
@@ -38,7 +38,7 @@ class AirQualityInstance(Instance):
         self.logger.info("Training completed")
 
     def forecast(
-        self, model: Model, dataset: ModelData, secretfile: Optional[str] = None
+        self, model: ModelMixin, dataset: ModelData, secretfile: Optional[str] = None
     ) -> AirQualityResult:
         """Predict using the model on the test dataset.
 
@@ -67,7 +67,7 @@ class AirQualityInstance(Instance):
         )
 
     def predict_on_training_set(
-        self, model: Model, dataset: ModelData, secretfile: Optional[str] = None
+        self, model: ModelMixin, dataset: ModelData, secretfile: Optional[str] = None
     ) -> AirQualityResult:
         """Predict on the training set using the model.
 

@@ -5,7 +5,7 @@ import pickle
 import shutil
 import typer
 import json
-from pathlib import Path
+from pathlib import Path, PurePath
 from ..state import (
     state,
     MODEL_CACHE,
@@ -392,60 +392,88 @@ def delete_cache(
 ):
 
     """Delete the model data cache"""
-
     delete_model_cache(overwrite)
 
 
-# @app.command()
-# def fit(
-#     cluster_id: str = ClusterId,
-#     hexgrid: bool = HexGrid,
-#     maxiter: int = MaxIter,
-#     preddays: int = NDays,
-#     predhours: int = NHours,
-#     tag: str = Tag,
-#     traindays: int = NDays,
-#     trainhours: int = NHours,
-#     trainupto: str = UpTo,
-# ) -> None:
-#     """Train the SVGP model"""
+@app.command()
+def fit(
+    input_dir: Path = typer.Argument(None),
+    cluster_id: str = "laptop",
+    maxiter: int = MaxIter,
+    tag: str = Tag,
+) -> None:
+    """Train a model loading data from INPUT-DIR
 
-#     secretfile: str = state["secretfile"]
-#     # create a dictionary of data settings
-#     data_config = ModelData.generate_data_config(
-#         trainupto,
-#         hexgrid=hexgrid,
-#         include_satellite=False,
-#         predhours=predhours + preddays,
-#         trainhours=trainhours + traindays,
-#     )
-#     # load the dataset
-#     dataset = ModelData(data_config, secretfile=secretfile)
-#     dataset.update_remote_tables()  # write the data id & settings to DB
+    If INPUT-DIR not provided will try to load data from the urbanair CLI cache
+    
+    INPUT-DIR should be created by running 'urbanair model data save-cache'"""
 
-#     # create the model
-#     model = SVGP(batch_size=1000)  # big batch size for the grid
-#     model.model_params["maxiter"] = maxiter
-#     model.model_params["kernel"]["name"] = "matern32"
+    # 1. Load data and configuration file
+    # 2, Create model params
+    # 3. Fit model
+    # 4. Upload model params to blob storage/database (where in blob storage parameters are)
+    # 5. Run prediction.
+    # 6. Upload to database.
 
-#     # object for inserting model parameters into the database
-#     aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
-#     aq_model_params.update_remote_tables()  # write model name, id & params to DB
+    if input_dir:
+        if input_dir.is_dir():
+            state["logger"].info(f"Loading data from  {input_dir}")
+        else:
+            state["logger"].warning(f"{input_dir} is not a directory")
 
-#     # instance for training and forecasting air quality
-#     svgp_instance = AirQualityInstance(
-#         model_name="svgp",
-#         param_id=aq_model_params.param_id,
-#         data_id=dataset.data_id,
-#         cluster_id=cluster_id,
-#         tag=tag,
-#         fit_start_time=datetime.now().isoformat(),
-#         secretfile=secretfile,
-#     )
+        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
 
-#     # train and forecast the model
-# svgp_instance.train(model, dataset)
-#     result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
+        if not training_pickle.is_file():
+            state["logger"].warning(f"{training_pickle} does not exist")
 
-#     svgp_instance.update_remote_tables()  # write the instance to the DB
-#     result.update_remote_tables()  # write results to DB
+    with MODEL_TRAINING_X_PICKLE.open("rb") as X_pickle_f:
+        X_train = pickle.load(X_pickle_f)
+
+    with MODEL_TRAINING_Y_PICKLE.open("rb") as Y_pickle_f:
+        Y_train = pickle.load(Y_pickle_f)
+
+    with MODEL_TRAINING_INDEX_PICKLE.open("rb") as index_pickle_f:
+        index_train = pickle.load(index_pickle_f)
+
+    full_config = load_model_config(full=True)
+
+    secretfile: str = state["secretfile"]
+
+    # create the model
+    model = SVGP(batch_size=1000)  # big batch size for the grid
+    model.model_params["maxiter"] = maxiter
+    model.model_params["kernel"]["name"] = "matern32"
+
+    #  load the dataset
+    # aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
+    # dataset = ModelData(data_config, secretfile=secretfile)
+
+    # instance for training and forecasting air quality
+    # TODO: Reimpliment get data_id from ModelData class
+    fit_start_time = datetime.utcnow().isoformat()
+    # svgp_instance = AirQualityInstance(
+    #     model_name="svgp",
+    #     param_id=aq_model_params.param_id,
+    #     data_id=full_config.data_id(),
+    #     cluster_id=cluster_id,
+    #     tag=tag,
+    #     fit_start_time=fit_start_time,
+    #     secretfile=secretfile,
+    # )
+
+    # train and forecast the model
+    # svgp_instance.train(model, dataset)
+
+    model.fit(X_train, Y_train)
+
+    # result = svgp_instance.forecast(model, dataset, secretfile=secretfile)
+
+    #
+    # dataset.update_remote_tables()  # write the data id & settings to DB
+
+    # object for inserting model parameters into the database
+    # aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
+    # aq_model_params.update_remote_tables()  # write model name, id & params to DB
+
+    # svgp_instance.update_remote_tables()  # write the instance to the DB
+    # result.update_remote_tables()  # write results to DB

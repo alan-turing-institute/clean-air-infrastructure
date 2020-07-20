@@ -37,7 +37,7 @@ class SVGP(ModelMixin):
         Returns:
             Default model parameters for SVGP.
         """
-        dict(
+        return dict(
             jitter=1e-5,
             likelihood_variance=0.1,
             minibatch_size=100,

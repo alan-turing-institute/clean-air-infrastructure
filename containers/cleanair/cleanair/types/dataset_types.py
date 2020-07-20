@@ -51,3 +51,7 @@ class FullConfig(BaseConfig):
         if parts[0] != "value":
             raise ValueError("must start with 'value_'")
         return v
+
+    def data_id(self):
+
+        print(self.json(sort_keys=True))

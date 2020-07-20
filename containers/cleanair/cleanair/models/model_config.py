@@ -12,7 +12,6 @@ from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 from sqlalchemy import func, text, and_, null, cast, String
 from sqlalchemy.sql.expression import Alias
-from patsy import dmatrices, dmatrix
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,

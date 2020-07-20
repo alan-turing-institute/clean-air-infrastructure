@@ -26,6 +26,7 @@ setuptools.setup(
         "nptyping==1.2.0",
         "numpy==1.18.5",
         "pandas==1.0.5",
+        "pydantic==1.6.1",
         "python-dateutil==2.8.1",
         "pytz==2019.3",
         "pyyaml==5.3.1",
