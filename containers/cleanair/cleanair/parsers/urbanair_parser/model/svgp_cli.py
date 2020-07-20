@@ -40,7 +40,7 @@ from ....types import (
     BaseConfig,
     FullConfig,
     FeatureNames,
-    FeatureBufferSize
+    FeatureBufferSize,
 )
 from .model_data_cli import load_model_config, get_training_arrays
 from ....loggers import red, green
@@ -70,7 +70,7 @@ def fit(
 
     # Load training data
     X_train, Y_train, _ = get_training_arrays(input_dir)
-    full_config = load_model_config(input_dir, full=True)    
+    full_config = load_model_config(input_dir, full=True)
 
     # Create the model
     secretfile: str = state["secretfile"]
