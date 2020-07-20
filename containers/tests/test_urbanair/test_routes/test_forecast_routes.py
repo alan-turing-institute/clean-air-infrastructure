@@ -1,7 +1,8 @@
 """JamCam API route tests"""
-# import pytest
-# # from cleanair.databases import DBWriter
-# from cleanair.databases.tables import AirQualityInstanceTable, AirQualityResultTable
+import pytest
+from sqlalchemy.exc import IntegrityError
+from cleanair.databases import DBWriter
+from cleanair.databases.tables import AirQualityInstanceTable
 
 
 # pylint: disable=C0115,R0201
@@ -20,33 +21,48 @@ class TestBasic:
         assert response.status_code == 200
 
 
-# class TestAdvanced:
-#     def test_24_hours(self, client_class, fit_start_time):
-#         """Test 12 hour request startime/endtime"""
+class TestAdvanced:
+    def test_setup(self, secretfile, connection_class, forecast_stat_records):
+        """Insert test data"""
 
-#         # Check response
-#         response = client_class.get(
-#             "/api/v1/forecasts/raw/",
-#             params={
-#                 "starttime": "2020-06-05T00:00:00",
-#                 "endtime": "2020-06-06T00:00:00",
-#             },
-#         )
-#         assert response.status_code == 200
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
-#         data = response.json()
-#         assert len(data) == len(fit_start_time)
+            writer.commit_records(
+                forecast_stat_records,
+                on_conflict="overwrite",
+                table=AirQualityInstanceTable,
+            )
+        except IntegrityError:
+            pytest.fail("Dummy data insert")
 
-#     def test_recent_404_no_data(self, client_class):
-#         """Requst when no data is available"""
+    def test_24_hours(self, client_class, forecast_stat_records):
+        """Test 12 hour request startime/endtime"""
 
-#         response = client_class.get(
-#             "/api/v1/forecasts/raw/",
-#             params={
-#                 "starttime": "2020-03-02T00:00:00",
-#                 "endtime": "2020-03-03T00:00:00",
-#             },
-#         )
+        # Check response
+        response = client_class.get(
+            "/api/v1/forecasts/raw/",
+            params={
+                "starttime": "2020-06-05T00:00:00",
+                "endtime": "2020-06-06T00:00:00",
+            },
+        )
+        assert response.status_code == 200
 
-#         assert response.status_code == 404
-#         assert response.json()["detail"] == "No data was found"
+        data = response.json()
+        assert len(data) == len(forecast_stat_records)
+
+    def test_recent_404_no_data(self, client_class):
+        """Requst when no data is available"""
+
+        response = client_class.get(
+            "/api/v1/forecasts/raw/",
+            params={
+                "starttime": "2020-03-02T00:00:00",
+                "endtime": "2020-03-03T00:00:00",
+            },
+        )
+
+        assert response.status_code == 404
+        assert response.json()["detail"] == "No data was found"

@@ -4,7 +4,7 @@ from typing import List, Tuple
 from datetime import datetime
 import json
 from pydantic import BaseModel
-from pydantic.validators import str_validator
+from pydantic import root_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -47,13 +47,9 @@ class ForecastGeometry(BaseModel):
     type: str
     coordinates: List[Tuple[float, float]]
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v:str):
+    # pylint: disable-msg=E0213,W0221
+    @root_validator
+    def validate(cls, v: str):
         res = json.loads(v)
         return {"type": res.get("type"), "coordinates": res.get("coordinates")}
 
