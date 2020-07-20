@@ -62,8 +62,8 @@ def video_stat_records():
     "Fake data for jamcam routes test"
     video_upload_datetimes = rrule.rrule(
         rrule.HOURLY,
-        dtstart=parser.isoparse("2020-06-05T00:00:00"),
-        until=parser.isoparse("2020-06-05T23:00:00"),
+        dtstart=parser.isoparse("2020-01-01T00:00:00"),
+        until=parser.isoparse("2020-01-01T23:00:00"),
     )
 
     records = []
@@ -84,14 +84,13 @@ def video_stat_records():
             i += 1
     return records
 
-
 @pytest.fixture(scope="module")
 def forecast_stat_records():
     "Fake data for forecast routes test"
     forecast_upload_datetimes = rrule.rrule(
         rrule.HOURLY,
-        dtstart=parser.isoparse("2020-01-01T00:00:00"),
-        until=parser.isoparse("2020-01-01T23:00:00"),
+        dtstart=parser.isoparse("2020-06-01T00:00:00"),
+        until=parser.isoparse("2020-06-01T23:00:00"),
     )
 
     records = []

@@ -51,7 +51,7 @@ class ForecastGeometry(BaseModel):
     def __get_validators__(cls):
         yield str_validator
         yield cls.validate
-
+    # pylint: disable-msg=W0221
     @classmethod
     def validate(cls, v: str):
         res = json.loads(v)
