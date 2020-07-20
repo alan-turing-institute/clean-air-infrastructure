@@ -1,7 +1,6 @@
 """Cleanair enum types"""
 from enum import Enum, unique
 
-
 @unique
 class FeatureNames(str, Enum):
 
