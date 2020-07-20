@@ -42,7 +42,7 @@ class TestAdvanced:
 
         # Check response
         response = client_class.get(
-            "/api/v1/forecasts/raw/",
+            "/api/v1/forecasts/forecast_available/",
             params={
                 "starttime": "2020-06-05T00:00:00",
                 "endtime": "2020-06-06T00:00:00",
@@ -57,7 +57,7 @@ class TestAdvanced:
         """Requst when no data is available"""
 
         response = client_class.get(
-            "/api/v1/forecasts/raw/",
+            "/api/v1/forecasts/forecast_available/",
             params={
                 "starttime": "2020-03-02T00:00:00",
                 "endtime": "2020-03-03T00:00:00",
