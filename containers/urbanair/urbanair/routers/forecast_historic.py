@@ -98,13 +98,13 @@ async def forecast__model_results(
 async def forecast_geojson(
     instance_id: str = Query(None, description="A unique forecast id"),
     db: Session = Depends(get_db),
-) -> Optional[Dict]:
+) -> Optional[List[Dict]]:
 
     data = get_forecast_json(db, instance_id).limit(10)
 
     out = all_or_404(data)
 
-   # print(out[1][0]["properties"])
+    # print(out[1][0]["properties"])
     # print(AirPolutionFeature.schema())
 
     return [i[0] for i in out]

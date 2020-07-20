@@ -51,7 +51,7 @@ class ForecastGeometry(BaseModel):
         yield cls.validate
 
     @classmethod
-    def validate(cls, v: str):
+    def validate(cls, v):
         res = json.loads(v)
         return {"type": res.get("type"), "coordinates": res.get("coordinates")}
 
