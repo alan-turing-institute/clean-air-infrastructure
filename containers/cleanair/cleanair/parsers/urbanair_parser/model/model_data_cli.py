@@ -1,5 +1,5 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 from datetime import datetime
 import pickle
 import shutil
@@ -47,13 +47,16 @@ from ....loggers import red, green
 app = typer.Typer(help="Get data for model fitting")
 
 
-def load_model_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
+def load_model_config(input_dir: Path = typer.Argument(None), full: bool = False) -> Union[BaseConfig, FullConfig]:
     """Load an existing configuration file"""
 
     if full:
         config = MODEL_CONFIG_FULL
     else:
         config = MODEL_CONFIG
+
+    if input_dir:
+            config = input_dir.joinpath(config.parts[-1])
 
     if config.exists():
         with config.open("r") as config_f:
@@ -69,7 +72,6 @@ def load_model_config(full: bool = False) -> Union[BaseConfig, FullConfig]:
             f"{red(f'A full model config does not exist. Run generate-full-config')}"
         )
     raise typer.Abort()
-
 
 def delete_model_cache(overwrite: bool):
     """Delete everything from the MODEL_CACHE"""
@@ -98,8 +100,7 @@ def delete_model_cache(overwrite: bool):
     for cache_file in cache_content:
         if cache_file.exists():
             cache_file.unlink()
-
-
+            
 # pylint: disable=too-many-arguments
 @app.command()
 def generate_config(
@@ -269,33 +270,64 @@ def download(
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
 
+
 @app.command()
-def get_arrays():
+def get_training_arrays(input_dir: Optional[Path] = None):
     """Get data arrays for tensorflow models"""
 
     state["logger"].info(f"Getting data arrays")
 
-    full_config = load_model_config(full=True)
+    full_config = load_model_config(input_dir, full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
-    if MODEL_TRAINING_PICKLE.exists():
-        state["logger"].info(f"Getting training data arrays")
+    if not input_dir:
+        training_pickle = MODEL_TRAINING_PICKLE
+    else:
+        if not input_dir.is_dir():
+            state['logger'].warning(f"{input_dir} is not a directory")
+            raise typer.Abort()
 
-        with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
-            training_data_df_norm = pickle.load(training_pickle_f)
+        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
 
-        X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-            full_config, training_data_df_norm, prediction=False,
-        )
+    if not training_pickle.exists():
+        state['logger'].warning(f"{training_pickle} does not exist")
+        raise typer.Abort()
 
-        with MODEL_TRAINING_X_PICKLE.open("wb") as X_pickle_f:
-            pickle.dump(X_dict, X_pickle_f)
+    training_data_df_norm = load_training_data(input_dir)
 
-        with MODEL_TRAINING_Y_PICKLE.open("wb") as Y_pickle_f:
-            pickle.dump(Y_dict, Y_pickle_f)
+    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+        full_config, training_data_df_norm, prediction=False,
+    )
 
-        with MODEL_TRAINING_INDEX_PICKLE.open("wb") as index_pickle_f:
-            pickle.dump(index_dict, index_pickle_f)
+    return X_dict, Y_dict, index_dict
+    
+
+@app.command()
+def get_prediction_arrays(input_dir: Optional[Path] = None):
+
+    state["logger"].info(f"Getting data arrays")
+
+    full_config = load_model_config(input_dir, full=True)
+    model_data = ModelData(secretfile=state["secretfile"])
+
+    if not input_dir:
+        prediction_pickle = MODEL_PREDICTION_PICKLE
+    else:
+        if not input_dir.is_dir():
+            state['logger'].warning(f"{input_dir} is not a directory")
+            raise typer.Abort()
+
+        prediction_pickle = input_dir.joinpath(*MODEL_PREDICTION_PICKLE.parts[-2:])
+
+    if not prediction_pickle.exists():
+        state['logger'].warning(f"{prediction_pickle} does not exist")
+        raise typer.Abort()
+
+    prediction_data_df_norm = load_prediction_data(input_dir)
+
+    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+        full_config, training_data_df_norm, prediction=False,
+    )
 
     if MODEL_PREDICTION_PICKLE.exists():
         state["logger"].info(f"Getting prediction data arrays")
@@ -315,6 +347,30 @@ def get_arrays():
         with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
             pickle.dump(index_dict, index_pickle_f)
 
+def load_training_data(input_dir: Optional[Path] = None):
+    """Load training data from either the CACHE or input_dir"""
+
+    if not input_dir:
+        training_pickle = MODEL_TRAINING_PICKLE
+    else:
+        if not input_dir.is_dir():
+            state['logger'].warning(f"{input_dir} is not a directory")
+            raise typer.Abort()
+
+        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+
+    if not training_pickle.exists():
+        state['logger'].warning("Training data not found. Download and resave cache")
+        raise typer.Abort()
+
+    with training_pickle.open("rb") as training_pickle_f:
+        return pickle.load(training_pickle_f)
+
+def load_prediction_data(input_dir: Optional[Path] = None):
+    """Load training data from either the CACHE or input_dir"""
+
+    typer.echo("Not implimented")
+    raise typer.Abort()
 
 @app.command()
 def save_cache(
@@ -415,31 +471,14 @@ def fit(
     # 5. Run prediction.
     # 6. Upload to database.
 
-    if input_dir:
-        if input_dir.is_dir():
-            state["logger"].info(f"Loading data from  {input_dir}")
-        else:
-            state["logger"].warning(f"{input_dir} is not a directory")
+    # Load training data
+    X_train, Y_train, _ = get_training_arrays(input_dir)
+    full_config = load_model_config(input_dir, full=True)    
 
-        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+    
 
-        if not training_pickle.is_file():
-            state["logger"].warning(f"{training_pickle} does not exist")
-
-    with MODEL_TRAINING_X_PICKLE.open("rb") as X_pickle_f:
-        X_train = pickle.load(X_pickle_f)
-
-    with MODEL_TRAINING_Y_PICKLE.open("rb") as Y_pickle_f:
-        Y_train = pickle.load(Y_pickle_f)
-
-    with MODEL_TRAINING_INDEX_PICKLE.open("rb") as index_pickle_f:
-        index_train = pickle.load(index_pickle_f)
-
-    full_config = load_model_config(full=True)
-
+    # Create the model
     secretfile: str = state["secretfile"]
-
-    # create the model
     model = SVGP(batch_size=1000)  # big batch size for the grid
     model.model_params["maxiter"] = maxiter
     model.model_params["kernel"]["name"] = "matern32"
