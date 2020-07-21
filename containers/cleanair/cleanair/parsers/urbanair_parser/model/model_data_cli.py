@@ -40,7 +40,7 @@ app = typer.Typer(help="Get data for model fitting")
 
 
 def load_model_config(
-    input_dir: Path = typer.Argument(None), full: bool = False
+    input_dir: Path = None, full: bool = False
 ) -> Union[BaseConfig, FullConfig]:
     """Load an existing configuration file"""
 
@@ -375,13 +375,13 @@ def save_cache(
         show_default=True,
     ),
     output_prediction: bool = typer.Option(
-        True,
+        False,
         "--output-prediction",
         help="Assert prediction data is copied from cache",
         show_default=True,
     ),
     output_csv: bool = typer.Option(
-        True, "--output-csv", help="Output dataframes as csv", show_default=True
+        False, "--output-csv", help="Output dataframes as csv", show_default=True
     ),
 ):
     """Copy all CACHE to OUTPUT-DIR
