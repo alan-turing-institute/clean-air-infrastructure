@@ -8,7 +8,7 @@ from cleanair.databases.tables import (
     JamCamVideoStats,
     AirQualityInstanceTable,
     AirQualityModelTable,
-    AirQualityDataTable
+    AirQualityDataTable,
 )
 from urbanair import main, databases
 from urbanair.types import DetectionClass
@@ -96,36 +96,39 @@ def forecast_stat_records():
     forecast_upload_datetimes = rrule.rrule(
         rrule.HOURLY,
         dtstart=parser.isoparse("2020-06-05T00:00:00"),
-        until=parser.isoparse("2020-06-06T00:00:00"),
+        until=parser.isoparse("2020-06-05T23:00:00"),
     )
 
     records_instance = []
     records_model = []
     records_data = []
-    records_model.append(AirQualityModelTable(
-        model_name="ssd",
-        param_id="eefef",
-        model_param={'hello' : 'hi'})
-    )
-        
-    records_data.append(AirQualityDataTable(
-        data_id="dmee",
-        data_config={'config': 'TestConfig'},
-        preprocessing={'prepoc': 'Test'})
-    )
-
     i = 0
     for vtime in forecast_upload_datetimes:
-        records_instance.append(AirQualityInstanceTable(
-                instance_id="kfjefefre",
+        records_model.append(
+            AirQualityModelTable(
+                model_name="ssd" + str(i),
+                param_id="eefef" + str(i),
+                model_param={"hello": "hi"},
+            )
+        )
+        records_data.append(
+            AirQualityDataTable(
+                data_id="dmee" + str(i),
+                data_config={"config": "TestConfig"},
+                preprocessing={"prepoc": "Test"},
+            )
+        )
+        records_instance.append(
+            AirQualityInstanceTable(
+                instance_id="kfjefefre" + str(i),
                 tag="adld",
-                git_hash = "sffrfre",
+                git_hash="sffrfre",
                 cluster_id="ldmeldedw",
-                model_name="ssd",
-                data_id="dmee",
-                param_id="eefef",
-                fit_start_time=vtime)
+                model_name="ssd" + str(i),
+                data_id="dmee" + str(i),
+                param_id="eefef" + str(i),
+                fit_start_time=vtime,
+            )
         )
         i += 1
-    
     return [records_instance, records_data, records_model]
