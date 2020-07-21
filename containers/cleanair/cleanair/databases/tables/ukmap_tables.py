@@ -3,7 +3,7 @@ Table for UKMap static data
 """
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE
-from geoalchemy2 import Geometry # type: ignore
+from geoalchemy2 import Geometry
 from ..base import Base
 
 

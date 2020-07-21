@@ -1,7 +1,7 @@
 """
 Tables for AQE data source
 """
-from geoalchemy2 import Geometry # type: ignore
+from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
