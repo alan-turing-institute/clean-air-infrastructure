@@ -71,7 +71,7 @@ class DBConnectionMixin:
         try:
             with open(secret_file) as f_secret:
                 data = json.load(f_secret)
-                self.logger.info(
+                self.logger.debug(
                     "Database connection information loaded from %s", green(f_secret)
                 )
                 return data
@@ -99,7 +99,7 @@ class DBConnectionMixin:
                 try:
                     with open(secret_fname) as f_secret:
                         data = json.load(f_secret)
-                    self.logger.info(
+                    self.logger.debug(
                         "Database connection information loaded from %s",
                         green(secret_fname),
                     )

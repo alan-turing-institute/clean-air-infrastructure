@@ -31,7 +31,8 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         dynamic=False,
         batch_size=10,
         sources=None,
-        **kwargs
+        insert_method="missing",
+        **kwargs,
     ):
         """Base class for extracting features.
         args:
@@ -55,6 +56,12 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             self.output_table = DynamicFeature
         else:
             self.output_table = StaticFeature
+
+        if insert_method == "all":
+            self.exclude_has_data = False
+        else:
+            self.exclude_has_data = True
+        self.insert_method = insert_method
 
     @property
     def feature_names(self):
@@ -459,7 +466,10 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             )
 
             missing_point_ids_df = self.get_static_feature_availability(
-                [feature_name], self.sources, exclude_has_data=True, output_type="df"
+                [feature_name],
+                self.sources,
+                exclude_has_data=self.exclude_has_data,
+                output_type="df",
             )
 
             if missing_point_ids_df.empty:

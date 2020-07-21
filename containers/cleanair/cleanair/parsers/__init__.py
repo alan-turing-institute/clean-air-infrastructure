@@ -11,7 +11,6 @@ from .complex import (
     FeatureSourceParser,
 )
 from .dashboard_parser import DashboardParser
-from .model_fitting_parser import ModelFittingParser
 from .simple import (
     InsertMethodParser,
     WebParser,
@@ -41,7 +40,6 @@ __all__ = [
     "DatabaseSetupParser",
     "AQEReadingArgumentParser",
     "LAQNReadingArgumentParser",
-    "ModelFittingParser",
     "StaticFeatureArgumentParser",
     "SatelliteArgumentParser",
     "ScootForecastFeatureArgumentParser",

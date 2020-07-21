@@ -3,6 +3,7 @@ Instances of models and data.
 """
 import abc
 from ..databases import DBWriter
+from ..loggers import get_logger
 from ..utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
 
@@ -42,6 +43,10 @@ class Instance(DBWriter):
         """
         # if the database is not available try and use local files
         super().__init__(secretfile=secretfile, **kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
 
         self._model_name = model_name
         self._param_id = param_id
