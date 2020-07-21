@@ -679,9 +679,17 @@ urbanair model data download --training-data --prediction-data
 urbanair model data save-cache <data-dir-name>
 ```
 
+### Run model
 ```bash
 urbanair model svgp fit <data-directory>
 ```
+
+or for deep gp
+
+```bash
+urbanair model deep-gp fit <data-directory>
+```
+
 ## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.
