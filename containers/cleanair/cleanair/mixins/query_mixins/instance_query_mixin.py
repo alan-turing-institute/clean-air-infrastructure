@@ -1,14 +1,17 @@
 """Mixin class for querying instances."""
 
-from typing import Any
-from sqlalchemy import and_ # type: ignore
+from typing import Any, TYPE_CHECKING
+from sqlalchemy import and_
 from ...decorators import db_query
 from ...databases.mixins import (
     DataTableMixin,
     InstanceTableMixin,
     ModelTableMixin,
 )
-
+from ...timestamps import datetime_from_str
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Query
+    from ...databases import Connector
 
 class InstanceQueryMixin:
     """
@@ -24,10 +27,11 @@ class InstanceQueryMixin:
     """
 
     # declaring these attributes prevents mypy errors
-    data_table: DataTableMixin
-    instance_table: InstanceTableMixin
-    model_table: ModelTableMixin
-    dbcnxn: Any
+    if TYPE_CHECKING:
+        data_table: DataTableMixin
+        instance_table: InstanceTableMixin
+        model_table: ModelTableMixin
+        dbcnxn: Connector
 
     @db_query
     def get_instances(  # pylint: disable=too-many-arguments
@@ -38,7 +42,7 @@ class InstanceQueryMixin:
         param_ids: list = None,
         models: list = None,
         fit_start_time: str = None,
-    ):
+    ) -> Query:
         """
         Get traffic instances and optionally filter by parameters.
 
@@ -58,21 +62,21 @@ class InstanceQueryMixin:
             # filter by instance ids
             if instance_ids:
                 readings = readings.filter(
-                    self.instance_table.instance_id.in_(instance_ids) # type: ignore # sqlalchemy.Column
+                    self.instance_table.instance_id.in_(instance_ids)
                 )
             # filter by data ids
             if data_ids:
-                readings = readings.filter(self.instance_table.data_id.in_(data_ids)) # type: ignore # sqlalchemy.Column
+                readings = readings.filter(self.instance_table.data_id.in_(data_ids))
             # filter by param ids and model name
             if param_ids:
-                readings = readings.filter(self.instance_table.param_id.in_(param_ids)) # type: ignore # sqlalchemy.Column
+                readings = readings.filter(self.instance_table.param_id.in_(param_ids))
             # filter by model names
             if models:
-                readings = readings.filter(self.instance_table.model_name.in_(models)) # type: ignore # sqlalchemy.Column
+                readings = readings.filter(self.instance_table.model_name.in_(models))
             # get all instances that were fit on or after the given date
             if fit_start_time:
                 readings = readings.filter(
-                    self.instance_table.fit_start_time >= fit_start_time # type: ignore # sqlalchemy.Column
+                    self.instance_table.fit_start_time >= datetime_from_str(fit_start_time, r"%Y-%m-%d %H:%M:%S")
                 )
             return readings
 
@@ -85,7 +89,7 @@ class InstanceQueryMixin:
         param_ids: list = None,
         models: list = None,
         fit_start_time: str = None,
-    ):
+    ) -> Query:
         """
         Get all traffic instances and join the json parameters.
 
