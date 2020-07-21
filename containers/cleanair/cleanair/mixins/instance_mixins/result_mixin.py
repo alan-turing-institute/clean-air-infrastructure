@@ -1,7 +1,7 @@
 """Mixin class for predictions from a model."""
 
 from typing import Optional, TYPE_CHECKING
-import pandas as pd # type: ignore
+import pandas as pd
 from sqlalchemy import inspect
 from ..query_mixins import ResultQueryMixin
 

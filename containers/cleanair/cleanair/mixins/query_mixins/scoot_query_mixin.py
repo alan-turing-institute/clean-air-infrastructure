@@ -3,7 +3,7 @@
 from typing import Any, Iterable, List, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import func, or_, and_
-import pandas as pd # type: ignore
+import pandas as pd
 from ...databases.tables import (
     MetaPoint,
     ScootDetector,
