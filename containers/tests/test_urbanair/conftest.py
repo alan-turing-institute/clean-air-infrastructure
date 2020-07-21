@@ -90,14 +90,14 @@ def forecast_stat_records():
     "Fake data for forecast routes test"
     forecast_upload_datetimes = rrule.rrule(
         rrule.HOURLY,
-        dtstart=parser.isoparse("2020-01-01T00:00:00"),
-        until=parser.isoparse("2020-01-02T00:00:00"),
+        dtstart=parser.isoparse("2020-06-05T00:00:00"),
+        until=parser.isoparse("2020-06-06T00:00:00"),
     )
 
     records = []
     i = 0
     for vtime in forecast_upload_datetimes:
-        records.append(AirQualityInstanceTable(fit_start_time=vtime,))
+        records.append(AirQualityInstanceTable(fit_start_time=vtime))
 
         i += 1
     return records

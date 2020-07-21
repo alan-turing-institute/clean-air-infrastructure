@@ -15,27 +15,27 @@ class TestBasic:
         assert "text/html" in response.headers["content-type"]
         assert response.status_code == 200
 
-    # def test_forecast_info(self, client_class):
-    #     "Test forecast info API"
-    #     response = client_class.get("/api/v1/forecasts/forecast_info/")
-    #     assert response.status_code == 200
+    def test_forecast_info(self, client_class):
+        "Test forecast info API"
+        response = client_class.get("/api/v1/forecasts/forecast_info/")
+        assert response.status_code == 200
 
 
 class TestAdvanced:
-    def test_setup(self, secretfile, connection_class, forecast_stat_records):
-        """Insert test data"""
+    # def test_setup(self, secretfile, connection_class, forecast_stat_records):
+    #     """Insert test data"""
 
-        try:
-            # Insert data
-            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+    #     try:
+    #         # Insert data
+    #         writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
-            writer.commit_records(
-                forecast_stat_records,
-                on_conflict="overwrite",
-                table=AirQualityInstanceTable,
-            )
-        except IntegrityError:
-            pytest.fail("Dummy data insert")
+    #         writer.commit_records(
+    #             forecast_stat_records,
+    #             on_conflict="overwrite",
+    #             table=AirQualityInstanceTable,
+    #         )
+    #     except IntegrityError:
+    #         pytest.fail("Dummy data insert")
 
     def test_24_hours(self, client_class, forecast_stat_records):
         """Test 24 hour request startime/endtime"""
@@ -54,15 +54,15 @@ class TestAdvanced:
         assert len(data) == len(forecast_stat_records)
 
     def test_12_hours_equivilant(self, client_class):
-        """Test /api/v1/jamcams/raw returns 12 hours"""
+        """Test /api/v1/forecasts/forecast_available returns 12 hours"""
 
         # Check response
         response1 = client_class.get(
-            "/api/v1/jamcams/raw/", params={"starttime": "2020-06-05T00:00:00",},
+            "/api/v1/forecasts/forecast_available/", params={"starttime": "2020-06-05T00:00:00",},
         ).json()
 
         response2 = client_class.get(
-            "/api/v1/jamcams/raw/", params={"endtime": "2020-06-05T12:00:00"},
+            "/api/v1/forecasts/forecast_available/", params={"endtime": "2020-06-05T12:00:00"},
         ).json()
 
         assert response1 == response2
