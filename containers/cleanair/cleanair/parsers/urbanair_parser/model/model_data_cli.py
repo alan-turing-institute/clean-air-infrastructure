@@ -12,10 +12,6 @@ from ..state import (
     MODEL_CONFIG_FULL,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
-    MODEL_TRAINING_X_PICKLE,
-    MODEL_TRAINING_Y_PICKLE,
-    MODEL_PREDICTION_X_PICKLE,
-    MODEL_PREDICTION_Y_PICKLE,
     MODEL_TRAINING_INDEX_PICKLE,
     MODEL_PREDICTION_INDEX_PICKLE,
 )
@@ -95,6 +91,36 @@ def delete_model_cache(overwrite: bool):
     for cache_file in cache_content:
         if cache_file.exists():
             cache_file.unlink()
+
+
+def get_training_arrays(input_dir: Optional[Path] = None):
+    """Get data arrays for tensorflow models"""
+
+    state["logger"].info(f"Getting data arrays")
+
+    full_config = load_model_config(input_dir, full=True)
+    model_data = ModelData(secretfile=state["secretfile"])
+
+    if not input_dir:
+        training_pickle = MODEL_TRAINING_PICKLE
+    else:
+        if not input_dir.is_dir():
+            state["logger"].warning(f"{input_dir} is not a directory")
+            raise typer.Abort()
+
+        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+
+    if not training_pickle.exists():
+        state["logger"].warning(f"{training_pickle} does not exist")
+        raise typer.Abort()
+
+    training_data_df_norm = load_training_data(input_dir)
+
+    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+        full_config, training_data_df_norm, prediction=False,
+    )
+
+    return X_dict, Y_dict, index_dict
 
 
 # pylint: disable=too-many-arguments
@@ -256,84 +282,6 @@ def download(
         state["logger"].info("Writing prediction data to cache")
         with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
-
-
-@app.command()
-def get_training_arrays(input_dir: Optional[Path] = None):
-    """Get data arrays for tensorflow models"""
-
-    state["logger"].info(f"Getting data arrays")
-
-    full_config = load_model_config(input_dir, full=True)
-    model_data = ModelData(secretfile=state["secretfile"])
-
-    if not input_dir:
-        training_pickle = MODEL_TRAINING_PICKLE
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
-
-    if not training_pickle.exists():
-        state["logger"].warning(f"{training_pickle} does not exist")
-        raise typer.Abort()
-
-    training_data_df_norm = load_training_data(input_dir)
-
-    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, training_data_df_norm, prediction=False,
-    )
-
-    return X_dict, Y_dict, index_dict
-
-
-@app.command()
-def get_prediction_arrays(input_dir: Optional[Path] = None):
-    """Get prediction arrays"""
-    state["logger"].info(f"Getting data arrays")
-
-    full_config = load_model_config(input_dir, full=True)
-    model_data = ModelData(secretfile=state["secretfile"])
-
-    if not input_dir:
-        prediction_pickle = MODEL_PREDICTION_PICKLE
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        prediction_pickle = input_dir.joinpath(*MODEL_PREDICTION_PICKLE.parts[-2:])
-
-    if not prediction_pickle.exists():
-        state["logger"].warning(f"{prediction_pickle} does not exist")
-        raise typer.Abort()
-
-    prediction_data_df_norm = load_prediction_data(input_dir)
-
-    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=False,
-    )
-
-    if MODEL_PREDICTION_PICKLE.exists():
-        state["logger"].info(f"Getting prediction data arrays")
-
-        with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-            prediction_data_df_norm = pickle.load(prediction_pickle_f)
-
-        X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-            full_config, prediction_data_df_norm, prediction=True,
-        )
-
-        with MODEL_PREDICTION_X_PICKLE.open("wb") as X_pickle_f:
-            pickle.dump(X_dict, X_pickle_f)
-
-        with MODEL_PREDICTION_Y_PICKLE.open("wb") as Y_pickle_f:
-            pickle.dump(Y_dict, Y_pickle_f)
-
-        with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
-            pickle.dump(index_dict, index_pickle_f)
 
 
 def load_training_data(input_dir: Optional[Path] = None):

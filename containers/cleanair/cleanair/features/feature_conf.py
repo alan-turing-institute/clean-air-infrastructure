@@ -1,7 +1,6 @@
 """
 Street Canyon feature extraction
 """
-from enum import Enum
 from ..databases.tables import StreetCanyon, OSHighway, UKMap
 from .feature_funcs import sum_length, avg_, min_, max_, sum_area
 from ..types import FeatureNames
