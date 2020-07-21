@@ -4,7 +4,12 @@ import pytest
 from dateutil import rrule, parser
 from sqlalchemy.orm import sessionmaker
 import numpy as np
-from cleanair.databases.tables import JamCamVideoStats, AirQualityInstanceTable
+from cleanair.databases.tables import (
+    JamCamVideoStats,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
+    AirQualityDataTable
+)
 from urbanair import main, databases
 from urbanair.types import DetectionClass
 
@@ -94,10 +99,33 @@ def forecast_stat_records():
         until=parser.isoparse("2020-06-06T00:00:00"),
     )
 
-    records = []
+    records_instance = []
+    records_model = []
+    records_data = []
+    records_model.append(AirQualityModelTable(
+        model_name="ssd",
+        param_id="eefef",
+        model_param={'hello' : 'hi'})
+    )
+        
+    records_data.append(AirQualityDataTable(
+        data_id="dmee",
+        data_config={'config': 'TestConfig'},
+        preprocessing={'prepoc': 'Test'})
+    )
+
     i = 0
     for vtime in forecast_upload_datetimes:
-        records.append(AirQualityInstanceTable(fit_start_time=vtime))
-
+        records_instance.append(AirQualityInstanceTable(
+                instance_id="kfjefefre",
+                tag="adld",
+                git_hash = "sffrfre",
+                cluster_id="ldmeldedw",
+                model_name="ssd",
+                data_id="dmee",
+                param_id="eefef",
+                fit_start_time=vtime)
+        )
         i += 1
-    return records
+    
+    return [records_instance, records_data, records_model]
