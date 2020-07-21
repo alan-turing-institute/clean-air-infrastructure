@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.schema import CreateSchema
 from sqlalchemy.sql import text
-from sqlalchemy_utils import database_exists, create_database # type: ignore
+from sqlalchemy_utils import database_exists, create_database
 from .base import Base
 from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
