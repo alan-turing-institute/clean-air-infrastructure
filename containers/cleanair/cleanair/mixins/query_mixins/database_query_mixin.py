@@ -2,7 +2,7 @@
 Mixin for useful database queries
 """
 
-from sqlalchemy import and_, func, literal, null # type: ignore
+from sqlalchemy import and_, func, literal, null
 from ...decorators import db_query
 from ...databases.tables import (
     AQEReading,
@@ -17,9 +17,16 @@ from ...databases.tables import (
 )
 from ...loggers import get_logger
 from ...timestamps import as_datetime
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Query
+    import datetime
+    from ...databases import DBWriter
+    Base = DBWriter
+else:
+    Base = object
 
-
-class DBQueryMixin:
+class DBQueryMixin(Base):
     """Common database queries. Child classes must also inherit from DBWriter"""
 
     def __init__(self, **kwargs):
@@ -52,7 +59,7 @@ class DBQueryMixin:
             return feature_types_q
 
     @db_query
-    def get_available_dynamic_features(self, start_date, end_date):
+    def get_available_dynamic_features(self, start_date: datetime.datetime, end_date: datetime.datetime) -> Query:
         """Return a list of the available dynamic features in the database.
             Only returns features that are available between start_date and end_date
         """
