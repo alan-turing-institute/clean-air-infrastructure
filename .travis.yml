@@ -75,7 +75,7 @@ jobs:
 
       script:
         # Run all pytest unit tests
-        # - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
+        - python -m pytest containers/tests/test_urbanair --secretfile $DB_SECRET_FILE
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
