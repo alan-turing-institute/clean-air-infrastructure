@@ -8,6 +8,7 @@ from . import Species
 from . import Source
 from . import FeatureNames
 from . import FeatureBufferSize
+from ..utils import hash_dict
 
 # pylint: disable=invalid-name
 DataConfig = Dict[str, Union[str, bool, List[str]]]
@@ -56,4 +57,4 @@ class FullConfig(BaseConfig):
 
     def data_id(self):
         "Return a hashed data id"
-        print(self.json(sort_keys=True))
+        return hash_dict(self.json(sort_keys=True))

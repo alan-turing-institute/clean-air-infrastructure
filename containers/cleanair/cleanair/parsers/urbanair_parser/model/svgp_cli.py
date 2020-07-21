@@ -79,22 +79,22 @@ def fit(
     model.model_params["kernel"]["name"] = "matern32"
 
     #  load the dataset
-    # aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
+    aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
     # dataset = ModelData(secretfile=secretfile)
 
     # instance for training and forecasting air quality
 
     fit_start_time = datetime.utcnow().isoformat()
 
-    # svgp_instance = AirQualityInstance(
-    #     model_name="svgp",
-    #     param_id=aq_model_params.param_id,
-    #     data_id=full_config.data_id(),
-    #     cluster_id=cluster_id,
-    #     tag=tag,
-    #     fit_start_time=fit_start_time,
-    #     secretfile=secretfile,
-    # )
+    svgp_instance = AirQualityInstance(
+        model_name="svgp",
+        param_id=aq_model_params.param_id,
+        data_id=full_config.data_id(),
+        cluster_id=cluster_id,
+        tag=tag,
+        fit_start_time=fit_start_time,
+        secretfile=secretfile,
+    )
 
     # train and forecast the model
     # svgp_instance.train(model, dataset)
