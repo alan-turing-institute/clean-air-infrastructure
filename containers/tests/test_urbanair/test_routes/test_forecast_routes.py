@@ -11,13 +11,6 @@ from cleanair.databases.tables import (
 # pylint: disable=C0115,R0201
 
 
-class TestBasic:
-    def test_forecast_info(self, client_class):
-        "Test forecast info API"
-        response = client_class.get("/api/v1/forecasts/forecast_info/")
-        assert response.status_code == 404
-
-
 class TestAdvanced:
     def test_setup_air(self, secretfile, connection_class, forecast_stat_records):
         """Insert test data"""
