@@ -515,7 +515,7 @@ class ModelData(DBReader, DBQueryMixin):
         """
 
         static_features = self.select_static_features(
-            features, source, point_ids, output_type="subquery"
+            features, source, output_type="subquery"
         )
 
         static_features_expand = self.expand_time_species(
