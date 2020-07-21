@@ -2,7 +2,7 @@
 
 from typing import Optional, TYPE_CHECKING
 import pandas as pd # type: ignore
-from sqlalchemy import inspect # type: ignore
+from sqlalchemy import inspect
 from ..query_mixins import ResultQueryMixin
 
 if TYPE_CHECKING:

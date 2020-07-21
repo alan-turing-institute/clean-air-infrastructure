@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from typing import Optional, Any, Type
-from sqlalchemy import func # type: ignore
+from sqlalchemy import func
 
 from ...databases.mixins import ResultTableMixin
 from ...databases.tables import MetaPoint
@@ -22,7 +22,7 @@ class ResultQueryMixin:
     @db_query
     def query_results(
         self,
-        instance_id, # type: ignore # sqlalchemy.Column
+        instance_id,
         data_id: Optional[str] = None,
         join_metapoint: Optional[bool] = False,
     ):
@@ -37,7 +37,7 @@ class ResultQueryMixin:
         base_query = [self.result_table]
         if join_metapoint:
             base_query += [
-                MetaPoint.source, # type: ignore # sqlalchemy.Column
+                MetaPoint.source,
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
             ]
