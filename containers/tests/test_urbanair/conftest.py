@@ -97,12 +97,7 @@ def forecast_stat_records():
     records = []
     i = 0
     for vtime in forecast_upload_datetimes:
-        records.append(
-            AirQualityInstanceTable(
-                instance_id="e9725df2c26a2a7589316fb69685e34678c2284a3c357078a62866300f6ff24b",
-                fit_start_time=vtime,
-            )
-        )
+        records.append(AirQualityInstanceTable(fit_start_time=vtime,))
 
         i += 1
     return records

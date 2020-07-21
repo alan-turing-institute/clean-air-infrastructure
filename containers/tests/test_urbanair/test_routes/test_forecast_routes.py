@@ -15,10 +15,10 @@ class TestBasic:
         assert "text/html" in response.headers["content-type"]
         assert response.status_code == 200
 
-    def test_forecast_info(self, client_class):
-        "Test forecast info API"
-        response = client_class.get("/api/v1/forecasts/forecast_info/")
-        assert response.status_code == 200
+    # def test_forecast_info(self, client_class):
+    #     "Test forecast info API"
+    #     response = client_class.get("/api/v1/forecasts/forecast_info/")
+    #     assert response.status_code == 200
 
 
 class TestAdvanced:
@@ -38,7 +38,7 @@ class TestAdvanced:
             pytest.fail("Dummy data insert")
 
     def test_24_hours(self, client_class, forecast_stat_records):
-        """Test 12 hour request startime/endtime"""
+        """Test 24 hour request startime/endtime"""
 
         # Check response
         response = client_class.get(
@@ -52,6 +52,20 @@ class TestAdvanced:
 
         data = response.json()
         assert len(data) == len(forecast_stat_records)
+
+    def test_12_hours_equivilant(self, client_class):
+        """Test /api/v1/jamcams/raw returns 12 hours"""
+
+        # Check response
+        response1 = client_class.get(
+            "/api/v1/jamcams/raw/", params={"starttime": "2020-06-05T00:00:00",},
+        ).json()
+
+        response2 = client_class.get(
+            "/api/v1/jamcams/raw/", params={"endtime": "2020-06-05T12:00:00"},
+        ).json()
+
+        assert response1 == response2
 
     def test_recent_404_no_data(self, client_class):
         """Request when no data is available"""
