@@ -33,7 +33,7 @@ from ..shared_args.dataset_options import HexGrid
 from ..shared_args.instance_options import ClusterId, Tag
 from ..shared_args.model_options import MaxIter
 from ....instance import AirQualityInstance, AirQualityModelParams
-from ....models import ModelData, SVGP, ModelConfig
+from ....models import ModelData, SVGP, ModelConfig, MRDGP
 from ....types import (
     Species,
     Source,
@@ -75,10 +75,18 @@ def fit(
     # Create the model
     secretfile: str = state["secretfile"]
 
+    #TODO: experiment_config default does not train
+    experiment_config = dict(
+        name="MR_DGP",
+        restore=False,
+        model_state_fp="./",
+        save_model_state=False,
+        train=True
+    )
+
     # Load Deep GP Model
-    model = SVGP(batch_size=1000)  # big batch size for the grid
+    model = MRDGP(batch_size=1000, experiment_config=experiment_config)  # big batch size for the grid
     model.model_params["maxiter"] = maxiter
-    model.model_params["kernel"]["name"] = "matern32"
 
     #  load the dataset
     # aq_model_params = AirQualityModelParams(secretfile, "svgp", model.model_params)
