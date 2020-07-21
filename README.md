@@ -658,13 +658,30 @@ Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 To train a model on your local machine you can run a model fitting entrypoint:
 
+### Generate a model config
 ```bash
-python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source satellite --pred-source laqn --pred-source hexgrid
 ```
 
-You can adjust the model parameters and data settings by changing the command line arguments.
-Use the `--help` flag to see available options.
+### Validate the config
+```bash
+urbanair model data generate-full-config
+```
 
+### Download all data
+
+```bash
+urbanair model data download --training-data --prediction-data
+```
+
+### Export data to directory
+```bash
+urbanair model data save-cache <data-dir-name>
+```
+
+```bash
+urbanair model svgp fit <data-directory>
+```
 ## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.
