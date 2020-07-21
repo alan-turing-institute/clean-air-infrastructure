@@ -1,7 +1,7 @@
 """An air quality result."""
 
 from typing import Optional, Type
-import pandas as pd # type: ignore
+import pandas as pd
 from ..databases import DBWriter
 from ..mixins import ResultMixin
 from ..databases.tables import AirQualityResultTable
