@@ -1,6 +1,6 @@
 """Jamcam database queries and external api calls"""
-from typing import Optional
-from datetime import datetime, timedelta
+from typing import Optional, Union
+from datetime import datetime, timedelta, date
 from fastapi import HTTPException
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
@@ -17,8 +17,8 @@ ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 def start_end_filter(
     query: Query,
-    starttime: Optional[datetime],
-    endtime: Optional[datetime],
+    starttime: Union[None, date, datetime],
+    endtime: Union[None, date, datetime],
     max_video_upload_time_sq: Alias,
 ) -> Query:
     """Create an sqlalchemy filter which implements the following:
@@ -28,24 +28,32 @@ def start_end_filter(
         If not starttime and endtime get the last day of available data
     """
 
+    # If a date provided take first hour of day
+    if isinstance(starttime, date):
+        starttime = datetime.combine(starttime, datetime.min.time())
+    if isinstance(endtime, date):
+        endtime = datetime.combine(endtime, datetime.min.time())
+
     if starttime and endtime:
         return query.filter(
-            JamCamVideoStats.video_upload_datetime >= starttime,
-            JamCamVideoStats.video_upload_datetime < endtime,
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat(),
+            JamCamVideoStats.video_upload_datetime < endtime.isoformat(),
         )
 
     # 24 hours from starttime
     if starttime:
         return query.filter(
-            JamCamVideoStats.video_upload_datetime >= starttime,
-            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
+            JamCamVideoStats.video_upload_datetime >= starttime.isoformat(),
+            JamCamVideoStats.video_upload_datetime
+            < (starttime + timedelta(hours=24)).isoformat(),
         )
 
     # 24 hours before endtime
     if endtime:
         return query.filter(
-            JamCamVideoStats.video_upload_datetime < endtime,
-            JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=24),
+            JamCamVideoStats.video_upload_datetime < endtime.isoformat(),
+            JamCamVideoStats.video_upload_datetime
+            >= (endtime - timedelta(hours=24)).isoformat(),
         )
 
     # Last available 24 hours
@@ -217,6 +225,50 @@ def get_jamcam_hourly(
 
     # Filter by time
     res = start_end_filter(res, starttime, endtime, max_video_upload_datetime_sq)
+
+    # Filter by detection class
+    res = detection_class_filter(res, detection_class)
+
+    return res
+
+
+@db_query
+def get_jamcam_daily(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    startdate: Optional[date] = None,
+    enddate: Optional[date] = None,
+) -> Query:
+    """Get daily aggregates"""
+
+    max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
+
+    res = (
+        db.query(
+            JamCamVideoStats.camera_id,
+            func.avg(JamCamVideoStats.counts).label("counts"),
+            JamCamVideoStats.detection_class,
+            func.date_trunc("day", JamCamVideoStats.video_upload_datetime).label(
+                "measurement_start_utc"
+            ),
+        )
+        .group_by(
+            func.date_trunc("day", JamCamVideoStats.video_upload_datetime),
+            JamCamVideoStats.camera_id,
+            JamCamVideoStats.detection_class,
+        )
+        .order_by(
+            JamCamVideoStats.camera_id,
+            func.date_trunc("day", JamCamVideoStats.video_upload_datetime),
+        )
+    )
+
+    # Filter by camera_id
+    res = camera_id_filter(res, camera_id)
+
+    # Filter by time
+    res = start_end_filter(res, startdate, enddate, max_video_upload_datetime_sq)
 
     # Filter by detection class
     res = detection_class_filter(res, detection_class)
