@@ -129,7 +129,7 @@ class TestRaw:
             "/api/v1/jamcams/raw/",
             params={
                 "starttime": "2020-01-01T00:00:00",
-                "endtime": "2020-01-03T00:00:00",
+                "endtime": "2020-01-03T01:00:00",
             },
         )
 
@@ -137,7 +137,7 @@ class TestRaw:
         assert "Cannot request more than two days" in response.json()["detail"]
 
     def test_request_404_2w(self, client_class, video_stat_records):
-        """Request more than 2 weeks hours"""
+        """Request more than 2 weeks"""
 
         camera_id = video_stat_records[0].camera_id
         response = client_class.get(
@@ -145,17 +145,17 @@ class TestRaw:
             params={
                 "camera_id": camera_id,
                 "starttime": "2020-01-01T00:00:00",
-                "endtime": "2020-01-09T00:00:00",
+                "endtime": "2020-01-15T01:00:00",
             },
         )
 
         assert response.status_code == 422
-        assert "Cannot request more than one week" in response.json()["detail"]
+        assert "Cannot request more than two weeks" in response.json()["detail"]
 
     def test_request_404_1_week(self, client_class, video_stat_records):
         """Requst when no data is available"""
 
-        camera_id = video_stat_records[0].camera_id.split(".mp4")[0]
+        camera_id = video_stat_records[0].camera_id
         response = client_class.get(
             "/api/v1/jamcams/raw/",
             params={
