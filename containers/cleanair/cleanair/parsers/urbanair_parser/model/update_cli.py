@@ -10,9 +10,9 @@ import typer
 from .model_data_cli import load_model_config
 from ..state import state
 from ..state.configuration import (
-    FORECAST_RESULTS_CSV,
+    FORECAST_RESULT_CSV,
     MODEL_PARAMS,
-    TRAINING_RESULTS_CSV,
+    TRAINING_RESULT_CSV,
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
@@ -63,11 +63,11 @@ def __load_result_df(
 
 def load_training_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
     """Load the predictions on the training set from a csv."""
-    return __load_result_df(input_dir, TRAINING_RESULTS_CSV)
+    return __load_result_df(input_dir, TRAINING_RESULT_CSV)
 
 def load_forecast_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
     """Load the predictions on the forecast set from a csv."""
-    return __load_result_df(input_dir, FORECAST_RESULTS_CSV)
+    return __load_result_df(input_dir, FORECAST_RESULT_CSV)
 
 def load_model_params(input_dir: Optional[Path] = None) -> ModelParams:
     """Load the model params from a json file."""
