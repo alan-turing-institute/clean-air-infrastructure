@@ -1,14 +1,18 @@
 """Confif for urbanair tests"""
 from fastapi.testclient import TestClient
 import pytest
+import uuid
+from sqlalchemy import func
 from dateutil import rrule, parser
 from sqlalchemy.orm import sessionmaker
 import numpy as np
 from cleanair.databases.tables import (
     JamCamVideoStats,
+    MetaPoint,
     AirQualityInstanceTable,
     AirQualityModelTable,
     AirQualityDataTable,
+    AirQualityResultTable
 )
 from urbanair import main, databases
 from urbanair.types import DetectionClass
@@ -102,6 +106,8 @@ def forecast_stat_records():
     records_instance = []
     records_model = []
     records_data = []
+    records_result = []
+    records_point = []
     i = 0
     for vtime in forecast_upload_datetimes:
         records_model.append(
@@ -130,5 +136,30 @@ def forecast_stat_records():
                 fit_start_time=vtime,
             )
         )
+        records_point.append(
+            MetaPoint(
+                source="snfvfdv" + str(i),
+                location=func.ST_SetSRID(func.ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [-123.365556, 48.428611]}'),4326), 
+                id=uuid.UUID('12345678-1234-5678-1234-567812345678'+ str(i)).hex
+            )
+        )
+        records_result.append(
+            AirQualityResultTable(
+                instance_id="kfjefefre" + str(i),
+                data_id="dmee" + str(i),
+                point_id=uuid.UUID('12345678-1234-5678-1234-567812345678'+ str(i)).hex,
+                measurement_start_utc=vtime,
+                NO2_mean="1.1561",
+                NO2_var="1.8595",
+                PM10_mean="0.62611",
+                PM10_var="0.5146",
+                PM25_mean="0.1561",
+                PM25_var="0.2616",
+                CO2_mean="0.9948",
+                CO2_var="0.4656",
+                O3_mean="1.36161",
+                O3_var="0.761616",
+            )
+        )
         i += 1
-    return [records_instance, records_data, records_model]
+    return [records_instance, records_data, records_model,records_point,records_result]

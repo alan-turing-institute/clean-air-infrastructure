@@ -3,9 +3,11 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
+    MetaPoint,
     AirQualityInstanceTable,
     AirQualityModelTable,
     AirQualityDataTable,
+    AirQualityResultTable
 )
 
 # pylint: disable=C0115,R0201
@@ -21,6 +23,8 @@ class TestAdvanced:
             records_instance = forecast_stat_records[0]
             records_data = forecast_stat_records[1]
             records_model = forecast_stat_records[2]
+            records_point = forecast_stat_records[3]
+            records_result = forecast_stat_records[4]
             writer.commit_records(
                 records_data, on_conflict="overwrite", table=AirQualityDataTable,
             )
@@ -31,6 +35,16 @@ class TestAdvanced:
                 records_instance,
                 on_conflict="overwrite",
                 table=AirQualityInstanceTable,
+            )
+            writer.commit_records(
+                records_point,
+                on_conflict="overwrite",
+                table=MetaPoint,
+            )
+            writer.commit_records(
+                records_result,
+                on_conflict="overwrite",
+                table=AirQualityResultTable,
             )
         except IntegrityError:
             pytest.fail("Dummy data insert")
