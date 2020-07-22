@@ -1,11 +1,23 @@
 """Fixtures for the model data class."""
 
+from typing import Iterable
 import pytest
+from pydantic import BaseModel
 import numpy as np
 from cleanair.types import FeaturesDict, TargetDict
-
+from cleanair.databases.tables import (
+    StaticFeature,
+    LAQNReading,
+    LAQNSite,
+    AQEReading,
+    AQESite,
+    SatelliteForecast,
+    SatelliteBox,
+)
 
 # pylint: disable=redefined-outer-name
+# @pytest.fixture(scope="function")
+# def laqn_sites():
 
 
 @pytest.fixture(scope="function")
