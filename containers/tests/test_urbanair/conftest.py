@@ -110,6 +110,7 @@ def forecast_stat_records():
     records_point = []
     i = 0
     for vtime in forecast_upload_datetimes:
+        val=uuid.uuid4()
         records_model.append(
             AirQualityModelTable(
                 model_name="ssd" + str(i),
@@ -140,14 +141,14 @@ def forecast_stat_records():
             MetaPoint(
                 source="snfvfdv" + str(i),
                 location=func.ST_SetSRID(func.ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [-123.365556, 48.428611]}'),4326), 
-                id=uuid.UUID('12345678-1234-5678-1234-567812345678'+ str(i)).hex
+                id=val.hex
             )
         )
         records_result.append(
             AirQualityResultTable(
                 instance_id="kfjefefre" + str(i),
                 data_id="dmee" + str(i),
-                point_id=uuid.UUID('12345678-1234-5678-1234-567812345678'+ str(i)).hex,
+                point_id=val.hex,
                 measurement_start_utc=vtime,
                 NO2_mean="1.1561",
                 NO2_var="1.8595",
