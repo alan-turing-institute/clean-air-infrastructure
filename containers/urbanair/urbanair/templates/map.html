@@ -29,7 +29,7 @@
     <div id="controls" class="panel">
         <div class="controls-options">Options</div>
         <div class="controls-container">
-            <label for="controls">Detection Classs</label><br>
+            <label for="controls">Detection Class</label><br>
             <select id="select-detection-class" onchange="changeMarkerType()">
                 <option value="person">People</option>
                 <option value="car">Cars</option>
@@ -41,7 +41,7 @@
             <br>
             <label for="controls">Date</label><br>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            <span style="color: red;">(experimental)</span>
+<!--            <span style="color: red;">(experimental)</span>-->
         </div><br>
     </div>
 
@@ -51,10 +51,10 @@
     </div>
 
     <!-- CAMERA DETAILS -->
-    <div id="detailsPanel" class="panel mono" style="visibility: hidden;">
+    <div id="detailsPanel" class="panel mono" style="visibility: hidden; font-size: 14px">
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
-            <strong id="panel-camera-id">CAMERA:</strong>
+            <span id="panel-camera-id">CAMERA:</span>
             <br><br>
             <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
             <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
@@ -62,9 +62,9 @@
             <label for="checkbox-ground-estimate">Show ground estimate</label>
             <input type="checkbox" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" checked>
             <br>
-            <span style='color: red'>Parameter estimation export in queue</span><br>
+<!--            <span style='color: red'>Parameter estimation export in queue</span><br>-->
             h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br>
-            phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>
+<!--            phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>-->
             u_0,v_0 | Vanishing point (pixels):  <br>
             S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA):
         </div>
@@ -384,7 +384,7 @@
 
     function updatePanel(camera) {
         document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
-        document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
+        document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`;
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
     }
 
