@@ -54,6 +54,13 @@ class TestAdvanced:
         response = client_class.get("/api/v1/forecasts/forecast_info/")
         assert response.status_code == 200
 
+    def test_result(self, client_class):
+        "Test forecast info API"
+        response = client_class.get("/api/v1/forecasts/forecast__model_results/", params={
+                "instance_id": "kfjefefre1",
+            },)
+        assert response.status_code == 200
+
     def test_24_hours_air(self, client_class, forecast_stat_records):
         """Test 24 hour request startime/endtime"""
 
