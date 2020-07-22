@@ -21,11 +21,11 @@ from ..types import DetectionClass
 
 router = APIRouter()
 
-ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
-ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
+TWO_WEEK_SECONDS = 14 * 24 * 60 * 60
+TWO_DAYS_SECONDS = 2 * 24 * 60 * 60
 
 
-async def common_jamcam_params(
+def common_jamcam_params(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
@@ -46,13 +46,13 @@ async def common_jamcam_params(
     if starttime and endtime:
         seconds_requested = (endtime - starttime).total_seconds()
 
-        if camera_id and (seconds_requested > ONE_WEEK_SECONDS):
+        if camera_id and (seconds_requested > TWO_WEEK_SECONDS):
             raise HTTPException(
                 422,
-                detail="""Cannot request more than one week of data in a single call when camera_id is provided. Check startime and endtime parameters""",
+                detail="""Cannot request more than two weeks of data in a single call when camera_id is provided. Check startime and endtime parameters""",
             )
 
-        if not camera_id and (seconds_requested > ONE_DAYS_SECONDS):
+        if not camera_id and (seconds_requested > TWO_DAYS_SECONDS):
             raise HTTPException(
                 422,
                 detail="""Cannot request more than two days of data in a single call when no camera_id is provided. Check startime and endtime parameters""",
@@ -71,7 +71,7 @@ async def common_jamcam_params(
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
 )
-async def camera_info() -> Response:
+def camera_info() -> Response:
     "Get camera info"
     return get_jamcam_info()
 
@@ -103,7 +103,7 @@ async def camera_available(
     description="Request counts of objects at jamcam cameras.",
     response_model=List[JamCamVideo],
 )
-async def camera_raw_counts(
+def camera_raw_counts(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
@@ -123,7 +123,7 @@ async def camera_raw_counts(
     response_model=List[JamCamVideoAverage],
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
-async def camera_hourly_average(
+def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
