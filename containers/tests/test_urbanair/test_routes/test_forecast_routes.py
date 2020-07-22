@@ -12,7 +12,6 @@ from cleanair.databases.tables import (
 
 # pylint: disable=C0115,R0201
 
-
 class TestAdvanced:
     def test_setup_air(self, secretfile, connection_class, forecast_stat_records):
         """Insert test data"""
@@ -54,11 +53,17 @@ class TestAdvanced:
         response = client_class.get("/api/v1/forecasts/forecast_info/")
         assert response.status_code == 200
 
-    def test_result(self, client_class):
-        "Test forecast info API"
-        response = client_class.get("/api/v1/forecasts/forecast__model_results/", params={
-                "instance_id": "kfjefefre1",
-            },)
+    def test_result(self, client_class, forecast_stat_records):
+
+        "Test forecast result info API"
+        instance_id = forecast_stat_records[4][0].instance_id
+        print (instance_id)
+        response = client_class.get(
+            "/api/v1/forecasts/forecast_geojson/",
+            params={
+                "instance_id": instance_id,
+            },
+        )
         assert response.status_code == 200
 
     def test_24_hours_air(self, client_class, forecast_stat_records):
