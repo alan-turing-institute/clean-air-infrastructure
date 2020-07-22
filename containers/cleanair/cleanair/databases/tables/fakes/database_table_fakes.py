@@ -4,10 +4,11 @@ from typing import Iterable, Optional
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
 import random
-from scipy.stats import uniform
+from scipy.stats import uniform, norm
+import numpy as np
 import string
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from ....types import Source
 
 
@@ -61,4 +62,26 @@ class LAQNSiteSchema(BaseModel):
     _gen_site_code = validator("site_code", allow_reuse=True, always=True)(
         gen_site_code
     )
+
+
+class LAQNReadingSchema(BaseModel):
+
+    site_code: str
+    species_code: str
+    measurement_start_utc: datetime
+    measurement_end_utc: Optional[datetime]
+    value: Optional[float]
+
+    @validator("value", always=True)
+    def gen_value(cls, v):
+        if v:
+            return v
+        return np.exp(norm.rvs(0, 1))
+
+    @validator("measurement_end_utc", always=True)
+    def gen_measurement_end_time(cls, v, values):
+        if v:
+            return v
+        else:
+            return values["measurement_start_utc"] + timedelta(hours=1)
 
