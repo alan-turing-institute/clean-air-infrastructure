@@ -40,7 +40,7 @@
             </select>
             <br>
             <label for="controls">Date</label><br>
-            <input type="date" id="date" min="2020-05-29" onchange="updateMarkersByDate()">
+            <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
             <span style="color: red;">(experimental)</span>
         </div><br>
     </div>
@@ -126,41 +126,42 @@
         return x;
     }
       
-    function updateGraph(e) {
-        let camera_id = this.options.id.replace("JamCams_", "")
+    function updateGraph() {
+        let camera_id = selectedCam;//this.options.id.replace("JamCams_", "")
         let starttime = getDate() + "T00%3A00%3A00";
         document.getElementById("chart").style.display = "block";
-        config.options.title.text = 'Loading ' + camera_id + "...";
-        config.data.labels = [];
-        config.data.datasets = [];
+        detailsChartConfig.options.title.text = 'Loading ' + camera_id + "...";
+        detailsChartConfig.data.labels = [];
+        detailsChartConfig.data.datasets = [];
         window.detailsChart.update();
         // https://urbanair.turing.ac.uk/
 
         fetch('api/v1/jamcams/raw?camera_id=' + camera_id + '&starttime=' + starttime)
-            .then(function (response) {
-                response.json().then(function (result) {
+        .then(function (response) {
+            response.json().then(function (result) {
 
-                    let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
-                    for (type of detection_classes) {
-                        let subdat = result.filter(function(item){return item.detection_class == type})
-                        let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
-                        
-                    //     zeroIdxs = result.counts[type].filter(i => i > 0);
-                            config.data.datasets.push(
-                                {
-                                    label: type,
-                                    backgroundColor: COLORS[type],
-                                    borderColor: COLORS[type],
-                                    data: counts,
-                                    fill: false,
-                                }
-                            )
-                    }
-                    config.options.title.text = 'Counts for camera ' + camera_id + ' on ' + getDate();
-                    window.detailsChart.update()
-                });
+                let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
+                for (type of detection_classes) {
+                    let subdat = result.filter(function(item){return item.detection_class == type})
+                    let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
+                    
+                //     zeroIdxs = result.counts[type].filter(i => i > 0);
+                    detailsChartConfig.data.datasets.push(
+                            {
+                                label: type,
+                                backgroundColor: COLORS[type],
+                                borderColor: COLORS[type],
+                                data: counts,
+                                fill: false,
+                            }
+                        )
+                }
+                detailsChartConfig.options.title.text = 'Counts for camera ' + camera_id + ' on ' + getDate();
+                window.detailsChart.update()
             });
+        });
     }
+
 
     map.on('load', () => {
 
@@ -222,7 +223,7 @@
 
             selectedCam = camera.id;
             map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
-            updateGraph(camera);
+            updateGraph();
             updatePanel(camera);
             showDetailsPanel();
         })
@@ -330,36 +331,6 @@
         });
     }
 
-    function updateGraph(camera) {
-        detailsChartConfig.options.title.text = `Loading camera ${camera.id}...`;
-        detailsChartConfig.data.labels = [];
-        detailsChartConfig.data.datasets = [];
-        window.detailsChart.update();
-        // https://urbanair.turing.ac.uk/
-
-        fetch(`api/v1/jamcams/raw?camera_id=${camera.id}`)
-        .then((response) => {
-            return response.json()
-        })
-        .then((result) => {
-            let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
-            for (type of detection_classes) {
-                let subdat = result.filter(function(item){return item.detection_class == type})
-                let counts =  subdat.map(({measurement_start_utc, counts}) => ({t:  new Date(measurement_start_utc,), y: counts})) 
-                detailsChartConfig.data.datasets.push(
-                    {
-                        label: type,
-                        backgroundColor: COLORS[type],
-                        borderColor: COLORS[type],
-                        data: counts,
-                        fill: false,
-                    }
-                )
-            }
-            detailsChartConfig.options.title.text = `Counts for camera ${camera.id} (last 12 hrs)`;
-            window.detailsChart.update()
-        });
-    }
             
     function updateBar(counts, type){
         
@@ -452,9 +423,11 @@
         }
     }
 
-    function updateMarkersByDate(){
+    function updateDate(){
         loadData(getDate());
+        updateGraph();
     }
+
 
     var detailsChartConfig = {
         type: 'line',
