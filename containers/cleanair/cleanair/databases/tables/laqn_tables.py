@@ -14,7 +14,9 @@ class LAQNSite(Base):
     __table_args__ = {"schema": "interest_points"}
 
     site_code = Column(String(4), primary_key=True, nullable=False)
-    point_id = Column(UUID, ForeignKey("interest_points.meta_point.id"), nullable=False)
+    point_id = Column(
+        UUID(as_uuid=True), ForeignKey("interest_points.meta_point.id"), nullable=False
+    )
     site_type = Column(String(20), nullable=False)
     date_opened = Column(TIMESTAMP, nullable=False)
     date_closed = Column(TIMESTAMP)
@@ -71,7 +73,9 @@ class LAQNReading(Base):
         nullable=False,
     )
     species_code = Column(String(4), primary_key=True, nullable=False)
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
+    )
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     value = Column(DOUBLE_PRECISION, nullable=True)
 
@@ -119,6 +123,7 @@ class LAQNReading(Base):
             for i, key in enumerate(old_key):
                 reading_dict[new_key[i]] = reading_dict.pop(key)
             return reading_dict
+
         # Construct the record and return it
         return LAQNReading(
             site_code=reading_dict["SiteCode"],
