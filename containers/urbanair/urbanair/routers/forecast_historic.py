@@ -41,9 +41,7 @@ async def common_forecast_start_end(
 
 
 async def common_forecast_id(
-    instance_id: str = Query(
-        None, description="A unique forecast instance id"
-    )
+    instance_id: str = Query(None, description="A unique forecast instance id")
 ) -> Dict:
     """Common ids in forecast routes."""
     return {"instance_id": instance_id}
@@ -95,10 +93,10 @@ async def forecast__model_results(
     response_model=List[AirPolutionFeature],
 )
 async def forecast_geojson(
-   commons: dict = Depends(common_forecast_id), db: Session = Depends(get_db)
+    commons: dict = Depends(common_forecast_id), db: Session = Depends(get_db)
 ) -> Optional[List[Dict]]:
 
-    data = get_forecast_json(db,commons["instance_id"]).limit(10)
+    data = get_forecast_json(db, commons["instance_id"]).limit(10)
 
     out = all_or_404(data)
 

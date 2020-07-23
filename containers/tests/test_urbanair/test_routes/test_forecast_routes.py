@@ -7,10 +7,11 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityModelTable,
     AirQualityDataTable,
-    AirQualityResultTable
+    AirQualityResultTable,
 )
 
 # pylint: disable=C0115,R0201
+
 
 class TestAdvanced:
     def test_setup_air(self, secretfile, connection_class, forecast_stat_records):
@@ -36,14 +37,10 @@ class TestAdvanced:
                 table=AirQualityInstanceTable,
             )
             writer.commit_records(
-                records_point,
-                on_conflict="overwrite",
-                table=MetaPoint,
+                records_point, on_conflict="overwrite", table=MetaPoint,
             )
             writer.commit_records(
-                records_result,
-                on_conflict="overwrite",
-                table=AirQualityResultTable,
+                records_result, on_conflict="overwrite", table=AirQualityResultTable,
             )
         except IntegrityError:
             pytest.fail("Dummy data insert")
@@ -57,12 +54,9 @@ class TestAdvanced:
 
         "Test forecast result info API"
         instance_id = forecast_stat_records[4][0].instance_id
-        print (instance_id)
+        print(instance_id)
         response = client_class.get(
-            "/api/v1/forecasts/forecast_geojson/",
-            params={
-                "instance_id": instance_id,
-            },
+            "/api/v1/forecasts/forecast_geojson/", params={"instance_id": instance_id,},
         )
         assert response.status_code == 200
 

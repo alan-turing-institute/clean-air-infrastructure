@@ -1,8 +1,7 @@
 """Confif for urbanair tests"""
+import uuid
 from fastapi.testclient import TestClient
 import pytest
-import uuid
-from sqlalchemy import func
 from dateutil import rrule, parser
 from sqlalchemy.orm import sessionmaker
 import numpy as np
@@ -12,7 +11,7 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityModelTable,
     AirQualityDataTable,
-    AirQualityResultTable
+    AirQualityResultTable,
 )
 from urbanair import main, databases
 from urbanair.types import DetectionClass
@@ -110,7 +109,7 @@ def forecast_stat_records():
     records_point = []
     i = 0
     for vtime in forecast_upload_datetimes:
-        val=uuid.uuid4()
+        val = uuid.uuid4()
         records_model.append(
             AirQualityModelTable(
                 model_name="ssd" + str(i),
@@ -140,8 +139,8 @@ def forecast_stat_records():
         records_point.append(
             MetaPoint(
                 source="snfvfdv" + str(i),
-                location=func.ST_SetSRID(func.ST_GeomFromGeoJSON('{"type": "Point", "coordinates": [-123.365556, 48.428611]}'),4326), 
-                id=val.hex
+                location="SRID=4326;POINT(-123.365556 48.428611)",
+                id=val.hex,
             )
         )
         records_result.append(
@@ -163,4 +162,10 @@ def forecast_stat_records():
             )
         )
         i += 1
-    return [records_instance, records_data, records_model,records_point,records_result]
+    return [
+        records_instance,
+        records_data,
+        records_model,
+        records_point,
+        records_result,
+    ]
