@@ -1,47 +1,9 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import List, Dict, Union, Optional
-from datetime import datetime
-import pickle
-import shutil
 import typer
-import json
-from pathlib import Path, PurePath
-from ..state import (
-    state,
-    MODEL_CACHE,
-    MODEL_CONFIG,
-    MODEL_CONFIG_FULL,
-    MODEL_DATA_CACHE,
-    MODEL_TRAINING_PICKLE,
-    MODEL_PREDICTION_PICKLE,
-    MODEL_TRAINING_X_PICKLE,
-    MODEL_TRAINING_Y_PICKLE,
-    MODEL_PREDICTION_X_PICKLE,
-    MODEL_PREDICTION_Y_PICKLE,
-    MODEL_TRAINING_INDEX_PICKLE,
-    MODEL_PREDICTION_INDEX_PICKLE,
-)
-from ..shared_args import (
-    UpTo,
-    NDays,
-    NDays_callback,
-    NHours,
-    ValidSources,
-    UpTo_callback,
-)
-from ..shared_args.dataset_options import HexGrid
+from pathlib import Path
 from ..shared_args.model_options import MaxIter
-
-from ....types import (
-    Species,
-    Source,
-    BaseConfig,
-    FullConfig,
-    FeatureNames,
-    FeatureBufferSize,
-)
 from .model_data_cli import load_model_config, get_training_arrays
-from ....loggers import red, green
+from ....models import SVGP
 
 app = typer.Typer(help="SVGP model fitting")
 
