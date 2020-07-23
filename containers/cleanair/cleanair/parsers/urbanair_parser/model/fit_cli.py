@@ -10,6 +10,7 @@ app = typer.Typer(help="SVGP model fitting")
 
 @app.command()
 def fit(
+    model_name: str = ModelName,
     input_dir: Path = typer.Argument(None),
     kernel: str = "matern32",
     maxiter: int = MaxIter,
