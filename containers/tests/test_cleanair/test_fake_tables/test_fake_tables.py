@@ -9,6 +9,8 @@ from cleanair.databases.tables.fakes import (
     MetaPointSchema,
     LAQNSiteSchema,
     LAQNReadingSchema,
+    AirQualityModelShema,
+    AirQualityDataShema
 )
 from cleanair.types import Source, Species
 

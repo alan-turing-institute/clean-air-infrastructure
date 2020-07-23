@@ -88,31 +88,44 @@ class LAQNReadingSchema(BaseModel):
 
 
 class AirQualityModelShema(BaseModel):
-    model_name = Optional[str]
-    param_id = Optional[str]
-    model_param = Json 
+    model_name: str = "svgp"
+    param_id: Optional[str]
+    model_param: Optional[Json]
 
     @validator("param_id", always=True)
     def gen_param_id(cls, v):
         if v:
             return v
-        return hash_fn(str(np.random()))
+        return hash_fn(str(random.random()))
 
-    @validator("model_name", always=True)
-    def gen_model_name(cls, v):
+    @validator("model_param", always=True)
+    def gen_model_param(cls, v):
         if v:
             return v
-        return "svgp"
+        return '{"params": "empty"}'
+   
 
 class AirQualityDataShema(BaseModel):
-    data_id = Optional[str]
-    data_config = Json
-    preprocessing = Json
+    data_id: Optional[str]
+    data_config: Optional[Json]
+    preprocessing: Optional[Json]
 
     @validator("data_id", always=True)
     def gen_data_id(cls, v):
         if v:
             return v
-        return hash_fn(str(np.random()))
+        return hash_fn(str(random.random()))
 
+    
+    @validator("data_config", always=True)
+    def gen_data_config(cls, v):
+        if v:
+            return v
+        return '{"data_config": "empty"}'
 
+    
+    @validator("preprocessing", always=True)
+    def gen_preprocessing(cls, v):
+        if v:
+            return v
+        return '{"preprocessing": "empty"}'
