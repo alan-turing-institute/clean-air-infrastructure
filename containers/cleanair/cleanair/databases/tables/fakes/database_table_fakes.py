@@ -87,7 +87,8 @@ class LAQNReadingSchema(BaseModel):
             return values["measurement_start_utc"] + timedelta(hours=1)
 
 
-class AirQualityModelShema(BaseModel):
+class AirQualityModelSchema(BaseModel):
+
     model_name: str = "svgp"
     param_id: Optional[str]
     model_param: Optional[Json]
@@ -103,9 +104,10 @@ class AirQualityModelShema(BaseModel):
         if v:
             return v
         return '{"params": "empty"}'
-   
 
-class AirQualityDataShema(BaseModel):
+
+class AirQualityDataSchema(BaseModel):
+
     data_id: Optional[str]
     data_config: Optional[Json]
     preprocessing: Optional[Json]
@@ -116,14 +118,12 @@ class AirQualityDataShema(BaseModel):
             return v
         return hash_fn(str(random.random()))
 
-    
     @validator("data_config", always=True)
     def gen_data_config(cls, v):
         if v:
             return v
         return '{"data_config": "empty"}'
 
-    
     @validator("preprocessing", always=True)
     def gen_preprocessing(cls, v):
         if v:

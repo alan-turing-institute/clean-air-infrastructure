@@ -4,13 +4,19 @@ from dateutil import rrule
 from dateutil.parser import isoparse
 from sqlalchemy.exc import IntegrityError, ProgrammingError, IntegrityError
 from cleanair.databases import DBWriter, DBReader
-from cleanair.databases.tables import MetaPoint, LAQNSite, LAQNReading
+from cleanair.databases.tables import (
+    MetaPoint,
+    LAQNSite,
+    LAQNReading,
+    AirQualityModelTable,
+    AirQualityDataTable,
+)
 from cleanair.databases.tables.fakes import (
     MetaPointSchema,
     LAQNSiteSchema,
     LAQNReadingSchema,
-    AirQualityModelShema,
-    AirQualityDataShema
+    AirQualityModelSchema,
+    AirQualityDataSchema,
 )
 from cleanair.types import Source, Species
 
@@ -57,6 +63,21 @@ def laqn_reading_records(laqn_site_records):
                 )
 
     return laqn_readings
+
+
+# AirPollution Schemas
+
+
+@pytest.fixture(scope="class")
+def airq_model_records():
+
+    return [AirQualityModelSchema() for i in range(100)]
+
+
+@pytest.fixture(scope="class")
+def airq_data_records():
+
+    return [AirQualityDataSchema() for i in range(100)]
 
 
 class TestDataFaker:
@@ -142,6 +163,40 @@ class TestDataFaker:
                 [i.dict() for i in laqn_reading_records],
                 on_conflict="overwrite",
                 table=LAQNReading,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
+
+class TestAirFaker:
+    def test_insert_model_readings(
+        self, secretfile, connection_class, airq_model_records
+    ):
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in airq_model_records],
+                on_conflict="overwrite",
+                table=AirQualityModelTable,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
+    def test_insert_data_readings(
+        self, secretfile, connection_class, airq_data_records
+    ):
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in airq_data_records],
+                on_conflict="overwrite",
+                table=AirQualityDataTable,
             )
         except Exception:
             pytest.fail("Dummy data insert")

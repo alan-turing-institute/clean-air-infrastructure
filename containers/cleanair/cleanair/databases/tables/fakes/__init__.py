@@ -1,4 +1,16 @@
-from .database_table_fakes import MetaPointSchema, LAQNSiteSchema, LAQNReadingSchema
+from .database_table_fakes import (
+    MetaPointSchema,
+    LAQNSiteSchema,
+    LAQNReadingSchema,
+    AirQualityModelSchema,
+    AirQualityDataSchema,
+)
 
 
-__all__ = ["MetaPointSchema", "LAQNSiteSchema", "LAQNReadingSchema"]
+__all__ = [
+    "MetaPointSchema",
+    "LAQNSiteSchema",
+    "LAQNReadingSchema",
+    "AirQualityModelSchema",
+    "AirQualityDataSchema",
+]
