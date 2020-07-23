@@ -1,7 +1,7 @@
 """Fake data generators which can be inserted into database"""
 
 from typing import Iterable, Optional
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Json
 from pydantic.dataclasses import dataclass
 import random
 from scipy.stats import uniform, norm
@@ -9,6 +9,7 @@ import numpy as np
 import string
 import uuid
 from datetime import datetime, date, timedelta
+from ....utils.hashing import hash_fn
 from ....types import Source
 
 
@@ -84,4 +85,34 @@ class LAQNReadingSchema(BaseModel):
             return v
         else:
             return values["measurement_start_utc"] + timedelta(hours=1)
+
+
+class AirQualityModelShema(BaseModel):
+    model_name = Optional[str]
+    param_id = Optional[str]
+    model_param = Json 
+
+    @validator("param_id", always=True)
+    def gen_param_id(cls, v):
+        if v:
+            return v
+        return hash_fn(str(np.random()))
+
+    @validator("model_name", always=True)
+    def gen_model_name(cls, v):
+        if v:
+            return v
+        return "svgp"
+
+class AirQualityDataShema(BaseModel):
+    data_id = Optional[str]
+    data_config = Json
+    preprocessing = Json
+
+    @validator("data_id", always=True)
+    def gen_data_id(cls, v):
+        if v:
+            return v
+        return hash_fn(str(np.random()))
+
 
