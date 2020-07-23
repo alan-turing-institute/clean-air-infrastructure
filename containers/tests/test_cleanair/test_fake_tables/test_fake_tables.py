@@ -10,6 +10,7 @@ from cleanair.databases.tables import (
     LAQNReading,
     AirQualityModelTable,
     AirQualityDataTable,
+    AirQualityInstanceTable
 )
 from cleanair.databases.tables.fakes import (
     MetaPointSchema,
@@ -17,6 +18,7 @@ from cleanair.databases.tables.fakes import (
     LAQNReadingSchema,
     AirQualityModelSchema,
     AirQualityDataSchema,
+    AirQualityInstanceSchema,
 )
 from cleanair.types import Source, Species
 
@@ -71,13 +73,27 @@ def laqn_reading_records(laqn_site_records):
 @pytest.fixture(scope="class")
 def airq_model_records():
 
-    return [AirQualityModelSchema() for i in range(100)]
+    return [AirQualityModelSchema() for i in range(10)]
 
 
 @pytest.fixture(scope="class")
 def airq_data_records():
 
-    return [AirQualityDataSchema() for i in range(100)]
+    return [AirQualityDataSchema() for i in range(10)]
+
+
+@pytest.fixture(scope="class")
+def airq_instance_records(airq_data_records, airq_model_records):
+
+    
+    return [AirQualityInstanceSchema(
+                        param_id=model.param_id,
+                        data_id=data.data_id,
+                        fit_start_time=isoparse("2020-01-01"),
+                    )
+            for model in airq_model_records
+            for data in airq_data_records
+    ]
 
 
 class TestDataFaker:
@@ -200,3 +216,20 @@ class TestAirFaker:
             )
         except Exception:
             pytest.fail("Dummy data insert")
+
+    def test_insert_instance_readings(
+        self, secretfile, connection_class, airq_instance_records
+    ):
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in airq_instance_records],
+                on_conflict="overwrite",
+                table=AirQualityInstanceTable,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+

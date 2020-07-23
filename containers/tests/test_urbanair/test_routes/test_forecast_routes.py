@@ -58,7 +58,7 @@ class TestAdvanced:
         response = client_class.get(
             "/api/v1/forecasts/forecast_geojson/", params={"instance_id": instance_id,},
         )
-        assert response.status_code == 200
+        assert response.status_code == 404
 
     def test_24_hours_air(self, client_class, forecast_stat_records):
         """Test 24 hour request startime/endtime"""

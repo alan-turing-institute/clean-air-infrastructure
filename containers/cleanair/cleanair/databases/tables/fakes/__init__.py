@@ -4,6 +4,7 @@ from .database_table_fakes import (
     LAQNReadingSchema,
     AirQualityModelSchema,
     AirQualityDataSchema,
+    AirQualityInstanceSchema,
 )
 
 
@@ -13,4 +14,5 @@ __all__ = [
     "LAQNReadingSchema",
     "AirQualityModelSchema",
     "AirQualityDataSchema",
+    "AirQualityInstanceSchema",
 ]

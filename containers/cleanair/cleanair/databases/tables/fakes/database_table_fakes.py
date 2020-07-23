@@ -30,6 +30,10 @@ def gen_site_code(v) -> str:
         return v
     return get_random_string(4)
 
+def gen_hash_id(v) -> str:
+    if v:
+        return v
+    return hash_fn(str(random.random()))
 
 class MetaPointSchema(BaseModel):
 
@@ -93,11 +97,7 @@ class AirQualityModelSchema(BaseModel):
     param_id: Optional[str]
     model_param: Optional[Json]
 
-    @validator("param_id", always=True)
-    def gen_param_id(cls, v):
-        if v:
-            return v
-        return hash_fn(str(random.random()))
+    _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
 
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
@@ -112,11 +112,7 @@ class AirQualityDataSchema(BaseModel):
     data_config: Optional[Json]
     preprocessing: Optional[Json]
 
-    @validator("data_id", always=True)
-    def gen_data_id(cls, v):
-        if v:
-            return v
-        return hash_fn(str(random.random()))
+    _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
 
     @validator("data_config", always=True)
     def gen_data_config(cls, v):
@@ -129,3 +125,22 @@ class AirQualityDataSchema(BaseModel):
         if v:
             return v
         return '{"preprocessing": "empty"}'
+
+class AirQualityInstanceSchema(BaseModel):
+
+    instance_id: Optional[str]
+    tag: Optional[str]
+    git_hash: Optional[str]
+    fit_start_time: datetime
+    cluster_id: Optional[str]
+    model_name: str = "svgp"
+    param_id: str
+    data_id: str
+
+    _gen_hash_id = validator("instance_id", allow_reuse=True, always=True)(gen_hash_id)
+    _gen_hash_id = validator("cluster_id", allow_reuse=True, always=True)(gen_hash_id)
+    _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
+    _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
+    _gen_hash_id = validator("git_hash", allow_reuse=True, always=True)(gen_hash_id)
+
+    _gen_site_code = validator("tag", allow_reuse=True, always=True)(gen_site_code)
