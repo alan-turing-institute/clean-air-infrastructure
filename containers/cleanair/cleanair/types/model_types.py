@@ -21,12 +21,12 @@ class BaseModelParams(BaseModel):
     kernel: Union[KernelParams, List[KernelParams]]
     likelihood_variance: float
     num_inducing_points: int
+    maxiter: int
     minibatch_size: int
 
 class SVGPParams(BaseModelParams):
     """Model parameters for the SVGP."""
     jitter: float
-    maxiter: int
 
 class MRDGPParams(BaseModel):
     """Model parameters for the Deep GP."""

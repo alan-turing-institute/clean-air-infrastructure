@@ -11,7 +11,7 @@ from ..state.configuration import MODEL_PARAMS
 from ....models import SVGP, ModelMixin
 from ....types.model_types import KernelParams, SVGPParams
 
-app = typer.Typer(help="SVGP model fitting")
+app = typer.Typer(help="Setup model parameters.")
 
 Jitter = typer.Option(1e-5, help="Amount of jitter to add.", show_default=True)
 Lengthscales = typer.Option(1.0, help="Initialising lengthscales of the kernel.", show_default=True)
@@ -59,4 +59,4 @@ def save_model_params(model_params: BaseModel, input_dir: Optional[Path] = None)
     else:
         params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
     with open(params_fp, "w") as params_file:
-        json.dump(model_params.json(), params_file)
+        json.dump(model_params.dict(), params_file, indent=4)
