@@ -1,12 +1,9 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import Optional
 import typer
 from pathlib import Path
-from ..shared_args.model_options import MaxIter
 from .model_data_cli import load_model_config, get_training_arrays
 from .update_cli import load_model_params
 from ....models import SVGP, ModelMixin
-from ....types import ParamsDict
 
 app = typer.Typer(help="SVGP model fitting")
 
