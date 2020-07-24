@@ -16,7 +16,7 @@ from ..state.configuration import (
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
-from ....types import ModelParams
+from ....types import ParamsDict
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -69,7 +69,7 @@ def load_forecast_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
     """Load the predictions on the forecast set from a csv."""
     return __load_result_df(input_dir, FORECAST_RESULT_CSV)
 
-def load_model_params(input_dir: Optional[Path] = None) -> ModelParams:
+def load_model_params(input_dir: Optional[Path] = None) -> ParamsDict:
     """Load the model params from a json file."""
     if not input_dir:
         params_fp = MODEL_PARAMS

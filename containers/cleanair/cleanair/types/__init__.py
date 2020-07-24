@@ -11,7 +11,7 @@ from .dataset_types import (
     FullConfig,
     InterestPointDict,
 )
-from .model_types import ModelParams
+from .model_types import ParamsDict
 
 
 __all__ = [

@@ -6,7 +6,7 @@ from ..shared_args.model_options import MaxIter
 from .model_data_cli import load_model_config, get_training_arrays
 from .update_cli import load_model_params
 from ....models import SVGP, ModelMixin
-from ....types import ModelParams
+from ....types import ParamsDict
 
 app = typer.Typer(help="SVGP model fitting")
 

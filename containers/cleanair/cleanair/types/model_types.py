@@ -1,7 +1,8 @@
 """Types for models and parameters."""
 
 from typing import Dict, List, Optional, Union
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
+from ..utils import hash_dict
 
 KernelDict = Dict[str, Union[str, float, List[Union[int, float]]]]
 ParamsDict = Dict[str, Union[float, bool, int, KernelDict, List[KernelDict]]]
@@ -29,3 +30,14 @@ class SVGPParams(BaseModelParams):
 
 class MRDGPParams(BaseModel):
     """Model parameters for the Deep GP."""
+
+    base_laqn: BaseModelParams
+    base_sat: BaseModelParams
+    dgp_sat: BaseModelParams
+    mixing_weight: Dict[str, Union[str, None]]
+    num_prediction_samples: int
+    num_samples_between_layers: int
+
+    def param_id(self):
+        """Return a hashed param id."""
+        return hash_dict(self.json(sort_keys=True))
