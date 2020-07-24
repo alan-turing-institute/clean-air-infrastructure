@@ -243,3 +243,13 @@ class TestAirFaker:
         except Exception:
             pytest.fail("Dummy data insert")
 
+    def test_read_instance_records(self, secretfile, connection_class, airq_instance_records):
+        """Check we can read the laqn site rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(AirQualityInstanceTable).all()
+
+        assert len(data) == len(airq_instance_records)
