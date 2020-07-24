@@ -57,6 +57,23 @@ def compile_create_materialized_view(element, compiler, **kw):
     )
 
 
+class SetViewOwner(DDLElement):
+    def __init__(self, name, owner, materialized=False):
+        self.name = name
+        self.owner = owner
+        self.materialized = materialized
+
+
+@compiler.compiles(SetViewOwner)
+def compile_set_view_owner(element, compiler, **kw):
+    return "ALTER {} VIEW {} OWNER TO {}".format(
+        "MATERIALIZED " if element.materialized else "",
+        element.name,
+        element.owner,        
+        compiler.sql_compiler.process(element.selectable, literal_binds=True),
+    )
+
+
 def create_table_from_selectable(
     name, selectable, schema, indexes=None, metadata=None, aliases=None
 ):
@@ -80,7 +97,7 @@ def create_table_from_selectable(
 
 
 def create_materialized_view(
-    name, selectable, metadata, indexes=None, aliases=None, schema="public"
+    name, selectable, metadata, indexes=None, aliases=None, schema="public", owner=None
 ):
     """ Create a view on a given metadata
 
@@ -117,6 +134,11 @@ def create_materialized_view(
     def create_indexes(target, connection, **kw):
         for idx in table.indexes:
             idx.create(connection)
+
+    if owner:
+        @sa.event.listens_for(metadata, "after_create")
+        def set_owner(target, connection, **kw):
+            SetViewOwner(name=name, owner=owner, materialized=True)
 
     return table
 
