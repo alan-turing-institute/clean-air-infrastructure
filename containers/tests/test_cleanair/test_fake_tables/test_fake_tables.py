@@ -10,7 +10,8 @@ from cleanair.databases.tables import (
     LAQNReading,
     AirQualityModelTable,
     AirQualityDataTable,
-    AirQualityInstanceTable
+    AirQualityInstanceTable,
+    AirQualityResultTable,
 )
 from cleanair.databases.tables.fakes import (
     MetaPointSchema,
@@ -19,11 +20,12 @@ from cleanair.databases.tables.fakes import (
     AirQualityModelSchema,
     AirQualityDataSchema,
     AirQualityInstanceSchema,
+    AirQualityResultSchema,
 )
 from cleanair.types import Source, Species
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def meta_records():
 
     return [
@@ -96,14 +98,32 @@ def airq_instance_records(airq_data_records, airq_model_records):
 
             airq_instance_readings.append(
                 AirQualityInstanceSchema(
-                data_id=airq_data_records[i].data_id,
-                param_id=airq_model_records[i].param_id,
-                model_name=airq_model_records[i].model_name,
-                fit_start_time=measurement_start_time,
+                    data_id=airq_data_records[i].data_id,
+                    param_id=airq_model_records[i].param_id,
+                    model_name=airq_model_records[i].model_name,
+                    fit_start_time=measurement_start_time,
                 )
-        )
+            )
 
     return airq_instance_readings
+
+@pytest.fixture(scope="class")
+def airq_result_records(airq_instance_records, meta_records):
+
+    airq_result_readings = []
+
+    for i in range(100):
+        airq_result_readings.append(
+            AirQualityResultSchema(
+                instance_id=airq_instance_records[i].instance_id,
+                data_id=airq_instance_records[i].data_id,
+                point_id=meta_records[i].id,
+                measurement_start_utc=airq_instance_records[i].fit_start_time,
+            )
+        )
+
+    return airq_result_readings
+
 
 
 class TestDataFaker:
@@ -142,7 +162,7 @@ class TestDataFaker:
     def test_insert_laqn_site_records(
         self, secretfile, connection_class, laqn_site_records, meta_records
     ):
-        "Insert laqn data"
+        """Insert laqn data"""
 
         try:
             # Insert data
@@ -195,10 +215,12 @@ class TestDataFaker:
 
 
 class TestAirFaker:
+   
     def test_insert_model_readings(
         self, secretfile, connection_class, airq_model_records
     ):
-
+        """Insert model schema data"""
+    
         try:
             # Insert data
             writer = DBWriter(secretfile=secretfile, connection=connection_class)
@@ -214,6 +236,7 @@ class TestAirFaker:
     def test_insert_data_readings(
         self, secretfile, connection_class, airq_data_records
     ):
+        """Insert data schema info"""
 
         try:
             # Insert data
@@ -230,6 +253,7 @@ class TestAirFaker:
     def test_insert_instance_readings(
         self, secretfile, connection_class, airq_instance_records
     ):
+        """Insert instance schema data"""
 
         try:
             # Insert data
@@ -244,7 +268,7 @@ class TestAirFaker:
             pytest.fail("Dummy data insert")
 
     def test_read_instance_records(self, secretfile, connection_class, airq_instance_records):
-        """Check we can read the laqn site rows"""
+        """Check we can read the instance shema rows"""
 
         reader = DBReader(secretfile=secretfile, connection=connection_class)
 
@@ -253,3 +277,19 @@ class TestAirFaker:
             data = session.query(AirQualityInstanceTable).all()
 
         assert len(data) == len(airq_instance_records)
+
+    def test_insert_result_readings(
+        self, secretfile, connection_class, airq_result_records
+    ):
+        """Insert result schema data"""
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in airq_result_records],
+                on_conflict="overwrite",
+                table=AirQualityResultTable,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
