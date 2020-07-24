@@ -90,24 +90,22 @@ class LAQNReadingSchema(BaseModel):
         else:
             return values["measurement_start_utc"] + timedelta(hours=1)
 
-
 class AirQualityModelSchema(BaseModel):
-
+    
     model_name: str = "svgp"
-    param_id: Optional[str]
     model_param: Optional[Json]
+    param_id: Optional[str]
 
     _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-
+    
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
         if v:
             return v
         return '{"params": "empty"}'
 
-
 class AirQualityDataSchema(BaseModel):
-
+    
     data_id: Optional[str]
     data_config: Optional[Json]
     preprocessing: Optional[Json]
@@ -128,19 +126,17 @@ class AirQualityDataSchema(BaseModel):
 
 class AirQualityInstanceSchema(BaseModel):
 
+    model_name: str
+    param_id: str
+    data_id: str
+    fit_start_time: datetime
+    cluster_id: Optional[str]
     instance_id: Optional[str]
     tag: Optional[str]
     git_hash: Optional[str]
-    fit_start_time: datetime
-    cluster_id: Optional[str]
-    model_name: str = "svgp"
-    param_id: str
-    data_id: str
+    
 
     _gen_hash_id = validator("instance_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_hash_id = validator("cluster_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_hash_id = validator("git_hash", allow_reuse=True, always=True)(gen_hash_id)
-
-    _gen_site_code = validator("tag", allow_reuse=True, always=True)(gen_site_code)
+    _gen_hash_id1 = validator("cluster_id", allow_reuse=True, always=True)(gen_hash_id)
+    _gen_site_code = validator("git_hash", allow_reuse=True, always=True)(gen_site_code)
+    _gen_site_code1 = validator("tag", allow_reuse=True, always=True)(gen_site_code)

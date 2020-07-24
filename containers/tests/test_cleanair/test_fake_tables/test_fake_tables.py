@@ -73,27 +73,37 @@ def laqn_reading_records(laqn_site_records):
 @pytest.fixture(scope="class")
 def airq_model_records():
 
-    return [AirQualityModelSchema() for i in range(10)]
+    return [AirQualityModelSchema() for i in range(100)]
 
 
 @pytest.fixture(scope="class")
 def airq_data_records():
 
-    return [AirQualityDataSchema() for i in range(10)]
+    return [AirQualityDataSchema() for i in range(100)]
 
-
+    
 @pytest.fixture(scope="class")
 def airq_instance_records(airq_data_records, airq_model_records):
 
-    
-    return [AirQualityInstanceSchema(
-                        param_id=model.param_id,
-                        data_id=data.data_id,
-                        fit_start_time=isoparse("2020-01-01"),
-                    )
-            for model in airq_model_records
-            for data in airq_data_records
-    ]
+    airq_instance_readings = []
+
+    for i in range(100):
+        for measurement_start_time in rrule.rrule(
+                rrule.HOURLY,
+                dtstart=isoparse("2020-01-01"),
+                until=isoparse("2020-01-07"),
+        ):
+
+            airq_instance_readings.append(
+                AirQualityInstanceSchema(
+                data_id=airq_data_records[i].data_id,
+                param_id=airq_model_records[i].param_id,
+                model_name=airq_model_records[i].model_name,
+                fit_start_time=measurement_start_time,
+                )
+        )
+
+    return airq_instance_readings
 
 
 class TestDataFaker:
