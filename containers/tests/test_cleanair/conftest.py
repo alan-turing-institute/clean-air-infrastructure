@@ -73,7 +73,7 @@ def svgp_params_dict() -> ModelParams:
         "jitter": 1e-5,
         "likelihood_variance": 0.1,
         "minibatch_size": 100,
-        "n_inducing_points": 100,
+        "num_inducing_points": 100,
         "restore": False,
         "train": True,
         "model_state_fp": None,

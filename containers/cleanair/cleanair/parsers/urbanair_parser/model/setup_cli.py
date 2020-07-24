@@ -10,9 +10,7 @@ from ..state.configuration import MODEL_PARAMS
 from ....models import SVGP, ModelMixin
 from ....types import ModelParams
 
-
 app = typer.Typer(help="SVGP model fitting")
-
 
 @app.command()
 def svgp(
@@ -25,6 +23,9 @@ def svgp(
     model = SVGP(batch_size=1000, tasks=full_config.species)
     model.model_params["maxiter"] = maxiter
     model.model_params["kernel"]["name"] = kernel
+
+    # Save model parameters
+    save_model_params(model.model_params, input_dir=input_dir)
 
 def save_model_params(model_params: ModelParams, input_dir: Optional[Path] = None) -> None:
     """Load the model params from a json file."""

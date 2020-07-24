@@ -24,7 +24,7 @@ class SVGP(ModelMixin):
     minimum_param_keys = [
         "likelihood_variance",
         "minibatch_size",
-        "n_inducing_points",
+        "num_inducing_points",
         "train",
         "jitter",
         "maxiter",
@@ -41,9 +41,9 @@ class SVGP(ModelMixin):
             jitter=1e-5,
             likelihood_variance=0.1,
             minibatch_size=100,
-            n_inducing_points=2000,
+            num_inducing_points=2000,
             maxiter=100,
-            kernel=dict(name="mat32+linear", variance=0.1, lengthscale=0.1),
+            kernel=dict(name="matern32", type="matern32", variance=0.1, lengthscales=0.1),
         )
 
     def setup_model(
@@ -68,14 +68,15 @@ class SVGP(ModelMixin):
         with gpflow.settings.temp_settings(
             custom_config
         ), gpflow.session_manager.get_session().as_default():
-            kernel_name = self.model_params["kernel"]["name"]
-            if kernel_name == "rbf":
+            kernel_type = self.model_params["kernel"]["type"]
+            if kernel_type == "rbf":
                 kern = gpflow.kernels.RBF(
+                    name=self.model_params["kernel"]["name"],
                     input_dim=num_input_dimensions,
-                    lengthscales=self.model_params["kernel"]["lengthscale"],
+                    lengthscales=self.model_params["kernel"]["lengthscales"],
                     ARD=True,
                 )
-            elif kernel_name == "matern32":
+            elif kernel_type == "matern32":
                 kern = gpflow.kernels.Matern32(
                     input_dim=num_input_dimensions,
                     variance=1,
@@ -118,10 +119,10 @@ class SVGP(ModelMixin):
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
-        if self.model_params["n_inducing_points"] > x_array.shape[0]:
-            self.model_params["n_inducing_points"] = x_array.shape[0]
+        if self.model_params["num_inducing_points"] > x_array.shape[0]:
+            self.model_params["num_inducing_points"] = x_array.shape[0]
 
-        z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
+        z_r = kmeans2(x_array, self.model_params["num_inducing_points"], minit="points")[
             0
         ]
 
