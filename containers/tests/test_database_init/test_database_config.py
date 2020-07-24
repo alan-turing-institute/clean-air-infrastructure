@@ -53,6 +53,6 @@ def test_configure_role(
     db_config.create_user(
         readonly_user_login["username"], readonly_user_login["password"]
     )
-    db_config.grant_role_to_user(readonly_user_login["username"], "readonly")
+    db_config.grant_role(readonly_user_login["username"], "readonly")
 
     assert readonly_user_login["username"] in db_config.list_roles()
