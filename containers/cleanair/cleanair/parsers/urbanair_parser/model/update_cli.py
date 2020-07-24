@@ -1,10 +1,9 @@
 """Command line interface for updating the database with results."""
 
-
+from typing import Optional, Union
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 import pandas as pd
 import typer
 from .model_data_cli import load_model_config
@@ -16,7 +15,7 @@ from ..state.configuration import (
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
-from ....types import ParamsDict
+from ....types.model_types import SVGPParams, MRDGPParams
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -69,11 +68,16 @@ def load_forecast_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
     """Load the predictions on the forecast set from a csv."""
     return __load_result_df(input_dir, FORECAST_RESULT_CSV)
 
-def load_model_params(input_dir: Optional[Path] = None) -> ParamsDict:
+def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRDGPParams, SVGPParams]:
     """Load the model params from a json file."""
     if not input_dir:
         params_fp = MODEL_PARAMS
     else:
         params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
     with open(params_fp, "r") as params_file:
-        return json.load(params_file)
+        params_dict = json.load(params_file)
+    if model_name == "svgp":
+        return SVGPParams(**params_dict)
+    if model_name == "mrdgp":
+        return MRDGPParams(**params_dict)
+    raise ValueError("Must pass a valid model name.")

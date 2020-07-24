@@ -10,14 +10,32 @@ from ....types import ParamsDict
 
 app = typer.Typer(help="SVGP model fitting")
 
+Refresh = typer.Option(default=10, help="Frequency of printing ELBO.")
+Restore = typer.Option(default=False, help="Restore the model state from cache.")
+
 @app.command()
-def fit(
-    model_name: str,
+def svgp(
     input_dir: Path = typer.Argument(None),
-    batch_size: int = typer.Option(default=100, help="Size of batches for prediction."),
-    refresh: int = typer.Option(default=10, help="Frequency of printing ELBO."),
-    restore: bool = typer.Option(default=False, help="Restore the model state from cache."),
+    refresh: int = Refresh,
+    restore: bool = Restore,
 ) -> None:
+    """Fit a Sparse Variational Gaussian Process."""
+    model_params = load_model_params("svgp", input_dir)
+    model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
+    fit_model(model, input_dir)
+
+@app.command()
+def mrdgp(
+    input_dir: Path = typer.Argument(None),
+    refresh: int = Refresh,
+    restore: bool = Restore,
+) -> None:
+    """Fit a Multi-resolution Deep Gaussian Process."""
+    model_params = load_model_params("mrdgp", input_dir)
+    # TODO create model and call fit_model method
+    raise NotImplementedError("Deep GP coming soon :p")
+
+def fit_model(model: ModelMixin, input_dir: Path) -> None:
     """Train a model loading data from INPUT-DIR
 
     If INPUT-DIR not provided will try to load data from the urbanair CLI cache
@@ -27,13 +45,6 @@ def fit(
     # Load data and configuration file
     X_train, Y_train, _ = get_training_arrays(input_dir)
     full_config = load_model_config(input_dir, full=True)
-
-    # Load model params from file and create model
-    model_params = load_model_params(input_dir)
-    if model_name == "svgp":
-        model = SVGP(model_params=model_params, tasks=full_config.species)
-    elif model_name == "deepgp":
-        raise NotImplementedError("Need to implement Deep GP.")
 
     # Fit model
     model.fit(X_train, Y_train)
