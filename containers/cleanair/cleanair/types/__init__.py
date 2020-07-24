@@ -22,7 +22,7 @@ __all__ = [
     "FeaturesDict",
     "FeatureBufferSize",
     "InterestPointDict",
-    "ModelParams",
+    "ParamsDict",
     "NDArrayTuple",
     "TargetDict",
     "Source",
