@@ -17,6 +17,7 @@ def MyView():
         __table__ = create_materialized_view(
             name="test_view",
             schema="jamcam",
+            owner="refresher",
             selectable=select([JamCamVideoStats.id, JamCamVideoStats.camera_id]),
             metadata=Base.metadata,
         )
