@@ -4,13 +4,23 @@ from dateutil import rrule
 from dateutil.parser import isoparse
 from sqlalchemy.exc import IntegrityError, ProgrammingError, IntegrityError
 from cleanair.databases import DBWriter, DBReader
-from cleanair.databases.tables import MetaPoint, LAQNSite, LAQNReading
+from cleanair.databases.tables import (
+    MetaPoint,
+    LAQNSite,
+    LAQNReading,
+    AQESite,
+    AQEReading,
+    StaticFeature,
+)
 from cleanair.databases.tables.fakes import (
     MetaPointSchema,
     LAQNSiteSchema,
     LAQNReadingSchema,
+    AQESiteSchema,
+    AQEReadingSchema,
+    StaticFeaturesSchema,
 )
-from cleanair.types import Source, Species
+from cleanair.types import Source, Species, FeatureNames
 
 
 @pytest.fixture(scope="class")
@@ -24,11 +34,22 @@ def meta_records():
 
 
 @pytest.fixture(scope="class")
+def aqe_site_records(meta_records):
+
+    return [
+        AQESiteSchema(point_id=rec.id, date_opened="2015-01-01")
+        for rec in meta_records
+        if rec.source == Source.aqe
+    ]
+
+
+@pytest.fixture(scope="class")
 def laqn_site_records(meta_records):
 
     return [
         LAQNSiteSchema(point_id=rec.id, date_opened="2015-01-01")
         for rec in meta_records
+        if rec.source == Source.laqn
     ]
 
 
@@ -55,6 +76,47 @@ def laqn_reading_records(laqn_site_records):
                 )
 
     return laqn_readings
+
+
+@pytest.fixture(scope="class")
+def aqe_reading_records(aqe_site_records):
+    """AQE reading records assuming full record set with all species at every sensor and no missing data"""
+    aqe_readings = []
+    for site in aqe_site_records:
+
+        for species in Species:
+
+            for measurement_start_time in rrule.rrule(
+                rrule.HOURLY,
+                dtstart=isoparse("2020-01-01"),
+                until=isoparse("2020-01-07"),
+            ):
+
+                aqe_readings.append(
+                    AQEReadingSchema(
+                        site_code=site.site_code,
+                        species_code=species,
+                        measurement_start_utc=measurement_start_time,
+                    )
+                )
+
+    return aqe_readings
+
+
+@pytest.fixture(scope="class")
+def static_feature_records(meta_records):
+    """Static features records"""
+    static_features = []
+    for rec in meta_records:
+        for feature in FeatureNames:
+
+            static_features.append(
+                StaticFeaturesSchema(
+                    point_id=rec.id, feature_name=feature, feature_source=rec.source
+                )
+            )
+
+    return static_features
 
 
 class TestDataFaker:
@@ -93,7 +155,7 @@ class TestDataFaker:
     def test_insert_laqn_site_records(
         self, secretfile, connection_class, laqn_site_records, meta_records
     ):
-        "Insert laqn data"
+        "Insert laqn site data"
 
         try:
             # Insert data
@@ -103,6 +165,23 @@ class TestDataFaker:
                 [i.dict() for i in laqn_site_records],
                 on_conflict="overwrite",
                 table=LAQNSite,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
+    def test_insert_aqe_site_records(
+        self, secretfile, connection_class, aqe_site_records, meta_records
+    ):
+        "Insert aqe site data"
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in aqe_site_records],
+                on_conflict="overwrite",
+                table=AQESite,
             )
         except Exception:
             pytest.fail("Dummy data insert")
@@ -128,6 +207,17 @@ class TestDataFaker:
 
         assert len(data) == len(laqn_site_records)
 
+    def test_read_aqe_records(self, secretfile, connection_class, aqe_site_records):
+        """Check we can read the laqn site rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(AQESite).all()
+
+        assert len(data) == len(aqe_site_records)
+
     def test_insert_laqn_readings(
         self, secretfile, connection_class, laqn_reading_records
     ):
@@ -140,6 +230,62 @@ class TestDataFaker:
                 [i.dict() for i in laqn_reading_records],
                 on_conflict="overwrite",
                 table=LAQNReading,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
+    def test_read_laqn_readings(
+        self, secretfile, connection_class, laqn_reading_records
+    ):
+        """Check we can read the laqn site rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(LAQNReading).all()
+
+        assert len(data) == len(laqn_reading_records)
+
+    def test_insert_aqe_readings(
+        self, secretfile, connection_class, aqe_reading_records
+    ):
+        "Insert aqe reading data"
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in aqe_reading_records],
+                on_conflict="overwrite",
+                table=AQEReading,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
+    def test_read_aqe_readings(self, secretfile, connection_class, aqe_reading_records):
+        """Check we can read the aqe reading rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(AQEReading).all()
+
+        assert len(data) == len(aqe_reading_records)
+
+    def test_insert_static_features(
+        self, secretfile, connection_class, static_feature_records
+    ):
+        "Insert static features"
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in static_feature_records],
+                on_conflict="overwrite",
+                table=StaticFeature,
             )
         except Exception:
             pytest.fail("Dummy data insert")
