@@ -1,10 +1,19 @@
 """Commands for a Sparse Variational GP to model air quality."""
 import logging
-import typer
+import pickle
 from pathlib import Path
-from .model_data_cli import load_model_config, get_training_arrays
+from typing import Optional
+import typer
+import pandas as pd
+from .model_data_cli import (
+    get_prediction_arrays,
+    get_training_arrays,
+    load_model_config,
+)
 from .update_cli import load_model_params
+from ..state.configuration import FORECAST_RESULT_PICKLE
 from ....models import SVGP, ModelMixin
+from ....types import TargetDict
 
 app = typer.Typer(help="SVGP model fitting")
 
@@ -49,5 +58,24 @@ def fit_model(model: ModelMixin, input_dir: Path) -> None:
     # Fit model
     model.fit(X_train, Y_train)
 
-    # TODO Prediction
-    
+    # Prediction
+    X_test = get
+    y_forecast = model.predict()
+
+
+def __save_prediction_to_pickle(
+    y_pred: TargetDict,
+    result_pickle_path: Path,
+    input_dir: Optional[Path] = None
+) -> None:
+    """Save a dictionary of predictions to a pickle."""
+    if input_dir:
+        result_fp = result_pickle_path
+    else:
+        result_fp = input_dir.joinpath(*result_pickle_path.parts[-2:])
+    with open(result_fp, "w") as pickle_file:
+        pickle.dump(y_pred, pickle_file)
+
+def save_forecast_to_pickle(y_pred: TargetDict, input_dir: Optional[Path] = None) -> None:
+    """Save the results dataframe to a file."""
+    __save_prediction_to_pickle(y_pred, FORECAST_RESULT_PICKLE, input_dir=input_dir)

@@ -50,8 +50,8 @@ def results(
     result.update_remote_tables()  # write results to DB
 
 def __load_result_df(
+    result_csv_path: Path,
     input_dir: Optional[Path] = None,
-    result_csv_path: Optional[Path] = None
 ) -> pd.DataFrame:
     """Load a results dataframe."""
     if not input_dir:
@@ -76,6 +76,7 @@ def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRD
         params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
     with open(params_fp, "r") as params_file:
         params_dict = json.load(params_file)
+    assert isinstance(params_dict, dict)
     if model_name == "svgp":
         return SVGPParams(**params_dict)
     if model_name == "mrdgp":

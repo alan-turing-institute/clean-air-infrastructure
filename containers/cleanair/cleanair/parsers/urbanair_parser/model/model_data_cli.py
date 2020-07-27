@@ -1,10 +1,11 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import List, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional
 import pickle
 import shutil
 import json
 from pathlib import Path
 import typer
+import pandas as pd
 from ..state import (
     state,
     MODEL_CACHE,
@@ -202,7 +203,7 @@ def generate_full_config() -> None:
     state["logger"].info("Validate the cached config file")
     config = load_model_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
-    model_config.validate_config(config)
+    model_config.validate_config(config)  # TODO fix this method
 
     # # Generate a full configuration file
     full_config = model_config.generate_full_config(config)
@@ -290,7 +291,10 @@ def get_training_arrays(input_dir: Optional[Path] = None):
 
 
 @app.command()
-def get_prediction_arrays(input_dir: Optional[Path] = None):
+def get_prediction_arrays(
+    input_dir: Optional[Path] = None,
+    return_y=False
+) -> Union[Tuple[Dict, Dict], Tuple[Dict, Dict, Dict]]:
     """Get prediction arrays"""
     state["logger"].info(f"Getting data arrays")
 
@@ -310,59 +314,56 @@ def get_prediction_arrays(input_dir: Optional[Path] = None):
         state["logger"].warning(f"{prediction_pickle} does not exist")
         raise typer.Abort()
 
-    prediction_data_df_norm = load_prediction_data(input_dir)
+    prediction_data_df_norm = load_test_data(input_dir)
 
-    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=False,
+    return model_data.get_data_arrays(
+        full_config, prediction_data_df_norm, prediction=not return_y,
     )
 
-    if MODEL_PREDICTION_PICKLE.exists():
-        state["logger"].info(f"Getting prediction data arrays")
+    # if MODEL_PREDICTION_PICKLE.exists():
+    #     state["logger"].info(f"Getting prediction data arrays")
 
-        with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-            prediction_data_df_norm = pickle.load(prediction_pickle_f)
+    #     with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
+    #         prediction_data_df_norm = pickle.load(prediction_pickle_f)
 
-        X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-            full_config, prediction_data_df_norm, prediction=True,
-        )
+    #     X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+    #         full_config, prediction_data_df_norm, prediction=True,
+    #     )
 
-        with MODEL_PREDICTION_X_PICKLE.open("wb") as X_pickle_f:
-            pickle.dump(X_dict, X_pickle_f)
+    #     with MODEL_PREDICTION_X_PICKLE.open("wb") as X_pickle_f:
+    #         pickle.dump(X_dict, X_pickle_f)
 
-        with MODEL_PREDICTION_Y_PICKLE.open("wb") as Y_pickle_f:
-            pickle.dump(Y_dict, Y_pickle_f)
+    #     with MODEL_PREDICTION_Y_PICKLE.open("wb") as Y_pickle_f:
+    #         pickle.dump(Y_dict, Y_pickle_f)
 
-        with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
-            pickle.dump(index_dict, index_pickle_f)
+    #     with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
+    #         pickle.dump(index_dict, index_pickle_f)
 
-
-def load_training_data(input_dir: Optional[Path] = None):
-    """Load training data from either the CACHE or input_dir"""
-
+def __load_data_pickle(data_pickle_path: Path, input_dir: Optional[Path]) -> Dict[Source, pd.DataFrame]:
+    """Load either training or test data from a pickled file."""
     if not input_dir:
-        training_pickle = MODEL_TRAINING_PICKLE
+        data_fp = data_pickle_path
     else:
         if not input_dir.is_dir():
             state["logger"].warning(f"{input_dir} is not a directory")
             raise typer.Abort()
 
-        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+        data_fp = input_dir.joinpath(*data_pickle_path.parts[-2:])
 
-    if not training_pickle.exists():
-        state["logger"].warning("Training data not found. Download and resave cache")
+    if not data_fp.exists():
+        state["logger"].warning("Data not found. Download and resave cache")
         raise typer.Abort()
 
-    with training_pickle.open("rb") as training_pickle_f:
-        return pickle.load(training_pickle_f)
+    with data_fp.open("rb") as pickle_f:
+        return pickle.load(pickle_f)
 
-
-def load_prediction_data(input_dir: Optional[Path] = None):
+def load_training_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
     """Load training data from either the CACHE or input_dir"""
+    return __load_data_pickle(MODEL_TRAINING_PICKLE, input_dir=input_dir)
 
-    typer.echo("Not implimented")
-    raise typer.Abort()
-
-    return None
+def load_test_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
+    """Load test data from either the CACHE or input_dir"""
+    return __load_data_pickle(MODEL_PREDICTION_PICKLE, input_dir=input_dir)
 
 
 @app.command()
