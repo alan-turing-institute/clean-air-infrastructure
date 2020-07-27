@@ -1,5 +1,5 @@
 """
-Given a model data object, check that the data matches the config.
+Tests related to the ModelConfig class
 """
 import pytest
 

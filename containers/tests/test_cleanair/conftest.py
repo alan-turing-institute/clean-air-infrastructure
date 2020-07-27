@@ -143,6 +143,58 @@ def static_feature_records(meta_records):
     return static_features
 
 
+@pytest.fixture(scope="class")
+def fake_cleanair_dataset(
+    secretfile,
+    connection_class,
+    meta_records,
+    laqn_site_records,
+    aqe_site_records,
+    laqn_reading_records,
+    aqe_reading_records,
+    static_feature_records,
+):
+    """Insert a fake air quality dataset into the database"""
+
+    writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+    # Insert meta data
+    writer.commit_records(
+        [i.dict() for i in meta_records], on_conflict="overwrite", table=MetaPoint,
+    )
+
+    # Insert LAQNSite data
+    writer.commit_records(
+        [i.dict() for i in laqn_site_records], on_conflict="overwrite", table=LAQNSite,
+    )
+
+    # Insert LAQNReading data
+    writer.commit_records(
+        [i.dict() for i in laqn_reading_records],
+        on_conflict="overwrite",
+        table=LAQNReading,
+    )
+
+    # Insert AQESite data
+    writer.commit_records(
+        [i.dict() for i in aqe_site_records], on_conflict="overwrite", table=AQESite,
+    )
+
+    # Insert AQEReading data
+    writer.commit_records(
+        [i.dict() for i in aqe_reading_records],
+        on_conflict="overwrite",
+        table=AQEReading,
+    )
+
+    # Insert static features data
+    writer.commit_records(
+        [i.dict() for i in static_feature_records],
+        on_conflict="overwrite",
+        table=StaticFeature,
+    )
+
+
 # @pytest.fixture(scope="function")
 # def no_features_data_config() -> DataConfig:
 #     """Data config with no features."""
