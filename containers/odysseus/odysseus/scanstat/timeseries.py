@@ -33,9 +33,12 @@ def holt_winters(
     """
 
     # Check parameter values
-    assert 0 <= alpha <= 1
-    assert 0 <= beta <= 1
-    assert 0 <= gamma <= 1
+    if not 0 <= alpha <= 1:
+        raise ValueError("alpha parameter must be between 0 and 1")
+    if not 0 <= beta <= 1:
+        raise ValueError("beta parameter must be between 0 and 1")
+    if not 0 <= gamma <= 1:
+        raise ValueError("gamma parameter must be between 0 and 1")
 
     # Get default detectors
     if detectors is None:
