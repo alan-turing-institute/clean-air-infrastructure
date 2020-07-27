@@ -113,14 +113,20 @@ def airq_result_records(airq_instance_records, meta_records):
     airq_result_readings = []
 
     for i in range(100):
-        airq_result_readings.append(
-            AirQualityResultSchema(
-                instance_id=airq_instance_records[i].instance_id,
-                data_id=airq_instance_records[i].data_id,
-                point_id=meta_records[i].id,
-                measurement_start_utc=airq_instance_records[i].fit_start_time,
+        for measurement_start_time in rrule.rrule(
+                rrule.HOURLY,
+                dtstart=isoparse("2020-01-01"),
+                until=isoparse("2020-01-07"),
+        ):
+        
+            airq_result_readings.append(
+                AirQualityResultSchema(
+                    instance_id=airq_instance_records[i].instance_id,
+                    data_id=airq_instance_records[i].data_id,
+                    point_id=meta_records[i].id,
+                    measurement_start_utc=measurement_start_time,
+                )
             )
-        )
 
     return airq_result_readings
 
