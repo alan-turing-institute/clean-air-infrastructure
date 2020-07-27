@@ -2,6 +2,7 @@
 
 from typing import Optional, Union
 import json
+import pickle
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -9,13 +10,14 @@ import typer
 from .model_data_cli import load_model_config
 from ..state import state
 from ..state.configuration import (
-    FORECAST_RESULT_CSV,
+    FORECAST_RESULT_PICKLE,
     MODEL_PARAMS,
-    TRAINING_RESULT_CSV,
+    TRAINING_RESULT_PICKLE,
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
 from ....types.model_types import SVGPParams, MRDGPParams
+from ....types.dataset_types import TargetDict
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -26,11 +28,11 @@ def results(
     tag: str = Tag,
 ):
     """Update the results to the database."""
-    # TODO check input directory exists
-
     # load files
-    model_params = load_model_params(input_dir)
-    result_df = load_forecast_result_df(input_dir)
+    model_params = load_model_params("svgp", input_dir)
+    y_pred = load_forecast_from_pickle(input_dir)
+    print(y_pred)
+    exit()
     full_config = load_model_config(input_dir, full=True)
 
     secretfile: str = state["secretfile"]
@@ -49,24 +51,25 @@ def results(
     instance.update_remote_tables()  # write the instance to the DB
     result.update_remote_tables()  # write results to DB
 
-def __load_result_df(
+def __load_result_pickle(
     result_csv_path: Path,
     input_dir: Optional[Path] = None,
-) -> pd.DataFrame:
+) -> TargetDict:
     """Load a results dataframe."""
     if not input_dir:
         result_fp = result_csv_path
     else:
         result_fp = input_dir.joinpath(*result_csv_path.parts[-2:])
-    return pd.read_csv(result_fp)
+    with open(result_fp, "rb") as pickle_file:
+        return pickle.load(pickle_file)
 
-def load_training_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
-    """Load the predictions on the training set from a csv."""
-    return __load_result_df(input_dir, TRAINING_RESULT_CSV)
+def load_training_pred_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
+    """Load the predictions on the training set from a pickle."""
+    return __load_result_pickle(TRAINING_RESULT_PICKLE, input_dir)
 
-def load_forecast_result_df(input_dir: Optional[Path] = None) -> pd.DataFrame:
-    """Load the predictions on the forecast set from a csv."""
-    return __load_result_df(input_dir, FORECAST_RESULT_CSV)
+def load_forecast_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
+    """Load the predictions on the forecast set from a pickle."""
+    return __load_result_pickle(FORECAST_RESULT_PICKLE, input_dir)
 
 def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRDGPParams, SVGPParams]:
     """Load the model params from a json file."""
@@ -76,7 +79,6 @@ def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRD
         params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
     with open(params_fp, "r") as params_file:
         params_dict = json.load(params_file)
-    assert isinstance(params_dict, dict)
     if model_name == "svgp":
         return SVGPParams(**params_dict)
     if model_name == "mrdgp":

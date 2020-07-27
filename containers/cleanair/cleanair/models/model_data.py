@@ -40,6 +40,8 @@ from ..types import (
     FullConfig,
     FeatureNames,
     FeaturesDict,
+    IndexDict,
+    IndexedDatasetDict,
     TargetDict,
 )
 
@@ -739,7 +741,7 @@ class ModelData(DBWriter, DBQueryMixin):
         full_config: FullConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
-    ) -> Tuple[FeaturesDict, TargetDict, FeaturesDict]:
+    ) -> IndexedDatasetDict:
 
         species = full_config.species
         x_names = self.x_names_norm(full_config.x_names)
@@ -1628,15 +1630,18 @@ class ModelData(DBWriter, DBQueryMixin):
         # Get satellite data
         return all_features, satellite_readings
 
-    def get_df_from_pred_dict(
-        self, data_df, data_dict, pred_dict, **kwargs,
+    @staticmethod
+    def join_pred_dict_on_dataframe(
+        data_df: pd.DataFrame,
+        data_dict: FeaturesDict,
+        pred_dict: TargetDict,
+        sources: Optional[List[Source]] = None,
+        species: Optional[List[Species]] = None,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
-        sources = kwargs["sources"] if "sources" in kwargs else "all"
-        species = kwargs["species"] if "species" in kwargs else "all"
-        if sources == "all":
+        if not sources:
             sources = pred_dict.keys()
-        if species == "all":
+        if not species:
             species = self.config["species"]
         # create new dataframe and track indices for different sources + pollutants
         indices = []
