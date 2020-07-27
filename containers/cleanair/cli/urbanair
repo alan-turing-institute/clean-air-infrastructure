@@ -10,6 +10,8 @@ from cleanair.parsers.urbanair_parser import features
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.loggers.logcolours import red, green
 
+from odysseus import parsers
+
 app = typer.Typer()
 APP_NAME = "UrbanAir-CLI"
 
@@ -160,6 +162,7 @@ def init_production():
 
 app.add_typer(inputs.app, name="inputs")
 app.add_typer(features.app, name="features")
+app.add_typer(parsers.app, name="odysseus")
 
 if __name__ == "__main__":
 
