@@ -2,7 +2,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from .routers import jamcam, static, forecast_historic
+from .routers import jamcam, static
 from .config import get_settings
 
 
@@ -35,6 +35,3 @@ if not get_settings().docker:
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
-app.include_router(
-    forecast_historic.router, prefix="/api/v1/forecasts", tags=["forecasts"]
-)
