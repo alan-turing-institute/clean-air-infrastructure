@@ -291,11 +291,11 @@ def get_training_arrays(input_dir: Optional[Path] = None):
 
 
 @app.command()
-def get_prediction_arrays(
+def get_test_arrays(
     input_dir: Optional[Path] = None,
     return_y=False
-) -> Union[Tuple[Dict, Dict], Tuple[Dict, Dict, Dict]]:
-    """Get prediction arrays"""
+) -> Tuple[Dict, Dict, Dict]:
+    """Get test arrays"""
     state["logger"].info(f"Getting data arrays")
 
     full_config = load_model_config(input_dir, full=True)
@@ -317,7 +317,7 @@ def get_prediction_arrays(
     prediction_data_df_norm = load_test_data(input_dir)
 
     return model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=not return_y,
+        full_config, prediction_data_df_norm, prediction=return_y,
     )
 
     # if MODEL_PREDICTION_PICKLE.exists():

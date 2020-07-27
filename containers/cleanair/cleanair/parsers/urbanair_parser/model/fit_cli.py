@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 import pandas as pd
 from .model_data_cli import (
-    get_prediction_arrays,
+    get_test_arrays,
     get_training_arrays,
     load_model_config,
 )
@@ -17,12 +17,14 @@ from ....types import TargetDict
 
 app = typer.Typer(help="SVGP model fitting")
 
+ExistOk = typer.Option(default=False, help="If true overwrite results if they exist.")
 Refresh = typer.Option(default=10, help="Frequency of printing ELBO.")
 Restore = typer.Option(default=False, help="Restore the model state from cache.")
 
 @app.command()
 def svgp(
     input_dir: Path = typer.Argument(None),
+    exist_ok: bool = ExistOk,
     refresh: int = Refresh,
     restore: bool = Restore,
 ) -> None:
@@ -30,11 +32,12 @@ def svgp(
     logging.info("Loading model params from %s", input_dir)
     model_params = load_model_params("svgp", input_dir)
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
-    fit_model(model, input_dir)
+    fit_model(model, input_dir, exist_ok=exist_ok)
 
 @app.command()
 def mrdgp(
     input_dir: Path = typer.Argument(None),
+    exist_ok: bool = ExistOk,
     refresh: int = Refresh,
     restore: bool = Restore,
 ) -> None:
@@ -44,7 +47,7 @@ def mrdgp(
     # model = MRDGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
     raise NotImplementedError("Deep GP coming soon :p")
 
-def fit_model(model: ModelMixin, input_dir: Path) -> None:
+def fit_model(model: ModelMixin, input_dir: Path, exist_ok: bool = False) -> None:
     """Train a model loading data from INPUT-DIR
 
     If INPUT-DIR not provided will try to load data from the urbanair CLI cache
@@ -59,23 +62,34 @@ def fit_model(model: ModelMixin, input_dir: Path) -> None:
     model.fit(X_train, Y_train)
 
     # Prediction
-    X_test = get
-    y_forecast = model.predict()
+    x_test, y_test, _ = get_test_arrays(input_dir=input_dir, return_y=True)
+    y_forecast = model.predict(x_test)
+    save_forecast_to_pickle(y_forecast, input_dir=input_dir, exist_ok=exist_ok)
 
 
 def __save_prediction_to_pickle(
     y_pred: TargetDict,
     result_pickle_path: Path,
+    exist_ok: bool = False,
     input_dir: Optional[Path] = None
 ) -> None:
     """Save a dictionary of predictions to a pickle."""
-    if input_dir:
+    if not input_dir:
         result_fp = result_pickle_path
     else:
         result_fp = input_dir.joinpath(*result_pickle_path.parts[-2:])
-    with open(result_fp, "w") as pickle_file:
+
+    # create the parent directory - if it exists throw error to avoid overwriting result
+    if not result_fp.parent.exists():
+        result_fp.parent.mkdir(parents=True, exist_ok=exist_ok)
+    logging.info("Writing predictions to %s", result_fp)
+    with open(result_fp, "wb") as pickle_file:
         pickle.dump(y_pred, pickle_file)
 
-def save_forecast_to_pickle(y_pred: TargetDict, input_dir: Optional[Path] = None) -> None:
+def save_forecast_to_pickle(
+    y_pred: TargetDict,
+    exist_ok: bool = False,
+    input_dir: Optional[Path] = None
+) -> None:
     """Save the results dataframe to a file."""
-    __save_prediction_to_pickle(y_pred, FORECAST_RESULT_PICKLE, input_dir=input_dir)
+    __save_prediction_to_pickle(y_pred, FORECAST_RESULT_PICKLE, exist_ok=exist_ok, input_dir=input_dir)
