@@ -1,4 +1,5 @@
 """Commands for a Sparse Variational GP to model air quality."""
+import logging
 import typer
 from pathlib import Path
 from .model_data_cli import load_model_config, get_training_arrays
@@ -17,6 +18,7 @@ def svgp(
     restore: bool = Restore,
 ) -> None:
     """Fit a Sparse Variational Gaussian Process."""
+    logging.info("Loading model params from %s", input_dir)
     model_params = load_model_params("svgp", input_dir)
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
     fit_model(model, input_dir)
@@ -30,6 +32,7 @@ def mrdgp(
     """Fit a Multi-resolution Deep Gaussian Process."""
     model_params = load_model_params("mrdgp", input_dir)
     # TODO create model and call fit_model method
+    # model = MRDGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
     raise NotImplementedError("Deep GP coming soon :p")
 
 def fit_model(model: ModelMixin, input_dir: Path) -> None:
