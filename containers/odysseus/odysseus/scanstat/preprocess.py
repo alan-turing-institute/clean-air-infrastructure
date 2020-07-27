@@ -135,15 +135,15 @@ def remove_anomalies(
     """Remove anomalies from the input dataframe.
     Args:
         scoot_df: DataFrame of Raw Scoot Data
-        max_anom: Maximum number of allowed anomalies in a detector timse-series.
+        max_anom: Maximum number of allowed anomalies in a detector time-series.
                   Otherwise, removed.
-        n_sigma: Number of std devs away from the median to create the anaomaly threshold
+        n_sigma: Number of std devs away from the median to create the anomaly threshold
         repeats: Number of times to repeat the anomaly removal process
         rolling_hours: Number of hours used in the the rolling median calculation
-        global_threshold: Choose to use rolling median with rolling_hours windeo
+        global_threshold: Choose to use rolling median with rolling_hours window
                           or a fixed global median.
     Returns:
-        scoot_df: DataFrame free from anaomalies
+        scoot_df: DataFrame free from anomalies
     """
 
     scoot_df = scoot_df.sort_values(["detector_id", "measurement_end_utc"])
@@ -211,7 +211,7 @@ def drop_sparse_detectors(
     the time range of the input dataframe.
     Args:
         scoot_df: Dataframe of scoot data (preferably free from anomalies)
-        perecentage_missing: A detector above percentage_missing of missing data
+        percentage_missing: A detector above percentage_missing of missing data
                              will be removed from the dataframe
         end_times: Array of measurement times for which we want measurements for.
     Returns:
@@ -250,7 +250,7 @@ def drop_sparse_detectors(
 def fill_missing_values(scoot_df: pd.DataFrame, method: str = "linear") -> pd.DataFrame:
 
     """Fills the missing values of the remaining detectors with sufficiently low
-    amounts of missing data. Vechicle counts are interpolated, other columns are
+    amounts of missing data. Vehicle counts are interpolated, other columns are
     padded out.
 
     Args:

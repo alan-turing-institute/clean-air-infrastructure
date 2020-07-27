@@ -120,7 +120,7 @@ def average_gridcell_scores(
      i.e. For a given grid cell, we find all search regions that contain it, and
      return the average score. Useful for visualisation.
     Args:
-        all_scores: Resultgin dataframe from `scan()` method
+        all_scores: Resulting dataframe from `scan()` method
         grid_resolution: Number of partitions per spatial axis used to create the grid
     Returns:
         grid_level_scores: Average likelihood score per spatial gridcell at each
