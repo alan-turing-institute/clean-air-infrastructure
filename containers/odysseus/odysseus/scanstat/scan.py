@@ -1,5 +1,6 @@
 """Functionality for the main Spatial Scan loop over a rectangular grid"""
 import time
+import logging
 
 import pandas as pd
 import numpy as np
@@ -26,9 +27,6 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
     Returns:
         Dataframe summarising each space-time region's F(S) score.
     """
-    # ==================
-    # 1) Scan over grid
-    # ==================
 
     # Set Initial Timer
     init_time = time.perf_counter()
@@ -92,36 +90,58 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
                         # Count Regions
                         num_regions += 1
 
-        # Print Progress
-        print(
-            "Search spatial regions with t_min = {} and t_max = {}".format(
-                t_min, t_max
-            ),
-            end="\r",
+        # Log Progress
+        logging.info(
+            "Search spatial regions with t_min = %s and t_max = %s", t_min, t_max
         )
 
     scan_time = time.perf_counter()
 
-    print(
-        "\n{} space-time regions searched in {:.2f} seconds".format(
-            num_regions, scan_time - init_time
-        )
+    logging.info(
+        "%d space-time regions searched in %.2f seconds",
+        num_regions,
+        scan_time - init_time,
     )
 
     # At this point, we have a dataframe populated with likelihood statistic
-    # scores for *each* search region. Sort it so that the highest `l_score_EBP`
+    # scores for *each* search region. Sort it so that the highest `l_score_ebp`
     # score is at the top.
     all_scores = pd.DataFrame.from_dict(scores_dict, "index").sort_values(
         "l_score_ebp", ascending=False
     )
+    return all_scores
 
-    # ====================================
-    # 2) Aggregating scores to grid level
-    # ====================================
 
-    # Now, we aggregate these scores to grid level by taking an average of l_score_EBP.
-    # i.e. For a given grid cell, we find all search regions that contain it, and
-    # return the average score. Useful for visualisation.
+def average_gridcell_scores(
+    all_scores: pd.DataFrame, grid_resolution: int
+) -> pd.DataFrame:
+
+    """Aggregate scores from the scan to grid level by taking an average of l_score_ebp.
+     i.e. For a given grid cell, we find all search regions that contain it, and
+     return the average score. Useful for visualisation.
+    Args:
+        all_scores: Resultgin dataframe from `scan()` method
+        grid_resolution: Number of partitions per spatial axis used to create the grid
+    Returns:
+        grid_level_scores: Average likelihood score per spatial gridcell at each
+                           time slice of interest.
+    """
+    # Set Initial Timer
+    init_time = time.perf_counter()
+
+    # TODO Clunky - want ScanScoot object to have Scan parameters built into it
+    # i.e. region definitions: borough, grid_res, t_min, t_max, days_in_future (forecast)
+    # For now - Infer max/min time labels from the input data
+    t_min = all_scores.measurement_start_utc.min()
+    t_max = all_scores.measurement_end_utc.max()
+
+    # Set up iterators
+    x_ticks = range(grid_resolution + 1)
+    y_ticks = range(grid_resolution + 1)
+    t_ticks = pd.date_range(start=t_min, end=t_max, freq="H")
+
+    # Time direction convention - reverse
+    t_ticks = t_ticks[::-1]
 
     return_dict = {}
     num_regions = 0
@@ -139,6 +159,8 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
                     & (all_scores["measurement_start_utc"] == t_min)
                 ]
 
+                # Calculate mean per gridcell here. Loss of information but
+                # easier to interpret
                 mean_score = gridcell["l_score_ebp"].mean()
                 std = gridcell["l_score_ebp"].std()
 
@@ -158,11 +180,10 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
 
     grid_level_scores = pd.DataFrame.from_dict(return_dict, "index")
 
-    print(
-        "\n{} Results aggregated to grid cell level in {:.2f} seconds".format(
-            num_regions, agg_time - scan_time
-        )
+    logging.info(
+        "%d region results aggregated to grid cell level in %.2f seconds",
+        num_regions,
+        agg_time - init_time,
     )
-    print("Total run time: {:.2f} seconds".format(agg_time - init_time))
 
-    return all_scores, grid_level_scores
+    return grid_level_scores
