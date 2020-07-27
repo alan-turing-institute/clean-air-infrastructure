@@ -30,15 +30,18 @@ def gen_site_code(v) -> str:
         return v
     return get_random_string(4)
 
+
 def gen_hash_id(v) -> str:
     if v:
         return v
     return hash_fn(str(random.random()))
 
+
 def gen_random_value(cls, v) -> float:
-        if v:
-            return v
-        return np.exp(norm.rvs(0, 1))
+    if v:
+        return v
+    return np.exp(norm.rvs(0, 1))
+
 
 class MetaPointSchema(BaseModel):
 
@@ -95,22 +98,24 @@ class LAQNReadingSchema(BaseModel):
         else:
             return values["measurement_start_utc"] + timedelta(hours=1)
 
+
 class AirQualityModelSchema(BaseModel):
-    
+
     model_name: str = "svgp"
     model_param: Optional[Json]
     param_id: Optional[str]
 
     _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-    
+
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
         if v:
             return v
         return '{"params": "empty"}'
 
+
 class AirQualityDataSchema(BaseModel):
-    
+
     data_id: Optional[str]
     data_config: Optional[Json]
     preprocessing: Optional[Json]
@@ -129,6 +134,7 @@ class AirQualityDataSchema(BaseModel):
             return v
         return '{"preprocessing": "empty"}'
 
+
 class AirQualityInstanceSchema(BaseModel):
 
     model_name: str
@@ -139,12 +145,18 @@ class AirQualityInstanceSchema(BaseModel):
     instance_id: Optional[str]
     tag: Optional[str]
     git_hash: Optional[str]
-    
 
-    _gen_hash_instance_id = validator("instance_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_hash_cluster_id = validator("cluster_id", allow_reuse=True, always=True)(gen_hash_id)
-    _gen_site_code_git = validator("git_hash", allow_reuse=True, always=True)(gen_site_code)
+    _gen_hash_instance_id = validator("instance_id", allow_reuse=True, always=True)(
+        gen_hash_id
+    )
+    _gen_hash_cluster_id = validator("cluster_id", allow_reuse=True, always=True)(
+        gen_hash_id
+    )
+    _gen_site_code_git = validator("git_hash", allow_reuse=True, always=True)(
+        gen_site_code
+    )
     _gen_site_code_tag = validator("tag", allow_reuse=True, always=True)(gen_site_code)
+
 
 class AirQualityResultSchema(BaseModel):
 
@@ -161,16 +173,35 @@ class AirQualityResultSchema(BaseModel):
     CO2_mean: Optional[float]
     CO2_var: Optional[float]
     O3_mean: Optional[float]
-    O3_var: Optional[float] 
+    O3_var: Optional[float]
 
-    _gen_random_NO2_mean = validator("NO2_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_NO2_var = validator("NO2_var", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_PM25_mean = validator("PM25_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_PM25_var = validator("PM25_var", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_CO2_mean = validator("CO2_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_CO2_var = validator("CO2_var", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_O3_mean = validator("O3_mean", allow_reuse=True, always=True)(gen_random_value)
-    _gen_random_O3_var = validator("O3_var", allow_reuse=True, always=True)(gen_random_value)
-   
+    _gen_random_NO2_mean = validator("NO2_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_NO2_var = validator("NO2_var", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_PM25_mean = validator("PM25_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_PM25_var = validator("PM25_var", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_CO2_mean = validator("CO2_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_CO2_var = validator("CO2_var", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_O3_mean = validator("O3_mean", allow_reuse=True, always=True)(
+        gen_random_value
+    )
+    _gen_random_O3_var = validator("O3_var", allow_reuse=True, always=True)(
+        gen_random_value
+    )

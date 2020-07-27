@@ -83,7 +83,7 @@ def airq_data_records():
 
     return [AirQualityDataSchema() for i in range(100)]
 
-    
+
 @pytest.fixture(scope="class")
 def airq_instance_records(airq_data_records, airq_model_records):
 
@@ -91,9 +91,7 @@ def airq_instance_records(airq_data_records, airq_model_records):
 
     for i in range(100):
         for measurement_start_time in rrule.rrule(
-                rrule.HOURLY,
-                dtstart=isoparse("2020-01-01"),
-                until=isoparse("2020-01-07"),
+            rrule.HOURLY, dtstart=isoparse("2020-01-01"), until=isoparse("2020-01-07"),
         ):
 
             airq_instance_readings.append(
@@ -107,6 +105,7 @@ def airq_instance_records(airq_data_records, airq_model_records):
 
     return airq_instance_readings
 
+
 @pytest.fixture(scope="class")
 def airq_result_records(airq_instance_records, meta_records):
 
@@ -114,11 +113,9 @@ def airq_result_records(airq_instance_records, meta_records):
 
     for i in range(100):
         for measurement_start_time in rrule.rrule(
-                rrule.HOURLY,
-                dtstart=isoparse("2020-01-01"),
-                until=isoparse("2020-01-07"),
+            rrule.HOURLY, dtstart=isoparse("2020-01-01"), until=isoparse("2020-01-07"),
         ):
-        
+
             airq_result_readings.append(
                 AirQualityResultSchema(
                     instance_id=airq_instance_records[i].instance_id,
@@ -129,7 +126,6 @@ def airq_result_records(airq_instance_records, meta_records):
             )
 
     return airq_result_readings
-
 
 
 class TestDataFaker:
@@ -235,12 +231,12 @@ class TestAirFaker:
             )
         except Exception:
             pytest.fail("Dummy data insert")
-   
+
     def test_insert_model_readings(
         self, secretfile, connection_class, airq_model_records
     ):
         """Insert model schema data"""
-    
+
         try:
             # Insert data
             writer = DBWriter(secretfile=secretfile, connection=connection_class)
@@ -287,7 +283,9 @@ class TestAirFaker:
         except Exception:
             pytest.fail("Dummy data insert")
 
-    def test_read_instance_records(self, secretfile, connection_class, airq_instance_records):
+    def test_read_instance_records(
+        self, secretfile, connection_class, airq_instance_records
+    ):
         """Check we can read the instance shema rows"""
 
         reader = DBReader(secretfile=secretfile, connection=connection_class)
@@ -314,7 +312,9 @@ class TestAirFaker:
         except Exception:
             pytest.fail("Dummy data insert")
 
-    def test_read_result_records(self, secretfile, connection_class, airq_result_records):
+    def test_read_result_records(
+        self, secretfile, connection_class, airq_result_records
+    ):
         """Check we can read the result shema rows"""
 
         reader = DBReader(secretfile=secretfile, connection=connection_class)

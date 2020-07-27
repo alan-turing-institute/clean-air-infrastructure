@@ -83,4 +83,3 @@ def video_stat_records():
 
             i += 1
     return records
-
