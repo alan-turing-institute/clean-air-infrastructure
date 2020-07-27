@@ -57,7 +57,7 @@ class GridMixin:
     def fishnet_over_borough(
         self,
         borough: str,
-        grid_resolution: int = 16,
+        grid_resolution: int = 8,
         rotation: float = 0,
         srid: int = 4326,
     ):
