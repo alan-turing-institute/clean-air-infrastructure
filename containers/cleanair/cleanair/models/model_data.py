@@ -1633,7 +1633,7 @@ class ModelData(DBWriter, DBQueryMixin):
     @staticmethod
     def join_pred_dict_on_dataframe(
         data_df: pd.DataFrame,
-        data_dict: FeaturesDict,
+        index_dict: FeaturesDict,
         pred_dict: TargetDict,
         sources: Optional[List[Source]] = None,
         species: Optional[List[Species]] = None,
@@ -1642,12 +1642,12 @@ class ModelData(DBWriter, DBQueryMixin):
         if not sources:
             sources = pred_dict.keys()
         if not species:
-            species = self.config["species"]
+            raise NotImplementedError("Todo")
         # create new dataframe and track indices for different sources + pollutants
         indices = []
         for source in sources:
             for pollutant in pred_dict[source]:
-                indices.extend(data_dict["index"][source][pollutant])
+                indices.extend(index_dict[source][pollutant])
         predict_df = pd.DataFrame(index=indices)
         data_df = data_df.loc[indices]
         # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 import pandas as pd
 import typer
-from .model_data_cli import load_model_config
+from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
 from ..state.configuration import (
     FORECAST_RESULT_PICKLE,
@@ -16,6 +16,7 @@ from ..state.configuration import (
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
+from ....models import ModelData
 from ....types.model_types import SVGPParams, MRDGPParams
 from ....types.dataset_types import TargetDict
 
@@ -31,9 +32,18 @@ def results(
     # load files
     model_params = load_model_params("svgp", input_dir)
     y_pred = load_forecast_from_pickle(input_dir)
+    x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
+    test_df = load_test_data(input_dir)
     print(y_pred)
-    exit()
+    print(index_dict)
     full_config = load_model_config(input_dir, full=True)
+    result_df = ModelData.join_pred_dict_on_dataframe(
+        test_df,
+        index_dict,
+        y_pred,
+        sources=full_config.pred_sources,
+        species=full_config.species
+    )
 
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
