@@ -4,7 +4,7 @@ import datetime
 import pandas as pd
 
 
-def aggregate_to_grid(
+def aggregate_readings_to_grid(
     detector_df: pd.DataFrame, forecast_df: pd.DataFrame
 ) -> pd.DataFrame:
 
@@ -44,7 +44,7 @@ def aggregate_to_grid(
     # These columns make no sense when aggregating to grid level, so drop
     agg_df = agg_df.drop(["detector_id", "lon", "lat", "location"], axis=1)
 
-    # This column not particulalry needed for the scan, so no need
+    # This column not particularly needed for the scan, so no need
     # to carry it round.
     agg_df = agg_df.drop(["geom"], axis=1)
 
