@@ -73,7 +73,7 @@ class ResultTableMixin:
     instance_id = Column(String(64), primary_key=True, nullable=False)
     data_id = Column(String(64), primary_key=True, nullable=False)
 
-    point_id = Column(UUID, primary_key=True, nullable=False)
+    point_id = Column(UUID(as_uuid=True), primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
 
     def __repr__(self):
