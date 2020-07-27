@@ -25,7 +25,7 @@ from cleanair.databases.tables.fakes import (
 from cleanair.types import Source, Species
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def meta_records():
 
     return [
@@ -215,6 +215,20 @@ class TestDataFaker:
 
 
 class TestAirFaker:
+    def test_db_insert(self, secretfile, connection_class, meta_records):
+        """Insert MetaPoint rows"""
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in meta_records],
+                on_conflict="overwrite",
+                table=MetaPoint,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
    
     def test_insert_model_readings(
         self, secretfile, connection_class, airq_model_records
@@ -293,3 +307,14 @@ class TestAirFaker:
             )
         except Exception:
             pytest.fail("Dummy data insert")
+
+    def test_read_result_records(self, secretfile, connection_class, airq_result_records):
+        """Check we can read the result shema rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(AirQualityResultTable).all()
+
+        assert len(data) == len(airq_result_records)
