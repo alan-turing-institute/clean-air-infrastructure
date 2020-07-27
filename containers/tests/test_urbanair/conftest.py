@@ -1,5 +1,4 @@
 """Confif for urbanair tests"""
-import uuid
 from fastapi.testclient import TestClient
 import pytest
 from dateutil import rrule, parser
@@ -56,4 +55,32 @@ def client_class(connection_class):
     test_client = TestClient(main.app)
 
     return test_client
+
+
+@pytest.fixture(scope="module")
+def video_stat_records():
+    "Fake data for jamcam routes test"
+    video_upload_datetimes = rrule.rrule(
+        rrule.HOURLY,
+        dtstart=parser.isoparse("2020-01-01T00:00:00"),
+        until=parser.isoparse("2020-01-01T23:00:00"),
+    )
+
+    records = []
+    i = 0
+    for vtime in video_upload_datetimes:
+        for dect in DetectionClass.map_all():
+            records.append(
+                JamCamVideoStats(
+                    id=i,
+                    camera_id="54335.234234",
+                    video_upload_datetime=vtime,
+                    detection_class=dect,
+                    counts=np.random.poisson(lam=10),
+                    source=0,
+                )
+            )
+
+            i += 1
+    return records
 
