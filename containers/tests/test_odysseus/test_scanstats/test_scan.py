@@ -11,8 +11,8 @@ from geoalchemy2.shape import to_shape
 
 from odysseus.scanstat.preprocess import preprocessor
 from odysseus.scanstat.forecast import forecast
-from odysseus.scanstat.utils import aggregate_to_grid
-from odysseus.scanstat.scan import scan
+from odysseus.scanstat.utils import aggregate_readings_to_grid
+from odysseus.scanstat.scan import scan, average_gridcell_scores
 
 if TYPE_CHECKING:
     from odysseus.scoot import ScanScoot
@@ -22,10 +22,10 @@ def test_scan(scan_scoot: ScanScoot, scoot_writer) -> None:
     """Test whole pipeline of scan functions with settings below."""
 
     # Set up scan variables
+    # TODO - Can we get at these through scan_scoot?
     days_in_past = 28
     days_in_future = 1
     ts_method = "HW"
-    # TODO - Can we get at these through scan_scoot?
     borough = "Westminster"
     grid_resolution = 8
 
@@ -74,17 +74,23 @@ def test_scan(scan_scoot: ScanScoot, scoot_writer) -> None:
     print(detector_df)
 
     # Now we can aggregate
-    agg_df = aggregate_to_grid(detector_df, forecast_df)
+    agg_df = aggregate_readings_to_grid(detector_df, forecast_df)
     print(agg_df)
 
     aggregate_checks(agg_df, days_in_future, grid_resolution)
 
     # 4) Scan
-    all_scores, grid_level_scores = scan(agg_df, grid_resolution=grid_resolution)
+    all_scores = scan(agg_df, grid_resolution=grid_resolution)
 
-    scan_checks(all_scores, grid_level_scores, t_max, days_in_future, grid_resolution)
+    scan_checks(all_scores, t_max, days_in_future, grid_resolution)
     print(all_scores)
+
+    # 5) Aggregate scores to gridcell level using the average
+    grid_level_scores = average_gridcell_scores(all_scores, grid_resolution)
+
+    average_score_checks(grid_level_scores, days_in_future, grid_resolution)
     print(grid_level_scores)
+
     return
 
 
@@ -200,7 +206,6 @@ def aggregate_checks(
 
 def scan_checks(
     all_scores: pd.DataFrame,
-    grid_level_scores: pd.DataFrame,
     t_max: datetime,
     days_in_future: int,
     grid_resolution: int,
@@ -209,10 +214,8 @@ def scan_checks(
 
     # All outputted values should not be NaN
     assert not all_scores.isnull().values.any()
-    assert not grid_level_scores.isnull().values.any()
 
     assert len(all_scores) > 0
-    assert len(grid_level_scores) == 24 * days_in_future * grid_resolution ** 2
 
     all_score_cols = [
         "row_min",
@@ -225,26 +228,12 @@ def scan_checks(
         "actual_count",
         "l_score_ebp",
     ]
-    grid_level_cols = [
-        "measurement_start_utc",
-        "measurement_end_utc",
-        "row",
-        "col",
-        "l_score_ebp_mean",
-        "l_score_ebp_std",
-    ]
-
     assert set(all_score_cols) == set(all_scores.columns)
-    assert set(grid_level_cols) == set(grid_level_scores.columns)
 
     assert all_scores["row_min"].min() >= 1
     assert all_scores["col_min"].min() >= 1
     assert all_scores["row_max"].max() <= grid_resolution
     assert all_scores["col_max"].max() <= grid_resolution
-    assert grid_level_scores["row"].min() >= 1
-    assert grid_level_scores["col"].min() >= 1
-    assert grid_level_scores["row"].max() <= grid_resolution
-    assert grid_level_scores["col"].max() <= grid_resolution
 
     assert (all_scores["row_max"] - all_scores["row_min"]).max() <= (
         grid_resolution / 2
@@ -260,3 +249,34 @@ def scan_checks(
     )
 
     assert all_scores["l_score_ebp"].min() >= 1
+
+
+def average_score_checks(
+    grid_level_scores: pd.DataFrame,
+    days_in_future: int,
+    grid_resolution: int,
+) -> None:
+    """ Test that output from the main `average_gridcell_scores()` function is sensible."""
+
+    # All outputted values should not be NaN
+    assert not grid_level_scores.isnull().values.any()
+
+    assert len(grid_level_scores) == 24 * days_in_future * grid_resolution ** 2
+
+    grid_level_cols = [
+        "measurement_start_utc",
+        "measurement_end_utc",
+        "row",
+        "col",
+        "l_score_ebp_mean",
+        "l_score_ebp_std",
+    ]
+
+    assert set(grid_level_cols) == set(grid_level_scores.columns)
+
+    assert grid_level_scores["row"].min() >= 1
+    assert grid_level_scores["col"].min() >= 1
+    assert grid_level_scores["row"].max() <= grid_resolution
+    assert grid_level_scores["col"].max() <= grid_resolution
+
+    assert grid_level_scores["l_score_ebp_mean"].min() >= 1
