@@ -57,4 +57,4 @@ class FullConfig(BaseConfig):
 
     def data_id(self):
         "Return a hashed data id"
-        return hash_dict(self.json(sort_keys=True))
+        return hash_dict(self.dict())
