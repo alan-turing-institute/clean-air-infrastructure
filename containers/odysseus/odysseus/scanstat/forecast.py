@@ -1,6 +1,8 @@
 """Contains all functionality to create forecasts of SCOOT data using different
 methods of timeseries analysis from `scanstat.timeseries`"""
 
+import logging
+
 import pandas as pd
 import numpy as np
 
@@ -40,17 +42,21 @@ def forecast(
     """
 
     # Drop useless columns
-    assert set(["rolling_threshold", "global_threshold"]) <= set(proc_df.columns)
+    if not set(["rolling_threshold", "global_threshold"]) <= set(proc_df.columns):
+        raise KeyError("Input dataframe does not contain the correct columns")
     proc_df = proc_df.drop(["rolling_threshold", "global_threshold"], axis=1)
-    assert days_in_future > 0
-    assert days_in_past > 0
+
+    if days_in_future <= 0:
+        raise ValueError("days_in_future must be a positive integer")
+    if days_in_past <= 0:
+        raise ValueError("days_in_past must be a positive integer")
 
     t_min = proc_df["measurement_start_utc"].min()
     t_max = proc_df["measurement_end_utc"].max()
 
-    print("Input dataframe contains data spanning {} to {}.".format(t_min, t_max))
+    logging.info("Input dataframe contains data spanning %s to %s", t_min, t_max)
 
-    if detectors is None:
+    if not detectors:
         detectors = proc_df["detector_id"].drop_duplicates().to_numpy()
 
     # Organise dates of train/forecast/analysis
@@ -63,25 +69,26 @@ def forecast(
 
     # Print sanity checks
     if avail_past_days < days_in_past:
-        print(
-            "Input dataframe only contains {} days worth of data before the prediction period.".format(
-                avail_past_days
-            ),
-            "Setting days_in_past = {}.".format(avail_past_days),
+        logging.info(
+            "Input dataframe only contains %d days worth of data before the prediction period.",
+            avail_past_days,
         )
+        logging.info("Setting days_in_past = %d.", avail_past_days)
         forecast_data_start = t_min
     else:
         forecast_data_start = prediction_start - np.timedelta64(days_in_past, "D")
 
-    print(
-        "Using data from {} to {}, to build {} forecasting model.\n".format(
-            forecast_data_start, prediction_start, method
-        )
+    logging.info(
+        "Using data from %s to %s, to build %s forecasting model",
+        forecast_data_start,
+        prediction_start,
+        method,
     )
-    print(
-        "Forecasting counts between {} and {} for {} detectors.".format(
-            prediction_start, t_max, len(detectors)
-        )
+    logging.info(
+        "Forecasting counts between %s and %s for %d detectors.",
+        prediction_start,
+        t_max,
+        len(detectors),
     )
 
     # Select forecasting method
@@ -112,7 +119,8 @@ def forecast(
     #            days_in_past=days_in_past,
     #            kern=kern,
     #        )
-    print("Forecasting complete.")
+
+    logging.info("Forecasting complete.")
 
     # Merge actual_count dataframe with forecast dataframe, carry out checks
     # and return.
@@ -144,7 +152,7 @@ def forecast(
     # Make Baseline Values Non-Negative
     negative = len(forecast_df[forecast_df["baseline"] < 0]["baseline"])
     if negative > 0:
-        print("Setting {} negative baseline values to zero.\n".format(negative))
+        logging.info("Setting %d negative baseline values to zero", negative)
         forecast_df["baseline"] = forecast_df["baseline"].apply(
             lambda x: np.max([0, x])
         )
