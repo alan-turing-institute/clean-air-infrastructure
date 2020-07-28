@@ -5,13 +5,15 @@ from .dataset_types import (
     DataConfig,
     DatasetDict,
     FeaturesDict,
+    IndexedDatasetDict,
+    IndexDict,
     TargetDict,
     NDArrayTuple,
     BaseConfig,
     FullConfig,
     InterestPointDict,
 )
-from .model_types import ModelParams
+from .model_types import ParamsDict
 
 
 __all__ = [
@@ -21,8 +23,10 @@ __all__ = [
     "DatasetDict",
     "FeaturesDict",
     "FeatureBufferSize",
+    "IndexDict",
+    "IndexedDatasetDict",
     "InterestPointDict",
-    "ModelParams",
+    "ParamsDict",
     "NDArrayTuple",
     "TargetDict",
     "Source",

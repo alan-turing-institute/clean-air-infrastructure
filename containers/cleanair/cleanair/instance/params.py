@@ -7,14 +7,14 @@ from ..utils.hashing import hash_dict
 from ..databases.mixins import ModelTableMixin
 
 # if TYPE_CHECKING:
-from ..types import ModelParams
+from ..types import ParamsDict
 
 
 class ModelParamsMixin:
     """Parameters of an air quality model."""
 
     def __init__(
-        self, secretfile: str, model_name: str, model_params: ModelParams, **kwargs,
+        self, secretfile: str, model_name: str, model_params: ParamsDict, **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
         self.model_name = model_name
