@@ -295,7 +295,7 @@ class ModelConfig(
 
         # bounded_geom = self.query_london_boundary(output_type="subquery")
 
-        # ToDo: Filter by bounding geometry
+        # To Do: Filter by bounding geometry. Geometry should be a materialiized view
 
         if source == Source.laqn:
 
