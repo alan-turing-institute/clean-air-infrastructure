@@ -1631,36 +1631,44 @@ class ModelData(DBWriter, DBQueryMixin):
         return all_features, satellite_readings
 
     @staticmethod
-    def join_pred_dict_on_dataframe(
+    def join_forecast_on_dataframe(
         data_df: pd.DataFrame,
-        index_dict: FeaturesDict,
         pred_dict: TargetDict,
-        sources: Optional[List[Source]] = None,
-        species: Optional[List[Species]] = None,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
-        if not sources:
-            sources = pred_dict.keys()
-        if not species:
-            raise NotImplementedError("Todo")
-        # create new dataframe and track indices for different sources + pollutants
-        indices = []
-        for source in sources:
-            for pollutant in pred_dict[source]:
-                indices.extend(index_dict[source][pollutant])
-        predict_df = pd.DataFrame(index=indices)
-        data_df = data_df.loc[indices]
-        # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
-        for pred_type in ["mean", "var"]:
-            for pollutant in species:
-                # add a column containing pred results for all sources
-                column = np.array([])
-                for source in sources:
-                    column = np.append(column, pred_dict[source][pollutant][pred_type])
-                predict_df[pollutant + "_" + pred_type] = column
-        # add predict_df as new columns to data_df - they should share an index
-        new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
-        return new_df
+        # TODO implement this for multiple sources
+        # TODO take the index as a parameter and match pred_dict onto data_df using index
+        for pollutant in pred_dict:
+            data_df[pollutant + "_mean"] = pred_dict[pollutant]["mean"].flatten()
+            data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
+        return data_df
+
+        # if not sources:
+        #     sources = pred_dict.keys()
+        # if not species:
+        #     raise NotImplementedError("Todo")
+        # # create new dataframe and track indices for different sources + pollutants
+        # indices = []
+        # for source in sources:
+        #     # for pollutant in pred_dict[source]:
+        #     # print(type(source.value))
+        #     # print(type(pollutant))
+        #     # print(index_dict[source])
+        #     # print("Shape of index_dict[source][pollutant]:", index_dict[source.value][pollutant].shape)
+        #     indices.extend(index_dict[source])
+        # predict_df = pd.DataFrame(index=indices)
+        # data_df = data_df.loc[indices]
+        # # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
+        # for pred_type in ["mean", "var"]:
+        #     for pollutant in species:
+        #         # add a column containing pred results for all sources
+        #         column = np.array([])
+        #         for source in sources:
+        #             column = np.append(column, pred_dict[source][pollutant][pred_type])
+        #         predict_df[pollutant + "_" + pred_type] = column
+        # # add predict_df as new columns to data_df - they should share an index
+        # new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
+        # return new_df
 
     def update_test_df_with_preds(self, test_pred_dict: dict):
         """Update the normalised_pred_data_df with predictions for all pred sources.

@@ -7,6 +7,13 @@ from ..utils import hash_dict
 KernelDict = Dict[str, Union[str, float, List[Union[int, float]]]]
 ParamsDict = Dict[str, Union[float, bool, int, KernelDict, List[KernelDict]]]
 
+class ParamIdMixin:
+    """Add function for creating a param id."""
+
+    def param_id(self):
+        """Return a hashed param id."""
+        return hash_dict(self.json(sort_keys=True))
+
 class KernelParams(BaseModel):
     """Validation for kernel parameters."""
 
@@ -24,11 +31,11 @@ class BaseModelParams(BaseModel):
     maxiter: int
     minibatch_size: int
 
-class SVGPParams(BaseModelParams):
+class SVGPParams(ParamIdMixin, BaseModelParams):
     """Model parameters for the SVGP."""
     jitter: float
 
-class MRDGPParams(BaseModel):
+class MRDGPParams(ParamIdMixin, BaseModel):
     """Model parameters for the Deep GP."""
 
     base_laqn: BaseModelParams
@@ -37,7 +44,3 @@ class MRDGPParams(BaseModel):
     mixing_weight: Dict[str, Union[str, None]]
     num_prediction_samples: int
     num_samples_between_layers: int
-
-    def param_id(self):
-        """Return a hashed param id."""
-        return hash_dict(self.json(sort_keys=True))

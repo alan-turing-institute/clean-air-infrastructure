@@ -17,6 +17,7 @@ from ..state.configuration import (
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
 from ....models import ModelData
+from ....types import Source
 from ....types.model_types import SVGPParams, MRDGPParams
 from ....types.dataset_types import TargetDict
 
@@ -33,22 +34,19 @@ def results(
     model_params = load_model_params("svgp", input_dir)
     y_pred = load_forecast_from_pickle(input_dir)
     x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
-    test_df = load_test_data(input_dir)
+    test_data = load_test_data(input_dir)
     print(y_pred)
     print(index_dict)
     full_config = load_model_config(input_dir, full=True)
-    result_df = ModelData.join_pred_dict_on_dataframe(
-        test_df,
-        index_dict,
-        y_pred,
-        sources=full_config.pred_sources,
-        species=full_config.species
+    result_df = ModelData.join_forecast_on_dataframe(
+        test_data[Source.laqn],
+        y_pred[Source.laqn],
     )
 
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
-        model_name=model_params["model_name"],
-        param_id=model_params.param_id, # TODO this will break
+        model_name="svgp",
+        param_id=model_params.param_id(), # TODO this will break
         data_id=full_config.data_id(),
         cluster_id=cluster_id,
         tag=tag,

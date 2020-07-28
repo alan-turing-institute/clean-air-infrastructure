@@ -317,7 +317,7 @@ def get_test_arrays(
     prediction_data_df_norm = load_test_data(input_dir)
 
     return model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=return_y,
+        full_config, prediction_data_df_norm, prediction=not return_y,
     )
 
     # if MODEL_PREDICTION_PICKLE.exists():
