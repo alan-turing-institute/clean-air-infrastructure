@@ -1,4 +1,5 @@
 """CleanAir module setup script"""
+
 import setuptools
 
 setuptools.setup(

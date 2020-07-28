@@ -1,49 +1,52 @@
 """Fake data generators which can be inserted into database"""
 
-from typing import Iterable, Optional
-from pydantic import BaseModel, validator, Json
-from pydantic.dataclasses import dataclass
+from typing import Optional
 import random
-from scipy.stats import uniform, norm
-import numpy as np
 import string
 import uuid
 from datetime import datetime, date, timedelta
+import numpy as np
+from scipy.stats import uniform, norm
+from pydantic import BaseModel, validator, Json
 from ....utils.hashing import hash_fn
-from ....types import Source
+from ....types import Source, FeatureNames
 
 
-def get_random_string(length):
+def _get_random_string(length):
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for i in range(length))
     return result_str
 
 
+# pylint: disable=C0103,E0213
+
+
 def gen_point_id(v) -> uuid.UUID:
+    "Return a random uuid"
     if v:
         return v
     return uuid.uuid4()
 
 
 def gen_site_code(v) -> str:
+    "Return a random string with length 4"
     if v:
         return v
-    return get_random_string(4)
+    return _get_random_string(4)
 
 
 def gen_hash_id(v) -> str:
+    "Return a random hash id"
     if v:
         return v
     return hash_fn(str(random.random()))
 
 
-def gen_random_value(cls, v) -> float:
+def gen_norm_value(v) -> float:
+    "Return a random value between 0 and 1"
     if v:
         return v
     return np.exp(norm.rvs(0, 1))
-
-
-class MetaPointSchema(BaseModel):
 
 
 class MetaPointSchema(BaseModel):
@@ -54,6 +57,7 @@ class MetaPointSchema(BaseModel):
 
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
 
+    # pylint: disable=R0201,C0116
     @validator("location", always=True)
     def gen_location(cls, v):
         if v:
@@ -89,23 +93,61 @@ class LAQNReadingSchema(BaseModel):
     value: Optional[float]
 
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
-
+    # pylint: disable=R0201,C0116
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
         if v:
             return v
-        else:
-            return values["measurement_start_utc"] + timedelta(hours=1)
+        return values["measurement_start_utc"] + timedelta(hours=1)
+
+
+class AQESiteSchema(LAQNSiteSchema):
+    "AQE Site schema"
+    site_name: Optional[str]
+
+    _gen_site_name = validator("site_name", allow_reuse=True, always=True)(
+        gen_site_code
+    )
+
+
+class AQEReadingSchema(LAQNReadingSchema):
+    "AQE Reading schema"
+
+
+class StaticFeaturesSchema(BaseModel):
+    "Static Features schema"
+    point_id: uuid.UUID
+    feature_name: FeatureNames
+    feature_source: Source
+    value_1000: Optional[float]
+    value_500: Optional[float]
+    value_200: Optional[float]
+    value_100: Optional[float]
+    value_10: Optional[float]
+
+    _gen_value_1000 = validator("value_1000", always=True, allow_reuse=True)(
+        gen_norm_value
+    )
+    _gen_value_500 = validator("value_500", always=True, allow_reuse=True)(
+        gen_norm_value
+    )
+    _gen_value_200 = validator("value_200", always=True, allow_reuse=True)(
+        gen_norm_value
+    )
+    _gen_value_100 = validator("value_100", always=True, allow_reuse=True)(
+        gen_norm_value
+    )
+    _gen_value_10 = validator("value_10", always=True, allow_reuse=True)(gen_norm_value)
 
 
 class AirQualityModelSchema(BaseModel):
-
+    "AirPollution Model Schema"
     model_name: str = "svgp"
     model_param: Optional[Json]
     param_id: Optional[str]
 
     _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-
+    # pylint: disable=R0201,C0116
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
         if v:
@@ -114,13 +156,13 @@ class AirQualityModelSchema(BaseModel):
 
 
 class AirQualityDataSchema(BaseModel):
-
+    "AirPollution Data Schema"
     data_id: Optional[str]
     data_config: Optional[Json]
     preprocessing: Optional[Json]
 
     _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
-
+    # pylint: disable=R0201,C0116
     @validator("data_config", always=True)
     def gen_data_config(cls, v):
         if v:
@@ -135,7 +177,7 @@ class AirQualityDataSchema(BaseModel):
 
 
 class AirQualityInstanceSchema(BaseModel):
-
+    "AirPollution Instance Schema"
     model_name: str
     param_id: str
     data_id: str
@@ -158,7 +200,7 @@ class AirQualityInstanceSchema(BaseModel):
 
 
 class AirQualityResultSchema(BaseModel):
-
+    "AirPollution Result Schema"
     instance_id: str
     data_id: str
     point_id: uuid.UUID
@@ -175,32 +217,32 @@ class AirQualityResultSchema(BaseModel):
     O3_var: Optional[float]
 
     _gen_random_NO2_mean = validator("NO2_mean", allow_reuse=True, always=True)(
-        gen_random_value
+        gen_norm_value
     )
-    _gen_random_NO2_var = validator("NO2_var", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_NO2_var = validator("NO2_var", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_PM10_mean = validator("PM10_mean", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_PM25_mean = validator("PM25_mean", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_PM25_mean = validator("PM25_mean", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_PM25_var = validator("PM25_var", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_PM25_var = validator("PM25_var", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_CO2_mean = validator("CO2_mean", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_CO2_mean = validator("CO2_mean", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_CO2_var = validator("CO2_var", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_CO2_var = validator("CO2_var", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_O3_mean = validator("O3_mean", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_O3_mean = validator("O3_mean", allow_reuse=True, always=True)(
+        gen_norm_value
     )
-    _gen_random_O3_var = validator("O3_var", allow_reuse=True, always=True)(
-        gen_random_value
+    _gen_norm_O3_var = validator("O3_var", allow_reuse=True, always=True)(
+        gen_norm_value
     )
