@@ -16,6 +16,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk> |      
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
