@@ -1,3 +1,4 @@
+"Fake database data"
 from .database_table_fakes import (
     MetaPointSchema,
     LAQNSiteSchema,
