@@ -19,9 +19,8 @@ from .mr_dgp.mr_mixing_weights import (
 
 from .mr_dgp.utils import set_objective
 
-from ..loggers import get_logger
 from .model import ModelMixin
-from ..types import FeaturesDict, ModelParams, TargetDict
+from ..types import FeaturesDict, ParamsDict, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -35,7 +34,7 @@ class MRDGP(ModelMixin):
     MR-DGP for air quality.
     """
 
-    def get_default_model_params(self):
+    def get_default_model_params(self) -> ParamsDict:
         """
         The default model parameters of MR-DGP if none are supplied.
 
@@ -46,20 +45,17 @@ class MRDGP(ModelMixin):
             Dictionary of parameters.
         """
         return {
-            "restore": False,
-            "train": True,
-            "model_state_fp": "",
             "base_laqn": {
                 "kernel": {
                     "name": "MR_SE_LAQN_BASE",
                     "type": "se",
                     "active_dims": [0, 1, 2],  # epoch, lat, lon,
                     "lengthscales": [0.1, 0.1, 0, 1],
-                    "variances": [1.0, 1.0, 1.0],
+                    "variance": [1.0, 1.0, 1.0],
                 },
-                "inducing_num": 300,
+                "num_inducing_points": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1,
+                "likelihood_variance": 0.1,
             },
             "base_sat": {
                 "kernel": {
@@ -67,11 +63,11 @@ class MRDGP(ModelMixin):
                     "type": "se",
                     "active_dims": [0, 1, 2],  # epoch, lat, lon,
                     "lengthscales": [0.1, 0.1, 0, 1],
-                    "variances": [1.0, 1.0, 1.0],
+                    "variance": [1.0, 1.0, 1.0],
                 },
-                "inducing_num": 300,
+                "num_inducing_points": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1,
+                "likelihood_variance": 0.1,
             },
             "dgp_sat": {
                 "kernel": [
@@ -79,19 +75,19 @@ class MRDGP(ModelMixin):
                         "name": "MR_LINEAR_SAT_DGP",
                         "type": "linear",
                         "active_dims": [0],  # previous GP, lat, lon,
-                        "variances": [1.0],
+                        "variance": [1.0],
                     },
                     {
                         "name": "MR_SE_SAT_DGP",
                         "type": "se",
                         "active_dims": [2, 3],  # previous GP, lat, lon,
                         "lengthscales": [0.1, 0, 1],
-                        "variances": [1.0, 1.0],
+                        "variance": [1.0, 1.0],
                     },
                 ],
-                "inducing_num": 300,
+                "num_inducing_points": 300,
                 "minibatch_size": 100,
-                "noise_sigma": 0.1,
+                "likelihood_variance": 0.1,
             },
             "mixing_weight": {"name": "dgp_only", "param": None},
             "num_samples_between_layers": 1,
@@ -109,9 +105,9 @@ class MRDGP(ModelMixin):
 
         k_parent_1 = None
 
-        num_z_base_laqn = self.model_params["base_laqn"]["inducing_num"]
-        num_z_base_sat = self.model_params["base_sat"]["inducing_num"]
-        num_z_dgp_sat = self.model_params["dgp_sat"]["inducing_num"]
+        num_z_base_laqn = self.model_params["base_laqn"]["num_inducing_points"]
+        num_z_base_sat = self.model_params["base_sat"]["num_inducing_points"]
+        num_z_dgp_sat = self.model_params["dgp_sat"]["num_inducing_points"]
 
         base_z_inducing_locations = [
             get_inducing_points(dataset[0][0], num_z_base_laqn),
@@ -147,10 +143,10 @@ class MRDGP(ModelMixin):
 
         noise_sigmas = [
             [
-                self.model_params["base_laqn"]["noise_sigma"],
-                self.model_params["base_sat"]["noise_sigma"],
+                self.model_params["base_laqn"]["likelihood_variance"],
+                self.model_params["base_sat"]["likelihood_variance"],
             ],
-            [self.model_params["dgp_sat"]["noise_sigma"]],
+            [self.model_params["dgp_sat"]["likelihood_variance"]],
             [1.0],
         ]
 
@@ -244,9 +240,9 @@ class MRDGP(ModelMixin):
 
                 if not simple_optimizing_scheme:
                     set_objective(AdamOptimizer, "base_elbo")
-
+                    # TODO maxiter for different models (sat, laqn -> sat)
                     opt.minimize(
-                        self.model, step_callback=self.elbo_logger, maxiter=self.model_params["maxiter"]
+                        self.model, step_callback=self.elbo_logger, maxiter=self.model_params["base_laqn"]["maxiter"]
                     )
 
                     # m.disable_base_elbo()
@@ -362,7 +358,7 @@ def get_kernel(kernels, base_name):
                 # construct linear kernel on current active dim
                 kernel_obj = kernel_dict[kernel_type](
                     input_dim=1,
-                    variance=kernel["variances"][idx],
+                    variance=kernel["variance"][idx],
                     active_dims=[kernel["active_dims"][idx]],
                     name="{kernel}_{kernel_idx}_{idx}".format(
                         kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
@@ -373,7 +369,7 @@ def get_kernel(kernels, base_name):
                 kernel_obj = kernel_dict[kernel_type](
                     input_dim=1,
                     lengthscales=kernel["lengthscales"][idx],
-                    variance=kernel["variances"][idx],
+                    variance=kernel["variance"][idx],
                     active_dims=[kernel["active_dims"][idx]],
                     name="{kernel}_{kernel_idx}_{idx}".format(
                         kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
