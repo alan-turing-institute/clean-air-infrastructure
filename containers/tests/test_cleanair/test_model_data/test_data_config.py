@@ -230,6 +230,14 @@ class TestModelConfig:
 
             assert set(meta_ids) == set(interest_ids)
 
+    def test_generate_full_config(self, valid_config, model_config):
+
+        try:
+            full_config = model_config.generate_full_config(valid_config)
+
+        except ValidationError:
+            pytest.raises("Full config failed")
+
     # def test_full_config(self, valid_config, model_config, meta_records):
 
     #     full_config = model_config.generate_full_config(valid_config)
