@@ -10,6 +10,8 @@ from scipy.stats import uniform, norm
 import numpy as np
 from ....types import Source, FeatureNames
 
+# pylint: disable=E0213,R0201
+
 
 def get_random_string(length: int) -> str:
     "Random string of length"
@@ -47,7 +49,6 @@ class MetaPointSchema(BaseModel):
 
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
 
-    @classmethod
     @validator("location", always=True)
     def gen_location(cls, v):
         "Random location"
@@ -85,7 +86,6 @@ class LAQNReadingSchema(BaseModel):
 
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
 
-    @classmethod
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
         "Generate end time one hour after start time"
