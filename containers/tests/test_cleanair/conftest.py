@@ -48,6 +48,16 @@ from cleanair.types import Source, Species, FeatureNames
 
 
 @pytest.fixture(scope="class")
+def dataset_start_date():
+    return isoparse("2020-01-01")
+
+
+@pytest.fixture(scope="class")
+def dataset_end_date():
+    return isoparse("2020-01-05")
+
+
+@pytest.fixture(scope="class")
 def meta_records():
 
     return [
@@ -78,7 +88,7 @@ def laqn_site_records(meta_records):
 
 
 @pytest.fixture(scope="class")
-def laqn_reading_records(laqn_site_records):
+def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date):
     """LAQN reading records assuming full record set with all species at every sensor and no missing data"""
     laqn_readings = []
     for site in laqn_site_records:
@@ -86,9 +96,7 @@ def laqn_reading_records(laqn_site_records):
         for species in Species:
 
             for measurement_start_time in rrule.rrule(
-                rrule.HOURLY,
-                dtstart=isoparse("2020-01-01"),
-                until=isoparse("2020-01-07"),
+                rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
             ):
 
                 laqn_readings.append(
@@ -103,7 +111,7 @@ def laqn_reading_records(laqn_site_records):
 
 
 @pytest.fixture(scope="class")
-def aqe_reading_records(aqe_site_records):
+def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
     """AQE reading records assuming full record set with all species at every sensor and no missing data"""
     aqe_readings = []
     for site in aqe_site_records:
@@ -111,9 +119,7 @@ def aqe_reading_records(aqe_site_records):
         for species in Species:
 
             for measurement_start_time in rrule.rrule(
-                rrule.HOURLY,
-                dtstart=isoparse("2020-01-01"),
-                until=isoparse("2020-01-07"),
+                rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
             ):
 
                 aqe_readings.append(

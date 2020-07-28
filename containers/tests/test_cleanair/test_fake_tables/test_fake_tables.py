@@ -24,9 +24,11 @@ from cleanair.types import Source, Species, FeatureNames
 
 
 class TestDataFaker:
-    def test_read_metapoint_records(
-        self, fake_cleanair_dataset, secretfile, connection_class, meta_records
-    ):
+    def test_setup(self, fake_cleanair_dataset):
+
+        pass
+
+    def test_read_metapoint_records(self, secretfile, connection_class, meta_records):
         """Check we can read the rows"""
 
         reader = DBReader(secretfile=secretfile, connection=connection_class)

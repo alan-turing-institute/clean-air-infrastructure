@@ -18,7 +18,7 @@ from ..mixins.availability_mixins import (
 from ..loggers import get_logger, green
 from ..timestamps import as_datetime
 from ..decorators import db_query
-
+from ..exceptions import MissingFeatureError
 from ..types import (
     Source,
     Species,
@@ -74,11 +74,11 @@ class ModelConfig(
             pred_end_date=(
                 as_datetime(trainupto) + timedelta(hours=predhours)
             ).isoformat(),
-            train_sources=[src.value for src in train_sources],
-            pred_sources=[src.value for src in pred_sources],
+            train_sources=train_sources,
+            pred_sources=pred_sources,
             train_interest_points={src: "all" for src in train_sources},
             pred_interest_points={src: "all" for src in pred_sources},
-            species=[src.value for src in species],
+            species=species,
             features=features,
             buffer_sizes=buffer_sizes,
             norm_by=norm_by,
@@ -90,24 +90,17 @@ class ModelConfig(
         """Validate a configuration file"""
         self.logger.info("Validating config")
 
-        self.logger.debug("Checking requested features are available in database")
-        self.__check_features_available(
+        self.check_features_available(
             config.features, config.train_start_date, config.pred_end_date
         )
         self.logger.info(green("Requested features are available"))
 
         # Check training sources are available
-        self.logger.debug(
-            "Checking requested sources for training are available in database"
-        )
-        self.__check_sources_available(config.train_sources)
+        self.check_sources_available(config.train_sources)
         self.logger.info(green("Requested training sources are available"))
 
         # Check prediction sources are available
-        self.logger.debug(
-            "Checking requested sources for prediction are available in database"
-        )
-        self.__check_sources_available(config.pred_sources)
+        self.check_sources_available(config.pred_sources)
         self.logger.info(green("Requested prediction sources are available"))
 
         # TODO: Validate interest points
@@ -159,9 +152,9 @@ class ModelConfig(
 
         return FullConfig(**config_dict)
 
-    def __check_features_available(
+    def check_features_available(
         self, features: List[FeatureNames], start_date: datetime, end_date: datetime
-    ):
+    ) -> None:
         """Check that all requested features exist in the database"""
 
         available_features = self.get_available_static_features(
@@ -175,14 +168,14 @@ class ModelConfig(
             if feature.value not in available_features:
                 unavailable_features.append(feature)
         if unavailable_features:
-            raise AttributeError(
+            raise MissingFeatureError(
                 """The following features are not available the cleanair database: {}.
                    If requesting dynamic features they may not be available for the selected dates""".format(
                     unavailable_features
                 )
             )
 
-    def __check_sources_available(self, sources: List[Source]):
+    def check_sources_available(self, sources: List[Source]):
         """Check that sources are available in the database
 
         args:

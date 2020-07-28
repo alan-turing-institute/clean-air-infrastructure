@@ -2,24 +2,186 @@
 Tests related to the ModelConfig class
 """
 import pytest
+from enum import Enum
+from dateutil.parser import isoparse
+from datetime import timedelta
+from pydantic import ValidationError
+from cleanair.models import ModelConfig
+from cleanair.types.dataset_types import BaseConfig, FullConfig
 
-# from cleanair.types import Species, TargetDict
+from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
+from cleanair.exceptions import MissingFeatureError
 
 
-class TestRaw:
-    def test_setup(self, secretfile, connection_class):
+@pytest.fixture(scope="class")
+def model_config(secretfile, connection_class):
+
+    return ModelConfig(secretfile=secretfile, connection=connection_class)
+
+
+@pytest.fixture()
+def valid_config(dataset_start_date, dataset_end_date):
+
+    return BaseConfig(
+        **{
+            "train_start_date": dataset_start_date,
+            "train_end_date": dataset_end_date,
+            "pred_start_date": dataset_end_date,
+            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "include_prediction_y": False,
+            "train_sources": ["laqn", "satellite"],
+            "pred_sources": ["satellite", "laqn", "hexgrid"],
+            "train_interest_points": {"laqn": "all", "satellite": "all"},
+            "pred_interest_points": {
+                "satellite": "all",
+                "laqn": "all",
+                "hexgrid": "all",
+            },
+            "species": ["NO2"],
+            "features": [
+                "total_road_length",
+                "total_a_road_length",
+                "total_a_road_primary_length",
+                "total_b_road_length",
+                "grass",
+                "building_height",
+                "water",
+                "park",
+                "max_canyon_narrowest",
+                "max_canyon_ratio",
+            ],
+            "buffer_sizes": ["1000", "500"],
+            "norm_by": "laqn",
+            "model_type": "svgp",
+        }
+    )
+
+
+class TestModelConfig:
+    def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
 
-        try:
-            # Insert data
-            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+        pass
 
-            # writer.commit_records(
-            #     video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
-            # )
-        except IntegrityError:
-            pytest.fail("Dummy data insert")
+    def test_generate_config(self, model_config):
+
+        try:
+            model_config.generate_data_config(
+                "2020-01-01",
+                48,
+                48,
+                [Source.laqn, Source.aqe, Source.satellite],
+                [Source.laqn, Source.hexgrid],
+                [Species.NO2],
+                [i.value for i in FeatureNames],
+                [i.value for i in FeatureBufferSize],
+                Source.laqn,
+                "svgp",
+            )
+        except ValueError as e:
+            pytest.fail(e)
+
+    @pytest.mark.parametrize(
+        "trainupto,train_sources,pred_sources,species,features,buffer_sizes,norm_by,model_type",
+        [
+            # Uses an invalid source
+            pytest.param(
+                "2020-01-01",
+                [Source.laqn, Source.aqe, Source.satellite],
+                [Source.laqn, Source.hexgrid],
+                [Species.NO2],
+                [i.value for i in FeatureNames],
+                [i.value for i in FeatureBufferSize],
+                "not_a_source",
+                "svgp",
+            ),
+            # Species rather than source in pred source
+            pytest.param(
+                "2020-01-01",
+                [Source.laqn, Source.aqe, Source.satellite],
+                [Source.laqn, Species.NO2],
+                [Species.NO2],
+                [i.value for i in FeatureNames],
+                [i.value for i in FeatureBufferSize],
+                Source.laqn,
+                "svgp",
+            ),
+        ],
+    )
+    def test_generate_config_invalid(
+        self,
+        model_config,
+        trainupto,
+        train_sources,
+        pred_sources,
+        species,
+        features,
+        buffer_sizes,
+        norm_by,
+        model_type,
+    ):
+        "Test parameter validation"
+
+        with pytest.raises(ValidationError):
+            model_config.generate_data_config(
+                trainupto,
+                48,
+                48,
+                train_sources,
+                pred_sources,
+                species,
+                features,
+                buffer_sizes,
+                norm_by,
+                model_type,
+            )
+
+    def test_config_validation(
+        self, valid_config, model_config, static_feature_records
+    ):
+
+        # All static features in database
+        assert {i.feature_name for i in static_feature_records} == set(
+            model_config.get_available_static_features(output_type="list")
+        )
+
+        # Check feature availability doesn't raise an error
+        try:
+            model_config.check_features_available(
+                valid_config.features,
+                valid_config.train_start_date,
+                valid_config.pred_end_date,
+            )
+        except Exception as e:
+            print(e)
+            pytest.fail("Unexpected error")
+
+        class FakeFeature(str, Enum):
+
+            fake_feature = "fake_feature"
+
+        with pytest.raises(MissingFeatureError):
+            model_config.check_features_available(
+                [FakeFeature.fake_feature],
+                valid_config.train_start_date,
+                valid_config.pred_end_date,
+            )
+        # assert len(model_config.get_available_static_features().all()) == len(
+        #     FeatureNames
+        # )
+
+    # def test_full_config(self, valid_config, model_config, meta_records):
+
+    #     full_config = model_config.generate_full_config(valid_config)
+
+    #     sources = full_config.train_interest_points.keys()
+
+    #     for src in sources:
+
+    #         assert full_config.train_interest_points[src] == [
+    #             i.id for i in meta_records if i.source == src
+    #         ]
 
 
 # def test_training_dicts(model_data):
