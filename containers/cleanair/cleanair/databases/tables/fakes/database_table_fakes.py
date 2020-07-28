@@ -9,6 +9,7 @@ import numpy as np
 from scipy.stats import uniform, norm
 from pydantic import BaseModel, validator, Json
 from ....utils.hashing import hash_fn
+#pylist: disable=R0401
 from ....types import Source, FeatureNames
 
 

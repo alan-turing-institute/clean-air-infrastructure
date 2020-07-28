@@ -1,5 +1,5 @@
 """Types for the cleanair package."""
-
+# pylint: disable=cyclic-import
 from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
 from .dataset_types import (
     DataConfig,
