@@ -1,10 +1,14 @@
 """Confif for urbanair tests"""
+import random
+from scipy.stats import uniform, norm
+import numpy as np
+import string
 import uuid
 from fastapi.testclient import TestClient
 import pytest
 from dateutil import rrule, parser
 from sqlalchemy.orm import sessionmaker
-import numpy as np
+from cleanair.utils.hashing import hash_fn
 from cleanair.databases.tables import (
     JamCamVideoStats,
     MetaPoint,
@@ -15,6 +19,28 @@ from cleanair.databases.tables import (
 )
 from urbanair import main, databases
 from urbanair.types import DetectionClass
+
+def get_random_string(length):
+    letters = string.ascii_lowercase
+    result_str = "".join(random.choice(letters) for i in range(length))
+    return result_str
+
+def gen_site_code() -> str:
+    return get_random_string(5)
+
+def gen_hash_id() -> str:
+    return hash_fn(str(random.random()))
+
+def gen_random_value() -> float:
+    return np.exp(norm.rvs(0, 1))
+
+def gen_location():
+    min_lon = -0.508854438
+    max_lon = 0.334270337
+    min_lat = 51.286678732
+    max_lat = 51.692470396
+    point = uniform.rvs([min_lon, min_lat], [max_lon - min_lon, max_lat - min_lat])
+    return f"SRID=4326;POINT({point[0]} {point[1]})"
 
 
 @pytest.fixture()
@@ -107,61 +133,66 @@ def forecast_stat_records():
     records_data = []
     records_result = []
     records_point = []
-    i = 0
     for vtime in forecast_upload_datetimes:
-        val = uuid.uuid4()
+        point_id = uuid.uuid4()
+        instance_id = gen_hash_id()
+        param_id = gen_hash_id()
+        cluster_id = gen_hash_id()
+        data_id = gen_hash_id()
+        model_name = gen_site_code()  
+
         records_model.append(
             AirQualityModelTable(
-                model_name="ssd" + str(i),
-                param_id="eefef" + str(i),
+                model_name=model_name,
+                param_id=param_id,
                 model_param={"hello": "hi"},
             )
         )
         records_data.append(
             AirQualityDataTable(
-                data_id="dmee" + str(i),
+                data_id=data_id,
                 data_config={"config": "TestConfig"},
                 preprocessing={"prepoc": "Test"},
             )
         )
         records_instance.append(
             AirQualityInstanceTable(
-                instance_id="kfjefefre" + str(i),
-                tag="adld",
-                git_hash="sffrfre",
-                cluster_id="ldmeldedw",
-                model_name="ssd" + str(i),
-                data_id="dmee" + str(i),
-                param_id="eefef" + str(i),
+                instance_id=instance_id,
+                tag=gen_site_code(),
+                git_hash=gen_site_code(),
+                cluster_id=cluster_id,
+                model_name=model_name,
+                data_id=data_id,
+                param_id=param_id,
                 fit_start_time=vtime,
             )
         )
         records_point.append(
             MetaPoint(
-                source="snfvfdv" + str(i),
-                location="SRID=4326;POINT(-123.365556 48.428611)",
-                id=val.hex,
+                source=gen_site_code(),
+                location=gen_location(),
+                id=point_id.hex,
             )
         )
         records_result.append(
             AirQualityResultTable(
-                instance_id="kfjefefre" + str(i),
-                data_id="dmee" + str(i),
-                point_id=val.hex,
+                instance_id=instance_id,
+                data_id=data_id,
+                point_id=point_id.hex,
                 measurement_start_utc=vtime,
-                NO2_mean="1.1561",
-                NO2_var="1.8595",
-                PM10_mean="0.62611",
-                PM10_var="0.5146",
-                PM25_mean="0.1561",
-                PM25_var="0.2616",
-                CO2_mean="0.9948",
-                CO2_var="0.4656",
-                O3_mean="1.36161",
-                O3_var="0.761616",
+                NO2_mean=gen_random_value(),
+                NO2_var=gen_random_value(),
+                PM10_mean=gen_random_value(),
+                PM10_var=gen_random_value(),
+                PM25_mean=gen_random_value(),
+                PM25_var=gen_random_value(),
+                CO2_mean=gen_random_value(),
+                CO2_var=gen_random_value(),
+                O3_mean=gen_random_value(),
+                O3_var=gen_random_value(),
             )
         )
-        i += 1
+    
     return [
         records_instance,
         records_data,
