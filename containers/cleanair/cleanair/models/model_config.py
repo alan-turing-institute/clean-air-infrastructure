@@ -18,7 +18,7 @@ from ..mixins.availability_mixins import (
 from ..loggers import get_logger, green
 from ..timestamps import as_datetime
 from ..decorators import db_query
-from ..exceptions import MissingFeatureError
+from ..exceptions import MissingFeatureError, MissingSourceError
 from ..types import (
     Source,
     Species,
@@ -190,7 +190,7 @@ class ModelConfig(
                 unavailable_sources.append(source)
 
         if unavailable_sources:
-            raise AttributeError(
+            raise MissingSourceError(
                 "The following sources are not available the cleanair database: {}".format(
                     unavailable_sources
                 )

@@ -11,7 +11,8 @@ from cleanair.types.dataset_types import BaseConfig, FullConfig
 
 from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
-from cleanair.exceptions import MissingFeatureError
+from cleanair.databases.tables import MetaPoint
+from cleanair.exceptions import MissingFeatureError, MissingSourceError
 
 
 @pytest.fixture(scope="class")
@@ -137,9 +138,10 @@ class TestModelConfig:
                 model_type,
             )
 
-    def test_config_validation(
+    def test_validation_static_features(
         self, valid_config, model_config, static_feature_records
     ):
+        """Check static features raise error when missing"""
 
         # All static features in database
         assert {i.feature_name for i in static_feature_records} == set(
@@ -153,23 +155,80 @@ class TestModelConfig:
                 valid_config.train_start_date,
                 valid_config.pred_end_date,
             )
-        except Exception as e:
-            print(e)
+        except Exception:
             pytest.fail("Unexpected error")
 
         class FakeFeature(str, Enum):
 
             fake_feature = "fake_feature"
 
+        # Check error raised when features missing
         with pytest.raises(MissingFeatureError):
             model_config.check_features_available(
                 [FakeFeature.fake_feature],
                 valid_config.train_start_date,
                 valid_config.pred_end_date,
             )
-        # assert len(model_config.get_available_static_features().all()) == len(
-        #     FeatureNames
-        # )
+
+    def test_validation_source_available(
+        self, valid_config, model_config, static_feature_records
+    ):
+
+        # All sources in database
+        assert {i.feature_source.value for i in static_feature_records}.issubset(
+            set(model_config.get_available_sources(output_type="list"))
+        )
+
+        # Check source availability doesn't raise an error
+        try:
+            model_config.check_sources_available(valid_config.train_sources)
+        except Exception:
+            pytest.fail("Unexpected error")
+        try:
+            model_config.check_sources_available(valid_config.pred_sources)
+        except Exception:
+            pytest.fail("Unexpected error")
+
+        class FakeSource(str, Enum):
+            fake_source = "fake_source"
+
+        # Check error raised when features missing
+        with pytest.raises(MissingSourceError):
+            model_config.check_sources_available([FakeSource.fake_source])
+
+    def test_validate_config(self, valid_config, model_config):
+        "Check all validations pass"
+
+        try:
+            model_config.validate_config(valid_config)
+        except Exception:
+            pytest.raises("Unexpected error")
+
+    @pytest.mark.parametrize(
+        "interest_points_name", [("train_interest_points"), ("pred_interest_points")],
+    )
+    def test_get_interest_point_ids(
+        self, valid_config, model_config, interest_points_name
+    ):
+        "Check we get all interest points"
+
+        interest_points = getattr(valid_config, interest_points_name)
+        sources = interest_points.keys()
+
+        all_interest_points = model_config.get_interest_point_ids(interest_points)
+
+        for source in sources:
+
+            with model_config.dbcnxn.open_session() as session:
+
+                meta_ids = (
+                    session.query(MetaPoint.id).filter(MetaPoint.source == source).all()
+                )
+
+            meta_ids = [str(i.id) for i in meta_ids]
+            interest_ids = all_interest_points[source]
+
+            assert set(meta_ids) == set(interest_ids)
 
     # def test_full_config(self, valid_config, model_config, meta_records):
 

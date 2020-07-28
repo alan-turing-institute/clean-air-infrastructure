@@ -1,3 +1,3 @@
-from .exceptions import MissingFeatureError
+from .exceptions import MissingFeatureError, MissingSourceError
 
-__all__ = ["MissingFeatureError"]
+__all__ = ["MissingFeatureError", "MissingSourceError"]
