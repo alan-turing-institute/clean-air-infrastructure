@@ -1,7 +1,4 @@
-"""
-Module for inserting fake data acceptable from the database
-"""
-
+"Fake database data"
 from .database_table_fakes import (
     MetaPointSchema,
     LAQNSiteSchema,

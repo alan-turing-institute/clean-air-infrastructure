@@ -1,36 +1,34 @@
 """Fake data generators which can be inserted into database"""
 
-from typing import Optional
 import random
+from typing import Optional
 import string
 import uuid
 from datetime import datetime, date, timedelta
-import numpy as np
+from pydantic import BaseModel, validator
 from scipy.stats import uniform, norm
-from pydantic import BaseModel, validator, Json
-from ....utils.hashing import hash_fn
-#pylist: disable=R0401
+import numpy as np
 from ....types import Source, FeatureNames
 
+# pylint: disable=E0213,R0201
 
-def _get_random_string(length):
+
+def get_random_string(length: int) -> str:
+    "Random string of length"
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for i in range(length))
     return result_str
 
 
-# pylint: disable=C0103,E0213
-
-
-def gen_point_id(v) -> uuid.UUID:
-    "Return a random uuid"
+def gen_point_id(v: Optional[uuid.UUID]) -> uuid.UUID:
+    "Random uuid"
     if v:
         return v
     return uuid.uuid4()
 
 
 def gen_site_code(v) -> str:
-    "Return a random string with length 4"
+   "Random site code"
     if v:
         return v
     return _get_random_string(4)
@@ -43,8 +41,8 @@ def gen_hash_id(v) -> str:
     return hash_fn(str(random.random()))
 
 
-def gen_norm_value(v) -> float:
-    "Return a random value between 0 and 1"
+def gen_norm_value(v: Optional[float]) -> float:
+    "random exp normal"
     if v:
         return v
     return np.exp(norm.rvs(0, 1))
@@ -61,6 +59,7 @@ class MetaPointSchema(BaseModel):
     # pylint: disable=R0201,C0116
     @validator("location", always=True)
     def gen_location(cls, v):
+        "Random location"
         if v:
             return v
         min_lon = -0.508854438
@@ -97,6 +96,7 @@ class LAQNReadingSchema(BaseModel):
     # pylint: disable=R0201,C0116
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
+        "Generate end time one hour after start time"
         if v:
             return v
         return values["measurement_start_utc"] + timedelta(hours=1)
@@ -116,7 +116,7 @@ class AQEReadingSchema(LAQNReadingSchema):
 
 
 class StaticFeaturesSchema(BaseModel):
-    "Static Features schema"
+    "Static features schema"
     point_id: uuid.UUID
     feature_name: FeatureNames
     feature_source: Source
