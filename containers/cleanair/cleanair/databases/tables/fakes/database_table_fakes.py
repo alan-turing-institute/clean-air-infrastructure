@@ -10,9 +10,6 @@ from scipy.stats import uniform, norm
 import numpy as np
 from ....types import Source, FeatureNames
 
-# pylint: disable=E0213,R0201
-
-
 def get_random_string(length: int) -> str:
     "Random string of length"
     letters = string.ascii_lowercase
@@ -56,7 +53,6 @@ class MetaPointSchema(BaseModel):
 
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
 
-    # pylint: disable=R0201,C0116
     @validator("location", always=True)
     def gen_location(cls, v):
         "Random location"
@@ -93,7 +89,7 @@ class LAQNReadingSchema(BaseModel):
     value: Optional[float]
 
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
-    # pylint: disable=R0201,C0116
+
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
         "Generate end time one hour after start time"
@@ -148,9 +144,10 @@ class AirQualityModelSchema(BaseModel):
     param_id: Optional[str]
 
     _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-    # pylint: disable=R0201,C0116
+
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
+        "Generate empty parammeters"
         if v:
             return v
         return '{"params": "empty"}'
@@ -163,15 +160,17 @@ class AirQualityDataSchema(BaseModel):
     preprocessing: Optional[Json]
 
     _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
-    # pylint: disable=R0201,C0116
+   
     @validator("data_config", always=True)
     def gen_data_config(cls, v):
+        "Generate an empty data config"
         if v:
             return v
         return '{"data_config": "empty"}'
 
     @validator("preprocessing", always=True)
     def gen_preprocessing(cls, v):
+        "Generate an empty preprocessing"
         if v:
             return v
         return '{"preprocessing": "empty"}'
