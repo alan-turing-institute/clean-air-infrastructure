@@ -75,7 +75,6 @@ def fit_model(model: ModelMixin, input_dir: Path, exist_ok: bool = False) -> Non
 
     # Load data and configuration file
     X_train, Y_train, _ = get_training_arrays(input_dir)
-    full_config = load_model_config(input_dir, full=True)
 
     # Fit model
     model.fit(X_train, Y_train)

@@ -39,7 +39,6 @@ class ModelMixin:
             self.model_params = self.get_default_model_params()
         else:
             self.model_params = model_params
-            self.check_model_params_are_valid()
 
         # get filepaths and other configs
         default_config = dict(
@@ -61,7 +60,6 @@ class ModelMixin:
             )
         # other misc arguments
         self.model = None
-        self.minimum_param_keys = []
         self.epoch = 0
         self.batch_size = batch_size
         self.refresh = refresh
@@ -77,22 +75,6 @@ class ModelMixin:
         Returns:
             Default model parameters.
         """
-
-    def check_model_params_are_valid(self) -> None:
-        """
-        Check the model parameters are valid for the model.
-
-        Raises:
-            KeyError: If the model parameters are not sufficient.
-        """
-        min_keys = set(self.minimum_param_keys)
-        actual_keys = set(self.model_params.keys())
-        diff = min_keys - actual_keys
-        # if the set of minimial keys is NOT a subset of the parameters
-        if len(diff) > 0:
-            error_message = "Model parameters are not sufficient."
-            error_message += " You must also supply {d}.".format(d=diff)
-            raise KeyError(error_message)
 
     @abstractmethod
     def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
