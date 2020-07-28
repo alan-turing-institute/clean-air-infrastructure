@@ -216,7 +216,7 @@ class AirQualityResultSchema(BaseModel):
     O3_mean: Optional[float]
     O3_var: Optional[float]
 
-    _gen_random_NO2_mean = validator("NO2_mean", allow_reuse=True, always=True)(
+    _gen_norm_NO2_mean = validator("NO2_mean", allow_reuse=True, always=True)(
         gen_norm_value
     )
     _gen_norm_NO2_var = validator("NO2_var", allow_reuse=True, always=True)(
