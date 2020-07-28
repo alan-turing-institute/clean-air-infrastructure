@@ -22,7 +22,7 @@ from cleanair.databases.tables.fakes import (
     AirQualityInstanceSchema,
     AirQualityResultSchema,
 )
-from cleanair.types import Source, Species
+from cleanair.types import Source, Species, FeatureNames
 
 
 @pytest.fixture(scope="class")
@@ -36,11 +36,22 @@ def meta_records():
 
 
 @pytest.fixture(scope="class")
+def aqe_site_records(meta_records):
+
+    return [
+        AQESiteSchema(point_id=rec.id, date_opened="2015-01-01")
+        for rec in meta_records
+        if rec.source == Source.aqe
+    ]
+
+
+@pytest.fixture(scope="class")
 def laqn_site_records(meta_records):
 
     return [
         LAQNSiteSchema(point_id=rec.id, date_opened="2015-01-01")
         for rec in meta_records
+        if rec.source == Source.laqn
     ]
 
 
@@ -178,6 +189,23 @@ class TestDataFaker:
         except Exception:
             pytest.fail("Dummy data insert")
 
+    def test_insert_aqe_site_records(
+        self, secretfile, connection_class, aqe_site_records, meta_records
+    ):
+        "Insert aqe site data"
+
+        try:
+            # Insert data
+            writer = DBWriter(secretfile=secretfile, connection=connection_class)
+
+            writer.commit_records(
+                [i.dict() for i in aqe_site_records],
+                on_conflict="overwrite",
+                table=AQESite,
+            )
+        except Exception:
+            pytest.fail("Dummy data insert")
+
     def test_laqn_foreign_key_fail(self, secretfile, connection_class):
         "Make sure we can't violate the foreign key constraint for point_id"
         writer = DBWriter(secretfile=secretfile, connection=connection_class)
@@ -198,6 +226,17 @@ class TestDataFaker:
             data = session.query(LAQNSite).all()
 
         assert len(data) == len(laqn_site_records)
+
+    def test_read_aqe_records(self, secretfile, connection_class, aqe_site_records):
+        """Check we can read the laqn site rows"""
+
+        reader = DBReader(secretfile=secretfile, connection=connection_class)
+
+        with reader.dbcnxn.open_session() as session:
+
+            data = session.query(AQESite).all()
+
+        assert len(data) == len(aqe_site_records)
 
     def test_insert_laqn_readings(
         self, secretfile, connection_class, laqn_reading_records

@@ -45,6 +45,9 @@ def gen_random_value(cls, v) -> float:
 
 class MetaPointSchema(BaseModel):
 
+
+class MetaPointSchema(BaseModel):
+    "Meta Point Schema"
     id: Optional[uuid.UUID]
     source: str
     location: Optional[str]
@@ -65,7 +68,7 @@ class MetaPointSchema(BaseModel):
 
 
 class LAQNSiteSchema(BaseModel):
-
+    "LAQN Site Schema"
     site_code: Optional[str]
     point_id: uuid.UUID
     site_type: str = "Roadside"
@@ -78,18 +81,14 @@ class LAQNSiteSchema(BaseModel):
 
 
 class LAQNReadingSchema(BaseModel):
-
+    "LAQN Reading Schema"
     site_code: str
     species_code: str
     measurement_start_utc: datetime
     measurement_end_utc: Optional[datetime]
     value: Optional[float]
 
-    @validator("value", always=True)
-    def gen_value(cls, v):
-        if v:
-            return v
-        return np.exp(norm.rvs(0, 1))
+    _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
 
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
