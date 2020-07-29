@@ -1,6 +1,6 @@
 """Class for scan stats interacting with DB."""
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Optional
 import pandas as pd
 from sqlalchemy import func
@@ -34,18 +34,20 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         super().__init__(**kwargs)
         self.borough: str = borough
         self.forecast_hours: int = forecast_hours
-        self.forecast_start: str = as_datetime(upto) - timedelta(forecast_hours)
+        self.forecast_start: str = as_datetime(upto) - timedelta(hours=forecast_hours)
         self.forecast_upto: str = as_datetime(upto)
         self.grid_resolution: int = grid_resolution
         self.model_name: str = model_name
         self.train_hours: int = train_hours
-        self.train_start: str = as_datetime(upto) - timedelta(train_hours + forecast_hours)
+        self.train_start: str = as_datetime(upto) - timedelta(
+            hours=train_hours + forecast_hours
+        )
         self.train_upto: str = self.forecast_start
         # load the scoot readings
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
             borough=self.borough,
             start=self.train_start,
-            upto=self.train_upto,
+            upto=self.forecast_upto,
             output_type="df",
         )
 
@@ -54,13 +56,19 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         # 2) Pre-process
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
-        forecast_df = forecast(processed_df, self.train_hours, self.forecast_hours, self.model_name)
+        forecast_df = forecast(
+            processed_df, self.train_hours, self.forecast_hours, self.model_name
+        )
         # 4) Aggregate readings/forecast to grid level
-        aggregate = aggregate_readings_to_grid(forecast_df, processed_df)
+        aggregate = aggregate_readings_to_grid(forecast_df)
         # 5) Scan
-        all_scores = scan(aggregate, self.grid_resolution)
+        all_scores = scan(
+            aggregate, self.grid_resolution, self.forecast_start, self.forecast_upto
+        )
         # 6) Aggregate average scores to grid level
-        grid_level_scores = average_gridcell_scores(all_scores, self.grid_resolution)
+        grid_level_scores = average_gridcell_scores(
+            all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
+        )
         return grid_level_scores
 
     @db_query
@@ -74,8 +82,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             The geometry column of the scoot detector table is renamed to 'location'.
             The geometry column of the fishnet is 'geom'.
         """
-        # TODO add xmin, ymin, xmax, ymax for each grid square
-        fishnet = self.fishnet_over_borough(borough, output_type="subquery")
+        fishnet = self.fishnet_over_borough(
+            borough, self.grid_resolution, output_type="subquery"
+        )
         detectors = self.scoot_detectors(output_type="subquery", geom_label="location")
         with self.dbcnxn.open_session() as session:
             readings = session.query(detectors, fishnet).join(
@@ -97,8 +106,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
-            return session.query(readings).join(
-                fishnet, readings.c.detector_id == fishnet.c.detector_id
+            # Yields df with duplicate columns
+            return session.query(readings, fishnet).join(
+                fishnet, fishnet.c.detector_id == readings.c.detector_id,
             )
 
     def update_remote_tables(self):

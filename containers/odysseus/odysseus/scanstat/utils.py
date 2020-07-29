@@ -4,14 +4,11 @@ import datetime
 import pandas as pd
 
 
-def aggregate_readings_to_grid(
-    detector_df: pd.DataFrame, forecast_df: pd.DataFrame
-) -> pd.DataFrame:
+def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
 
     """Aggregates data from each detector in forecast_df to grid-cell level
     as prescribed by detector_df.
     Args:
-        detector_df: SCOOT data with location, row, col and attached geometry (grid-cell)
         forecast_df: Forecasted SCOOT data from time series analysis
     Returns:
         agg_df: dataframe of SCOOT data aggregated to the spatial grid at hourly
@@ -19,10 +16,6 @@ def aggregate_readings_to_grid(
                 separate columns in the returned dataframe.
     """
 
-    # Check for columns in detector_df and readings
-    assert set(["detector_id", "location", "lon", "lat", "row", "col", "geom"]) == set(
-        detector_df.columns
-    )
     assert set(
         [
             "detector_id",
@@ -32,21 +25,14 @@ def aggregate_readings_to_grid(
             "lat",
             "location",
             "count",
+            "row",
+            "col",
             "baseline",
         ]
     ) == set(forecast_df.columns)
 
-    # Merge readings with detector grid info
-    agg_df = forecast_df.merge(
-        detector_df, how="left", on=["detector_id", "lon", "lat", "location"]
-    )
-
     # These columns make no sense when aggregating to grid level, so drop
-    agg_df = agg_df.drop(["detector_id", "lon", "lat", "location"], axis=1)
-
-    # This column not particularly needed for the scan, so no need
-    # to carry it round.
-    agg_df = agg_df.drop(["geom"], axis=1)
+    agg_df = forecast_df.drop(["detector_id", "lon", "lat", "location"], axis=1)
 
     # Sum counts and baselines at grid cell level
     agg_df = agg_df.groupby(

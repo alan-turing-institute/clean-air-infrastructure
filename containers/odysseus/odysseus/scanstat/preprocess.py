@@ -288,6 +288,8 @@ def fill_missing_values(scoot_df: pd.DataFrame, method: str = "linear") -> pd.Da
             "lon",
             "lat",
             "location",
+            "row",
+            "col",
             "measurement_start_utc",
             "measurement_end_utc",
             "n_vehicles_in_interval",

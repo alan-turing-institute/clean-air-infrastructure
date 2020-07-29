@@ -6,8 +6,6 @@ import datetime
 
 import numpy as np
 import pandas as pd
-from shapely import wkb
-from geoalchemy2.shape import to_shape
 
 from odysseus.scanstat.preprocess import preprocessor
 from odysseus.scanstat.forecast import forecast
@@ -18,26 +16,20 @@ if TYPE_CHECKING:
     from odysseus.scoot import ScanScoot
 
 
-def test_scan(scan_scoot: ScanScoot, scoot_writer) -> None:
+def test_scan(scan_scoot: ScanScoot) -> None:
     """Test whole pipeline of scan functions with settings below."""
 
-    # Set up scan variables
-    # TODO - Can we get at these through scan_scoot?
-    days_in_past = 28
-    days_in_future = 1
-    ts_method = "HW"
-    borough = "Westminster"
-    grid_resolution = 8
+    days_in_past = int(scan_scoot.train_hours / 24)
+    days_in_future = int(scan_scoot.forecast_hours / 24)
+    ts_method = scan_scoot.model_name
+    readings = scan_scoot.readings
 
-    scoot_writer.update_remote_tables()
-    readings = scan_scoot.scoot_fishnet_readings(
-        borough=borough,
-        start=scoot_writer.start,
-        upto=scoot_writer.upto,
-        output_type="df",
-    )
+    # Drop duplicate readings from join
+    # TODO - change the join type so this isnt necessary
+    readings = readings.loc[:, ~readings.columns.duplicated()].copy()
+    print(readings)
 
-    init_num_detectors = len(readings["detector_id"].unique())
+    init_num_detectors = len(readings["detector_id"].drop_duplicates())
     init_num_days = (
         readings["measurement_end_utc"].max() - readings["measurement_start_utc"].min()
     ).days
@@ -61,34 +53,40 @@ def test_scan(scan_scoot: ScanScoot, scoot_writer) -> None:
     )
     print(forecast_df)
 
-    forecast_checks(forecast_df, init_num_detectors, days_in_future, t_max)
+    forecast_checks(
+        forecast_df,
+        init_num_detectors,
+        scan_scoot.forecast_hours,
+        scan_scoot.forecast_start,
+        scan_scoot.forecast_upto,
+    )
 
     # 3) Aggregate data to grid level
-    # First requires getting grid_cell information for the detectors
-    # TODO - this doesn't come from `scoot_fishnet_readings` at the moment
-    detector_df = scan_scoot.scoot_fishnet(borough, output_type="df")
-    detector_df["geom"] = detector_df["geom"].apply(lambda x: wkb.loads(x, hex=True))
-    detector_df["location"] = (
-        detector_df["location"].apply(to_shape).apply(lambda x: x.wkt)
-    )
-    print(detector_df)
-
-    # Now we can aggregate
-    agg_df = aggregate_readings_to_grid(detector_df, forecast_df)
+    agg_df = aggregate_readings_to_grid(forecast_df)
     print(agg_df)
 
-    aggregate_checks(agg_df, days_in_future, grid_resolution)
+    aggregate_checks(agg_df, days_in_future, scan_scoot.grid_resolution)
 
     # 4) Scan
-    all_scores = scan(agg_df, grid_resolution=grid_resolution)
+    all_scores = scan(
+        agg_df,
+        scan_scoot.grid_resolution,
+        scan_scoot.forecast_start,
+        scan_scoot.forecast_upto,
+    )
 
-    scan_checks(all_scores, t_max, days_in_future, grid_resolution)
+    scan_checks(all_scores, t_max, days_in_future, scan_scoot.grid_resolution)
     print(all_scores)
 
     # 5) Aggregate scores to gridcell level using the average
-    grid_level_scores = average_gridcell_scores(all_scores, grid_resolution)
+    grid_level_scores = average_gridcell_scores(
+        all_scores,
+        scan_scoot.grid_resolution,
+        scan_scoot.forecast_start,
+        scan_scoot.forecast_upto,
+    )
 
-    average_score_checks(grid_level_scores, days_in_future, grid_resolution)
+    average_score_checks(grid_level_scores, days_in_future, scan_scoot.grid_resolution)
     print(grid_level_scores)
 
     return
@@ -107,6 +105,8 @@ def preprocess_checks(
         "lon",
         "lat",
         "location",
+        "row",
+        "col",
         "measurement_start_utc",
         "measurement_end_utc",
         "n_vehicles_in_interval",
@@ -134,8 +134,9 @@ def preprocess_checks(
 def forecast_checks(
     forecast_df: pd.DataFrame,
     init_num_detectors: int,
-    days_in_future: int,
-    t_max: datetime,
+    forecast_hours: int,
+    forecast_start: datetime,
+    forecast_upto: datetime,
 ) -> None:
     """Test that forecasts are carried out successfully in `forecast()`."""
 
@@ -147,6 +148,8 @@ def forecast_checks(
         "lon",
         "lat",
         "location",
+        "row",
+        "col",
         "measurement_start_utc",
         "measurement_end_utc",
         "count",
@@ -160,12 +163,10 @@ def forecast_checks(
     neg_baselines = forecast_df[forecast_df["baseline"] < 0]
     assert len(neg_baselines) == 0
 
-    assert len(forecast_df) == days_in_future * 24 * num_detectors
+    assert len(forecast_df) == forecast_hours * num_detectors
 
-    assert forecast_df["measurement_end_utc"].max() == t_max
-    assert forecast_df["measurement_start_utc"].min() == t_max - np.timedelta64(
-        days_in_future, "D"
-    )
+    assert forecast_df["measurement_start_utc"].min() == forecast_start
+    assert forecast_df["measurement_end_utc"].max() == forecast_upto
 
 
 def aggregate_checks(
@@ -252,9 +253,7 @@ def scan_checks(
 
 
 def average_score_checks(
-    grid_level_scores: pd.DataFrame,
-    days_in_future: int,
-    grid_resolution: int,
+    grid_level_scores: pd.DataFrame, days_in_future: int, grid_resolution: int,
 ) -> None:
     """ Test that output from the main `average_gridcell_scores()` function is sensible."""
 

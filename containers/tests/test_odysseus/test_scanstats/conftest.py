@@ -3,9 +3,8 @@
 from typing import Any
 import pytest
 from shapely.geometry import Polygon
-from cleanair.databases import Connector, DBReader
+from cleanair.databases import DBReader
 from odysseus.databases.mixins import GridMixin
-from odysseus.scoot import ScanScoot
 
 
 @pytest.fixture(scope="function")
@@ -25,9 +24,3 @@ class Grid(GridMixin, DBReader):
 def grid(secretfile: str, connection: Any) -> Grid:
     """A simple grid class."""
     return Grid(secretfile=secretfile, connection=connection)
-
-
-@pytest.fixture(scope="function")
-def scan_scoot(secretfile: str, connection: Connector) -> ScanScoot:
-    """Fixture for scan scoot class."""
-    return ScanScoot(secretfile=secretfile, connection=connection)
