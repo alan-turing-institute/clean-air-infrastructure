@@ -1,7 +1,6 @@
 """Fake data generators which can be inserted into database"""
 
 import random
-
 from typing import Optional
 import string
 import uuid
@@ -11,6 +10,9 @@ from scipy.stats import uniform, norm
 import numpy as np
 from ....utils.hashing import hash_fn
 from ....types import Source, FeatureNames
+
+# pylint: disable=E0213,R0201
+
 
 def get_random_string(length: int) -> str:
     "Random string of length"
@@ -26,14 +28,14 @@ def gen_point_id(v: Optional[uuid.UUID]) -> uuid.UUID:
     return uuid.uuid4()
 
 
-def gen_site_code(v) -> str:
+def gen_site_code(v: Optional[str]) -> str:
     "Random site code"
     if v:
         return v
     return get_random_string(4)
 
 
-def gen_hash_id(v) -> str:
+def gen_hash_id(v: Optional[str]) -> str:
     "Return a random hash id"
     if v:
         return v
@@ -54,7 +56,7 @@ class MetaPointSchema(BaseModel):
     location: Optional[str]
 
     _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
-    #pylint: disable=E0213,R0201
+
     @validator("location", always=True)
     def gen_location(cls, v):
         "Random location"
@@ -91,7 +93,7 @@ class LAQNReadingSchema(BaseModel):
     value: Optional[float]
 
     _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
-    #pylint: disable=E0213,R0201
+
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
         "Generate end time one hour after start time"
@@ -146,7 +148,7 @@ class AirQualityModelSchema(BaseModel):
     param_id: Optional[str]
 
     _gen_hash_id = validator("param_id", allow_reuse=True, always=True)(gen_hash_id)
-    #pylint: disable=E0213,R0201
+
     @validator("model_param", always=True)
     def gen_model_param(cls, v):
         "Generate empty parammeters"
@@ -162,7 +164,7 @@ class AirQualityDataSchema(BaseModel):
     preprocessing: Optional[Json]
 
     _gen_hash_id = validator("data_id", allow_reuse=True, always=True)(gen_hash_id)
-    #pylint: disable=E0213,R0201
+
     @validator("data_config", always=True)
     def gen_data_config(cls, v):
         "Generate an empty data config"
