@@ -1,9 +1,9 @@
 """Confif for urbanair tests"""
 import random
 from scipy.stats import uniform, norm
-import numpy as np
 import string
 import uuid
+import numpy as np
 from fastapi.testclient import TestClient
 import pytest
 from dateutil import rrule, parser
@@ -21,20 +21,25 @@ from urbanair import main, databases
 from urbanair.types import DetectionClass
 
 def get_random_string(length):
+    "random string"
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for i in range(length))
     return result_str
 
 def gen_site_code() -> str:
+    "random site code"
     return get_random_string(5)
 
 def gen_hash_id() -> str:
+    "random hash_id"
     return hash_fn(str(random.random()))
 
 def gen_random_value() -> float:
+    "random value"
     return np.exp(norm.rvs(0, 1))
 
-def gen_location():
+def gen_location() -> str:
+    "random location"
     min_lon = -0.508854438
     max_lon = 0.334270337
     min_lat = 51.286678732
