@@ -1,5 +1,3 @@
-
-
 import typer
 from . import scan_cli
 

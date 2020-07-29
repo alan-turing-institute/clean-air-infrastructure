@@ -252,9 +252,7 @@ def scan_checks(
 
 
 def average_score_checks(
-    grid_level_scores: pd.DataFrame,
-    days_in_future: int,
-    grid_resolution: int,
+    grid_level_scores: pd.DataFrame, days_in_future: int, grid_resolution: int,
 ) -> None:
     """ Test that output from the main `average_gridcell_scores()` function is sensible."""
 

@@ -8,7 +8,9 @@ from dateutil import parser
 import pytz
 
 
-def as_datetime(maybe_dt: Union[datetime.datetime, datetime.date, str]) -> datetime.datetime:
+def as_datetime(
+    maybe_dt: Union[datetime.datetime, datetime.date, str]
+) -> datetime.datetime:
     """Convert an input that might be a datetime into a datetime"""
     # Return if already a datetime
     if isinstance(maybe_dt, datetime.datetime):
@@ -24,16 +26,20 @@ def as_datetime(maybe_dt: Union[datetime.datetime, datetime.date, str]) -> datet
             microsecond=0, second=0, minute=0
         )
     if maybe_dt == "today":
-        return datetime.datetime.combine(datetime.date.today(), datetime.datetime.min.time())
+        return datetime.datetime.combine(
+            datetime.date.today(), datetime.datetime.min.time()
+        )
 
     if maybe_dt == "tomorrow":
         return datetime.datetime.combine(
-            datetime.date.today() + datetime.timedelta(days=1), datetime.datetime.min.time()
+            datetime.date.today() + datetime.timedelta(days=1),
+            datetime.datetime.min.time(),
         )
 
     if maybe_dt == "yesterday":
         return datetime.datetime.combine(
-            datetime.date.today() - datetime.timedelta(days=1), datetime.datetime.min.time()
+            datetime.date.today() - datetime.timedelta(days=1),
+            datetime.datetime.min.time(),
         )
 
     return parser.isoparse(maybe_dt)

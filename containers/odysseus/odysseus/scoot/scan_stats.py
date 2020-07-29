@@ -17,6 +17,7 @@ from ..scanstat import (
     scan,
 )
 
+
 class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     """Reading and writing scan stats for SCOOT."""
 
@@ -39,7 +40,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.grid_resolution: int = grid_resolution
         self.model_name: str = model_name
         self.train_hours: int = train_hours
-        self.train_start: str = as_datetime(upto) - timedelta(train_hours + forecast_hours)
+        self.train_start: str = as_datetime(upto) - timedelta(
+            train_hours + forecast_hours
+        )
         self.train_upto: str = self.forecast_start
         # load the scoot readings
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
@@ -54,7 +57,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         # 2) Pre-process
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
-        forecast_df = forecast(processed_df, self.train_hours, self.forecast_hours, self.model_name)
+        forecast_df = forecast(
+            processed_df, self.train_hours, self.forecast_hours, self.model_name
+        )
         # 4) Aggregate readings/forecast to grid level
         aggregate = aggregate_readings_to_grid(forecast_df, processed_df)
         # 5) Scan
