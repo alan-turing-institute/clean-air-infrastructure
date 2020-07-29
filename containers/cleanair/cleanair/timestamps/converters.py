@@ -1,17 +1,47 @@
 """
 Timestamp conversion functions
 """
+
+from typing import Union
 import datetime
 from dateutil import parser
 import pytz
 
 
-def as_datetime(maybe_dt):
+def as_datetime(
+    maybe_dt: Union[datetime.datetime, datetime.date, str]
+) -> datetime.datetime:
     """Convert an input that might be a datetime into a datetime"""
+    # Return if already a datetime
     if isinstance(maybe_dt, datetime.datetime):
         return maybe_dt
+    # Convert date to datetime
     if isinstance(maybe_dt, datetime.date):
         return datetime.datetime.combine(maybe_dt, datetime.datetime.min.time())
+    # Convert strings into a datetime
+    if maybe_dt == "now":
+        return datetime.datetime.now().replace(microsecond=0, second=0, minute=0)
+    if maybe_dt == "lasthour":
+        return (datetime.datetime.now() - datetime.timedelta(hours=1)).replace(
+            microsecond=0, second=0, minute=0
+        )
+    if maybe_dt == "today":
+        return datetime.datetime.combine(
+            datetime.date.today(), datetime.datetime.min.time()
+        )
+
+    if maybe_dt == "tomorrow":
+        return datetime.datetime.combine(
+            datetime.date.today() + datetime.timedelta(days=1),
+            datetime.datetime.min.time(),
+        )
+
+    if maybe_dt == "yesterday":
+        return datetime.datetime.combine(
+            datetime.date.today() - datetime.timedelta(days=1),
+            datetime.datetime.min.time(),
+        )
+
     return parser.isoparse(maybe_dt)
 
 

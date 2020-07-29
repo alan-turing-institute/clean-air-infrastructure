@@ -17,6 +17,7 @@ from ..scanstat import (
     scan,
 )
 
+
 class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     """Reading and writing scan stats for SCOOT."""
 
