@@ -15,6 +15,7 @@ from ..state.configuration import (
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
+from ....loggers import get_logger
 from ....models import ModelData
 from ....types import Source
 from ....types.model_types import SVGPParams, MRDGPParams
@@ -24,36 +25,39 @@ app = typer.Typer(help="Update database with model fit.")
 
 @app.command()
 def results(
+    model_name: str,
     input_dir: Path = typer.Argument(None),
     cluster_id: str = ClusterId,
     tag: str = Tag,
 ):
     """Update the results to the database."""
-    # load files
-    model_params = load_model_params("svgp", input_dir)
+    logger = get_logger("update_results")
+
+    logger.info("Reading model params, predictions, test data and data config from files")
+    model_params = load_model_params(model_name, input_dir)
     y_pred = load_forecast_from_pickle(input_dir)
     x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
     test_data = load_test_data(input_dir)
-    print(y_pred)
-    print(index_dict)
     full_config = load_model_config(input_dir, full=True)
+
+    # TODO this function needs to use the index_dict above
     result_df = ModelData.join_forecast_on_dataframe(
         test_data[Source.laqn],
         y_pred[Source.laqn],
     )
 
+    # create an instance with correct ids
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
-        model_name="svgp",
-        param_id=model_params.param_id(), # TODO this will break
+        model_name=model_name,
+        param_id=model_params.param_id(),
         data_id=full_config.data_id(),
         cluster_id=cluster_id,
         tag=tag,
         fit_start_time=datetime.utcnow().isoformat(),
         secretfile=secretfile,
     )
-    # TODO create method for writing model parameters to DB
-    # TODO create method for writing data config to DB
+    # create a results object and write results + params
     result = AirQualityResult(instance.instance_id, instance.data_id, result_df, secretfile)
     instance.update_model_tables(model_params.json())
     instance.update_data_tables(full_config.json())
