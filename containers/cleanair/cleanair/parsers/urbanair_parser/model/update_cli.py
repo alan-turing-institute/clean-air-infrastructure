@@ -5,7 +5,6 @@ import json
 import pickle
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
 import typer
 from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
@@ -56,6 +55,8 @@ def results(
     # TODO create method for writing model parameters to DB
     # TODO create method for writing data config to DB
     result = AirQualityResult(instance.instance_id, instance.data_id, result_df, secretfile)
+    instance.update_model_tables(model_params.json())
+    instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
     result.update_remote_tables()  # write results to DB
 

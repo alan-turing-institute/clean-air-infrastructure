@@ -24,7 +24,7 @@ class AirQualityInstance(Instance):
         records = [dict(
             model_name=self.model_name,
             param_id=self.param_id,
-            model_params=model_params,
+            model_param=model_params,
         )]
         self.commit_records(records, on_conflict="ignore", table=AirQualityModelTable)
 
