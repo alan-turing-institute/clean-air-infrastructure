@@ -7,6 +7,7 @@ from cleanair.parsers.urbanair_parser.shared_args import (
 	UpTo,
 )
 from cleanair.parsers.urbanair_parser.state import state
+from cleanair.timestamps import as_datetime
 from .shared_args import Borough, GridResolution, ModelName
 from ..scoot import ScanScoot
 
@@ -30,5 +31,13 @@ def scoot(
 	forecast_hours = forecast_days + forecast_hours
 
 	# run the scan stats
-	scan_scoot = ScanScoot(borough, forecast_hours, train_hours, upto, grid_resolution=grid_resolution, model_name=model_name, secretfile=secretfile)
+	scan_scoot = ScanScoot(
+		borough,
+		forecast_hours,
+		train_hours,
+		upto,
+		grid_resolution=grid_resolution,
+		model_name=model_name,
+		secretfile=secretfile
+	)
 	scan_df = scan_scoot.run()
