@@ -59,18 +59,6 @@ class TestAdvanced:
             "/api/v1/forecasts/forecast_model_results/", params={"instance_id": instance_id},
         )
         assert response.status_code == 200
-        data = response.json()
-        print (data)
-
-    def test_model_result(self, client_class, forecast_stat_records):
-
-        "Test forecast result info API"
-        instance_id = forecast_stat_records[4][0].instance_id
-        
-        response = client_class.get(
-            "/api/v1/forecasts/forecast_model_results/", params={"instance_id": instance_id},
-        )
-        assert response.status_code == 200
         
 
     def test_result(self, client_class, forecast_stat_records):
