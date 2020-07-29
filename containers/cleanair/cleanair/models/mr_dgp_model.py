@@ -115,7 +115,11 @@ class MRDGP(ModelMixin):
         ]
 
         sliced_dataset = np.concatenate(
-            [np.expand_dims(dataset[0][0][:, 0, i], -1) for i in list(range(1,dataset[0][0].shape[-1]))], axis=1
+            [
+                np.expand_dims(dataset[0][0][:, 0, i], -1)
+                for i in list(range(1, dataset[0][0].shape[-1]))
+            ],
+            axis=1,
         )
 
         dgp_z_inducing_locations = get_inducing_points(
@@ -172,10 +176,12 @@ class MRDGP(ModelMixin):
             num_samples=self.model_params["num_samples_between_layers"],
             name=name_prefix + "MRDGP",
         )
-        
+
         return model
 
-    def fit(self, x_train: FeaturesDict, y_train:TargetDict, mask: bool=None) -> None:
+    def fit(
+        self, x_train: FeaturesDict, y_train: TargetDict, mask: bool = None
+    ) -> None:
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
@@ -195,19 +201,18 @@ class MRDGP(ModelMixin):
         x_laqn, y_laqn = ModelMixin.clean_data(x_laqn, y_laqn)
 
         if mask:
-            #remove any satellite tiles that are not fully in London
-            in_london_index = ~np.all(mask['satellite'], axis=1)
+            # remove any satellite tiles that are not fully in London
+            in_london_index = ~np.all(mask["satellite"], axis=1)
 
             x_sat = x_sat[in_london_index]
             y_sat = y_sat[in_london_index]
-        
-        #TODO: can remove when SAT data is stable
+
+        # TODO: can remove when SAT data is stable
         if False:
-            #replace nans in x_sat with zeros
+            # replace nans in x_sat with zeros
             nan_idx = np.isnan(x_sat)
             x_sat[nan_idx] = 0.0
             print(x_sat.shape)
-
 
         X = [x_sat, x_laqn[:, None, :]]
         Y = [y_sat, y_laqn]
@@ -242,14 +247,20 @@ class MRDGP(ModelMixin):
                     set_objective(AdamOptimizer, "base_elbo")
                     # TODO maxiter for different models (sat, laqn -> sat)
                     opt.minimize(
-                        self.model, step_callback=self.elbo_logger, maxiter=self.model_params["base_laqn"]["maxiter"]
+                        self.model,
+                        step_callback=self.elbo_logger,
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
                     )
 
                     # m.disable_base_elbo()
                     # set_objective(AdamOptimizer, 'elbo')
                     # opt.minimize(m, step_callback=logger, maxiter=10)
                 else:
-                    opt.minimize(self.model, step_callback=self.elbo_logger, maxiter=self.model_params["maxiter"])
+                    opt.minimize(
+                        self.model,
+                        step_callback=self.elbo_logger,
+                        maxiter=self.model_params["maxiter"],
+                    )
 
         except KeyboardInterrupt:
             print("Ending early")
@@ -314,6 +325,7 @@ def get_mixing_weight(name, param=None):
     else:
         mixing_weight = weight_dict[name]()
     return mixing_weight
+
 
 def get_inducing_points(X, num_z=None):
     """

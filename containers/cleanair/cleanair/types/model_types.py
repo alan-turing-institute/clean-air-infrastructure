@@ -7,12 +7,14 @@ from ..utils import hash_dict
 KernelDict = Dict[str, Union[str, float, List[Union[int, float]]]]
 ParamsDict = Dict[str, Union[float, bool, int, KernelDict, List[KernelDict]]]
 
+
 class ParamIdMixin:
     """Add function for creating a param id."""
 
     def param_id(self):
         """Return a hashed param id."""
         return hash_dict(self.json(sort_keys=True))
+
 
 class KernelParams(BaseModel):
     """Validation for kernel parameters."""
@@ -23,17 +25,22 @@ class KernelParams(BaseModel):
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
 
+
 class BaseModelParams(BaseModel):
     """Validation of a (sub) model parameters."""
+
     kernel: Union[KernelParams, List[KernelParams]]
     likelihood_variance: float
     num_inducing_points: int
     maxiter: int
     minibatch_size: int
 
+
 class SVGPParams(ParamIdMixin, BaseModelParams):
     """Model parameters for the SVGP."""
+
     jitter: float
+
 
 class MRDGPParams(ParamIdMixin, BaseModel):
     """Model parameters for the Deep GP."""

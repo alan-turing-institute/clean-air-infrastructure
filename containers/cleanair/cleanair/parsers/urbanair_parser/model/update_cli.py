@@ -23,6 +23,7 @@ from ....types.dataset_types import TargetDict
 
 app = typer.Typer(help="Update database with model fit.")
 
+
 @app.command()
 def results(
     model_name: str,
@@ -33,7 +34,9 @@ def results(
     """Update the results to the database."""
     logger = get_logger("update_results")
 
-    logger.info("Reading model params, predictions, test data and data config from files")
+    logger.info(
+        "Reading model params, predictions, test data and data config from files"
+    )
     model_params = load_model_params(model_name, input_dir)
     y_pred = load_forecast_from_pickle(input_dir)
     x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
@@ -42,8 +45,7 @@ def results(
 
     # TODO this function needs to use the index_dict above
     result_df = ModelData.join_forecast_on_dataframe(
-        test_data[Source.laqn],
-        y_pred[Source.laqn],
+        test_data[Source.laqn], y_pred[Source.laqn],
     )
 
     # create an instance with correct ids
@@ -58,15 +60,17 @@ def results(
         secretfile=secretfile,
     )
     # create a results object and write results + params
-    result = AirQualityResult(instance.instance_id, instance.data_id, result_df, secretfile)
+    result = AirQualityResult(
+        instance.instance_id, instance.data_id, result_df, secretfile
+    )
     instance.update_model_tables(model_params.json())
     instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
     result.update_remote_tables()  # write results to DB
 
+
 def __load_result_pickle(
-    result_csv_path: Path,
-    input_dir: Optional[Path] = None,
+    result_csv_path: Path, input_dir: Optional[Path] = None,
 ) -> TargetDict:
     """Load a results dataframe."""
     if not input_dir:
@@ -76,15 +80,20 @@ def __load_result_pickle(
     with open(result_fp, "rb") as pickle_file:
         return pickle.load(pickle_file)
 
+
 def load_training_pred_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
     """Load the predictions on the training set from a pickle."""
     return __load_result_pickle(TRAINING_RESULT_PICKLE, input_dir)
+
 
 def load_forecast_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
     """Load the predictions on the forecast set from a pickle."""
     return __load_result_pickle(FORECAST_RESULT_PICKLE, input_dir)
 
-def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRDGPParams, SVGPParams]:
+
+def load_model_params(
+    model_name, input_dir: Optional[Path] = None
+) -> Union[MRDGPParams, SVGPParams]:
     """Load the model params from a json file."""
     if not input_dir:
         params_fp = MODEL_PARAMS

@@ -5,7 +5,9 @@ from datetime import datetime
 from .air_quality_result import AirQualityResult
 from .instance import Instance
 from ..databases.tables import (
-    AirQualityDataTable, AirQualityInstanceTable, AirQualityModelTable,
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
 )
 from ..models import ModelData, ModelMixin
 from ..types import DataConfig
@@ -21,11 +23,13 @@ class AirQualityInstance(Instance):
         Args:
             model_params: All the parameters of the model.
         """
-        records = [dict(
-            model_name=self.model_name,
-            param_id=self.param_id,
-            model_param=model_params,
-        )]
+        records = [
+            dict(
+                model_name=self.model_name,
+                param_id=self.param_id,
+                model_param=model_params,
+            )
+        ]
         self.commit_records(records, on_conflict="ignore", table=AirQualityModelTable)
 
     def update_data_tables(self, data_config: DataConfig) -> None:
@@ -34,11 +38,9 @@ class AirQualityInstance(Instance):
         Args:
             data_config: The dictionary of data settings.
         """
-        records = [dict(
-            data_id=self.data_id,
-            data_config=data_config,
-            preprocessing=dict(),
-        )]
+        records = [
+            dict(data_id=self.data_id, data_config=data_config, preprocessing=dict(),)
+        ]
         self.commit_records(records, on_conflict="ignore", table=AirQualityDataTable)
 
     def update_remote_tables(self):

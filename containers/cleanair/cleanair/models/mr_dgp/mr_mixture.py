@@ -16,6 +16,7 @@ class MR_Mixture(Model):
     """
         Implementation of MR_DGP mixture. Each mixture is a GPFlow model.
     """
+
     def __init__(
         self,
         datasets=None,
@@ -38,17 +39,18 @@ class MR_Mixture(Model):
             parent_mixtures: an array of parent mixture models
         """
 
-        #setup gpflow model first
+        # setup gpflow model first
         Model.__init__(self, **kwargs)
 
-        #lint friendly defaults
+        # lint friendly defaults
         self.datasets = [] if (datasets is None) else datasets
-        self.inducing_locations = [] if inducing_locations is None else inducing_locations
+        self.inducing_locations = (
+            [] if inducing_locations is None else inducing_locations
+        )
         self.noise_sigmas = [] if noise_sigmas is None else noise_sigmas
         minibatch_sizes = [] if minibatch_sizes is None else minibatch_sizes
 
-
-        #setup Mixture model
+        # setup Mixture model
         self.dataset_sizes = []
         self.get_dataset_sizes()
 
@@ -57,18 +59,18 @@ class MR_Mixture(Model):
         self.Y = []
         self.Z = self.inducing_locations
         self.masks = masks
-        self.mask_pointers = [] #store the mask objects
+        self.mask_pointers = []  # store the mask objects
         self.kernels = kernels
         self.num_samples = num_samples
 
-        #holders for the latent SVGPs
+        # holders for the latent SVGPs
         self.base_gps = []  # one per dataset
         self.deep_gps = []  # all but the first dataset
         self.parent_gps = []
 
-        #the ELBO can be split into terms that relate to the base, dgp and parent GPs. 
+        # the ELBO can be split into terms that relate to the base, dgp and parent GPs.
         self.base_elbo = []
-        self.dgp_elbo = []  
+        self.dgp_elbo = []
         self.parent_elbo = []
         self.elbo = 0.0
 
@@ -213,12 +215,10 @@ class MR_Mixture(Model):
         parent_mu_arr = []
         parent_sig_arr = []
 
-        #if no data provided assume we use training data
+        # if no data provided assume we use training data
         x_0 = getattr(self, "x_{i}".format(i=0))
         if X is not None:
             x_0 = X
-
-
 
         for i in range(self.num_datasets):
             x_i = getattr(self, "x_{i}".format(i=i))
@@ -226,27 +226,27 @@ class MR_Mixture(Model):
             if X is not None:
                 x_i = X
 
-            #get q(f|x_i) from the base GP
+            # get q(f|x_i) from the base GP
             # mu: N x S x 1
             # sig: N x S x S
             base_mu, base_sig = self.base_gps[i].conditional(x_i)
 
-            #if interested in predicting y get q(y|x_i) of the base gp
+            # if interested in predicting y get q(y|x_i) of the base gp
             if predict_y:
-                base_mu, base_sig = self.base_gps[i].likelihood.predict_mean_and_var(base_mu, base_sig)
+                base_mu, base_sig = self.base_gps[i].likelihood.predict_mean_and_var(
+                    base_mu, base_sig
+                )
 
             base_mu_arr.append(base_mu)
             base_sig_arr.append(base_sig)
 
             if i > 0:
-                #all dgps are trained on x_0, y_0
+                # all dgps are trained on x_0, y_0
                 base_mu, base_sig = self.base_gps[i].conditional(x_0)
 
-                #sample from the base GP
-                #num_samples x N x S x 1
-                samples = self.base_gps[i].sample(
-                    base_mu, base_sig, num_samples
-                )  
+                # sample from the base GP
+                # num_samples x N x S x 1
+                samples = self.base_gps[i].sample(base_mu, base_sig, num_samples)
 
                 dgp_mu_samples, dgp_sig_samples = self.sample_condition(
                     x_0, samples, self.deep_gps[i - 1], predict_y
@@ -256,18 +256,25 @@ class MR_Mixture(Model):
                 dgp_sig_arr.append(dgp_sig_samples)
 
         for i in range(len(self.parent_gps)):
-            #sample from the parent mixtures
-            #num_samples x N x S x 1
-            samples = self.parent_mixtures[i].sample_experts(
-                x_0, num_samples
-            )  
+            # sample from the parent mixtures
+            # num_samples x N x S x 1
+            samples = self.parent_mixtures[i].sample_experts(x_0, num_samples)
 
-            parent_mu_samples, parent_sig_samples = self.sample_condition(x_0, samples, self.parent_gps[i], predict_y)
+            parent_mu_samples, parent_sig_samples = self.sample_condition(
+                x_0, samples, self.parent_gps[i], predict_y
+            )
 
             parent_mu_arr.append(parent_mu_samples)
             parent_sig_arr.append(parent_sig_samples)
 
-        return base_mu_arr, base_sig_arr, dgp_mu_arr, dgp_sig_arr, parent_mu_arr, parent_sig_arr
+        return (
+            base_mu_arr,
+            base_sig_arr,
+            dgp_mu_arr,
+            dgp_sig_arr,
+            parent_mu_arr,
+            parent_sig_arr,
+        )
 
     @params_as_tensors
     def sampled_ell(self, y, mu, sig, gp, mask):
@@ -345,8 +352,7 @@ class MR_Mixture(Model):
 
             kl = self.base_gps[i].kl_term()
 
-            ell = tf.Print(ell, [tf.reduce_sum(ell)], 'base ell {i}: '.format(i=i))
-
+            ell = tf.Print(ell, [tf.reduce_sum(ell)], "base ell {i}: ".format(i=i))
 
             base_ell_arr.append(tf.reduce_sum(ell))
             base_kl_arr.append(tf.reduce_sum(kl))
@@ -365,7 +371,7 @@ class MR_Mixture(Model):
                 )  # trained onto the first dataset
                 ell = scale * _ell
 
-                ell = tf.Print(ell, [tf.reduce_sum(ell)], 'dgp ell: '.format(i=i))
+                ell = tf.Print(ell, [tf.reduce_sum(ell)], "dgp ell: ".format(i=i))
 
                 dgp_ell_arr.append(ell)
 
@@ -621,7 +627,6 @@ class MR_Mixture(Model):
 
         dgp_mu = dgp_mu + parent_mu
         dgp_sig = dgp_sig + parent_sig
-
 
         mu, sig = self.mixing_weight.predict(
             base_mu, base_sig, dgp_mu, dgp_sig, num_samples=num_samples
