@@ -19,6 +19,7 @@ class Fishnet(Base):
     )
     row = Column(Integer, nullable=False)
     col = Column(Integer, nullable=False)
+    borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
     geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True), nullable=False)
 
 class ScootScanStats(Base):
