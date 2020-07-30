@@ -1632,8 +1632,7 @@ class ModelData(DBWriter, DBQueryMixin):
 
     @staticmethod
     def join_forecast_on_dataframe(
-        data_df: pd.DataFrame,
-        pred_dict: TargetDict,
+        data_df: pd.DataFrame, pred_dict: TargetDict,
     ):
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources

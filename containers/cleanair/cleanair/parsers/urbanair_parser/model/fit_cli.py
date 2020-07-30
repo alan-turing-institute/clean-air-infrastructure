@@ -21,6 +21,7 @@ ExistOk = typer.Option(default=False, help="If true overwrite results if they ex
 Refresh = typer.Option(default=10, help="Frequency of printing ELBO.")
 Restore = typer.Option(default=False, help="Restore the model state from cache.")
 
+
 @app.command()
 def svgp(
     input_dir: Path = typer.Argument(None),
@@ -33,6 +34,7 @@ def svgp(
     model_params = load_model_params("svgp", input_dir)
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
     fit_model(model, input_dir, exist_ok=exist_ok)
+
 
 @app.command()
 def mrdgp(
@@ -52,10 +54,10 @@ def mrdgp(
         model_dir = input_dir.joinpath(*MODEL_CACHE.parts[-2:])
     experiment_config = dict(
         name="MR_DGP",
-        restore=restore,    # TODO this is passed into the model - remove
+        restore=restore,  # TODO this is passed into the model - remove
         model_state_fp=model_dir,
         save_model_state=True,
-        train=True
+        train=True,
     )
     # Create the Deep GP model
     model = MRDGP(
@@ -65,6 +67,7 @@ def mrdgp(
         restore=restore,
     )
     fit_model(model, input_dir, exist_ok=exist_ok)
+
 
 def fit_model(model: ModelMixin, input_dir: Path, exist_ok: bool = False) -> None:
     """Train a model loading data from INPUT-DIR
@@ -89,7 +92,7 @@ def __save_prediction_to_pickle(
     y_pred: TargetDict,
     result_pickle_path: Path,
     exist_ok: bool = False,
-    input_dir: Optional[Path] = None
+    input_dir: Optional[Path] = None,
 ) -> None:
     """Save a dictionary of predictions to a pickle."""
     if not input_dir:
@@ -104,10 +107,11 @@ def __save_prediction_to_pickle(
     with open(result_fp, "wb") as pickle_file:
         pickle.dump(y_pred, pickle_file)
 
+
 def save_forecast_to_pickle(
-    y_pred: TargetDict,
-    exist_ok: bool = False,
-    input_dir: Optional[Path] = None
+    y_pred: TargetDict, exist_ok: bool = False, input_dir: Optional[Path] = None
 ) -> None:
     """Save the results dataframe to a file."""
-    __save_prediction_to_pickle(y_pred, FORECAST_RESULT_PICKLE, exist_ok=exist_ok, input_dir=input_dir)
+    __save_prediction_to_pickle(
+        y_pred, FORECAST_RESULT_PICKLE, exist_ok=exist_ok, input_dir=input_dir
+    )

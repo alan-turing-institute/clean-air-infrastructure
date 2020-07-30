@@ -292,8 +292,7 @@ def get_training_arrays(input_dir: Optional[Path] = None):
 
 @app.command()
 def get_test_arrays(
-    input_dir: Optional[Path] = None,
-    return_y=False
+    input_dir: Optional[Path] = None, return_y=False
 ) -> Tuple[Dict, Dict, Dict]:
     """Get test arrays"""
     state["logger"].info(f"Getting data arrays")
@@ -339,7 +338,10 @@ def get_test_arrays(
     #     with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
     #         pickle.dump(index_dict, index_pickle_f)
 
-def __load_data_pickle(data_pickle_path: Path, input_dir: Optional[Path]) -> Dict[Source, pd.DataFrame]:
+
+def __load_data_pickle(
+    data_pickle_path: Path, input_dir: Optional[Path]
+) -> Dict[Source, pd.DataFrame]:
     """Load either training or test data from a pickled file."""
     if not input_dir:
         data_fp = data_pickle_path
@@ -357,9 +359,11 @@ def __load_data_pickle(data_pickle_path: Path, input_dir: Optional[Path]) -> Dic
     with data_fp.open("rb") as pickle_f:
         return pickle.load(pickle_f)
 
+
 def load_training_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
     """Load training data from either the CACHE or input_dir"""
     return __load_data_pickle(MODEL_TRAINING_PICKLE, input_dir=input_dir)
+
 
 def load_test_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
     """Load test data from either the CACHE or input_dir"""

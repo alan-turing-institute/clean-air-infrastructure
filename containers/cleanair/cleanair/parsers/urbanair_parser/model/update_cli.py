@@ -5,7 +5,6 @@ import json
 import pickle
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
 import typer
 from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
@@ -16,6 +15,7 @@ from ..state.configuration import (
 )
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
+from ....loggers import get_logger
 from ....models import ModelData
 from ....types import Source
 from ....types.model_types import SVGPParams, MRDGPParams
@@ -23,45 +23,54 @@ from ....types.dataset_types import TargetDict
 
 app = typer.Typer(help="Update database with model fit.")
 
+
 @app.command()
 def results(
+    model_name: str,
     input_dir: Path = typer.Argument(None),
     cluster_id: str = ClusterId,
     tag: str = Tag,
 ):
     """Update the results to the database."""
-    # load files
-    model_params = load_model_params("svgp", input_dir)
+    logger = get_logger("update_results")
+
+    logger.info(
+        "Reading model params, predictions, test data and data config from files"
+    )
+    model_params = load_model_params(model_name, input_dir)
     y_pred = load_forecast_from_pickle(input_dir)
     x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
     test_data = load_test_data(input_dir)
-    print(y_pred)
-    print(index_dict)
     full_config = load_model_config(input_dir, full=True)
+
+    # TODO this function needs to use the index_dict above
     result_df = ModelData.join_forecast_on_dataframe(
-        test_data[Source.laqn],
-        y_pred[Source.laqn],
+        test_data[Source.laqn], y_pred[Source.laqn],
     )
 
+    # create an instance with correct ids
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
-        model_name="svgp",
-        param_id=model_params.param_id(), # TODO this will break
+        model_name=model_name,
+        param_id=model_params.param_id(),
         data_id=full_config.data_id(),
         cluster_id=cluster_id,
         tag=tag,
         fit_start_time=datetime.utcnow().isoformat(),
         secretfile=secretfile,
     )
-    # TODO create method for writing model parameters to DB
-    # TODO create method for writing data config to DB
-    result = AirQualityResult(instance.instance_id, instance.data_id, result_df, secretfile)
+    # create a results object and write results + params
+    result = AirQualityResult(
+        instance.instance_id, instance.data_id, result_df, secretfile
+    )
+    instance.update_model_tables(model_params.json())
+    instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
     result.update_remote_tables()  # write results to DB
 
+
 def __load_result_pickle(
-    result_csv_path: Path,
-    input_dir: Optional[Path] = None,
+    result_csv_path: Path, input_dir: Optional[Path] = None,
 ) -> TargetDict:
     """Load a results dataframe."""
     if not input_dir:
@@ -71,15 +80,20 @@ def __load_result_pickle(
     with open(result_fp, "rb") as pickle_file:
         return pickle.load(pickle_file)
 
+
 def load_training_pred_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
     """Load the predictions on the training set from a pickle."""
     return __load_result_pickle(TRAINING_RESULT_PICKLE, input_dir)
+
 
 def load_forecast_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
     """Load the predictions on the forecast set from a pickle."""
     return __load_result_pickle(FORECAST_RESULT_PICKLE, input_dir)
 
-def load_model_params(model_name, input_dir: Optional[Path] = None) -> Union[MRDGPParams, SVGPParams]:
+
+def load_model_params(
+    model_name, input_dir: Optional[Path] = None
+) -> Union[MRDGPParams, SVGPParams]:
     """Load the model params from a json file."""
     if not input_dir:
         params_fp = MODEL_PARAMS
