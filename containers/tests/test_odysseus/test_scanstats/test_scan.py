@@ -23,11 +23,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     days_in_future = int(scan_scoot.forecast_hours / 24)
     ts_method = scan_scoot.model_name
     readings = scan_scoot.readings
-
-    # Drop duplicate readings from join
-    # TODO - change the join type so this isnt necessary
-    # This is also done in `preprocessor`. Ideally remove both.
-    readings = readings.loc[:, ~readings.columns.duplicated()].copy()
     print(readings)
 
     init_num_detectors = len(readings["detector_id"].drop_duplicates())
@@ -268,8 +263,8 @@ def average_score_checks(
         "measurement_end_utc",
         "row",
         "col",
-        "l_score_ebp_mean",
-        "l_score_ebp_std",
+        "ebp_mean",
+        "ebp_std",
     ]
 
     assert set(grid_level_cols) == set(grid_level_scores.columns)
@@ -279,4 +274,4 @@ def average_score_checks(
     assert grid_level_scores["row"].max() <= grid_resolution
     assert grid_level_scores["col"].max() <= grid_resolution
 
-    assert grid_level_scores["l_score_ebp_mean"].min() >= 1
+    assert grid_level_scores["ebp_mean"].min() >= 1

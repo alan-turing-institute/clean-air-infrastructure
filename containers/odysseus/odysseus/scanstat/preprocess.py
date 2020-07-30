@@ -56,10 +56,7 @@ def preprocessor(
     if rolling_hours < 0 and not global_threshold:
         raise ValueError("rolling_hours must be non-negative")
 
-    # TODO - Remove this once scoot_fishnet_query gives one column each
-    # First remove duplicate columns
-    scoot_df = scoot_df.loc[:, ~scoot_df.columns.duplicated()].copy()
-
+    # Sort values for nice multi-indexing printing
     scoot_df.sort_values(['detector_id', 'measurement_end_utc'], inplace=True)
 
     # Convert location wkb to wkt, so can use groupby later on

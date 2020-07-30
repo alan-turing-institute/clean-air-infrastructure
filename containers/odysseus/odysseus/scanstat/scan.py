@@ -94,7 +94,7 @@ def scan(
 
         # Log Progress
         logging.info(
-            "Search spatial regions with t_min = %s and t_max = %s", t_min, t_max
+            "Searching spatial regions with t_min = %s and t_max = %s", t_min, t_max
         )
 
     scan_time = time.perf_counter()

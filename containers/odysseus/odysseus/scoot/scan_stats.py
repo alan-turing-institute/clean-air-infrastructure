@@ -72,7 +72,6 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         grid_level_scores = average_gridcell_scores(
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
-        print(grid_level_scores)
         return grid_level_scores
 
     @db_query
