@@ -106,15 +106,23 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             start=start,
             upto=upto,
             # detectors=fishnet.c.detector_id,
-            with_location=True,
+            with_location=False,
             output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
             # Yields df with duplicate columns
-            return session.query(readings, fishnet).join(
+            return session.query(
+                readings,
+                fishnet.c.lon,
+                fishnet.c.lat,
+                fishnet.c.location,
+                fishnet.c.row,
+                fishnet.c.col,
+                fishnet.c.geom,
+            ).join(
                 fishnet, fishnet.c.detector_id == readings.c.detector_id,
             )
 
-    def update_remote_tables(self):
+    def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
         raise NotImplementedError("Coming soon :p")
