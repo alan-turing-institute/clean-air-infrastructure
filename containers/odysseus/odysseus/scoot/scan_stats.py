@@ -3,8 +3,9 @@
 from datetime import timedelta
 from typing import Optional
 import pandas as pd
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from cleanair.databases import DBWriter
+from cleanair.databases.tables.scan_tables import Fishnet, ScootScanStats
 from cleanair.decorators import db_query
 from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
@@ -44,6 +45,11 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             hours=train_hours + forecast_hours
         )
         self.train_upto: str = self.forecast_start
+        self.fishnet_df: pd.DataFrame = self.fishnet_over_borough(
+            borough=self.borough,
+            grid_resolution=self.grid_resolution,
+            output_type="df"
+        )
         # load the scoot readings
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
             borough=self.borough,
@@ -51,6 +57,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             upto=self.forecast_upto,
             output_type="df",
         )
+        self.scores_df: pd.DataFrame = None     # assigned in run() method
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
@@ -70,6 +77,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         grid_level_scores = average_gridcell_scores(
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
+        self.scores_df = grid_level_scores
         return grid_level_scores
 
     @db_query
@@ -122,4 +130,13 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
-        raise NotImplementedError("Coming soon :p")
+        scores_inst = inspect(ScootScanStats)
+        scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
+        scores_records = self.scores_df[scores_cols].to_dict("records")
+
+        fishnet_inst = inspect(Fishnet)
+        fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
+        fishnet_records = self.fishnet_df[fishnet_cols].to_dict("records")
+
+        self.commit_records(fishnet_records, table=Fishnet, on_conflict="ignore")
+        self.commit_records(scores_records, table=ScootScanStats, on_conflict="ignore")
