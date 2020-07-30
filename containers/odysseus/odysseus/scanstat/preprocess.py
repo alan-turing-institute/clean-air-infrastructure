@@ -57,12 +57,12 @@ def preprocessor(
         raise ValueError("rolling_hours must be non-negative")
 
     # Sort values for nice multi-indexing printing
-    scoot_df.sort_values(['detector_id', 'measurement_end_utc'], inplace=True)
+    scoot_df.sort_values(["detector_id", "measurement_end_utc"], inplace=True)
 
     # Convert location wkb to wkt, so can use groupby later on
     scoot_df["location"] = scoot_df["location"].apply(to_shape).apply(lambda x: x.wkt)
     # Drop geom column as not needed for scan
-    scoot_df = scoot_df.drop('geom', axis=1)
+    scoot_df = scoot_df.drop("geom", axis=1)
 
     # Convert dates to useful format
     scoot_df["measurement_start_utc"] = pd.to_datetime(
@@ -88,7 +88,7 @@ def preprocessor(
 
     # Drop duplicates - some detectors are mapped to two grid cells
     # If this is true, we keep the first.
-    scoot_df = scoot_df.loc[~scoot_df.index.duplicated(keep='first')]
+    scoot_df = scoot_df.loc[~scoot_df.index.duplicated(keep="first")]
 
     # Calculate original num of detectors inputted by user
     orig_set = set(scoot_df.index.get_level_values("detector_id"))
@@ -120,9 +120,7 @@ def preprocessor(
     curr_set = set(scoot_df.index.get_level_values("detector_id"))
     curr_length = len(curr_set)
     logging.info(
-        "%d detectors dropped: %s",
-        orig_length - curr_length,
-        orig_set.difference(curr_set),
+        "%d detectors dropped", orig_length - curr_length,
     )
 
     # Interpolate missing counts and fill missing lon, lats, locations etc.
@@ -252,6 +250,12 @@ def drop_sparse_detectors(
     # If there are detectors to be dropped, remove them.
     if detectors_to_drop:
         scoot_df.drop(detectors_to_drop, level="detector_id", inplace=True)
+
+    # Check here to see if any detectors are left!
+    if scoot_df.empty:
+        raise ValueError(
+            "All detectors have too many missing values. Try increasing the percentage_missing threshold."
+        )
 
     return scoot_df
 
