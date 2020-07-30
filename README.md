@@ -665,6 +665,21 @@ python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRE
 You can adjust the model parameters and data settings by changing the command line arguments.
 Use the `--help` flag to see available options.
 
+### Odysseus with the CLI
+
+To setup the production database:
+
+```bash
+az login
+urbanair init-production
+```
+
+To run the scan statistics for scoot:
+```bash
+urbanair odysseus scan scoot
+```
+Add the `--help` option for different ways of querying scoot data and changing model parameters.
+
 ## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.
