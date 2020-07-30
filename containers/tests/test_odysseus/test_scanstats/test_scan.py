@@ -26,6 +26,7 @@ def test_scan(scan_scoot: ScanScoot) -> None:
 
     # Drop duplicate readings from join
     # TODO - change the join type so this isnt necessary
+    # This is also done in `preprocessor`. Ideally remove both.
     readings = readings.loc[:, ~readings.columns.duplicated()].copy()
     print(readings)
 

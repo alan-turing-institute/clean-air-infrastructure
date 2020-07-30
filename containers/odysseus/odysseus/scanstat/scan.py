@@ -169,8 +169,8 @@ def average_gridcell_scores(
                     "measurement_end_utc": t_max,
                     "row": row_num,
                     "col": col_num,
-                    "l_score_ebp_mean": mean_score,
-                    "l_score_ebp_std": std,
+                    "ebp_mean": mean_score,
+                    "ebp_std": std,
                 }
 
                 num_spatial_regions += 1

@@ -56,8 +56,16 @@ def preprocessor(
     if rolling_hours < 0 and not global_threshold:
         raise ValueError("rolling_hours must be non-negative")
 
+    # TODO - Remove this once scoot_fishnet_query gives one column each
+    # First remove duplicate columns
+    scoot_df = scoot_df.loc[:, ~scoot_df.columns.duplicated()].copy()
+
+    scoot_df.sort_values(['detector_id', 'measurement_end_utc'], inplace=True)
+
     # Convert location wkb to wkt, so can use groupby later on
     scoot_df["location"] = scoot_df["location"].apply(to_shape).apply(lambda x: x.wkt)
+    # Drop geom column as not needed for scan
+    scoot_df = scoot_df.drop('geom', axis=1)
 
     # Convert dates to useful format
     scoot_df["measurement_start_utc"] = pd.to_datetime(
@@ -80,6 +88,10 @@ def preprocessor(
 
     # Create Multi-index dataframe
     scoot_df = scoot_df.set_index(["detector_id", "measurement_end_utc"])
+
+    # Drop duplicates - some detectors are mapped to two grid cells
+    # If this is true, we keep the first.
+    scoot_df = scoot_df.loc[~scoot_df.index.duplicated(keep='first')]
 
     # Calculate original num of detectors inputted by user
     orig_set = set(scoot_df.index.get_level_values("detector_id"))
@@ -105,7 +117,7 @@ def preprocessor(
     )
 
     # Missing Data Removal
-    drop_sparse_detectors(scoot_df, percentage_missing, end_times)
+    scoot_df = drop_sparse_detectors(scoot_df, percentage_missing, end_times)
 
     # Return drop information to user
     curr_set = set(scoot_df.index.get_level_values("detector_id"))

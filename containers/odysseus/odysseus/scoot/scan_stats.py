@@ -35,11 +35,13 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         super().__init__(**kwargs)
         self.borough: str = borough
         self.forecast_hours: int = forecast_hours
+        self.forecast_days: int = int(forecast_hours / 24)
         self.forecast_start: str = as_datetime(upto) - timedelta(hours=forecast_hours)
         self.forecast_upto: str = as_datetime(upto)
         self.grid_resolution: int = grid_resolution
         self.model_name: str = model_name
         self.train_hours: int = train_hours
+        self.train_days: int = int(train_hours / 24)
         self.train_start: str = as_datetime(upto) - timedelta(
             hours=train_hours + forecast_hours
         )
@@ -58,7 +60,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
         forecast_df = forecast(
-            processed_df, self.train_hours, self.forecast_hours, self.model_name
+            processed_df, self.train_days, self.forecast_days, self.model_name
         )
         # 4) Aggregate readings/forecast to grid level
         aggregate = aggregate_readings_to_grid(forecast_df)
@@ -70,6 +72,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         grid_level_scores = average_gridcell_scores(
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
+        print(grid_level_scores)
         return grid_level_scores
 
     @db_query
