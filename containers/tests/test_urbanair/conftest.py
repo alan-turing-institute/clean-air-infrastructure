@@ -1,8 +1,8 @@
 """Confif for urbanair tests"""
 import random
-from scipy.stats import uniform, norm
 import string
 import uuid
+from scipy.stats import uniform, norm
 import numpy as np
 from fastapi.testclient import TestClient
 import pytest
@@ -20,23 +20,28 @@ from cleanair.databases.tables import (
 from urbanair import main, databases
 from urbanair.types import DetectionClass
 
+
 def get_random_string(length):
     "random string"
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for i in range(length))
     return result_str
 
+
 def gen_site_code() -> str:
     "random site code"
     return get_random_string(5)
+
 
 def gen_hash_id() -> str:
     "random hash_id"
     return hash_fn(str(random.random()))
 
+
 def gen_random_value() -> float:
     "random value"
     return np.exp(norm.rvs(0, 1))
+
 
 def gen_location() -> str:
     "random location"
@@ -144,13 +149,11 @@ def forecast_stat_records():
         param_id = gen_hash_id()
         cluster_id = gen_hash_id()
         data_id = gen_hash_id()
-        model_name = gen_site_code()  
+        model_name = gen_site_code()
 
         records_model.append(
             AirQualityModelTable(
-                model_name=model_name,
-                param_id=param_id,
-                model_param={"hello": "hi"},
+                model_name=model_name, param_id=param_id, model_param={"hello": "hi"},
             )
         )
         records_data.append(
@@ -173,11 +176,7 @@ def forecast_stat_records():
             )
         )
         records_point.append(
-            MetaPoint(
-                source=gen_site_code(),
-                location=gen_location(),
-                id=point_id.hex,
-            )
+            MetaPoint(source=gen_site_code(), location=gen_location(), id=point_id.hex,)
         )
         records_result.append(
             AirQualityResultTable(
@@ -197,7 +196,7 @@ def forecast_stat_records():
                 O3_var=gen_random_value(),
             )
         )
-    
+
     return [
         records_instance,
         records_data,
