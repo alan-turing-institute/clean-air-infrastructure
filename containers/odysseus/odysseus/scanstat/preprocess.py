@@ -207,6 +207,11 @@ def remove_anomalies(
     logging.info("Dropping detectors with more than %d anomalies", max_anom)
     dropped_df = scoot_df.drop(scoot_df[scoot_df["num_anom"] > max_anom].index)
 
+    # Check here to see if any detectors are left!
+    if dropped_df.empty:
+        raise ValueError(
+            "All detectors have too many anomalies. Try increasing the max_anom_per_day threshold."
+        )
     return dropped_df
 
 
@@ -293,6 +298,10 @@ def fill_missing_values(scoot_df: pd.DataFrame, method: str = "linear") -> pd.Da
 
     # Fill missing lon, lat, rolling, global columns with existing values
     scoot_df = scoot_df.groupby("detector_id").apply(lambda x: x.ffill().bfill())
+
+    # ffill and bfill convert row and col to floats. Remedy that here
+    scoot_df['row'] = scoot_df['row'].astype(int)
+    scoot_df['col'] = scoot_df['col'].astype(int)
 
     # Re-Order Columns
     scoot_df = scoot_df[

@@ -10,9 +10,9 @@ def holt_winters(
     proc_df: pd.DataFrame,
     days_in_past: int,
     days_in_future: int,
-    alpha: float = 0.1,
-    beta: float = 0.1,
-    gamma: float = 0.1,
+    alpha: float,
+    beta: float,
+    gamma: float,
     detectors: list = None,
 ) -> pd.DataFrame:
 

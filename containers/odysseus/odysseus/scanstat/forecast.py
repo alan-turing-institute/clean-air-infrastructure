@@ -15,9 +15,9 @@ def forecast(
     days_in_future: int,
     method: str = "HW",
     detectors: list = None,
-    alpha: float = 0.1,
-    beta: float = 0.1,
-    gamma: float = 0.1,
+    alpha: float = 0.06,
+    beta: float = 0.02,
+    gamma: float = 0.6,
     # kern=None,
 ) -> pd.DataFrame:
 
