@@ -144,7 +144,6 @@ def forecast_stat_records():
     records_result = []
     records_point = []
     for vtime in forecast_upload_datetimes:
-        point_id = uuid.uuid4()
         instance_id = gen_hash_id()
         param_id = gen_hash_id()
         cluster_id = gen_hash_id()
@@ -175,27 +174,30 @@ def forecast_stat_records():
                 fit_start_time=vtime,
             )
         )
-        records_point.append(
-            MetaPoint(source=gen_site_code(), location=gen_location(), id=point_id.hex,)
-        )
-        records_result.append(
-            AirQualityResultTable(
-                instance_id=instance_id,
-                data_id=data_id,
-                point_id=point_id.hex,
-                measurement_start_utc=vtime,
-                NO2_mean=gen_random_value(),
-                NO2_var=gen_random_value(),
-                PM10_mean=gen_random_value(),
-                PM10_var=gen_random_value(),
-                PM25_mean=gen_random_value(),
-                PM25_var=gen_random_value(),
-                CO2_mean=gen_random_value(),
-                CO2_var=gen_random_value(),
-                O3_mean=gen_random_value(),
-                O3_var=gen_random_value(),
+
+        for i in range(6):
+            point_id = uuid.uuid4()
+            records_point.append(
+                MetaPoint(source=gen_site_code(), location=gen_location(), id=point_id.hex,)
             )
-        )
+            records_result.append(
+                AirQualityResultTable(
+                    instance_id=instance_id,
+                    data_id=data_id,
+                    point_id=point_id.hex,
+                    measurement_start_utc=vtime,
+                    NO2_mean=gen_random_value(),
+                    NO2_var=gen_random_value(),
+                    PM10_mean=gen_random_value(),
+                    PM10_var=gen_random_value(),
+                    PM25_mean=gen_random_value(),
+                    PM25_var=gen_random_value(),
+                    CO2_mean=gen_random_value(),
+                    CO2_var=gen_random_value(),
+                    O3_mean=gen_random_value(),
+                    O3_var=gen_random_value(),
+                )
+            )
 
     return [
         records_instance,

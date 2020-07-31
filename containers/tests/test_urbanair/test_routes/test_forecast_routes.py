@@ -60,6 +60,8 @@ class TestAdvanced:
             params={"instance_id": instance_id},
         )
         assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 6
 
     def test_result(self, client_class, forecast_stat_records):
 
