@@ -92,6 +92,7 @@ class MRDGP(ModelMixin):
             "mixing_weight": {"name": "dgp_only", "param": None},
             "num_samples_between_layers": 1,
             "num_prediction_samples": 1,
+            "maxiter": 100
         }
 
     def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
@@ -249,7 +250,7 @@ class MRDGP(ModelMixin):
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
+                        maxiter=self.model_params['base_laqn']["maxiter"],
                     )
 
                     # m.disable_base_elbo()
@@ -259,7 +260,7 @@ class MRDGP(ModelMixin):
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
-                        maxiter=self.model_params["maxiter"],
+                        maxiter=self.model_params['base_laqn']["maxiter"],
                     )
 
         except KeyboardInterrupt:
