@@ -2,14 +2,12 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from .routers import jamcam, static
+from .routers.odysseus import static, jamcam
 from .config import get_settings
 
 
 app = FastAPI(
-    title="Odysseus API",
-    description="API for trusted partners",
-    version="0.0.1",
+    title="Odysseus API", description="Project Odysseus API", version="0.0.1",
 )
 
 app.include_router(static.router)
