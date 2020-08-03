@@ -7,7 +7,9 @@ from cleanair.databases import (
     Base,
 )
 from cleanair.databases.views import create_materialized_view
-from cleanair.databases.tables import JamCamVideoStats
+from cleanair.databases.tables import JamCamVideoStats, HexGrid
+# from cleanair.databases.views.hexgrid_views import LondonBoundaryView
+
 
 
 @pytest.fixture()
@@ -25,7 +27,26 @@ def MyView():
     return MyView
 
 
-def test_create_view(secretfile, connection, MyView):
+class LondonBoundaryView(Base):
+    """View of the interest points that gives london's boundary"""
+    __table__ = create_materialized_view(
+                name="london_boundary",
+                schema="interest_points",
+                owner="refresher",
+                selectable=select(
+                    [func.ST_MakePolygon(func.ST_Boundary(func.ST_Union(HexGrid.geom)))]
+                    ),
+                metadata=Base.metadata,
+                )
+
+
+
+@pytest.fixture()
+def londonView():
+    return LondonBoundaryView
+
+
+def test_create_view(secretfile, connection, londonView):
     """Check that we can create a materialised view and refresh it"""
 
     db_instance = DBWriter(
@@ -40,7 +61,7 @@ def test_create_view(secretfile, connection, MyView):
 
     with db_instance.dbcnxn.open_session() as session:
 
-        refresh_materialized_view(session, "jamcam.test_view")
+        refresh_materialized_view(session, "interest_points.london_boundary")
 
         output = session.query(MyView)
 
