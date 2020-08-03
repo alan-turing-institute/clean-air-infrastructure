@@ -7,8 +7,8 @@ from .config import get_settings
 
 
 app = FastAPI(
-    title="UrbanAir API",
-    description="High resolution air polution forecasts",
+    title="Odysseus API",
+    description="API for trusted partners",
     version="0.0.1",
 )
 
