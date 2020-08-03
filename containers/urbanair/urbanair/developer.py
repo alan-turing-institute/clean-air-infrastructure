@@ -2,7 +2,7 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from .routers import jamcam, static
+from .routers import jamcam, static, urbanroute
 from .config import get_settings
 
 
@@ -13,4 +13,5 @@ app = FastAPI(
 )
 
 app.include_router(static.router)
+app.include_router(urbanroute.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
