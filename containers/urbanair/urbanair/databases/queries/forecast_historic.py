@@ -91,32 +91,3 @@ def get_forecast_json(db: Session, instance_id: str,) -> Query:
     )
 
     return out
-
-    # @db_query
-    # def get_forecast_json(self, instance_id):
-
-    #     with self.dbcnxn.open_session() as session:
-
-    #         out_sq = (
-    #             session.query(
-    #                 AirQualityResultTable.point_id,
-    #                 AirQualityResultTable.measurement_start_utc,
-    #                 AirQualityResultTable.NO2_mean,
-    #                 AirQualityResultTable.NO2_var,
-    #                 func.ST_GeometryN(HexGrid.geom, 1).label("geom")
-    #             )
-    #             .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
-    #             .filter(AirQualityResultTable.instance_id == instance_id
-    #             )
-    #         ).subquery()
-
-    #         out = (
-    #             session.query(
-    #                 func.jsonb_build_object('type', 'Feature',
-    #                                         'id', out_sq.c.point_id,
-    #                                         'geometry', func.ST_AsGeoJSON(out_sq.c.geom),
-    #                                         'properties', func.jsonb_build_object('measurement_start_utc', out_sq.c.measurement_start_utc,
-    #                                                                               'NO2_mean', out_sq.c.NO2_mean,
-    #                                                                               'NO2_var', out_sq.c.NO2_var) )
-    #             )
-    #         )
