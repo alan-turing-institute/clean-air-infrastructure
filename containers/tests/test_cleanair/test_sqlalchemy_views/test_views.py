@@ -48,14 +48,9 @@ def test_create_view(secretfile, connection, londonView):
 
     with db_instance.dbcnxn.open_session() as session:
 
-        Base.__prepare__()
-
-        LondonBoundaryView()
-
         refresh_materialized_view(session, "interest_points.london_boundary")
 
-        output = session.query(MyView)
-
+        output = session.query(londonView)
         result = output.first()
-        assert result.id == 4232
-        assert result.camera_id == "sdfs"
+
+        assert result is not None
