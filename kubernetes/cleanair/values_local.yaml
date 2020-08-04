@@ -16,6 +16,8 @@ deployments:
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
+        - name: ROOT_PATH
+          value: /forecast
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -42,8 +44,10 @@ services:
           targetPort: 80
 
 ingressRules:
-    - host: urbanair.turing.ac.uk
-      paths:
-        - path: /
+    # - host: urbanair.turing.ac.uk
+      - paths:
+        - path: /forecast
           serviceName: cleanair-api
           servicePort: 80
+
+development: true
