@@ -66,17 +66,16 @@ async def forecast(
 @router.get(
     "/forecast_geojson",
     description="Geojson: Forecast models result values filter by instance_id",
-    response_model=List[AirPollutionFeature],
+    response_model=AirPollutionFeatureCollection,
 )
 async def forecast_geojson(
     instance_id: str = Query(None, description="A unique forecast instance id"),
     db: Session = Depends(get_db),
-) -> Optional[Dict]:
+) -> Optional[List[Dict]]:
 
     data = get_forecast_json(db, instance_id)
 
     out = all_or_404(data)
 
-    print(out)
-
-    return out
+    if out:
+        return {"features": [i[0] for i in out]}

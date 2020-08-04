@@ -58,16 +58,12 @@ class ForecastGeometry(BaseModel):
 class AirPollutionFeature(BaseModel):
 
     id: str
+    type: str = "Feature"
     geometry: ForecastGeometry
     properties: ForecastProperties
-
-    class Config:
-        orm_mode = True
 
 
 class AirPollutionFeatureCollection(BaseModel):
 
-    out: AirPollutionFeature
-
-    # class Config:
-    #     orm_mode = True
+    type: str = "FeatureCollection"
+    features: List[AirPollutionFeature]
