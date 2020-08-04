@@ -90,7 +90,7 @@ def get_forecast_json(db: Session, instance_id: str,) -> Query:
         )
     )
 
-    return out.limit(10)
+    return out
 
     # @db_query
     # def get_forecast_json(self, instance_id):
