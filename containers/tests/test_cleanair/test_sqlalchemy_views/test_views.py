@@ -8,7 +8,7 @@ from cleanair.databases import (
 )
 from cleanair.databases.views import create_materialized_view
 from cleanair.databases.tables import JamCamVideoStats, HexGrid
-# from cleanair.databases.views.hexgrid_views import LondonBoundaryView
+from cleanair.databases.materialised_views.london_boundary import LondonBoundaryView
 
 
 
@@ -25,19 +25,6 @@ def MyView():
         )
 
     return MyView
-
-
-class LondonBoundaryView(Base):
-    """View of the interest points that gives london's boundary"""
-    __table__ = create_materialized_view(
-                name="london_boundary",
-                schema="interest_points",
-                owner="refresher",
-                selectable=select(
-                    [func.ST_MakePolygon(func.ST_Boundary(func.ST_Union(HexGrid.geom)))]
-                    ),
-                metadata=Base.metadata,
-                )
 
 
 
@@ -60,6 +47,10 @@ def test_create_view(secretfile, connection, londonView):
     )
 
     with db_instance.dbcnxn.open_session() as session:
+
+        Base.__prepare__()
+
+        LondonBoundaryView()
 
         refresh_materialized_view(session, "interest_points.london_boundary")
 
