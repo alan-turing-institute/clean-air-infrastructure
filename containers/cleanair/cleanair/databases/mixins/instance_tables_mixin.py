@@ -70,7 +70,7 @@ class ResultTableMixin:
 
     __tablename__ = "result"
 
-    instance_id = Column(String(64), primary_key=True, nullable=False)
+    instance_id = Column(String(64), primary_key=True, nullable=False, index=True)
     data_id = Column(String(64), primary_key=True, nullable=False)
 
     point_id = Column(UUID, primary_key=True, nullable=False)

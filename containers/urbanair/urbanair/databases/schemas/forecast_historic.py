@@ -6,6 +6,7 @@ import json
 from pydantic import BaseModel
 from pydantic.validators import str_validator
 from pydantic.dataclasses import dataclass
+from pydantic.types import UUID
 
 
 class ForecastBase(BaseModel):
@@ -21,11 +22,11 @@ class ForecastBase(BaseModel):
 
 class ForecastResultBase(BaseModel):
 
-    instance_id: str
     data_id: str
     point_id: str
     measurement_start_utc: datetime
-    NO2_mean: str
+    NO2_mean: float
+    NO2_var: float
 
     class Config:
         orm_mode = True
@@ -47,11 +48,6 @@ class ForecastGeometry(BaseModel):
     type: str
     coordinates: List[Tuple[float, float]]
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
-
     # pylint: disable-msg=W0221
     @classmethod
     def validate(cls, v: str):
@@ -59,7 +55,7 @@ class ForecastGeometry(BaseModel):
         return {"type": res.get("type"), "coordinates": res.get("coordinates")}
 
 
-class AirPolutionFeature(BaseModel):
+class AirPollutionFeature(BaseModel):
 
     id: str
     geometry: ForecastGeometry
@@ -69,6 +65,9 @@ class AirPolutionFeature(BaseModel):
         orm_mode = True
 
 
-class AirPolutionFeatureCollection(BaseModel):
+class AirPollutionFeatureCollection(BaseModel):
 
-    out: List[AirPolutionFeature]
+    out: AirPollutionFeature
+
+    # class Config:
+    #     orm_mode = True
