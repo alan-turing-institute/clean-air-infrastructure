@@ -17,7 +17,8 @@ templates = Jinja2Templates(
 
 @router.get("/", include_in_schema=False)
 async def index(request: Request) -> RedirectResponse:
-    return RedirectResponse(url="/map")
+
+    return RedirectResponse(url=request.url_for("jamcam_map"))
 
 
 @router.get("/map", include_in_schema=False)
