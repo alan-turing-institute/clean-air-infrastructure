@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     admin_email: str = "ogiles@turing.ac.uk"
     db_secret_file: str = ".db_secrets.json"
     docker: bool = True
+    root_path: str = ""
 
 
 @lru_cache()
