@@ -6,9 +6,9 @@ deployments:
     - name: cleanair-api
       replicas: 1
       image:
-        repository: cleanairdocker.azurecr.io/urbanairapi
+        repository: urbanairapi
         tag: local
-        imagePullPolicy: Always
+        imagePullPolicy: Never
       env:
         - name: APP_MODULE
           value: "urbanair.urbanair:app"
@@ -46,7 +46,7 @@ services:
 ingressRules:
     # - host: urbanair.turing.ac.uk
       - paths:
-        - path: /forecast
+        - path: /forecast(/|$)(.*)
           serviceName: cleanair-api
           servicePort: 80
 
