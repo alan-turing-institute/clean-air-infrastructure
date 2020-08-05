@@ -1,17 +1,19 @@
 """UrbanAir API"""
 import os
-from fastapi import FastAPI
+from typing import Optional
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+
+# from .routers.urbanair import static
 from .routers.urbanair import static
 from .config import get_settings
-
 
 app = FastAPI(
     title="UrbanAir API",
     description="High resolution air pollution forecasts",
     version="0.0.1",
+    root_path=get_settings().root_path,
 )
-
 
 app.mount(
     "/static",
@@ -22,3 +24,4 @@ app.mount(
 )
 
 app.include_router(static.router)
+

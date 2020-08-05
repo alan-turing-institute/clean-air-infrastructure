@@ -7,7 +7,10 @@ from .config import get_settings
 
 
 app = FastAPI(
-    title="Odysseus API", description="Project Odysseus API", version="0.0.1",
+    title="Odysseus API",
+    description="Project Odysseus API",
+    version="0.0.1",
+    root_path=get_settings().root_path,
 )
 
 app.mount(
