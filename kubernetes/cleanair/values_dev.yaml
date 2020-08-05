@@ -17,7 +17,7 @@ deployments:
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
-          value: /forecasts
+          value: /
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -124,7 +124,7 @@ services:
 ingressRules:
     # - host: urbanair.turing.ac.uk
       - paths:
-        - path: /forecasts(/|$)(.*)
+        - path: /()(.*)
           serviceName: cleanair-api
           servicePort: 80
         - path: /odysseus(/|$)(.*)
