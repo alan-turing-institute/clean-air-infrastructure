@@ -60,7 +60,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
         forecast_df = forecast(
-            processed_df, self.train_days, self.forecast_days, self.model_name
+            processed_df, self.train_start, self.train_upto, self.forecast_start, self.forecast_upto, self.model_name
         )
         # 4) Aggregate readings/forecast to grid level
         aggregate = aggregate_readings_to_grid(forecast_df)
