@@ -3,13 +3,12 @@ Mixin for checking what aqe data is in database and what is missing
 """
 from typing import Optional
 from datetime import timedelta
-from sqlalchemy import func, text, column, String, distinct
+from sqlalchemy import func, text
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
 from ...databases.tables import MetaPoint, AQESite, AQEReading
 from ...loggers import get_logger
-from ...databases.base import Values
 
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
@@ -80,7 +79,7 @@ class AQEAvailabilityMixin:
 
     @db_query
     def gen_date_range(self, start_date: str, end_date: Optional[str] = None):
-
+        """Generate a data range"""
         with self.dbcnxn.open_session() as session:
 
             # Generate expected time series

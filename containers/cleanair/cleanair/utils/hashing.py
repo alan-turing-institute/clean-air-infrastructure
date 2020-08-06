@@ -1,6 +1,5 @@
 """Functions for hashing."""
 import os
-import json
 import logging
 import hashlib
 import git
