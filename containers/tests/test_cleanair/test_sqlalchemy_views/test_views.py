@@ -28,7 +28,7 @@ def MyView():
 
 
 @pytest.fixture
-def myView():
+def MyView():
     return MyView
 
 
