@@ -186,6 +186,8 @@ def aggregate_checks(
         "measurement_end_utc",
         "count",
         "baseline",
+        "baseline_lower",
+        "baseline_upper",
     ]
     assert set(cols) == set(agg_df.columns)
 

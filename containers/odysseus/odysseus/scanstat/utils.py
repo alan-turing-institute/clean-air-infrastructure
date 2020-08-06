@@ -28,6 +28,8 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "row",
             "col",
             "baseline",
+            "baseline_upper",
+            "baseline_lower",
         ]
     ) == set(forecast_df.columns)
 
