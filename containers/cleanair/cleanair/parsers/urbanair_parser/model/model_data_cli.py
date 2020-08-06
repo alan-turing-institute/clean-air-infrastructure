@@ -282,7 +282,7 @@ def download(
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
 
-@app.command()
+
 def get_training_arrays(input_dir: Optional[Path] = None):
     """Get data arrays for tensorflow models"""
 
@@ -313,7 +313,6 @@ def get_training_arrays(input_dir: Optional[Path] = None):
     return X_dict, Y_dict, index_dict
 
 
-@app.command()
 def get_test_arrays(
     input_dir: Optional[Path] = None, return_y=False
 ) -> Tuple[Dict, Dict, Dict]:

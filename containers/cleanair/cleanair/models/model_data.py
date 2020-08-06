@@ -185,10 +185,15 @@ class ModelData(DBReader, DBQueryMixin):
 
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in full_config.train_sources:
+
+            train_end_date = full_config.train_end_date
+            if source == Source.satellite:
+                train_end_date = full_config.pred_end_date
+
             data_output[source] = self.download_source_data(
                 with_sensor_readings=True,
                 start_date=full_config.train_start_date,
-                end_date=full_config.train_end_date,
+                end_date=train_end_date,
                 species=full_config.species,
                 point_ids=full_config.train_interest_points[source],
                 features=full_config.features,
@@ -201,7 +206,9 @@ class ModelData(DBReader, DBQueryMixin):
     ) -> Dict[Source, pd.DataFrame]:
         """Download prediction data"""
         data_output: Dict[Source, pd.DateFrame] = {}
+
         for source in full_config.pred_sources:
+
             data_output[source] = self.download_source_data(
                 with_sensor_readings=False,
                 start_date=full_config.pred_start_date,
@@ -316,6 +323,7 @@ class ModelData(DBReader, DBQueryMixin):
                     )
 
             else:
+
                 (
                     index_dict[source],
                     X_dict[source],
@@ -696,12 +704,15 @@ class ModelData(DBReader, DBQueryMixin):
 
     @staticmethod
     def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: TargetDict,
+        data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
     ):
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources
         # TODO take the index as a parameter and match pred_dict onto data_df using index
         for pollutant in pred_dict:
+            # print(pollutant)
+            # print(index)
+            # print(index_dict[pollutant])
             data_df[pollutant + "_mean"] = pred_dict[pollutant]["mean"].flatten()
             data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
         return data_df
