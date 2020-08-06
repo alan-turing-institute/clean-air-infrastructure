@@ -14,6 +14,6 @@ class LondonBoundaryView(Base):
                 name="london_boundary",
                 schema="interest_points",
                 owner="refresher",
-                selectable=select([func.ST_MakePolygon(func.ST_Boundary(func.ST_Union(HexGrid.geom)))]),
+                selectable=select([func.ST_MakePolygon(func.ST_Boundary(func.ST_Union(HexGrid.geom))).label('geom')]),
                 metadata=Base.metadata,
                 )

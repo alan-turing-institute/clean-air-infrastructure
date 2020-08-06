@@ -77,4 +77,4 @@ def test_create_materialised_view(secretfile, connection, londonView):
         output = session.query(londonView)
         result = output.first()
 
-        assert result is not None
+        assert result.geom is not None
