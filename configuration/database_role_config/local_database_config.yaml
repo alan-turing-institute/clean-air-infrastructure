@@ -166,7 +166,7 @@ roles:
         privileges:
           - SELECT
 
-  - role: test_refresher
+  - role: refresher
     create_schema: False
     inherit:
       - readonly

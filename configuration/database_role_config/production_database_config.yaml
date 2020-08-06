@@ -209,3 +209,8 @@ roles:
         create: False
         privileges:
           - SELECT
+
+  - role: refresher
+    create_schema: False
+    inherit:
+      - readonly
