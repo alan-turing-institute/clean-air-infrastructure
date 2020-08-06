@@ -27,13 +27,42 @@ def MyView():
     return MyView
 
 
+@pytest.fixture
+def myView():
+    return MyView
+
 
 @pytest.fixture()
 def londonView():
     return LondonBoundaryView
 
 
-def test_create_view(secretfile, connection, londonView):
+
+def test_create_view(secretfile, connection, MyView):
+    """Check that we can create a materialised view and refresh it"""
+
+    db_instance = DBWriter(
+        secretfile=secretfile, connection=connection, initialise_tables=True
+    )
+
+    db_instance.commit_records(
+        [JamCamVideoStats(id=4232, camera_id="sdfs")],
+        on_conflict="ignore",
+        table=JamCamVideoStats,
+    )
+
+    with db_instance.dbcnxn.open_session() as session:
+
+        refresh_materialized_view(session, "jamcam.test_view")
+
+        output = session.query(MyView)
+
+        result = output.first()
+        assert result.id == 4232
+        assert result.camera_id == "sdfs"
+
+
+def test_create_materialised_view(secretfile, connection, londonView):
     """Check that we can create a materialised view and refresh it"""
 
     db_instance = DBWriter(
