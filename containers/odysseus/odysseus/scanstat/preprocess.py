@@ -13,7 +13,7 @@ def preprocessor(
     scoot_df: pd.DataFrame,
     percentage_missing: float = 20,
     max_anom_per_day: int = 1,
-    n_sigma: float = 3,
+    n_sigma: int = 3,
     repeats: int = 1,
     global_threshold: bool = False,
     rolling_hours: int = 24,
