@@ -51,7 +51,8 @@ def mrdgp(
     if not input_dir:
         model_dir = MODEL_CACHE
     else:
-        model_dir = input_dir.joinpath(*MODEL_CACHE.parts[-2:])
+        model_dir = input_dir
+
     experiment_config = dict(
         name="MR_DGP",
         restore=restore,  # TODO this is passed into the model - remove
@@ -76,15 +77,16 @@ def fit_model(model: ModelMixin, input_dir: Path, exist_ok: bool = False) -> Non
 
     INPUT-DIR should be created by running 'urbanair model data save-cache'"""
 
-    # Load data and configuration file
+    # # Load data and configuration file
     X_train, Y_train, _ = get_training_arrays(input_dir)
 
     # Fit model
     model.fit(X_train, Y_train)
 
     # Prediction
-    x_test, y_test, _ = get_test_arrays(input_dir=input_dir, return_y=True)
+    x_test, y_test, index = get_test_arrays(input_dir=input_dir, return_y=False)
     y_forecast = model.predict(x_test)
+
     save_forecast_to_pickle(y_forecast, input_dir=input_dir, exist_ok=exist_ok)
 
 

@@ -92,7 +92,7 @@ class MRDGP(ModelMixin):
             "mixing_weight": {"name": "dgp_only", "param": None},
             "num_samples_between_layers": 1,
             "num_prediction_samples": 1,
-            "maxiter": 100
+            "maxiter": 100,
         }
 
     def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
@@ -186,7 +186,6 @@ class MRDGP(ModelMixin):
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
-        print(x_train.keys())
 
         x_laqn = x_train["laqn"].copy()
         y_laqn = y_train["laqn"]["NO2"].copy()
@@ -250,7 +249,7 @@ class MRDGP(ModelMixin):
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
-                        maxiter=self.model_params['base_laqn']["maxiter"],
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
                     )
 
                     # m.disable_base_elbo()
@@ -260,7 +259,7 @@ class MRDGP(ModelMixin):
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
-                        maxiter=self.model_params['base_laqn']["maxiter"],
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
                     )
 
         except KeyboardInterrupt:

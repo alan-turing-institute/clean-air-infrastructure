@@ -6,6 +6,7 @@ import pickle
 from datetime import datetime
 from pathlib import Path
 import typer
+import pandas as pd
 from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
 from ..state.configuration import (
@@ -44,9 +45,17 @@ def results(
     full_config = load_model_config(input_dir, full=True)
 
     # TODO this function needs to use the index_dict above
-    result_df = ModelData.join_forecast_on_dataframe(
-        test_data[Source.laqn], y_pred[Source.laqn],
-    )
+
+    all_results = pd.DataFrame()
+    for source in test_data.keys():
+        result_df = ModelData.join_forecast_on_dataframe(
+            test_data[source], y_pred[source], index_dict[source]
+        )
+        all_results = pd.concat([all_results, result_df], axis=0)
+
+        # print(result_df["NO2_mean"].dtype)
+
+        result_df.to_csv(input_dir / "dataframes" / f"{source}_forecast.csv")
 
     # create an instance with correct ids
     secretfile: str = state["secretfile"]

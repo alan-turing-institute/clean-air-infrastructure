@@ -13,10 +13,6 @@ from ..state import (
     MODEL_CONFIG_FULL,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
-    MODEL_TRAINING_X_PICKLE,
-    MODEL_TRAINING_Y_PICKLE,
-    MODEL_PREDICTION_X_PICKLE,
-    MODEL_PREDICTION_Y_PICKLE,
     MODEL_TRAINING_INDEX_PICKLE,
     MODEL_PREDICTION_INDEX_PICKLE,
 )
@@ -86,9 +82,6 @@ def delete_model_cache(overwrite: bool):
         MODEL_CONFIG_FULL,
         MODEL_TRAINING_PICKLE,
         MODEL_PREDICTION_PICKLE,
-        MODEL_TRAINING_X_PICKLE,
-        MODEL_TRAINING_Y_PICKLE,
-        MODEL_PREDICTION_X_PICKLE,
         MODEL_TRAINING_INDEX_PICKLE,
         MODEL_PREDICTION_INDEX_PICKLE,
     ]
@@ -96,6 +89,36 @@ def delete_model_cache(overwrite: bool):
     for cache_file in cache_content:
         if cache_file.exists():
             cache_file.unlink()
+
+
+def get_training_arrays(input_dir: Optional[Path] = None):
+    """Get data arrays for tensorflow models"""
+
+    state["logger"].info(f"Getting data arrays")
+
+    full_config = load_model_config(input_dir, full=True)
+    model_data = ModelData(secretfile=state["secretfile"])
+
+    if not input_dir:
+        training_pickle = MODEL_TRAINING_PICKLE
+    else:
+        if not input_dir.is_dir():
+            state["logger"].warning(f"{input_dir} is not a directory")
+            raise typer.Abort()
+
+        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+
+    if not training_pickle.exists():
+        state["logger"].warning(f"{training_pickle} does not exist")
+        raise typer.Abort()
+
+    training_data_df_norm = load_training_data(input_dir)
+
+    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
+        full_config, training_data_df_norm, prediction=False,
+    )
+
+    return X_dict, Y_dict, index_dict
 
 
 # pylint: disable=too-many-arguments
@@ -259,7 +282,7 @@ def download(
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
 
-@app.command()
+
 def get_training_arrays(input_dir: Optional[Path] = None):
     """Get data arrays for tensorflow models"""
 
@@ -290,7 +313,6 @@ def get_training_arrays(input_dir: Optional[Path] = None):
     return X_dict, Y_dict, index_dict
 
 
-@app.command()
 def get_test_arrays(
     input_dir: Optional[Path] = None, return_y=False
 ) -> Tuple[Dict, Dict, Dict]:

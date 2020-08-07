@@ -1,44 +1,25 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Union, Optional, Tuple
-from datetime import date, datetime, timedelta
-import json
-import os
-import pickle
-import pandas as pd
-import numpy as np
-from dateutil import rrule
-from dateutil.relativedelta import relativedelta
-from pydantic import BaseModel
-from sqlalchemy import func, text, and_, null, cast, String
-from sqlalchemy.sql.expression import Alias
+from typing import List
+from datetime import datetime, timedelta
+from sqlalchemy import func, text, and_, cast, String
 from ..databases.tables import (
     StaticFeature,
     DynamicFeature,
-    AirQualityDataTable,
-    SatelliteGrid,
     MetaPoint,
-    LondonBoundary,
-    AQESite,
-    LAQNSite,
     HexGrid,
 )
-
-from ..databases import DBWriter, Base
-from ..mixins import DBQueryMixin
+from ..databases import DBReader
 from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
     AQEAvailabilityMixin,
     SatelliteAvailabilityMixin,
 )
-from ..loggers import get_logger, green, red
-from ..utils import hash_dict
+from ..loggers import get_logger, green
 from ..timestamps import as_datetime
 from ..decorators import db_query
 
-# if TYPE_CHECKING:
 from ..types import (
-    DataConfig,
     Source,
     Species,
     FeatureNames,
@@ -54,7 +35,7 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class ModelConfig(
-    LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBWriter
+    LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
     """Create and validate cleanair model configurations"""
 
@@ -67,6 +48,7 @@ class ModelConfig(
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+    # pylint: disable=R0913
     @staticmethod
     def generate_data_config(
         trainupto: str,
@@ -97,15 +79,15 @@ class ModelConfig(
             train_interest_points={src: "all" for src in train_sources},
             pred_interest_points={src: "all" for src in pred_sources},
             species=[src.value for src in species],
-            features=[ftr for ftr in features],
-            buffer_sizes=[buff for buff in buffer_sizes],
+            features=features,
+            buffer_sizes=buffer_sizes,
             norm_by=norm_by,
             model_type=model_type,
             include_prediction_y=False,
         )
 
     def validate_config(self, config: BaseConfig):
-
+        """Validate a configuration file"""
         self.logger.info("Validating config")
 
         self.logger.debug("Checking requested features are available in database")
@@ -151,8 +133,6 @@ class ModelConfig(
     def generate_full_config(self, config: BaseConfig):
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
-
-        interest_point_dict = config.train_interest_points
 
         # Expand interest points
         config.train_interest_points = self.get_interest_point_ids(
@@ -224,7 +204,7 @@ class ModelConfig(
             )
 
     def get_interest_point_ids(self, interest_point_dict: InterestPointDict):
-
+        """Get ids of interest points"""
         output_dict: InterestPointDict = {}
 
         for key in interest_point_dict:
@@ -307,7 +287,7 @@ class ModelConfig(
 
     @db_query
     def get_meta_point_ids(self, source: Source):
-
+        """Get metapoint ids"""
         with self.dbcnxn.open_session() as session:
 
             return session.query(MetaPoint.id.label("point_id")).filter(
@@ -315,12 +295,12 @@ class ModelConfig(
             )
 
     @db_query
-    def get_available_interest_points(self, source: Source, point_ids=None):
+    def get_available_interest_points(self, source: Source):
         """
         Get available interest points for a particular source
         """
 
-        bounded_geom = self.query_london_boundary(output_type="subquery")
+        # bounded_geom = self.query_london_boundary(output_type="subquery")
 
         # ToDo: Filter by bounding geometry
 

@@ -16,6 +16,7 @@ def check(
 
     typer.echo("Check scoot data")
     # Set logging verbosity
+    # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
 
 

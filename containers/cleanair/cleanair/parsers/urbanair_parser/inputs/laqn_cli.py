@@ -22,6 +22,7 @@ def check(
     all_species = [spc.value for spc in species]
 
     # Set logging verbosity
+    # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
 
     laqn_writer = LAQNWriter(
