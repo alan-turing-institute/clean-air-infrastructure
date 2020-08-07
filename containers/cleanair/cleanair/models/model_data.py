@@ -46,9 +46,8 @@ def get_val(x):
     )
 
 
-#  pylint: disable=R0904
-class ModelData(DBReader, DBQueryMixin):
-    """Read data from multiple database tables in order to get data for model fitting"""
+class ModelDataExtractor:
+    """Extract model data"""
 
     def __init__(self, **kwargs):
         """
@@ -100,125 +99,6 @@ class ModelData(DBReader, DBQueryMixin):
         data_frame.columns = new_column_names
 
         return data_frame
-
-    # pylint: disable=R0913
-    def download_source_data(
-        self,
-        with_sensor_readings: bool,
-        start_date: datetime,
-        end_date: datetime,
-        species: List[Species],
-        point_ids: List[str],
-        features: List[FeatureNames],
-        source: Source,
-    ) -> pd.DataFrame:
-        """Download all training data (static, dynamic[not yet implimented] and sensor readings)
-        for a given source (e.g. laqn, aqe, satellite)
-        """
-
-        if with_sensor_readings:
-            # Get source dataframe
-            source_data = self.get_training_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                species=species,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
-            )
-            if source == Source.satellite:
-                index_names = self.sensor_satellite_index_names
-            else:
-                index_names = self.sensor_index_names
-
-        else:
-            # Get source dataframe
-            source_data = self.get_prediction_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
-            )
-            index_names = self.feature_index_names
-
-        source_data_index = source_data.set_index(index_names)
-
-        if not set(source_data_index.columns) == set(self.column_names):
-            raise AttributeError("Wrong column names")
-        if not set(source_data_index.index.names) == set(index_names):
-            raise AttributeError("Wrong index names")
-
-        features_df = pd.pivot_table(
-            source_data, index=index_names, columns="feature_name", aggfunc=get_val,
-        ).reset_index()
-        flattend_features_df = self.flatten_column_names(features_df)
-        flattend_features_df["epoch"] = flattend_features_df[
-            "measurement_start_utc"
-        ].apply(lambda x: x.timestamp())
-
-        # If sensor readings then make species a columns
-        if with_sensor_readings:
-
-            index_cols = [
-                col
-                for col in flattend_features_df.columns
-                if col not in ("species_code", "value")
-            ]
-
-            return pd.pivot_table(
-                flattend_features_df,
-                index=index_cols,
-                columns="species_code",
-                values="value",
-                aggfunc=get_val,
-            ).reset_index()
-
-        return flattend_features_df
-
-    def download_training_config_data(
-        self, full_config: FullConfig
-    ) -> Dict[Source, pd.DateFrame]:
-        """Download all input data specified in a validated full config file"""
-
-        data_output: Dict[Source, pd.DateFrame] = {}
-        for source in full_config.train_sources:
-
-            train_end_date = full_config.train_end_date
-            if source == Source.satellite:
-                train_end_date = full_config.pred_end_date
-
-            data_output[source] = self.download_source_data(
-                with_sensor_readings=True,
-                start_date=full_config.train_start_date,
-                end_date=train_end_date,
-                species=full_config.species,
-                point_ids=full_config.train_interest_points[source],
-                features=full_config.features,
-                source=source,
-            )
-        return data_output
-
-    def download_prediction_config_data(
-        self, full_config: FullConfig
-    ) -> Dict[Source, pd.DataFrame]:
-        """Download prediction data"""
-        data_output: Dict[Source, pd.DateFrame] = {}
-
-        for source in full_config.pred_sources:
-
-            data_output[source] = self.download_source_data(
-                with_sensor_readings=False,
-                start_date=full_config.pred_start_date,
-                end_date=full_config.pred_end_date,
-                species=full_config.species,
-                point_ids=full_config.pred_interest_points[source],
-                features=full_config.features,
-                source=source,
-            )
-        return data_output
 
     # pylint: disable=C0116,R0201
     @overload
@@ -379,6 +259,179 @@ class ModelData(DBReader, DBQueryMixin):
     def x_names_norm(self, x_names):
         """Get the normalised x names"""
         return [x + "_norm" for x in x_names]
+
+    @staticmethod
+    def join_forecast_on_dataframe(
+        data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
+    ):
+        """Return a new dataframe with columns updated from pred_dict."""
+        # TODO implement this for multiple sources
+        # TODO take the index as a parameter and match pred_dict onto data_df using index
+        for pollutant in pred_dict:
+            # print(pollutant)
+            # print(index)
+            # print(index_dict[pollutant])
+            data_df[pollutant + "_mean"] = pred_dict[pollutant]["mean"].flatten()
+            data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
+        return data_df
+
+    def update_test_df_with_preds(self, test_pred_dict: dict):
+        """Update the normalised_pred_data_df with predictions for all pred sources.
+
+        Args:
+            test_pred_dict: Dictionary of model predictions.
+        """
+        self.normalised_pred_data_df = self.get_df_from_pred_dict(
+            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
+        )
+
+    def update_training_df_with_preds(self, training_pred_dict):
+        """Updated the normalised_training_data_df with predictions on the training set."""
+        self.normalised_training_data_df = self.get_df_from_pred_dict(
+            self.normalised_training_data_df,
+            self.get_training_data_arrays(),
+            training_pred_dict,
+        )
+
+
+#  pylint: disable=R0904
+class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
+    """Read data from multiple database tables in order to get data for model fitting"""
+
+    def __init__(self, **kwargs):
+        """
+        Initialise the ModelData object with a config file
+        args:
+            config: A config dictionary
+            config_dir: A directory containing config files
+                        (created by ModelData.save_config_state())
+        """
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+    # pylint: disable=R0913
+    def download_source_data(
+        self,
+        with_sensor_readings: bool,
+        start_date: datetime,
+        end_date: datetime,
+        species: List[Species],
+        point_ids: List[str],
+        features: List[FeatureNames],
+        source: Source,
+    ) -> pd.DataFrame:
+        """Download all training data (static, dynamic[not yet implimented] and sensor readings)
+        for a given source (e.g. laqn, aqe, satellite)
+        """
+
+        if with_sensor_readings:
+            # Get source dataframe
+            source_data = self.get_training_data_inputs(
+                start_date=start_date,
+                end_date=end_date,
+                species=species,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                output_type="df",
+            )
+            if source == Source.satellite:
+                index_names = self.sensor_satellite_index_names
+            else:
+                index_names = self.sensor_index_names
+
+        else:
+            # Get source dataframe
+            source_data = self.get_prediction_data_inputs(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                output_type="df",
+            )
+            index_names = self.feature_index_names
+
+        source_data_index = source_data.set_index(index_names)
+
+        if not set(source_data_index.columns) == set(self.column_names):
+            raise AttributeError("Wrong column names")
+        if not set(source_data_index.index.names) == set(index_names):
+            raise AttributeError("Wrong index names")
+
+        features_df = pd.pivot_table(
+            source_data, index=index_names, columns="feature_name", aggfunc=get_val,
+        ).reset_index()
+        flattend_features_df = self.flatten_column_names(features_df)
+        flattend_features_df["epoch"] = flattend_features_df[
+            "measurement_start_utc"
+        ].apply(lambda x: x.timestamp())
+
+        # If sensor readings then make species a columns
+        if with_sensor_readings:
+
+            index_cols = [
+                col
+                for col in flattend_features_df.columns
+                if col not in ("species_code", "value")
+            ]
+
+            return pd.pivot_table(
+                flattend_features_df,
+                index=index_cols,
+                columns="species_code",
+                values="value",
+                aggfunc=get_val,
+            ).reset_index()
+
+        return flattend_features_df
+
+    def download_training_config_data(
+        self, full_config: FullConfig
+    ) -> Dict[Source, pd.DateFrame]:
+        """Download all input data specified in a validated full config file"""
+
+        data_output: Dict[Source, pd.DateFrame] = {}
+        for source in full_config.train_sources:
+
+            train_end_date = full_config.train_end_date
+            if source == Source.satellite:
+                train_end_date = full_config.pred_end_date
+
+            data_output[source] = self.download_source_data(
+                with_sensor_readings=True,
+                start_date=full_config.train_start_date,
+                end_date=train_end_date,
+                species=full_config.species,
+                point_ids=full_config.train_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
+
+    def download_prediction_config_data(
+        self, full_config: FullConfig
+    ) -> Dict[Source, pd.DataFrame]:
+        """Download prediction data"""
+        data_output: Dict[Source, pd.DateFrame] = {}
+
+        for source in full_config.pred_sources:
+
+            data_output[source] = self.download_source_data(
+                with_sensor_readings=False,
+                start_date=full_config.pred_start_date,
+                end_date=full_config.pred_end_date,
+                species=full_config.species,
+                point_ids=full_config.pred_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
 
     @db_query
     def select_static_features(self, features: List[FeatureNames], source: Source):
@@ -701,66 +754,6 @@ class ModelData(DBReader, DBQueryMixin):
                     static_features.c.measurement_start_utc,
                 )
             )
-
-    @staticmethod
-    def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
-    ):
-        """Return a new dataframe with columns updated from pred_dict."""
-        # TODO implement this for multiple sources
-        # TODO take the index as a parameter and match pred_dict onto data_df using index
-        for pollutant in pred_dict:
-            # print(pollutant)
-            # print(index)
-            # print(index_dict[pollutant])
-            data_df[pollutant + "_mean"] = pred_dict[pollutant]["mean"].flatten()
-            data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
-        return data_df
-
-        # if not sources:
-        #     sources = pred_dict.keys()
-        # if not species:
-        #     raise NotImplementedError("Todo")
-        # # create new dataframe and track indices for different sources + pollutants
-        # indices = []
-        # for source in sources:
-        #     # for pollutant in pred_dict[source]:
-        #     # print(type(source.value))
-        #     # print(type(pollutant))
-        #     # print(index_dict[source])
-        #     # print("Shape of index_dict[source][pollutant]:", index_dict[source.value][pollutant].shape)
-        #     indices.extend(index_dict[source])
-        # predict_df = pd.DataFrame(index=indices)
-        # data_df = data_df.loc[indices]
-        # # iterate through NO2_mean, NO2_var, PM10_mean, PM10_var...
-        # for pred_type in ["mean", "var"]:
-        #     for pollutant in species:
-        #         # add a column containing pred results for all sources
-        #         column = np.array([])
-        #         for source in sources:
-        #             column = np.append(column, pred_dict[source][pollutant][pred_type])
-        #         predict_df[pollutant + "_" + pred_type] = column
-        # # add predict_df as new columns to data_df - they should share an index
-        # new_df = pd.concat([data_df, predict_df], axis=1, ignore_index=False)
-        # return new_df
-
-    def update_test_df_with_preds(self, test_pred_dict: dict):
-        """Update the normalised_pred_data_df with predictions for all pred sources.
-
-        Args:
-            test_pred_dict: Dictionary of model predictions.
-        """
-        self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
-        )
-
-    def update_training_df_with_preds(self, training_pred_dict):
-        """Updated the normalised_training_data_df with predictions on the training set."""
-        self.normalised_training_data_df = self.get_df_from_pred_dict(
-            self.normalised_training_data_df,
-            self.get_training_data_arrays(),
-            training_pred_dict,
-        )
 
     def update_remote_tables(
         self, full_config: FullConfig, preprocessing: Optional[Dict] = None
