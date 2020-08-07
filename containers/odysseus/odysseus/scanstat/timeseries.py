@@ -110,6 +110,8 @@ def holt_winters(
                 # upper and lower columns with HW being the exception to the rule.
                 "baseline_upper": baseline,
                 "baseline_lower": baseline,
+                # TODO - Fix tests to incorporate this
+                "standard_deviation": 0.0
             }
         )
         framelist.append(forecasts)
@@ -212,11 +214,11 @@ def gp_forecast(
                 "measurement_start_utc": forecast_period,
                 "measurement_end_utc": forecast_period + timedelta(hours=1),
                 "baseline": test_predict.flatten(),
-                "prediction_variance": test_var.flatten(),
                 "baseline_upper": test_predict.flatten()
                 + 3 * np.sqrt(test_var.flatten()),
                 "baseline_lower": test_predict.flatten()
                 - 3 * np.sqrt(test_var.flatten()),
+                "standard_deviation": np.sqrt(test_var.flatten()),
             }
         )
 

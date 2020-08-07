@@ -71,11 +71,11 @@ def forecast(
     # Select forecasting method
     if method == "HW":
         y = holt_winters(
-            train_data, forecast_start, forecast_upto, detectors=detectors,
+            train_data, forecast_start, forecast_upto, detectors=detectors
         )
 
     if method == "GP":
-        y = gp_forecast(train_data, forecast_start, forecast_upto, detectors=detectors,)
+        y = gp_forecast(train_data, forecast_start, forecast_upto, detectors=detectors)
 
     logging.info("Forecasting complete.")
 
@@ -93,13 +93,13 @@ def forecast(
         how="left",
     )
     forecast_df.rename(
-        columns={"n_vehicles_in_interval": "count",}, inplace=True,
+        columns={"n_vehicles_in_interval": "actual",}, inplace=True,
     )
 
     # Add check for NaNs cleanse
-    count_nans = forecast_df["count"].isnull().sum(axis=0)
+    actual_nans = forecast_df["actual"].isnull().sum(axis=0)
     baseline_nans = forecast_df["baseline"].isnull().sum(axis=0)
-    if count_nans != 0 or baseline_nans != 0:
+    if actual_nans != 0 or baseline_nans != 0:
         raise ValueError("Something went wrong with the forecast")
 
     # Make Baseline Values Non-Negative
@@ -109,5 +109,11 @@ def forecast(
         forecast_df["baseline"] = forecast_df["baseline"].apply(
             lambda x: np.max([0, x])
         )
+        forecast_df["baseline_upper"] = forecast_df["baseline_upper"].apply(
+            lambda x: np.max([0, x])
+        )
+    forecast_df["baseline_lower"] = forecast_df["baseline_lower"].apply(
+        lambda x: np.max([0, x])
+    )
 
     return forecast_df

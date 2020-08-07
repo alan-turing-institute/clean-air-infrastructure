@@ -24,17 +24,18 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "lon",
             "lat",
             "location",
-            "count",
+            "actual",
             "row",
             "col",
             "baseline",
             "baseline_upper",
             "baseline_lower",
+            "standard_deviation"
         ]
     ) == set(forecast_df.columns)
 
     # These columns make no sense when aggregating to grid level, so drop
-    agg_df = forecast_df.drop(["detector_id", "lon", "lat", "location"], axis=1)
+    agg_df = forecast_df.drop(["detector_id", "lon", "lat", "location", "standard_deviation"], axis=1)
 
     # Sum counts and baselines at grid cell level
     agg_df = agg_df.groupby(
@@ -55,7 +56,7 @@ def event_count(
     row_max: int,
     t_min: datetime,
     t_max: datetime,
-) -> pd.DataFrame:
+) -> dict:
 
     """Aggregate the vehicle counts that fall within the region specified by
     the last 6 arguments (row/colums/time identifiers). Scaled by 1e6 for metric
@@ -71,8 +72,11 @@ def event_count(
         t_min: earliest time defining the space-time region (inclusive)
         t_max: latest_time defining the space-time region (inclusive)
     Returns:
-        baseline_count: sum of detector baseline estimates in search region
-        actual_count: sum of actual detector counts in search region
+        dictionary with keys:
+            baseline: sum of detector baseline estimates in search region
+            baseline_upper: sum of detector upper-estimate baseline estimates in search region
+            baseline_lower: sum of detector lower-estimate baseline estimates in search region
+            actual: sum of actual detector counts in search region
     Notes:
         t_max is fixed currently. The scan statistic is calculated for all space-time
         regions such that t_max is the most recent day. The search is then conducted
@@ -86,11 +90,15 @@ def event_count(
             "col",
             "measurement_start_utc",
             "measurement_end_utc",
-            "count",
+            "actual",
             "baseline",
+            "baseline_upper",
+            "baseline_lower",
         ]
     ) <= set(agg_df.columns)
 
+    # Find all space-time regions that are a subset of the region described
+    # in the arguments of this function.
     search_region_mask = (
         (agg_df["col"].between(col_min, col_max))
         & (agg_df["row"].between(row_min, row_max))
@@ -101,8 +109,10 @@ def event_count(
     search_region_data = agg_df.loc[search_region_mask]
 
     if search_region_data.empty:
-        return 0, 0
-    return (
-        search_region_data["baseline"].sum() / 1e6,
-        search_region_data["count"].sum() / 1e6,
-    )
+        return {'baseline': 0, 'baseline_upper': 0, 'baseline_lower': 0, 'actual': 0}
+    return {
+        'baseline': search_region_data["baseline"].sum() / 1e6,
+        'baseline_upper': search_region_data["baseline_upper"].sum() / 1e6,
+        'baseline_lower': search_region_data["baseline_lower"].sum() / 1e6,
+        'actual': search_region_data["actual"].sum() / 1e6,
+    }

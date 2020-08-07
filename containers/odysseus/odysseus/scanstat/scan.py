@@ -6,7 +6,7 @@ import datetime
 import pandas as pd
 import numpy as np
 
-from .metrics import likelihood_ratio_ebp
+from .metrics import ebp, ebp_asym, kulldorf
 from .utils import event_count
 
 
@@ -20,7 +20,8 @@ def scan(
     given by:
                 F(S) := Pr (data | H_1 (S)) / Pr (data | H_0)
     where H_0 and H_1 (S) are defined in the Expectation-Based Scan Statistic
-    paper by D. Neill.
+    paper by D. Neill. Results are by default, sorted in descending order w.r.t
+    this metric.
 
     Args:
         agg_df: dataframe consisting of the detectors which lie in
@@ -49,6 +50,12 @@ def scan(
         else int((grid_resolution + 1) / 2)
     )
 
+    # Kulldorf metric requires total baselines and total actual counts
+    baseline_total = agg_df['baseline'].sum() / 1e6
+    baseline_total_upper = agg_df['baseline_upper'].sum() / 1e6
+    baseline_total_lower = agg_df['baseline_lower'].sum() / 1e6
+    actual_total = agg_df['actual'].sum() / 1e6
+
     # Time direction convention - reverse
     t_ticks = t_ticks[::-1]
 
@@ -65,15 +72,24 @@ def scan(
                         row_min + 1, np.min([row_min + half_max, grid_resolution]) + 1
                     ):  # row_max
 
-                        # Count up baselines and actual counts here
-                        baseline_count, actual_count = event_count(
+                        # Count up baselines and actual counts within region here
+                        counts = event_count(
                             agg_df, col_min, col_max, row_min, row_max, t_min, t_max
                         )
+                        baseline, baseline_upper, baseline_lower, actual = counts.values()
 
                         # Compute Metric(s)
-                        ebp_l_score = likelihood_ratio_ebp(
-                            baseline_count, actual_count
-                        )  # Normal EBP metric
+                        ebp_score = ebp(baseline, actual)
+                        ebp_score_upper = ebp(baseline_lower, actual)
+                        ebp_score_lower = ebp(baseline_upper, actual)
+
+                        kulldorf_score = kulldorf(baseline, baseline_total, actual, actual_total)
+                        kulldorf_score_upper = kulldorf(baseline_lower, baseline_total_lower, actual, actual_total)
+                        kulldorf_score_lower = kulldorf(baseline_upper, baseline_total_upper, actual, actual_total)
+
+                        ebp_asym_score = ebp_asym(baseline, actual)
+                        ebp_asym_upper = ebp_asym(baseline_lower, actual)
+                        ebp_asym_lower = ebp_asym(baseline_upper, actual)
 
                         # Append results
                         scores_dict[num_regions] = {
@@ -83,10 +99,19 @@ def scan(
                             "col_max": col_max,
                             "measurement_start_utc": t_min,
                             "measurement_end_utc": t_max,
-                            "baseline_count": baseline_count,
-                            "actual_count": actual_count,
-                            "l_score_ebp": ebp_l_score,
-                            # "p_value_EBP": np.nan,
+                            "baseline": baseline,
+                            "baseline_upper": baseline_upper,
+                            "baseline_lower": baseline_lower,
+                            "actual": actual,
+                            "ebp_lower": ebp_score_lower,
+                            "ebp": ebp_score,
+                            "ebp_upper": ebp_score_upper,
+                            "kulldorf_lower": kulldorf_score_lower,
+                            "kulldorf": kulldorf_score,
+                            "kulldorf_upper": kulldorf_score_upper,
+                            "ebp_asym_lower": ebp_asym_lower,
+                            "ebp_asym": ebp_asym_score,
+                            "ebp_asym_upper": ebp_asym_upper,
                         }
 
                         # Count Regions
@@ -106,10 +131,10 @@ def scan(
     )
 
     # At this point, we have a dataframe populated with likelihood statistic
-    # scores for *each* search region. Sort it so that the highest `l_score_ebp`
+    # scores for *each* search region. Sort it so that the highest `ebp`
     # score is at the top.
     all_scores = pd.DataFrame.from_dict(scores_dict, "index").sort_values(
-        "l_score_ebp", ascending=False
+        "ebp", ascending=False
     )
     return all_scores
 
@@ -121,7 +146,7 @@ def average_gridcell_scores(
     forecast_end: datetime,
 ) -> pd.DataFrame:
 
-    """Aggregate scores from the scan to grid level by taking an average of l_score_ebp.
+    """Aggregate scores from the scan to grid level by taking an average of the metrics.
      i.e. For a given grid cell, we find all search regions that contain it, and
      return the average score. Useful for visualisation.
     Args:
@@ -161,16 +186,34 @@ def average_gridcell_scores(
 
                 # Calculate mean per gridcell here. Loss of information but
                 # easier to interpret
-                mean_score = gridcell["l_score_ebp"].mean()
-                std = gridcell["l_score_ebp"].std()
+                mean_scores = gridcell[
+                    [
+                        "ebp_lower",
+                        "ebp",
+                        "ebp_upper",
+                        "kulldorf_lower",
+                        "kulldorf",
+                        "kulldorf_upper",
+                        "ebp_asym_lower",
+                        "ebp_asym",
+                        "ebp_asym_upper",
+                    ]
+                ].mean()
 
                 return_dict[num_regions] = {
                     "measurement_start_utc": t_min,
                     "measurement_end_utc": t_max,
                     "row": row_num,
                     "col": col_num,
-                    "ebp_mean": mean_score,
-                    "ebp_std": std,
+                    "ebp_lower": mean_scores['ebp_lower'],
+                    "ebp": mean_scores['ebp'],
+                    "ebp_upper": mean_scores["ebp_upper"],
+                    "kulldorf_lower": mean_scores['kulldorf_lower'],
+                    "kulldorf": mean_scores['kulldorf'],
+                    "kulldorf_upper": mean_scores["kulldorf_upper"],
+                    "ebp_asym_lower": mean_scores['ebp_asym_lower'],
+                    "ebp_asym": mean_scores['ebp_asym'],
+                    "ebp_asym_upper": mean_scores["ebp_asym_upper"],
                 }
 
                 num_spatial_regions += 1
