@@ -150,7 +150,7 @@ def preprocessor(
         curr_length - post_periodic_length,
     )
 
-    # Interpolate missing counts and fill missing lon, lats, locations etc.
+    # Fill missing lon, lats, locations etc.
     proc_df = fill_missing_values(scoot_df)
 
     logging.info("Data processing complete.")
