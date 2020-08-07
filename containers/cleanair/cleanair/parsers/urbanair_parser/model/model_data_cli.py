@@ -22,7 +22,7 @@ from ..shared_args import (
     UpTo_callback,
 )
 
-from ....models import ModelData, ModelConfig
+from ....models import ModelData, ModelDataExtractor, ModelConfig
 from ....types import (
     Species,
     Source,
@@ -97,7 +97,7 @@ def get_training_arrays(input_dir: Optional[Path] = None):
     state["logger"].info(f"Getting data arrays")
 
     full_config = load_model_config(input_dir, full=True)
-    model_data = ModelData(secretfile=state["secretfile"])
+    model_data = ModelDataExtractor()
 
     if not input_dir:
         training_pickle = MODEL_TRAINING_PICKLE
@@ -282,14 +282,13 @@ def download(
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
 
 
-
 def get_training_arrays(input_dir: Optional[Path] = None):
     """Get data arrays for tensorflow models"""
 
     state["logger"].info(f"Getting data arrays")
 
     full_config = load_model_config(input_dir, full=True)
-    model_data = ModelData(secretfile=state["secretfile"])
+    model_data = ModelDataExtractor()
 
     if not input_dir:
         training_pickle = MODEL_TRAINING_PICKLE
@@ -320,7 +319,7 @@ def get_test_arrays(
     state["logger"].info(f"Getting data arrays")
 
     full_config = load_model_config(input_dir, full=True)
-    model_data = ModelData(secretfile=state["secretfile"])
+    model_data = ModelDataExtractor()
 
     if not input_dir:
         prediction_pickle = MODEL_PREDICTION_PICKLE
