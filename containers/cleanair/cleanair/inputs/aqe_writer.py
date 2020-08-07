@@ -8,13 +8,14 @@ from xml.dom import minidom
 import pandas
 import requests
 from ..mixins import DateRangeMixin, APIRequestMixin
+from ..mixins.availability_mixins import AQEAvailabilityMixin
 from ..databases import DBWriter
 from ..databases.tables import AQESite, AQEReading, MetaPoint
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class AQEWriter(DateRangeMixin, APIRequestMixin, DBWriter):
+class AQEWriter(DateRangeMixin, APIRequestMixin, AQEAvailabilityMixin, DBWriter):
     """Manage interactions with the AQE table on Azure"""
 
     # Set list of primary-key columns
