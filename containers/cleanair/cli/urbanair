@@ -173,7 +173,6 @@ def init_production():
 
 app.add_typer(inputs.app, name="inputs")
 app.add_typer(features.app, name="features")
-app.add_typer(model.app, name="model")
 
 if __name__ == "__main__":
 
