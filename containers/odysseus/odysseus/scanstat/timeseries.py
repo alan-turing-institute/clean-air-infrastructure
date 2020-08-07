@@ -110,7 +110,6 @@ def holt_winters(
                 # upper and lower columns with HW being the exception to the rule.
                 "baseline_upper": baseline,
                 "baseline_lower": baseline,
-                # TODO - Fix tests to incorporate this
                 "standard_deviation": 0.0
             }
         )
@@ -202,7 +201,7 @@ def gp_forecast(
         test_var = scaler.inverse_transform(var)
 
         forecast_period = pd.date_range(
-            start=forecast_start, end=forecast_upto, freq="H",
+            start=forecast_start, end=forecast_upto - timedelta(hours=1), freq="H",
         )
 
         # organise data into dataframe similar to the SCOOT outputs
