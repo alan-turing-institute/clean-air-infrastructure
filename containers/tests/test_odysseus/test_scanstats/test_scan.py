@@ -147,10 +147,11 @@ def forecast_checks(
         "col",
         "measurement_start_utc",
         "measurement_end_utc",
-        "count",
+        "actual",
         "baseline",
         "baseline_lower",
         "baseline_upper",
+        "standard_deviation"
     ]
     assert set(cols) == set(forecast_df.columns)
 
@@ -184,7 +185,7 @@ def aggregate_checks(
         "col",
         "measurement_start_utc",
         "measurement_end_utc",
-        "count",
+        "actual",
         "baseline",
         "baseline_lower",
         "baseline_upper",
@@ -224,9 +225,19 @@ def scan_checks(
         "col_max",
         "measurement_start_utc",
         "measurement_end_utc",
-        "baseline_count",
-        "actual_count",
-        "l_score_ebp",
+        "baseline",
+        "baseline_upper",
+        "baseline_lower",
+        "actual",
+        "ebp_lower",
+        "ebp",
+        "ebp_upper",
+        "kulldorf_lower",
+        "kulldorf",
+        "kulldorf_upper",
+        "ebp_asym_lower",
+        "ebp_asym",
+        "ebp_asym_upper",
     ]
     assert set(all_score_cols) == set(all_scores.columns)
 
@@ -246,7 +257,10 @@ def scan_checks(
     assert all_scores.at[0, "measurement_end_utc"] == forecast_upto
     assert all_scores["measurement_start_utc"].min() == forecast_upto - timedelta(days=forecast_days)
 
-    assert all_scores["l_score_ebp"].min() >= 1
+    assert all_scores["ebp"].min() >= 1
+    assert all_scores["ebp_lower"].min() >= 1
+    assert all_scores["ebp_upper"].min() >= 1
+    assert all_scores["ebp_upper"].ge(all_scores["ebp"]).all()
 
 
 def average_score_checks(
@@ -264,8 +278,15 @@ def average_score_checks(
         "measurement_end_utc",
         "row",
         "col",
-        "ebp_mean",
-        "ebp_std",
+        "ebp_lower",
+        "ebp",
+        "ebp_upper",
+        "kulldorf_lower",
+        "kulldorf",
+        "kulldorf_upper",
+        "ebp_asym_lower",
+        "ebp_asym",
+        "ebp_asym_upper",
     ]
 
     assert set(grid_level_cols) == set(grid_level_scores.columns)
@@ -275,4 +296,4 @@ def average_score_checks(
     assert grid_level_scores["row"].max() <= grid_resolution
     assert grid_level_scores["col"].max() <= grid_resolution
 
-    assert grid_level_scores["ebp_mean"].min() >= 1
+    assert grid_level_scores["ebp"].min() >= 1
