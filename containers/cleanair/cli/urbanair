@@ -7,7 +7,6 @@ import json
 import typer
 from cleanair.parsers.urbanair_parser import inputs
 from cleanair.parsers.urbanair_parser import features
-from cleanair.parsers.urbanair_parser import model
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.parsers.urbanair_parser.state import (
     CONFIG_SECRETFILE_PATH,
@@ -34,7 +33,8 @@ def init_app(
 
     # Create app directory structure
     if not APP_DIR.is_dir():
-        APP_DIR.mkdir()
+        typer.echo("Creating Urbanair CLI application directory")
+        APP_DIR.mkdir(parents=True)
 
     if not MODEL_CACHE.is_dir():
         MODEL_CACHE.mkdir()
