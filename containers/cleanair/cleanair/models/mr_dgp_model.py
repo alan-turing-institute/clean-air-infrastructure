@@ -91,7 +91,7 @@ class MRDGP(ModelMixin):
             },
             "mixing_weight": {"name": "dgp_only", "param": None},
             "num_samples_between_layers": 1,
-            "num_prediction_samples": 1,
+            "num_prediction_samples": 10,
             "maxiter": 100,
         }
 
@@ -193,7 +193,13 @@ class MRDGP(ModelMixin):
         x_sat = x_train["satellite"].copy()
         y_sat = y_train["satellite"]["NO2"].copy()
 
+
+
         # ===========================Setup Data===========================
+        features = [0, 1, 2]
+        x_laqn = x_laqn[:, features]
+        x_sat = x_sat[:, :, features]
+
         # X = [X_laqn[:, None, :], X_sat]
         # Y = [Y_laqn, Y_sat]
 
@@ -216,6 +222,11 @@ class MRDGP(ModelMixin):
 
         X = [x_sat, x_laqn[:, None, :]]
         Y = [y_sat, y_laqn]
+
+        print(x_sat.shape)
+        print(y_sat.shape)
+        print(x_laqn.shape)
+        print(y_laqn.shape)
 
         # ===========================Setup Model===========================
         dataset = [[X[1], Y[1]], [X[0], Y[0]]]
