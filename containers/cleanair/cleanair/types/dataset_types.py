@@ -4,10 +4,7 @@ from typing import Dict, List, Tuple, Union
 from datetime import datetime
 from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
-from . import Species
-from . import Source
-from . import FeatureNames
-from . import FeatureBufferSize
+from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
 from ..utils import hash_dict
 
 # pylint: disable=invalid-name

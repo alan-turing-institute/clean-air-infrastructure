@@ -38,7 +38,9 @@ for i in range(len(valid_features)):
             None, help="Features to process. If non given will process all",
         ),
         source: List[ValidSources] = Sources,
-        only_missing: bool = typer.Option(False, help="Only show missing data",),
+        only_missing: bool = typer.Option(
+            False, "--only-missing", help="Only show missing data",
+        ),
         web: bool = Web,
         it: int = typer.Option(i, hidden=True),
     ) -> None:

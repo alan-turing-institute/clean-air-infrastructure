@@ -15,10 +15,10 @@ KernelType = typer.Option("matern32", help="Type of kernel.", show_default=True)
 KernelVariance = typer.Option(
     1.0, help="Initialising variance of the kernel.", show_default=True
 )
-MaxIter = typer.Option(10, help="Num iterations of training model", show_default=True)
 MinibatchSize = typer.Option(
     100, help="Size of each batch for prediction.", show_default=True
 )
 NumInducingPoints = typer.Option(
     1000, help="Number of inducing points.", show_default=True
 )
+MaxIter = typer.Option(10, help="Num iterations of training model", show_default=True,)
