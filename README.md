@@ -705,7 +705,7 @@ docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.a
 To run the latest version of this entrypoint:
 
 ```bash
-docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+docker run -it --rm cleanairdocker.azurecr.io/mf:latest
 ```
 
 ## Singularity for HPC

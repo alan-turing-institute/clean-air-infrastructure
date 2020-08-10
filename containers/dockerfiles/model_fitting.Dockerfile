@@ -1,5 +1,5 @@
 # Use an official tensorflow gpu runtime as a parent image
-FROM tensorflow/tensorflow:1.15.0-gpu-py3
+FROM python:3.7
 
 # Get the arg value of the git hash
 ARG git_hash
@@ -15,11 +15,9 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages - note tensorflow-gpu 1.15.0 is already installed
+RUN pip install tensorflow==1.15.0
 RUN pip install gpflow==1.5.1
 RUN pip install '/app/cleanair'
 
-# Copy the run script into the container
-# COPY entrypoints/model_fitting/model_fitting.py /app
-
-# Run the entrypoint script when the container launches
-# ENTRYPOINT ["python", "model_fitting.py"]
+# Run the entrypoint
+ENTRYPOINT [ "urbanair", "model", "fit", "mrdgp" ]
