@@ -63,9 +63,8 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanair
-        imagePullPolicy: Never
-        tag: local
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
     args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "aqe", "fill", "--ndays", "2"]
     volumeMounts:
     - name: secrets
@@ -84,9 +83,8 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanair
-        imagePullPolicy: Never
-        tag: local
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
     args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "laqn", "fill", "--ndays", "2"]
     volumeMounts:
     - name: secrets
@@ -105,9 +103,8 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanair
-        imagePullPolicy: Never
-        tag: local
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
     args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "satellite", "fill", "--ndays", "30", "--insert-method", "missing"]
     volumeMounts:
     - name: secrets
@@ -126,9 +123,8 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanair
-        imagePullPolicy: Never
-        tag: local
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
     args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "1"]
     volumeMounts:
     - name: secrets
