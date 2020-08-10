@@ -1,4 +1,4 @@
-# UrbanAir API
+# Running development server
 
 The UrbanAir RESTFUL API is a [Fast API](https://fastapi.tiangolo.com/) application. To run it in locally you must configure the following steps:
 

@@ -1,8 +1,8 @@
 # Project information
-site_name: Urbanair
-site_description: Documentation for the UrbanAir project
-site_author: Oscar Giles etc
-site_url: https://urbanair.turing.ac.uk/docs
+site_name: CleanAir Development Docs
+site_description: Documentation for the CleanAir project
+site_author: Oscar Giles, James Robinson, Patrick O'Hara, Christy Nakou
+site_url: https://urbanair.turing.ac.uk/dev/docs
 
 # Repository
 repo_name: alan-turing-institute/clean-air-infrastructure
@@ -53,43 +53,46 @@ plugins:
             show_source: true
       watch:
         - containers/cleanair
-        - containers/odysseus
 
+docs_dir: 'docs_src/'
 nav:
-- Cleanair: index.md
-- User Guide:
-  - Setting up a developmet environment:
+  - Cleanair: index.md
+  - Developer setup:
     - setup/azure-account.md
     - setup/non-infrastructure-dependencies.md
     - setup/infrastructure-dependencies.md
-    - setup/configure-local-database.md
-  
-  - accessing-production-database.md
-  - entry-points.md
-  - urbanair-api.md
-  - developer-guide.md
+    - Databases:
+      - setup/configure-local-database.md
+      - setup/accessing-production-database.md
+  - Style and tests:
+    - developer_guide/style-guide.md
+    - developer_guide/tests.md
+  - CleanAir:
+    - cleanair/cleanair-cli.md
+  - UrbanAir API:
+    - urbanair-api.md
+  - Infrastructure:
+    - infrastructure/infrastructure-deployment.md
   - researcher-guide.md
-  - infrastructure-development.md 
+
+
+#   - entry-points.md
+#   - urbanair-api.md
+#   - developer-guide.md
+
   
 
-- API: 
-  - Cleanair: 
-    - API/cleanair/dashboard.md
-    - API/cleanair/databases.md
-    - API/cleanair/decorators.md
-    - API/cleanair/features.md
-    - API/cleanair/inputs.md
-    - API/cleanair/instance.md
-    - API/cleanair/loggers.md
-    - API/cleanair/metrics.md
-    - API/cleanair/models.md
-    - API/cleanair/parsers.md
-    - API/cleanair/timestamps.md
-  - Odysseus:
-    - API/odysseus/databases.md
-    - API/odysseus/test_types.md
-    - API/odysseus/dates.md
-    - API/odysseus/metric.md
-    - API/odysseus/parsers.md
-    - API/odysseus/preprocess.md
-    - API/odysseus/scoot_processing.md
+# - API: 
+#   - Cleanair: 
+#     - API/cleanair/dashboard.md
+#     - API/cleanair/databases.md
+#     - API/cleanair/decorators.md
+#     - API/cleanair/features.md
+#     - API/cleanair/inputs.md
+#     - API/cleanair/instance.md
+#     - API/cleanair/loggers.md
+#     - API/cleanair/metrics.md
+#     - API/cleanair/models.md
+#     - API/cleanair/parsers.md
+#     - API/cleanair/timestamps.md
+
