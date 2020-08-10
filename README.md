@@ -697,6 +697,13 @@ or for deep gp
 urbanair model deep-gp fit <data-directory>
 ```
 
+## Model fitting with docker
+
+```
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+docker run -it -v /Users/pohara/experiments/urbanair/test1:/app --rm cleanairdocker.azurecr.io/mf:latest /app
+```
+
 ## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.
