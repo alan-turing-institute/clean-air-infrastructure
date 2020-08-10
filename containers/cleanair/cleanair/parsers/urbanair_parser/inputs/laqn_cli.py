@@ -34,7 +34,7 @@ def check(
     # print(laqn_writer.get_open_sites(output_type="tabulate",))
 
     # print(
-    #     laqn_writer.get_raw_data(
+    #     laqn_writer.get_raw_laqn_data(
     #         start_date=laqn_writer.start_datetime.isoformat(),
     #         end_date=laqn_writer.end_datetime.isoformat(),
     #         species=all_species,
@@ -43,7 +43,7 @@ def check(
     # )
 
     # print(
-    #     laqn_writer.get_raw_data(
+    #     laqn_writer.get_raw_laqn_data(
     #         start_date=laqn_writer.start_datetime.isoformat(),
     #         end_date=laqn_writer.end_datetime.isoformat(),
     #         species=all_species,
