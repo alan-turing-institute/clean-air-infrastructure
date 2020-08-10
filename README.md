@@ -27,6 +27,21 @@ A list of key developers on the project. A good place to start if you wish to co
 | Tim Spain          | [@timspainUCL](https://github.com/timspainUCL)       | <t.spain@ucl.ac.uk>       |
 | Edward Thorpe-Woods | [@TeddyTW](https://github.com/TeddyTW)              | <ethorpe-woods@turing.ac.uk>|
 
+
+# Documentatin
+
+## Development docs
+
+To run docs locally:
+
+```bash
+pip install -r containers/requirements.txt
+```
+
+```bash
+mkdocs serve -f containers/docs/mkdocs.yml
+```
+
 # Contents
 
 ### Setting up a development environment
