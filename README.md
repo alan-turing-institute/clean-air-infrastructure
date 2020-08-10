@@ -16,6 +16,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk> |      
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
@@ -58,6 +59,9 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
+- [Training models](#training-models)
+- [GPU support with Docker](#gpu-support-with-docker)
+- [Singularity for HPC](#singularity-for-hpc)
 
 ### Infrastructure
 
@@ -381,6 +385,12 @@ pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 
 To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributors-:dancers:). You should discuss what your access requirements are (e.g. do you need write access).To access the database first [login to Azure](#login-to-Azure) from the terminal. 
 
+If you do not have an azure subscription you must use:
+
+```bash
+az login --allow-no-subscriptions
+```
+
 You can then request an access token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
 
 ```bash
@@ -583,7 +593,7 @@ This fixture ensures that all interactions with the database take place within a
 
 # Researcher guide
 
-*The following steps provide useful tools for researchers to use, for example jupyter notebooks.*
+*The following steps provide useful tools for researchers to use, for example setting up jupyter notebooks and running models using a GPU.*
 
 ## Setup notebook
 
@@ -598,6 +608,16 @@ You can start the notebook:
 ```bash
 jupyter notebook
 ```
+
+Alternatively you may wish to use jupyter lab which offers more features on top of the normal notebooks.
+
+```bash
+jupyter lab
+```
+
+This will require some additional steps for [adding jupyter lab extensions for plotly](https://plotly.com/python/getting-started/#jupyterlab-support-python-35).
+
+For some notebooks you may also want to a mapbox for visualising spatial data. To do this you will need a [mapbox access token](https://docs.mapbox.com/help/how-mapbox-works/access-tokens/) which you can store inside your `.env` file (see below).
 
 ### Environment variables
 
@@ -640,6 +660,86 @@ secretfile = os.getenv("DB_SECRET_FILE", None)
 ```
 
 Remember that the `PGPASSWORD` token will only be valid for ~1h.
+
+## Training models
+
+To train a model on your local machine you can run a model fitting entrypoint:
+
+```bash
+python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+```
+
+You can adjust the model parameters and data settings by changing the command line arguments.
+Use the `--help` flag to see available options.
+
+## GPU support with Docker
+
+For GPU support we strongly recommend using our docker image to run the entrypoint.
+This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
+
+You can build our custom GPU dockerfile with the following command:
+
+```bash
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+```
+
+To run the latest version of this entrypoint:
+
+```bash
+docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+```
+
+## Singularity for HPC
+
+Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).
+This software means you can [import and run Docker images](https://singularity.lbl.gov/docs-docker) without having Docker installed or being a superuser.
+Scientific clusters are often a pain to setup, so we strongly recommend using Singularity & Docker to avoid a painful experience.
+
+First login to your HPC and ensure singularity is installed:
+
+```bash
+singularity --version
+```
+
+Now we will need to pull the Docker image from our Docker container registry on Azure.
+Since our docker images are private you will need to login to the container registry.
+1. Go to [portal.azure.com](https://portal.azure.com).
+2. Search for the `CleanAirDocker` container registry.
+3. Go to `Access keys`.
+4. The username is `CleanAirDocker`. Copy the password.
+
+```bash
+singularity pull --docker-login docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+Then build the singularity image to a `.sif` file.
+We recommend you store all of your singularity images in a directory called `containers`.
+
+```bash
+singularity build --docker-login containers/model_fitting.sif docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+To test everything has built correctly, spawn a shell and run python:
+
+```bash
+singularity shell containers/model_fitting.sif
+python
+```
+
+Then try importing tensorflow and cleanair:
+
+```python
+import tensorflow as tf
+tf.__version__
+import cleanair
+cleanair.__version__
+```
+
+Finally your can run the singularity image, passing any arguments you see fit:
+
+```bash
+singularity run containers/model_fitting.sif --secretfile $SECRETS
+```
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**

@@ -73,10 +73,11 @@ def video_stat_records():
             records.append(
                 JamCamVideoStats(
                     id=i,
-                    camera_id="54335.234234.mp4",
+                    camera_id="54335.234234",
                     video_upload_datetime=vtime,
                     detection_class=dect,
                     counts=np.random.poisson(lam=10),
+                    source=0,
                 )
             )
 
