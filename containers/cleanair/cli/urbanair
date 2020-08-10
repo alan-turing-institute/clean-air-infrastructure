@@ -13,7 +13,7 @@ from cleanair.parsers.urbanair_parser.state import (
     APP_DIR,
     PROD_HOST,
     PROD_SECRET_DICT,
-    MODEL_CACHE,
+    DATA_CACHE,
     MODEL_DATA_CACHE,
 )
 from cleanair.loggers.logcolours import red, green
@@ -36,8 +36,8 @@ def init_app(
         typer.echo("Creating Urbanair CLI application directory")
         APP_DIR.mkdir(parents=True)
 
-    if not MODEL_CACHE.is_dir():
-        MODEL_CACHE.mkdir()
+    if not DATA_CACHE.is_dir():
+        DATA_CACHE.mkdir()
 
     if not MODEL_DATA_CACHE.is_dir():
         MODEL_DATA_CACHE.mkdir()
