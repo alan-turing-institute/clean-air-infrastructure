@@ -35,16 +35,12 @@ def fill(
     default_logger = initialise_logging(state["verbose"])
 
     # Update the SCOOT reading table on the database, logging any unhandled exceptions
-    try:
-        scoot_writer = ScootWriter(
-            end=upto,
-            nhours=nhours + ndays,
-            secretfile=state["secretfile"],
-            aws_key_id=aws_key_id,
-            aws_key=aws_key,
-        )
-        scoot_writer.update_remote_tables()
 
-    except Exception as error:
-        default_logger.error("An uncaught exception occurred: %s", str(error))
-        raise
+    scoot_writer = ScootWriter(
+        end=upto,
+        nhours=nhours + ndays,
+        secretfile=state["secretfile"],
+        aws_key_id=aws_key_id,
+        aws_key=aws_key,
+    )
+    scoot_writer.update_remote_tables()
