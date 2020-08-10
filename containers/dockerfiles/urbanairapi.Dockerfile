@@ -12,4 +12,4 @@ RUN pip install -e /modules/urbanair/
 
 # Build the documentation
 COPY docs /app/docs
-RUN mkdocs build -d /modules/urbanair/urbanair/packages -f /app/docs/mkdocs.yml     
+RUN mkdocs build -d /modules/urbanair/urbanair/packages -f /app/docs/mkdocs.yml
