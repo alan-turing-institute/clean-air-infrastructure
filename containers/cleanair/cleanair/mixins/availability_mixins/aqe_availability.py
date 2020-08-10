@@ -56,7 +56,9 @@ class AQEAvailabilityMixin:
             return aqe_site_q
 
     @db_query
-    def get_in_data(self, start_date: str, end_date: Optional[str] = None):
+    def get_readings_between_dates(
+        self, start_date: str, end_date: Optional[str] = None
+    ):
 
         """Count the number of AQE readings for each open aqe site between start_date and end_data
         """
@@ -115,7 +117,7 @@ class AQEAvailabilityMixin:
             reference_end_date (str): Optional. iso date. The last datetimee to check data from
         """
 
-        in_data_cte = self.get_in_data(start_date, end_date).cte()
+        in_data_cte = self.get_readings_between_dates(start_date, end_date).cte()
         open_sites_sq = self.get_aqe_open_sites(
             with_location=False, output_type="subquery"
         )
