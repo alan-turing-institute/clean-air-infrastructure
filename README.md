@@ -32,7 +32,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ## Development docs
 
-To run docs locally:
+### Run locally
 
 ```bash
 pip install -r containers/requirements.txt
@@ -41,6 +41,7 @@ pip install -r containers/requirements.txt
 ```bash
 mkdocs serve -f containers/docs/mkdocs.yml
 ```
+
 
 # Contents
 

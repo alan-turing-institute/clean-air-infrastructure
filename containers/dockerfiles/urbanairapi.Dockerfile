@@ -10,7 +10,6 @@ RUN pip install '/apps/cleanair[models, dashboard]'
 COPY urbanair/ /modules/urbanair/
 RUN pip install -e /modules/urbanair/
 
-
+# Build the documentation
 COPY docs /app/docs
-COPY mkdocs.yml /app/mkdocs.yml
-RUN mkdocs build -d /modules/urbanair/urbanair/packages
+RUN mkdocs build -d /modules/urbanair/urbanair/packages -f /app/docs/mkdocs.yml     

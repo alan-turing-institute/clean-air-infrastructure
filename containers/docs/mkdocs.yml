@@ -75,13 +75,7 @@ nav:
     - infrastructure/infrastructure-deployment.md
   - researcher-guide.md
 
-
-#   - entry-points.md
-#   - urbanair-api.md
-#   - developer-guide.md
-
-  
-
+# ToDo: Add API docs
 # - API: 
 #   - Cleanair: 
 #     - API/cleanair/dashboard.md
