@@ -1,6 +1,7 @@
 """Functionality for the main Spatial Scan loop over a rectangular grid"""
 import time
 import logging
+import datetime
 
 import pandas as pd
 import numpy as np
@@ -9,7 +10,9 @@ from .metrics import likelihood_ratio_ebp
 from .utils import event_count
 
 
-def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
+def scan(
+    agg_df: pd.DataFrame, grid_resolution: int, forecast_start: datetime, forecast_end: datetime
+) -> pd.DataFrame:
 
     """Main function for looping through the sub-space-time regions (S) of
     global_region represented by data in forecast_data. We search for regions
@@ -24,6 +27,8 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
                        global_region, their locations and both their
                        baseline and actual counts for the past W days.
         grid_partition: Split each spatial axis into this many partitions.
+        forecast_start: forecast start time
+        forecast_end: forecast end time
     Returns:
         Dataframe summarising each space-time region's F(S) score.
     """
@@ -31,13 +36,10 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
     # Set Initial Timer
     init_time = time.perf_counter()
 
-    # Infer max/min time labels from the input data
-    t_min = agg_df.measurement_start_utc.min()
-    t_max = agg_df.measurement_end_utc.max()
-
     # Set up iterators
     x_ticks = range(grid_resolution + 1)
     y_ticks = range(grid_resolution + 1)
+    t_min, t_max = forecast_start, forecast_end
     t_ticks = pd.date_range(start=t_min, end=t_max, freq="H")
 
     # Each search region has spatial extent that covers less than half_max row/columns
@@ -113,7 +115,10 @@ def scan(agg_df: pd.DataFrame, grid_resolution: int) -> pd.DataFrame:
 
 
 def average_gridcell_scores(
-    all_scores: pd.DataFrame, grid_resolution: int
+    all_scores: pd.DataFrame,
+    grid_resolution: int,
+    forecast_start: datetime,
+    forecast_end: datetime,
 ) -> pd.DataFrame:
 
     """Aggregate scores from the scan to grid level by taking an average of l_score_ebp.
@@ -129,15 +134,10 @@ def average_gridcell_scores(
     # Set Initial Timer
     init_time = time.perf_counter()
 
-    # TODO Clunky - want ScanScoot object to have Scan parameters built into it
-    # i.e. region definitions: borough, grid_res, t_min, t_max, days_in_future (forecast)
-    # For now - Infer max/min time labels from the input data
-    t_min = all_scores.measurement_start_utc.min()
-    t_max = all_scores.measurement_end_utc.max()
-
     # Set up iterators
     x_ticks = range(grid_resolution + 1)
     y_ticks = range(grid_resolution + 1)
+    t_min, t_max = forecast_start, forecast_end
     t_ticks = pd.date_range(start=t_min, end=t_max, freq="H")
 
     # Time direction convention - reverse
