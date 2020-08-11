@@ -40,7 +40,7 @@ def test_create_view(secretfile, connection, MyView):
     )
 
     db_instance.commit_records(
-        [JamCamVideoStats(id=4232, camera_id="sdfs")],
+        [JamCamVideoStats(id=4232, camera_id="sdfs", source=1)],
         on_conflict="ignore",
         table=JamCamVideoStats,
     )
@@ -74,7 +74,9 @@ def test_create_materialised_view(secretfile, connection, londonView):
 
 
 def test_materialised_view_not_persisted(secretfile, connection, londonView):
-    """Check that we can create a materialised view and refresh it"""
+    """Check that materialized view isnt persisted during tests
+    
+    If this fails another test is probably not using connection fixture"""
 
     db_instance = DBWriter(
         secretfile=secretfile, connection=connection, initialise_tables=False
