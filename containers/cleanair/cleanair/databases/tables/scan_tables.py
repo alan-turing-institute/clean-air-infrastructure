@@ -6,16 +6,21 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from ..base import Base
 
+
 class Fishnet(Base):
     """Grid/fishnet cast over a borough or other polygon."""
 
     __tablename__ = "fishnet"
     __table_args__ = {"schema": "traffic_modelling"}
 
-    # TODO once we've decided upon grid resolution this should have a 
+    # TODO once we've decided upon grid resolution this should have a
     # foreign key to the meta point table
     point_id = Column(
-        UUID(as_uuid=True), primary_key=True, unique=True, nullable=False, default=uuid.uuid4
+        UUID(as_uuid=True),
+        primary_key=True,
+        unique=True,
+        nullable=False,
+        default=uuid.uuid4,
     )
     row = Column(Integer, nullable=False)
     col = Column(Integer, nullable=False)
@@ -25,7 +30,11 @@ class Fishnet(Base):
     # see issue: https://github.com/alan-turing-institute/clean-air-infrastructure/issues/465
     # borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
     borough = Column(String, nullable=False, index=True)
-    geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True), nullable=False)
+    geom = Column(
+        Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True),
+        nullable=False,
+    )
+
 
 class ScootScanStats(Base):
     """Table of scoot scan statistics."""

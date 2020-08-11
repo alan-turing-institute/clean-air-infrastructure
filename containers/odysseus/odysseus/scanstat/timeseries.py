@@ -110,7 +110,7 @@ def holt_winters(
                 # upper and lower columns with HW being the exception to the rule.
                 "baseline_upper": baseline,
                 "baseline_lower": baseline,
-                "standard_deviation": 0.0
+                "standard_deviation": 0.0,
             }
         )
         framelist.append(forecasts)
