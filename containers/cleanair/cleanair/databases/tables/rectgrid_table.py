@@ -57,8 +57,6 @@ class RectGrid100(DeferredReflection, Base):
     __table_args__ = {"schema": "interest_points"}
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<RectGrid100(" + ", ".join(vals) + ")>"

@@ -31,13 +31,13 @@ Example config:
         },
         "Y": {
             "laqn": {
-                "NO2": y_laqn_no2,
+                "NO2": y_laqn_NO2,
                 "PM10": y_laqn_pm10
             }
         },
         "index": {
             "laqn": {
-                "NO2": laqn_no2_index,
+                "NO2": laqn_NO2_index,
                 "PM10: laqn_pm10_index
             }
         }

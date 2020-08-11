@@ -16,6 +16,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk> |      
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
@@ -48,8 +49,8 @@ A list of key developers on the project. A good place to start if you wish to co
 - [Entry point with local database](#entry-point-with-local-database)
 - [Entry point with production database](#entry-point-with-production-database)
 
-### UrbanAir Flask API
-- [Running the UrbanAir API](#urbanAir-API)
+### Running the UrbanAir API
+- [Running the UrbanAir API](#urbanair-api)
 
 ### Developer guide
 - [Style guide](#style-guide)
@@ -58,6 +59,9 @@ A list of key developers on the project. A good place to start if you wish to co
 
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
+- [Training models](#training-models)
+- [GPU support with Docker](#gpu-support-with-docker)
+- [Singularity for HPC](#singularity-for-hpc)
 
 ### Infrastructure
 
@@ -84,6 +88,7 @@ To contribute as a non-infrastructure developer you will need the following:
 - `postgreSQL` (command-line tool for interacting with db)
 - `CleanAir python packages` (install python packages)
 - `GDAL` (For inserting static datasets)
+- `eccodes` (For reading GRIB files)
 
 The instructions below are to install the dependencies system-wide, however you can
 follow the [instructions at the end if you wish to use an anaconda environment](#with-a-Conda-environment)
@@ -116,9 +121,12 @@ brew install postgresql postgis
 ```bash
 brew install gdal
 ```
-
 or any of the [binaries](https://gdal.org/download.html#binaries) provided for different platforms.
 
+### Eccodes
+```bash
+brew install eccodes
+```
 
 ### Development tools
 The following are optional as we can run everything on docker images. However, they are recommended for development/testing and required for setting up a local copy of the database. 
@@ -318,14 +326,14 @@ createdb cleanair_test_db
 
 We must now setup the database schema. This also creates a number of roles on the database.
 
-Create a variable with the location of your secrets file
+Create a variable with the location of your secrets file and set as an environment variable
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-python containers/entrypoints/setup/configure_db_roles.py -s $SECRETS -c configuration/database_role_config/local_database_config.yaml   
+python containers/entrypoints/setup/configure_db_roles.py -s $DB_SECRET_FILE -c configuration/database_role_config/local_database_config.yaml   
 ```
 
 ### Static data insert
@@ -349,13 +357,13 @@ SAS_TOKEN=<SAS_TOKEN>
 You can then download and insert all static data into the database by running the following:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d rectgrid_100 street_canyon hexgrid london_boundary oshighway_roadlink scoot_detector urban_village
 ```
 
 If you would also like to add `UKMAP` to the database run:
 
 ```bash
-python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $SECRETS -d ukmap
+python containers/entrypoints/setup/insert_static_datasets.py insert -t $SAS_TOKEN -s $DB_SECRET_FILE -d ukmap
 ```
 
 `UKMAP` is extremly large and will take ~1h to download and insert. We therefore do not run tests against `UKMAP` at the moment. 
@@ -369,13 +377,19 @@ N.B SAS tokens will expire after a short length of time, after which you will ne
 You can check everything configured correctly by running:
 
 ```bash
-pytest containers/tests/test_database_init --secretfile $SECRETS
+pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 ```
 
 
 # Access CleanAir Production Database
 
 To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributors-:dancers:). You should discuss what your access requirements are (e.g. do you need write access).To access the database first [login to Azure](#login-to-Azure) from the terminal. 
+
+If you do not have an azure subscription you must use:
+
+```bash
+az login --allow-no-subscriptions
+```
 
 You can then request an access token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
 
@@ -483,25 +497,35 @@ docker run --network host -e PGPASSWORD -v $SECRET_DIR:/secrets input_satellite:
 
 # UrbanAir API
 
-The UrbanAir RESTFUL API is a [Flask](https://flask.palletsprojects.com/en/1.1.x/quickstart/) application. To run it in locally you must configure the following steps:
+The UrbanAir RESTFUL API is a [Fast API](https://fastapi.tiangolo.com/) application. To run it in locally you must configure the following steps:
 
 ### Configure CleanAir database secrets
-Ensure you have configured a secrets file for the CleanAir database as documented [above](#create-secret-file-to-connect-using-CleanAir-package). You will also need to set the [`PGPASSWORD` environment variable](#entry-point-with-production-database)
+Ensure you have configured a secrets file for the CleanAir database 
 
 ```bash
-export DATABASE_SECRETFILE=$(pwd)/.secrets/.db_secrets_ad.json
+export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
 
-### Enable Flask development server
+### Run the application
 
-```bash
-export FLASK_ENV=development 
+### On development server
+```bash 
+DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
 ```
 
-You can now run the API
+### In a docker image
+
+To build the API docker image
+```bash
+docker build -t fastapi:test -f containers/dockerfiles/urbanairapi.Dockerfile 'containers'
+```
+
+The run the docker image:
 
 ```bash
-python containers/urbanair/wsgi.py
+DB_SECRET_FILE='.db_secrets_ad.json'
+SECRET_DIR=$(pwd)/.secrets  
+docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
 ```
 
 # Developer guide
@@ -539,11 +563,11 @@ All tests can be found in the [`containers/tests/`](containers/tests) directory.
 To run the full test suite against the local database run
 
 ```bash
-SECRETS=$(pwd)/.secrets/.db_secrets_offline.json
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_offline.json
 ```
 
 ```bash
-pytest containers --secretfile $SECRETS
+pytest containers --secretfile $DB_SECRET_FILE
 ```
 
 ## Writing tests
@@ -569,7 +593,7 @@ This fixture ensures that all interactions with the database take place within a
 
 # Researcher guide
 
-*The following steps provide useful tools for researchers to use, for example jupyter notebooks.*
+*The following steps provide useful tools for researchers to use, for example setting up jupyter notebooks and running models using a GPU.*
 
 ## Setup notebook
 
@@ -585,10 +609,20 @@ You can start the notebook:
 jupyter notebook
 ```
 
+Alternatively you may wish to use jupyter lab which offers more features on top of the normal notebooks.
+
+```bash
+jupyter lab
+```
+
+This will require some additional steps for [adding jupyter lab extensions for plotly](https://plotly.com/python/getting-started/#jupyterlab-support-python-35).
+
+For some notebooks you may also want to a mapbox for visualising spatial data. To do this you will need a [mapbox access token](https://docs.mapbox.com/help/how-mapbox-works/access-tokens/) which you can store inside your `.env` file (see below).
+
 ### Environment variables
 
 To access the database, the notebooks need access to the `PGPASSWORD` environment variable.
-It is also recommended to set the `SECRETS` variable.
+It is also recommended to set the `DB_SECRET_FILE` variable.
 We will create a `.env` file within you notebook directory `path/to/notebook` where you will be storing environment variables.
 
 > **Note**: if you are using a shared system or scientific cluster, **do not follow these steps and do not store your password in a file**.
@@ -597,7 +631,7 @@ Run the below command to create a `.env` file, replacing `path/to/secretfile` wi
 
 ```bash
 echo '
-SECRETS="path/to/secretfile"
+DB_SECRET_FILE="path/to/secretfile"
 PGPASSWORD=
 ' > path/to/notebook/.env
 ```
@@ -622,10 +656,90 @@ To access the environment variables, include the following lines at the top of y
 You can now access the value of these variables as follows:
 
 ```python
-secretfile = os.getenv("SECRETS", None)
+secretfile = os.getenv("DB_SECRET_FILE", None)
 ```
 
 Remember that the `PGPASSWORD` token will only be valid for ~1h.
+
+## Training models
+
+To train a model on your local machine you can run a model fitting entrypoint:
+
+```bash
+python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+```
+
+You can adjust the model parameters and data settings by changing the command line arguments.
+Use the `--help` flag to see available options.
+
+## GPU support with Docker
+
+For GPU support we strongly recommend using our docker image to run the entrypoint.
+This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
+
+You can build our custom GPU dockerfile with the following command:
+
+```bash
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+```
+
+To run the latest version of this entrypoint:
+
+```bash
+docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+```
+
+## Singularity for HPC
+
+Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).
+This software means you can [import and run Docker images](https://singularity.lbl.gov/docs-docker) without having Docker installed or being a superuser.
+Scientific clusters are often a pain to setup, so we strongly recommend using Singularity & Docker to avoid a painful experience.
+
+First login to your HPC and ensure singularity is installed:
+
+```bash
+singularity --version
+```
+
+Now we will need to pull the Docker image from our Docker container registry on Azure.
+Since our docker images are private you will need to login to the container registry.
+1. Go to [portal.azure.com](https://portal.azure.com).
+2. Search for the `CleanAirDocker` container registry.
+3. Go to `Access keys`.
+4. The username is `CleanAirDocker`. Copy the password.
+
+```bash
+singularity pull --docker-login docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+Then build the singularity image to a `.sif` file.
+We recommend you store all of your singularity images in a directory called `containers`.
+
+```bash
+singularity build --docker-login containers/model_fitting.sif docker://cleanairdocker.azurecr.io/mf:latest
+```
+
+To test everything has built correctly, spawn a shell and run python:
+
+```bash
+singularity shell containers/model_fitting.sif
+python
+```
+
+Then try importing tensorflow and cleanair:
+
+```python
+import tensorflow as tf
+tf.__version__
+import cleanair
+cleanair.__version__
+```
+
+Finally your can run the singularity image, passing any arguments you see fit:
+
+```bash
+singularity run containers/model_fitting.sif --secretfile $SECRETS
+```
 
 # Infrastructure Deployment
 :skull: **The following steps are needed to setup the Clean Air cloud infrastructure. Only infrastrucure administrator should deploy**

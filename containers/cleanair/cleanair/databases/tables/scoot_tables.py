@@ -19,9 +19,10 @@ class ScootReading(Base):
         ForeignKey("interest_points.scoot_detector.detector_n"),
         primary_key=True,
         nullable=False,
+        index=True,
     )  # DETSCN
     measurement_start_utc = Column(
-        TIMESTAMP, primary_key=True, nullable=False
+        TIMESTAMP, primary_key=True, nullable=False, index=True
     )  # TIMESTAMP
     measurement_end_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False
@@ -101,10 +102,8 @@ class ScootDetector(DeferredReflection, Base):
     __table_args__ = {"schema": "interest_points"}
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootDetector(" + ", ".join(vals)
 
 
@@ -133,10 +132,8 @@ class ScootRoadMatch(Base):
     detector = relationship("ScootDetector")
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadMatch(" + ", ".join(vals)
 
 
@@ -160,35 +157,27 @@ class ScootRoadForecast(Base):
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"
 
 
 class ScootRoadReading(Base):
     """Table of SCOOT readings for each road segment"""
 
-    __tablename__ = "scoot_road_reading"
+    __tablename__ = "scoot_road_reading2"
     __table_args__ = {"schema": "processed_data"}
 
-    road_toid = Column(
-        String(),
-        ForeignKey("static_data.oshighway_roadlink.toid"),
-        primary_key=True,
-        nullable=False,
+    road_toid = Column(String(), primary_key=True, nullable=False)
+    measurement_start_utc = Column(
+        TIMESTAMP, primary_key=True, nullable=False, index=True
     )
-    measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
-    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
     occupancy_percentage = Column(DOUBLE_PRECISION)
     congestion_percentage = Column(DOUBLE_PRECISION)
     saturation_percentage = Column(DOUBLE_PRECISION)
 
     def __repr__(self):
-        vals = [
-            "{}='{}'".format(column, getattr(self, column))
-            for column in [c.name for c in self.__table__.columns]
-        ]
+        cols = [c.name for c in self.__table__.columns]
+        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
         return "<ScootRoadForecast(" + ", ".join(vals) + ")>"

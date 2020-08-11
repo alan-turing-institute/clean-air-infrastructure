@@ -4,7 +4,9 @@ FROM python:3.7
 # Update certificates
 RUN    apt-get update \
     && apt-get install openssl \
-    && apt-get install ca-certificates
+    && apt-get install ca-certificates  cmake build-essential gfortran -y
+
+RUN apt-get install libeccodes0 -y
 
 # Set the working directory to /app
 WORKDIR /app
@@ -13,29 +15,8 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install /app/cleanair
+RUN pip install /app/cleanair pyopenssl
 
-# Install pygrib
-RUN apt-get update
-RUN apt-get -y install cmake build-essential
-
-RUN apt-get -y install gfortran
-RUN wget --output-document eccodes-2.13.0-Source.tar.gz https://confluence.ecmwf.int/download/attachments/45757960/eccodes-2.13.0-Source.tar.gz?api=v2
-RUN ls
-RUN tar -xzf eccodes-2.13.0-Source.tar.gz
-RUN ls eccodes-2.13.0-Source.tar.gz
-RUN mkdir build ; cd build
-RUN cd build && cmake -DENABLE_JPG=ON ../eccodes-2.13.0-Source && make && ctest && make install
-
-RUN apt-cache search libgeos
-RUN apt-get -y install libgeos-dev libgeos-3.7.1
-RUN pip install https://github.com/matplotlib/basemap/archive/master.zip
-
-RUN git clone https://github.com/jswhit/pygrib.git
-RUN cd pygrib && mv setup.cfg.template setup.cfg
-RUN pip install pygrib
-
-RUN pip install pyopenssl
 # Copy the run script into the container
 COPY entrypoints/inputs/input_satellite_readings.py /app
 

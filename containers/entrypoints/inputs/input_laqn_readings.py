@@ -19,7 +19,7 @@ def main():
     # Update the LAQN tables on the database, logging any unhandled exceptions
     try:
         laqn_writer = LAQNWriter(
-            end=args.end,
+            end=args.upto,
             nhours=args.nhours,
             secretfile=args.secretfile,
             secret_dict=args.secret_dict,

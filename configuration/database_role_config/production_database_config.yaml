@@ -5,16 +5,17 @@
 database: cleanair_inputs_db
 
 schema: 
- 
+
   - dynamic_data 
   - dynamic_features 
   - gla_traffic
   - interest_points
   - model_features
-  - model_results
+  - air_quality_modelling
   - processed_data
   - static_data
   - static_features
+  - traffic_modelling
   - jamcam
 
 roles:
@@ -41,7 +42,7 @@ roles:
         create: False
         privileges: 
           - SELECT
-      - name: model_results
+      - name: air_quality_modelling
         create: False
         privileges: 
           - SELECT
@@ -54,6 +55,10 @@ roles:
         privileges: 
           - SELECT
       - name: static_features
+        create: False
+        privileges: 
+          - SELECT
+      - name: traffic_modelling
         create: False
         privileges: 
           - SELECT
@@ -85,7 +90,7 @@ roles:
         create: False
         privileges: 
           - ALL
-      - name: model_results
+      - name: air_quality_modelling
         create: False
         privileges: 
           - ALL
@@ -98,6 +103,10 @@ roles:
         privileges: 
           - ALL
       - name: static_features
+        create: False
+        privileges: 
+          - ALL
+      - name: traffic_modelling
         create: False
         privileges: 
           - ALL
@@ -129,7 +138,7 @@ roles:
         create: True
         privileges: 
           - ALL
-      - name: model_results
+      - name: air_quality_modelling
         create: True
         privileges: 
           - ALL
@@ -145,52 +154,12 @@ roles:
         create: True
         privileges: 
           - ALL
+      - name: traffic_modelling
+        create: True
+        privileges: 
+          - ALL
       - name: jamcam
         create: True
-        privileges:
-          - ALL
-
-  - role: readwrite
-    create_schema: False
-    schema: 
-      - name: dynamic_data 
-        create: False
-        privileges: 
-          - ALL
-      - name: dynamic_features 
-        create: False
-        privileges: 
-          - ALL
-      - name: gla_traffic
-        create: False
-        privileges: 
-          - ALL
-      - name: interest_points
-        create: False
-        privileges: 
-          - ALL
-      - name: model_features
-        create: False
-        privileges: 
-          - ALL
-      - name: model_results
-        create: False
-        privileges: 
-          - ALL
-      - name: processed_data
-        create: False
-        privileges: 
-          - ALL
-      - name: static_data
-        create: False
-        privileges: 
-          - ALL
-      - name: static_features
-        create: False
-        privileges: 
-          - ALL
-      - name: jamcam
-        create: False
         privileges:
           - ALL
 

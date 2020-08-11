@@ -81,6 +81,7 @@ class DBWriter(DBInteractor):
                 self.logger.error("Failed to add rows to the database: %s", type(error))
                 self.logger.error(str(error))
                 session.rollback()
+                raise error
 
     def __commit_records_orm(self, records):
         """Add records using sqlalchemy ORM"""
@@ -123,7 +124,7 @@ class DBWriter(DBInteractor):
         """
         if on_conflict not in ["overwrite", "ignore"]:
             raise ValueError(
-                "Only 'merge' or 'ignore' are valid arguments for 'on_conflict'"
+                "Only 'overwrite' or 'ignore' are valid arguments for 'on_conflict'"
             )
         # Open a session and insert the road matches
         start_session = time.time()

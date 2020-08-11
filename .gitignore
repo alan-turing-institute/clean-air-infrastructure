@@ -19,9 +19,14 @@ python-virtual-environments/
 
 # Python
 *__pycache__
+.mypy_cache
 
 # Python package
 *.egg-info
+
+# Notebooks
+notebooks/
+*.cfg
 
 # Misc
 images/
