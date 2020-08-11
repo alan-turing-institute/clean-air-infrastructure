@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy import select, func
+from sqlalchemy.exc import ProgrammingError
 from cleanair.databases import (
     DBWriter,
     connector,
@@ -70,3 +71,19 @@ def test_create_materialised_view(secretfile, connection, londonView):
         result = output.first()
 
         assert result.geom is not None
+
+
+def test_materialised_view_not_persisted(secretfile, connection, londonView):
+    """Check that we can create a materialised view and refresh it"""
+
+    db_instance = DBWriter(
+        secretfile=secretfile, connection=connection, initialise_tables=False
+    )
+
+    with db_instance.dbcnxn.open_session() as session:
+
+        with pytest.raises(ProgrammingError) as error:
+            refresh_materialized_view(session, "interest_points.london_boundary")
+
+            assert "psycopg2.errors.UndefinedTable" in str(error)
+
