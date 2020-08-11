@@ -19,7 +19,12 @@ class Fishnet(Base):
     )
     row = Column(Integer, nullable=False)
     col = Column(Integer, nullable=False)
-    borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
+    # note borough should be a foreign key to the london_boundary table
+    # but because london_boundary doesn't have a unique attribute on
+    # the name of a borough we can't create the foreign key
+    # see issue: https://github.com/alan-turing-institute/clean-air-infrastructure/issues/465
+    # borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
+    borough = Column(String, nullable=False, index=True)
     geom = Column(Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True), nullable=False)
 
 class ScootScanStats(Base):

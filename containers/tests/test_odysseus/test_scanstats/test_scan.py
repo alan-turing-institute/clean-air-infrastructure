@@ -84,9 +84,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     average_score_checks(grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution)
     print(grid_level_scores)
 
-    return
-
-
 def preprocess_checks(
     proc_df: pd.DataFrame, init_num_days: int, init_num_detectors: int
 ) -> None:
