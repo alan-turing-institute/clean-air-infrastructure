@@ -9,7 +9,7 @@ class EmptyQueryError(Exception):
     """Raised when a database query returns no rows"""
 
 
-def check_empty_df(data_frame: pd.df, raise_error: bool=True):
+def check_empty_df(data_frame: pd.DataFrame, raise_error: bool=True):
     """Check a dataframe is not empty and raise and error if it is"""
     if data_frame.empty and raise_error:
         raise EmptyQueryError(
