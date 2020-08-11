@@ -193,4 +193,3 @@ class TestModelConfig:
 
         except ValidationError:
             pytest.raises("Full config failed")
-
