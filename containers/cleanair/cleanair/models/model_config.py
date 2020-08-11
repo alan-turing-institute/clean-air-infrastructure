@@ -37,7 +37,9 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 class ModelConfig(
     LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
-    """Create and validate cleanair model configurations"""
+    """Create and validate cleanair model configurations
+    
+    Runs checks against the database"""
 
     def __init__(self, **kwargs) -> None:
 
@@ -227,33 +229,6 @@ class ModelConfig(
             )
 
             return feature_types_q
-
-    @db_query
-    def get_available_dynamic_features(self, start_date, end_date):
-        """Return a list of the available dynamic features in the database.
-            Only returns features that are available between start_date and end_date
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            available_dynamic_sq = (
-                session.query(
-                    DynamicFeature.feature_name,
-                    func.min(DynamicFeature.measurement_start_utc).label("min_date"),
-                    func.max(DynamicFeature.measurement_start_utc).label("max_date"),
-                )
-                .group_by(DynamicFeature.feature_name)
-                .subquery()
-            )
-
-            available_dynamic_q = session.query(available_dynamic_sq).filter(
-                and_(
-                    available_dynamic_sq.c["min_date"] <= start_date,
-                    available_dynamic_sq.c["max_date"] >= end_date,
-                )
-            )
-
-            return available_dynamic_q
 
     @db_query
     def get_available_sources(self):
