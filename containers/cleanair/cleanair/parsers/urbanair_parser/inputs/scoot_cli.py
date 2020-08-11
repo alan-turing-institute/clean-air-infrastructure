@@ -7,7 +7,7 @@ from ..state import state
 
 app = typer.Typer()
 
-# pylint: disable=W0613
+# pylint: disable=W0613,W0612
 @app.command()
 def check(
     upto: str = UpTo, nhours: int = NHours, ndays: int = NDays, web: bool = Web
