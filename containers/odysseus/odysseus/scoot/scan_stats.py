@@ -147,27 +147,26 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             )
             return fishnet_with_points
 
-    def update_remote_tables(self) -> None:
-        """Write the scan statistics to a database table."""
-        # TODO code written badly in a rush - will almost certainly break
+    def update_fishnet_tables(self) -> None:
+        """Update the scoot fishnet tables using the fishnet_df dataframe."""
         # create records for the fishnet
-        # TODO in future pushing the fishnet to DB should be a separate function
         fishnet_inst = inspect(Fishnet)
         fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
         fishnet_records = self.fishnet_df[fishnet_cols].to_dict("records")
-
         # need to commit records for the fishnet before scores
         self.commit_records(fishnet_records, table=Fishnet, on_conflict="overwrite")
 
+    def update_remote_tables(self) -> None:
+        """Write the scan statistics to a database table."""
         # get the point id, row and columns
         fishnet_with_points: pd.DataFrame = self.fishnet_query(
             self.borough, output_type="df"
         )
-
         # TODO snap a point_id column from fishnet_with_points onto the self.scores_df by joining on row & col
+        scores_df = self.scores_df.merge(fishnet_with_points, on=["row", "col"])
 
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = self.scores_df[scores_cols].to_dict("records")
+        scores_records = scores_df[scores_cols].to_dict("records")
         self.commit_records(scores_records, table=ScootScanStats, on_conflict="ignore")
