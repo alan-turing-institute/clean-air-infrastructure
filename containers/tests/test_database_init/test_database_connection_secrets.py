@@ -26,7 +26,9 @@ def test_connector(secretfile, secret_dict, connection):
 
 def test_interactor(secretfile, secret_dict, connection):
     "Same for the interactor"
-    connection = DBInteractor(secretfile, initialise_tables=False)
+    connection = DBInteractor(
+        secretfile, connection=connection, initialise_tables=False
+    )
 
     for key, value in secret_dict.items():
         if key in connection.dbcnxn.connection_dict:
