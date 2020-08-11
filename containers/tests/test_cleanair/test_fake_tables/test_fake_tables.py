@@ -81,10 +81,9 @@ class TestDataFaker:
 
         assert len(data) == len(aqe_site_records)
 
-    def test_read_laqn_readings(
+    def test_insert_laqn_readings(
         self, secretfile, connection_class, laqn_reading_records
     ):
-        """Check we can read the laqn site rows"""
 
         reader = DBReader(secretfile=secretfile, connection=connection_class)
 

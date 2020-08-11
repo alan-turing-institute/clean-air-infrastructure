@@ -1,40 +1,44 @@
 """Fake data generators which can be inserted into database"""
 
-from typing import Iterable, Optional
-from pydantic import BaseModel, validator
-from pydantic.dataclasses import dataclass
 import random
-from scipy.stats import uniform, norm
-import numpy as np
+from typing import Optional
 import string
 import uuid
 from datetime import datetime, date, timedelta
+from pydantic import BaseModel, validator
+from scipy.stats import uniform, norm
+import numpy as np
 from ....types import Source, FeatureNames
 
+# pylint: disable=E0213,R0201
 
-def get_random_string(length):
+
+def get_random_string(length: int) -> str:
+    "Random string of length"
     letters = string.ascii_lowercase
     result_str = "".join(random.choice(letters) for i in range(length))
     return result_str
 
 
-def gen_point_id(v) -> uuid.UUID:
+def gen_point_id(v: Optional[uuid.UUID]) -> uuid.UUID:
+    "Random uuid"
     if v:
         return v
     return uuid.uuid4()
 
 
-def gen_site_code(v) -> str:
+def gen_site_code(v: Optional[str]) -> str:
+    "Random site code"
     if v:
         return v
     return get_random_string(4)
 
 
-def gen_norm_value(v) -> float:
+def gen_norm_value(v: Optional[float]) -> float:
+    "random exp normal"
     if v:
         return v
-    else:
-        return np.exp(norm.rvs(0, 1))
+    return np.exp(norm.rvs(0, 1))
 
 
 class MetaPointSchema(BaseModel):
@@ -47,6 +51,7 @@ class MetaPointSchema(BaseModel):
 
     @validator("location", always=True)
     def gen_location(cls, v):
+        "Random location"
         if v:
             return v
         min_lon = -0.508854438
@@ -83,10 +88,10 @@ class LAQNReadingSchema(BaseModel):
 
     @validator("measurement_end_utc", always=True)
     def gen_measurement_end_time(cls, v, values):
+        "Generate end time one hour after start time"
         if v:
             return v
-        else:
-            return values["measurement_start_utc"] + timedelta(hours=1)
+        return values["measurement_start_utc"] + timedelta(hours=1)
 
 
 class AQESiteSchema(LAQNSiteSchema):
@@ -103,7 +108,7 @@ class AQEReadingSchema(LAQNReadingSchema):
 
 
 class StaticFeaturesSchema(BaseModel):
-
+    "Static features schema"
     point_id: uuid.UUID
     feature_name: FeatureNames
     feature_source: Source
