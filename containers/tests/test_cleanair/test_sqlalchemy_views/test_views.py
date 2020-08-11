@@ -64,12 +64,6 @@ def test_create_materialised_view(secretfile, connection, londonView):
         secretfile=secretfile, connection=connection, initialise_tables=True
     )
 
-    db_instance.commit_records(
-        [JamCamVideoStats(id=4232, camera_id="sdfs")],
-        on_conflict="ignore",
-        table=JamCamVideoStats,
-    )
-
     with db_instance.dbcnxn.open_session() as session:
 
         refresh_materialized_view(session, "interest_points.london_boundary")
