@@ -2,6 +2,7 @@
 Sparse Variational Gaussian Process (LAQN ONLY)
 """
 
+from __future__ import annotations
 import os
 import numpy as np
 from scipy.cluster.vq import kmeans2

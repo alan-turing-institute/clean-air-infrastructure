@@ -1,6 +1,7 @@
 """
 Timestamp conversion functions
 """
+from __future__ import annotations
 import datetime
 from dateutil import parser
 import pytz

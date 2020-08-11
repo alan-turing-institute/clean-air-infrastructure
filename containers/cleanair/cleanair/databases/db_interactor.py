@@ -1,6 +1,7 @@
 """
 Table reader/writer
 """
+from __future__ import annotations
 from typing import Dict, TYPE_CHECKING
 from .connector import Connector
 from ..loggers import get_logger

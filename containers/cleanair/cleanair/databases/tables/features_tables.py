@@ -1,6 +1,7 @@
 """
 Tables for intersection between datasource and interest points
 """
+from __future__ import annotations
 from sqlalchemy import Column, ForeignKey, String, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship

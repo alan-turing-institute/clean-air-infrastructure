@@ -1,5 +1,5 @@
 """Queries for the air quality modelling schema."""
-
+from __future__ import annotations
 from ..db_reader import DBReader
 from ..tables import (
     AirQualityDataTable,

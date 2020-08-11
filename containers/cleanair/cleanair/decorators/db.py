@@ -1,4 +1,5 @@
 """DB decorators"""
+from __future__ import annotations
 import functools
 import pandas as pd
 from tabulate import tabulate

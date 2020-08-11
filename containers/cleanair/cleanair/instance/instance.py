@@ -1,6 +1,7 @@
 """
 Instances of models and data.
 """
+from __future__ import annotations
 import abc
 from ..databases import DBWriter
 from ..utils.hashing import hash_fn, instance_id_from_hash, get_git_hash

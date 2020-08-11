@@ -2,6 +2,7 @@
 Table that summerises an instance (model + data + result).
 """
 
+from __future__ import annotations
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
 from typing import TYPE_CHECKING

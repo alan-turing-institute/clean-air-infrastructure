@@ -1,4 +1,5 @@
 """API decorators"""
+from __future__ import annotations
 import functools
 import time
 import logging

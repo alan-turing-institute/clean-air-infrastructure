@@ -1,6 +1,7 @@
 """
 Tables for GLA lockdown scoot
 """
+from __future__ import annotations
 from sqlalchemy import Column, ForeignKey, String, Integer, Enum
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, BOOLEAN
 from ..base import Base

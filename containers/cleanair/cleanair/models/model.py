@@ -2,6 +2,7 @@
 The interface for London air quality models.
 """
 
+from __future__ import annotations
 from typing import Callable, Dict, List, Optional
 from abc import abstractmethod
 import numpy as np

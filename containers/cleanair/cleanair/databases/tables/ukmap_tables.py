@@ -1,6 +1,7 @@
 """
 Table for UKMap static data
 """
+from __future__ import annotations
 from sqlalchemy import Column, String, Integer
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, DATE
 from geoalchemy2 import Geometry

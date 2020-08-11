@@ -1,4 +1,5 @@
 """Declarative base class and table initialisation"""
+from __future__ import annotations
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.compiler import SQLCompiler
 from sqlalchemy.sql.expression import FromClause

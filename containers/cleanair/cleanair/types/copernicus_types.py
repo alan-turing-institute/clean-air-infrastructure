@@ -1,5 +1,6 @@
 """Types related to the copernicus API, but could be used elsewhere"""
 
+from __future__ import annotations
 from enum import Enum
 
 

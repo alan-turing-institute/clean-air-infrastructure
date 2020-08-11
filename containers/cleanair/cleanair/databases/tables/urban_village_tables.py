@@ -1,6 +1,7 @@
 """
 Table for urban village static data
 """
+from __future__ import annotations
 from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
 

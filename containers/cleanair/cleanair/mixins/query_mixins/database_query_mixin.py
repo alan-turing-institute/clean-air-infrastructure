@@ -2,6 +2,7 @@
 Mixin for useful database queries
 """
 
+from __future__ import annotations
 from sqlalchemy import and_, func, literal, null
 from ...decorators import db_query
 from ...databases.tables import (

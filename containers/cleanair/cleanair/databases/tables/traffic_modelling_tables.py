@@ -1,5 +1,6 @@
 """Tables for the traffic modelling schema."""
 
+from __future__ import annotations
 from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
 from ..base import Base
 from ..mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin

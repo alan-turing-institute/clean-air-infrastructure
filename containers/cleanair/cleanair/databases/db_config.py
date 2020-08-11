@@ -1,4 +1,5 @@
 """Class for configuring database schema"""
+from __future__ import annotations
 from yaml import load, Loader
 from sqlalchemy.sql import text
 from sqlalchemy.exc import ProgrammingError

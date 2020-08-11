@@ -1,6 +1,7 @@
 """
 Scoot feature extraction
 """
+from __future__ import annotations
 import time
 from geoalchemy2.comparator import Comparator
 import pandas as pd

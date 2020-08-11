@@ -1,6 +1,7 @@
 """
 Table for interest points
 """
+from __future__ import annotations
 import uuid
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String

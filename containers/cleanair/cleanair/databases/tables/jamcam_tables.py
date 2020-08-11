@@ -1,4 +1,5 @@
 """Tables for jamcam results"""
+from __future__ import annotations
 from sqlalchemy import Column, String, BigInteger, Text
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,

@@ -1,6 +1,7 @@
 """
 Tables for Satellite data
 """
+from __future__ import annotations
 import uuid
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
