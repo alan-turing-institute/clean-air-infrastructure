@@ -11,7 +11,6 @@ from cleanair.databases.tables import JamCamVideoStats, HexGrid
 from cleanair.databases.materialised_views.london_boundary import LondonBoundaryView
 
 
-
 @pytest.fixture()
 def MyView():
     # Define views
@@ -30,7 +29,6 @@ def MyView():
 @pytest.fixture()
 def londonView():
     return LondonBoundaryView
-
 
 
 def test_create_view(secretfile, connection, MyView):

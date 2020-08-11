@@ -37,6 +37,13 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sqlalchemy as sa
 from sqlalchemy.ext import compiler
 from sqlalchemy.schema import DDLElement, PrimaryKeyConstraint
+from geoalchemy2.types import Geometry
+
+
+class RawGeometry(Geometry):
+    # Override Geometry type so it doesnt wrap with st_AsEWKB
+    def column_expression(self, col):
+        return col
 
 
 class CreateView(DDLElement):
@@ -69,7 +76,7 @@ def compile_set_view_owner(element, compiler, **kw):
     return "ALTER {} VIEW {} OWNER TO {}".format(
         "MATERIALIZED " if element.materialized else "",
         element.name,
-        element.owner,        
+        element.owner,
         compiler.sql_compiler.process(element.selectable, literal_binds=True),
     )
 
@@ -136,6 +143,7 @@ def create_materialized_view(
             idx.create(connection)
 
     if owner:
+
         @sa.event.listens_for(metadata, "after_create")
         def set_owner(target, connection, **kw):
             SetViewOwner(name=name, owner=owner, materialized=True)
