@@ -48,6 +48,7 @@ setuptools.setup(
             "dash==1.8.0",
             "plotly==4.4.1",
         ],
+        "development": ["mypy", "sqlalchemy-stubs"]
     },
     python_requires=">=3.6",
 )
