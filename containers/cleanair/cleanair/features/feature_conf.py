@@ -1,9 +1,9 @@
 """
 Street Canyon feature extraction
 """
-from ..databases.tables import StreetCanyon, OSHighway, UKMap
+from ..databases.tables import StreetCanyon, OSHighway, UKMap, ScootRoadReading
 from .feature_funcs import sum_length, avg_, min_, max_, sum_area
-from ..types import FeatureNames
+from ..types import FeatureNames, DynamicFeatureNames
 
 
 FEATURE_CONFIG = {
@@ -121,6 +121,36 @@ ALL_FEATURES = [
     val
     for sublist in [
         list(j.keys()) for j in [ftype["features"] for ftype in FEATURE_CONFIG.values()]
+    ]
+    for val in sublist
+]
+
+FEATURE_CONFIG_DYNAMIC = {
+    "scoot": {
+        "table": ScootRoadReading,
+        "features": {
+            DynamicFeatureNames.max_n_vehicles.value: {
+                "type": "value",
+                "feature_dict": {"n_vehicles_in_interval": ["*"]},
+                "aggfunc": max_,
+            }
+        },
+    }
+}
+
+ALL_FEATURES = [
+    val
+    for sublist in [
+        list(j.keys()) for j in [ftype["features"] for ftype in FEATURE_CONFIG.values()]
+    ]
+    for val in sublist
+]
+
+ALL_FEATURES_DYNAMIC = [
+    val
+    for sublist in [
+        list(j.keys())
+        for j in [ftype["features"] for ftype in FEATURE_CONFIG_DYNAMIC.values()]
     ]
     for val in sublist
 ]

@@ -28,6 +28,12 @@ class FeatureNames(str, Enum):
 
 
 @unique
+class DynamicFeatureNames(str, Enum):
+
+    max_n_vehicles = "max_n_vehicles"
+
+
+@unique
 class FeatureBufferSize(str, Enum):
     "Buffer sizes"
     one_thousand = 1000

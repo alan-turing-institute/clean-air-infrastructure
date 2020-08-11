@@ -5,7 +5,7 @@ import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
-from ....features import FEATURE_CONFIG
+from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
 from ....timestamps import day_to_iso
 from ....types import Source as ValidSources
 
@@ -13,8 +13,11 @@ UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
 # pylint: disable=C0103
 zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
+zip_features_dynamic: Dict = dict(
+    zip(FEATURE_CONFIG_DYNAMIC.keys(), FEATURE_CONFIG_DYNAMIC.keys())
+)
 ValidFeatureSources = Enum("ValidFeatureSources", zip_features)
-
+ValidDynamicFeatureSources = Enum("ValidDynamicFeatureSources", zip_features_dynamic)
 
 DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
 
