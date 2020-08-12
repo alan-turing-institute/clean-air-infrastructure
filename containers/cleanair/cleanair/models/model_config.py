@@ -248,14 +248,15 @@ class ModelConfig(
             )
 
     @db_query
-    def get_available_interest_points(self, source: Source):
+    def get_available_interest_points(self, source: Source, within_london_only: bool):
         """
         Get available interest points for a particular source
+        and optionally filter sites outside of london
+
+        If requesting LAQN or AQE will only return open sites
         """
 
         bounded_geom = self.query_london_boundary(output_type="subquery")
-
-        # To Do: Filter by bounding geometry. Geometry should be a materialiized view
 
         if source == Source.laqn:
 
@@ -274,9 +275,16 @@ class ModelConfig(
 
         with self.dbcnxn.open_session() as session:
 
-            # Ensure we always return a string
-            return (
-                session.query(cast(point_ids_sq.c.point_id, String),)
-                .join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
-                .filter(func.ST_Within(bounded_geom.c.geom, MetaPoint.location))
-            )
+            point_ids = session.query(
+                cast(point_ids_sq.c.point_id, String),
+                bounded_geom.c.geom,
+                MetaPoint.location,
+            ).join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
+
+            if within_london_only:
+                return point_ids.filter(
+                    func.ST_Intersects(MetaPoint.location, bounded_geom.c.geom)
+                )
+
+            return point_ids
+

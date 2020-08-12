@@ -63,6 +63,17 @@ def meta_within_london():
 
 
 @pytest.fixture(scope="class")
+def meta_within_london_closed():
+    """Meta points within London for laqn and aqe"""
+
+    return [
+        MetaPointSchema(source=source)
+        for i in range(10)
+        for source in [Source.laqn, Source.aqe]
+    ]
+
+
+@pytest.fixture(scope="class")
 def meta_outside_london():
     """Meta points outside london for laqn and aqe"""
 
@@ -83,52 +94,72 @@ def meta_outside_london():
 
 
 @pytest.fixture(scope="class")
-def meta_records(meta_within_london, meta_outside_london):
+def meta_records(meta_within_london, meta_within_london_closed, meta_outside_london):
     "All Meta Points"
 
-    return meta_within_london + meta_outside_london
+    return meta_within_london + meta_within_london_closed + meta_outside_london
 
 
 @pytest.fixture(scope="class")
-def aqe_site_records(meta_records, site_open_date, site_closed_date):
+def aqe_sites_open(meta_within_london, meta_outside_london, site_open_date):
+
+    meta_recs = meta_within_london + meta_outside_london
+
+    return [
+        AQESiteSchema(point_id=rec.id, date_opened=site_open_date)
+        for rec in meta_recs
+        if rec.source == Source.aqe
+    ]
+
+
+@pytest.fixture(scope="class")
+def aqe_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
+
+    return [
+        AQESiteSchema(
+            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date
+        )
+        for rec in meta_within_london_closed
+        if rec.source == Source.aqe
+    ]
+
+
+@pytest.fixture(scope="class")
+def aqe_site_records(aqe_sites_open, aqe_sites_closed):
     "Create data for AQESite with a few closed sites"
 
-    open_site = [
-        AQESiteSchema(point_id=rec.id, date_opened=site_open_date)
-        for rec in meta_records[2:]
-        if rec.source == Source.aqe
-    ]
-
-    closed_sites = [
-        AQESiteSchema(
-            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date,
-        )
-        for rec in meta_records[:2]
-        if rec.source == Source.aqe
-    ]
-
-    return open_site + closed_sites
+    return aqe_sites_open + aqe_sites_closed
 
 
 @pytest.fixture(scope="class")
-def laqn_site_records(meta_records, site_open_date, site_closed_date):
-    "Create data for LAQNSite with a few closed sites"
+def laqn_sites_open(meta_within_london, meta_outside_london, site_open_date):
 
-    open_site = [
+    meta_recs = meta_within_london + meta_outside_london
+
+    return [
         LAQNSiteSchema(point_id=rec.id, date_opened=site_open_date)
-        for rec in meta_records[2:]
-        if rec.source == Source.aqe
+        for rec in meta_recs
+        if rec.source == Source.laqn
     ]
 
-    closed_sites = [
+
+@pytest.fixture(scope="class")
+def laqn_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
+
+    return [
         LAQNSiteSchema(
-            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date,
+            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date
         )
-        for rec in meta_records[:2]
-        if rec.source == Source.aqe
+        for rec in meta_within_london_closed
+        if rec.source == Source.laqn
     ]
 
-    return open_site
+
+@pytest.fixture(scope="class")
+def laqn_site_records(laqn_sites_open, laqn_sites_closed):
+    "Create data for AQESite with a few closed sites"
+
+    return laqn_sites_open + laqn_sites_closed
 
 
 @pytest.fixture(scope="class")

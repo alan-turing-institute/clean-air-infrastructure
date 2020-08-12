@@ -160,36 +160,58 @@ class TestModelConfig:
         except Exception:
             pytest.raises("Unexpected error")
 
-    @pytest.mark.parametrize(
-        "interest_points_name", [("train_interest_points"), ("pred_interest_points")],
-    )
-    def test_get_interest_point_ids(
-        self, valid_config, model_config, interest_points_name
+    def test_get_interest_point_ids_open_laqn(
+        self, valid_config, model_config, laqn_sites_open
     ):
         "Check we get all interest points"
 
-        interest_points = getattr(valid_config, interest_points_name)
-        sources = interest_points.keys()
+        # Check we get all open sites and not any closed sites
+        laqn_point_ids = {str(rec.point_id) for rec in laqn_sites_open}
+        assert laqn_point_ids == {
+            str(i)
+            for i in model_config.get_available_interest_points(
+                Source.laqn, within_london_only=False, output_type="list"
+            )
+        }
 
-        all_interest_points = model_config.get_interest_point_ids(interest_points)
+    def test_get_interest_point_ids_open_laqn_within_london(
+        self, valid_config, model_config, meta_within_london
+    ):
+        "Check we get all interest points"
 
-        for source in sources:
+        # Check we get all open sites and not any closed sites
+        laqn_point_ids_in_london = {
+            str(rec.id) for rec in meta_within_london if rec.source == Source.laqn
+        }
 
-            with model_config.dbcnxn.open_session() as session:
+        assert laqn_point_ids_in_london == {
+            str(i)
+            for i in model_config.get_available_interest_points(
+                Source.laqn, within_london_only=True, output_type="list"
+            )
+        }
 
-                meta_ids = (
-                    session.query(MetaPoint.id).filter(MetaPoint.source == source).all()
-                )
+        # quit()
+        # all_interest_points = model_config.get_interest_point_ids(interest_points)
 
-            meta_ids = [str(i.id) for i in meta_ids]
-            interest_ids = all_interest_points[source]
+        # for source in sources:
 
-            assert set(meta_ids) == set(interest_ids)
+        #     with model_config.dbcnxn.open_session() as session:
 
-    def test_generate_full_config(self, valid_config, model_config):
+        #         meta_ids = (
+        #             session.query(MetaPoint.id).filter(MetaPoint.source == source).all()
+        #         )
 
-        try:
-            full_config = model_config.generate_full_config(valid_config)
+        #     meta_ids = [str(i.id) for i in meta_ids]
+        #     interest_ids = all_interest_points[source]
 
-        except ValidationError:
-            pytest.raises("Full config failed")
+        #     print(len(set(meta_ids)), len(set(interest_ids)))
+        #     assert set(meta_ids) == set(interest_ids)
+
+    # def test_generate_full_config(self, valid_config, model_config):
+
+    #     try:
+    #         full_config = model_config.generate_full_config(valid_config)
+
+    #     except ValidationError:
+    #         pytest.raises("Full config failed")
