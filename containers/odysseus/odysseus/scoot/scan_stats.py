@@ -159,7 +159,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         fishnet_df["borough"] = self.borough
 
         fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
-        self.commit_records(fishnet_records, table=Fishnet, on_conflict="overwrite")
+        self.commit_records(fishnet_records, table=Fishnet, on_conflict="ignore")
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
@@ -174,4 +174,4 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
         scores_records = scores_df[scores_cols].to_dict("records")
-        self.commit_records(scores_records, table=ScootScanStats, on_conflict="ignore")
+        self.commit_records(scores_records, table=ScootScanStats, on_conflict="overwrite")
