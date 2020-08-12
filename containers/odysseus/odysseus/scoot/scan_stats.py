@@ -7,6 +7,7 @@ from sqlalchemy import func, inspect
 from cleanair.databases import DBWriter
 from cleanair.databases.tables.scan_tables import FishnetTable, ScootScanStats
 from cleanair.decorators import db_query
+from cleanair.loggers import get_logger
 from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
 from ..databases.mixins import GridMixin
@@ -40,6 +41,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.forecast_start: str = as_datetime(upto) - timedelta(hours=forecast_hours)
         self.forecast_upto: str = as_datetime(upto)
         self.grid_resolution: int = grid_resolution
+        self.logger = get_logger("scan_scoot")
         self.model_name: str = model_name
         self.train_hours: int = train_hours
         self.train_days: int = int(train_hours / 24)
@@ -48,11 +50,18 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         )
         self.train_upto: str = self.forecast_start
         # load the scoot readings with the fishnet joined on
+        self.logger.info("Getting scoot readings and fishnet from the database.")
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
             start=self.train_start,
             upto=self.forecast_upto,
             output_type="df",
         )
+        # if no readings are returned then raise a value error
+        if len(self.readings) == 0:
+            error_message = "No scoot readings were returned from the DB. "
+            error_message += "This could be because there is no scoot data in the time range "
+            error_message += "or because the fishnet does not exist in the database."
+            raise ValueError(error_message)
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
@@ -146,10 +155,15 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
+        # need to attach the point_id
+        scores_df = self.scores_df.merge(
+            self.readings[["point_id", "row", "col"]],
+            on=["row", "col"],
+        )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = self.scores_df[scores_cols].to_dict("records")
+        scores_records = scores_df[scores_cols].to_dict("records")
         self.commit_records(scores_records, table=ScootScanStats, on_conflict="overwrite")
 
 class Fishnet(GridMixin, DBWriter):
@@ -169,6 +183,7 @@ class Fishnet(GridMixin, DBWriter):
         )
         # add the borough column
         fishnet_df["borough"] = self.borough
+        fishnet_df["grid_resolution"] = self.grid_resolution
 
         # create records for the fishnet
         fishnet_inst = inspect(FishnetTable)

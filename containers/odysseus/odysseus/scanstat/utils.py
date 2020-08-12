@@ -27,6 +27,7 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "actual",
             "row",
             "col",
+            "point_id",
             "baseline",
             "baseline_upper",
             "baseline_lower",
@@ -41,7 +42,7 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
 
     # Sum counts and baselines at grid cell level
     agg_df = agg_df.groupby(
-        ["row", "col", "measurement_start_utc", "measurement_end_utc"]
+        ["row", "col", "point_id", "measurement_start_utc", "measurement_end_utc"]
     ).sum()
 
     # Convert back to normal dataframe
@@ -90,6 +91,7 @@ def event_count(
         [
             "row",
             "col",
+            "point_id",
             "measurement_start_utc",
             "measurement_end_utc",
             "actual",

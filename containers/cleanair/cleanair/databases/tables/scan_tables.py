@@ -28,8 +28,8 @@ class FishnetTable(Base):
         default=uuid.uuid4,
     )
     grid_resolution = Column(Integer, primary_key=False, nullable=False, index=True)
-    row = Column(Integer, nullable=False)
-    col = Column(Integer, nullable=False)
+    row = Column(Integer, nullable=False)   # index starts at 1
+    col = Column(Integer, nullable=False)   # index starts at 1
     # note borough should be a foreign key to the london_boundary table
     # but because london_boundary doesn't have a unique attribute on
     # the name of a borough we can't create the foreign key
@@ -55,7 +55,7 @@ class ScootScanStats(Base):
         TIMESTAMP, primary_key=True, nullable=False
     )
     point_id = Column(UUID(as_uuid=True), ForeignKey(FishnetTable.point_id), primary_key=True)
-    ebg = Column(DOUBLE_PRECISION, nullable=True)
+    ebp = Column(DOUBLE_PRECISION, nullable=True)
     ebp_lower = Column(DOUBLE_PRECISION, nullable=True)
     ebp_upper = Column(DOUBLE_PRECISION, nullable=True)
     kulldorf_lower = Column(DOUBLE_PRECISION, nullable=True)
