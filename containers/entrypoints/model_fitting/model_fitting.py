@@ -76,6 +76,7 @@ def main():  # pylint: disable=R0914
         data_id=model_data.data_id,
         cluster_id="laptop",
         tag=args.tag,
+        git_hash=args.git_hash,
         fit_start_time=fit_start_time,
         secretfile=args.secretfile,
     )

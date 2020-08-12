@@ -32,13 +32,7 @@ class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
         self._preprocessing = preprocessing
 
         # load scoot from the data config
-        traffic_df = self.get_scoot_by_dow(
-            day_of_week=self.data_config["weekdays"][0],
-            start_time=self._data_config["start"],
-            end_time=self._data_config["end"],
-            detectors=self._data_config["detectors"],
-            output_type="df",
-        )
+        traffic_df = self.scoot_readings(**self.data_config, output_type="df")
         # from dataframe load datatset
         self._df = TrafficDataset.preprocess_dataframe(traffic_df, self._preprocessing)
         self._input_dataset = TrafficDataset.from_dataframe(

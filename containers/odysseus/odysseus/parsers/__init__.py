@@ -1,12 +1,5 @@
-"""
-Traffic parsers.
-"""
+"""Odysseus command line interface."""
 
-from .baseline_parser import BaselineParser
-from .training_parser import TrainLockdownModelParser, TrainScootModelParser
+from .main import app
 
-__all__ = [
-    "BaselineParser",
-    "TrainLockdownModelParser",
-    "TrainScootModelParser",
-]
+__all__ = ["app"]

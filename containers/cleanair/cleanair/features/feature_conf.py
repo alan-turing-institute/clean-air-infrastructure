@@ -115,3 +115,11 @@ FEATURE_CONFIG = {
         },
     },
 }
+
+ALL_FEATURES = [
+    val
+    for sublist in [
+        list(j.keys()) for j in [ftype["features"] for ftype in FEATURE_CONFIG.values()]
+    ]
+    for val in sublist
+]

@@ -1,0 +1,169 @@
+#!/usr/bin/env python
+from pathlib import Path
+import shutil
+import subprocess
+import os
+import json
+import typer
+from cleanair.parsers.urbanair_parser import inputs
+from cleanair.parsers.urbanair_parser import features
+from cleanair.parsers.urbanair_parser.state import state
+from cleanair.loggers.logcolours import red, green
+
+from odysseus import parsers
+
+app = typer.Typer()
+APP_NAME = "UrbanAir-CLI"
+
+APP_DIR = typer.get_app_dir(APP_NAME)
+CONFIG_SECRETFILE_PATH: Path = Path(APP_DIR) / ".db_secrets.json"
+
+PROD_HOST = "cleanair-inputs-server.postgres.database.azure.com"
+PROD_PORT = 5432
+PROD_DB_NAME = "cleanair_inputs_db"
+PROD_SSL_MODE = "require"
+
+PROD_SECRET_DICT = {
+    "host": PROD_HOST,
+    "port": PROD_PORT,
+    "db_name": PROD_DB_NAME,
+    "ssl_mode": PROD_SSL_MODE,
+}
+
+
+@app.callback()
+def main(
+    verbose: bool = False,
+    secretfile: str = typer.Option(
+        None,
+        help="json file containing database secrets. Not required if an init command called",
+    ),
+) -> None:
+    """
+    Manage the CleanAir infrastructure
+    """
+
+    if verbose:
+        typer.echo("Debug verbosity")
+        state["verbose"] = True
+
+    if secretfile:
+        state["secretfile"] = secretfile
+        return
+
+    if CONFIG_SECRETFILE_PATH.is_file():
+        state["secretfile"] = CONFIG_SECRETFILE_PATH
+
+
+@app.command()
+def init_local(
+    secretfile: Path = typer.Option(..., help="Path to a database secret file (.json)")
+) -> None:
+    """Initialise the CLI to connect to a local database"""
+
+    # Create app dir
+    if not os.path.isdir(APP_DIR):
+        os.mkdir(APP_DIR)
+
+    # Copy secretfile over
+    typer.echo("Copy secretfile to urbanair config directory")
+    shutil.copy(str(secretfile), str(CONFIG_SECRETFILE_PATH))
+
+
+@app.command()
+def remove_config():
+    """Delete all CLI configutation data"""
+
+    # Create app dir
+    if not os.path.isdir(APP_DIR):
+        typer.echo("Configuration does not exist")
+        raise typer.Abort()
+
+    else:
+        confirm = typer.prompt(
+            f"{red('You are about to delete the entire contents of the config directory.')} Would you like to continue: y/n"
+        )
+
+        if confirm == "y":
+            try:
+                shutil.rmtree(APP_DIR)
+            except:
+                typer.echo(f"Failed to delete directory {str(APP_DIR)}")
+                raise typer.Abort()
+        else:
+            raise typer.Abort()
+
+
+@app.command()
+def init_production():
+    """Initialise the CLI to connect to the production database
+        
+    Ensure you have run 'az login' first"""
+
+    try:
+        user_cmd = subprocess.run(
+            ["az", "ad", "signed-in-user", "show", "-o", "json"],
+            capture_output=True,
+            check=True,
+        )
+
+        username = json.loads(user_cmd.stdout.decode())["userPrincipalName"]
+
+    except Exception as e:
+        typer.echo("Could not get active user. Have you run 'az login'")
+        typer.Abort()
+
+    # Create app dir
+    if not os.path.isdir(APP_DIR):
+        os.mkdir(APP_DIR)
+
+    # Request an access token
+    typer.echo(
+        f"Requesting access token for {green(username)} to connect to {green(PROD_HOST)}"
+    )
+
+    try:
+        token_cmd = subprocess.run(
+            [
+                "az",
+                "account",
+                "get-access-token",
+                "--resource-type",
+                "oss-rdbms",
+                "--query",
+                "accessToken",
+                "-o",
+                "tsv",
+            ],
+            check=True,
+            capture_output=True,
+        )
+    except:
+        typer.echo(
+            f"Failed to get an access token for {green(username)}. Do you have DB access?"
+        )
+        raise typer.Abort()
+
+    token = token_cmd.stdout.decode("utf-8")[:-1]
+
+    PROD_SECRET_DICT["password"] = token
+    PROD_SECRET_DICT["username"] = username + "@cleanair-inputs-server"
+
+    # Create config secretfile
+    with open(CONFIG_SECRETFILE_PATH, "w") as secretfile:
+        json.dump(PROD_SECRET_DICT, secretfile, indent=4)
+
+    typer.echo(
+        f"Credentials for {green(username)} writen to {CONFIG_SECRETFILE_PATH}\n"
+        f"To remove credentials call {green('urbanair remove_config')}\n"
+        f"{red('Credentials will expire after 5-60 minutes.')} If access required for longer contact admin"
+    )
+
+
+app.add_typer(inputs.app, name="inputs")
+app.add_typer(features.app, name="features")
+app.add_typer(parsers.app, name="odysseus")
+
+if __name__ == "__main__":
+
+    app()
