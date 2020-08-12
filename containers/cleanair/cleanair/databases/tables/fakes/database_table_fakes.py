@@ -51,13 +51,13 @@ class MetaPointSchema(BaseModel):
 
     @validator("location", always=True)
     def gen_location(cls, v):
-        "Random location"
+        "Random location. These will always be within the border of HexGrid"
         if v:
             return v
-        min_lon = -0.508854438
-        max_lon = 0.334270337
-        min_lat = 51.286678732
-        max_lat = 51.692470396
+        min_lon = -0.33
+        max_lon = 0.11
+        min_lat = 51.4
+        max_lat = 51.6
 
         point = uniform.rvs([min_lon, min_lat], [max_lon - min_lon, max_lat - min_lat])
         return f"SRID=4326;POINT({point[0]} {point[1]})"
