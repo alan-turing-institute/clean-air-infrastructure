@@ -89,7 +89,14 @@ class ModelConfig(
         )
 
     def validate_config(self, config: DataConfig):
-        """Validate a configuration file"""
+        """Validate a configuration file
+        
+        Check:
+            1. requested features are available
+            2. requested sources are available for training and prediction periods
+
+        """
+
         self.logger.info("Validating config")
 
         self.check_features_available(
@@ -105,34 +112,17 @@ class ModelConfig(
         self.check_sources_available(config.pred_sources)
         self.logger.info(green("Requested prediction sources are available"))
 
-        # TODO: Validate interest points
-        # # Check interest points are valid
-        # if isinstance(config.train_interest_points, list):
-        #     self.__check_points_available(
-        #         config.train_interest_points, config.train_sources
-        #     )
-        # self.logger.info(green("Requested training interest points are available"))
-
-        # pred_interest_points = config["pred_interest_points"]
-        # if isinstance(pred_interest_points, list):
-        #     self.__check_points_available(pred_interest_points, pred_sources)
-        # self.logger.info(green("Requested prediction interest points are available"))
-
-        # if "satellite" in config["train_sources"]:
-        #     satellite_interest_points = config["train_satellite_interest_points"]
-        #     if isinstance(satellite_interest_points, list):
-        #         self.__check_points_available(pred_interest_points, ["satellite"])
-        #     self.logger.info(green("Requested satellite interest points are available"))
         self.logger.info("Validate config complete")
 
     def generate_full_config(self, config: DataConfig):
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
 
-        # Expand interest points
+        # Get interest points from database
         config.train_interest_points = self.get_interest_point_ids(
             config.train_interest_points
         )
+
         config.pred_interest_points = self.get_interest_point_ids(
             config.pred_interest_points
         )
