@@ -46,11 +46,9 @@ def scoot(
     print(scan_df.sample(10))
     scan_scoot.update_remote_tables()
 
+
 @app.command()
-def setup(
-    borough: str = Borough,
-    grid_resolution: int = GridResolution,
-) -> None:
+def setup(borough: str = Borough, grid_resolution: int = GridResolution,) -> None:
     """Create a fishnet over a borough with the given grid resolution."""
     fishnet = Fishnet(borough, grid_resolution, secretfile=state["secretfile"])
     fishnet.update_remote_tables()

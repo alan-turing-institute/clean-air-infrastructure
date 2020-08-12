@@ -52,14 +52,14 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         # load the scoot readings with the fishnet joined on
         self.logger.info("Getting scoot readings and fishnet from the database.")
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
-            start=self.train_start,
-            upto=self.forecast_upto,
-            output_type="df",
+            start=self.train_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
         if len(self.readings) == 0:
             error_message = "No scoot readings were returned from the DB. "
-            error_message += "This could be because there is no scoot data in the time range "
+            error_message += (
+                "This could be because there is no scoot data in the time range "
+            )
             error_message += "or because the fishnet does not exist in the database."
             raise ValueError(error_message)
         self.scores_df: pd.DataFrame = None  # assigned in run() method
@@ -102,10 +102,10 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             A database query.
         """
         with self.dbcnxn.open_session() as session:
-            fishnet_with_points = session.query(FishnetTable).filter(
-                FishnetTable.borough == borough
-            ).filter(
-                FishnetTable.grid_resolution == grid_resolution
+            fishnet_with_points = (
+                session.query(FishnetTable)
+                .filter(FishnetTable.borough == borough)
+                .filter(FishnetTable.grid_resolution == grid_resolution)
             )
             return fishnet_with_points
 
@@ -134,10 +134,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         """Get a grid over a borough and return all scoot readings in that grid."""
         fishnet = self.scoot_fishnet(output_type="subquery")
         readings = self.scoot_readings(
-            start=start,
-            upto=upto,
-            with_location=False,
-            output_type="subquery",
+            start=start, upto=upto, with_location=False, output_type="subquery",
         )
         with self.dbcnxn.open_session() as session:
             # Yields df with duplicate columns
@@ -146,7 +143,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
                 fishnet.c.lon,
                 fishnet.c.lat,
                 fishnet.c.location,
-                fishnet.c.point_id,     # point id of fishnet grid square, not detector
+                fishnet.c.point_id,  # point id of fishnet grid square, not detector
                 fishnet.c.grid_resolution,
                 fishnet.c.row,
                 fishnet.c.col,
@@ -157,14 +154,16 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         """Write the scan statistics to a database table."""
         # need to attach the point_id
         scores_df = self.scores_df.merge(
-            self.readings[["point_id", "row", "col"]],
-            on=["row", "col"],
+            self.readings[["point_id", "row", "col"]], on=["row", "col"],
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
         scores_records = scores_df[scores_cols].to_dict("records")
-        self.commit_records(scores_records, table=ScootScanStats, on_conflict="overwrite")
+        self.commit_records(
+            scores_records, table=ScootScanStats, on_conflict="overwrite"
+        )
+
 
 class Fishnet(GridMixin, DBWriter):
     """Create and load fishnets over boroughs."""
@@ -188,7 +187,7 @@ class Fishnet(GridMixin, DBWriter):
         # create records for the fishnet
         fishnet_inst = inspect(FishnetTable)
         fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
-        fishnet_cols.remove("point_id") # will be created automatically on DB
+        fishnet_cols.remove("point_id")  # will be created automatically on DB
 
         fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
         self.commit_records(fishnet_records, table=FishnetTable, on_conflict="ignore")
