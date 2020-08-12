@@ -8,7 +8,12 @@ from ..base import Base
 
 
 class Fishnet(Base):
-    """Grid/fishnet cast over a borough or other polygon."""
+    """Grid/fishnet cast over a borough or other polygon.
+
+    Notes:
+        By convention, you should not define two grids with the same resolution
+        on the same borough (although there is no constraint enforcing this).
+    """
 
     __tablename__ = "fishnet"
     __table_args__ = {"schema": "traffic_modelling"}
@@ -22,6 +27,7 @@ class Fishnet(Base):
         nullable=False,
         default=uuid.uuid4,
     )
+    grid_resolution = Column(Integer, primary_key=False, nullable=False, index=True)
     row = Column(Integer, nullable=False)
     col = Column(Integer, nullable=False)
     # note borough should be a foreign key to the london_boundary table
@@ -29,7 +35,7 @@ class Fishnet(Base):
     # the name of a borough we can't create the foreign key
     # see issue: https://github.com/alan-turing-institute/clean-air-infrastructure/issues/465
     # borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
-    borough = Column(String, nullable=False, index=True)
+    borough = Column(String, primary_key=False, nullable=False, index=True)
     geom = Column(
         Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True),
         nullable=False,
@@ -47,8 +53,7 @@ class ScootScanStats(Base):
     )  # TIMESTAMP
     measurement_end_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False
-    )  # TIMESTAMP
-    # TODO create id of grid
+    )  # TIMESTAMP    
     point_id = Column(UUID(as_uuid=True), ForeignKey(Fishnet.point_id), primary_key=True)
     ebp_lower = Column(DOUBLE_PRECISION)
     ebp_upper = Column(DOUBLE_PRECISION)
