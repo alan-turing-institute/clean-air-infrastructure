@@ -1,6 +1,7 @@
 """CLI for scan stats."""
 
 import typer
+from cleanair.loggers import get_logger
 from cleanair.parsers.urbanair_parser.shared_args import (
     NDays,
     NHours,
@@ -26,6 +27,7 @@ def scoot(
     upto: str = UpTo,
 ) -> None:
     """Run scan stats on scoot."""
+    logger = get_logger("scan_scoot")
     secretfile: str = state["secretfile"]
     # NOTE days converted to hours with ndays callback
     train_hours = train_days + train_hours
@@ -42,8 +44,8 @@ def scoot(
         secretfile=secretfile,
     )
     scan_df = scan_scoot.run()
-    print("Columns:", list(scan_df.columns))
-    print(scan_df.sample(10))
+    logger.debug("Columns: %s", list(scan_df.columns))
+    logger.debug(scan_df.sample(10))
     scan_scoot.update_remote_tables()
 
 

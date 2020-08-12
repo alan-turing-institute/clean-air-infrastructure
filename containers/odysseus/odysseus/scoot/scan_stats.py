@@ -91,25 +91,6 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         return grid_level_scores
 
     @db_query
-    def fishnet_query(self, borough: str, grid_resolution: int) -> Any:
-        """Query the Fishnet table.
-
-        Args:
-            borough: Name of the borough to get the fishnet for.
-            grid_resolution: Number of rows and columns in the grid.
-
-        Returns:
-            A database query.
-        """
-        with self.dbcnxn.open_session() as session:
-            fishnet_with_points = (
-                session.query(FishnetTable)
-                .filter(FishnetTable.borough == borough)
-                .filter(FishnetTable.grid_resolution == grid_resolution)
-            )
-            return fishnet_with_points
-
-    @db_query
     def scoot_fishnet(self):
         """Get a grid over a borough and join on scoot detectors.
 

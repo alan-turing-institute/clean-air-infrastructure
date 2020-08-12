@@ -1,7 +1,7 @@
 """Test database queries for the scoot scan stats."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from datetime import datetime
 from shapely.geometry import Point, Polygon
 from shapely import wkb
@@ -39,7 +39,7 @@ def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
     assert detector_df.apply(lambda x: x["geom"].contains(x["location"]), axis=1).all()
 
 
-def test_scoot_fishnet_readings(scoot_writer, scan_scoot: ScanScoot) -> None:
+def test_scoot_fishnet_readings(scoot_writer: Any, scan_scoot: ScanScoot) -> None:
     """Test that the scoot readings are mapped to a fishnet over a borough."""
     scoot_writer.update_remote_tables()
     readings = scan_scoot.scoot_fishnet_readings(
