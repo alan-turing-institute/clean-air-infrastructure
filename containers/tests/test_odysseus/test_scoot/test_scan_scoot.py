@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from datetime import datetime
 from shapely.geometry import Point, Polygon
-from shapely import wkb
 from geoalchemy2.shape import to_shape
 
 
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
     """Test that a fishnet is cast over a borough and detectors are mapped to grid squares."""
     # create a fishnet over Westminster and map detectors to grid squares
-    detector_df = scan_scoot.scoot_fishnet("Westminster", output_type="df")
+    detector_df = scan_scoot.scoot_fishnet(output_type="df")
 
     # check that the dataframe is not empty
     assert len(detector_df) > 0
@@ -28,7 +27,7 @@ def test_scoot_fishnet(scan_scoot: ScanScoot) -> None:
     assert "detector_id" in detector_df.columns
 
     # create shapely objects from the WKB string/object
-    detector_df["geom"] = detector_df["geom"].apply(lambda x: wkb.loads(x, hex=True))
+    detector_df["geom"] = detector_df["geom"].apply(to_shape)
     detector_df["location"] = detector_df["location"].apply(to_shape)
 
     # check the convertion to type is correct

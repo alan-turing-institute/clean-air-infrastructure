@@ -83,6 +83,7 @@ def forecast(
         actual_counts,
         on=[
             "detector_id",
+            "point_id",
             "lon",
             "lat",
             "measurement_start_utc",

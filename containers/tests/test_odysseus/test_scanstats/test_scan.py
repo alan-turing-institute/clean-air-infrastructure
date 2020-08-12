@@ -29,7 +29,10 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     ).days
 
     # 1) Pre-Process data
+    assert "point_id_x" not in readings
     proc_df = preprocessor(readings)
+    assert "point_id_x" not in proc_df
+
     print(proc_df)
     preprocess_checks(proc_df, init_num_days, init_num_detectors)
 
@@ -46,6 +49,8 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_upto,
         method=scan_scoot.model_name,
     )
+    assert "point_id_x" not in forecast_df
+
     print(forecast_df)
 
     forecast_checks(
@@ -59,6 +64,7 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     # 3) Aggregate data to grid level
     agg_df = aggregate_readings_to_grid(forecast_df)
     print(agg_df)
+    assert "point_id_x" not in agg_df
 
     aggregate_checks(agg_df, scan_scoot.forecast_hours, scan_scoot.grid_resolution)
 
@@ -69,6 +75,7 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
     )
+    assert "point_id_x" not in all_scores
 
     scan_checks(
         all_scores,
@@ -85,6 +92,8 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
     )
+    assert "point_id_x" not in grid_level_scores
+
 
     average_score_checks(
         grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution
@@ -102,6 +111,7 @@ def preprocess_checks(
 
     cols = [
         "detector_id",
+        "point_id",
         "lon",
         "lat",
         "location",
@@ -145,6 +155,7 @@ def forecast_checks(
 
     cols = [
         "detector_id",
+        "point_id",
         "lon",
         "lat",
         "location",

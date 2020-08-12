@@ -135,7 +135,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         """Write the scan statistics to a database table."""
         # need to attach the point_id
         scores_df = self.scores_df.merge(
-            self.readings[["point_id", "row", "col"]], on=["row", "col"],
+            self.readings[["point_id", "row", "col"]], on=["row", "col", "point_id"],
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
