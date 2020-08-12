@@ -3,6 +3,7 @@ Mixin for useful database queries
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from sqlalchemy import and_, func, literal, null
 from ...decorators import db_query
 from ...databases.tables import (
@@ -18,7 +19,7 @@ from ...databases.tables import (
 )
 from ...loggers import get_logger
 from ...timestamps import as_datetime
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from sqlalchemy.orm import Query
     import datetime

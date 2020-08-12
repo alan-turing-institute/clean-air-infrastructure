@@ -1,11 +1,11 @@
 """Class for configuring database schema"""
 from __future__ import annotations
+from typing import Dict, Any, List, Union
 from yaml import load, Loader
 from sqlalchemy.sql import text
 from sqlalchemy.exc import ProgrammingError
 from .connector import Connector
 from ..loggers import get_logger
-from typing import Dict, Any, List, Union
 
 
 class DBConfig(Connector):
@@ -138,7 +138,7 @@ class DBConfig(Connector):
             )
             session.commit()
 
-    def assign_role_schema_usage(self, role_name: str, schema_name: str, create: bool=False):
+    def assign_role_schema_usage(self, role_name: str, schema_name: str, create: bool = False):
         """Assign a role to all schemas
 
         Args:

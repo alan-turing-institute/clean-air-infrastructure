@@ -3,10 +3,10 @@ Timestamp conversion functions
 """
 from __future__ import annotations
 import datetime
+from typing import Union
 from dateutil import parser
 import pytz
 
-from typing import Union
 
 
 def as_datetime(maybe_dt: Union[datetime.datetime, datetime.date, str]) -> datetime.datetime:

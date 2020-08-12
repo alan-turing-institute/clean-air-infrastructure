@@ -2,12 +2,12 @@
 Table for interest points
 """
 from __future__ import annotations
+from typing import Union
 import uuid
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 from ..base import Base
-from typing import Union
 
 
 class MetaPoint(Base):
@@ -44,7 +44,7 @@ class MetaPoint(Base):
         return "SRID=4326;POINT({} {})".format(longitude, latitude)
 
     @staticmethod
-    def build_entry(source: str, latitude: float=None, longitude: float=None, geometry: Geometry=None) -> Union[MetaPoint, None]:
+    def build_entry(source: str, latitude: float = None, longitude: float = None, geometry: Geometry = None) -> Union[MetaPoint, None]:
         """Create an MetaPoint entry from a source and position details"""
         # Attempt to convert latitude and longitude to geometry
         if not geometry:

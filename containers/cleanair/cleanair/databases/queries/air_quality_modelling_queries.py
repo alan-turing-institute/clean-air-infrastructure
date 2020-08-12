@@ -1,5 +1,6 @@
 """Queries for the air quality modelling schema."""
 from __future__ import annotations
+from typing import Type
 from ..db_reader import DBReader
 from ..tables import (
     AirQualityDataTable,
@@ -8,7 +9,6 @@ from ..tables import (
     AirQualityResultTable,
 )
 from ...mixins import InstanceQueryMixin, ResultQueryMixin
-from typing import Type
 
 
 class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):

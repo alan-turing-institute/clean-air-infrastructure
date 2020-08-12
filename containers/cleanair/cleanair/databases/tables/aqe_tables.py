@@ -2,11 +2,12 @@
 Tables for AQE data source
 """
 from __future__ import annotations
+from typing import Dict, Any, Union, TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from ..base import Base
-from typing import Dict, Any, Union, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .meta_point_table import MetaPoint
 
@@ -96,7 +97,7 @@ class AQEReading(Base):
         )
 
     @staticmethod
-    def build_entry(reading_dict: Dict[str, Any], return_dict: bool =False) -> Union[AQEReading, Dict[str, Any]]:
+    def build_entry(reading_dict: Dict[str, Any], return_dict: bool = False) -> Union[AQEReading, Dict[str, Any]]:
         """
         Create an AQEReading entry, replacing empty strings with None
         If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core

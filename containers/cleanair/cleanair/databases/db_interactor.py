@@ -17,7 +17,7 @@ class DBInteractor:
         dbcnxn: Connector
 
     def __init__(
-        self, secretfile: str, initialise_tables: bool=True, connection: Connection=None, secret_dict: Dict[str, str]=None
+        self, secretfile: str, initialise_tables: bool = True, connection: Connection = None, secret_dict: Dict[str, str] = None
     ):
         """
         Init method for connecting to database

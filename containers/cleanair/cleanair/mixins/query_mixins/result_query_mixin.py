@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from abc import abstractmethod
-from typing import Optional, Any, Type
+from typing import Optional, Any, List, Type
 from sqlalchemy import func, Column # type: ignore
 
 from ...databases.mixins import ResultTableMixin

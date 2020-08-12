@@ -2,12 +2,12 @@
 Tables for SCOOT data source
 """
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import relationship
 from ..base import Base
-from typing import TYPE_CHECKING
 
 
 class ScootReading(Base):

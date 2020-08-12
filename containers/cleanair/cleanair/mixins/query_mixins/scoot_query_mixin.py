@@ -1,7 +1,7 @@
 """Queries for the scoot dataset."""
 
 from __future__ import annotations
-from typing import Any, Iterable, List, TYPE_CHECKING
+from typing import Iterable, List, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import func, or_, and_
 import pandas as pd

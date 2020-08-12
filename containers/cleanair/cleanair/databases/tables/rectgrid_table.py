@@ -2,13 +2,14 @@
 Tables for AQE data source
 """
 from __future__ import annotations
+from typing import Dict, Any, TYPE_CHECKING
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import DeferredReflection
 from ..base import Base
-from typing import Dict, Any, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .meta_point_table import MetaPoint
 

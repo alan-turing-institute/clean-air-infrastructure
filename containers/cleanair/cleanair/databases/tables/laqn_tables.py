@@ -2,11 +2,12 @@
 Tables for LAQN data source
 """
 from __future__ import annotations
+from typing import Any, Union, Dict, TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP, UUID
 from sqlalchemy.orm import relationship
 from ..base import Base
-from typing import Any, Union, Dict, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .meta_point_table import MetaPoint
 
@@ -95,7 +96,7 @@ class LAQNReading(Base):
         )
 
     @staticmethod
-    def build_entry(reading_dict: Dict[str, Any], return_dict: bool=False) -> Union[Dict[str, Any], LAQNReading]:
+    def build_entry(reading_dict: Dict[str, Any], return_dict: bool = False) -> Union[Dict[str, Any], LAQNReading]:
         """
         Create an LAQNReading entry, replacing empty strings with None
         If return_dict then return a dictionary rather than and entry, to allow inserting via sqlalchemy core

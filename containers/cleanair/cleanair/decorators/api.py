@@ -3,10 +3,10 @@ from __future__ import annotations
 import functools
 import time
 import logging
+from typing import Callable, Any
 import requests
 from ..loggers import get_logger, red, green
 
-from typing import Callable, Any
 
 logging.basicConfig(level=20)
 logger = get_logger(__name__)  # pylint: disable=C0103

@@ -31,7 +31,7 @@ class Values(FromClause):
 
 @compiles(Values)
 # pylint: disable=unused-argument
-def compile_values(element: Values, compiler: SQLCompiler, asfrom: bool=False, **kw) -> str:
+def compile_values(element: Values, compiler: SQLCompiler, asfrom: bool = False, **kw) -> str:
     """Compile values to sql"""
     # pylint: disable=invalid-name
     columns = element.columns

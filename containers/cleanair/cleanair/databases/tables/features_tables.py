@@ -2,13 +2,13 @@
 Tables for intersection between datasource and interest points
 """
 from __future__ import annotations
+from typing import Tuple, TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, String, Float, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
 from sqlalchemy.orm import relationship
 from ..base import Base
 from ...timestamps.converters import safe_strptime
 
-from typing import Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from .meta_point_table import MetaPoint
 
@@ -47,7 +47,7 @@ class StaticFeature(Base):
         return "<StaticFeature" + ", ".join(vals) + ")>"
 
     @staticmethod
-    def build_entry(feature_name: str, feature_source:str, reading_tuple: Tuple) -> StaticFeature:
+    def build_entry(feature_name: str, feature_source: str, reading_tuple: Tuple) -> StaticFeature:
         """
         Create a StaticFeature entry and return it
         """

@@ -1,7 +1,7 @@
 """Mixin class for querying instances."""
 
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from sqlalchemy import and_
 from ...decorators import db_query
 from ...databases.mixins import (

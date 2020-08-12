@@ -4,6 +4,7 @@ Class for connecting to Azure databases
 from __future__ import annotations
 from contextlib import contextmanager
 import time
+from typing import Iterator, TYPE_CHECKING
 import requests
 from sqlalchemy import create_engine, event
 from sqlalchemy.exc import SQLAlchemyError
@@ -15,7 +16,7 @@ from sqlalchemy_utils import database_exists, create_database
 from .base import Base
 from ..loggers import get_logger, green, red
 from ..mixins import DBConnectionMixin
-from typing import Iterator, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
     from sqlalchemy.orm.session import Session
@@ -124,7 +125,7 @@ class Connector(DBConnectionMixin):
             create_database(self.connection_string)
 
     @contextmanager
-    def open_session(self, skip_check: bool=False) -> Iterator:
+    def open_session(self, skip_check: bool = False) -> Iterator:
         """
         Create a session as a context manager which will thereby self-close
         """
@@ -162,7 +163,7 @@ class Connector(DBConnectionMixin):
             session.close()
 
     def check_internet_connection(
-        self, url: str="http://www.google.com/", timeout: int=5, interval: int=10
+        self, url: str = "http://www.google.com/", timeout: int = 5, interval: int = 10
     ):
         """
         Check that the internet is accessible

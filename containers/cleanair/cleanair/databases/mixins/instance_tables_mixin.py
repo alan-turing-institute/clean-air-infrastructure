@@ -3,9 +3,10 @@ Table that summerises an instance (model + data + result).
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import TIMESTAMP, JSONB, UUID
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from sqlalchemy.sql.schema import Table
 
