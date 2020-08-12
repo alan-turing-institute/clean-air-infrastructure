@@ -9,7 +9,7 @@ from cleanair.parsers.urbanair_parser.shared_args import (
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.timestamps import as_datetime
 from .shared_args import Borough, GridResolution, ModelName
-from ..scoot import ScanScoot
+from ..scoot import Fishnet, ScanScoot
 
 app = typer.Typer()
 
@@ -44,5 +44,13 @@ def scoot(
     scan_df = scan_scoot.run()
     print("Columns:", list(scan_df.columns))
     print(scan_df.sample(10))
-    scan_scoot.update_fishnet_tables()
     scan_scoot.update_remote_tables()
+
+@app.command()
+def setup(
+    borough: str = Borough,
+    grid_resolution: int = GridResolution,
+) -> None:
+    """Create a fishnet over a borough with the given grid resolution."""
+    fishnet = Fishnet(borough, grid_resolution, secretfile=state["secretfile"])
+    fishnet.update_remote_tables()

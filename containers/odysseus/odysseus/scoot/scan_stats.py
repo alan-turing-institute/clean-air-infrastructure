@@ -5,7 +5,7 @@ from typing import Any, Optional
 import pandas as pd
 from sqlalchemy import func, inspect
 from cleanair.databases import DBWriter
-from cleanair.databases.tables.scan_tables import Fishnet, ScootScanStats
+from cleanair.databases.tables.scan_tables import FishnetTable, ScootScanStats
 from cleanair.decorators import db_query
 from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
@@ -47,12 +47,8 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             hours=train_hours + forecast_hours
         )
         self.train_upto: str = self.forecast_start
-        self.fishnet_df: pd.DataFrame = self.fishnet_over_borough(
-            borough=self.borough, grid_resolution=self.grid_resolution, output_type="df"
-        )
-        # load the scoot readings
+        # load the scoot readings with the fishnet joined on
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
-            borough=self.borough,
             start=self.train_start,
             upto=self.forecast_upto,
             output_type="df",
@@ -86,18 +82,34 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         return grid_level_scores
 
     @db_query
-    def scoot_fishnet(self, borough: str):
-        """Get a grid over a borough and join on scoot detectors.
+    def fishnet_query(self, borough: str, grid_resolution: int) -> Any:
+        """Query the Fishnet table.
 
         Args:
-            borough: The name of the borough to get scoot detectors for.
+            borough: Name of the borough to get the fishnet for.
+            grid_resolution: Number of rows and columns in the grid.
+
+        Returns:
+            A database query.
+        """
+        with self.dbcnxn.open_session() as session:
+            fishnet_with_points = session.query(FishnetTable).filter(
+                FishnetTable.borough == borough
+            ).filter(
+                FishnetTable.grid_resolution == grid_resolution
+            )
+            return fishnet_with_points
+
+    @db_query
+    def scoot_fishnet(self):
+        """Get a grid over a borough and join on scoot detectors.
 
         Notes:
             The geometry column of the scoot detector table is renamed to 'location'.
             The geometry column of the fishnet is 'geom'.
         """
-        fishnet = self.fishnet_over_borough(
-            borough, self.grid_resolution, output_type="subquery"
+        fishnet = self.fishnet_query(
+            self.borough, self.grid_resolution, output_type="subquery"
         )
         detectors = self.scoot_detectors(output_type="subquery", geom_label="location")
         with self.dbcnxn.open_session() as session:
@@ -108,14 +120,13 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     @db_query
     def scoot_fishnet_readings(
-        self, borough: str, start: str, upto: Optional[str] = None,
+        self, start: str, upto: Optional[str] = None,
     ):
         """Get a grid over a borough and return all scoot readings in that grid."""
-        fishnet = self.scoot_fishnet(borough, output_type="subquery")
+        fishnet = self.scoot_fishnet(output_type="subquery")
         readings = self.scoot_readings(
             start=start,
             upto=upto,
-            # detectors=fishnet.c.detector_id,
             with_location=False,
             output_type="subquery",
         )
@@ -126,52 +137,43 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
                 fishnet.c.lon,
                 fishnet.c.lat,
                 fishnet.c.location,
+                fishnet.c.point_id,     # point id of fishnet grid square, not detector
+                fishnet.c.grid_resolution,
                 fishnet.c.row,
                 fishnet.c.col,
                 fishnet.c.geom,
             ).join(fishnet, fishnet.c.detector_id == readings.c.detector_id,)
 
-    @db_query
-    def fishnet_query(self, borough: str) -> Any:
-        """Query the Fishnet table.
-
-        Args:
-            borough: Name of the borough to get the fishnet for.
-
-        Returns:
-            A database query.
-        """
-        with self.dbcnxn.open_session() as session:
-            fishnet_with_points = session.query(Fishnet).filter(
-                Fishnet.borough == borough
-            )
-            return fishnet_with_points
-
-    def update_fishnet_tables(self) -> None:
-        """Update the scoot fishnet tables using the fishnet_df dataframe."""
-        # create records for the fishnet
-        fishnet_inst = inspect(Fishnet)
-        fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
-        fishnet_cols.remove("point_id") # will be created automatically on DB
-
-        # add the boroug column
-        fishnet_df = self.fishnet_df
-        fishnet_df["borough"] = self.borough
-
-        fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
-        self.commit_records(fishnet_records, table=Fishnet, on_conflict="ignore")
-
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
-        # get the point id, row and columns
-        fishnet_with_points: pd.DataFrame = self.fishnet_query(
-            self.borough, output_type="df"
-        )
-        # TODO snap a point_id column from fishnet_with_points onto the self.scores_df by joining on row & col
-        scores_df = self.scores_df.merge(fishnet_with_points, on=["row", "col"])
-
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = scores_df[scores_cols].to_dict("records")
+        scores_records = self.scores_df[scores_cols].to_dict("records")
         self.commit_records(scores_records, table=ScootScanStats, on_conflict="overwrite")
+
+class Fishnet(GridMixin, DBWriter):
+    """Create and load fishnets over boroughs."""
+
+    def __init__(self, borough: str, grid_resolution: int, **kwargs):
+        """Initialise the fishnet."""
+        super().__init__(**kwargs)
+        self.borough: str = borough
+        self.grid_resolution: int = grid_resolution
+
+    def update_remote_tables(self) -> None:
+        """Update the scoot fishnet tables using the fishnet_df dataframe."""
+        # create the fishnet over the borough
+        fishnet_df: pd.DataFrame = self.fishnet_over_borough(
+            borough=self.borough, grid_resolution=self.grid_resolution, output_type="df"
+        )
+        # add the borough column
+        fishnet_df["borough"] = self.borough
+
+        # create records for the fishnet
+        fishnet_inst = inspect(FishnetTable)
+        fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
+        fishnet_cols.remove("point_id") # will be created automatically on DB
+
+        fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
+        self.commit_records(fishnet_records, table=FishnetTable, on_conflict="ignore")
