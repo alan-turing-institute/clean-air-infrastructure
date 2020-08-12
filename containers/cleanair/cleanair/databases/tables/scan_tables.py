@@ -50,11 +50,17 @@ class ScootScanStats(Base):
 
     measurement_start_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False, index=True
-    )  # TIMESTAMP
+    )
     measurement_end_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False
-    )  # TIMESTAMP    
+    )
     point_id = Column(UUID(as_uuid=True), ForeignKey(Fishnet.point_id), primary_key=True)
+    ebg = Column(DOUBLE_PRECISION, nullable=True)
     ebp_lower = Column(DOUBLE_PRECISION)
     ebp_upper = Column(DOUBLE_PRECISION)
-    # TODO create columns for other metrics
+    kulldorf_lower = Column(DOUBLE_PRECISION, nullable=True)
+    kulldorf = Column(DOUBLE_PRECISION, nullable=True)
+    kulldorf_upper = Column(DOUBLE_PRECISION, nullable=True)
+    ebp_asym_lower = Column(DOUBLE_PRECISION, nullable=True)
+    ebp_asym = Column(DOUBLE_PRECISION, nullable=True)
+    ebp_asym_upper = Column(DOUBLE_PRECISION, nullable=True)
