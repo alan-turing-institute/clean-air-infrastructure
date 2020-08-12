@@ -43,7 +43,6 @@ def test_scoot_fishnet_readings(scoot_writer: Any, scan_scoot: ScanScoot) -> Non
     """Test that the scoot readings are mapped to a fishnet over a borough."""
     scoot_writer.update_remote_tables()
     readings = scan_scoot.scoot_fishnet_readings(
-        borough="Westminster",
         start=scoot_writer.start,
         upto=scoot_writer.upto,
         output_type="df",

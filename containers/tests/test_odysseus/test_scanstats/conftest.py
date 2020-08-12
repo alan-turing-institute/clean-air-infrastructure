@@ -23,7 +23,7 @@ class Grid(GridMixin, DBReader):
 @pytest.fixture(scope="function")
 def fishnet(secretfile: str, connection: Any, borough: str) -> Fishnet:
     """Create a fishnet class to create grids."""
-    return Fishnet(borough, 8, secretfile=secretfile, connection=connection)
+    return Fishnet(borough, 6, secretfile=secretfile, connection=connection)
 
 @pytest.fixture(scope="function")
 def grid(secretfile: str, connection: Any) -> Grid:
