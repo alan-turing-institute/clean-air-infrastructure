@@ -9,7 +9,7 @@ from cleanair.databases import (
 )
 from cleanair.databases.views import create_materialized_view
 from cleanair.databases.tables import JamCamVideoStats, HexGrid
-from cleanair.databases.materialised_views.london_boundary import LondonBoundaryView
+from cleanair.databases.materialised_views import LondonBoundaryView
 
 
 @pytest.fixture()
