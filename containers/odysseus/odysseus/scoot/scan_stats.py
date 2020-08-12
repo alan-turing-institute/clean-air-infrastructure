@@ -143,7 +143,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         """
         with self.dbcnxn.open_session() as session:
             fishnet_with_points = session.query(Fishnet).filter(
-                Fishnet.borough == self.borough
+                Fishnet.borough == borough
             )
             return fishnet_with_points
 
@@ -152,8 +152,13 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         # create records for the fishnet
         fishnet_inst = inspect(Fishnet)
         fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
-        fishnet_records = self.fishnet_df[fishnet_cols].to_dict("records")
-        # need to commit records for the fishnet before scores
+        fishnet_cols.remove("point_id") # will be created automatically on DB
+
+        # add the boroug column
+        fishnet_df = self.fishnet_df
+        fishnet_df["borough"] = self.borough
+
+        fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
         self.commit_records(fishnet_records, table=Fishnet, on_conflict="overwrite")
 
     def update_remote_tables(self) -> None:

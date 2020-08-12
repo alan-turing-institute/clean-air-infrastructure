@@ -42,19 +42,14 @@ class ScootScanStats(Base):
     __tablename__ = "scoot_scan_stats"
     __table_args__ = {"schema": "traffic_modelling"}
 
-    detector_id = Column(
-        String(9),
-        ForeignKey("interest_points.scoot_detector.detector_n"),
-        primary_key=True,
-        nullable=False,
-        index=True,
-    )
     measurement_start_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False, index=True
     )  # TIMESTAMP
     measurement_end_utc = Column(
         TIMESTAMP, primary_key=True, nullable=False
     )  # TIMESTAMP
-    point_id = Column(UUID(as_uuid=True), ForeignKey(Fishnet.point_id))
-    ebp_mean = Column(DOUBLE_PRECISION)
-    ebp_std = Column(DOUBLE_PRECISION)
+    # TODO create id of grid
+    point_id = Column(UUID(as_uuid=True), ForeignKey(Fishnet.point_id), primary_key=True)
+    ebp_lower = Column(DOUBLE_PRECISION)
+    ebp_upper = Column(DOUBLE_PRECISION)
+    # TODO create columns for other metrics

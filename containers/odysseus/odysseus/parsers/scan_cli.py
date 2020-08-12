@@ -42,3 +42,7 @@ def scoot(
         secretfile=secretfile,
     )
     scan_df = scan_scoot.run()
+    print("Columns:", list(scan_df.columns))
+    print(scan_df.sample(10))
+    scan_scoot.update_fishnet_tables()
+    scan_scoot.update_remote_tables()
