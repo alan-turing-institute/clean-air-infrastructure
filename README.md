@@ -16,6 +16,7 @@ A list of key developers on the project. A good place to start if you wish to co
 
 | Name               | GitHub ID                                            | Email                     | Admin  |
 | ------------------ | -----------------------------------------------------| ------------------------- | ------ |
+| James Brandreth    | [@jamesbrandreth](https://github.com/jamesbrandreth) | <jbrandreth@turing.ac.uk> |      
 | Oscar Giles        | [@OscartGiles](https://github.com/OscartGiles)       | <ogiles@turing.ac.uk>     | Infrastructure, Prod Database, Kubernetes Cluster
 | Oliver Hamelijnck  | [@defaultobject](https://github.com/defaultobject)   | <ohamelijnck@turing.ac.uk>|      
 | Chance Haycock     | [@chancehaycock](https://github.com/chancehaycock)   | <chaycock@turing.ac.uk>   |
@@ -383,6 +384,12 @@ pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 # Access CleanAir Production Database
 
 To access the production database you will need an Azure account and be given access by one of the [database adminstrators](#contributors-:dancers:). You should discuss what your access requirements are (e.g. do you need write access).To access the database first [login to Azure](#login-to-Azure) from the terminal. 
+
+If you do not have an azure subscription you must use:
+
+```bash
+az login --allow-no-subscriptions
+```
 
 You can then request an access token. The token will be valid for between 5 minutes and 1 hour. Set the token as an environment variable:
 

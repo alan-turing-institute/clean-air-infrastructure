@@ -12,7 +12,7 @@ import pandas as pd
 from sqlalchemy.engine import Connection
 from cleanair.databases import DBReader
 from cleanair.databases.tables import MetaPoint
-from cleanair.types import DataConfig, ParamsSVGP
+from cleanair.types import DataConfig, ModelParams
 from cleanair.models import ModelData
 from cleanair.instance import (
     AirQualityInstance,
@@ -94,7 +94,7 @@ def base_aq_preprocessing() -> Dict:
 
 
 @pytest.fixture(scope="function")
-def svgp_params_dict() -> ParamsSVGP:
+def svgp_params_dict() -> ModelParams:
     """SVGP model parameter fixture."""
     return {
         "jitter": 1e-5,
@@ -120,7 +120,7 @@ def svgp_model_params(
 
 
 @pytest.fixture(scope="function")
-def svgp_param_id(svgp_params_dict: ParamsSVGP) -> str:
+def svgp_param_id(svgp_params_dict: ModelParams) -> str:
     """Param id of svgp model params"""
     return hash_dict(svgp_params_dict)
 

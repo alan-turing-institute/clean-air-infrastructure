@@ -11,7 +11,7 @@ from cleanair.databases.tables import JamCamVideoStats
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
-TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
+# TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
@@ -23,9 +23,9 @@ def start_end_filter(
 ) -> Query:
     """Create an sqlalchemy filter which implements the following:
         If starttime and endtime are given filter between them.
-        If only starttime filter 12 hours including starttime
-        If only endtime  filter 12 hours proceeding endtime
-        If not starttime and endtime get the last 12 hours available
+        If only starttime filter 24 hours including starttime
+        If only endtime  filter 24 hours proceeding endtime
+        If not starttime and endtime get the last day of available data
     """
 
     if starttime and endtime:
@@ -34,24 +34,24 @@ def start_end_filter(
             JamCamVideoStats.video_upload_datetime < endtime,
         )
 
-    # 12 hours from starttime
+    # 24 hours from starttime
     if starttime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime >= starttime,
-            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=12),
+            JamCamVideoStats.video_upload_datetime < starttime + timedelta(hours=24),
         )
 
-    # 12 hours before endtime
+    # 24 hours before endtime
     if endtime:
         return query.filter(
             JamCamVideoStats.video_upload_datetime < endtime,
-            JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=12),
+            JamCamVideoStats.video_upload_datetime >= endtime - timedelta(hours=24),
         )
 
-    # Last available 12 hours
+    # Last available 24 hours
     return query.filter(
         JamCamVideoStats.video_upload_datetime
-        > max_video_upload_time_sq.c.max_video_upload_datetime - TWELVE_HOUR_INTERVAL
+        >= func.date_trunc("day", max_video_upload_time_sq.c.max_video_upload_datetime)
     )
 
 
@@ -73,7 +73,7 @@ def detection_class_filter(query: Query, detection_class: DetectionClass) -> Que
 def camera_id_filter(query: Query, camera_id: Optional[str]) -> Query:
     "Filter by camera_id"
     if camera_id:
-        return query.filter(JamCamVideoStats.camera_id == camera_id + ".mp4")
+        return query.filter(JamCamVideoStats.camera_id == camera_id)
     return query
 
 
@@ -162,11 +162,11 @@ def get_jamcam_raw(
     max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
 
     res = db.query(
-        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
+        JamCamVideoStats.camera_id,
         JamCamVideoStats.counts,
         JamCamVideoStats.detection_class,
         JamCamVideoStats.video_upload_datetime.label("measurement_start_utc"),
-    )
+    ).order_by(JamCamVideoStats.camera_id, JamCamVideoStats.video_upload_datetime)
 
     # Filter by camera_id
     res = camera_id_filter(res, camera_id)
@@ -192,17 +192,24 @@ def get_jamcam_hourly(
 
     max_video_upload_datetime_sq = max_video_upload_q(db).subquery()
 
-    res = db.query(
-        func.split_part(JamCamVideoStats.camera_id, ".mp4", 1).label("camera_id"),
-        func.avg(JamCamVideoStats.counts).label("counts"),
-        JamCamVideoStats.detection_class,
-        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
-            "measurement_start_utc"
-        ),
-    ).group_by(
-        func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
-        JamCamVideoStats.camera_id,
-        JamCamVideoStats.detection_class,
+    res = (
+        db.query(
+            JamCamVideoStats.camera_id,
+            func.avg(JamCamVideoStats.counts).label("counts"),
+            JamCamVideoStats.detection_class,
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
+                "measurement_start_utc"
+            ),
+        )
+        .group_by(
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
+            JamCamVideoStats.camera_id,
+            JamCamVideoStats.detection_class,
+        )
+        .order_by(
+            JamCamVideoStats.camera_id,
+            func.date_trunc("hour", JamCamVideoStats.video_upload_datetime),
+        )
     )
 
     # Filter by camera_id

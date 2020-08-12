@@ -27,6 +27,7 @@ python-virtual-environments/
 # Notebooks
 notebooks/
 *.cfg
+
 # Misc
 images/
 
