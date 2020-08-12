@@ -7,7 +7,7 @@ from dateutil.parser import isoparse
 from datetime import timedelta
 from pydantic import ValidationError
 from cleanair.models import ModelConfig
-from cleanair.types.dataset_types import BaseConfig, FullConfig
+from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
 from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter

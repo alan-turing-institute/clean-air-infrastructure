@@ -23,8 +23,8 @@ from ..types import (
     Source,
     Species,
     FeatureNames,
-    BaseConfig,
-    FullConfig,
+    DataConfig,
+    FullDataConfig,
     FeatureBufferSize,
     InterestPointDict,
 )
@@ -63,11 +63,11 @@ class ModelConfig(
         buffer_sizes: List[FeatureBufferSize],
         norm_by: str,
         model_type: str,
-    ) -> BaseConfig:
+    ) -> DataConfig:
         """Return a configuration class
         """
 
-        return BaseConfig(
+        return DataConfig(
             train_start_date=(
                 as_datetime(trainupto) - timedelta(hours=trainhours)
             ).isoformat(),
@@ -88,7 +88,7 @@ class ModelConfig(
             include_prediction_y=False,
         )
 
-    def validate_config(self, config: BaseConfig):
+    def validate_config(self, config: DataConfig):
         """Validate a configuration file"""
         self.logger.info("Validating config")
 
@@ -125,7 +125,7 @@ class ModelConfig(
         #     self.logger.info(green("Requested satellite interest points are available"))
         self.logger.info("Validate config complete")
 
-    def generate_full_config(self, config: BaseConfig):
+    def generate_full_config(self, config: DataConfig):
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
 
@@ -152,18 +152,14 @@ class ModelConfig(
         config_dict["feature_names"] = feature_names
         config_dict["x_names"] = x_names
 
-        return FullConfig(**config_dict)
+        return FullDataConfig(**config_dict)
 
     def check_features_available(
         self, features: List[FeatureNames], start_date: datetime, end_date: datetime
     ) -> None:
         """Check that all requested features exist in the database"""
 
-        available_features = self.get_available_static_features(
-            output_type="list"
-        ) + self.get_available_dynamic_features(
-            start_date, end_date, output_type="list"
-        )
+        available_features = self.get_available_static_features(output_type="list")
         unavailable_features = []
 
         for feature in features:

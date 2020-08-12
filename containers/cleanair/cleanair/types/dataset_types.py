@@ -17,7 +17,7 @@ DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 InterestPointDict = Dict[Source, Union[str, List[str]]]
 
 
-class BaseConfig(BaseModel):
+class DataConfig(BaseModel):
     "Base config for clean air models"
     train_start_date: datetime
     train_end_date: datetime
@@ -38,7 +38,7 @@ class BaseConfig(BaseModel):
     model_type: str
 
 
-class FullConfig(BaseConfig):
+class FullDataConfig(DataConfig):
     "Full configuration class"
     x_names: List[str]
     feature_names: List[str]

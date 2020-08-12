@@ -16,7 +16,7 @@ from cleanair.databases.tables import (
     SatelliteBox,
 )
 from cleanair.models import ModelConfig, ModelData
-from cleanair.types.dataset_types import BaseConfig, FullConfig
+from cleanair.types.dataset_types import DataConfig, FullDataConfig
 
 
 @pytest.fixture(scope="class")
@@ -29,7 +29,7 @@ def model_config(secretfile, connection_class):
 def valid_config(dataset_start_date, dataset_end_date):
     "Valid config for 'fake_cleanair_dataset' fixture"
 
-    return BaseConfig(
+    return DataConfig(
         **{
             "train_start_date": dataset_start_date,
             "train_end_date": dataset_end_date,
