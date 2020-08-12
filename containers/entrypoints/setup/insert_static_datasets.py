@@ -18,7 +18,6 @@ from azure.storage.blob import (
     AccountSasPermissions,
 )
 from cleanair.databases import Connector, DBInteractor
-from cleanair.databases.materialised_views.london_boundary import LondonBoundaryView
 from cleanair.inputs import StaticWriter
 from cleanair.parsers import DatabaseSetupParser
 
@@ -53,11 +52,7 @@ DATASETS = {
         "schema": "interest_points",
         "table": "scoot_detector",
     },
-    "ukmap": {
-        "blob_container": "ukmap",
-        "schema": "static_data",
-        "table": "ukmap"
-    },
+    "ukmap": {"blob_container": "ukmap", "schema": "static_data", "table": "ukmap"},
     "urban_village": {
         "blob_container": "urbanvillage",
         "schema": "static_data",

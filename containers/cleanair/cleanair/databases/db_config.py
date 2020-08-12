@@ -97,8 +97,9 @@ class DBConfig(Connector):
                         role["role"], schema["name"], schema["privileges"]
                     )
                     self.assign_role_schema_sequences(role["role"], schema["name"])
-                    self.assign_role_schema_default_sequences(role["role"], schema["name"])
-
+                    self.assign_role_schema_default_sequences(
+                        role["role"], schema["name"]
+                    )
 
     def create_role(self, role_name):
         """Create a new role

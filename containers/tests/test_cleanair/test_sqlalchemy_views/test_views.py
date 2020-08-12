@@ -88,4 +88,3 @@ def test_materialised_view_not_persisted(secretfile, connection, londonView):
             refresh_materialized_view(session, "interest_points.london_boundary")
 
             assert "psycopg2.errors.UndefinedTable" in str(error)
-

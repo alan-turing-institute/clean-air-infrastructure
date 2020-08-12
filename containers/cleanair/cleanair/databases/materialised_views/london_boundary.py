@@ -1,10 +1,11 @@
 """
 Views of London boundary static data
 """
+
 from sqlalchemy import select, func
+from cleanair.databases.tables import HexGrid
 from ..base import Base
 from ..views import create_materialized_view, RawGeometry
-from cleanair.databases.tables import HexGrid
 
 
 class LondonBoundaryView(Base):
