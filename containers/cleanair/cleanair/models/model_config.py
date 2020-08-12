@@ -9,6 +9,7 @@ from ..databases.tables import (
     MetaPoint,
     HexGrid,
 )
+from ..databases.materialised_views import LondonBoundaryView
 from ..databases import DBReader
 from ..mixins.availability_mixins import (
     LAQNAvailabilityMixin,
@@ -194,6 +195,10 @@ class ModelConfig(
                 isinstance(interest_point_dict[key], str)
                 and interest_point_dict[key] == "all"
             ):
+
+                # print(self.get_available_interest_points(key, output_type="sql"))
+                # quit()
+
                 output_dict[key] = self.get_available_interest_points(
                     key, output_type="list"
                 )
@@ -228,16 +233,10 @@ class ModelConfig(
 
     @db_query
     def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London"""
+        """Query LondonBoundary to obtain the bounding geometry for London. Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
 
-            hull = session.query(
-                func.ST_MakePolygon(
-                    func.ST_Boundary((func.ST_Dump(func.ST_Union(HexGrid.geom))).geom)
-                ).label("geom")
-            )
-
-        return hull
+            return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query
     def get_meta_point_ids(self, source: Source):
@@ -254,7 +253,7 @@ class ModelConfig(
         Get available interest points for a particular source
         """
 
-        # bounded_geom = self.query_london_boundary(output_type="subquery")
+        bounded_geom = self.query_london_boundary(output_type="subquery")
 
         # To Do: Filter by bounding geometry. Geometry should be a materialiized view
 
@@ -276,4 +275,8 @@ class ModelConfig(
         with self.dbcnxn.open_session() as session:
 
             # Ensure we always return a string
-            return session.query(cast(point_ids_sq.c.point_id, String))
+            return (
+                session.query(cast(point_ids_sq.c.point_id, String),)
+                .join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
+                .filter(func.ST_Within(bounded_geom.c.geom, MetaPoint.location))
+            )

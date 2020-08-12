@@ -6,6 +6,7 @@ Fixtures for the cleanair module.
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
+from datetime import timedelta
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     MetaPoint,
@@ -39,33 +40,95 @@ def dataset_end_date():
 
 
 @pytest.fixture(scope="class")
-def meta_records():
-    "Create data for MetaPoint"
+def site_open_date(dataset_start_date):
+
+    return dataset_start_date - timedelta(days=365)
+
+
+@pytest.fixture(scope="class")
+def site_closed_date(dataset_start_date):
+    "Site close date before the measurement period"
+    return dataset_start_date - timedelta(days=100)
+
+
+@pytest.fixture(scope="class")
+def meta_within_london():
+    """Meta points within London for laqn and aqe"""
+
     return [
         MetaPointSchema(source=source)
-        for i in range(100)
-        for source in [Source.laqn, Source.aqe, Source.satellite]
+        for i in range(10)
+        for source in [Source.laqn, Source.aqe]
     ]
 
 
 @pytest.fixture(scope="class")
-def aqe_site_records(meta_records):
-    "Create data for AQESite"
+def meta_outside_london():
+    """Meta points outside london for laqn and aqe"""
+
+    locations = [
+        [-2.658500, 51.834700],
+        [2.59890, 48.41120],
+        [-1.593061, 53.936595],
+        [-1.999790, 53.172000],
+    ]
+
     return [
-        AQESiteSchema(point_id=rec.id, date_opened="2015-01-01")
-        for rec in meta_records
+        MetaPointSchema(
+            source=source, location=f"SRID=4326;POINT({point[0]} {point[1]})"
+        )
+        for point in locations
+        for source in [Source.laqn, Source.aqe]
+    ]
+
+
+@pytest.fixture(scope="class")
+def meta_records(meta_within_london, meta_outside_london):
+    "All Meta Points"
+
+    return meta_within_london + meta_outside_london
+
+
+@pytest.fixture(scope="class")
+def aqe_site_records(meta_records, site_open_date, site_closed_date):
+    "Create data for AQESite with a few closed sites"
+
+    open_site = [
+        AQESiteSchema(point_id=rec.id, date_opened=site_open_date)
+        for rec in meta_records[2:]
         if rec.source == Source.aqe
     ]
 
+    closed_sites = [
+        AQESiteSchema(
+            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date,
+        )
+        for rec in meta_records[:2]
+        if rec.source == Source.aqe
+    ]
+
+    return open_site + closed_sites
+
 
 @pytest.fixture(scope="class")
-def laqn_site_records(meta_records):
-    "Create data for LAQNSite"
-    return [
-        LAQNSiteSchema(point_id=rec.id, date_opened="2015-01-01")
-        for rec in meta_records
-        if rec.source == Source.laqn
+def laqn_site_records(meta_records, site_open_date, site_closed_date):
+    "Create data for LAQNSite with a few closed sites"
+
+    open_site = [
+        LAQNSiteSchema(point_id=rec.id, date_opened=site_open_date)
+        for rec in meta_records[2:]
+        if rec.source == Source.aqe
     ]
+
+    closed_sites = [
+        LAQNSiteSchema(
+            point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date,
+        )
+        for rec in meta_records[:2]
+        if rec.source == Source.aqe
+    ]
+
+    return open_site
 
 
 @pytest.fixture(scope="class")
@@ -75,19 +138,21 @@ def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date
     laqn_readings = []
     for site in laqn_site_records:
 
-        for species in Species:
+        if not site.date_closed:
 
-            for measurement_start_time in rrule.rrule(
-                rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
-            ):
+            for species in Species:
 
-                laqn_readings.append(
-                    LAQNReadingSchema(
-                        site_code=site.site_code,
-                        species_code=species,
-                        measurement_start_utc=measurement_start_time,
+                for measurement_start_time in rrule.rrule(
+                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                ):
+
+                    laqn_readings.append(
+                        LAQNReadingSchema(
+                            site_code=site.site_code,
+                            species_code=species,
+                            measurement_start_utc=measurement_start_time,
+                        )
                     )
-                )
 
     return laqn_readings
 
@@ -98,19 +163,21 @@ def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
     aqe_readings = []
     for site in aqe_site_records:
 
-        for species in Species:
+        if not site.date_closed:
 
-            for measurement_start_time in rrule.rrule(
-                rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
-            ):
+            for species in Species:
 
-                aqe_readings.append(
-                    AQEReadingSchema(
-                        site_code=site.site_code,
-                        species_code=species,
-                        measurement_start_utc=measurement_start_time,
+                for measurement_start_time in rrule.rrule(
+                    rrule.HOURLY, dtstart=dataset_start_date, until=dataset_end_date,
+                ):
+
+                    aqe_readings.append(
+                        AQEReadingSchema(
+                            site_code=site.site_code,
+                            species_code=species,
+                            measurement_start_utc=measurement_start_time,
+                        )
                     )
-                )
 
     return aqe_readings
 

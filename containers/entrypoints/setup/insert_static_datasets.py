@@ -18,6 +18,7 @@ from azure.storage.blob import (
     AccountSasPermissions,
 )
 from cleanair.databases import Connector, DBInteractor
+from cleanair.databases.materialised_views import LondonBoundaryView
 from cleanair.inputs import StaticWriter
 from cleanair.parsers import DatabaseSetupParser
 
