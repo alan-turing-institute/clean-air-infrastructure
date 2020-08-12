@@ -70,9 +70,7 @@ def forecast(
 
     # Select forecasting method
     if method == "HW":
-        y = holt_winters(
-            train_data, forecast_start, forecast_upto, detectors=detectors
-        )
+        y = holt_winters(train_data, forecast_start, forecast_upto, detectors=detectors)
 
     if method == "GP":
         y = gp_forecast(train_data, forecast_start, forecast_upto, detectors=detectors)

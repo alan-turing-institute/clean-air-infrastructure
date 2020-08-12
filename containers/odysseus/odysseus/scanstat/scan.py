@@ -11,7 +11,10 @@ from .utils import event_count
 
 
 def scan(
-    agg_df: pd.DataFrame, grid_resolution: int, forecast_start: datetime, forecast_end: datetime
+    agg_df: pd.DataFrame,
+    grid_resolution: int,
+    forecast_start: datetime,
+    forecast_end: datetime,
 ) -> pd.DataFrame:
 
     """Main function for looping through the sub-space-time regions (S) of
@@ -51,10 +54,10 @@ def scan(
     )
 
     # Kulldorf metric requires total baselines and total actual counts
-    baseline_total = agg_df['baseline'].sum() / 1e6
-    baseline_total_upper = agg_df['baseline_upper'].sum() / 1e6
-    baseline_total_lower = agg_df['baseline_lower'].sum() / 1e6
-    actual_total = agg_df['actual'].sum() / 1e6
+    baseline_total = agg_df["baseline"].sum() / 1e6
+    baseline_total_upper = agg_df["baseline_upper"].sum() / 1e6
+    baseline_total_lower = agg_df["baseline_lower"].sum() / 1e6
+    actual_total = agg_df["actual"].sum() / 1e6
 
     # Time direction convention - reverse
     t_ticks = t_ticks[::-1]
@@ -76,16 +79,27 @@ def scan(
                         counts = event_count(
                             agg_df, col_min, col_max, row_min, row_max, t_min, t_max
                         )
-                        baseline, baseline_upper, baseline_lower, actual = counts.values()
+                        (
+                            baseline,
+                            baseline_upper,
+                            baseline_lower,
+                            actual,
+                        ) = counts.values()
 
                         # Compute Metric(s)
                         ebp_score = ebp(baseline, actual)
                         ebp_score_upper = ebp(baseline_lower, actual)
                         ebp_score_lower = ebp(baseline_upper, actual)
 
-                        kulldorf_score = kulldorf(baseline, baseline_total, actual, actual_total)
-                        kulldorf_score_upper = kulldorf(baseline_lower, baseline_total_lower, actual, actual_total)
-                        kulldorf_score_lower = kulldorf(baseline_upper, baseline_total_upper, actual, actual_total)
+                        kulldorf_score = kulldorf(
+                            baseline, baseline_total, actual, actual_total
+                        )
+                        kulldorf_score_upper = kulldorf(
+                            baseline_lower, baseline_total_lower, actual, actual_total
+                        )
+                        kulldorf_score_lower = kulldorf(
+                            baseline_upper, baseline_total_upper, actual, actual_total
+                        )
 
                         ebp_asym_score = ebp_asym(baseline, actual)
                         ebp_asym_upper = ebp_asym(baseline_lower, actual)
@@ -205,14 +219,14 @@ def average_gridcell_scores(
                     "measurement_end_utc": t_max,
                     "row": row_num,
                     "col": col_num,
-                    "ebp_lower": mean_scores['ebp_lower'],
-                    "ebp": mean_scores['ebp'],
+                    "ebp_lower": mean_scores["ebp_lower"],
+                    "ebp": mean_scores["ebp"],
                     "ebp_upper": mean_scores["ebp_upper"],
-                    "kulldorf_lower": mean_scores['kulldorf_lower'],
-                    "kulldorf": mean_scores['kulldorf'],
+                    "kulldorf_lower": mean_scores["kulldorf_lower"],
+                    "kulldorf": mean_scores["kulldorf"],
                     "kulldorf_upper": mean_scores["kulldorf_upper"],
-                    "ebp_asym_lower": mean_scores['ebp_asym_lower'],
-                    "ebp_asym": mean_scores['ebp_asym'],
+                    "ebp_asym_lower": mean_scores["ebp_asym_lower"],
+                    "ebp_asym": mean_scores["ebp_asym"],
                     "ebp_asym_upper": mean_scores["ebp_asym_upper"],
                 }
 

@@ -70,7 +70,12 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_upto,
     )
 
-    scan_checks(all_scores, scan_scoot.forecast_upto, scan_scoot.forecast_days, scan_scoot.grid_resolution)
+    scan_checks(
+        all_scores,
+        scan_scoot.forecast_upto,
+        scan_scoot.forecast_days,
+        scan_scoot.grid_resolution,
+    )
     print(all_scores)
 
     # 5) Aggregate scores to gridcell level using the average
@@ -81,10 +86,10 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_upto,
     )
 
-    average_score_checks(grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution)
+    average_score_checks(
+        grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution
+    )
     print(grid_level_scores)
-
-    return
 
 
 def preprocess_checks(
@@ -151,7 +156,7 @@ def forecast_checks(
         "baseline",
         "baseline_lower",
         "baseline_upper",
-        "standard_deviation"
+        "standard_deviation",
     ]
     assert set(cols) == set(forecast_df.columns)
 
@@ -255,7 +260,9 @@ def scan_checks(
 
     assert len(all_scores["measurement_end_utc"].unique()) == 1
     assert all_scores.at[0, "measurement_end_utc"] == forecast_upto
-    assert all_scores["measurement_start_utc"].min() == forecast_upto - timedelta(days=forecast_days)
+    assert all_scores["measurement_start_utc"].min() == forecast_upto - timedelta(
+        days=forecast_days
+    )
 
     assert all_scores["ebp"].min() >= 1
     assert all_scores["ebp_lower"].min() >= 1

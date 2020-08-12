@@ -16,6 +16,7 @@ setuptools.setup(
     ],
     install_requires=[
         "cleanair",
+        "astropy>=4.0.1",
         "gpflow>=2.0.5",
         "tensorflow>=2.2.0",
         "tensorflow_probability>=0.9",

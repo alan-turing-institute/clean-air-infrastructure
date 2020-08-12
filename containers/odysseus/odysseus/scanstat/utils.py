@@ -30,12 +30,14 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "baseline",
             "baseline_upper",
             "baseline_lower",
-            "standard_deviation"
+            "standard_deviation",
         ]
     ) == set(forecast_df.columns)
 
     # These columns make no sense when aggregating to grid level, so drop
-    agg_df = forecast_df.drop(["detector_id", "lon", "lat", "location", "standard_deviation"], axis=1)
+    agg_df = forecast_df.drop(
+        ["detector_id", "lon", "lat", "location", "standard_deviation"], axis=1
+    )
 
     # Sum counts and baselines at grid cell level
     agg_df = agg_df.groupby(
@@ -109,10 +111,10 @@ def event_count(
     search_region_data = agg_df.loc[search_region_mask]
 
     if search_region_data.empty:
-        return {'baseline': 0, 'baseline_upper': 0, 'baseline_lower': 0, 'actual': 0}
+        return {"baseline": 0, "baseline_upper": 0, "baseline_lower": 0, "actual": 0}
     return {
-        'baseline': search_region_data["baseline"].sum() / 1e6,
-        'baseline_upper': search_region_data["baseline_upper"].sum() / 1e6,
-        'baseline_lower': search_region_data["baseline_lower"].sum() / 1e6,
-        'actual': search_region_data["actual"].sum() / 1e6,
+        "baseline": search_region_data["baseline"].sum() / 1e6,
+        "baseline_upper": search_region_data["baseline_upper"].sum() / 1e6,
+        "baseline_lower": search_region_data["baseline_lower"].sum() / 1e6,
+        "actual": search_region_data["actual"].sum() / 1e6,
     }

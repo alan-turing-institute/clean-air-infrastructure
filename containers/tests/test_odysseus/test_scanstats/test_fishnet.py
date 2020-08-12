@@ -86,10 +86,14 @@ def test_fishnet_over_borough(grid) -> None:
     fishnet_df = grid.fishnet_over_borough(borough, grid_res, output_type="df")
     fishnet_checks(fishnet_df, geom, grid_res)
 
+
 def test_fishnet_scoot_readings(scan_scoot: ScanScoot) -> None:
     """Test that scoot readings from a fishnet a returned correctly."""
     readings_df: pd.DataFrame = scan_scoot.scoot_fishnet_readings(
-        borough=scan_scoot.borough, start=scan_scoot.train_start, upto=scan_scoot.forecast_upto, output_type="df",
+        borough=scan_scoot.borough,
+        start=scan_scoot.train_start,
+        upto=scan_scoot.forecast_upto,
+        output_type="df",
     )
     cols = list(readings_df.columns)
     # checks every column in only listed once

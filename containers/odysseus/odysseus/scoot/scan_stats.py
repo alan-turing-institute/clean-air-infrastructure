@@ -48,9 +48,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         )
         self.train_upto: str = self.forecast_start
         self.fishnet_df: pd.DataFrame = self.fishnet_over_borough(
-            borough=self.borough,
-            grid_resolution=self.grid_resolution,
-            output_type="df"
+            borough=self.borough, grid_resolution=self.grid_resolution, output_type="df"
         )
         # load the scoot readings
         self.readings: pd.DataFrame = self.scoot_fishnet_readings(
@@ -59,7 +57,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             upto=self.forecast_upto,
             output_type="df",
         )
-        self.scores_df: pd.DataFrame = None     # assigned in run() method
+        self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
@@ -67,7 +65,12 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
         forecast_df = forecast(
-            processed_df, self.train_start, self.train_upto, self.forecast_start, self.forecast_upto, self.model_name
+            processed_df,
+            self.train_start,
+            self.train_upto,
+            self.forecast_start,
+            self.forecast_upto,
+            self.model_name,
         )
         # 4) Aggregate readings/forecast to grid level
         aggregate = aggregate_readings_to_grid(forecast_df)
@@ -126,9 +129,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
                 fishnet.c.row,
                 fishnet.c.col,
                 fishnet.c.geom,
-            ).join(
-                fishnet, fishnet.c.detector_id == readings.c.detector_id,
-            )
+            ).join(fishnet, fishnet.c.detector_id == readings.c.detector_id,)
 
     @db_query
     def fishnet_query(self, borough: str) -> Any:
@@ -141,28 +142,36 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             A database query.
         """
         with self.dbcnxn.open_session() as session:
-            fishnet_with_points = session.query(Fishnet).filter(Fishnet.borough == self.borough)
+            fishnet_with_points = session.query(Fishnet).filter(
+                Fishnet.borough == borough
+            )
             return fishnet_with_points
+
+    def update_fishnet_tables(self) -> None:
+        """Update the scoot fishnet tables using the fishnet_df dataframe."""
+        # create records for the fishnet
+        fishnet_inst = inspect(Fishnet)
+        fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
+        fishnet_cols.remove("point_id") # will be created automatically on DB
+
+        # add the boroug column
+        fishnet_df = self.fishnet_df
+        fishnet_df["borough"] = self.borough
+
+        fishnet_records = fishnet_df[fishnet_cols].to_dict("records")
+        self.commit_records(fishnet_records, table=Fishnet, on_conflict="ignore")
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
-        # TODO code written badly in a rush - will almost certainly break
-        # create records for the fishnet
-        # TODO in future pushing the fishnet to DB should be a separate function
-        fishnet_inst = inspect(Fishnet)
-        fishnet_cols = [c_attr.key for c_attr in fishnet_inst.mapper.column_attrs]
-        fishnet_records = self.fishnet_df[fishnet_cols].to_dict("records")
-
-        # need to commit records for the fishnet before scores
-        self.commit_records(fishnet_records, table=Fishnet, on_conflict="overwrite")
-
         # get the point id, row and columns
-        fishnet_with_points: pd.DataFrame = self.fishnet_query(self.borough, output_type="df")
-
+        fishnet_with_points: pd.DataFrame = self.fishnet_query(
+            self.borough, output_type="df"
+        )
         # TODO snap a point_id column from fishnet_with_points onto the self.scores_df by joining on row & col
+        scores_df = self.scores_df.merge(fishnet_with_points, on=["row", "col"])
 
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = self.scores_df[scores_cols].to_dict("records")
-        self.commit_records(scores_records, table=ScootScanStats, on_conflict="ignore")
+        scores_records = scores_df[scores_cols].to_dict("records")
+        self.commit_records(scores_records, table=ScootScanStats, on_conflict="overwrite")
