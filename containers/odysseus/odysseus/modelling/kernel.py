@@ -45,7 +45,7 @@ def parse_kernel_token(next_token, kernel_map):
     raise TypeError("Token was not a list or dict.")
 
 
-def parse_kernel(token):
+def parse_kernel(token) -> gpflow.kernels.Kernel:
     """
     Takes a list or dict and returns a kernel by parsing the datastructure.
     """
