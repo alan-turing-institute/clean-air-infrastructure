@@ -119,7 +119,7 @@ async def camera_raw_counts(
 
 async def csv_from_json_query(*args: Optional[Any], filename: str = "", function: Callable, **kwargs: Optional[Any]) -> Response:
 
-    all_data = await function(*args)
+    all_data = await function(*args, **kwargs)
 
     text = ",".join(all_data[0].keys()) + "\n"
     
