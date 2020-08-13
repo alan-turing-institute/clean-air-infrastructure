@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+import typer
+
+app = typer.Typer(callback=init_app)
+
+if __name__ == "__main__":
+    app()
