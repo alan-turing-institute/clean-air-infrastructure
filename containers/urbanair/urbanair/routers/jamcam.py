@@ -1,5 +1,7 @@
 """JamCam API routes"""
 # pylint: disable=C0116
+import csv
+import io
 from typing import List, Dict, Optional, Any, Callable
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
@@ -117,27 +119,39 @@ async def camera_raw_counts(
 
     return all_or_404(data)
 
+def json_format_wanted(value):
+    """
+    Helper function to define format of dates when serialising dictionaries to
+    json
+    """
+    if isinstance(value, datetime):
+        return value.isoformat()
+    return str(value)
+
+def dict_to_str(dictionary):
+    """
+    Helper function to convert dictionary values into the desired format.
+    """
+    out_dictionary = {}
+    for key, value in dictionary.items():
+        out_dictionary[key] = json_format_wanted(value)
+    return out_dictionary
+
 async def csv_from_json_query(*args: Optional[Any], filename: str = "", function: Callable, **kwargs: Optional[Any]) -> Response:
 
     all_data = await function(*args, **kwargs)
 
-    text = ",".join(all_data[0].keys()) + "\n"
-    
+    csvfile = io.StringIO()
+    csvwriter = csv.DictWriter(csvfile, fieldnames=all_data[0].keys())
+    csvwriter.writeheader()
+
     for row in all_data:
-        str_row = []
-        for r in row.values():
-            if isinstance(r, str):
-                str_row.append(r)
-            elif isinstance(r, datetime):
-                str_row.append(r.isoformat())
-            else:
-                str_row.append(str(r))
+        row = dict_to_str(row)
+        csvwriter.writerow(row)
 
-        text += (",".join(str_row) + "\n")
+    response = Response(csvfile.getvalue(), media_type="text/csv")
 
-    response = Response(text, media_type="text/csv")
-
-    if len(filename) > 0:
+    if filename:
         response.headers["Content-Disposition"] = f"attachment; filename={filename}.csv"
 
     return response

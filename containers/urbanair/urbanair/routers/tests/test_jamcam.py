@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from ..jamcam import csv_from_json_query
+from ..jamcam import csv_from_json_query, json_format_wanted
 
 async def generate_dictionary(number=0, with_commas=False):
     locations = ['London', 'Cambridge', 'Bristol']
@@ -22,15 +22,6 @@ async def generate_dictionary(number=0, with_commas=False):
         output *= number
     await asyncio.sleep(0)
     return output
-
-def json_format_wanted(value):
-    """
-    Helper function to define format of dates when serialising dictionaries to
-    json
-    """
-    if isinstance(value, datetime.datetime):
-        return value.isoformat()
-    return str(value)
 
 def keys_to_number(dictionary):
     """
@@ -55,10 +46,10 @@ async def test_csv_from_json_query():
     result = await csv_from_json_query(function=generate_dictionary, with_commas=True)
     fields = ["location,longitude,latitude,date",
               "London,0.002,56.231,2018-01-02T23:02:12",
-              "Cambridge, UK,0.143,-23.411,2018-01-03T23:02:12",
+              '"Cambridge, UK",0.143,-23.411,2018-01-03T23:02:12',
               "Bristol,-0.246,0.0,2018-01-04T23:02:12",
               ""]
-    expected = "\n".join(fields)
+    expected = "\r\n".join(fields)
     assert result.body.decode() == expected
     assert result.headers.items() == [('content-length', f'{len(expected)}'),
                                       ('content-type', 'text/csv; charset=utf-8')]
