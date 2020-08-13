@@ -12,6 +12,7 @@ def path() -> None:
     """Echo the application directory."""
     typer.echo(f"{APP_DIR}")
 
+
 @app.command()
 def remove() -> None:
     """Delete all CLI configutation data"""

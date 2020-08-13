@@ -1,4 +1,3 @@
-
 import subprocess
 import os
 import json
@@ -15,6 +14,7 @@ from ....loggers.logcolours import red, green
 
 app = typer.Typer(help="Initialise the CLI to connect to a local database.")
 
+
 @app.command()
 def local(
     secretfile: Path = typer.Option(..., help="Path to a database secret file (.json)")
@@ -24,6 +24,7 @@ def local(
     # Copy secretfile over
     typer.echo("Copy secretfile to urbanair config directory")
     shutil.copy(str(secretfile), str(CONFIG_SECRETFILE_PATH))
+
 
 @app.command()
 def production() -> None:
