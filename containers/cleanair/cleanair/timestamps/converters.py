@@ -1,9 +1,8 @@
 """
 Timestamp conversion functions
 """
-
 from typing import Union
-import datetime
+from datetime import date, datetime, timedelta
 from dateutil import parser
 import pytz
 
@@ -12,49 +11,27 @@ def as_datetime(
     maybe_dt: Union[datetime.datetime, datetime.date, str]
 ) -> datetime.datetime:
     """Convert an input that might be a datetime into a datetime"""
-    # Return if already a datetime
-    if isinstance(maybe_dt, datetime.datetime):
+    if isinstance(maybe_dt, datetime):
         return maybe_dt
-    # Convert date to datetime
-    if isinstance(maybe_dt, datetime.date):
-        return datetime.datetime.combine(maybe_dt, datetime.datetime.min.time())
-    # Convert strings into a datetime
-    if maybe_dt == "now":
-        return datetime.datetime.now().replace(microsecond=0, second=0, minute=0)
-    if maybe_dt == "lasthour":
-        return (datetime.datetime.now() - datetime.timedelta(hours=1)).replace(
-            microsecond=0, second=0, minute=0
-        )
-    if maybe_dt == "today":
-        return datetime.datetime.combine(
-            datetime.date.today(), datetime.datetime.min.time()
-        )
-
-    if maybe_dt == "tomorrow":
-        return datetime.datetime.combine(
-            datetime.date.today() + datetime.timedelta(days=1),
-            datetime.datetime.min.time(),
-        )
-
-    if maybe_dt == "yesterday":
-        return datetime.datetime.combine(
-            datetime.date.today() - datetime.timedelta(days=1),
-            datetime.datetime.min.time(),
-        )
-
+    if isinstance(maybe_dt, date):
+        return datetime.combine(maybe_dt, datetime.min.time())
+    try:
+        maybe_dt: str = day_to_iso(maybe_dt)
+    except ValueError:
+        pass
     return parser.isoparse(maybe_dt)
 
 
 def safe_strptime(naive_string, format_str):
     """Wrapper around strptime to allow for broken time strings"""
     try:
-        return datetime.datetime.strptime(naive_string, format_str)
+        return datetime.strptime(naive_string, format_str)
     except ValueError:
         if naive_string[11:19] == "24:00:00":
             naive_string = naive_string[:11] + "23:59:59"
-            return datetime.datetime.strptime(
-                naive_string, format_str
-            ) + datetime.timedelta(seconds=1)
+            return datetime.strptime(naive_string, format_str) + datetime.timedelta(
+                seconds=1
+            )
     raise ValueError(
         "Time data '{}' does not match format '{}'".format(naive_string, format_str)
     )
@@ -72,7 +49,7 @@ def datetime_from_str(naive_string, timezone, rounded=False):
 
 def datetime_from_unix(timestamp):
     """Convert unix timestamp to datetime"""
-    return datetime.datetime.fromtimestamp(timestamp, pytz.utc)
+    return datetime.fromtimestamp(timestamp, pytz.utc)
 
 
 def utcstr_from_unix(timestamp, rounded=False):
@@ -101,3 +78,31 @@ def to_nearest_hour(input_datetime):
     if input_datetime.minute >= 30:
         input_datetime += datetime.timedelta(hours=1)
     return input_datetime.replace(minute=0, second=0, microsecond=0)
+
+
+def day_to_iso(day: str) -> str:
+    """Convert one of 'now', 'lasthour', 'today', 'tomorrow' or 'yesterday' to a iso string"""
+
+    # Convert end argument into a datetime
+    if day == "now":
+        return datetime.now().replace(microsecond=0, second=0, minute=0).isoformat()
+    if day == "lasthour":
+        return (
+            (datetime.now() - timedelta(hours=1))
+            .replace(microsecond=0, second=0, minute=0)
+            .isoformat()
+        )
+    if day == "today":
+        return datetime.combine(date.today(), datetime.min.time()).isoformat()
+
+    if day == "tomorrow":
+        return datetime.combine(
+            date.today() + timedelta(days=1), datetime.min.time()
+        ).isoformat()
+
+    if day == "yesterday":
+        return datetime.combine(
+            date.today() - timedelta(days=1), datetime.min.time()
+        ).isoformat()
+
+    raise ValueError(f"{day} is not a valid day")

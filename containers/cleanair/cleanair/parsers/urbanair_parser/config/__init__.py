@@ -1,4 +1,4 @@
-"""Odysseus command line interface."""
+"""Config settings for the CLI."""
 
 from .main import app
 
