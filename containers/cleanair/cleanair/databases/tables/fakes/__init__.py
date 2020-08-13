@@ -5,6 +5,8 @@ from .database_table_fakes import (
     LAQNReadingSchema,
     AQESiteSchema,
     AQEReadingSchema,
+    SatelliteBoxSchema,
+    SatelliteGridSchema,
     StaticFeaturesSchema,
 )
 
@@ -15,5 +17,7 @@ __all__ = [
     "LAQNReadingSchema",
     "AQESiteSchema",
     "AQEReadingSchema",
+    "SatelliteBoxSchema",
+    "SatelliteGridSchema",
     "StaticFeaturesSchema",
 ]

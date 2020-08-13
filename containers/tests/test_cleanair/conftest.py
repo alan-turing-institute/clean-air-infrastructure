@@ -2,11 +2,13 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name
-
+from typing import Tuple
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 from datetime import timedelta
+import numpy as np
+from nptyping import NDArray
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     MetaPoint,
@@ -14,6 +16,8 @@ from cleanair.databases.tables import (
     LAQNReading,
     AQESite,
     AQEReading,
+    SatelliteBox,
+    SatelliteGrid,
     StaticFeature,
 )
 from cleanair.databases.tables.fakes import (
@@ -23,35 +27,37 @@ from cleanair.databases.tables.fakes import (
     AQESiteSchema,
     AQEReadingSchema,
     StaticFeaturesSchema,
+    SatelliteBoxSchema,
+    SatelliteGridSchema,
 )
 from cleanair.types import Source, Species, FeatureNames
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def dataset_start_date():
     "Fake dataset start date"
     return isoparse("2020-01-01")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def site_open_date(dataset_start_date):
 
     return dataset_start_date - timedelta(days=365)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def site_closed_date(dataset_start_date):
     "Site close date before the measurement period"
     return dataset_start_date - timedelta(days=100)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def meta_within_london():
     """Meta points within London for laqn and aqe"""
 
@@ -62,7 +68,7 @@ def meta_within_london():
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def meta_within_london_closed():
     """Meta points within London for laqn and aqe"""
 
@@ -73,7 +79,7 @@ def meta_within_london_closed():
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def meta_outside_london():
     """Meta points outside london for laqn and aqe"""
 
@@ -93,14 +99,7 @@ def meta_outside_london():
     ]
 
 
-@pytest.fixture(scope="class")
-def meta_records(meta_within_london, meta_within_london_closed, meta_outside_london):
-    "All Meta Points"
-
-    return meta_within_london + meta_within_london_closed + meta_outside_london
-
-
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def aqe_sites_open(meta_within_london, meta_outside_london, site_open_date):
 
     meta_recs = meta_within_london + meta_outside_london
@@ -112,7 +111,7 @@ def aqe_sites_open(meta_within_london, meta_outside_london, site_open_date):
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def aqe_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
 
     return [
@@ -124,14 +123,14 @@ def aqe_sites_closed(meta_within_london_closed, site_open_date, site_closed_date
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def aqe_site_records(aqe_sites_open, aqe_sites_closed):
     "Create data for AQESite with a few closed sites"
 
     return aqe_sites_open + aqe_sites_closed
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def laqn_sites_open(meta_within_london, meta_outside_london, site_open_date):
 
     meta_recs = meta_within_london + meta_outside_london
@@ -143,7 +142,7 @@ def laqn_sites_open(meta_within_london, meta_outside_london, site_open_date):
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def laqn_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
 
     return [
@@ -155,14 +154,14 @@ def laqn_sites_closed(meta_within_london_closed, site_open_date, site_closed_dat
     ]
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def laqn_site_records(laqn_sites_open, laqn_sites_closed):
     "Create data for AQESite with a few closed sites"
 
     return laqn_sites_open + laqn_sites_closed
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date):
     """LAQN reading records assuming full record set with all species at every sensor and no missing data"""
 
@@ -188,7 +187,7 @@ def laqn_reading_records(laqn_site_records, dataset_start_date, dataset_end_date
     return laqn_readings
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
 def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
     """AQE reading records assuming full record set with all species at every sensor and no missing data"""
     aqe_readings = []
@@ -213,7 +212,111 @@ def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
     return aqe_readings
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="module")
+def satellite_box_records():
+
+    # Set of grid center locations over london
+    locations = [
+        (-0.45, 51.65),
+        (-0.35, 51.65),
+        (-0.25, 51.65),
+        (-0.15, 51.65),
+        (-0.05, 51.65),
+        (0.05, 51.65),
+        (0.15, 51.65),
+        (0.25, 51.65),
+        (-0.45, 51.55),
+        (-0.35, 51.55),
+        (-0.25, 51.55),
+        (-0.15, 51.55),
+        (-0.05, 51.55),
+        (0.05, 51.55),
+        (0.15, 51.55),
+        (0.25, 51.55),
+        (-0.45, 51.45),
+        (-0.35, 51.45),
+        (-0.25, 51.45),
+        (-0.15, 51.45),
+        (-0.05, 51.45),
+        (0.05, 51.45),
+        (0.15, 51.45),
+        (0.25, 51.45),
+        (-0.45, 51.35),
+        (-0.35, 51.35),
+        (-0.25, 51.35),
+        (-0.15, 51.35),
+        (-0.05, 51.35),
+        (0.05, 51.35),
+        (0.15, 51.35),
+        (0.25, 51.35),
+    ]
+
+    return [SatelliteBoxSchema(centroid=loc) for loc in locations]
+
+
+@pytest.fixture(scope="module")
+def satellite_meta_point_and_box_records(satellite_box_records):
+    "Get satellite meta points and satellite interest point to box map"
+
+    def build_satellite_grid(
+        point: Tuple[float, float],
+        half_grid: float,
+        n_points_lat: int,
+        n_points_lon: int,
+    ) -> NDArray:
+        "Return a grid of satellite points centred at a grid square"
+        lat_space = np.linspace(
+            point[0] - half_grid + (half_grid / n_points_lat),
+            point[0] + half_grid - (half_grid / n_points_lat),
+            n_points_lat,
+        )
+        lon_space = np.linspace(
+            point[1] - half_grid + (half_grid / n_points_lon),
+            point[1] + half_grid - (half_grid / n_points_lon),
+            n_points_lon,
+        )
+        # Convert the linear-spaces into a grid
+        return np.array([[lat, lon] for lon in lon_space for lat in lat_space])
+
+    all_sat_metapoints = []
+    all_sat_box_map = []
+    for sat_box in satellite_box_records:
+
+        sat_grid = build_satellite_grid(sat_box.centroid_tuple, 0.05, 12, 8)
+
+        for entry in sat_grid:
+
+            meta_point = MetaPointSchema(
+                source=Source.satellite,
+                location=f"SRID=4326;POINT({entry[0]} {entry[1]})",
+            )
+
+            sat_map = SatelliteGridSchema(point_id=meta_point.id, box_id=sat_box.id)
+
+            all_sat_metapoints.append(meta_point)
+            all_sat_box_map.append(sat_map)
+
+    return all_sat_metapoints, all_sat_box_map
+
+
+@pytest.fixture(scope="module")
+def meta_records(
+    meta_within_london,
+    meta_within_london_closed,
+    meta_outside_london,
+    satellite_meta_point_and_box_records,
+):
+    "Concatenate all meta records"
+
+    return (
+        meta_within_london
+        + meta_within_london_closed
+        + meta_outside_london
+        + satellite_meta_point_and_box_records[0]
+    )
+
+
+@pytest.fixture(scope="module")
 def static_feature_records(meta_records):
     """Static features records"""
     static_features = []
@@ -239,6 +342,8 @@ def fake_cleanair_dataset(
     aqe_site_records,
     laqn_reading_records,
     aqe_reading_records,
+    satellite_box_records,
+    satellite_meta_point_and_box_records,
     static_feature_records,
 ):
     """Insert a fake air quality dataset into the database"""
@@ -272,6 +377,20 @@ def fake_cleanair_dataset(
         [i.dict() for i in aqe_reading_records],
         on_conflict="overwrite",
         table=AQEReading,
+    )
+
+    # Insert satellite box records
+    writer.commit_records(
+        [i.dict() for i in satellite_box_records],
+        on_conflict="overwrite",
+        table=SatelliteBox,
+    )
+
+    # Insert satellite box map
+    sat_box_map = satellite_meta_point_and_box_records[1]
+    # For some reason this insert fails using core
+    writer.commit_records(
+        [SatelliteGrid(**i.dict()) for i in sat_box_map], on_conflict="overwrite",
     )
 
     # Insert static features data

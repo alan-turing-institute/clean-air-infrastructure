@@ -81,7 +81,7 @@ class TestDataFaker:
 
         assert len(data) == len(aqe_site_records)
 
-    def test_insert_laqn_readings(
+    def test_read_laqn_readings(
         self, secretfile, connection_class, laqn_reading_records
     ):
 
@@ -104,14 +104,24 @@ class TestDataFaker:
 
         assert len(data) == len(aqe_reading_records)
 
-    def test_read_static_features(
-        self, secretfile, connection_class, static_feature_records
-    ):
+    # def test_read_static_features(
+    #     self, secretfile, connection_class, static_feature_records
+    # ):
 
-        reader = DBReader(secretfile=secretfile, connection=connection_class)
+    #     reader = DBReader(secretfile=secretfile, connection=connection_class)
 
-        with reader.dbcnxn.open_session() as session:
+    #     with reader.dbcnxn.open_session() as session:
 
-            data = session.query(StaticFeature).all()
+    #         data = session.query(StaticFeature).all()
 
-        assert len(data) == len(static_feature_records)
+    #     assert len(data) == len(static_feature_records)
+
+    # def test_satellite_box(
+    #     self, satellite_box_records, satellite_meta_point_and_box_records
+    # ):
+
+    #     print(satellite_box_records[0])
+    #     print(satellite_meta_point_and_box_records[0])
+    #     print(satellite_meta_point_and_box_records[1])
+
+    #     # quit()

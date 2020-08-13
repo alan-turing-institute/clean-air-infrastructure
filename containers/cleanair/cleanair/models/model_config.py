@@ -287,4 +287,3 @@ class ModelConfig(
                 )
 
             return point_ids
-

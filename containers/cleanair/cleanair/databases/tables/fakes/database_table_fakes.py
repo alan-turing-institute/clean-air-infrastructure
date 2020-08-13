@@ -1,16 +1,21 @@
 """Fake data generators which can be inserted into database"""
 
 import random
-from typing import Optional
+from typing import Optional, Union, Tuple
 import string
+import re
 import uuid
 from datetime import datetime, date, timedelta
 from pydantic import BaseModel, validator
 from scipy.stats import uniform, norm
 import numpy as np
 from ....types import Source, FeatureNames
+from ....databases.tables import SatelliteBox
 
 # pylint: disable=E0213,R0201
+
+# Point regular expression
+RE_POINT = re.compile("^SRID=4326;POINT\((\d*\.?\d*) (\d*\.?\d*)\)$")
 
 
 def get_random_string(length: int) -> str:
@@ -105,6 +110,60 @@ class AQESiteSchema(LAQNSiteSchema):
 
 class AQEReadingSchema(LAQNReadingSchema):
     "AQE Reading schema"
+
+
+class SatelliteBoxSchema(BaseModel):
+    "Satellite Box Schema"
+
+    centroid: Union[str, Tuple[float, float]]
+    geom: Optional[str]
+    id: Optional[uuid.UUID]
+
+    _gen_point_id = validator("id", allow_reuse=True, always=True)(gen_point_id)
+
+    @validator("centroid", always=True)
+    def validate_point(cls, v):
+        """Generate end time one hour after start time
+        
+        Example:
+            'SRID=4326;POINT(4.2234 2232342.2342)'
+        """
+
+        if isinstance(v, str):
+
+            if RE_POINT.match(v):
+                return v
+            raise ValueError("Not a valid Point string")
+
+        if isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError("v must be tuple of length 2")
+            return f"SRID=4326;POINT({v[0]} {v[1]})"
+
+    @validator("geom", always=True)
+    def gen_geom(cls, v, values):
+        "Generate end time one hour after start time"
+        if v:
+            raise ValueError("Do not provide a value. Calculated automatically")
+
+        centroid = values["centroid"]
+        centroid_points = centroid[16:].strip(")").split(" ")
+
+        return SatelliteBox.build_box_ewkt(
+            float(centroid_points[1]), float(centroid_points[0]), 0.05
+        )
+
+    @property
+    def centroid_tuple(self):
+
+        return [float(i) for i in self.centroid[16:].strip(")").split(" ")]
+
+
+class SatelliteGridSchema(BaseModel):
+    "Satellite Grid Schema"
+
+    point_id: uuid.UUID
+    box_id: uuid.UUID
 
 
 class StaticFeaturesSchema(BaseModel):
