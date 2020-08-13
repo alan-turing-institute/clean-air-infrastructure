@@ -196,11 +196,10 @@ class ModelConfig(
                 and interest_point_dict[key] == "all"
             ):
 
-                # print(self.get_available_interest_points(key, output_type="sql"))
-                # quit()
-
                 output_dict[key] = self.get_available_interest_points(
-                    key, output_type="list"
+                    key,
+                    within_london_only=(key != Source.satellite),
+                    output_type="list",
                 )
 
             else:
@@ -254,6 +253,9 @@ class ModelConfig(
         and optionally filter sites outside of london
 
         If requesting LAQN or AQE will only return open sites
+        If requesting Satellite will only get points from tiles that intersect
+            the london boundary. within_london_only will further filter by whether
+            interest points themselves are in London.
         """
 
         bounded_geom = self.query_london_boundary(output_type="subquery")

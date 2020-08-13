@@ -226,6 +226,17 @@ class TestDataConfig:
             satellite_interest_points_available
         )
 
+        # Now use the function that calls the get_available_interest_points
+        satellite_interest_points_available_in_london2 = model_config.get_interest_point_ids(
+            {Source.satellite: "all"}
+        )[
+            Source.satellite
+        ]
+
+        assert set(satellite_interest_points_available_in_london2) == set(
+            satellite_interest_points_available
+        )
+
     def test_generate_full_config(self, valid_config, model_config):
         """Test full config doesnt raise any validation errors"""
         # ToDo: Write a full config file for the test set to verify
