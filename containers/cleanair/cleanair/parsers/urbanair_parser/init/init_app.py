@@ -10,6 +10,7 @@ from ..state import (
 )
 from ....loggers import initialise_logging
 
+
 def init_app(
     verbose: bool = False,
     secretfile: str = typer.Option(

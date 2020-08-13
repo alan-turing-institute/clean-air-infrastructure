@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from dateutil.parser import isoparse
 import typer
@@ -15,11 +14,10 @@ from cleanair.parsers.urbanair_parser.state import state
 
 app = typer.Typer(help="Percent of baseline.")
 
+
 @app.command()
 def scoot(
-    backfill: bool = typer.Option(False),
-    ndays: int = NDays,
-    upto: str = UpTo,
+    backfill: bool = typer.Option(False), ndays: int = NDays, upto: str = UpTo,
 ) -> None:
     """Percent of baseline for scoot."""
     secretfile: str = state["secretfile"]
@@ -47,10 +45,7 @@ def scoot(
     else:
         # get query object
         traffic_query_normal = TrafficPercentageChange(
-            secretfile=secretfile,
-            end=upto,
-            nhours=ndays - 24,
-            baseline_tag="normal",
+            secretfile=secretfile, end=upto, nhours=ndays - 24, baseline_tag="normal",
         )
 
         traffic_query_lockdown = TrafficPercentageChange(
