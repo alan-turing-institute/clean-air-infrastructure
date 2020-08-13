@@ -56,7 +56,7 @@ def test_create_view(secretfile, connection, MyView):
         assert result.camera_id == "sdfs"
 
 
-def test_create_materialised_view(secretfile, connection, londonView):
+def test_refresh_materialised_view(secretfile, connection, londonView):
     """Check that we can create a materialised view and refresh it"""
 
     db_instance = DBWriter(
