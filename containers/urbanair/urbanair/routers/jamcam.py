@@ -125,7 +125,7 @@ async def csv_from_json_query(*args: Optional[Any], filename: str = "", function
     
     for row in all_data:
         str_row = []
-        for r in row:
+        for r in row.values():
             if isinstance(r, str):
                 str_row.append(r)
             elif isinstance(r, datetime):

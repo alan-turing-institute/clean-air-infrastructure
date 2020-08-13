@@ -17,5 +17,6 @@ async def generate_dictionary(number=0):
 @pytest.mark.asyncio
 async def test_csv_from_json_query():
     result = await csv_from_json_query(function=generate_dictionary)
-    assert result.body == b'location,longitude,latitude\nlocation,longitude,latitude\nlocation,longitude,latitude\nlocation,longitude,latitude\n'
-    assert result.headers.items() == [('content-length', '112'), ('content-type', 'text/csv; charset=utf-8')]
+    expected = "location,longitude,latitude\nLondon,0.002,56.231\nCambridge, UK,0.143,-23.411\nBristol,-0.246,0.0\n"
+    assert result.body.decode() == expected
+    assert result.headers.items() == [('content-length', f'{len(expected)}'), ('content-type', 'text/csv; charset=utf-8')]
