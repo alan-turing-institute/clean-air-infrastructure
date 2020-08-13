@@ -30,7 +30,7 @@ class AQESite(Base):
     
     # Create AQESite.point with no reverse relationship
     point = relationship("MetaPoint")
-    
+
     def __repr__(self) -> str:
         return (
             "<AQESite("
