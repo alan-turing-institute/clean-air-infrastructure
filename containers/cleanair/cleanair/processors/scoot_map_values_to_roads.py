@@ -50,7 +50,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 self.value_type,
             )
 
-            road_match_cte = session.query(ScootRoadMatch).cte("road_match")
+            road_match_cte = session.query(ScootRoadMatch).subquery()
 
             q_per_road_forecasts = (
                 session.query(
@@ -101,33 +101,35 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 )
             )
 
-            # Estimate how many records will be updated
-            n_roads = session.query(ScootRoadMatch.road_toid).distinct().count()
-            n_hours = int(
-                (self.end_datetime - self.start_datetime).total_seconds() / 3600
-            )
-            n_records = n_roads * n_hours
-            self.logger.info(
-                "Preparing to insert/update approximately %s per-road %s...",
-                green(n_records),
-                self.value_type,
-            )
+            return q_per_road_forecasts
 
-            # Insert from the query to reduce memory usage and database round-trips
-            # NB. we must overwrite here, as we may be replacing forecasts with readings
+            # # Estimate how many records will be updated
+            # n_roads = session.query(ScootRoadMatch.road_toid).distinct().count()
+            # n_hours = int(
+            #     (self.end_datetime - self.start_datetime).total_seconds() / 3600
+            # )
+            # n_records = n_roads * n_hours
+            # self.logger.info(
+            #     "Preparing to insert/update approximately %s per-road %s...",
+            #     green(n_records),
+            #     self.value_type,
+            # )
 
-            self.commit_records(
-                q_per_road_forecasts.subquery(),
-                table=self.table_per_road,
-                on_conflict="overwrite",
-            )
+            # # Insert from the query to reduce memory usage and database round-trips
+            # # NB. we must overwrite here, as we may be replacing forecasts with readings
 
-            # Print a final timing message
-            self.logger.info(
-                "Insertion of per-road %s took %s",
-                self.value_type,
-                green(duration(session_start, time.time())),
-            )
+            # self.commit_records(
+            #     q_per_road_forecasts.subquery(),
+            #     table=self.table_per_road,
+            #     on_conflict="overwrite",
+            # )
+
+            # # Print a final timing message
+            # self.logger.info(
+            #     "Insertion of per-road %s took %s",
+            #     self.value_type,
+            #     green(duration(session_start, time.time())),
+            # )
 
 
 class ScootPerRoadForecastMapper(ScootPerRoadValueMapperBase):
