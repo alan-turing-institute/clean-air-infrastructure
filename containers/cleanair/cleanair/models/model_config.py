@@ -266,6 +266,12 @@ class ModelConfig(
 
             point_ids_sq = self.get_aqe_open_sites(output_type="subquery")
 
+        elif source == Source.satellite:
+
+            point_ids_sq = self.get_satellite_interest_points_in_boundary(
+                output_type="subquery"
+            )
+
         elif source in [Source.satellite, Source.hexgrid]:
 
             point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")

@@ -15,7 +15,7 @@ from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
 
 
-class TestModelConfig:
+class TestDataConfig:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
 
@@ -191,27 +191,46 @@ class TestModelConfig:
             )
         }
 
-        # quit()
-        # all_interest_points = model_config.get_interest_point_ids(interest_points)
+    def test_get_box_ids_within_london(self, model_config, satellite_box_records):
+        """Check we only get box ids which intersect with the London Boundary
+        
+        We know two are outside the London boundary in the test set"""
 
-        # for source in sources:
+        n_outside_london = 2
+        assert (
+            len(satellite_box_records) - n_outside_london
+            == model_config.get_satellite_box_in_boundary().count()
+        )
 
-        #     with model_config.dbcnxn.open_session() as session:
+    def test_get_satellite_point_ids(self, model_config):
 
-        #         meta_ids = (
-        #             session.query(MetaPoint.id).filter(MetaPoint.source == source).all()
-        #         )
+        satellite_interest_points = model_config.get_satellite_interest_points_in_boundary(
+            output_type="list"
+        )
 
-        #     meta_ids = [str(i.id) for i in meta_ids]
-        #     interest_ids = all_interest_points[source]
+        satellite_interest_points_available = model_config.get_available_interest_points(
+            Source.satellite, within_london_only=False, output_type="list"
+        )
 
-        #     print(len(set(meta_ids)), len(set(interest_ids)))
-        #     assert set(meta_ids) == set(interest_ids)
+        assert {str(i) for i in satellite_interest_points} == set(
+            satellite_interest_points_available
+        )
 
-    # def test_generate_full_config(self, valid_config, model_config):
+        # Check we filter correctly
+        satellite_interest_points_available_in_london = model_config.get_available_interest_points(
+            Source.satellite, within_london_only=True, output_type="list"
+        )
 
-    #     try:
-    #         full_config = model_config.generate_full_config(valid_config)
+        # ToDo: Come up with a better test than this!
+        assert len(satellite_interest_points_available_in_london) < len(
+            satellite_interest_points_available
+        )
 
-    #     except ValidationError:
-    #         pytest.raises("Full config failed")
+    def test_generate_full_config(self, valid_config, model_config):
+        """Test full config doesnt raise any validation errors"""
+        # ToDo: Write a full config file for the test set to verify
+        try:
+            full_config = model_config.generate_full_config(valid_config)
+
+        except ValidationError:
+            pytest.raises("Full config failed")
