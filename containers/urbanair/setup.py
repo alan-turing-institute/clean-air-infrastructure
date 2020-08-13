@@ -15,5 +15,8 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=["cleanair", "fastapi[all]", "aiofiles", "geojson"],
+    extras_requires={
+        "development": ["pytest", "pytest-asyncio"],
+    }
     python_requires=">=3.7",
 )
