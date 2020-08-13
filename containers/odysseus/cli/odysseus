@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
 import typer
+from cleanair.parsers.urbanair_parser import config, init, inputs
+from odysseus.parsers import baseline
 
-app = typer.Typer(callback=init_app)
+app = typer.Typer(callback=init.init_app)
+app.add_typer(baseline.app, name="baseline")
+app.add_typer(config.app, name="config")
+app.add_typer(init.app, name="init")
+app.add_typer(inputs.app, name="inputs")
 
 if __name__ == "__main__":
     app()
