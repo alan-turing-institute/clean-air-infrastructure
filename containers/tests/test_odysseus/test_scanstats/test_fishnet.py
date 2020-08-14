@@ -92,23 +92,27 @@ def test_fishnet_scoot_readings(scan_scoot: ScanScoot) -> None:
     assert sum([not cols.count(element) == 1 for element in cols]) == 0
 
 
-def test_update_fishnet_tables(fishnet: Fishnet) -> None:
+def test_update_fishnet_tables(westminster_fishnet: Fishnet) -> None:
     """Test that the fishnet is inserted into the database and can be queried."""
-    fishnet_df = fishnet.fishnet_query(
-        fishnet.borough, fishnet.grid_resolution, output_type="df"
+    fishnet_df = westminster_fishnet.fishnet_query(
+        westminster_fishnet.borough,
+        westminster_fishnet.grid_resolution,
+        output_type="df",
     )
     assert len(fishnet_df) == 0
-    fishnet.update_remote_tables()
-    fishnet_df = fishnet.fishnet_query(
-        fishnet.borough, fishnet.grid_resolution, output_type="df"
+    westminster_fishnet.update_remote_tables()
+    fishnet_df = westminster_fishnet.fishnet_query(
+        westminster_fishnet.borough,
+        westminster_fishnet.grid_resolution,
+        output_type="df",
     )
-    borough_geom = get_borough_geom(fishnet, fishnet.borough)
+    borough_geom = get_borough_geom(westminster_fishnet, westminster_fishnet.borough)
 
     # this is stupid - need to convert from wkb element to shapely then to hex string - must be a better way
     fishnet_df["geom"] = fishnet_df["geom"].apply(lambda x: to_shape(x).wkb_hex)
 
     # run fishnet tests
-    fishnet_checks(fishnet_df, borough_geom, fishnet.grid_resolution)
+    fishnet_checks(fishnet_df, borough_geom, westminster_fishnet.grid_resolution)
 
 
 def get_borough_geom(
