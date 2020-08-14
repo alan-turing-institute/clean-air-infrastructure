@@ -1,20 +1,27 @@
 """Types for the cleanair package."""
 
-from .copernicus_types import Species
+from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
 from .dataset_types import (
     DataConfig,
     DatasetDict,
     FeaturesDict,
-    NDArrayTuple,
     TargetDict,
+    NDArrayTuple,
+    BaseConfig,
+    FullConfig,
+    InterestPointDict,
 )
 from .model_types import ModelParams
-from .sources import Source
+
 
 __all__ = [
+    "BaseConfig",
+    "FullConfig",
     "DataConfig",
     "DatasetDict",
     "FeaturesDict",
+    "FeatureBufferSize",
+    "InterestPointDict",
     "ModelParams",
     "NDArrayTuple",
     "TargetDict",

@@ -43,6 +43,7 @@ def preprocessor(
     """
     columns = [
         "detector_id",
+        "point_id",
         "lon",
         "lat",
         "location",
@@ -341,6 +342,7 @@ def fill_missing_values(scoot_df: pd.DataFrame) -> pd.DataFrame:
             "lon",
             "lat",
             "location",
+            "point_id",
             "row",
             "col",
             "measurement_start_utc",
@@ -397,9 +399,7 @@ def drop_aperiodic_detectors(
     """
 
     proc_df = proc_df.join(
-        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(
-            lambda x: fap(x)
-        ),
+        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(fap),
         on=["detector_id"],
         rsuffix="X",
     )

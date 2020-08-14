@@ -1,11 +1,11 @@
 """Create grids over London."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from sqlalchemy import func, select, column
 from cleanair.decorators import db_query
 from cleanair.databases import Connector
-from cleanair.databases.tables import LondonBoundary
+from cleanair.databases.tables import FishnetTable, LondonBoundary
 
 if TYPE_CHECKING:
     from geoalchemy2.types import WKBElement
@@ -110,3 +110,22 @@ class GridMixin:
             return self.st_fishnet(
                 reading[0], grid_resolution, grid_step, rotation, srid
             )
+
+    @db_query
+    def fishnet_query(self, borough: str, grid_resolution: int) -> Any:
+        """Query the Fishnet table.
+
+        Args:
+            borough: Name of the borough to get the fishnet for.
+            grid_resolution: Number of rows and columns in the grid.
+
+        Returns:
+            A database query.
+        """
+        with self.dbcnxn.open_session() as session:
+            fishnet_with_points = (
+                session.query(FishnetTable)
+                .filter(FishnetTable.borough == borough)
+                .filter(FishnetTable.grid_resolution == grid_resolution)
+            )
+            return fishnet_with_points

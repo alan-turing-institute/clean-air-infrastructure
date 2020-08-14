@@ -27,12 +27,13 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "actual",
             "row",
             "col",
+            # "point_id",
             "baseline",
             "baseline_upper",
             "baseline_lower",
             "standard_deviation",
         ]
-    ) == set(forecast_df.columns)
+    ).issubset(set(forecast_df.columns))
 
     # These columns make no sense when aggregating to grid level, so drop
     agg_df = forecast_df.drop(

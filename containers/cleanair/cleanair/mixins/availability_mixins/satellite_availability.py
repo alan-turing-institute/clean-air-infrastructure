@@ -37,7 +37,9 @@ class SatelliteAvailabilityMixin:
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(MetaPoint).filter(MetaPoint.source == "satellite")
+            return session.query(
+                MetaPoint.id, MetaPoint.source, MetaPoint.location
+            ).filter(MetaPoint.source == "satellite")
 
     @db_query
     def get_satellite_box(self, with_centroids=True):

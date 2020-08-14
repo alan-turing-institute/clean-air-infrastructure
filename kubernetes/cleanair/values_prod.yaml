@@ -63,8 +63,29 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/input_aqe
+        repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "aqe", "fill", "--ndays", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+  
+  - name: input-laqn
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "laqn", "fill", "--ndays", "2"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -76,14 +97,35 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: input-laqn
+  - name: input-satellite
+    schedule: "30 10 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "satellite", "fill", "--ndays", "30", "--insert-method", "missing"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: input-scoot
     schedule: "5 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/input_laqn
+        repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "1"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -216,45 +258,6 @@ cronjobs:
     - name: credentials
       secret:
         secretName: credentials.yaml
-    imagePullSecrets:
-        - name: regcred
-
-  - name: input-satellite
-    schedule: "30 10 * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-      repository: cleanairdocker.azurecr.io/input_satellite
-      imagePullPolicy: IfNotPresent
-    args: ["fill", "--ndays", "30", "-k", ""]
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
-
-  - name: input-scoot
-    schedule: "5 * * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-      repository: cleanairdocker.azurecr.io/input_scoot
-      imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
     imagePullSecrets:
         - name: regcred
 

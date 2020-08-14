@@ -22,96 +22,12 @@ def check(
     all_species = [spc.value for spc in species]
 
     # Set logging verbosity
+    # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
 
     laqn_writer = LAQNWriter(
         end=upto, nhours=nhours + ndays, secretfile=state["secretfile"]
     )
-
-    # print(laqn_writer.get_open_sites(output_type="sql",))
-
-    # print(laqn_writer.get_open_sites(output_type="tabulate",))
-
-    # print(
-    #     laqn_writer.get_raw_data(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="sql",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_raw_data(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="tabulate",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.gen_date_range(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="sql",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.gen_date_range(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="tabulate",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_laqn_availability(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="sql",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_laqn_availability(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="tabulate",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_laqn_availability_daily(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="sql",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_laqn_availability_daily(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="tabulate",
-    #     )
-    # )
-
-    # print(
-    #     laqn_writer.get_laqn_availability_daily_total(
-    #         start_date=laqn_writer.start_datetime.isoformat(),
-    #         end_date=laqn_writer.end_datetime.isoformat(),
-    #         species=all_species,
-    #         output_type="sql",
-    #     )
-    # )
 
     print(
         laqn_writer.get_laqn_availability_daily_total(

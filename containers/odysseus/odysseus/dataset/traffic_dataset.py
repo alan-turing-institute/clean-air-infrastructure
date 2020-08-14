@@ -12,6 +12,8 @@ from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
 
 
+# TODO Patrick: I don't think this class should inherit from TF dataset
+# Instead it should read data from DB and output a TF dataset/pd.DataFrame/np.array
 class TrafficDataset(DBReader, ScootQueryMixin, tf.data.Dataset):
     """
     A traffic dataset that queries the database given a data config dictionary.

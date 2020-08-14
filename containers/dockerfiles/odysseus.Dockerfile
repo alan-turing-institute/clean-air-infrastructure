@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.7
+FROM tensorflow/tensorflow:latest-gpu
 
 # Set the working directory to /app
 WORKDIR /app
@@ -12,8 +12,5 @@ COPY odysseus /app/odysseus/
 RUN pip install /app/cleanair
 RUN pip install /app/odysseus
 
-# Copy the run script into the container
-COPY entrypoints/odysseus/lockdown_baseline_comparison.py /app
-
 # Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "lockdown_baseline_comparison.py"]
+ENTRYPOINT ["odysseus", "scan", "scoot"]
