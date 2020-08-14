@@ -7,6 +7,7 @@ import pandas as pd
 from odysseus.scoot import ScanScoot
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
+# pylint: disable=redefined-outer-name
 
 if TYPE_CHECKING:
     from cleanair.databases import Connector

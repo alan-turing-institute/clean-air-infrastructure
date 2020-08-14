@@ -6,7 +6,7 @@ setuptools.setup(
     version="0.0.1",
     author="Oscar Giles, James Robinson, Patrick O'Hara, Ollie Hamelijnck",
     author_email="ogiles@turing.ac.uk, jrobinson@turing.ac.uk, pohara@turing.ac.uk, ohamelijnck@turing.ac.uk",
-    description="CleanAir Traffic module for CleanAir traffic modules",
+    description="The Odysseus project for London's busyness.",
     url="https://github.com/alan-turing-institute/clean-air-infrastructure",
     packages=setuptools.find_packages(),
     classifiers=[
@@ -15,11 +15,12 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "cleanair",
+        "cleanair>=0.0.1",
         "astropy>=4.0.1",
         "gpflow>=2.0.5",
-        "tensorflow>=2.2.0",
-        "tensorflow_probability>=0.9",
+        "tensorflow>=2.3.0",
+        "tensorflow_probability>=0.11.0",
     ],
     python_requires=">=3.7",
+    scripts=["cli/odysseus"],
 )

@@ -5,6 +5,7 @@ import pytest
 from shapely.geometry import Polygon
 from cleanair.databases import DBReader
 from odysseus.databases.mixins import GridMixin
+from odysseus.scoot import Fishnet
 
 
 @pytest.fixture(scope="function")
@@ -18,6 +19,12 @@ def square() -> Polygon:
 
 class Grid(GridMixin, DBReader):
     """A class for testing out grid queries."""
+
+
+@pytest.fixture(scope="function")
+def fishnet(secretfile: str, connection: Any, borough: str) -> Fishnet:
+    """Create a fishnet class to create grids."""
+    return Fishnet(borough, 6, secretfile=secretfile, connection=connection)
 
 
 @pytest.fixture(scope="function")

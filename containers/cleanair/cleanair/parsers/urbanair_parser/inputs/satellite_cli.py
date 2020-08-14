@@ -27,6 +27,7 @@ def check(
     typer.echo("Check satellite data")
 
     # Set logging verbosity
+    # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
 
     satellite_writer = SatelliteWriter(
@@ -73,6 +74,7 @@ def fill(
     typer.echo(f"Fill satellite data using '{insert_method.value}' insert method")
 
     # Set logging verbosity
+    # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
 
     satellite_writer = SatelliteWriter(

@@ -1,27 +1,19 @@
 """Shared CLI arguments"""
+from typing import Dict
 import os
 import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
-from cleanair.features import FEATURE_CONFIG, ALL_FEATURES
-from cleanair.types import Species as ValidSpecies
+from ....features import FEATURE_CONFIG
+from ....timestamps import day_to_iso
+from ....types import Source as ValidSources
 
 UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
 # pylint: disable=C0103
-ValidFeatureSources = Enum(
-    "ValidFeatureSources", dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
-)
-ValidFeatureNames = Enum("ValidFeatureNames", dict(zip(ALL_FEATURES, ALL_FEATURES)))
-
-
-class ValidSources(str, Enum):
-    "Valid sources"
-    laqn = "laqn"
-    aqe = "aqe"
-    satellite = "satellite"
-    hexgrid = "hexgrid"
+zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
+ValidFeatureSources = Enum("ValidFeatureSources", zip_features)
 
 
 DEFAULT_SOURCES = [ValidSources.laqn, ValidSources.aqe]
@@ -49,7 +41,11 @@ def is_iso_string(isostring: str) -> bool:
 
 def UpTo_callback(value: str) -> str:
     "process UpTo arg"
-    if (value in UP_TO_VALUES) or is_iso_string(value):
+
+    if value in UP_TO_VALUES:
+        return day_to_iso(value)
+
+    if is_iso_string(value):
         return value
 
     raise typer.BadParameter(
@@ -124,10 +120,7 @@ UpTo = typer.Option(
 NHours = typer.Option(0, help="Number of hours of data to process", show_default=True)
 
 NDays = typer.Option(
-    1,
-    help="Number of days of data to process",
-    callback=NDays_callback,
-    show_default=True,
+    ..., help="Number of days of data to process", callback=NDays_callback,
 )
 
 CopernicusKey = typer.Option(

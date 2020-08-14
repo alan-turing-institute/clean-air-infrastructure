@@ -6,12 +6,13 @@ from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import Point, MultiPoint, Polygon, MultiPolygon
 from shapely import wkb
 from haversine import haversine
+from cleanair.databases import DBReader
 from cleanair.databases.tables import LondonBoundary
-
 
 if TYPE_CHECKING:
     import pandas as pd
-    from odysseus.scoot import ScanScoot
+    from odysseus.scoot import Fishnet, ScanScoot
+    from odysseus.databases.mixins import GridMixin
 
 
 def fishnet_checks(
@@ -44,7 +45,7 @@ def fishnet_checks(
     assert multi_points.convex_hull.buffer(1e-10).contains(geom)
 
 
-def test_fishnet_over_square(grid, square: Polygon) -> None:
+def test_fishnet_over_square(grid: GridMixin, square: Polygon) -> None:
     """Test the fishnet is cast correctly over a square."""
     grid_res = 4
     srid = 4326
@@ -69,33 +70,57 @@ def test_fishnet_over_square(grid, square: Polygon) -> None:
     fishnet_checks(fishnet_df, square, grid_res)
 
 
-def test_fishnet_over_borough(grid) -> None:
+def test_fishnet_over_borough(grid: GridMixin) -> None:
     """Test the fishnet is cast over the borough."""
     borough = "Westminster"
     grid_res = 8
-
-    # get the borough geometry
-    with grid.dbcnxn.open_session() as session:
-        result = (
-            session.query(LondonBoundary).filter(LondonBoundary.name == borough).one()
-        )
-        geom = to_shape(result.geom)
-        assert isinstance(geom, MultiPolygon)
+    borough_geom = get_borough_geom(grid, borough)
 
     print(grid.fishnet_over_borough(borough, grid_res, output_type="sql"))
     fishnet_df = grid.fishnet_over_borough(borough, grid_res, output_type="df")
-    fishnet_checks(fishnet_df, geom, grid_res)
+    fishnet_checks(fishnet_df, borough_geom, grid_res)
 
 
 def test_fishnet_scoot_readings(scan_scoot: ScanScoot) -> None:
     """Test that scoot readings from a fishnet a returned correctly."""
     readings_df: pd.DataFrame = scan_scoot.scoot_fishnet_readings(
-        borough=scan_scoot.borough,
-        start=scan_scoot.train_start,
-        upto=scan_scoot.forecast_upto,
-        output_type="df",
+        start=scan_scoot.train_start, upto=scan_scoot.forecast_upto, output_type="df",
     )
     cols = list(readings_df.columns)
     # checks every column in only listed once
     print(cols)
     assert sum([not cols.count(element) == 1 for element in cols]) == 0
+
+
+def test_update_fishnet_tables(fishnet: Fishnet) -> None:
+    """Test that the fishnet is inserted into the database and can be queried."""
+    fishnet_df = fishnet.fishnet_query(
+        fishnet.borough, fishnet.grid_resolution, output_type="df"
+    )
+    assert len(fishnet_df) == 0
+    fishnet.update_remote_tables()
+    fishnet_df = fishnet.fishnet_query(
+        fishnet.borough, fishnet.grid_resolution, output_type="df"
+    )
+    borough_geom = get_borough_geom(fishnet, fishnet.borough)
+
+    # this is stupid - need to convert from wkb element to shapely then to hex string - must be a better way
+    fishnet_df["geom"] = fishnet_df["geom"].apply(lambda x: to_shape(x).wkb_hex)
+
+    # run fishnet tests
+    fishnet_checks(fishnet_df, borough_geom, fishnet.grid_resolution)
+
+
+def get_borough_geom(
+    dbreader: DBReader, borough_name: str
+) -> Union[Polygon, MultiPolygon]:
+    """Get the borough geometry."""
+    with dbreader.dbcnxn.open_session() as session:
+        result = (
+            session.query(LondonBoundary)
+            .filter(LondonBoundary.name == borough_name)
+            .one()
+        )
+        geom = to_shape(result.geom)
+        assert isinstance(geom, MultiPolygon)
+        return geom

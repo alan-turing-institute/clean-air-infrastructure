@@ -102,7 +102,7 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 bad-functions=map,filter,input
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_,x,X,y,Y,Y_pred,X_pred,id, X_sat, X_sat_mask, Y_sat, app, router, db, templates
+good-names=i,j,k,ex,Run,_,x,X,y,Y,Y_pred,X_pred,id, X_sat, X_sat_mask, Y_sat, app, router, db, templates, X_dict, Y_dict, X_pickle_f, Y_pickle_f, X_train, Y_train
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=foo,bar,baz,toto,tutu,tata
@@ -326,7 +326,7 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=6
+max-args=12
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
