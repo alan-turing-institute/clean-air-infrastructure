@@ -11,6 +11,7 @@ from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
 from ..state.configuration import (
     FORECAST_RESULT_PICKLE,
+    RESULT_CACHE,
     MODEL_PARAMS,
     TRAINING_RESULT_PICKLE,
 )
@@ -44,19 +45,6 @@ def results(
     test_data = load_test_data(input_dir)
     full_config = load_model_config(input_dir, full=True)
 
-    # TODO this function needs to use the index_dict above
-
-    all_results = pd.DataFrame()
-    for source in test_data.keys():
-        result_df = ModelData.join_forecast_on_dataframe(
-            test_data[source], y_pred[source], index_dict[source]
-        )
-        all_results = pd.concat([all_results, result_df], axis=0)
-
-        # print(result_df["NO2_mean"].dtype)
-
-        result_df.to_csv(input_dir / "dataframes" / f"{source}_forecast.csv")
-
     # create an instance with correct ids
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
@@ -68,14 +56,25 @@ def results(
         fit_start_time=datetime.utcnow().isoformat(),
         secretfile=secretfile,
     )
-    # create a results object and write results + params
-    result = AirQualityResult(
-        instance.instance_id, instance.data_id, result_df, secretfile
-    )
     instance.update_model_tables(model_params.json())
     instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
-    result.update_remote_tables()  # write results to DB
+
+    all_results = pd.DataFrame()
+    for source in test_data.keys():
+        result_df = ModelData.join_forecast_on_dataframe(
+            test_data[source], y_pred[source], index_dict[source]
+        )
+        all_results = pd.concat([all_results, result_df], axis=0)
+        logger.info("Writing the forecasts to CSV for source %s", source.value)
+        save_forecast_to_csv(result_df, source, input_dir=input_dir)
+
+        # create a results object and write results + params
+        result = AirQualityResult(
+            instance.instance_id, instance.data_id, result_df, secretfile
+        )
+
+        result.update_remote_tables()  # write results to DB
 
 
 def __load_result_pickle(
@@ -98,6 +97,24 @@ def load_training_pred_from_pickle(input_dir: Optional[Path] = None) -> TargetDi
 def load_forecast_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
     """Load the predictions on the forecast set from a pickle."""
     return __load_result_pickle(FORECAST_RESULT_PICKLE, input_dir)
+
+def save_forecast_to_csv(
+    forecast_df: pd.DataFrame, source: Source, input_dir: Optional[Path] = None
+) -> None:
+    """Save the forecast dataframe to a csv.
+
+    Args:
+        forecast_df: DataFrame of forecasts for a given source.
+        source: Source predicted at, e.g. laqn, hexgrid.
+
+    Keyword args:
+        input_dir: A optional directory to use as the root.
+    """
+    if not input_dir:
+        result_fp = RESULT_CACHE
+    else:
+        result_fp = input_dir.joinpath(*RESULT_CACHE.parts[-1:])
+    forecast_df.to_csv(result_fp / f"{source.value}_forecast.csv")
 
 
 def load_model_params(
