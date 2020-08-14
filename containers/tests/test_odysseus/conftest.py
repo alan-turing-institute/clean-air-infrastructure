@@ -19,10 +19,12 @@ def forecast_hours() -> int:
     forecast_days = 1
     return forecast_days * 24
 
+
 @pytest.fixture(scope="function")
 def forecast_upto() -> str:
     """Upto date of scoot readings."""
     return "2020-01-23"
+
 
 @pytest.fixture(scope="function")
 def train_hours() -> int:
@@ -30,10 +32,12 @@ def train_hours() -> int:
     train_days = 21
     return train_days * 24
 
+
 @pytest.fixture(scope="function")
 def train_start() -> str:
     """Start date of scoot readings."""
     return "2020-01-01"
+
 
 @pytest.fixture(scope="function")
 def train_upto() -> str:
@@ -58,15 +62,18 @@ def scoot_df() -> pd.DataFrame:
     """Fake dataframe of realistic scoot data."""
     return generate_scoot_df(end_date="2020-01-03", num_detectors=2)
 
+
 @pytest.fixture(scope="function")
 def borough() -> str:
     """Westminster"""
     return "Westminster"
 
+
 @pytest.fixture(scope="function")
 def grid_resolution() -> int:
     """Grid resolution for the fishnet."""
     return 8
+
 
 @pytest.fixture(scope="function")
 def scoot_writer(
@@ -89,17 +96,19 @@ def scoot_writer(
         connection=connection,
     )
 
+
 @pytest.fixture(scope="function")
 def westminster_fishnet(
-    borough: str,
-    grid_resolution: int,
-    secretfile: str,
-    connection: Connector,
+    borough: str, grid_resolution: int, secretfile: str, connection: Connector,
 ) -> Fishnet:
     """A fishnet cast over Westminster."""
     return Fishnet(
-        borough=borough, grid_resolution=grid_resolution, secretfile=secretfile, connection=connection
+        borough=borough,
+        grid_resolution=grid_resolution,
+        secretfile=secretfile,
+        connection=connection,
     )
+
 
 @pytest.fixture(scope="function")
 def scan_scoot(
