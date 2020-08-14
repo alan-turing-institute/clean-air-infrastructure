@@ -72,7 +72,7 @@ def borough() -> str:
 @pytest.fixture(scope="function")
 def grid_resolution() -> int:
     """Grid resolution for the fishnet."""
-    return 8
+    return 7
 
 
 @pytest.fixture(scope="function")
