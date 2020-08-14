@@ -94,7 +94,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     )
     assert "point_id_x" not in grid_level_scores
 
-
     average_score_checks(
         grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution
     )

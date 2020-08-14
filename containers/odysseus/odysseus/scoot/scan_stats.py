@@ -39,7 +39,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.borough: str = borough
         self.forecast_hours: int = forecast_hours
         self.forecast_days: int = int(forecast_hours / 24)
-        self.forecast_start: str = as_datetime(forecast_upto) - timedelta(hours=forecast_hours)
+        self.forecast_start: str = as_datetime(forecast_upto) - timedelta(
+            hours=forecast_hours
+        )
         self.forecast_upto: str = as_datetime(forecast_upto)
         self.grid_resolution: int = grid_resolution
         self.logger = get_logger("scan_scoot")
@@ -59,7 +61,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             start=self.forecast_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
-        error_message = "No scoot readings were returned from the DB for {period} period. "
+        error_message = (
+            "No scoot readings were returned from the DB for {period} period. "
+        )
         error_message += (
             "This could be because there is no scoot data in the time range "
         )
@@ -73,7 +77,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
         # 2) Pre-process
-        raise NotImplementedError("Need to use both the training and forecast dataframes in scan stats functions")
+        raise NotImplementedError(
+            "Need to use both the training and forecast dataframes in scan stats functions"
+        )
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
         forecast_df = forecast(
@@ -141,7 +147,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
         # need to attach the point_id
-        raise NotImplementedError("Which dataframe should we be merging on? Is merging even necessary?")
+        raise NotImplementedError(
+            "Which dataframe should we be merging on? Is merging even necessary?"
+        )
         scores_df = self.scores_df.merge(
             self.readings[["point_id", "row", "col"]], on=["row", "col", "point_id"],
         )

@@ -7,9 +7,7 @@ from dateutil import parser
 import pytz
 
 
-def as_datetime(
-    maybe_dt: Union[datetime, date, str]
-) -> datetime:
+def as_datetime(maybe_dt: Union[datetime, date, str]) -> datetime:
     """Convert an input that might be a datetime into a datetime"""
     if isinstance(maybe_dt, datetime):
         return maybe_dt
@@ -29,9 +27,7 @@ def safe_strptime(naive_string, format_str):
     except ValueError:
         if naive_string[11:19] == "24:00:00":
             naive_string = naive_string[:11] + "23:59:59"
-            return datetime.strptime(naive_string, format_str) + timedelta(
-                seconds=1
-            )
+            return datetime.strptime(naive_string, format_str) + timedelta(seconds=1)
     raise ValueError(
         "Time data '{}' does not match format '{}'".format(naive_string, format_str)
     )

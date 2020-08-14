@@ -85,14 +85,13 @@ def test_fishnet_over_borough(grid: GridMixin) -> None:
 def test_fishnet_scoot_readings(scan_scoot: ScanScoot) -> None:
     """Test that scoot readings from a fishnet a returned correctly."""
     readings_df: pd.DataFrame = scan_scoot.scoot_fishnet_readings(
-        start=scan_scoot.train_start,
-        upto=scan_scoot.forecast_upto,
-        output_type="df",
+        start=scan_scoot.train_start, upto=scan_scoot.forecast_upto, output_type="df",
     )
     cols = list(readings_df.columns)
     # checks every column in only listed once
     print(cols)
     assert sum([not cols.count(element) == 1 for element in cols]) == 0
+
 
 def test_update_fishnet_tables(fishnet: Fishnet) -> None:
     """Test that the fishnet is inserted into the database and can be queried."""
@@ -112,11 +111,16 @@ def test_update_fishnet_tables(fishnet: Fishnet) -> None:
     # run fishnet tests
     fishnet_checks(fishnet_df, borough_geom, fishnet.grid_resolution)
 
-def get_borough_geom(dbreader: DBReader, borough_name: str) -> Union[Polygon, MultiPolygon]:
+
+def get_borough_geom(
+    dbreader: DBReader, borough_name: str
+) -> Union[Polygon, MultiPolygon]:
     """Get the borough geometry."""
     with dbreader.dbcnxn.open_session() as session:
         result = (
-            session.query(LondonBoundary).filter(LondonBoundary.name == borough_name).one()
+            session.query(LondonBoundary)
+            .filter(LondonBoundary.name == borough_name)
+            .one()
         )
         geom = to_shape(result.geom)
         assert isinstance(geom, MultiPolygon)
