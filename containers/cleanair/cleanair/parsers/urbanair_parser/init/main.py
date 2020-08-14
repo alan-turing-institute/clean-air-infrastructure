@@ -1,3 +1,5 @@
+"""CLI for initialising local and production database."""
+
 import subprocess
 import os
 import json
@@ -41,7 +43,7 @@ def production() -> None:
 
         username = json.loads(user_cmd.stdout.decode())["userPrincipalName"]
 
-    except Exception as e:
+    except Exception:
         typer.echo("Could not get active user. Have you run 'az login'")
         raise typer.Abort()
 
