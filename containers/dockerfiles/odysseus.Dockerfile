@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM tensorflow/tensorflow:latest-gpu
+FROM cleanairdocker.azurecr.io/tf23_py37:latest
 
 # Set the working directory to /app
 WORKDIR /app
