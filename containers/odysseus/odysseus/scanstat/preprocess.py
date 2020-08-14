@@ -399,9 +399,7 @@ def drop_aperiodic_detectors(
     """
 
     proc_df = proc_df.join(
-        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(
-            lambda x: fap(x)
-        ),
+        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(fap),
         on=["detector_id"],
         rsuffix="X",
     )
