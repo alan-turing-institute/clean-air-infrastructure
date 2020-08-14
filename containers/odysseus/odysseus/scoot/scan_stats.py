@@ -1,7 +1,7 @@
 """Class for scan stats interacting with DB."""
 
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Optional
 import pandas as pd
 from sqlalchemy import func, inspect
 from cleanair.databases import DBWriter
@@ -59,15 +59,15 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             start=self.forecast_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
-        error_message = "No scoot readings were returned from the DB for %s period. "
+        error_message = "No scoot readings were returned from the DB for {period} period. "
         error_message += (
             "This could be because there is no scoot data in the time range "
         )
         error_message += "or because the fishnet does not exist in the database."
         if len(self.training_readings) == 0:
-            raise ValueError(error_message.format("training"))
+            raise ValueError(error_message.format(period="training"))
         if len(self.forecast_readings) == 0:
-            raise ValueError(error_message.format("forecasting"))
+            raise ValueError(error_message.format(period="forecasting"))
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
