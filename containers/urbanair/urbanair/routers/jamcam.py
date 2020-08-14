@@ -11,7 +11,7 @@ from ..databases.schemas.jamcam import (
     JamCamFeatureCollection,
     JamCamAvailable,
 )
-from ..databases.queries import (
+from ..databases.queries.jamcam import (
     get_jamcam_available,
     get_jamcam_raw,
     get_jamcam_info,
