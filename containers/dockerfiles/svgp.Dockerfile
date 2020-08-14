@@ -1,9 +1,5 @@
 # Use an official tensorflow gpu runtime as a parent image
-FROM python:3.7
-
-# Install any needed packages - move to top for better caching
-RUN pip install tensorflow==1.15.0
-RUN pip install gpflow==1.5.1
+FROM cleanairdocker.azurecr.io/tf1_py37:latest
 
 # Get the arg value of the git hash
 ARG git_hash
