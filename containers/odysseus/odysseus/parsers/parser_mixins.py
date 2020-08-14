@@ -201,11 +201,11 @@ class ScootModellingSubParserMixin:
             return args.detectors
         # get list of scoot detectors
         if args.command == "batch":
-            detector_df = traffic_query.get_scoot_detectors(
-                start=args.batch_start,
-                end=args.batch_start + args.batch_size,
+            detector_df = traffic_query.scoot_detectors(
+                offset=args.batch_start,
+                limit=args.batch_size,
                 output_type="df",
             )
         else:
-            detector_df = traffic_query.get_scoot_detectors(output_type="df")
+            detector_df = traffic_query.scoot_detectors(output_type="df")
         return list(detector_df["detector_id"].unique())

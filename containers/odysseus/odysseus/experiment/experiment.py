@@ -21,7 +21,7 @@ class ExperimentMixin:
         **kwargs
     ):
         super().__init__(secretfile=secretfile, **kwargs)
-        if frame:
+        if not isinstance(frame, pd.DataFrame):
             self._frame = pd.DataFrame(
                 columns=[
                     "instance_id",

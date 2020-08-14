@@ -30,15 +30,18 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         return TrafficModelTable
 
     def load_datasets(
-        self, detectors: List, start_date: str, end_date: Optional[str] = None,
+        self, detectors: List, start_date: str, upto: Optional[str] = None,
     ) -> List[tf.data.Dataset]:
         """Load the data and train the models."""
         self.logger.info(
             "Querying the scoot database for readings on %s detectors.", len(detectors)
         )
-        scoot_df = self.get_scoot_with_location(
-            start_date, end_time=end_date, detectors=detectors, output_type="df"
+        scoot_df = self.scoot_readings(
+            detectors=detectors, start=start_date, upto=upto, output_type="df", with_location=True, 
         )
+        if scoot_df.empty:
+            raise ValueError('No readings in SCOOT dataframe')
+
         # list of scoot datasets
         datasets = [
             TrafficDataset.from_dataframe(
