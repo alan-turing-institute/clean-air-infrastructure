@@ -6,12 +6,11 @@ from geoalchemy2.shape import from_shape, to_shape
 from shapely.geometry import Point, MultiPoint, Polygon, MultiPolygon
 from shapely import wkb
 from haversine import haversine
+from cleanair.databases import DBReader
 from cleanair.databases.tables import LondonBoundary
-
 
 if TYPE_CHECKING:
     import pandas as pd
-    from cleanair.databases import DBReader
     from odysseus.scoot import Fishnet, ScanScoot
     from odysseus.databases.mixins import GridMixin
 
