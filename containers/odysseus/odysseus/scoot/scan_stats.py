@@ -27,8 +27,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self,
         borough: str,
         forecast_hours: int,
+        forecast_upto: str,
         train_hours: int,
-        upto: str,
+        train_upto: str,
         grid_resolution: int = 8,
         model_name: str = "HW",
         **kwargs,
@@ -38,35 +39,41 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.borough: str = borough
         self.forecast_hours: int = forecast_hours
         self.forecast_days: int = int(forecast_hours / 24)
-        self.forecast_start: str = as_datetime(upto) - timedelta(hours=forecast_hours)
-        self.forecast_upto: str = as_datetime(upto)
+        self.forecast_start: str = as_datetime(forecast_upto) - timedelta(hours=forecast_hours)
+        self.forecast_upto: str = as_datetime(forecast_upto)
         self.grid_resolution: int = grid_resolution
         self.logger = get_logger("scan_scoot")
         self.model_name: str = model_name
         self.train_hours: int = train_hours
         self.train_days: int = int(train_hours / 24)
-        self.train_start: str = as_datetime(upto) - timedelta(
-            hours=train_hours + forecast_hours
-        )
-        self.train_upto: str = self.forecast_start
+        self.train_start: str = as_datetime(train_upto) - timedelta(hours=train_hours)
+        self.train_upto: str = as_datetime(train_upto)
         # load the scoot readings with the fishnet joined on
         self.logger.info("Getting scoot readings and fishnet from the database.")
-        self.readings: pd.DataFrame = self.scoot_fishnet_readings(
-            start=self.train_start, upto=self.forecast_upto, output_type="df",
+
+        # separated train and forecast timeperiods so we must also separate their dataframes.
+        self.training_readings: pd.DataFrame = self.scoot_fishnet_readings(
+            start=self.train_start, upto=self.train_upto, output_type="df",
+        )
+        self.forecast_readings: pd.DataFrame = self.scoot_fishnet_readings(
+            start=self.forecast_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
-        if len(self.readings) == 0:
-            error_message = "No scoot readings were returned from the DB. "
-            error_message += (
-                "This could be because there is no scoot data in the time range "
-            )
-            error_message += "or because the fishnet does not exist in the database."
-            raise ValueError(error_message)
+        error_message = "No scoot readings were returned from the DB for %s period. "
+        error_message += (
+            "This could be because there is no scoot data in the time range "
+        )
+        error_message += "or because the fishnet does not exist in the database."
+        if len(self.training_readings) == 0:
+            raise ValueError(error_message.format("training"))
+        if len(self.forecast_readings) == 0:
+            raise ValueError(error_message.format("forecasting"))
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
         # 2) Pre-process
+        raise NotImplementedError("Need to use both the training and forecast dataframes in scan stats functions")
         processed_df = preprocessor(self.readings)
         # 3) Build Forecast
         forecast_df = forecast(
@@ -134,6 +141,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
         # need to attach the point_id
+        raise NotImplementedError("Which dataframe should we be merging on? Is merging even necessary?")
         scores_df = self.scores_df.merge(
             self.readings[["point_id", "row", "col"]], on=["row", "col", "point_id"],
         )

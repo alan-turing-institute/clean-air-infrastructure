@@ -8,7 +8,6 @@ from cleanair.parsers.urbanair_parser.shared_args import (
     UpTo,
 )
 from cleanair.parsers.urbanair_parser.state import state
-from cleanair.timestamps import as_datetime
 from .shared_args import Borough, GridResolution, ModelName
 from ..scoot import Fishnet, ScanScoot
 
@@ -21,10 +20,11 @@ def scoot(
     grid_resolution: int = GridResolution,
     forecast_days: int = NDays,
     forecast_hours: int = NHours,
+    forecast_upto: str = UpTo,
     model_name: str = ModelName,
     train_days: int = NDays,
     train_hours: int = NHours,
-    upto: str = UpTo,
+    train_upto: str = UpTo,
 ) -> None:
     """Run scan stats on scoot."""
     logger = get_logger("scan_scoot")
@@ -35,10 +35,11 @@ def scoot(
 
     # run the scan stats
     scan_scoot = ScanScoot(
-        borough,
-        forecast_hours,
-        train_hours,
-        upto,
+        borough=borough,
+        forecast_hours=forecast_hours,
+        forecast_upto=forecast_upto,
+        train_hours=train_hours,
+        train_upto=train_upto,
         grid_resolution=grid_resolution,
         model_name=model_name,
         secretfile=secretfile,
