@@ -60,6 +60,7 @@ A list of key developers on the project. A good place to start if you wish to co
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
 - [Training models](#training-models)
+- [Odysseus](#odysseus)
 - [GPU support with Docker](#gpu-support-with-docker)
 - [Singularity for HPC](#singularity-for-hpc)
 
@@ -672,19 +673,46 @@ python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRE
 You can adjust the model parameters and data settings by changing the command line arguments.
 Use the `--help` flag to see available options.
 
-### Odysseus with the CLI
+## Odysseus
 
 To setup the production database:
 
 ```bash
 az login
-urbanair init-production
+odysseus init production
 ```
 
-To run the scan statistics for scoot:
+Alternatively you can use your local database (but you should ensure you have the corrent data in your local DB).
+
 ```bash
-urbanair odysseus scan scoot
+odysseus init local
 ```
+
+### Scan statistics
+
+A fishnet cast over a given borough with a specified grid resolution is used to identify a given grid.
+To create a fishnet over a borough with a given resolution:
+
+```bash
+odysseus scan setup --borough NAME --grid-resolution RESOLUTION
+```
+
+where NAME is the borough name and grid resolution is a (small) integer.
+To run the scan statistics for scoot on the above fishnet with a specified train and forecast period:
+
+```bash
+odysseus scan scoot \
+    --borough NAME \
+    --grid-resolution RESOLUTION \
+    --forecast-upto 2020-05-20 \
+    --train-upto 2020-05-11 \
+    --train-days 21 \
+    --forecast-days 2 
+```
+
+The above command will have a gap of 7 days between the end of the train period and the beginning of the forecast period.
+If you want to always forecast for the last few days you can specify `--forecast-upto yesterday`.
+
 Add the `--help` option for different ways of querying scoot data and changing model parameters.
 
 ## GPU support with Docker
