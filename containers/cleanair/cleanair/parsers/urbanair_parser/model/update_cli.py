@@ -56,6 +56,7 @@ def results(
         fit_start_time=datetime.utcnow().isoformat(),
         secretfile=secretfile,
     )
+    logger.info("Create an instance with id %s", instance.instance_id)
     instance.update_model_tables(model_params.json())
     instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
@@ -70,10 +71,10 @@ def results(
         save_forecast_to_csv(result_df, source, input_dir=input_dir)
 
         # create a results object and write results + params
+        logger.info("Writing forecasts to result table for source %s", source.value)
         result = AirQualityResult(
             instance.instance_id, instance.data_id, result_df, secretfile
         )
-
         result.update_remote_tables()  # write results to DB
 
 
