@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import pytest
 import pandas as pd
-from odysseus.scoot import ScanScoot
+from odysseus.scoot import Fishnet, ScanScoot
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
 # pylint: disable=redefined-outer-name
@@ -14,15 +14,31 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(scope="function")
-def scoot_start() -> str:
+def forecast_hours() -> int:
+    """Number of hours to forecast for."""
+    forecast_days = 1
+    return forecast_days * 24
+
+@pytest.fixture(scope="function")
+def forecast_upto() -> str:
+    """Upto date of scoot readings."""
+    return "2020-01-23"
+
+@pytest.fixture(scope="function")
+def train_hours() -> int:
+    """Number of hours to train for."""
+    train_days = 21
+    return train_days * 24
+
+@pytest.fixture(scope="function")
+def train_start() -> str:
     """Start date of scoot readings."""
     return "2020-01-01"
 
-
 @pytest.fixture(scope="function")
-def scoot_upto() -> str:
-    """Upto date of scoot readings."""
-    return "2020-01-08"
+def train_upto() -> str:
+    """Train upto this datetime."""
+    return "2020-01-22"
 
 
 @pytest.fixture(scope="function")
@@ -42,27 +58,30 @@ def scoot_df() -> pd.DataFrame:
     """Fake dataframe of realistic scoot data."""
     return generate_scoot_df(end_date="2020-01-03", num_detectors=2)
 
-
 @pytest.fixture(scope="function")
 def borough() -> str:
     """Westminster"""
     return "Westminster"
 
+@pytest.fixture(scope="function")
+def grid_resolution() -> int:
+    """Grid resolution for the fishnet."""
+    return 8
 
 @pytest.fixture(scope="function")
 def scoot_writer(
     secretfile: str,
     connection: Connector,
-    scoot_start: str,
-    scoot_upto: str,
+    train_start: str,
+    forecast_upto: str,
     scoot_offset: int,
     scoot_limit: int,
     borough: str,
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
-        scoot_start,
-        scoot_upto,
+        train_start,
+        forecast_upto,
         scoot_offset,
         scoot_limit,
         borough,
@@ -70,32 +89,46 @@ def scoot_writer(
         connection=connection,
     )
 
+@pytest.fixture(scope="function")
+def westminster_fishnet(
+    borough: str,
+    grid_resolution: int,
+    secretfile: str,
+    connection: Connector,
+) -> Fishnet:
+    """A fishnet cast over Westminster."""
+    return Fishnet(
+        borough=borough, grid_resolution=grid_resolution, secretfile=secretfile, connection=connection
+    )
 
 @pytest.fixture(scope="function")
 def scan_scoot(
     scoot_writer: ScootGenerator,
-    scoot_upto: str,
+    westminster_fishnet: Fishnet,
     borough: str,
+    forecast_hours: int,
+    forecast_upto: str,
+    grid_resolution: int,
+    train_hours: int,
+    train_upto: str,
     secretfile: str,
     connection: Connector,
 ) -> ScanScoot:
     """Fixture for scan scoot class."""
-
-    days_in_past = 28
-    days_in_future = 1
     ts_method = "HW"
     borough = scoot_writer.borough
-    grid_resolution = 8
 
     scoot_writer.update_remote_tables()
+    westminster_fishnet.update_remote_tables()
 
     return ScanScoot(
-        borough,
-        days_in_future * 24,
-        days_in_past * 24,
-        scoot_upto,
-        grid_resolution,
-        ts_method,
+        borough=borough,
+        forecast_hours=forecast_hours,
+        forecast_upto=forecast_upto,
+        train_hours=train_hours,
+        train_upto=train_upto,
+        grid_resolution=grid_resolution,
+        model_name=ts_method,
         secretfile=secretfile,
         connection=connection,
     )

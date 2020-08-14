@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:latest
 
 # Set the working directory to /app
 WORKDIR /app
