@@ -90,7 +90,7 @@ def holt_winters(
         # Now insert gap between training and forecasting periods, if the method is "stitch" then the gap will be
         # no greater than 24 hours, where the forecast starts at the next equivalent hour
 
-        if method == "stitch"
+        if method == "stitch":
             gap_hours=gap_hours%24
             
         if gap_hours > 0:
