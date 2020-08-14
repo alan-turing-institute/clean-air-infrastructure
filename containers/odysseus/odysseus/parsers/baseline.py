@@ -1,3 +1,5 @@
+"""Commands for running the percent of baseline metric."""
+
 from datetime import datetime
 from dateutil.parser import isoparse
 import typer
