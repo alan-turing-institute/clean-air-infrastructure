@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from odysseus.databases import TrafficQuery
+from odysseus.experiment import ScootExperiment
 from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict
 
 @pytest.fixture(scope="function")
@@ -54,3 +55,8 @@ def frame(scoot_detectors, scoot_start, scoot_upto):
     dframe["instance_id"] = dframe.apply(lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1)
 
     return dframe
+
+@pytest.fixture(scope="function")
+def scoot_xp(scoot_writer, frame, secretfile, connection):
+    scoot_writer.update_remote_tables()
+    return ScootExperiment(frame=frame, secretfile=secretfile, connection=connection)
