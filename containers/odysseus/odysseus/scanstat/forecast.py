@@ -47,7 +47,7 @@ def forecast(
     if not set(["rolling_threshold", "global_threshold"]) <= set(
         processed_test.columns
     ):
-        raise KeyError("Train dataframe does not contain the correct columns")
+        raise KeyError("Test dataframe does not contain the correct columns")
     processed_train = processed_train.drop(
         ["rolling_threshold", "global_threshold"], axis=1
     )
