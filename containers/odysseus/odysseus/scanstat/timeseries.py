@@ -4,7 +4,7 @@ exponentially smoothed method."""
 
 import datetime
 
-# from datetime import timedelta
+from datetime import timedelta
 import logging
 
 import numpy as np
@@ -71,7 +71,7 @@ def holt_winters(
 
         gap_hours = int(
             (forecast_start - one_det["measurement_end_utc"].max())
-            / np.timedelta64(1, "h")
+            / timedelta(hours=1)
         )
 
         # HW algorithm
@@ -113,8 +113,8 @@ def holt_winters(
         # Now build the forecast
         for j in range(k, num_forecast_hours + k):
 
-            start = forecast_start + np.timedelta64(j - k, "h")
-            end = forecast_start + np.timedelta64(j - k + 1, "h")
+            start = forecast_start + timedelta(hours = j - k )
+            end = forecast_start + timedelta(hours = j - k + 1)
 
             hour = j % 24
             base = (smooth + trend) * hod[hour]
@@ -174,7 +174,7 @@ def gp_forecast(
         detectors = train_data["detector_id"].drop_duplicates().to_numpy()
 
     # Figure out how many data points to estimate
-    num_forecast_hours = int((forecast_upto - forecast_start) / np.timedelta64(1, "h"))
+    num_forecast_hours = int((forecast_upto - forecast_start) / timedelta(hours=1))
 
     framelist = []
     for detector in detectors:
@@ -221,14 +221,14 @@ def gp_forecast(
             # print(type(one_det.min()))
             int_start = (
                 forecast_start - one_det["measurement_end_utc"].min()
-            ) / np.timedelta64(1, "h")
+            ) / timedelta(hours=1)
             int_start = int_start + 1
             int_end = num_forecast_hours + int_start
 
         if method == "stitch":
             int_start = (
                 forecast_start - one_det["measurement_end_utc"].max()
-            ) / np.timedelta64(1, "h")
+            ) / timedelta(hours=1)
             int_start = int_start % 168 + (len(one_det))
             int_end = num_forecast_hours + int_start
 
@@ -245,7 +245,7 @@ def gp_forecast(
         test_var = scaler.inverse_transform(var)
 
         forecast_period = pd.date_range(
-            start=forecast_start, end=forecast_upto - np.timedelta64(1, "h"), freq="H",
+            start=forecast_start, end=forecast_upto - timedelta(hours=1), freq="H",
         )
 
         # organise data into dataframe similar to the SCOOT outputs
@@ -255,7 +255,7 @@ def gp_forecast(
                 "lon": train_data[train_data["detector_id"] == detector]["lon"].iloc[0],
                 "lat": train_data[train_data["detector_id"] == detector]["lat"].iloc[0],
                 "measurement_start_utc": forecast_period,
-                "measurement_end_utc": forecast_period + np.timedelta64(1, "h"),
+                "measurement_end_utc": forecast_period + timedelta(hours=1),
                 "baseline": test_predict.flatten(),
                 "baseline_upper": test_predict.flatten()
                 + 3 * np.sqrt(test_var.flatten()),
