@@ -3,7 +3,8 @@ within the scan statistic framework. Currently only contains the Holt-Winters
 exponentially smoothed method."""
 
 import datetime
-from datetime import timedelta
+
+# from datetime import timedelta
 import logging
 
 import numpy as np
@@ -22,7 +23,7 @@ def holt_winters(
     beta: float = 0.0128993,
     gamma: float = 0.29348953,
     detectors: list = None,
-    method: str = "stitch"
+    method: str = "stitch",
 ) -> pd.DataFrame:
 
     """Time series forecast using Holt-Winters method.
@@ -56,7 +57,6 @@ def holt_winters(
 
     # Figure out how many data points to estimate
     num_forecast_hours = (forecast_upto - forecast_start).days * 24
-    
 
     framelist = []
     for detector in detectors:
@@ -69,8 +69,10 @@ def holt_winters(
         # Ensure values are sorted before entering loop
         one_det = one_det.sort_values(by=["measurement_end_utc"])
 
-        gap_hours = int((forecast_start - one_det["measurement_end_utc"].max()) / np.timedelta64(1, "h"))
-        
+        gap_hours = int(
+            (forecast_start - one_det["measurement_end_utc"].max())
+            / np.timedelta64(1, "h")
+        )
 
         # HW algorithm
         for i in range(0, len(one_det)):
@@ -84,37 +86,35 @@ def holt_winters(
         baseline = []
         endtime = []
         starttime = []
-        
-        i+=1
-        
+
+        i += 1
+
         # Now insert gap between training and forecasting periods, if the method is "stitch" then the gap will be
         # no greater than 24 hours, where the forecast starts at the next equivalent hour
 
         if method == "stitch":
-            gap_hours=gap_hours%24
-            
+            gap_hours = gap_hours % 24
+
         if gap_hours > 0:
             for k in range(i, gap_hours + i):
                 hour = k % 24
                 base = (smooth + trend) * hod[hour]
 
-                smooth_new = (alpha * (base / hod[hour])) + (1 - alpha) * (smooth + trend)
+                smooth_new = (alpha * (base / hod[hour])) + (1 - alpha) * (
+                    smooth + trend
+                )
                 trend = beta * (smooth_new - smooth) + (1 - beta) * trend
                 hod[hour] = gamma * (base / smooth_new) + (1 - gamma) * hod[hour]
                 smooth = smooth_new
-            k+=1
-            l = k
+            k += 1
         else:
-            l = i
-
+            k = i
 
         # Now build the forecast
-        for j in range(l, num_forecast_hours + l):
-            
+        for j in range(k, num_forecast_hours + k):
 
-            start = forecast_start + np.timedelta64(j - l , "h")
-            end = forecast_start + np.timedelta64(j - l + 1, "h")
-            
+            start = forecast_start + np.timedelta64(j - k, "h")
+            end = forecast_start + np.timedelta64(j - k + 1, "h")
 
             hour = j % 24
             base = (smooth + trend) * hod[hour]
@@ -147,13 +147,14 @@ def holt_winters(
         framelist.append(forecasts)
     return pd.concat(framelist)
 
+
 def gp_forecast(
     train_data: pd.DataFrame,
     forecast_start: datetime,
     forecast_upto: datetime,
     kern: gpflow.kernels = None,
     detectors: list = None,
-    method: str = "gap"
+    method: str = "gap",
 ) -> pd.DataFrame:
 
     """Forecast using Gaussian Processes
@@ -173,7 +174,7 @@ def gp_forecast(
         detectors = train_data["detector_id"].drop_duplicates().to_numpy()
 
     # Figure out how many data points to estimate
-    num_forecast_hours = int((forecast_upto - forecast_start)/ np.timedelta64(1, "h"))
+    num_forecast_hours = int((forecast_upto - forecast_start) / np.timedelta64(1, "h"))
 
     framelist = []
     for detector in detectors:
@@ -192,8 +193,6 @@ def gp_forecast(
             kern_pd = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_pw = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_se = gpflow.kernels.SquaredExponential()
-            kern_w = gpflow.kernels.White()
-
             kern_pd.period.assign(24.0)
             kern_pw.period.assign(168.0)
 
@@ -219,20 +218,22 @@ def gp_forecast(
             continue
 
         if method == "gap":
-            #print(type(one_det.min()))
-            int_start = (forecast_start - one_det["measurement_end_utc"].min()) / np.timedelta64(1, "h")
-            int_start=int_start + 1
+            # print(type(one_det.min()))
+            int_start = (
+                forecast_start - one_det["measurement_end_utc"].min()
+            ) / np.timedelta64(1, "h")
+            int_start = int_start + 1
             int_end = num_forecast_hours + int_start
 
         if method == "stitch":
-            int_start = (forecast_start - one_det["measurement_end_utc"].max())/np.timedelta64(1, 'h')
-            int_start = int_start%168 + (len(one_det)) 
+            int_start = (
+                forecast_start - one_det["measurement_end_utc"].max()
+            ) / np.timedelta64(1, "h")
+            int_start = int_start % 168 + (len(one_det))
             int_end = num_forecast_hours + int_start
 
         ## generate test points for prediction
-        prediction_range = np.linspace(
-            int_start, int_end, num_forecast_hours
-        ).reshape(
+        prediction_range = np.linspace(int_start, int_end, num_forecast_hours).reshape(
             num_forecast_hours, 1
         )  # test points must be of shape (N, D)
 
@@ -246,7 +247,6 @@ def gp_forecast(
         forecast_period = pd.date_range(
             start=forecast_start, end=forecast_upto - np.timedelta64(1, "h"), freq="H",
         )
-        
 
         # organise data into dataframe similar to the SCOOT outputs
         forecast_df = pd.DataFrame(
