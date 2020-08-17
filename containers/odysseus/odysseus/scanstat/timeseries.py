@@ -3,6 +3,7 @@ within the scan statistic framework. Currently only contains the Holt-Winters
 exponentially smoothed method."""
 
 import datetime
+
 from datetime import timedelta
 import logging
 
@@ -196,15 +197,15 @@ def gp_forecast(
         Y = Y.astype(float)
         X = np.arange(1, len(Y) + 1, dtype=float).reshape(-1, 1)
 
-        scaler = MinMaxScaler(feature_range=(-1, 1))
-        y = scaler.fit_transform(Y)
+        if scaling:
+            scaler = MinMaxScaler(feature_range=(-1, 1))
+            Y = scaler.fit_transform(Y)
 
         if kern is None:
 
             kern_pd = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_pw = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_se = gpflow.kernels.SquaredExponential()
-
             kern_pd.period.assign(24.0)
             kern_pw.period.assign(168.0)
 
@@ -212,7 +213,7 @@ def gp_forecast(
         else:
             k = kern
 
-        model = gpflow.models.GPR(data=(X, y), kernel=k, mean_function=None)
+        model = gpflow.models.GPR(data=(X, Y), kernel=k, mean_function=None)
         opt = gpflow.optimizers.Scipy()
 
         try:
@@ -237,9 +238,14 @@ def gp_forecast(
         ## predict mean and variance of latent GP at test points
         mean, var = model.predict_f(prediction_range)
 
-        # reverse min_max scaler
-        test_predict = scaler.inverse_transform(mean)
-        test_var = scaler.inverse_transform(var)
+        if scaling:
+            # reverse min_max scaler
+            test_predict = scaler.inverse_transform(mean)
+            test_var = scaler.inverse_transform(var)
+
+        else:
+            test_predict = mean.numpy()
+            test_var = var.numpy()
 
         forecast_period = pd.date_range(
             start=forecast_start, end=forecast_upto - timedelta(hours=1), freq="H",
