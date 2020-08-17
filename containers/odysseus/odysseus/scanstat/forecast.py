@@ -30,7 +30,7 @@ def forecast(
         train_upto: Timestamp of end of training period
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
-        model_name: Forecast model_name to use for baseline, default is "HW" for Holt-Winters.
+        model_name: Forecast method to use for baseline, default is "HW" for Holt-Winters.
                 Options: "HW", ("GP", "LSTM")
         detectors: List of detectors to look produce forecasts for. Default behaviour
                    produces forecasts for all detectors present in input dataframe.
