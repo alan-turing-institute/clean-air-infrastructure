@@ -195,6 +195,7 @@ def forecast_checks(
     assert set(cols) == set(forecast_df.columns)
 
     num_detectors = len(forecast_df["detector_id"].unique())
+    # TODO - might not be the case if GP matrix can't be inverted
     assert init_num_detectors == num_detectors
 
     neg_baselines = forecast_df[forecast_df["baseline"] < 0]
