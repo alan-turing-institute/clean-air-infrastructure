@@ -1,8 +1,13 @@
 """
 Scoot value extrapolations
 """
+from typing import Union
 import time
-from sqlalchemy import func
+from datetime import datetime, timedelta
+from dateutil.parser import isoparse
+from sqlalchemy import func, column, text
+from sqlalchemy.dialects.postgresql import TIMESTAMP
+
 from ..databases import DBWriter
 from ..databases.tables import (
     ScootReading,
@@ -10,10 +15,15 @@ from ..databases.tables import (
     ScootRoadForecast,
     ScootRoadReading,
     ScootRoadMatch,
+    OSHighway,
 )
 from ..loggers import duration, get_logger, green
 from ..mixins import DateRangeMixin
 from ..decorators import db_query
+from ..databases.base import Values
+
+
+ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
 class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
@@ -40,6 +50,44 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
         )
 
     @db_query
+    def get_road_ids(self):
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(OSHighway.toid)
+
+    @db_query
+    def get_processed_data(self, start_datetime: str, end_datetime: str):
+        """Check what data has been processed"""
+
+        with self.dbcnxn.open_session() as session:
+
+            # return session.query(
+            #     self.table_per_road.road_toid, self.table_per_road.measurement_start_utc
+            # ).filter(
+            #     self.table_per_road.measurement_start_utc >= start_datetime,
+            #     self.table_per_road.measurement_start_utc < end_datetime,
+            #     self.table_per_road.road_toid == road_id,
+            # )
+
+            expected_date_times = session.query(
+                func.generate_series(
+                    start_datetime,
+                    (isoparse(end_datetime) - timedelta(days=1)).isoformat(),
+                    ONE_DAY_INTERVAL,
+                ).label("measurement_start_utc")
+            ).subquery()
+
+            expected_road_map = session.query(
+                OSHighway.toid.label("road_toid"),
+                expected_date_times.c.measurement_start_utc,
+            )
+
+            return expected_road_map
+
+            session.query(self.table_per_road)
+
+    @db_query
     def update_remote_tables(self):
         session_start = time.time()
         with self.dbcnxn.open_session() as session:
@@ -50,7 +98,11 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                 self.value_type,
             )
 
-            road_match_cte = session.query(ScootRoadMatch).subquery()
+            road_match_cte = (
+                session.query(ScootRoadMatch)
+                .order_by(ScootRoadMatch.road_toid)
+                .subquery()
+            )
 
             q_per_road_forecasts = (
                 session.query(
@@ -96,8 +148,8 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
                     < self.end_datetime.isoformat(),
                 )
                 .group_by(
-                    road_match_cte.c.road_toid,
                     self.table_per_detector.measurement_start_utc,
+                    road_match_cte.c.road_toid,
                 )
             )
 
@@ -124,7 +176,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             #     on_conflict="overwrite",
             # )
 
-            # # Print a final timing message
+            # Print a final timing message
             # self.logger.info(
             #     "Insertion of per-road %s took %s",
             #     self.value_type,
@@ -141,7 +193,7 @@ class ScootPerRoadForecastMapper(ScootPerRoadValueMapperBase):
             table_per_detector=ScootForecast,
             table_per_road=ScootRoadForecast,
             value_type="forecasts",
-            **kwargs
+            **kwargs,
         )
 
 
@@ -154,5 +206,5 @@ class ScootPerRoadReadingMapper(ScootPerRoadValueMapperBase):
             table_per_detector=ScootReading,
             table_per_road=ScootRoadReading,
             value_type="readings",
-            **kwargs
+            **kwargs,
         )
