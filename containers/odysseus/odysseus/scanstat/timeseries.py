@@ -14,18 +14,20 @@ from tensorflow.python.framework.errors import InvalidArgumentError
 from sklearn.preprocessing import MinMaxScaler
 
 
-def holt_winters(
+def hw_forecast(
     train_data: pd.DataFrame,
+    train_start: datetime,
+    train_upto: datetime,
     forecast_start: datetime,
     forecast_upto: datetime,
     alpha: float = 0.03869791,
     beta: float = 0.0128993,
     gamma: float = 0.29348953,
     detectors: list = None,
-    method: str = "stitch"
+    stitch_forecast: bool = True,
 ) -> pd.DataFrame:
 
-    """Time series forecast using Holt-Winters method.
+    """Time series forecast using Holt-Winters (HW) method.
 
     Args:
         train_data: Dataframe of 'processed' SCOOT data
@@ -55,8 +57,12 @@ def holt_winters(
         detectors = train_data["detector_id"].drop_duplicates().to_numpy()
 
     # Figure out how many data points to estimate
-    num_forecast_hours = (forecast_upto - forecast_start).days * 24
-    
+    num_train_hours = int((train_upto - train_start) / timedelta(hours=1))
+    num_forecast_hours = int((forecast_upto - forecast_start) / timedelta(hours=1))
+    num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
+
+    if stitch_forecast:
+        num_gap_hours = num_gap_hours % 24
 
     framelist = []
     for detector in detectors:
@@ -69,11 +75,8 @@ def holt_winters(
         # Ensure values are sorted before entering loop
         one_det = one_det.sort_values(by=["measurement_end_utc"])
 
-        gap_hours = int((forecast_start - one_det["measurement_end_utc"].max()) / np.timedelta64(1, "h"))
-        
-
-        # HW algorithm
-        for i in range(0, len(one_det)):
+        # HW algorithm for training
+        for i in range(0, num_train_hours):
             hour = i % 24
             count = one_det["n_vehicles_in_interval"].iloc[i]
             smooth_new = (alpha * (count / hod[hour])) + (1 - alpha) * (smooth + trend)
@@ -81,46 +84,42 @@ def holt_winters(
             hod[hour] = gamma * (count / smooth_new) + (1 - gamma) * hod[hour]
             smooth = smooth_new
 
-        baseline = []
-        endtime = []
-        starttime = []
-        
-        i+=1
-        
         # Now insert gap between training and forecasting periods, if the method is "stitch" then the gap will be
         # no greater than 24 hours, where the forecast starts at the next equivalent hour
-
-        if method == "stitch":
-            gap_hours=gap_hours%24
-            
-        if gap_hours > 0:
-            for k in range(i, gap_hours + i):
+        # Continue to train on more recent data if there is a gap between train and forecast periods
+        if num_gap_hours > 0:
+            for k in range(num_train_hours, num_train_hours + num_gap_hours):
                 hour = k % 24
                 base = (smooth + trend) * hod[hour]
 
-                smooth_new = (alpha * (base / hod[hour])) + (1 - alpha) * (smooth + trend)
+                smooth_new = (alpha * (base / hod[hour])) + (1 - alpha) * (
+                    smooth + trend
+                )
                 trend = beta * (smooth_new - smooth) + (1 - beta) * trend
                 hod[hour] = gamma * (base / smooth_new) + (1 - gamma) * hod[hour]
                 smooth = smooth_new
-            k+=1
-            l = k
-        else:
-            l = i
 
+            forecast_start_int = num_train_hours + num_gap_hours
+        else:
+            forecast_start_int = num_train_hours
+
+        forecast_start_times = []
+        forecast_end_times = []
+        baselines = []
 
         # Now build the forecast
-        for j in range(l, num_forecast_hours + l):
-            
+        for j in range(forecast_start_int, forecast_start_int + num_forecast_hours):
 
-            start = forecast_start + np.timedelta64(j - l , "h")
-            end = forecast_start + np.timedelta64(j - l + 1, "h")
-            
+            # Actual datetime associated with forecast for dataframe output
+            start_time = forecast_start + timedelta(hours=j - forecast_start_int)
+            end_time = forecast_start + timedelta(hours=j - forecast_start_int + 1)
 
             hour = j % 24
             base = (smooth + trend) * hod[hour]
-            baseline.append(base)
-            endtime.append(end)
-            starttime.append(start)
+
+            forecast_start_times.append(start_time)
+            forecast_end_times.append(end_time)
+            baselines.append(base)
 
             smooth_new = (alpha * (base / hod[hour])) + (1 - alpha) * (smooth + trend)
             trend = beta * (smooth_new - smooth) + (1 - beta) * trend
@@ -130,30 +129,34 @@ def holt_winters(
         forecasts = pd.DataFrame(
             {
                 "detector_id": detector,
-                "lon": one_det[one_det["detector_id"] == detector]["lon"].iloc[0],
-                "lat": one_det[one_det["detector_id"] == detector]["lat"].iloc[0],
-                "measurement_start_utc": starttime,
-                "measurement_end_utc": endtime,
-                "baseline": baseline,
-                # This is intentional - each forecast ouptuts upper, lower, normal
+                "lon": one_det["lon"].iloc[0],
+                "lat": one_det["lat"].iloc[0],
+                "point_id": one_det["point_id"].iloc[0],
+                "measurement_start_utc": forecast_start_times,
+                "measurement_end_utc": forecast_end_times,
+                "baseline": baselines,
+                # This is intentional - each forecast outputs upper, lower, normal
                 # columns regardless of whether they are meaningful.
                 # It is deemed that the majority of forecasts will have meaningful
                 # upper and lower columns with HW being the exception to the rule.
-                "baseline_upper": baseline,
-                "baseline_lower": baseline,
+                "baseline_upper": baselines,
+                "baseline_lower": baselines,
                 "standard_deviation": 0.0,
             }
         )
         framelist.append(forecasts)
     return pd.concat(framelist)
 
+
 def gp_forecast(
     train_data: pd.DataFrame,
+    train_start: datetime,
+    train_upto: datetime,
     forecast_start: datetime,
     forecast_upto: datetime,
     kern: gpflow.kernels = None,
     detectors: list = None,
-    method: str = "gap"
+    stitch_forecast: bool = False,
 ) -> pd.DataFrame:
 
     """Forecast using Gaussian Processes
@@ -173,7 +176,16 @@ def gp_forecast(
         detectors = train_data["detector_id"].drop_duplicates().to_numpy()
 
     # Figure out how many data points to estimate
-    num_forecast_hours = int((forecast_upto - forecast_start)/ np.timedelta64(1, "h"))
+    num_forecast_hours = int((forecast_upto - forecast_start) / timedelta(hours=1))
+    num_train_hours = int((train_upto - train_start) / timedelta(hours=1))
+    num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
+
+    # Stitch onto matching hour of the week
+    if stitch_forecast:
+        num_gap_hours = num_gap_hours % 168
+
+    forecast_start_int = num_train_hours + num_gap_hours
+    forecast_end_int = forecast_start_int + num_forecast_hours
 
     framelist = []
     for detector in detectors:
@@ -192,7 +204,6 @@ def gp_forecast(
             kern_pd = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_pw = gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential())
             kern_se = gpflow.kernels.SquaredExponential()
-            kern_w = gpflow.kernels.White()
 
             kern_pd.period.assign(24.0)
             kern_pw.period.assign(168.0)
@@ -218,21 +229,8 @@ def gp_forecast(
             del model
             continue
 
-        if method == "gap":
-            #print(type(one_det.min()))
-            int_start = (forecast_start - one_det["measurement_end_utc"].min()) / np.timedelta64(1, "h")
-            int_start=int_start + 1
-            int_end = num_forecast_hours + int_start
-
-        if method == "stitch":
-            int_start = (forecast_start - one_det["measurement_end_utc"].max())/np.timedelta64(1, 'h')
-            int_start = int_start%168 + (len(one_det)) 
-            int_end = num_forecast_hours + int_start
-
         ## generate test points for prediction
-        prediction_range = np.linspace(
-            int_start, int_end, num_forecast_hours
-        ).reshape(
+        prediction_range = np.linspace(forecast_start_int, forecast_end_int -1, num_forecast_hours).reshape(
             num_forecast_hours, 1
         )  # test points must be of shape (N, D)
 
@@ -244,18 +242,18 @@ def gp_forecast(
         test_var = scaler.inverse_transform(var)
 
         forecast_period = pd.date_range(
-            start=forecast_start, end=forecast_upto - np.timedelta64(1, "h"), freq="H",
+            start=forecast_start, end=forecast_upto - timedelta(hours=1), freq="H",
         )
-        
 
         # organise data into dataframe similar to the SCOOT outputs
         forecast_df = pd.DataFrame(
             {
                 "detector_id": detector,
-                "lon": train_data[train_data["detector_id"] == detector]["lon"].iloc[0],
-                "lat": train_data[train_data["detector_id"] == detector]["lat"].iloc[0],
+                "lon": one_det["lon"].iloc[0],
+                "lat": one_det["lat"].iloc[0],
+                "point_id": one_det["point_id"].iloc[0],
                 "measurement_start_utc": forecast_period,
-                "measurement_end_utc": forecast_period + np.timedelta64(1, "h"),
+                "measurement_end_utc": forecast_period + timedelta(hours=1),
                 "baseline": test_predict.flatten(),
                 "baseline_upper": test_predict.flatten()
                 + 3 * np.sqrt(test_var.flatten()),

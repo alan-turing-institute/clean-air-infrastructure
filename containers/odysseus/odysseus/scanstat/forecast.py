@@ -1,5 +1,5 @@
 """Contains all functionality to create forecasts of SCOOT data using different
-methods of timeseries analysis from `scanstat.timeseries`"""
+model_names of timeseries analysis from `scanstat.timeseries`"""
 
 import logging
 import datetime
@@ -7,21 +7,22 @@ import datetime
 import pandas as pd
 import numpy as np
 
-from .timeseries import holt_winters, gp_forecast
+from .timeseries import hw_forecast, gp_forecast
 
 
 def forecast(
-    proc_df: pd.DataFrame,
+    processed_train: pd.DataFrame,
+    processed_test: pd.DataFrame,
     train_start: datetime,
     train_upto: datetime,
     forecast_start: datetime,
     forecast_upto: datetime,
-    method: str = "HW",
+    model_name: str = "HW",
     detectors: list = None,
 ) -> pd.DataFrame:
 
-    """Produces a DataFrame where the count and baseline can be compared for use
-        in scan statistics
+    """Firstly produces a forecast using input training data. Secondly, produces a dataframe containing
+    actual counts (test data) and baseline predictions for each detectors at each time step.
 
     Args:
         proc_df: Dataframe of processed SCOOT data.
@@ -29,7 +30,7 @@ def forecast(
         train_upto: Timestamp of end of training period
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
-        method: Forecast method to use for baseline, default is "HW" for Holt-Winters.
+        model_name: Forecast model_name to use for baseline, default is "HW" for Holt-Winters.
                 Options: "HW", ("GP", "LSTM")
         detectors: List of detectors to look produce forecasts for. Default behaviour
                    produces forecasts for all detectors present in input dataframe.
@@ -39,27 +40,29 @@ def forecast(
     """
 
     # Drop useless columns
-    if not set(["rolling_threshold", "global_threshold"]) <= set(proc_df.columns):
-        raise KeyError("Input dataframe does not contain the correct columns")
-    proc_df = proc_df.drop(["rolling_threshold", "global_threshold"], axis=1)
+    if not set(["rolling_threshold", "global_threshold"]) <= set(
+        processed_train.columns
+    ):
+        raise KeyError("Train dataframe does not contain the correct columns")
+    if not set(["rolling_threshold", "global_threshold"]) <= set(
+        processed_test.columns
+    ):
+        raise KeyError("Train dataframe does not contain the correct columns")
+    processed_train = processed_train.drop(
+        ["rolling_threshold", "global_threshold"], axis=1
+    )
+    processed_test = processed_test.drop(
+        ["rolling_threshold", "global_threshold"], axis=1
+    )
 
     if not detectors:
-        detectors = proc_df["detector_id"].drop_duplicates().to_numpy()
-
-    train_data = proc_df[
-        (proc_df["measurement_start_utc"] >= train_start)
-        & (proc_df["measurement_end_utc"] <= train_upto)
-    ]
-    actual_counts = proc_df[
-        (proc_df["measurement_start_utc"] >= forecast_start)
-        & (proc_df["measurement_end_utc"] <= forecast_upto)
-    ]
+        detectors = processed_train["detector_id"].drop_duplicates().to_numpy()
 
     logging.info(
         "Using data from %s to %s, to build %s forecasting model",
         train_start,
         train_upto,
-        method,
+        model_name,
     )
     logging.info(
         "Forecasting counts between %s and %s for %d detectors.",
@@ -68,19 +71,22 @@ def forecast(
         len(detectors),
     )
 
-    # Select forecasting method
-    if method == "HW":
-        y = holt_winters(train_data, forecast_start, forecast_upto, detectors=detectors)
+    # Select forecasting model_name
+    if model_name == "HW":
+        y = hw_forecast(
+            processed_train, train_start, train_upto, forecast_start, forecast_upto, detectors=detectors
+        )
 
-    if method == "GP":
-        y = gp_forecast(train_data, forecast_start, forecast_upto, detectors=detectors)
+    if model_name == "GP":
+        y = gp_forecast(
+            processed_train, train_start, train_upto, forecast_start, forecast_upto, detectors=detectors
+        )
 
     logging.info("Forecasting complete.")
 
-    # Merge actual_count dataframe with forecast dataframe, carry out checks
-    # and return.
+    # Merge dataframe with actual counts with forecasted counts
     forecast_df = y.merge(
-        actual_counts,
+        processed_test,
         on=[
             "detector_id",
             "point_id",

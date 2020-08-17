@@ -12,11 +12,12 @@ from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
 from ..databases.mixins import GridMixin
 from ..scanstat import (
-    aggregate_readings_to_grid,
-    average_gridcell_scores,
-    forecast,
     preprocessor,
+    intersect_processed_data,
+    aggregate_readings_to_grid,
+    forecast,
     scan,
+    average_gridcell_scores,
 )
 
 
@@ -57,7 +58,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.training_readings: pd.DataFrame = self.scoot_fishnet_readings(
             start=self.train_start, upto=self.train_upto, output_type="df",
         )
-        self.forecast_readings: pd.DataFrame = self.scoot_fishnet_readings(
+        self.test_readings: pd.DataFrame = self.scoot_fishnet_readings(
             start=self.forecast_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
@@ -70,32 +71,39 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         error_message += "or because the fishnet does not exist in the database."
         if len(self.training_readings) == 0:
             raise ValueError(error_message.format(period="training"))
-        if len(self.forecast_readings) == 0:
+        if len(self.test_readings) == 0:
             raise ValueError(error_message.format(period="forecasting"))
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
-        # 2) Pre-process
-        raise NotImplementedError(
-            "Need to use both the training and forecast dataframes in scan stats functions"
-        )
-        processed_df = preprocessor(self.readings)
+        # 1) Pre-process both training and test data
+        processed_train = preprocessor(self.training_readings)
+        processed_test = preprocessor(self.test_readings)
+
+        # 2) Make sure that both of the above dataframes span the same detector set
+        processed_train, processed_test = intersect_processed_data(processed_train, processed_test)
+
         # 3) Build Forecast
         forecast_df = forecast(
-            processed_df,
+            processed_train,
+            processed_test,
             self.train_start,
             self.train_upto,
             self.forecast_start,
             self.forecast_upto,
             self.model_name,
         )
-        # 4) Aggregate readings/forecast to grid level
+
+        # 4) Aggregate forecast dataframe to grid level. Less to search through
+        # in scan
         aggregate = aggregate_readings_to_grid(forecast_df)
+
         # 5) Scan
         all_scores = scan(
             aggregate, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
+
         # 6) Aggregate average scores to grid level
         grid_level_scores = average_gridcell_scores(
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
