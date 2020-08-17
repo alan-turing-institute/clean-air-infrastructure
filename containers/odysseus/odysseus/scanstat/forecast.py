@@ -74,12 +74,22 @@ def forecast(
     # Select forecasting model_name
     if model_name == "HW":
         y = hw_forecast(
-            processed_train, train_start, train_upto, forecast_start, forecast_upto, detectors=detectors
+            processed_train,
+            train_start,
+            train_upto,
+            forecast_start,
+            forecast_upto,
+            detectors=detectors,
         )
 
     if model_name == "GP":
         y = gp_forecast(
-            processed_train, train_start, train_upto, forecast_start, forecast_upto, detectors=detectors
+            processed_train,
+            train_start,
+            train_upto,
+            forecast_start,
+            forecast_upto,
+            detectors=detectors,
         )
 
     logging.info("Forecasting complete.")

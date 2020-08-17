@@ -232,7 +232,9 @@ def gp_forecast(
             continue
 
         ## generate test points for prediction
-        prediction_range = np.linspace(forecast_start_int, forecast_end_int -1, num_forecast_hours).reshape(
+        prediction_range = np.linspace(
+            forecast_start_int, forecast_end_int - 1, num_forecast_hours
+        ).reshape(
             num_forecast_hours, 1
         )  # test points must be of shape (N, D)
 
