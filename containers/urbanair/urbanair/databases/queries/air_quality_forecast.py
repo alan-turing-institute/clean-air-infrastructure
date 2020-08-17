@@ -89,8 +89,7 @@ def get_forecasts_with_location(
             AirQualityResultTable.measurement_start_utc,
             AirQualityResultTable.NO2_mean,
             AirQualityResultTable.NO2_var,
-            func.ST_X(MetaPoint.location).label("latitude"),
-            func.ST_Y(MetaPoint.location).label("longitude"),
+            func.ST_AsText(MetaPoint.location).label("location"),
         )
         .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
         .filter(
