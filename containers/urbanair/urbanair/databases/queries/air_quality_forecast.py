@@ -71,3 +71,32 @@ def get_forecasts(
         )
         .filter(HexGrid.point_id == "15991a54-6330-455e-b220-6f397f56c777") # TODO remove
     )
+
+
+@db_query
+def get_forecasts_with_location(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime
+) -> Query:
+    """
+    Get all forecasts for a given model instance in the given datetime range
+    """
+    return (
+        db.query(
+            AirQualityResultTable.point_id,
+            AirQualityResultTable.measurement_start_utc,
+            AirQualityResultTable.NO2_mean,
+            AirQualityResultTable.NO2_var,
+            func.ST_X(MetaPoint.location).label("latitude"),
+            func.ST_Y(MetaPoint.location).label("longitude"),
+        )
+        .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
+        .filter(
+            AirQualityResultTable.instance_id == instance_id,
+            AirQualityResultTable.measurement_start_utc >= start_datetime,
+            AirQualityResultTable.measurement_start_utc <= end_datetime,
+        )
+        .filter(HexGrid.point_id == "15991a54-6330-455e-b220-6f397f56c777") # TODO remove
+    )
