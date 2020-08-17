@@ -1,5 +1,5 @@
 """Contains all functionality to create forecasts of SCOOT data using different
-model_names of timeseries analysis from `scanstat.timeseries`"""
+methods of timeseries analysis from `scanstat.timeseries`"""
 
 import logging
 import datetime
