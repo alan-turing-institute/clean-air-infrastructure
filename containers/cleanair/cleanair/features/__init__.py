@@ -8,11 +8,12 @@ from .feature_conf import (
     ALL_FEATURES,
     ALL_FEATURES_DYNAMIC,
 )
-from .feature_extractor import FeatureExtractor
+from .feature_extractor import FeatureExtractor, ScootFeatureExtractor
 
 __all__ = [
     "ALL_FEATURES",
     "FeatureExtractor",
     "ScootForecastFeatures",
     "ScootReadingFeatures",
+    "ScootFeatureExtractor",
 ]

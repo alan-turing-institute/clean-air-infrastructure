@@ -12,6 +12,9 @@ from ..databases.tables import (
     DynamicFeature,
     UKMap,
     MetaPoint,
+    OSHighway,
+    ScootRoadMatch,
+    ScootReading,
 )
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
@@ -19,7 +22,198 @@ from ..mixins import DBQueryMixin
 from ..loggers import duration, green, red, get_logger
 
 
-class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
+class FeatureExtractorMixin:
+    @db_query
+    def query_meta_points(self, point_ids):
+        """
+        Query MetaPoints, selecting all matching sources. We do not filter these in
+        order to ensure that repeated calls will return the same set of points.
+        """
+
+        with self.dbcnxn.open_session() as session:
+
+            q_meta_point = session.query(
+                MetaPoint.id,
+                MetaPoint.source,
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 1000)
+                ).label("buff_geom_1000"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 500)
+                ).label("buff_geom_500"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 200)
+                ).label("buff_geom_200"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 100)
+                ).label("buff_geom_100"),
+                func.Geometry(
+                    func.ST_Buffer(func.Geography(MetaPoint.location), 10)
+                ).label("buff_geom_10"),
+            ).filter(MetaPoint.id.in_(point_ids))
+
+        return q_meta_point
+
+
+class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
+    def __init__(
+        self,
+        # feature_source,
+        # table,
+        # features,
+        # dynamic=False,
+        # batch_size=10,
+        # sources=None,
+        insert_method="missing",
+        **kwargs,
+    ):
+        """Base class for extracting features.
+        args:
+            dynamic: Boolean. Set whether feature is dynamic (e.g. varies over time)
+                     Time must always be named measurement_start_utc
+        """
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        self.table_per_detector = ScootReading
+
+    @db_query
+    def oshighway_intersection(self, point_ids):
+
+        buffers = self.query_meta_points(point_ids, output_type="subquery")
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(
+                OSHighway.toid,
+                OSHighway.geom,
+                buffers.c.id,
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_500).label(
+                    "intersects_500"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_200).label(
+                    "intersects_200"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_100).label(
+                    "intersects_100"
+                ),
+                func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_10).label(
+                    "intersects_10"
+                ),
+            ).filter(func.ST_Intersects(OSHighway.geom, buffers.c.buff_geom_1000))
+
+    @db_query
+    def get_scoot_road_match(self, lookup_cte):
+
+        with self.dbcnxn.open_session() as session:
+            return (
+                session.query(ScootRoadMatch)
+                .filter(ScootRoadMatch.road_toid.in_([lookup_cte.c.toid]))
+                .order_by(ScootRoadMatch.road_toid)
+            )
+
+    @db_query
+    def scoot_to_road(self, point_ids, start_datetime, end_datetime):
+
+        intersection_lookup_cte = self.oshighway_intersection(point_ids=point_ids).cte(
+            "intersection_lookup"
+        )
+
+        scoot_road_match_sq = self.get_scoot_road_match(
+            intersection_lookup_cte, output_type="subquery"
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            per_road_forecasts_sq = (
+                session.query(
+                    scoot_road_match_sq.c.road_toid,
+                    self.table_per_detector.measurement_start_utc,
+                    (
+                        func.sum(
+                            self.table_per_detector.n_vehicles_in_interval
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("n_vehicles_in_interval"),
+                    (
+                        func.sum(
+                            self.table_per_detector.occupancy_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("occupancy_percentage"),
+                    (
+                        func.sum(
+                            self.table_per_detector.congestion_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("congestion_percentage"),
+                    (
+                        func.sum(
+                            self.table_per_detector.saturation_percentage
+                            * scoot_road_match_sq.c.weight
+                        )
+                        / func.sum(scoot_road_match_sq.c.weight)
+                    ).label("saturation_percentage"),
+                )
+                .join(
+                    self.table_per_detector,
+                    scoot_road_match_sq.c.detector_n
+                    == self.table_per_detector.detector_id,
+                )
+                .filter(
+                    self.table_per_detector.measurement_start_utc >= start_datetime,
+                    self.table_per_detector.measurement_start_utc < end_datetime,
+                )
+                .group_by(
+                    self.table_per_detector.measurement_start_utc,
+                    scoot_road_match_sq.c.road_toid,
+                )
+            ).subquery()
+
+            return session.query(intersection_lookup_cte, per_road_forecasts_sq).join(
+                intersection_lookup_cte,
+                intersection_lookup_cte.c.toid == per_road_forecasts_sq.c.road_toid,
+            )
+
+    @db_query
+    def get_scoot_features(self, point_ids, start_datetime, end_datetime):
+
+        scoot_road_readings = self.scoot_to_road(
+            point_ids, start_datetime, end_datetime, output_type="subquery"
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(
+                scoot_road_readings.c.id,
+                scoot_road_readings.c.measurement_start_utc,
+                literal("max_n_vehicles").label("feature_name"),
+                func.max(scoot_road_readings.c.n_vehicles_in_interval).label(
+                    "values_1000"
+                ),
+                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                .filter(scoot_road_readings.c.intersects_500)
+                .label("values_500"),
+                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                .filter(scoot_road_readings.c.intersects_200)
+                .label("values_200"),
+                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                .filter(scoot_road_readings.c.intersects_100)
+                .label("values_100"),
+                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                .filter(scoot_road_readings.c.intersects_10)
+                .label("values_10"),
+            ).group_by(
+                scoot_road_readings.c.id, scoot_road_readings.c.measurement_start_utc
+            )
+
+
+class FeatureExtractor(
+    DBWriter, FeatureExtractorMixin, StaticFeatureAvailabilityMixin, DBQueryMixin
+):
     """Extract features which are near to a given set of MetaPoints and inside London"""
 
     # pylint: disable=R0913
@@ -138,37 +332,6 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
     #         )
 
     #         return already_processed_q
-
-    @db_query
-    def query_meta_points(self, point_ids):
-        """
-        Query MetaPoints, selecting all matching sources. We do not filter these in
-        order to ensure that repeated calls will return the same set of points.
-        """
-
-        with self.dbcnxn.open_session() as session:
-
-            q_meta_point = session.query(
-                MetaPoint.id,
-                MetaPoint.source,
-                func.Geometry(
-                    func.ST_Buffer(func.Geography(MetaPoint.location), 1000)
-                ).label("buff_geom_1000"),
-                func.Geometry(
-                    func.ST_Buffer(func.Geography(MetaPoint.location), 500)
-                ).label("buff_geom_500"),
-                func.Geometry(
-                    func.ST_Buffer(func.Geography(MetaPoint.location), 200)
-                ).label("buff_geom_200"),
-                func.Geometry(
-                    func.ST_Buffer(func.Geography(MetaPoint.location), 100)
-                ).label("buff_geom_100"),
-                func.Geometry(
-                    func.ST_Buffer(func.Geography(MetaPoint.location), 10)
-                ).label("buff_geom_10"),
-            ).filter(MetaPoint.id.in_(point_ids))
-
-        return q_meta_point
 
     # @db_query
     # def query_features_dynamic(self, feature_name, feature_dict, agg_func, batch_size):
