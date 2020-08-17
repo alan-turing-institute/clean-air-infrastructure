@@ -178,3 +178,11 @@ roles:
         create: False
         privileges:
           - SELECT
+
+  - role: trafficmodelling
+    create_schema: False
+    schema:
+      - name: traffic_modelling
+        create: False
+        privileges:
+          - ALL
