@@ -13,9 +13,10 @@ WORKDIR /app
 
 # Copy the cleanair directory contents into the container
 COPY cleanair /app/cleanair
+COPY dockerfiles/svgp.sh /app/svgp.sh
 
-# Install any needed packages - note tensorflow-gpu 1.15.0 is already installed
+# Install cleanair
 RUN pip install '/app/cleanair'
 
 # Run the entrypoint
-ENTRYPOINT [ "urbanair", "model", "fit", "mrdgp" ]
+ENTRYPOINT [ "sh", "/app/svgp.sh" ]

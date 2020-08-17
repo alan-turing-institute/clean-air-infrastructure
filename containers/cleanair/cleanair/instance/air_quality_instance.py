@@ -23,6 +23,7 @@ class AirQualityInstance(Instance):
         Args:
             model_params: All the parameters of the model.
         """
+        self.logger.info("Writing model parameters to the air quality modelling table.")
         records = [
             dict(
                 model_name=self.model_name,
@@ -38,6 +39,7 @@ class AirQualityInstance(Instance):
         Args:
             data_config: The dictionary of data settings.
         """
+        self.logger.info("Writing data config to the air quality data table.")
         records = [
             dict(data_id=self.data_id, data_config=data_config, preprocessing=dict(),)
         ]
@@ -45,6 +47,7 @@ class AirQualityInstance(Instance):
 
     def update_remote_tables(self):
         """Write instance to the air quality instance table."""
+        self.logger.info("Writing the instance to the air quality instance table.")
         records = [self.to_dict()]
         self.commit_records(
             records, on_conflict="ignore", table=AirQualityInstanceTable
