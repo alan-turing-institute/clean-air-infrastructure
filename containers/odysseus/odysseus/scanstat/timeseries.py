@@ -70,8 +70,7 @@ def holt_winters(
         one_det = one_det.sort_values(by=["measurement_end_utc"])
 
         gap_hours = int(
-            (forecast_start - one_det["measurement_end_utc"].max())
-            / timedelta(hours=1)
+            (forecast_start - one_det["measurement_end_utc"].max()) / timedelta(hours=1)
         )
 
         # HW algorithm
@@ -113,8 +112,8 @@ def holt_winters(
         # Now build the forecast
         for j in range(k, num_forecast_hours + k):
 
-            start = forecast_start + timedelta(hours = j - k )
-            end = forecast_start + timedelta(hours = j - k + 1)
+            start = forecast_start + timedelta(hours=j - k)
+            end = forecast_start + timedelta(hours=j - k + 1)
 
             hour = j % 24
             base = (smooth + trend) * hod[hour]
@@ -155,6 +154,7 @@ def gp_forecast(
     kern: gpflow.kernels = None,
     detectors: list = None,
     method: str = "gap",
+    scaling: bool = True,
 ) -> pd.DataFrame:
 
     """Forecast using Gaussian Processes
@@ -185,8 +185,9 @@ def gp_forecast(
         Y = Y.astype(float)
         X = np.arange(1, len(Y) + 1, dtype=float).reshape(-1, 1)
 
-        scaler = MinMaxScaler(feature_range=(-1, 1))
-        y = scaler.fit_transform(Y)
+        if scaling:
+            scaler = MinMaxScaler(feature_range=(-1, 1))
+            Y = scaler.fit_transform(Y)
 
         if kern is None:
 
@@ -200,7 +201,7 @@ def gp_forecast(
         else:
             k = kern
 
-        model = gpflow.models.GPR(data=(X, y), kernel=k, mean_function=None)
+        model = gpflow.models.GPR(data=(X, Y), kernel=k, mean_function=None)
         opt = gpflow.optimizers.Scipy()
 
         try:
@@ -240,9 +241,14 @@ def gp_forecast(
         ## predict mean and variance of latent GP at test points
         mean, var = model.predict_f(prediction_range)
 
-        # reverse min_max scaler
-        test_predict = scaler.inverse_transform(mean)
-        test_var = scaler.inverse_transform(var)
+        if scaling:
+            # reverse min_max scaler
+            test_predict = scaler.inverse_transform(mean)
+            test_var = scaler.inverse_transform(var)
+
+        else:
+            test_predict = mean.numpy()
+            test_var = var.numpy()
 
         forecast_period = pd.date_range(
             start=forecast_start, end=forecast_upto - timedelta(hours=1), freq="H",
