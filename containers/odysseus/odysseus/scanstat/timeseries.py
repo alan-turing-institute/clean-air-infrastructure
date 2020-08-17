@@ -158,6 +158,7 @@ def gp_forecast(
     kern: gpflow.kernels = None,
     detectors: list = None,
     stitch_forecast: bool = False,
+    scale_target: bool = True,
 ) -> pd.DataFrame:
 
     """Forecast using Gaussian Processes
@@ -197,7 +198,7 @@ def gp_forecast(
         Y = Y.astype(float)
         X = np.arange(1, len(Y) + 1, dtype=float).reshape(-1, 1)
 
-        if scaling:
+        if scale_target:
             scaler = MinMaxScaler(feature_range=(-1, 1))
             Y = scaler.fit_transform(Y)
 
@@ -238,11 +239,10 @@ def gp_forecast(
         ## predict mean and variance of latent GP at test points
         mean, var = model.predict_f(prediction_range)
 
-        if scaling:
+        if scale_target:
             # reverse min_max scaler
             test_predict = scaler.inverse_transform(mean)
             test_var = scaler.inverse_transform(var)
-
         else:
             test_predict = mean.numpy()
             test_var = var.numpy()
