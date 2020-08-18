@@ -75,8 +75,6 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             raise ValueError(error_message.format(period="forecasting"))
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
-        print(len(self.training_readings['detector_id'].unique()))
-
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
 
