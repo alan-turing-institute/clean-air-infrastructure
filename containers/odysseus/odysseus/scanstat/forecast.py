@@ -3,6 +3,7 @@ methods of timeseries analysis from `scanstat.timeseries`"""
 
 import logging
 import datetime
+from datetime import timedelta
 
 import pandas as pd
 import numpy as np
@@ -19,6 +20,7 @@ def forecast(
     forecast_upto: datetime,
     model_name: str = "HW",
     detectors: list = None,
+    stitch_forecast: bool = True,
 ) -> pd.DataFrame:
 
     """Firstly produces a forecast using input training data. Secondly, produces a dataframe containing
@@ -71,6 +73,20 @@ def forecast(
         len(detectors),
     )
 
+    # Calculate hours between user-specified time periods and log info
+    num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
+    if num_gap_hours > 0:
+        if stitch_forecast:
+            logging.info(
+                "Using stitch method to account for %d hours difference between train and forecast periods.",
+                num_gap_hours,
+            )
+        else:
+            logging.info(
+                "Building long-range forecast over the %d hour gap between train and forecast periods.",
+                num_gap_hours,
+            )
+
     # Select forecasting model_name
     if model_name == "HW":
         y = hw_forecast(
@@ -80,6 +96,7 @@ def forecast(
             forecast_start,
             forecast_upto,
             detectors=detectors,
+            stitch_forecast=stitch_forecast,
         )
 
     if model_name == "GP":
@@ -90,6 +107,7 @@ def forecast(
             forecast_start,
             forecast_upto,
             detectors=detectors,
+            stitch_forecast=stitch_forecast,
         )
 
     logging.info("Forecasting complete.")
@@ -99,7 +117,6 @@ def forecast(
         processed_test,
         on=[
             "detector_id",
-            "point_id",
             "lon",
             "lat",
             "measurement_start_utc",
@@ -115,7 +132,7 @@ def forecast(
     actual_nans = forecast_df["actual"].isnull().sum(axis=0)
     baseline_nans = forecast_df["baseline"].isnull().sum(axis=0)
     if actual_nans != 0 or baseline_nans != 0:
-        raise ValueError("Something went wrong with the forecast")
+        raise ValueError("Something went wrong. Forecast contains NaNs.")
 
     # Make Baseline Values Non-Negative
     negative = len(forecast_df[forecast_df["baseline"] < 0]["baseline"])

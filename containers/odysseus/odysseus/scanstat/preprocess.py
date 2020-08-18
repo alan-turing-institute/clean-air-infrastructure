@@ -12,6 +12,7 @@ from astropy.timeseries import LombScargle
 
 def preprocessor(
     scoot_df: pd.DataFrame,
+    readings_type="",
     percentage_missing: float = 20,
     max_anom_per_day: int = 1,
     n_sigma: int = 3,
@@ -20,7 +21,7 @@ def preprocessor(
     rolling_hours: int = 24,
     consecutive_missing_threshold: int = 3,
     drop_aperiodic: bool = False,
-    fap_threshold: float = 1e-40,
+    fap_percentile_threshold: float = 0.95,
 ) -> pd.DataFrame:
 
     """Takes a SCOOT dataframe, performs anomaly removal, fills missing readings, and then
@@ -45,6 +46,7 @@ def preprocessor(
     columns = [
         "detector_id",
         "point_id",
+        "geom",
         "lon",
         "lat",
         "location",
@@ -66,13 +68,17 @@ def preprocessor(
     if rolling_hours < 0 and not global_threshold:
         raise ValueError("rolling_hours must be non-negative")
 
+    if readings_type:
+        logging.info("Preprocessing %s data", readings_type.upper())
+
     # Sort values for nice multi-indexing printing
     scoot_df.sort_values(["detector_id", "measurement_end_utc"], inplace=True)
 
     # Convert location wkb to wkt, so can use groupby later on
     scoot_df["location"] = scoot_df["location"].apply(to_shape).apply(lambda x: x.wkt)
-    # Drop geom column as not needed for scan
-    scoot_df = scoot_df.drop("geom", axis=1)
+
+    # Drop geom and point_id column as not needed for scan - will merge on at the end
+    scoot_df = scoot_df.drop(["geom", "point_id"], axis=1)
 
     # Convert dates to useful format
     scoot_df["measurement_start_utc"] = pd.to_datetime(
@@ -109,7 +115,7 @@ def preprocessor(
         )
     else:
         logging.info(
-            "Using the %d-day rolling median to remove outliers", rolling_hours
+            "Using the %d-hour rolling median to remove outliers", rolling_hours
         )
     logging.info(
         "Using %d iterations to remove points outside of %d sigma from the median",
@@ -144,7 +150,7 @@ def preprocessor(
 
     # User choice to run periodogram
     if drop_aperiodic:
-        scoot_df = drop_aperiodic_detectors(scoot_df, fap_threshold)
+        scoot_df = drop_aperiodic_detectors(scoot_df, fap_percentile_threshold)
 
     post_periodic_length = len(set(scoot_df.index.get_level_values("detector_id")))
     logging.info(
@@ -155,7 +161,8 @@ def preprocessor(
     # Fill missing lon, lats, locations etc.
     proc_df = fill_missing_values(scoot_df)
 
-    logging.info("Data processing complete.")
+    if readings_type:
+        logging.info("%s data processing complete.", readings_type.upper())
     return proc_df
 
 
@@ -343,7 +350,6 @@ def fill_missing_values(scoot_df: pd.DataFrame) -> pd.DataFrame:
             "lon",
             "lat",
             "location",
-            "point_id",
             "row",
             "col",
             "measurement_start_utc",
@@ -384,7 +390,7 @@ def fap(detector_timeseries: pd.DataFrame) -> float:
 
 
 def drop_aperiodic_detectors(
-    proc_df: pd.DataFrame, fap_threshold: float
+    proc_df: pd.DataFrame, fap_percentile_threshold: float
 ) -> pd.DataFrame:
 
     """Drop all detectors that are not periodic 'enough' to continue with analysis.
@@ -408,16 +414,17 @@ def drop_aperiodic_detectors(
     # Rename 'wrongly' named column. Could be re-factored nicely
     proc_df.rename({"n_vehicles_in_intervalX": "fap"}, axis=1, inplace=True)
 
-    # TODO - change this to drop the top 5% quantile of faps?
+    # Drop the top 5% quantile of aperiodic detectors
     # Uses the assumption of "Most Scoot detctors are well behaved"
+    fap_threshold = np.percentile(proc_df["fap"], fap_percentile_threshold * 100)
 
     # Return detectors which satisfy the condition
     proc_df = proc_df[proc_df["fap"] < fap_threshold]
 
     if proc_df.empty:
-        raise ValueError(
-            "All detectors do not meet the periodicity requirements. Try increasing the fap threshold."
-        )
+        error_message = "All detectors do not meet the periodicity requirements. "
+        error_message += "Try increasing the fap percentile threshold."
+        raise ValueError(error_message)
 
     return proc_df
 

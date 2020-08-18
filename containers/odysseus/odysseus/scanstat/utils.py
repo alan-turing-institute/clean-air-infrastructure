@@ -27,7 +27,6 @@ def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
             "actual",
             "row",
             "col",
-            # "point_id",
             "baseline",
             "baseline_upper",
             "baseline_lower",

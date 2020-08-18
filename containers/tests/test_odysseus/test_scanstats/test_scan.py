@@ -29,17 +29,17 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     init_num_test_detectors = len(test_readings["detector_id"].drop_duplicates())
     print(init_num_train_detectors)
     init_num_train_days = (
-        train_readings["measurement_end_utc"].max() - train_readings["measurement_start_utc"].min()
+        train_readings["measurement_end_utc"].max()
+        - train_readings["measurement_start_utc"].min()
     ).days
     init_num_forecast_days = (
-        test_readings["measurement_end_utc"].max() - test_readings["measurement_start_utc"].min()
+        test_readings["measurement_end_utc"].max()
+        - test_readings["measurement_start_utc"].min()
     ).days
 
     # 1) Pre-Process both data sets
-    assert "point_id_x" not in train_readings
-    assert "point_id_x" not in test_readings
-    processed_train = preprocessor(train_readings)
-    processed_test = preprocessor(test_readings)
+    processed_train = preprocessor(train_readings, readings_type="train")
+    processed_test = preprocessor(test_readings, readings_type="test")
 
     print(processed_test)
     print(processed_train)
@@ -66,8 +66,8 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.train_upto,
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
-#        model_name=scan_scoot.model_name,
-        model_name="GP",
+        model_name=scan_scoot.model_name,
+        stitch_forecast=True,
     )
     print(forecast_df)
 
@@ -124,7 +124,6 @@ def preprocess_checks(
 
     cols = [
         "detector_id",
-        "point_id",
         "lon",
         "lat",
         "location",
@@ -157,10 +156,12 @@ def preprocess_checks(
 def intersection_checks(train, test, init_num_train_detectors, init_num_test_detectors):
     """Test that dataframes contain data for the same detectors"""
 
-    train_detectors = set(train['detector_id'])
-    test_detectors = set(test['detector_id'])
+    train_detectors = set(train["detector_id"])
+    test_detectors = set(test["detector_id"])
     assert train_detectors == test_detectors
-    assert len(train_detectors) <= min(init_num_train_detectors, init_num_test_detectors)
+    assert len(train_detectors) <= min(
+        init_num_train_detectors, init_num_test_detectors
+    )
     assert len(test_detectors) <= min(init_num_train_detectors, init_num_test_detectors)
 
 
@@ -178,7 +179,6 @@ def forecast_checks(
 
     cols = [
         "detector_id",
-        "point_id",
         "lon",
         "lat",
         "location",
@@ -195,8 +195,8 @@ def forecast_checks(
     assert set(cols) == set(forecast_df.columns)
 
     num_detectors = len(forecast_df["detector_id"].unique())
-    # TODO - might not be the case if GP matrix can't be inverted
-    assert init_num_detectors == num_detectors
+    # Might not be equal if GP matrix can't be inverted
+    assert init_num_detectors >= num_detectors
 
     neg_baselines = forecast_df[forecast_df["baseline"] < 0]
     assert len(neg_baselines) == 0
