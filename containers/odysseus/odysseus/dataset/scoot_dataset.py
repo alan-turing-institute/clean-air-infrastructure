@@ -165,8 +165,8 @@ class ScootDataset(DBWriter, ScootQueryMixin):
             Preprocessed traffic data.
         """
 
-        # normalisation
-        traffic_df = normalise_datetime(traffic_df, wrt=preprocessing.normaliseby)
+        # TODO normalisation
+        # traffic_df = normalise_datetime(traffic_df, wrt=preprocessing.normaliseby)
         return traffic_df
 
     # def update_remote_tables(self):

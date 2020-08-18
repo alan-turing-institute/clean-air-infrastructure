@@ -16,4 +16,6 @@ def scoot_config(
 @pytest.fixture(scope="function")
 def scoot_preprocessing() -> ScootPreprocessing:
     """Preprocessing settings for scoot datasets."""
-    return ScootPreprocessing(features=["time"], target=["n_vehicles_in_interval"])
+    return ScootPreprocessing(
+        features=["time"], normaliseby="time", target=["n_vehicles_in_interval"]
+    )
