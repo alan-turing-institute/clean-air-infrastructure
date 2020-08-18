@@ -11,13 +11,15 @@ from ..databases.schemas.air_quality_forecast import (
     ForecastResultJson,
 )
 from ..databases.queries.air_quality_forecast import (
-    get_available_instance_ids,
-    get_forecasts,
-    get_forecasts_with_location,
+    cachable_available_instance_ids,
+    cachable_forecasts,
+    cachable_forecasts_with_location,
+    query_forecasts,
+    query_forecasts_with_location,
 )
 from ..responses import GeoJSONResponse
 
-import time
+
 router = APIRouter()
 
 
@@ -30,24 +32,24 @@ async def forecast_json(
     date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
-
-    start = time.time()
-
     # Establish start and end datetimes
     start_datetime = datetime.combine(date, datetime.min.time())
     end_datetime = start_datetime + timedelta(hours=48)
 
     # Get the most recent instance ID among all those which are predicting in the required interval
-    available_instance_ids = get_available_instance_ids(db, start_datetime, end_datetime).all()
+    available_instance_ids = cachable_available_instance_ids(db, start_datetime, end_datetime)
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query = get_forecasts(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
+    query_results = cachable_forecasts(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
 
-    print("Finished after", time.time() - start, "seconds")
-    return all_or_404(query)
+    # Return the query results as a list of tuples
+    return query_results
 
-    # One point only: Finished after 1.09916090965271 seconds
+    # One point: Finished after 1.1653501987457275 seconds
+    # One point (cached): Finished after 2.8133392333984375e-05
+    # All points: Finished after 10.618299961090088 seconds
+    # All points (cached): Finished after 6.29425048828125e-05 seconds
 
 
 @router.get(
@@ -60,24 +62,21 @@ async def forecast_geojson(
     date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
-
-    start = time.time()
     # Establish start and end datetimes
     start_datetime = datetime.combine(date, datetime.min.time())
     end_datetime = start_datetime + timedelta(hours=48)
 
     # Get the most recent instance ID among all those which are predicting in the required interval
-    available_instance_ids = get_available_instance_ids(db, start_datetime, end_datetime).all()
+    available_instance_ids = cachable_available_instance_ids(db, start_datetime, end_datetime)
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query = get_forecasts_with_location(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
-    # query_results = all_or_404(query)
-    query_results = query.limit(5)
-    query_results = [r._asdict() for r in query_results]
+    query_results = cachable_forecasts_with_location(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
 
-    print("Finished after", time.time() - start, "seconds")
-    return ForecastResultGeoJson(query_results)
+    # Return the query results as a GeoJSON FeatureCollection
+    return ForecastResultGeoJson([r._asdict() for r in query_results])
 
-    # One point only: Finished after 2.0673673152923584 seconds
-
+    # One point: Finished after 1.1568198204040527 seconds
+    # One point (cached): Finished after 6.67572021484375e-05 seconds
+    # All points: Finished after 13.079823017120361 seconds
+    # All points (cached): Finished after 0.5709922313690186 seconds

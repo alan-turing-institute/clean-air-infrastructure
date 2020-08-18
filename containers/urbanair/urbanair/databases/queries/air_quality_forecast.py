@@ -1,23 +1,25 @@
 """Air quality forecast database queries and external api calls"""
-from typing import Optional
+from cachetools import cached, LRUCache
+from cachetools.keys import hashkey
 from datetime import datetime
+from typing import Optional, List, Tuple
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
-from fastapi import HTTPException
 from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
-    AirQualityDataTable,
     HexGrid,
     MetaPoint,
 )
 from cleanair.decorators import db_query
-from cleanair.types import Source
+from ..database import all_or_404
 
 
 @db_query
-def get_available_instance_ids(
-    db: Session, start_datetime: datetime, end_datetime: datetime,
+def query_available_instance_ids(
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
 ) -> Query:
     """
     Check what forecast data is available between startdate and enddate.
@@ -46,8 +48,17 @@ def get_available_instance_ids(
     return res.order_by(AirQualityInstanceTable.fit_start_time.desc())
 
 
+@cached(cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs))
+def cachable_available_instance_ids(
+    db: Session,
+    start_datetime: datetime,
+    end_datetime: datetime,
+) -> Optional[List[Tuple]]:
+    return query_available_instance_ids(db, start_datetime, end_datetime).all()
+
+
 @db_query
-def get_forecasts(
+def query_forecasts(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -69,12 +80,22 @@ def get_forecasts(
             AirQualityResultTable.measurement_start_utc >= start_datetime,
             AirQualityResultTable.measurement_start_utc <= end_datetime,
         )
-        .filter(HexGrid.point_id == "15991a54-6330-455e-b220-6f397f56c777") # TODO remove
     )
 
 
+@cached(cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs))
+def cachable_forecasts(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+) -> Optional[List[Tuple]]:
+    query = query_forecasts(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
+    return all_or_404(query)
+
+
 @db_query
-def get_forecasts_with_location(
+def query_forecasts_with_location(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -92,10 +113,21 @@ def get_forecasts_with_location(
             func.ST_AsText(MetaPoint.location).label("location"),
         )
         .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
+        .join(MetaPoint, MetaPoint.id == HexGrid.point_id)
         .filter(
             AirQualityResultTable.instance_id == instance_id,
             AirQualityResultTable.measurement_start_utc >= start_datetime,
             AirQualityResultTable.measurement_start_utc <= end_datetime,
         )
-        .filter(HexGrid.point_id == "15991a54-6330-455e-b220-6f397f56c777") # TODO remove
     )
+
+
+@cached(cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs))
+def cachable_forecasts_with_location(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+) -> Optional[List[Tuple]]:
+    query = query_forecasts_with_location(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
+    return all_or_404(query)

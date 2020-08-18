@@ -1,6 +1,6 @@
 """Return schemas for air quality forecast routes"""
 from datetime import datetime
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from typing import List, Dict
 from geojson import FeatureCollection, Feature
 import shapely.wkt
@@ -8,7 +8,6 @@ import shapely.wkt
 
 class ForecastResultGeoJson(FeatureCollection):
     """Forecast results as GeoJSON feature collection"""
-
     def __init__(self, rows: List[Dict]) -> None:
         features = [
             Feature(

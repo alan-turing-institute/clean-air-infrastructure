@@ -17,7 +17,7 @@ SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 # Dependency
 def get_db() -> Session:
-    "Get a database session"
+    """Get a database session"""
     db = SESSION_LOCAL()
     try:
         yield db
@@ -26,10 +26,7 @@ def get_db() -> Session:
 
 
 def all_or_404(query: Query) -> Optional[List[Tuple]]:
-    """
-    Return all rows from a query and raise a 404 if empty
-    """
-
+    """Return all rows from a query and raise a 404 if empty."""
     data = query.all()
 
     if len(data) > 0:
