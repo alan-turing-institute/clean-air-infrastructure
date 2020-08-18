@@ -197,10 +197,8 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
     def get_scoot_features(self, point_ids, start_datetime, end_datetime):
 
         scoot_road_readings = self.scoot_to_road(
-            point_ids, start_datetime, end_datetime, output_type="query"
-        )
-
-        return scoot_road_readings
+            point_ids, start_datetime, end_datetime
+        ).cte()
 
         with self.dbcnxn.open_session() as session:
 
