@@ -341,7 +341,7 @@ deployments:
             secretName: secrets
       resources:
         limits:
-            cpu: "8"
+            cpu: "2"
         requests:
             cpu: "2"
             memory: "5Gi"
