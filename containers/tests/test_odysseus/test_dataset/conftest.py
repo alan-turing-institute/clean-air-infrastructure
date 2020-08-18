@@ -20,13 +20,23 @@ def scoot_config(
 def scoot_preprocessing() -> ScootPreprocessing:
     """Preprocessing settings for scoot datasets."""
     return ScootPreprocessing(
-        features=["time"], normaliseby="time", target=["n_vehicles_in_interval"]
+        datetime_transformation="epoch",
+        features=["time"],
+        normalise_datetime=False,
+        target=["n_vehicles_in_interval"],
     )
+
 
 @pytest.fixture(scope="function")
 def scoot_dataset(
-    secretfile: str, connection: Connector, scoot_config: ScootConfig, scoot_preprocessing: ScootPreprocessing, scoot_writer: Any,
+    secretfile: str,
+    connection: Connector,
+    scoot_config: ScootConfig,
+    scoot_preprocessing: ScootPreprocessing,
+    scoot_writer: Any,
 ) -> ScootDataset:
     """A scoot dataset with fake data."""
     scoot_writer.update_remote_tables()
-    return ScootDataset(scoot_config, scoot_preprocessing, secretfile=secretfile, connection=connection)
+    return ScootDataset(
+        scoot_config, scoot_preprocessing, secretfile=secretfile, connection=connection
+    )

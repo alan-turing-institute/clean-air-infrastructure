@@ -50,6 +50,7 @@ def test_scoot_dataset_init(
     # run other validation checks
     validate_scoot_dataset(dataset_from_df)
 
+
 def test_scoot_dataset_shapes(scoot_dataset: ScootDataset) -> None:
     """Test that the features have the correct shapes."""
     nrows = len(scoot_dataset.dataframe)

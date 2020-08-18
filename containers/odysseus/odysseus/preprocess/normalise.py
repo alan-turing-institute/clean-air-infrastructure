@@ -16,39 +16,49 @@ def denormalise(x, wrt_y):
     return (x * np.std(wrt_y, axis=0)) + np.mean(wrt_y, axis=0)
 
 
-def normalise_datetime(
-    time_df: pd.DataFrame, wrt: str = "hour", col: str = "measurement_start_utc"
+def transform_datetime(
+    time_df: pd.DataFrame,
+    transformation: str = "hour",
+    col: str = "measurement_start_utc",
+    normalise_datetime: bool = False,
 ) -> pd.DataFrame:
     """
     Normalise a pandas datetime series with respect to (wrt) a time attribute.
 
     Args:
         time_df: Must have a datetime col to normalise.
-        wrt (optional): Normalise with respect to 'clipped_hour', 'hour' or 'epoch'.
-        col (optional): Name of the datetime column.
+    
+    Keyword args:
+        transformation: Name of the method for transforming datetime.
+            Either epoch or hour.
+        col: Name of the datetime column.
+        normalise_datetime: If true, subtract the mean and divide by standard
+            deviation of the time column.
 
     Returns:
         DataFrame with two new columns called 'time' and 'time_norm'.
     """
-    if wrt == "epoch":
-        time_df["time"] = time_df[col].astype("int64") // 1e9  # convert to epoch
-        time_df["time_norm"] = normalise(time_df["time"])
+    transformed_df = time_df.copy()
+    if transformation == "epoch":
+        # use the datetime.timestamp() method to convert to integer
+        transformed_df["time"] = transformed_df[col].apply(lambda x: x.timestamp())
 
-    elif wrt == "clipped_hour":
-        time_df["time"] = time_df[col].dt.hour
-        time_df["time_norm"] = (time_df["time"] - 12) / 12
-
-    elif wrt == "hour":
-        time_df["time"] = time_df[col].dt.hour
-        time_df["time_norm"] = time_df["time"]
+    elif transformation == "hour":
+        # take the hour of the day as the time column
+        transformed_df["time"] = transformed_df[col].dt.hour
 
     else:
         raise ValueError(
-            "wrt must be either hour or epoch. You passed {arg}".format(arg=wrt)
+            "wrt must be either hour or epoch. You passed {arg}".format(
+                arg=transformation
+            )
         )
 
-    time_df = time_df.sort_values("time_norm")
-    return time_df
+    if normalise_datetime:
+        transformed_df["time_norm"] = normalise(transformed_df["time"])
+
+    transformed_df = transformed_df.sort_values("time")
+    return transformed_df
 
 
 def normalise_location(

@@ -10,6 +10,7 @@ from nptyping import NDArray, Float64
 from cleanair.databases import DBWriter
 from cleanair.utils import hash_dict
 from cleanair.mixins import ScootQueryMixin
+from ..preprocess import transform_datetime
 from .scoot_config import ScootConfig, ScootPreprocessing
 
 
@@ -176,10 +177,15 @@ class ScootDataset(DBWriter, ScootQueryMixin):
             Preprocessed traffic data.
         """
 
-        # TODO normalisation
-        # traffic_df = normalise_datetime(traffic_df, wrt=preprocessing.normaliseby)
+        dataframe = transform_datetime(
+            dataframe,
+            col="measurement_start_utc",
+            normalise_datetime=preprocessing.normalise_datetime,
+            transformation=preprocessing.datetime_transformation,
+        )
         return dataframe
 
+    # TODO write data settings to DB - move to instance class
     # def update_remote_tables(self):
     #     """Update the data config table for traffic."""
     #     self.logger.info("Updating the traffic data table.")

@@ -15,6 +15,7 @@ class ScootConfig(BaseModel):
 class ScootPreprocessing(BaseModel):
     """Scoot preprocessing settings for a model."""
 
+    datetime_transformation: str
     features: List[str]
-    normaliseby: str  # TODO change name
+    normalise_datetime: bool
     target: List[str]
