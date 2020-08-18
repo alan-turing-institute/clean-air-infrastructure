@@ -1,8 +1,11 @@
 """Fixtures for datasets."""
 
-from typing import List
+from typing import Any, List
 import pytest
-from odysseus.dataset import ScootConfig, ScootPreprocessing
+from cleanair.databases import Connector
+from odysseus.dataset import ScootConfig, ScootDataset, ScootPreprocessing
+
+# pylint: disable=redefined-outer-name
 
 
 @pytest.fixture(scope="function")
@@ -19,3 +22,11 @@ def scoot_preprocessing() -> ScootPreprocessing:
     return ScootPreprocessing(
         features=["time"], normaliseby="time", target=["n_vehicles_in_interval"]
     )
+
+@pytest.fixture(scope="function")
+def scoot_dataset(
+    secretfile: str, connection: Connector, scoot_config: ScootConfig, scoot_preprocessing: ScootPreprocessing, scoot_writer: Any,
+) -> ScootDataset:
+    """A scoot dataset with fake data."""
+    scoot_writer.update_remote_tables()
+    return ScootDataset(scoot_config, scoot_preprocessing, secretfile=secretfile, connection=connection)

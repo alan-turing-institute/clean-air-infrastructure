@@ -49,3 +49,13 @@ def test_scoot_dataset_init(
     assert detector_id not in dataset_from_df.dataframe.detector_id.to_list()
     # run other validation checks
     validate_scoot_dataset(dataset_from_df)
+
+def test_scoot_dataset_shapes(scoot_dataset: ScootDataset) -> None:
+    """Test that the features have the correct shapes."""
+    nrows = len(scoot_dataset.dataframe)
+    nfeatures = len(scoot_dataset.preprocessing.features)
+    ntargets = len(scoot_dataset.preprocessing.target)
+    assert scoot_dataset.features_numpy.shape == (nrows, nfeatures)
+    assert scoot_dataset.features_tensor.shape == (nrows, nfeatures)
+    assert scoot_dataset.target_numpy.shape == (nrows, ntargets)
+    assert scoot_dataset.target_tensor.shape == (nrows, ntargets)

@@ -4,7 +4,9 @@ A dataset for scoot.
 
 from typing import Collection, Optional
 import tensorflow as tf
+import numpy as np
 import pandas as pd
+from nptyping import NDArray, Float64
 from cleanair.databases import DBWriter
 from cleanair.utils import hash_dict
 from cleanair.mixins import ScootQueryMixin
@@ -65,9 +67,14 @@ class ScootDataset(DBWriter, ScootQueryMixin):
         return hash_dict(merged_dict)
 
     @property
+    def features_numpy(self) -> NDArray[Float64]:
+        """The features as a numpy array."""
+        return self.dataframe[self.preprocessing.features].to_numpy(dtype=np.float64)
+
+    @property
     def features_tensor(self) -> tf.Tensor:
         """The feature tensor."""
-        raise NotImplementedError("TODO - get tensor from dataframe")
+        return tf.convert_to_tensor(self.features_numpy, dtype=tf.dtypes.float64)
 
     @property
     def preprocessing(self) -> ScootPreprocessing:
@@ -75,9 +82,14 @@ class ScootDataset(DBWriter, ScootQueryMixin):
         return self._preprocessing
 
     @property
+    def target_numpy(self) -> NDArray[Float64]:
+        """The target as a numpy array."""
+        return self.dataframe[self.preprocessing.target].to_numpy(dtype=np.float64)
+
+    @property
     def target_tensor(self) -> tf.Tensor:
         """The target tensor."""
-        raise NotImplementedError("TODO - get tensor from dataframe")
+        return tf.convert_to_tensor(self.target_numpy, dtype=tf.dtypes.float64)
 
     @staticmethod
     def validate_dataframe(
@@ -151,7 +163,7 @@ class ScootDataset(DBWriter, ScootQueryMixin):
 
     @staticmethod
     def preprocess_dataframe(
-        traffic_df: pd.DataFrame, preprocessing: ScootPreprocessing
+        dataframe: pd.DataFrame, preprocessing: ScootPreprocessing
     ) -> pd.DataFrame:
         """
         Return a dataframe that has been normalised and preprocessed.
@@ -166,7 +178,7 @@ class ScootDataset(DBWriter, ScootQueryMixin):
 
         # TODO normalisation
         # traffic_df = normalise_datetime(traffic_df, wrt=preprocessing.normaliseby)
-        return traffic_df
+        return dataframe
 
     # def update_remote_tables(self):
     #     """Update the data config table for traffic."""
