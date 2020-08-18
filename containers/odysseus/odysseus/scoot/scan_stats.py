@@ -77,9 +77,10 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
+
         # 1) Pre-process both training and test data
-        processed_train = preprocessor(self.training_readings)
-        processed_test = preprocessor(self.test_readings)
+        processed_train = preprocessor(self.training_readings, readings_type="train")
+        processed_test = preprocessor(self.test_readings, readings_type="test")
 
         # 2) Make sure that both of the above dataframes span the same detector set
         processed_train, processed_test = intersect_processed_data(processed_train, processed_test)
@@ -95,8 +96,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             self.model_name,
         )
 
-        # 4) Aggregate forecast dataframe to grid level. Less to search through
-        # in scan
+        # 4) Aggregate forecast dataframe to grid level. Less to search through in scan
         aggregate = aggregate_readings_to_grid(forecast_df)
 
         # 5) Scan
@@ -109,6 +109,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
         self.scores_df = grid_level_scores
+        # Return dataframe to be stored in database
         return grid_level_scores
 
     @db_query
@@ -154,17 +155,18 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
-        # need to attach the point_id
-        raise NotImplementedError(
-            "Which dataframe should we be merging on? Is merging even necessary?"
+        # Need to attach the point_id to scores_df
+        # Only way to get all grid_res ** 2 point id's is to call fishnet_query
+        fishnet_df = self.fishnet_query(
+            self.borough, self.grid_resolution, output_type="df"
         )
-        scores_df = self.scores_df.merge(
-            self.readings[["point_id", "row", "col"]], on=["row", "col", "point_id"],
+        final_scores_df = self.scores_df.merge(
+            fishnet_df[['row', 'col', 'point_id']], on=["row", "col"], how='left',
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = scores_df[scores_cols].to_dict("records")
+        scores_records = final_scores_df[scores_cols].to_dict("records")
         self.commit_records(
             scores_records, table=ScootScanStats, on_conflict="overwrite"
         )

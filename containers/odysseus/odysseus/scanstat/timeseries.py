@@ -32,13 +32,17 @@ def hw_forecast(
 
     Args:
         train_data: Dataframe of 'processed' SCOOT data
+        train_start: Timestamp of beginning of training period
+        train_upto: Timestamp of end of training period
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
         alpha: Optimisation parameter
         beta: Optimisation parameter
         gamma: Optimisation parameter
         detectors: List of detectors to look at. Defaults to all.
-        method: string refering the the method for handling long forecasts; "gap" or "stitch"
+        stitch_forecast: If there is a gap between training and forecast periods,
+                         avoid long-range forecasts by stitching to the closest
+                         matching hour of the next week (GP) or next day (HW).
 
     Returns:
         Dataframe forecast in same format as SCOOT input dataframe, with baseline
@@ -62,6 +66,9 @@ def hw_forecast(
     num_forecast_hours = int((forecast_upto - forecast_start) / timedelta(hours=1))
     num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
 
+    # If there is a gap between forecast and training periods, stitching the forecasts
+    # prevents long-range forecasts by using forecasting counts for the day after the
+    # the training period. Note: HW has no dow component
     if stitch_forecast:
         num_gap_hours = num_gap_hours % 24
 
@@ -85,8 +92,6 @@ def hw_forecast(
             hod[hour] = gamma * (count / smooth_new) + (1 - gamma) * hod[hour]
             smooth = smooth_new
 
-        # Now insert gap between training and forecasting periods, if the method is "stitch" then the gap will be
-        # no greater than 24 hours, where the forecast starts at the next equivalent hour
         # Continue to train on more recent data if there is a gap between train and forecast periods
         if num_gap_hours > 0:
             for k in range(num_train_hours, num_train_hours + num_gap_hours):
@@ -132,7 +137,6 @@ def hw_forecast(
                 "detector_id": detector,
                 "lon": one_det["lon"].iloc[0],
                 "lat": one_det["lat"].iloc[0],
-                "point_id": one_det["point_id"].iloc[0],
                 "measurement_start_utc": forecast_start_times,
                 "measurement_end_utc": forecast_end_times,
                 "baseline": baselines,
@@ -164,11 +168,15 @@ def gp_forecast(
     """Forecast using Gaussian Processes
     Args:
         train_data: Dataframe of processed SCOOT data spanning the training period
+        train_start: Timestamp of beginning of training period
+        train_upto: Timestamp of end of training period
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
         kern: Specify custom gfplow kernel for GPR
         detectors: List of detectors to look at
-        method: string refering the the method for handling long forecasts; "gap" or "stitch"
+        stitch_forecast: If there is a gap between training and forecast periods,
+                         avoid long-range forecasts by stitching to closest day(GP), hour(HW)
+        scale_target: Scale target Y (counts) between [-1, 1] before GPR. Sometimes advantageous.
     Returns:
         Dataframe forecast in same format as SCOOT input dataframe
     """
@@ -182,7 +190,9 @@ def gp_forecast(
     num_train_hours = int((train_upto - train_start) / timedelta(hours=1))
     num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
 
-    # Stitch onto matching hour of the week
+    # Stitch onto matching hour of the week - this avoids long-range forecasts
+    # and instead, forecasts from the nearest matching day of the week after
+    # the end of the training period
     if stitch_forecast:
         num_gap_hours = num_gap_hours % 168
 
@@ -259,7 +269,6 @@ def gp_forecast(
                 "detector_id": detector,
                 "lon": one_det["lon"].iloc[0],
                 "lat": one_det["lat"].iloc[0],
-                "point_id": one_det["point_id"].iloc[0],
                 "measurement_start_utc": forecast_period,
                 "measurement_end_utc": forecast_period + timedelta(hours=1),
                 "baseline": test_predict.flatten(),
