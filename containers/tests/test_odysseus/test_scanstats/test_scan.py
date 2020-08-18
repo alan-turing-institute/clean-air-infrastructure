@@ -7,7 +7,7 @@ from datetime import timedelta
 
 import pandas as pd
 
-from odysseus.scanstat.preprocess import preprocessor
+from odysseus.scanstat.preprocess import preprocessor, intersect_processed_data
 from odysseus.scanstat.forecast import forecast
 from odysseus.scanstat.utils import aggregate_readings_to_grid
 from odysseus.scanstat.scan import scan, average_gridcell_scores
@@ -20,42 +20,60 @@ def test_scan(scan_scoot: ScanScoot) -> None:
     """Test whole pipeline of scan functions with settings below."""
 
     # Set up quick alias
-    readings = scan_scoot.readings
-    print(readings)
+    train_readings = scan_scoot.training_readings
+    test_readings = scan_scoot.test_readings
+    print(train_readings)
+    print(test_readings)
 
-    init_num_detectors = len(readings["detector_id"].drop_duplicates())
-    init_num_days = (
-        readings["measurement_end_utc"].max() - readings["measurement_start_utc"].min()
+    init_num_train_detectors = len(train_readings["detector_id"].drop_duplicates())
+    init_num_test_detectors = len(test_readings["detector_id"].drop_duplicates())
+    print(init_num_train_detectors)
+    init_num_train_days = (
+        train_readings["measurement_end_utc"].max()
+        - train_readings["measurement_start_utc"].min()
+    ).days
+    init_num_forecast_days = (
+        test_readings["measurement_end_utc"].max()
+        - test_readings["measurement_start_utc"].min()
     ).days
 
-    # 1) Pre-Process data
-    assert "point_id_x" not in readings
-    proc_df = preprocessor(readings)
-    assert "point_id_x" not in proc_df
+    # 1) Pre-Process both data sets
+    processed_train = preprocessor(train_readings, readings_type="train")
+    processed_test = preprocessor(test_readings, readings_type="test")
 
-    print(proc_df)
-    preprocess_checks(proc_df, init_num_days, init_num_detectors)
+    print(processed_test)
+    print(processed_train)
+    preprocess_checks(processed_train, init_num_train_days, init_num_train_detectors)
+    preprocess_checks(processed_test, init_num_forecast_days, init_num_test_detectors)
 
     # Update the number of detectors for the rest of the test - some are thrown
     # away in the pre-process stage.
-    init_num_detectors = len(proc_df["detector_id"].unique())
+    init_num_train_detectors = len(processed_train["detector_id"].unique())
+    init_num_test_detectors = len(processed_test["detector_id"].unique())
 
-    # 2) Produce forecast
+    # 2) Ensure both dataframes contain data for the same detectors
+    train, test = intersect_processed_data(processed_train, processed_test)
+
+    intersection_checks(train, test, init_num_train_detectors, init_num_test_detectors)
+
+    num_analysis_detectors = len(train["detector_id"].unique())
+
+    # 3) Produce forecast
     forecast_df = forecast(
-        proc_df,
+        train,
+        test,
         scan_scoot.train_start,
         scan_scoot.train_upto,
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
-        method=scan_scoot.model_name,
+        model_name=scan_scoot.model_name,
+        stitch_forecast=True,
     )
-    assert "point_id_x" not in forecast_df
-
     print(forecast_df)
 
     forecast_checks(
         forecast_df,
-        init_num_detectors,
+        num_analysis_detectors,
         scan_scoot.forecast_hours,
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
@@ -63,8 +81,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
 
     # 3) Aggregate data to grid level
     agg_df = aggregate_readings_to_grid(forecast_df)
-    print(agg_df)
-    assert "point_id_x" not in agg_df
 
     aggregate_checks(agg_df, scan_scoot.forecast_hours, scan_scoot.grid_resolution)
 
@@ -75,7 +91,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
     )
-    assert "point_id_x" not in all_scores
 
     scan_checks(
         all_scores,
@@ -92,7 +107,6 @@ def test_scan(scan_scoot: ScanScoot) -> None:
         scan_scoot.forecast_start,
         scan_scoot.forecast_upto,
     )
-    assert "point_id_x" not in grid_level_scores
 
     average_score_checks(
         grid_level_scores, scan_scoot.forecast_hours, scan_scoot.grid_resolution
@@ -110,7 +124,6 @@ def preprocess_checks(
 
     cols = [
         "detector_id",
-        "point_id",
         "lon",
         "lat",
         "location",
@@ -140,6 +153,18 @@ def preprocess_checks(
     assert len(proc_df) == num_days * 24 * num_detectors
 
 
+def intersection_checks(train, test, init_num_train_detectors, init_num_test_detectors):
+    """Test that dataframes contain data for the same detectors"""
+
+    train_detectors = set(train["detector_id"])
+    test_detectors = set(test["detector_id"])
+    assert train_detectors == test_detectors
+    assert len(train_detectors) <= min(
+        init_num_train_detectors, init_num_test_detectors
+    )
+    assert len(test_detectors) <= min(init_num_train_detectors, init_num_test_detectors)
+
+
 def forecast_checks(
     forecast_df: pd.DataFrame,
     init_num_detectors: int,
@@ -154,7 +179,6 @@ def forecast_checks(
 
     cols = [
         "detector_id",
-        "point_id",
         "lon",
         "lat",
         "location",
@@ -171,7 +195,8 @@ def forecast_checks(
     assert set(cols) == set(forecast_df.columns)
 
     num_detectors = len(forecast_df["detector_id"].unique())
-    assert init_num_detectors == num_detectors
+    # Might not be equal if GP matrix can't be inverted
+    assert init_num_detectors >= num_detectors
 
     neg_baselines = forecast_df[forecast_df["baseline"] < 0]
     assert len(neg_baselines) == 0
@@ -263,10 +288,10 @@ def scan_checks(
 
     assert (all_scores["row_max"] - all_scores["row_min"]).max() <= (
         grid_resolution / 2
-    ) - 1
+    )
     assert (all_scores["col_max"] - all_scores["col_min"]).max() <= (
         grid_resolution / 2
-    ) - 1
+    )
 
     assert len(all_scores["measurement_end_utc"].unique()) == 1
     assert all_scores.at[0, "measurement_end_utc"] == forecast_upto

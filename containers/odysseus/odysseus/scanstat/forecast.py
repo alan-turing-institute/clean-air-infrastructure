@@ -3,25 +3,28 @@ methods of timeseries analysis from `scanstat.timeseries`"""
 
 import logging
 import datetime
+from datetime import timedelta
 
 import pandas as pd
 import numpy as np
 
-from .timeseries import holt_winters, gp_forecast
+from .timeseries import hw_forecast, gp_forecast
 
 
 def forecast(
-    proc_df: pd.DataFrame,
+    processed_train: pd.DataFrame,
+    processed_test: pd.DataFrame,
     train_start: datetime,
     train_upto: datetime,
     forecast_start: datetime,
     forecast_upto: datetime,
-    method: str = "HW",
+    model_name: str = "HW",
     detectors: list = None,
+    stitch_forecast: bool = True,
 ) -> pd.DataFrame:
 
-    """Produces a DataFrame where the count and baseline can be compared for use
-        in scan statistics
+    """Firstly produces a forecast using input training data. Secondly, produces a dataframe containing
+    actual counts (test data) and baseline predictions for each detectors at each time step.
 
     Args:
         proc_df: Dataframe of processed SCOOT data.
@@ -29,37 +32,41 @@ def forecast(
         train_upto: Timestamp of end of training period
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
-        method: Forecast method to use for baseline, default is "HW" for Holt-Winters.
-                Options: "HW", ("GP", "LSTM")
+        model_name: Forecast method to use for baseline, default is "HW" for Holt-Winters.
+                Options: ["HW", "GP"]
         detectors: List of detectors to look produce forecasts for. Default behaviour
                    produces forecasts for all detectors present in input dataframe.
+        stitch_forecast: If there is a gap between training and forecast periods,
+                         avoid long-range forecasts by stitching to closest day(GP), hour(HW)
 
     Returns:
-        forecast_proc_df: Dataframe of SCOOT vehicle counts and baseline estimates
+        forecast_df: Dataframe of SCOOT vehicle counts and baseline estimates
     """
 
     # Drop useless columns
-    if not set(["rolling_threshold", "global_threshold"]) <= set(proc_df.columns):
-        raise KeyError("Input dataframe does not contain the correct columns")
-    proc_df = proc_df.drop(["rolling_threshold", "global_threshold"], axis=1)
+    if not set(["rolling_threshold", "global_threshold"]) <= set(
+        processed_train.columns
+    ):
+        raise KeyError("Train dataframe does not contain the correct columns")
+    if not set(["rolling_threshold", "global_threshold"]) <= set(
+        processed_test.columns
+    ):
+        raise KeyError("Test dataframe does not contain the correct columns")
+    processed_train = processed_train.drop(
+        ["rolling_threshold", "global_threshold"], axis=1
+    )
+    processed_test = processed_test.drop(
+        ["rolling_threshold", "global_threshold"], axis=1
+    )
 
     if not detectors:
-        detectors = proc_df["detector_id"].drop_duplicates().to_numpy()
-
-    train_data = proc_df[
-        (proc_df["measurement_start_utc"] >= train_start)
-        & (proc_df["measurement_end_utc"] <= train_upto)
-    ]
-    actual_counts = proc_df[
-        (proc_df["measurement_start_utc"] >= forecast_start)
-        & (proc_df["measurement_end_utc"] <= forecast_upto)
-    ]
+        detectors = processed_train["detector_id"].drop_duplicates().to_numpy()
 
     logging.info(
         "Using data from %s to %s, to build %s forecasting model",
         train_start,
         train_upto,
-        method,
+        model_name,
     )
     logging.info(
         "Forecasting counts between %s and %s for %d detectors.",
@@ -68,22 +75,50 @@ def forecast(
         len(detectors),
     )
 
-    # Select forecasting method
-    if method == "HW":
-        y = holt_winters(train_data, forecast_start, forecast_upto, detectors=detectors)
+    # Calculate hours between user-specified time periods and log info
+    num_gap_hours = int((forecast_start - train_upto) / timedelta(hours=1))
+    if num_gap_hours > 0:
+        if stitch_forecast:
+            logging.info(
+                "Using stitch method to account for %d hours difference between train and forecast periods.",
+                num_gap_hours,
+            )
+        else:
+            logging.info(
+                "Building long-range forecast over the %d hour gap between train and forecast periods.",
+                num_gap_hours,
+            )
 
-    if method == "GP":
-        y = gp_forecast(train_data, forecast_start, forecast_upto, detectors=detectors)
+    # Select forecasting model_name
+    if model_name == "HW":
+        y = hw_forecast(
+            processed_train,
+            train_start,
+            train_upto,
+            forecast_start,
+            forecast_upto,
+            detectors=detectors,
+            stitch_forecast=stitch_forecast,
+        )
+
+    if model_name == "GP":
+        y = gp_forecast(
+            processed_train,
+            train_start,
+            train_upto,
+            forecast_start,
+            forecast_upto,
+            detectors=detectors,
+            stitch_forecast=stitch_forecast,
+        )
 
     logging.info("Forecasting complete.")
 
-    # Merge actual_count dataframe with forecast dataframe, carry out checks
-    # and return.
+    # Merge dataframe with actual counts with forecasted counts
     forecast_df = y.merge(
-        actual_counts,
+        processed_test,
         on=[
             "detector_id",
-            "point_id",
             "lon",
             "lat",
             "measurement_start_utc",
@@ -99,7 +134,7 @@ def forecast(
     actual_nans = forecast_df["actual"].isnull().sum(axis=0)
     baseline_nans = forecast_df["baseline"].isnull().sum(axis=0)
     if actual_nans != 0 or baseline_nans != 0:
-        raise ValueError("Something went wrong with the forecast")
+        raise ValueError("Something went wrong. Forecast contains NaNs.")
 
     # Make Baseline Values Non-Negative
     negative = len(forecast_df[forecast_df["baseline"] < 0]["baseline"])

@@ -12,11 +12,12 @@ from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
 from ..databases.mixins import GridMixin
 from ..scanstat import (
-    aggregate_readings_to_grid,
-    average_gridcell_scores,
-    forecast,
     preprocessor,
+    intersect_processed_data,
+    aggregate_readings_to_grid,
+    forecast,
     scan,
+    average_gridcell_scores,
 )
 
 
@@ -57,7 +58,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         self.training_readings: pd.DataFrame = self.scoot_fishnet_readings(
             start=self.train_start, upto=self.train_upto, output_type="df",
         )
-        self.forecast_readings: pd.DataFrame = self.scoot_fishnet_readings(
+        self.test_readings: pd.DataFrame = self.scoot_fishnet_readings(
             start=self.forecast_start, upto=self.forecast_upto, output_type="df",
         )
         # if no readings are returned then raise a value error
@@ -70,37 +71,45 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         error_message += "or because the fishnet does not exist in the database."
         if len(self.training_readings) == 0:
             raise ValueError(error_message.format(period="training"))
-        if len(self.forecast_readings) == 0:
+        if len(self.test_readings) == 0:
             raise ValueError(error_message.format(period="forecasting"))
         self.scores_df: pd.DataFrame = None  # assigned in run() method
 
     def run(self) -> pd.DataFrame:
         """Run the scan statistics."""
-        # 2) Pre-process
-        raise NotImplementedError(
-            "Need to use both the training and forecast dataframes in scan stats functions"
-        )
-        processed_df = preprocessor(self.readings)
+
+        # 1) Pre-process both training and test data
+        processed_train = preprocessor(self.training_readings, readings_type="train")
+        processed_test = preprocessor(self.test_readings, readings_type="test")
+
+        # 2) Make sure that both of the above dataframes span the same detector set
+        processed_train, processed_test = intersect_processed_data(processed_train, processed_test)
+
         # 3) Build Forecast
         forecast_df = forecast(
-            processed_df,
+            processed_train,
+            processed_test,
             self.train_start,
             self.train_upto,
             self.forecast_start,
             self.forecast_upto,
             self.model_name,
         )
-        # 4) Aggregate readings/forecast to grid level
+
+        # 4) Aggregate forecast dataframe to grid level. Less to search through in scan
         aggregate = aggregate_readings_to_grid(forecast_df)
+
         # 5) Scan
         all_scores = scan(
             aggregate, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
+
         # 6) Aggregate average scores to grid level
         grid_level_scores = average_gridcell_scores(
             all_scores, self.grid_resolution, self.forecast_start, self.forecast_upto
         )
         self.scores_df = grid_level_scores
+        # Return dataframe to be stored in database
         return grid_level_scores
 
     @db_query
@@ -146,17 +155,18 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def update_remote_tables(self) -> None:
         """Write the scan statistics to a database table."""
-        # need to attach the point_id
-        raise NotImplementedError(
-            "Which dataframe should we be merging on? Is merging even necessary?"
+        # Need to attach the point_id to scores_df
+        # Only way to get all grid_res ** 2 point id's is to call fishnet_query
+        fishnet_df = self.fishnet_query(
+            self.borough, self.grid_resolution, output_type="df"
         )
-        scores_df = self.scores_df.merge(
-            self.readings[["point_id", "row", "col"]], on=["row", "col", "point_id"],
+        final_scores_df = self.scores_df.merge(
+            fishnet_df[['row', 'col', 'point_id']], on=["row", "col"], how='left',
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
         scores_cols = [c_attr.key for c_attr in scores_inst.mapper.column_attrs]
-        scores_records = scores_df[scores_cols].to_dict("records")
+        scores_records = final_scores_df[scores_cols].to_dict("records")
         self.commit_records(
             scores_records, table=ScootScanStats, on_conflict="overwrite"
         )
