@@ -2,6 +2,7 @@
 Traffic datasets.
 """
 
-from .traffic_dataset import TrafficDataset
+from .scoot_config import ScootConfig, ScootPreprocessing
+from .scoot_dataset import ScootDataset
 
-__all__ = ["TrafficDataset"]
+__all__ = ["ScootConfig", "ScootDataset", "ScootPreprocessing"]
