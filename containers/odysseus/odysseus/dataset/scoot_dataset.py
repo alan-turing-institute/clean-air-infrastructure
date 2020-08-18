@@ -11,6 +11,7 @@ from cleanair.mixins import ScootQueryMixin
 from ..preprocess import normalise_datetime
 from .scoot_config import ScootConfig, ScootPreprocessing
 
+
 class ScootDataset(DBWriter, ScootQueryMixin):
     """
     A scoot dataset that queries the database given a data config dictionary.
@@ -36,12 +37,14 @@ class ScootDataset(DBWriter, ScootQueryMixin):
             scoot_df = self.scoot_readings(**self.data_config.dict(), output_type="df")
         elif dataframe:
             scoot_df = dataframe.loc[
-                (scoot_df.measurement_start_utc >= data_config.start) &
-                (scoot_df.measurement_start_utc < data_config.upto) &
-                (scoot_df.detector_id.isin(data_config.detectors))
+                (scoot_df.measurement_start_utc >= data_config.start)
+                & (scoot_df.measurement_start_utc < data_config.upto)
+                & (scoot_df.detector_id.isin(data_config.detectors))
             ]
         else:
-            raise ValueError("Must pass either secretfile or dataframe as an argument to the ScootDataset init.")
+            raise ValueError(
+                "Must pass either secretfile or dataframe as an argument to the ScootDataset init."
+            )
 
         # preprocessing with settings from the preprocessing dict
         self._df = ScootDataset.preprocess_dataframe(scoot_df, self._preprocessing)
@@ -76,7 +79,6 @@ class ScootDataset(DBWriter, ScootQueryMixin):
     def target_tensor(self) -> tf.Tensor:
         """The target tensor."""
         raise NotImplementedError("TODO - get tensor from dataframe")
-
 
     @staticmethod
     def validate_dataframe(
@@ -133,9 +135,7 @@ class ScootDataset(DBWriter, ScootQueryMixin):
             A new tensorflow dataset.
         """
         ScootDataset.validate_dataframe(
-            traffic_df,
-            features=preprocessing.features,
-            target=preprocessing.target,
+            traffic_df, features=preprocessing.features, target=preprocessing.target,
         )
 
         # create numpy arrays of the x and y columns

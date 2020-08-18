@@ -101,7 +101,10 @@ def scoot_writer(
 def detectors(scoot_writer: ScootGenerator) -> List[str]:
     """Get the list of detectors the scoot writer creates readings for."""
     return scoot_writer.scoot_detectors(
-        offset=scoot_writer.offset, limit=scoot_writer.limit, borough=scoot_writer.borough, output_type="df"
+        offset=scoot_writer.offset,
+        limit=scoot_writer.limit,
+        borough=scoot_writer.borough,
+        output_type="df",
     )["detector_id"].to_list()
 
 
