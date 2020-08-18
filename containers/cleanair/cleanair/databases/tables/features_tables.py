@@ -13,6 +13,7 @@ class StaticFeature(Base):
     __tablename__ = "static_feature"
     __table_args__ = (
         Index("static_feature_id_idx2", "point_id"),
+        Index("static_feature_name_idx2", "feature_name"),
         Index("static_feature_id_name_idx2", "point_id", "feature_name"),
         {"schema": "model_features"},
     )

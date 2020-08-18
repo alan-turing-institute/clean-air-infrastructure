@@ -26,6 +26,7 @@ setuptools.setup(
         "nptyping==1.2.0",
         "numpy==1.18.5",
         "pandas==1.0.5",
+        "pydantic==1.6.1",
         "python-dateutil==2.8.1",
         "pytz==2019.3",
         "pyyaml==5.3.1",
@@ -37,6 +38,7 @@ setuptools.setup(
         "scikit-learn==0.23.1",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
+        "typer==0.2.1",
         "uuid==1.30",
         "xarray==0.15.1",
     ],
@@ -50,4 +52,5 @@ setuptools.setup(
         ],
     },
     python_requires=">=3.6",
+    scripts=["cli/urbanair"],
 )

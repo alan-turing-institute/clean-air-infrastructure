@@ -4,13 +4,14 @@ LAQN
 import datetime
 import requests
 from ..mixins import APIRequestMixin, DateRangeMixin
+from ..mixins.availability_mixins import LAQNAvailabilityMixin
 from ..databases import DBWriter
 from ..databases.tables import MetaPoint, LAQNSite, LAQNReading
 from ..loggers import get_logger, green
 from ..timestamps import datetime_from_str, utcstr_from_datetime
 
 
-class LAQNWriter(DateRangeMixin, APIRequestMixin, DBWriter):
+class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWriter):
     """
     Get data from the LAQN network via the API maintained by Kings College London:
     (https://www.londonair.org.uk/Londonair/API/)
