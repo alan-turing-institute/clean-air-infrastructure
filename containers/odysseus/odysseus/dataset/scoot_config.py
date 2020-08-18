@@ -16,5 +16,5 @@ class ScootPreprocessing(BaseModel):
     """Scoot preprocessing settings for a model."""
 
     features: List[str]
-    normaliseby: str    # TODO change name
+    normaliseby: str  # TODO change name
     target: List[str]

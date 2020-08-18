@@ -36,3 +36,16 @@ def test_scoot_dataset_init(
         scoot_config, scoot_preprocessing, secretfile=secretfile, connection=connection
     )
     validate_scoot_dataset(dataset_from_db)
+
+    # remove a detector
+    detector_id = scoot_config.detectors.pop()
+    assert detector_id not in scoot_config.detectors
+
+    # create a new dataset from the dataset previously loaded from DB
+    dataset_from_df = ScootDataset(
+        scoot_config, scoot_preprocessing, dataframe=dataset_from_db.dataframe,
+    )
+    # the detector removed above should not be in the dataset
+    assert detector_id not in dataset_from_df.dataframe.detector_id.to_list()
+    # run other validation checks
+    validate_scoot_dataset(dataset_from_df)

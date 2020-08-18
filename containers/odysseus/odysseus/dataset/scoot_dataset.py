@@ -8,7 +8,6 @@ import pandas as pd
 from cleanair.databases import DBWriter
 from cleanair.utils import hash_dict
 from cleanair.mixins import ScootQueryMixin
-from ..preprocess import normalise_datetime
 from .scoot_config import ScootConfig, ScootPreprocessing
 
 
@@ -35,11 +34,11 @@ class ScootDataset(DBWriter, ScootQueryMixin):
             super().__init__(secretfile=secretfile, **kwargs)
             # load scoot from the data config
             scoot_df = self.scoot_readings(**self.data_config.dict(), output_type="df")
-        elif dataframe:
+        elif isinstance(dataframe, pd.DataFrame):
             scoot_df = dataframe.loc[
-                (scoot_df.measurement_start_utc >= data_config.start)
-                & (scoot_df.measurement_start_utc < data_config.upto)
-                & (scoot_df.detector_id.isin(data_config.detectors))
+                (dataframe.measurement_start_utc >= data_config.start)
+                & (dataframe.measurement_start_utc < data_config.upto)
+                & (dataframe.detector_id.isin(data_config.detectors))
             ]
         else:
             raise ValueError(
