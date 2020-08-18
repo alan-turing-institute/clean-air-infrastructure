@@ -28,7 +28,14 @@ def forecast_json(
     start_date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
-    """Retrieve 48hrs of JSON forecasts starting at midnight on the requested date"""
+    """Retrieve 48hrs of JSON forecasts starting at midnight on the requested date
+
+    Args:
+        start_date (date): Date to retrieve forecasts for
+
+    Returns:
+        json: JSON containing 48hrs of forecasts at each hexgrid point
+    """
 
     # Establish start and end datetimes
     start_datetime = datetime.combine(start_date, datetime.min.time())
@@ -51,10 +58,6 @@ def forecast_json(
     # Return the query results as a list of tuples
     return query_results
 
-    # One point: Finished after 1.1653501987457275 seconds
-    # One point (cached): Finished after 2.8133392333984375e-05
-    # All points: Finished after 10.618299961090088 seconds
-    # All points (cached): Finished after 6.29425048828125e-05 seconds
 
 
 @router.get(
@@ -67,7 +70,14 @@ def forecast_geojson(
     start_date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
-    """Retrieve 48hrs of GeoJSON forecasts starting at midnight on the requested date"""
+    """Retrieve 48hrs of GeoJSON forecasts starting at midnight on the requested date
+
+    Args:
+        start_date (date): Date to retrieve forecasts for
+
+    Returns:
+        ForecastResultGeoJson: GeoJSON containing 48hrs of forecasts at each hexgrid point
+    """
 
     # Establish start and end datetimes
     start_datetime = datetime.combine(start_date, datetime.min.time())
@@ -89,8 +99,3 @@ def forecast_geojson(
 
     # Return the query results as a GeoJSON FeatureCollection
     return ForecastResultGeoJson([r._asdict() for r in query_results])
-
-    # One point: Finished after 1.1568198204040527 seconds
-    # One point (cached): Finished after 6.67572021484375e-05 seconds
-    # All points: Finished after 13.079823017120361 seconds
-    # All points (cached): Finished after 0.5709922313690186 seconds
