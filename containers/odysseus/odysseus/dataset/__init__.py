@@ -3,6 +3,7 @@ Traffic datasets.
 """
 
 from .batch import prepare_batch
-from .traffic_dataset import TrafficDataset
+from .scoot_config import ScootConfig, ScootPreprocessing
+from .scoot_dataset import ScootDataset
 
-__all__ = ["prepare_batch", "TrafficDataset"]
+__all__ = ["prepare_batch", "ScootConfig", "ScootDataset", "ScootPreprocessing"]

@@ -1,7 +1,7 @@
 """Fixtures for odysseus module."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 import pytest
 import pandas as pd
 from odysseus.scoot import Fishnet, ScanScoot
@@ -95,6 +95,17 @@ def scoot_writer(
         secretfile=secretfile,
         connection=connection,
     )
+
+
+@pytest.fixture(scope="function")
+def detectors(scoot_writer: ScootGenerator) -> List[str]:
+    """Get the list of detectors the scoot writer creates readings for."""
+    return scoot_writer.scoot_detectors(
+        offset=scoot_writer.offset,
+        limit=scoot_writer.limit,
+        borough=scoot_writer.borough,
+        output_type="df",
+    )["detector_id"].to_list()
 
 
 @pytest.fixture(scope="function")

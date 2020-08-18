@@ -18,6 +18,7 @@ setuptools.setup(
         "cleanair>=0.0.1",
         "astropy>=4.0.1",
         "gpflow>=2.0.5",
+        "pydantic>=1.6.1",  # NOTE cleanair will use pydantic so remove this in future PR
         "tensorflow>=2.3.0",
         "tensorflow_probability>=0.11.0",
     ],
