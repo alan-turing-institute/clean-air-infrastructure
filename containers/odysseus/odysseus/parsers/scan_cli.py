@@ -26,9 +26,6 @@ def scoot(
     forecast_hours: int = NHours,
     forecast_upto: str = UpTo,
     model_name: str = ModelName,
-    # train_days: int = NDays,
-    # train_hours: int = NHours,
-    # train_upto: str = UpTo,
 ) -> None:
     """Run scan stats on scoot."""
     logger = get_logger("scan_scoot")
@@ -36,13 +33,12 @@ def scoot(
 
     # NOTE days converted to hours with ndays callback
     forecast_hours = forecast_days + forecast_hours
-
-    train_hours = 21 * 24
-    # if baseline == Baseline.custom:
-    #     train_hours = train_days + train_hours
+    train_hours = 21 * 24  # 3 weeks
 
     if baseline == Baseline.last3weeks:
-        train_upto = (as_datetime(forecast_upto) - timedelta(hours=forecast_hours)).isoformat()
+        train_upto = (
+            as_datetime(forecast_upto) - timedelta(hours=forecast_hours)
+        ).isoformat()
     else:
         train_upto: str = BaselineUpto[baseline.value].value
 
