@@ -1,7 +1,7 @@
 """Return schemas for air quality forecast routes"""
 from datetime import datetime
-from pydantic import BaseModel
 from typing import List, Dict
+from pydantic import BaseModel
 from geojson import FeatureCollection, Feature
 import shapely.wkt
 
@@ -30,4 +30,5 @@ class ForecastResultJson(BaseModel):
     NO2_var: float
 
     class Config:
+        """Enable ORM mode"""
         orm_mode = True

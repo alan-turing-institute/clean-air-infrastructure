@@ -1,8 +1,8 @@
 """Air quality forecast database queries and external api calls"""
-from cachetools import cached, LRUCache
-from cachetools.keys import hashkey
 from datetime import datetime
 from typing import Optional, List, Tuple
+from cachetools import cached, LRUCache
+from cachetools.keys import hashkey
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
 from cleanair.databases.tables import (
@@ -55,6 +55,7 @@ def query_available_instance_ids(
 def cachable_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
+    """Cache results of query_available_instance_ids"""
     return query_available_instance_ids(db, start_datetime, end_datetime).all()
 
 
@@ -87,6 +88,7 @@ def query_forecasts(
 def cachable_forecasts(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
+    """Cache results of query_forecasts"""
     query = query_forecasts(
         db,
         instance_id=instance_id,
@@ -97,7 +99,7 @@ def cachable_forecasts(
 
 
 @db_query
-def query_forecasts_with_location(
+def query_forecasts_geom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime
 ) -> Query:
     """
@@ -124,10 +126,11 @@ def query_forecasts_with_location(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_with_location(
+def cachable_forecasts_geom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    query = query_forecasts_with_location(
+    """Cache results of query_forecasts_geom"""
+    query = query_forecasts_geom(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
