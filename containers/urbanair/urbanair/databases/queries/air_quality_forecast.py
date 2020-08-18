@@ -2,7 +2,7 @@
 from datetime import datetime
 import logging
 from typing import Optional, List, Tuple
-from cachetools import cached, LRUCache
+from cachetools import cached, LRUCache, TTLCache
 from cachetools.keys import hashkey
 from sqlalchemy import func
 from sqlalchemy.orm import Session, Query
@@ -53,7 +53,8 @@ def query_available_instance_ids(
 
 
 @cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    cache=TTLCache(maxsize=256, ttl=60),
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cachable_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
