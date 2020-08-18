@@ -152,6 +152,6 @@ stages:
         chartType: filepath
         chartPath: kubernetes/cleanair
         releaseName: cleanair
-        valueFile: values_prod.yaml
+        valueFile: kubernetes/cleanair/value_prod.yaml
         updatedependency: true
         install: true
