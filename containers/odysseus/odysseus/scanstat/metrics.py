@@ -1,14 +1,13 @@
-"""Contains all functionality required to calculate the likelihood ratio F(S)
-of a space-time region S as per Expectation-Based Scan Statistic paper. The
-ratio is computed for all space-time regions; if significantly larger than
-expected, randomisation testing is used to infer the statistical signifiance
-of the event"""
+"""Contains all functionality required to calculate likelihood metrics of
+a space-time region. The ratio is computed for all searched space-time regions."""
 
 import numpy as np
 
 
 def ebp(baseline_count: float, actual_count: float) -> float:
-    """Simple Expression for the likelihood ratio
+    """Simple Expression for the Expectation-Based Poisson (EBP)
+    likelihood ratio.
+
     Args:
         baseline_count: Sum of baseline counts in space-time region S
         actual_count: Sum of actual counts in space-time region S
@@ -31,7 +30,7 @@ def ebp(baseline_count: float, actual_count: float) -> float:
 
 def ebp_asym(baseline_count: float, actual_count: float) -> float:
 
-    """Extension to the original EBP likelihood ratio which aso assigns
+    """Extension to the original EBP likelihood ratio which also assigns
     meaningful scores to space-time regions whose actual activity is
     QUIETER than what is expected. If this is the case, this represented
     with a negative score. Note that this metric is centred about 0, whereas
@@ -71,7 +70,7 @@ def kulldorf(
     inside AND outside the region of interest. i.e. this metric aims to find
     space-time regions which have the largest score inside it and the smallest
     score outside of it. Depending on the application, this metric is sometimes
-    better at finding smaller regions of interest.
+    better at finding smaller high-scoring regions.
     Args:
         baseline_count_in: Sum of baseline predictions INSIDE the search region
         baseline_count_total: Sum of baseline predictions over the whole space-time domain

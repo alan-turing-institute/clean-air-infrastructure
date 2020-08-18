@@ -29,20 +29,22 @@ def preprocessor(
 
     Args:
         scoot_df: dataframe of SCOOT data
+        readings_type: train or test data
         percentage_missing: percentage of missing values, above which, drop detector
         n_sigma: number of standard deviations from the median to set anomaly threshold
         repeats: number of iterations for anomaly removal
         global_threshold: if True, global median used for threshold instead of rolling median
         rolling_hours: number of previous hours used to calculate rolling median
-        consecutive_missing_threshold:
-        drop_aperiodic: User choice to decide whether to run periodicity checks
-        fap_threshold: detectors with false-alarm-probability above this value
-                       will be dropped from further analysis
+        consecutive_missing_threshold: Drop detectors with more consecutive missing values
+                                       than this threshold
+        drop_aperiodic: Decide whether to run periodicity checks using periodogram
+        fap_percentile_threshold: detectors with false alarm probability above this percentile
+                                  will be dropped from further analysis
 
     Returns:
-        Dataframe of interpolated values with detectors dropped for too many missing
-        values or anomalies.
+        proc_df: Dataframe of processed SCOOT data.
     """
+
     columns = [
         "detector_id",
         "point_id",
@@ -384,7 +386,6 @@ def fap(detector_timeseries: pd.DataFrame) -> float:
 
     # Find the most dominant period and its 'power' output
     pmax = periodogram.power(1 / period).max()
-    # print(pmax)
 
     return periodogram.false_alarm_probability(pmax)
 
@@ -397,9 +398,8 @@ def drop_aperiodic_detectors(
     Helps drop badly-behaved detectors.
     Args:
         proc_df: Dataframe processed from anomalied and missing values
-        fap_threshold: Detectors with false-alarm-probabilites greater than this
-                       threshold will be removed. Note: the value of the threshold
-                       depends on the number of data points passed to the periodogram.
+        fap_percentile_threshold: Detectors with false-alarm-probabilites greater than
+                                  this percentile will be removed.
 
     Returns:
         proc_df: Dataframe complete from processing.
@@ -432,6 +432,7 @@ def drop_aperiodic_detectors(
 def intersect_processed_data(
     processed_train, processed_test
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
     """Ensures that both train and forecast dataframes contain data
     spanning the same set of detctors. Detector time series can be dropped
     in both sets of pre-processing. This additional step is required
@@ -441,7 +442,7 @@ def intersect_processed_data(
         processed_train: Processed training data
         processed_test: Processed test data
     Returns:
-        processed_train, processed_forecast contaning data for the same detectors
+        processed_train, processed_forecast containing data for the same detectors.
     """
 
     common_detectors = set(processed_train["detector_id"]).intersection(

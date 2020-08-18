@@ -33,12 +33,14 @@ def forecast(
         forecast_start: Timestamp of beginning of forecast period
         forecast_upto: Timestamp of end of forecast_period
         model_name: Forecast method to use for baseline, default is "HW" for Holt-Winters.
-                Options: "HW", ("GP", "LSTM")
+                Options: ["HW", "GP"]
         detectors: List of detectors to look produce forecasts for. Default behaviour
                    produces forecasts for all detectors present in input dataframe.
+        stitch_forecast: If there is a gap between training and forecast periods,
+                         avoid long-range forecasts by stitching to closest day(GP), hour(HW)
 
     Returns:
-        forecast_proc_df: Dataframe of SCOOT vehicle counts and baseline estimates
+        forecast_df: Dataframe of SCOOT vehicle counts and baseline estimates
     """
 
     # Drop useless columns

@@ -111,7 +111,7 @@ def westminster_fishnet(
 
 
 @pytest.fixture(scope="function", params=["HW", "GP"])
-def model_name(request):
+def model_name(request) -> str:
     """Time series mthod used in Scan Stats"""
     return request.param
 

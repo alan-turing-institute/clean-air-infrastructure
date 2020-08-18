@@ -7,7 +7,7 @@ import pandas as pd
 def aggregate_readings_to_grid(forecast_df: pd.DataFrame) -> pd.DataFrame:
 
     """Aggregates data from each detector in forecast_df to grid-cell level
-    as prescribed by detector_df.
+    i.e. (row, col)
     Args:
         forecast_df: Forecasted SCOOT data from time series analysis
     Returns:
@@ -60,7 +60,7 @@ def event_count(
     t_max: datetime,
 ) -> dict:
 
-    """Aggregate the vehicle counts that fall within the region specified by
+    """Sum the vehicle counts that fall within the region specified by
     the last 6 arguments (row/colums/time identifiers). Scaled by 1e6 for metric
     calculation.
 
