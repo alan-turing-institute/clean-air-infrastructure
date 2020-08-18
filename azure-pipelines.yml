@@ -131,7 +131,7 @@ stages:
     # Prepare Helm chart
     - script: |
         echo "Setting image tag to $(Build.SourceVersion)"
-        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values_prod.yaml
       displayName: 'Prepare Helm chart'
     # Install certmanager custom resource definition
     - script: |
