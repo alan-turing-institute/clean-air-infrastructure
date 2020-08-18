@@ -1,5 +1,6 @@
 """Air quality forecast database queries and external api calls"""
 from datetime import datetime
+import logging
 from typing import Optional, List, Tuple
 from cachetools import cached, LRUCache
 from cachetools.keys import hashkey
@@ -15,13 +16,15 @@ from cleanair.decorators import db_query
 from ..database import all_or_404
 
 
+logger = logging.getLogger("fastapi")
+
+
 @db_query
 def query_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Query:
     """
-    Check what forecast data is available between startdate and enddate.
-    If startdate and enddate are not provided checks all availability.
+    Check which model IDs produced forecasts between start_datetime and end_datetime.
     """
     res = (
         db.query(
@@ -56,6 +59,9 @@ def cachable_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache results of query_available_instance_ids"""
+    logger.info("Querying available instance IDs between {} and {}".format(
+        start_datetime, end_datetime)
+    )
     return query_available_instance_ids(db, start_datetime, end_datetime).all()
 
 
@@ -89,6 +95,9 @@ def cachable_forecasts(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache results of query_forecasts"""
+    logger.info("Querying forecasts for {} between {} and {}".format(
+        instance_id, start_datetime, end_datetime)
+    )
     query = query_forecasts(
         db,
         instance_id=instance_id,
@@ -130,6 +139,9 @@ def cachable_forecasts_geom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache results of query_forecasts_geom"""
+    logger.info("Querying forecast geometries for {} between {} and {}".format(
+        instance_id, start_datetime, end_datetime)
+    )
     query = query_forecasts_geom(
         db,
         instance_id=instance_id,

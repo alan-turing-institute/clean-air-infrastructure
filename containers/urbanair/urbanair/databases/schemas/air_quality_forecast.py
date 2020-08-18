@@ -19,6 +19,8 @@ class ForecastResultGeoJson(FeatureCollection):
             for row in rows
         ]
         super().__init__(features=features)
+        # NB. we must explicitly set the type or it will be set to cls.__name__
+        self["type"] = "FeatureCollection"
 
 
 class ForecastResultJson(BaseModel):
