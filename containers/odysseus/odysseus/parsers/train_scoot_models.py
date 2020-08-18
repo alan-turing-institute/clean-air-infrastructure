@@ -3,12 +3,13 @@
 
 from datetime import datetime, timedelta
 import pandas as pd
+import numpy as np
 
 from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict
 from cleanair.loggers import get_logger
 from cleanair.timestamps import as_datetime
 
-from odysseus.parsers import TrainScootModelParser
+from odysseus.parsers.training_parser import TrainScootModelParser
 from odysseus.databases import TrafficQuery
 from odysseus.experiment import ScootExperiment
 
@@ -48,17 +49,17 @@ def main():
         dict(detectors=[d], start_time=start_time, end_time=upto_time)
         for d in detectors
     ]
-    frame["preprocessing"] = preprocessing
-    frame["model_param"] = model_params
+    frame["preprocessing"] = np.repeat(preprocessing, num_detectors)
+    frame["model_param"] = np.repeat(model_params, num_detectors)
     frame["model_name"] = args.model_name
     frame["fit_start_time"] = datetime.now().strftime(fmt)
     frame["cluster_id"] = args.cluster_id
     frame["param_id"] = frame["model_param"].apply(hash_dict)
     frame["data_id"] = frame["data_config"].apply(hash_dict)
     frame["git_hash"] = get_git_hash()
-    frame["instance_id"] = frame[
-        ["model_name", "param_id", "data_id", "git_hash"]
-    ].apply(instance_id_from_hash)
+    frame["instance_id"] = frame.apply(lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1)
+
+    print(frame)
 
     # create an experiment (xp), load datasets and train models
     scoot_xp = ScootExperiment(frame=frame, secretfile=args.secretfile)
@@ -68,6 +69,8 @@ def main():
     models = scoot_xp.train_models(datasets, args.dryrun, args.logging_freq)
     logger.info("%s models finished training.", len(models))
 
+    print(models)
+    return
     # TODO update database table
     # TODO save models to blob storage
     scoot_xp.update_remote_tables()

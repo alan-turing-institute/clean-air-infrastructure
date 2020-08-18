@@ -29,26 +29,30 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         """Traffic model table."""
         return TrafficModelTable
 
+    # XXX - Can get this info direct from data_config
     def load_datasets(
-        self, detectors: List, start_date: str, end_date: Optional[str] = None,
+        self, detectors: List, start_date: str, upto: Optional[str] = None,
     ) -> List[tf.data.Dataset]:
         """Load the data and train the models."""
         self.logger.info(
             "Querying the scoot database for readings on %s detectors.", len(detectors)
         )
-        scoot_df = self.get_scoot_with_location(
-            start_date, end_time=end_date, detectors=detectors, output_type="df"
+        scoot_df = self.scoot_readings(
+            detectors=detectors, start=start_date, upto=upto, output_type="df", with_location=True,
         )
+        if scoot_df.empty:
+            raise ValueError('No readings in SCOOT dataframe')
+
         # list of scoot datasets
-        datasets = [
-            TrafficDataset.from_dataframe(
-                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])],
-                preprocessing,
+        datasets = []
+        for data_config, preprocessing in zip(self.frame.data_config, self.frame.preprocessing):
+            processed = TrafficDataset.preprocess_dataframe(
+                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])].copy(),
+                preprocessing
             )
-            for data_config, preprocessing in self.frame[
-                ["data_config", "preprocessing"]
-            ]
-        ]
+            datasets.append(
+                TrafficDataset.from_dataframe(processed, preprocessing)
+            )
         return datasets
 
     def train_models(
@@ -67,8 +71,10 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         """
         model_list = []
         # loop over datasets training models and saving the trained models
-        for row, dataset in zip(self.frame, datasets):
-            model_params = row["model_params"]
+        for i, dataset in enumerate(datasets):
+            row = self.frame.iloc[i]
+
+            model_params = row["model_param"]
             preprocessing = row["preprocessing"]
             num_features = len(preprocessing["features"])
             X = tf.stack([element[:num_features] for element in dataset])

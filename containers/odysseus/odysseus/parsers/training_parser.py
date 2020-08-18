@@ -51,6 +51,7 @@ class TrainScootModelParser(
     KernelParserMixin,
     PreprocessingParserMixin,
     ScootModellingSubParserMixin,
+    SecretFileParserMixin,
     ArgumentParser,
 ):
     """Parser for training scoot models for the air quality inputs."""

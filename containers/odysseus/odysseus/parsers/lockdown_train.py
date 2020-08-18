@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 import tensorflow as tf
 
-from odysseus.parsers import TrainLockdownModelParser
+from odysseus.parsers.training_parser import TrainLockdownModelParser
 from odysseus.experiment import TrafficInstance
 from odysseus.databases import TrafficQuery
 from odysseus.dates import (
