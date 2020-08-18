@@ -179,6 +179,14 @@ roles:
         privileges:
           - SELECT
 
+  - role: trafficmodellingwrite
+    create_schema: False
+    schema:
+      - name: traffic_modelling
+        create: False
+        privileges:
+          - ALL
+
   - role: refresher
     create_schema: False
     inherit:

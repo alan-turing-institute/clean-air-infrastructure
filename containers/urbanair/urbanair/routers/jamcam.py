@@ -25,7 +25,7 @@ ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
 
 
-async def common_jamcam_params(
+def common_jamcam_params(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
@@ -71,7 +71,7 @@ async def common_jamcam_params(
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
 )
-async def camera_info() -> Response:
+def camera_info() -> Response:
     "Get camera info"
     return get_jamcam_info()
 
@@ -83,7 +83,7 @@ async def camera_info() -> Response:
     If starttime and endtime are not provided checks all availability""",
     response_model=List[JamCamAvailable],
 )
-async def camera_available(
+def camera_available(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
@@ -103,7 +103,7 @@ async def camera_available(
     description="Request counts of objects at jamcam cameras.",
     response_model=List[JamCamVideo],
 )
-async def camera_raw_counts(
+def camera_raw_counts(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 
@@ -123,7 +123,7 @@ async def camera_raw_counts(
     response_model=List[JamCamVideoAverage],
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
-async def camera_hourly_average(
+def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
 

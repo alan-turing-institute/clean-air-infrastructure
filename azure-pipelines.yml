@@ -24,37 +24,16 @@ stages:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
-    # Inputs
+    
+    # Inputs and feature processing
     - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion) -f containers/dockerfiles/input_aqe_readings.Dockerfile containers
-      displayName: 'Build AQE data collection image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion) -f containers/dockerfiles/input_laqn_readings.Dockerfile containers
-      displayName: 'Build LAQN data collection image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion) -f containers/dockerfiles/input_satellite_readings.Dockerfile containers
-      displayName: 'Build satellite data collection image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion) -f containers/dockerfiles/input_scoot_readings.Dockerfile containers
-      displayName: 'Build SCOOT data collection image'
-    # Processing
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion) -f containers/dockerfiles/process_scoot_roadmaps.Dockerfile containers
-      displayName: 'Build SCOOT road mapping image'
-    # Feature extraction
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_forecast_features.Dockerfile containers
-      displayName: 'Build SCOOT forecast feature processing image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion) -f containers/dockerfiles/extract_scoot_reading_features.Dockerfile containers
-      displayName: 'Build SCOOT reading feature processing image'
-    - script: |
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_static:$(Build.SourceVersion) -f containers/dockerfiles/extract_static_features.Dockerfile containers
-      displayName: 'Build Static feature processing image'
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
+      displayName: 'Build a docker image for inputs and feature processing'
     # Output API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
+    # Todo: Remove this image if no longer in use (check with Patrick)
     # GLA Lockdown images
     - script: |
          docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion) -f containers/dockerfiles/lockdown_baseline.Dockerfile containers
@@ -69,14 +48,7 @@ stages:
       displayName: 'Login to ACR'
     # Push Docker images to ACR
     - script: |
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_aqe:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_laqn:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_satellite:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/input_scoot:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/process_scoot_roadmap:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_forecasts:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_scoot_readings:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/feature_static:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
@@ -159,7 +131,7 @@ stages:
     # Prepare Helm chart
     - script: |
         echo "Setting image tag to $(Build.SourceVersion)"
-        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values.yaml
+        sed -i 's/^imageTag:.*$/imageTag: $(Build.SourceVersion)/' kubernetes/cleanair/values_prod.yaml
       displayName: 'Prepare Helm chart'
     # Install certmanager custom resource definition
     - script: |
@@ -180,5 +152,6 @@ stages:
         chartType: filepath
         chartPath: kubernetes/cleanair
         releaseName: cleanair
+        valueFile: kubernetes/cleanair/values_prod.yaml
         updatedependency: true
         install: true
