@@ -28,7 +28,7 @@ router = APIRouter()
     description="Most up-to-date forecasts for a given day in JSON",
     response_model=List[ForecastResultJson],
 )
-async def forecast_json(
+def forecast_json(
     date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
@@ -37,11 +37,18 @@ async def forecast_json(
     end_datetime = start_datetime + timedelta(hours=48)
 
     # Get the most recent instance ID among all those which are predicting in the required interval
-    available_instance_ids = cachable_available_instance_ids(db, start_datetime, end_datetime)
+    available_instance_ids = cachable_available_instance_ids(
+        db, start_datetime, end_datetime
+    )
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query_results = cachable_forecasts(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
+    query_results = cachable_forecasts(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+    )
 
     # Return the query results as a list of tuples
     return query_results
@@ -58,7 +65,7 @@ async def forecast_json(
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
-async def forecast_geojson(
+def forecast_geojson(
     date: date = Query(None, description="Date to retrieve forecasts for"),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
@@ -67,11 +74,18 @@ async def forecast_geojson(
     end_datetime = start_datetime + timedelta(hours=48)
 
     # Get the most recent instance ID among all those which are predicting in the required interval
-    available_instance_ids = cachable_available_instance_ids(db, start_datetime, end_datetime)
+    available_instance_ids = cachable_available_instance_ids(
+        db, start_datetime, end_datetime
+    )
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query_results = cachable_forecasts_with_location(db, instance_id=instance_id, start_datetime=start_datetime, end_datetime=end_datetime)
+    query_results = cachable_forecasts_with_location(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+    )
 
     # Return the query results as a GeoJSON FeatureCollection
     return ForecastResultGeoJson([r._asdict() for r in query_results])

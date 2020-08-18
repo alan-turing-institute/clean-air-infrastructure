@@ -34,5 +34,7 @@ if not get_settings().docker:
     )
 
 app.include_router(static.router)
-app.include_router(air_quality_forecast.router, prefix="/api/v1/air_quality", tags=["air_quality"])
+app.include_router(
+    air_quality_forecast.router, prefix="/api/v1/air_quality", tags=["air_quality"]
+)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
