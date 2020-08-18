@@ -1,11 +1,33 @@
+from typing import List
+from enum import Enum
 import typer
+
 from .....loggers import initialise_logging
 from .....processors import ScootPerRoadReadingMapper
 from ...state import state
 from ...shared_args import UpTo, NDays, NHours, Species
-from .....features import ScootFeatureExtractor
+from .....features import ScootFeatureExtractor, FEATURE_CONFIG_DYNAMIC
+
+from ...shared_args import (
+    ValidSources,
+    Sources,
+    ValidDynamicFeatureSources,
+    ValidInsertMethods,
+    InsertMethod,
+)
 
 app = typer.Typer(help="Map scoot sensor readings to road segments")
+
+feature_names = list(FEATURE_CONFIG_DYNAMIC["scoot"]["features"].keys())
+valid_feature_names = Enum("ValidFeatureNames", zip(feature_names, feature_names))
+
+print(feature_names)
+print(list(valid_feature_names))
+# feature_source = valid_features[i]
+
+# sub_app = typer.Typer()
+# feature_names = list(FEATURE_CONFIG[valid_features[i].value]["features"].keys())
+# valid_feature_names.append(Enum("ValidFeatureNames", zip(feature_names, feature_names)))
 
 
 @app.command()
@@ -20,15 +42,35 @@ def check():
 
 
 @app.command()
-def fill(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays):
+def fill(
+    upto: str = UpTo,
+    nhours: int = NHours,
+    ndays: int = NDays,
+    feature_name: List[valid_feature_names] = typer.Option(
+        None, help="Features to process. If non given will process all",
+    ),
+    source: List[ValidSources] = Sources,
+    insert_method: ValidInsertMethods = InsertMethod,
+):
     """Construct maps between roads and SCOOT detectors"""
+
+    # Get all sources to process
+    all_sources = [src.value for src in source]
+
+    # Get all features to process
+    if feature_name:
+        all_feature_names = [fname.value for fname in feature_name]
+    else:
+        # Note: had to set i in the function call else looks up i global at runtime
+        all_feature_names = [fname.value for fname in valid_feature_names]
 
     default_logger = initialise_logging(state["verbose"])
 
-    scoot_features = ScootFeatureExtractor(secretfile=state["secretfile"])
-
-    scoot_road_readings = ScootPerRoadReadingMapper(
-        nhours=nhours + ndays, end=upto, secretfile=state["secretfile"]
+    scoot_features = ScootFeatureExtractor(
+        features=all_feature_names,
+        sources=all_sources,
+        insert_method=insert_method,
+        secretfile=state["secretfile"],
     )
 
     # print(scoot_road_readings.update_remote_tables(output_type="sql"))

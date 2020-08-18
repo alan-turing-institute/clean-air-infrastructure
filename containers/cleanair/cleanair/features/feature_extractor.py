@@ -60,10 +60,10 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
         self,
         # feature_source,
         # table,
-        # features,
+        features,
         # dynamic=False,
         # batch_size=10,
-        # sources=None,
+        sources=None,
         insert_method="missing",
         **kwargs,
     ):
@@ -76,6 +76,14 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
         super().__init__(**kwargs)
 
         self.table_per_detector = ScootReading
+
+        self.features = features
+        self.sources = sources if sources else []
+        if insert_method == "all":
+            self.exclude_has_data = False
+        else:
+            self.exclude_has_data = True
+        self.insert_method = insert_method
 
     @db_query
     def oshighway_intersection(self, point_ids):
@@ -182,8 +190,10 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
     def get_scoot_features(self, point_ids, start_datetime, end_datetime):
 
         scoot_road_readings = self.scoot_to_road(
-            point_ids, start_datetime, end_datetime, output_type="subquery"
+            point_ids, start_datetime, end_datetime, output_type="query"
         )
+
+        return scoot_road_readings
 
         with self.dbcnxn.open_session() as session:
 

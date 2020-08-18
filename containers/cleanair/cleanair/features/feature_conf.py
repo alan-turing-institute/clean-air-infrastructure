@@ -127,7 +127,7 @@ ALL_FEATURES = [
 
 FEATURE_CONFIG_DYNAMIC = {
     "scoot": {
-        "table": ScootRoadReading,
+        "table": OSHighway,
         "features": {
             DynamicFeatureNames.max_n_vehicles.value: {
                 "type": "value",
