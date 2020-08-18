@@ -6,7 +6,6 @@ from enum import Enum
 class Baseline(str, Enum):
     """A baseline period."""
 
-    custom = "custom"  # let the user define their own baseline
     prelockdown = "prelockdown"  # before lockdown started
     lockdown = "lockdown"  # during lockdown
     postlockdown = "postlockdown"  # after lockdown
