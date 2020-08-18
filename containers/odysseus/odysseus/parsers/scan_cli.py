@@ -1,5 +1,6 @@
 """CLI for scan stats."""
 
+from datetime import timedelta
 import typer
 from cleanair.loggers import get_logger
 from cleanair.parsers.urbanair_parser.shared_args import (
@@ -8,6 +9,8 @@ from cleanair.parsers.urbanair_parser.shared_args import (
     UpTo,
 )
 from cleanair.parsers.urbanair_parser.state import state
+from cleanair.timestamps import as_datetime
+from ..dates import Baseline, BaselineUpto
 from .shared_args import Borough, GridResolution, ModelName
 from ..scoot import Fishnet, ScanScoot
 
@@ -16,22 +19,28 @@ app = typer.Typer()
 
 @app.command()
 def scoot(
+    baseline: Baseline,
     borough: str = Borough,
     grid_resolution: int = GridResolution,
     forecast_days: int = NDays,
     forecast_hours: int = NHours,
     forecast_upto: str = UpTo,
     model_name: str = ModelName,
-    train_days: int = NDays,
-    train_hours: int = NHours,
-    train_upto: str = UpTo,
 ) -> None:
     """Run scan stats on scoot."""
     logger = get_logger("scan_scoot")
     secretfile: str = state["secretfile"]
+
     # NOTE days converted to hours with ndays callback
-    train_hours = train_days + train_hours
     forecast_hours = forecast_days + forecast_hours
+    train_hours = 21 * 24  # 3 weeks
+
+    if baseline == Baseline.last3weeks:
+        train_upto = (
+            as_datetime(forecast_upto) - timedelta(hours=forecast_hours)
+        ).isoformat()
+    else:
+        train_upto: str = BaselineUpto[baseline.value].value
 
     # run the scan stats
     scan_scoot = ScanScoot(
