@@ -1,13 +1,13 @@
 """Experiment for training multiple models on multiple scoot detectors."""
 
 from __future__ import annotations
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Tuple, TYPE_CHECKING
 import tensorflow as tf
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficInstanceTable, TrafficModelTable
 from cleanair.utils import save_model
 from cleanair.mixins import ScootQueryMixin
-from ..dataset import TrafficDataset
+from ..dataset import ScootDataset
 from .experiment import ExperimentMixin
 from ..modelling import parse_kernel, train_sensor_model
 from .utils import save_gpflow2_model_to_file
@@ -31,28 +31,30 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
 
     # XXX - Can get this info direct from data_config
     def load_datasets(
-        self, detectors: List, start_date: str, upto: Optional[str] = None,
-    ) -> List[tf.data.Dataset]:
+        self, detectors: List[str], start: str, upto: Optional[str] = None,
+    ) -> List[ScootDataset]:
         """Load the data and train the models."""
         self.logger.info(
             "Querying the scoot database for readings on %s detectors.", len(detectors)
         )
         scoot_df = self.scoot_readings(
-            detectors=detectors, start=start_date, upto=upto, output_type="df", with_location=True,
+            detectors=detectors, start=start, upto=upto, output_type="df", with_location=True,
         )
         if scoot_df.empty:
             raise ValueError('No readings in SCOOT dataframe')
 
         # list of scoot datasets
-        datasets = []
-        for data_config, preprocessing in zip(self.frame.data_config, self.frame.preprocessing):
-            processed = TrafficDataset.preprocess_dataframe(
-                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])].copy(),
-                preprocessing
-            )
-            datasets.append(
-                TrafficDataset.from_dataframe(processed, preprocessing)
-            )
+        datasets = self.frame[["data_config", "preprocessing"]].apply(
+            lambda x, y: ScootDataset(x, y, dataframe=scoot_df)
+        )
+        # for data_config, preprocessing in zip(self.frame.data_config, self.frame.preprocessing):
+        #     processed = ScootDataset.preprocess_dataframe(
+        #         scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])].copy(),
+        #         preprocessing
+        #     )
+        #     datasets.append(
+        #         ScootDataset.from_dataframe(processed, preprocessing)
+        #     )
         return datasets
 
     def train_models(

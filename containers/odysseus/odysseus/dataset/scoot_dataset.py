@@ -2,7 +2,7 @@
 A dataset for scoot.
 """
 
-from typing import Collection, Optional
+from typing import Collection, List, Optional
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -91,6 +91,17 @@ class ScootDataset(DBReader, ScootQueryMixin):
     def target_tensor(self) -> tf.Tensor:
         """The target tensor."""
         return tf.convert_to_tensor(self.target_numpy, dtype=tf.dtypes.float64)
+
+    def split_by_detector(self) -> List[ScootDataset]:
+        """Return a list of scoot datasets. One dataset for each detector."""
+        datasets = []
+        for detector_id in self.data_config.detectors:
+            data_config = ScootConfig(
+                detectors=[detector_id],
+                **self.data_config.dict().pop(["offset", "limit", "detectors"])
+            )
+            datasets.append(ScootDataset(data_config, self.preprocessing, dataframe=self.dataframe))
+        return datasets
 
     @staticmethod
     def validate_dataframe(
