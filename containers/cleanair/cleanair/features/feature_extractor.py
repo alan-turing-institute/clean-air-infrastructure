@@ -2,8 +2,10 @@
 Feature extraction Base  class
 """
 import time
+from datetime import timedelta
 from math import ceil
-from sqlalchemy import func, literal, or_, case
+from dateutil.parser import isoparse
+from sqlalchemy import func, literal, or_, case, column, String, text
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
 import numpy as np
 from ..databases import DBWriter
@@ -20,6 +22,10 @@ from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
 from ..mixins import DBQueryMixin
 from ..loggers import duration, green, red, get_logger
+from ..databases.base import Values
+
+
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
 class FeatureExtractorMixin:
@@ -62,7 +68,7 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
         # table,
         features,
         # dynamic=False,
-        # batch_size=10,
+        batch_size=10,
         sources=None,
         insert_method="missing",
         **kwargs,
@@ -84,6 +90,7 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
         else:
             self.exclude_has_data = True
         self.insert_method = insert_method
+        self.batch_size = batch_size
 
     @db_query
     def oshighway_intersection(self, point_ids):
@@ -219,6 +226,79 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
             ).group_by(
                 scoot_road_readings.c.id, scoot_road_readings.c.measurement_start_utc
             )
+
+    @db_query
+    def get_scoot_feature_availability(
+        self, feature_names, sources, start_datetime, end_datetime, exclude_has_data
+    ):
+
+        with self.dbcnxn.open_session() as session:
+
+            in_data = (
+                session.query(
+                    DynamicFeature.point_id,
+                    DynamicFeature.measurement_start_utc,
+                    DynamicFeature.feature_name,
+                )
+                .filter(
+                    DynamicFeature.feature_name.in_(feature_names),
+                    DynamicFeature.measurement_start_utc >= start_datetime,
+                    DynamicFeature.measurement_start_utc < end_datetime,
+                )
+                .subquery()
+            )
+
+            # Expected datetimes
+            expected_date_times = session.query(
+                func.generate_series(
+                    start_datetime,
+                    (isoparse(end_datetime) - timedelta(hours=1)).isoformat(),
+                    ONE_HOUR_INTERVAL,
+                ).label("measurement_start_utc")
+            ).subquery()
+
+            # Expected ids and feature names
+            expected_values = (
+                session.query(
+                    MetaPoint.id.label("point_id"),
+                    MetaPoint.source,
+                    Values(
+                        [column("feature_name", String),],
+                        *[(feature,) for feature in feature_names],
+                        alias_name="t2",
+                    ),
+                )
+                .filter(MetaPoint.source.in_(sources))
+                .subquery()
+            )
+
+            # Expected data
+            expected_data = session.query(
+                expected_values, expected_date_times
+            ).subquery()
+
+            available_data_q = session.query(
+                expected_data.c.point_id,
+                expected_data.c.measurement_start_utc,
+                expected_data.c.feature_name,
+                in_data.c.point_id.isnot(None).label("has_data")
+                # in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
+                # in_data_cte.c.n_records,
+                # (in_data_cte.c.n_records == 72 * 32).label("expected_n_records"),
+            ).join(
+                in_data,
+                (in_data.c.point_id == expected_data.c.point_id)
+                & (
+                    in_data.c.measurement_start_utc
+                    == expected_data.c.measurement_start_utc
+                )
+                & (in_data.c.feature_name == expected_data.c.feature_name),
+                isouter=True,
+            )
+
+            if exclude_has_data:
+                return available_data_q.filter(in_data.c.point_id.is_(None))
+            return available_data_q
 
 
 class FeatureExtractor(

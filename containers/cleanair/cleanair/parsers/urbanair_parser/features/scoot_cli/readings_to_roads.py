@@ -16,6 +16,8 @@ from ...shared_args import (
     InsertMethod,
 )
 
+from .....databases.materialised_views import LondonBoundaryView
+
 app = typer.Typer(help="Map scoot sensor readings to road segments")
 
 feature_names = list(FEATURE_CONFIG_DYNAMIC["scoot"]["features"].keys())
@@ -96,7 +98,20 @@ def fill(
                 "42bf0950-8438-498d-8024-ea8c8f43aff9",
             ],
             start_datetime="2020-01-01T00:00:00",
-            end_datetime="2020-01-01T01:00:00",
+            end_datetime="2020-01-02T00:00:00",
+            output_type="sql",
+        )
+    )
+
+    print()
+
+    print(
+        scoot_features.get_scoot_feature_availability(
+            feature_names=all_feature_names,
+            sources=all_sources,
+            start_datetime="2020-01-01T00:00:00",
+            end_datetime="2020-01-02T00:00:00",
+            exclude_has_data=True,
             output_type="sql",
         )
     )
