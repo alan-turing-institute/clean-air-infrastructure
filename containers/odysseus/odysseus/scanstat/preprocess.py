@@ -1,6 +1,7 @@
 """Functionality to remove anomalies, and deal with missing data before scanning."""
 
 import logging
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -407,6 +408,9 @@ def drop_aperiodic_detectors(
     # Rename 'wrongly' named column. Could be re-factored nicely
     proc_df.rename({"n_vehicles_in_intervalX": "fap"}, axis=1, inplace=True)
 
+    # TODO - change this to drop the top 5% quantile of faps?
+    # Uses the assumption of "Most Scoot detctors are well behaved"
+
     # Return detectors which satisfy the condition
     proc_df = proc_df[proc_df["fap"] < fap_threshold]
 
@@ -416,3 +420,28 @@ def drop_aperiodic_detectors(
         )
 
     return proc_df
+
+
+def intersect_processed_data(
+    processed_train, processed_test
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Ensures that both train and forecast dataframes contain data
+    spanning the same set of detctors. Detector time series can be dropped
+    in both sets of pre-processing. This additional step is required
+    to ensure detectors exist in both.
+
+    Args:
+        processed_train: Processed training data
+        processed_test: Processed test data
+    Returns:
+        processed_train, processed_forecast contaning data for the same detectors
+    """
+
+    common_detectors = set(processed_train["detector_id"]).intersection(
+        set(processed_test["detector_id"])
+    )
+
+    return (
+        processed_train[processed_train["detector_id"].isin(common_detectors)],
+        processed_test[processed_test["detector_id"].isin(common_detectors)],
+    )
