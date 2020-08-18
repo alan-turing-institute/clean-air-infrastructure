@@ -7,14 +7,14 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Float64
-from cleanair.databases import DBWriter
+from cleanair.databases import DBReader
 from cleanair.utils import hash_dict
 from cleanair.mixins import ScootQueryMixin
 from ..preprocess import transform_datetime
 from .scoot_config import ScootConfig, ScootPreprocessing
 
 
-class ScootDataset(DBWriter, ScootQueryMixin):
+class ScootDataset(DBReader, ScootQueryMixin):
     """
     A scoot dataset that queries the database given a data config dictionary.
     """

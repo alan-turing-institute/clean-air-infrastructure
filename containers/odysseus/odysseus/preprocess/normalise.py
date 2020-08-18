@@ -27,7 +27,7 @@ def transform_datetime(
 
     Args:
         time_df: Must have a datetime col to normalise.
-    
+
     Keyword args:
         transformation: Name of the method for transforming datetime.
             Either epoch or hour.
