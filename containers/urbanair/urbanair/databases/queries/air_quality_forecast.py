@@ -10,13 +10,12 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityResultTable,
     HexGrid,
-    MetaPoint,
 )
 from cleanair.decorators import db_query
 from ..database import all_or_404
 
 
-logger = logging.getLogger("fastapi")
+logger = logging.getLogger("fastapi") # pylint: disable=invalid-name
 
 
 @db_query
@@ -54,20 +53,21 @@ def query_available_instance_ids(
 
 @cached(
     cache=TTLCache(maxsize=256, ttl=60),
-    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+    key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
 def cachable_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache results of query_available_instance_ids"""
-    logger.info("Querying available instance IDs between {} and {}".format(
-        start_datetime, end_datetime)
+    logger.info(
+        "Querying available instance IDs between %s and %s",
+        start_datetime, end_datetime
     )
     return query_available_instance_ids(db, start_datetime, end_datetime).all()
 
 
 @db_query
-def query_forecasts(
+def query_forecasts_nogeom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime
 ) -> Query:
     """
@@ -92,14 +92,15 @@ def query_forecasts(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts(
+def cachable_forecasts_nogeom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    """Cache results of query_forecasts"""
-    logger.info("Querying forecasts for {} between {} and {}".format(
-        instance_id, start_datetime, end_datetime)
+    """Cache results of query_forecasts_nogeom"""
+    logger.info(
+        "Querying forecasts for %s between %s and %s",
+        instance_id, start_datetime, end_datetime
     )
-    query = query_forecasts(
+    query = query_forecasts_nogeom(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -109,7 +110,7 @@ def cachable_forecasts(
 
 
 @db_query
-def query_forecasts_geom(
+def query_forecasts_hexgrid(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime
 ) -> Query:
     """
@@ -121,10 +122,9 @@ def query_forecasts_geom(
             AirQualityResultTable.measurement_start_utc,
             AirQualityResultTable.NO2_mean,
             AirQualityResultTable.NO2_var,
-            func.ST_AsText(MetaPoint.location).label("location"),
+            func.ST_AsText(HexGrid.geom).label("geom"),
         )
         .join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
-        .join(MetaPoint, MetaPoint.id == HexGrid.point_id)
         .filter(
             AirQualityResultTable.instance_id == instance_id,
             AirQualityResultTable.measurement_start_utc >= start_datetime,
@@ -136,14 +136,15 @@ def query_forecasts_geom(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_geom(
+def cachable_forecasts_hexgrid(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    """Cache results of query_forecasts_geom"""
-    logger.info("Querying forecast geometries for {} between {} and {}".format(
-        instance_id, start_datetime, end_datetime)
+    """Cache results of query_forecasts_hexgrid"""
+    logger.info(
+        "Querying forecast geometries for %s between %s and %s",
+        instance_id, start_datetime, end_datetime
     )
-    query = query_forecasts_geom(
+    query = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,

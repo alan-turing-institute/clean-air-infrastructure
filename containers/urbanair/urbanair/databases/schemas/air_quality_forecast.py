@@ -12,7 +12,7 @@ class ForecastResultGeoJson(FeatureCollection):
     def __init__(self, rows: List[Dict]) -> None:
         features = [
             Feature(
-                geometry=shapely.wkt.loads(row["location"]),
+                geometry=shapely.wkt.loads(row["geom"]),
                 id=row["point_id"],
                 properties={"NO2_mean": row["NO2_mean"], "NO2_var": row["NO2_var"],},
             )
@@ -33,4 +33,5 @@ class ForecastResultJson(BaseModel):
 
     class Config:
         """Enable ORM mode"""
+
         orm_mode = True

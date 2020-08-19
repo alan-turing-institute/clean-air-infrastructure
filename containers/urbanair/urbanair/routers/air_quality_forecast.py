@@ -10,8 +10,8 @@ from ..databases.schemas.air_quality_forecast import (
 )
 from ..databases.queries.air_quality_forecast import (
     cachable_available_instance_ids,
-    cachable_forecasts,
-    cachable_forecasts_geom,
+    cachable_forecasts_nogeom,
+    cachable_forecasts_hexgrid,
 )
 from ..responses import GeoJSONResponse
 
@@ -24,7 +24,7 @@ router = APIRouter()
     description="Most up-to-date forecasts for a given hour in JSON",
     response_model=List[ForecastResultJson],
 )
-def forecast_json(
+def forecast_hexgrid_json(
     time: datetime = Query(
         None,
         description="JSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
@@ -50,7 +50,7 @@ def forecast_json(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query_results = cachable_forecasts(
+    query_results = cachable_forecasts_nogeom(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -67,7 +67,7 @@ def forecast_json(
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
-def forecast_geojson(
+def forecast_hexgrid_geojson(
     time: datetime = Query(
         None,
         description="GeoJSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
@@ -93,7 +93,7 @@ def forecast_geojson(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range
-    query_results = cachable_forecasts_geom(
+    query_results = cachable_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
