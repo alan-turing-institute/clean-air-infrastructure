@@ -22,9 +22,7 @@ def safe_strptime(naive_string, format_str):
     except ValueError:
         if naive_string[11:19] == "24:00:00":
             naive_string = naive_string[:11] + "23:59:59"
-            return datetime.strptime(naive_string, format_str) + datetime.timedelta(
-                seconds=1
-            )
+            return datetime.strptime(naive_string, format_str) + timedelta(seconds=1)
     raise ValueError(
         "Time data '{}' does not match format '{}'".format(naive_string, format_str)
     )
@@ -69,7 +67,7 @@ def unix_from_str(naive_string, timezone, rounded=False):
 def to_nearest_hour(input_datetime):
     """Rounds to nearest hour by adding a timedelta of one hour if the minute is 30 or later then truncating on hour"""
     if input_datetime.minute >= 30:
-        input_datetime += datetime.timedelta(hours=1)
+        input_datetime += timedelta(hours=1)
     return input_datetime.replace(minute=0, second=0, microsecond=0)
 
 
