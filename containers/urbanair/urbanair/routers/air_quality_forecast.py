@@ -7,13 +7,16 @@ from ..databases import get_db
 from ..databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
     ForecastResultJson,
+    GeometryJson,
 )
 from ..databases.queries.air_quality_forecast import (
-    cachable_available_instance_ids,
-    cachable_forecasts_hexgridnogeom,
-    cachable_forecasts_hexgridnogeom_bounded,
-    cachable_forecasts_hexgrid,
-    cachable_forecasts_hexgrid_bounded,
+    cacheable_available_instance_ids,
+    cacheable_forecasts_hexgridnogeom,
+    cacheable_forecasts_hexgridnogeom_bounded,
+    cacheable_forecasts_hexgrid,
+    cacheable_forecasts_hexgrid_bounded,
+    cacheable_geometries_hexgrid,
+    cacheable_geometries_hexgrid_bounded,
 )
 from ..responses import GeoJSONResponse
 
@@ -57,10 +60,7 @@ def bounding_box_params(
         le=MAX_LATITUDE,
     ),
 ) -> Dict:
-    """Common parameters in jamcam routes.
-       If a camera_id is provided request up to 1 week of data
-       If no camera_id is provided request up to 24 hours of data
-    """
+    """Common parameters for defining a bounding box"""
     # Ensure that all or none of the bounding box parameters are set
     if any([lon_min, lon_max, lat_min, lat_max]):
         # Longitude
@@ -79,7 +79,6 @@ def bounding_box_params(
                 400,
                 detail=f"Minimum latitude '{lat_min}' must be less than maximum '{lat_max}'",
             )
-
     return {
         "lon_min": lon_min,
         "lon_max": lon_max,
@@ -90,7 +89,7 @@ def bounding_box_params(
 
 @router.get(
     "/forecast/hexgrid/json",
-    description="Most up-to-date forecasts for a given hour in JSON",
+    description="Most up-to-date hexgrid forecasts for a given hour in JSON",
     response_model=List[ForecastResultJson],
 )
 def forecast_hexgrid_json(
@@ -103,7 +102,7 @@ def forecast_hexgrid_json(
     db: Session = Depends(get_db),
     bounding_box: dict = Depends(bounding_box_params),
 ) -> Optional[List[Tuple]]:
-    """Retrieve one hour of JSON forecasts containing the requested time
+    """Retrieve one hour of hexgrid forecasts containing the requested time in JSON
 
     Args:
         time (datetime): Time to retrieve forecasts for
@@ -116,14 +115,14 @@ def forecast_hexgrid_json(
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
-    available_instance_ids = cachable_available_instance_ids(
+    available_instance_ids = cacheable_available_instance_ids(
         db, start_datetime, end_datetime
     )
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
     if all(bounding_box.values()):
-        query_results = cachable_forecasts_hexgridnogeom_bounded(
+        query_results = cacheable_forecasts_hexgridnogeom_bounded(
             db,
             instance_id=instance_id,
             start_datetime=start_datetime,
@@ -131,7 +130,7 @@ def forecast_hexgrid_json(
             **bounding_box,
         )
     else:
-        query_results = cachable_forecasts_hexgridnogeom(
+        query_results = cacheable_forecasts_hexgridnogeom(
             db,
             instance_id=instance_id,
             start_datetime=start_datetime,
@@ -140,6 +139,30 @@ def forecast_hexgrid_json(
 
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
+    return query_results
+
+
+@router.get(
+    "/forecast/hexgrid/geometries",
+    description="Geometries for combining with plain JSON forecasts",
+    response_model=List[GeometryJson],
+)
+def forecast_hexgrid_geometries(
+    db: Session = Depends(get_db), bounding_box: dict = Depends(bounding_box_params),
+) -> Optional[List[Tuple]]:
+    """Retrieve hexgrid geometries in JSON
+
+    Returns:
+        json: JSON containing geometry of each hexgrid point
+    """
+    # Get forecasts in this range (using a bounding box if specified)
+    if all(bounding_box.values()):
+        query_results = cacheable_geometries_hexgrid_bounded(db, **bounding_box)
+    else:
+        query_results = cacheable_geometries_hexgrid(db)
+
+    # Return the query results as a list of tuples
+    # This will be automatically converted to GeometryJson using from_orm
     return query_results
 
 
@@ -159,7 +182,7 @@ def forecast_hexgrid_geojson(
     db: Session = Depends(get_db),
     bounding_box: dict = Depends(bounding_box_params),
 ) -> Optional[List[Dict]]:
-    """Retrieve one hour of GeoJSON forecasts containing the requested time
+    """Retrieve one hour of hexgrid forecasts containing the requested time in GeoJSON
 
     Args:
         time (datetime): Time to retrieve forecasts for
@@ -172,14 +195,14 @@ def forecast_hexgrid_geojson(
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
-    available_instance_ids = cachable_available_instance_ids(
+    available_instance_ids = cacheable_available_instance_ids(
         db, start_datetime, end_datetime
     )
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
     if all(bounding_box.values()):
-        query_results = cachable_forecasts_hexgrid_bounded(
+        query_results = cacheable_forecasts_hexgrid_bounded(
             db,
             instance_id=instance_id,
             start_datetime=start_datetime,
@@ -187,7 +210,7 @@ def forecast_hexgrid_geojson(
             **bounding_box,
         )
     else:
-        query_results = cachable_forecasts_hexgrid(
+        query_results = cacheable_forecasts_hexgrid(
             db,
             instance_id=instance_id,
             start_datetime=start_datetime,

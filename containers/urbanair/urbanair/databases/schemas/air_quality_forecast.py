@@ -20,7 +20,7 @@ class ForecastResultGeoJson(BaseModel):
             Feature(
                 geometry=shapely.wkt.loads(row["geom"]),
                 id=row["point_id"],
-                properties={"NO2_mean": row["NO2_mean"], "NO2_var": row["NO2_var"],},
+                properties={"NO2_mean": row["NO2_mean"], "NO2_var": row["NO2_var"]},
             )
             for row in rows
         ]
@@ -69,6 +69,19 @@ class ForecastResultJson(BaseModel):
     measurement_start_utc: datetime
     NO2_mean: float
     NO2_var: float
+
+    class Config:
+        """Pydantic configuration"""
+
+        orm_mode = True
+
+
+class GeometryJson(BaseModel):
+    """Forecast results as JSON"""
+
+    # Schema attributes
+    point_id: str
+    geom: str
 
     class Config:
         """Pydantic configuration"""

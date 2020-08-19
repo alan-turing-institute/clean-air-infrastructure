@@ -25,7 +25,7 @@ def query_available_instance_ids(
     """
     Check which model IDs produced forecasts between start_datetime and end_datetime.
     """
-    res = (
+    query = (
         db.query(
             AirQualityResultTable.instance_id,
             AirQualityResultTable.measurement_start_utc,
@@ -43,28 +43,72 @@ def query_available_instance_ids(
     )
 
     # Return only instance IDs and distinct values
-    res = res.with_entities(
+    query = query.with_entities(
         AirQualityInstanceTable.instance_id, AirQualityInstanceTable.fit_start_time
     ).distinct()
 
     # Order by fit start time
-    return res.order_by(AirQualityInstanceTable.fit_start_time.desc())
+    return query.order_by(AirQualityInstanceTable.fit_start_time.desc())
 
 
 @cached(
     cache=TTLCache(maxsize=256, ttl=60),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
-def cachable_available_instance_ids(
+def cacheable_available_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
-    """Cache results of query_available_instance_ids"""
+    """Cache available model instances"""
     logger.info(
         "Querying available instance IDs between %s and %s",
         start_datetime,
         end_datetime,
     )
     return query_available_instance_ids(db, start_datetime, end_datetime).all()
+
+
+@db_query
+def query_geometries_hexgrid(
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
+) -> Query:
+    """
+    Query geometries for combining with plain JSON forecasts
+    """
+    query = db.query(
+        AirQualityResultTable.point_id, func.ST_AsText(HexGrid.geom).label("geom"),
+    ).join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
+    if bounding_box:
+        query = query.filter(
+            func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
+        )
+    return query
+
+
+@cached(cache=LRUCache(maxsize=1), key="all")
+def cacheable_geometries_hexgrid(db: Session) -> Optional[List[Tuple]]:
+    """Cache geometries without bounding box"""
+    logger.info("Querying all geometries")
+    return all_or_404(query_geometries_hexgrid(db))
+
+
+@cached(
+    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+)
+def cacheable_geometries_hexgrid_bounded(
+    db: Session, lon_min: float, lon_max: float, lat_min: float, lat_max: float,
+) -> Optional[List[Tuple]]:
+    """Cache geometries with bounding box"""
+    logger.info(
+        "Querying geometries inside box (%s, %s => %s, %s)",
+        lon_min,
+        lat_min,
+        lon_max,
+        lat_max,
+    )
+    query = query_geometries_hexgrid(
+        db, bounding_box=(lon_min, lat_min, lon_max, lat_max)
+    )
+    return all_or_404(query)
 
 
 @db_query
@@ -108,7 +152,7 @@ def query_forecasts_hexgrid(
     # We return all hexes that overlap with any part of the bounding box
     if bounding_box:
         query = query.filter(
-            func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326),)
+            func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
         )
     return query
 
@@ -116,7 +160,7 @@ def query_forecasts_hexgrid(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_hexgridnogeom(
+def cacheable_forecasts_hexgridnogeom(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache forecasts without geometry and without bounding box"""
@@ -139,7 +183,7 @@ def cachable_forecasts_hexgridnogeom(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_hexgridnogeom_bounded(
+def cacheable_forecasts_hexgridnogeom_bounded(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -174,7 +218,7 @@ def cachable_forecasts_hexgridnogeom_bounded(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_hexgrid(
+def cacheable_forecasts_hexgrid(
     db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache forecasts with geometry and without bounding box"""
@@ -197,7 +241,7 @@ def cachable_forecasts_hexgrid(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cachable_forecasts_hexgrid_bounded(
+def cacheable_forecasts_hexgrid_bounded(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
