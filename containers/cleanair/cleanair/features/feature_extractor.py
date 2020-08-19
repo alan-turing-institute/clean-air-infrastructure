@@ -23,7 +23,7 @@ from ..decorators import db_query
 from ..mixins import DBQueryMixin
 from ..loggers import duration, green, red, get_logger
 from ..databases.base import Values
-
+from .feature_conf import FEATURE_CONFIG_DYNAMIC
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
@@ -85,6 +85,7 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
 
         self.features = features
         self.sources = sources if sources else []
+        self.feature_map = FEATURE_CONFIG_DYNAMIC["scoot"]["features"]
         if insert_method == "all":
             self.exclude_has_data = False
         else:
@@ -194,7 +195,15 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
             )
 
     @db_query
-    def get_scoot_features(self, point_ids, start_datetime, end_datetime):
+    def get_scoot_features(
+        self,
+        point_ids,
+        start_datetime,
+        end_datetime,
+        feature_name,
+        column_name,
+        agg_func,
+    ):
 
         scoot_road_readings = self.scoot_to_road(
             point_ids, start_datetime, end_datetime
@@ -205,20 +214,20 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
             return session.query(
                 scoot_road_readings.c.id,
                 scoot_road_readings.c.measurement_start_utc,
-                literal("max_n_vehicles").label("feature_name"),
-                func.max(scoot_road_readings.c.n_vehicles_in_interval).label(
+                literal(feature_name).label("feature_name"),
+                agg_func(getattr(scoot_road_readings.c, column_name)).label(
                     "values_1000"
                 ),
-                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                agg_func(getattr(scoot_road_readings.c, column_name))
                 .filter(scoot_road_readings.c.intersects_500)
                 .label("values_500"),
-                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                agg_func(getattr(scoot_road_readings.c, column_name))
                 .filter(scoot_road_readings.c.intersects_200)
                 .label("values_200"),
-                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                agg_func(getattr(scoot_road_readings.c, column_name))
                 .filter(scoot_road_readings.c.intersects_100)
                 .label("values_100"),
-                func.max(scoot_road_readings.c.n_vehicles_in_interval)
+                agg_func(getattr(scoot_road_readings.c, column_name))
                 .filter(scoot_road_readings.c.intersects_10)
                 .label("values_10"),
             ).group_by(
@@ -229,6 +238,9 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
     def get_scoot_feature_availability(
         self, feature_names, sources, start_datetime, end_datetime, exclude_has_data
     ):
+
+        feature_names = [feature.value for feature in feature_names]
+        sources = [source.value for source in sources]
 
         with self.dbcnxn.open_session() as session:
 
@@ -297,6 +309,45 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
             if exclude_has_data:
                 return available_data_q.filter(in_data.c.point_id.is_(None))
             return available_data_q
+
+    def update_remote_tables(self):
+
+        print(self.features)
+        print(self.feature_map)
+
+        all_queries = []
+        for feature in self.features:
+
+            feature_name = feature.value
+            table_column = list(self.feature_map[feature.value]["feature_dict"].keys())[
+                0
+            ]
+            agg_func = self.feature_map[feature.value]["aggfunc"]
+
+            print(
+                self.get_scoot_features(
+                    point_ids=[
+                        "fa6bf3a7-7448-450b-a6cb-b53694501ea8",
+                        "786246d4-7c6d-4017-adf2-47cabb624f8d",
+                        "8e3f6990-f8a9-427b-8526-2cdb19bbeb55",
+                        "f664314d-ea69-4a57-bd87-5e7cb38ec3d7",
+                        "26cd5561-9374-4b70-ac48-af25ad9f87f7",
+                        "e68bc738-66f2-461c-9988-116e4fbf7904",
+                        "9c61e592-b0f8-4cdd-86cd-aa8a092b2db0",
+                        "cb164b9e-46b9-44c0-8041-5aac4544e17d",
+                        "31b1c7a1-63e8-4d4f-ab6a-227bbe5da0b5",
+                        "42bf0950-8438-498d-8024-ea8c8f43aff9",
+                    ],
+                    start_datetime="2020-01-01T00:00:00",
+                    end_datetime="2020-01-02T00:00:00",
+                    feature_name=feature_name,
+                    column_name=table_column,
+                    agg_func=agg_func,
+                    output_type="sql",
+                )
+            )
+
+            print()
 
 
 class FeatureExtractor(

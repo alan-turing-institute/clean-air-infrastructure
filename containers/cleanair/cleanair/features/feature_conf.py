@@ -133,7 +133,42 @@ FEATURE_CONFIG_DYNAMIC = {
                 "type": "value",
                 "feature_dict": {"n_vehicles_in_interval": ["*"]},
                 "aggfunc": max_,
-            }
+            },
+            DynamicFeatureNames.avg_n_vehicles.value: {
+                "type": "value",
+                "feature_dict": {"n_vehicles_in_interval": ["*"]},
+                "aggfunc": avg_,
+            },
+            DynamicFeatureNames.max_occupancy_percentage.value: {
+                "type": "value",
+                "feature_dict": {"occupancy_percentage": ["*"]},
+                "aggfunc": max_,
+            },
+            DynamicFeatureNames.avg_occupancy_percentage.value: {
+                "type": "value",
+                "feature_dict": {"occupancy_percentage": ["*"]},
+                "aggfunc": avg_,
+            },
+            DynamicFeatureNames.max_congestion_percentage.value: {
+                "type": "value",
+                "feature_dict": {"congestion_percentage": ["*"]},
+                "aggfunc": max_,
+            },
+            DynamicFeatureNames.avg_congestion_percentage.value: {
+                "type": "value",
+                "feature_dict": {"congestion_percentage": ["*"]},
+                "aggfunc": avg_,
+            },
+            DynamicFeatureNames.max_saturation_percentage.value: {
+                "type": "value",
+                "feature_dict": {"saturation_percentage": ["*"]},
+                "aggfunc": max_,
+            },
+            DynamicFeatureNames.avg_saturation_percentage.value: {
+                "type": "value",
+                "feature_dict": {"saturation_percentage": ["*"]},
+                "aggfunc": avg_,
+            },
         },
     }
 }

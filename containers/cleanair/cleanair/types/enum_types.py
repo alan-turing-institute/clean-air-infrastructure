@@ -31,6 +31,13 @@ class FeatureNames(str, Enum):
 class DynamicFeatureNames(str, Enum):
 
     max_n_vehicles = "max_n_vehicles"
+    avg_n_vehicles = "avg_n_vehicles"
+    max_occupancy_percentage = "max_occupancy_percentage"
+    avg_occupancy_percentage = "avg_occupancy_percentage"
+    max_congestion_percentage = "max_congestion_percentage"
+    avg_congestion_percentage = "avg_congestion_percentage"
+    max_saturation_percentage = "max_saturation_percentage"
+    avg_saturation_percentage = "avg_saturation_percentage"
 
 
 @unique
