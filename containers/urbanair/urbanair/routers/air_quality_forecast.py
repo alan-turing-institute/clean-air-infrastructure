@@ -2,7 +2,7 @@
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..databases import get_db
 from ..databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
@@ -10,13 +10,82 @@ from ..databases.schemas.air_quality_forecast import (
 )
 from ..databases.queries.air_quality_forecast import (
     cachable_available_instance_ids,
-    cachable_forecasts_nogeom,
+    cachable_forecasts_hexgridnogeom,
+    cachable_forecasts_hexgridnogeom_bounded,
     cachable_forecasts_hexgrid,
+    cachable_forecasts_hexgrid_bounded,
 )
 from ..responses import GeoJSONResponse
 
 
 router = APIRouter()
+
+# Define the bounding box for London
+MIN_LONGITUDE = -0.510
+MAX_LONGITUDE = 0.335
+MIN_LATITUDE = 51.286
+MAX_LATITUDE = 51.692
+
+
+def bounding_box_params(
+    lon_min: Optional[float] = Query(
+        None,
+        description="[Optional] Bounding box, minimum longitude",
+        example="-0.29875",
+        ge=MIN_LONGITUDE,
+        le=MAX_LONGITUDE,
+    ),
+    lon_max: Optional[float] = Query(
+        None,
+        description="[Optional] Bounding box, maximum longitude",
+        example="0.12375",
+        ge=MIN_LONGITUDE,
+        le=MAX_LONGITUDE,
+    ),
+    lat_min: Optional[float] = Query(
+        None,
+        description="[Optional] Bounding box, minimum latitude",
+        example="51.3875",
+        ge=MIN_LATITUDE,
+        le=MAX_LATITUDE,
+    ),
+    lat_max: Optional[float] = Query(
+        None,
+        description="[Optional] Bounding box, maximum latitude",
+        example="51.5905",
+        ge=MIN_LATITUDE,
+        le=MAX_LATITUDE,
+    ),
+) -> Dict:
+    """Common parameters in jamcam routes.
+       If a camera_id is provided request up to 1 week of data
+       If no camera_id is provided request up to 24 hours of data
+    """
+    # Ensure that all or none of the bounding box parameters are set
+    if any([lon_min, lon_max, lat_min, lat_max]):
+        # Longitude
+        lon_min = lon_min if lon_min else MIN_LONGITUDE
+        lon_max = lon_max if lon_max else MAX_LONGITUDE
+        if lon_min >= lon_max:
+            raise HTTPException(
+                400,
+                detail=f"Minimum longitude '{lon_min}' must be less than maximum '{lon_max}'",
+            )
+        # Latitude
+        lat_min = lat_min if lat_min else MIN_LATITUDE
+        lat_max = lat_max if lat_max else MAX_LATITUDE
+        if lat_min >= lat_max:
+            raise HTTPException(
+                400,
+                detail=f"Minimum latitude '{lat_min}' must be less than maximum '{lat_max}'",
+            )
+
+    return {
+        "lon_min": lon_min,
+        "lon_max": lon_max,
+        "lat_min": lat_min,
+        "lat_max": lat_max,
+    }
 
 
 @router.get(
@@ -32,6 +101,7 @@ def forecast_hexgrid_json(
         example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
+    bounding_box: dict = Depends(bounding_box_params),
 ) -> Optional[List[Tuple]]:
     """Retrieve one hour of JSON forecasts containing the requested time
 
@@ -51,13 +121,22 @@ def forecast_hexgrid_json(
     )
     instance_id = available_instance_ids[0][0]
 
-    # Get forecasts in this range
-    query_results = cachable_forecasts_nogeom(
-        db,
-        instance_id=instance_id,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime,
-    )
+    # Get forecasts in this range (using a bounding box if specified)
+    if all(bounding_box.values()):
+        query_results = cachable_forecasts_hexgridnogeom_bounded(
+            db,
+            instance_id=instance_id,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            **bounding_box,
+        )
+    else:
+        query_results = cachable_forecasts_hexgridnogeom(
+            db,
+            instance_id=instance_id,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
 
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
@@ -78,6 +157,7 @@ def forecast_hexgrid_geojson(
         example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
+    bounding_box: dict = Depends(bounding_box_params),
 ) -> Optional[List[Dict]]:
     """Retrieve one hour of GeoJSON forecasts containing the requested time
 
@@ -97,13 +177,22 @@ def forecast_hexgrid_geojson(
     )
     instance_id = available_instance_ids[0][0]
 
-    # Get forecasts in this range
-    query_results = cachable_forecasts_hexgrid(
-        db,
-        instance_id=instance_id,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime,
-    )
+    # Get forecasts in this range (using a bounding box if specified)
+    if all(bounding_box.values()):
+        query_results = cachable_forecasts_hexgrid_bounded(
+            db,
+            instance_id=instance_id,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+            **bounding_box,
+        )
+    else:
+        query_results = cachable_forecasts_hexgrid(
+            db,
+            instance_id=instance_id,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
 
     # Return the query results as a GeoJSON FeatureCollection
     features = ForecastResultGeoJson.build_features(
