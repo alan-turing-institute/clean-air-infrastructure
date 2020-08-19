@@ -711,7 +711,7 @@ odysseus scan scoot BASELINE_PERIOD \
 
 The above command will forecast 2 days worth of scoot data using training data specified by `BASELINE_PERIOD`. It is recommended to pass this as `last3weeks` which will use the three weeks of data before the forecasting period to train the model. Other pre/mid/post lockdown training profiles are available.
 
-Upon completion, hourly scan statistics for each grid cell of the fishnet at each of hour of the forecast period can be found in the `scoot_scan_stats` table of the traffic modelling schema.
+Upon completion, scan statistics for each grid cell of the fishnet at each of hour of the forecast period can be found in the `scoot_scan_stats` table of the traffic modelling schema.
 
 Add the `--help` option for different ways of querying scoot data and changing model parameters/forecast methods.
 
