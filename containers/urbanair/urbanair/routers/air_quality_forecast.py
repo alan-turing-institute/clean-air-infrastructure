@@ -11,7 +11,6 @@ from ..databases.schemas.air_quality_forecast import (
 )
 from ..databases.queries.air_quality_forecast import (
     cacheable_available_instance_ids,
-    cacheable_forecasts_hexgridnogeom,
     cacheable_forecasts_hexgrid,
     cacheable_geometries_hexgrid,
 )
@@ -116,11 +115,12 @@ def forecast_hexgrid_json(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cacheable_forecasts_hexgridnogeom(
+    query_results = cacheable_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
+        with_geometry=False,
         bounding_box=bounding_box,
     )
 
@@ -191,6 +191,7 @@ def forecast_hexgrid_geojson(
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
+        with_geometry=True,
         bounding_box=bounding_box,
     )
 
