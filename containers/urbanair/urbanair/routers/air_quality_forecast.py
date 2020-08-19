@@ -12,11 +12,8 @@ from ..databases.schemas.air_quality_forecast import (
 from ..databases.queries.air_quality_forecast import (
     cacheable_available_instance_ids,
     cacheable_forecasts_hexgridnogeom,
-    cacheable_forecasts_hexgridnogeom_bounded,
     cacheable_forecasts_hexgrid,
-    cacheable_forecasts_hexgrid_bounded,
     cacheable_geometries_hexgrid,
-    cacheable_geometries_hexgrid_bounded,
 )
 from ..responses import GeoJSONResponse
 
@@ -59,9 +56,9 @@ def bounding_box_params(
         ge=MIN_LATITUDE,
         le=MAX_LATITUDE,
     ),
-) -> Dict:
+) -> Tuple[float]:
     """Common parameters for defining a bounding box"""
-    # Ensure that all or none of the bounding box parameters are set
+    # Ensure that all bounding box parameters are set if any single one is
     if any([lon_min, lon_max, lat_min, lat_max]):
         # Longitude
         lon_min = lon_min if lon_min else MIN_LONGITUDE
@@ -79,12 +76,10 @@ def bounding_box_params(
                 400,
                 detail=f"Minimum latitude '{lat_min}' must be less than maximum '{lat_max}'",
             )
-    return {
-        "lon_min": lon_min,
-        "lon_max": lon_max,
-        "lat_min": lat_min,
-        "lat_max": lat_max,
-    }
+    # Return a bounding box if any bounding parameter was provided
+    if all([lon_min, lon_max, lat_min, lat_max]):
+        return (lon_min, lat_min, lon_max, lat_max)
+    return None
 
 
 @router.get(
@@ -100,7 +95,7 @@ def forecast_hexgrid_json(
         example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
-    bounding_box: dict = Depends(bounding_box_params),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[List[Tuple]]:
     """Retrieve one hour of hexgrid forecasts containing the requested time in JSON
 
@@ -121,21 +116,13 @@ def forecast_hexgrid_json(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    if all(bounding_box.values()):
-        query_results = cacheable_forecasts_hexgridnogeom_bounded(
-            db,
-            instance_id=instance_id,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime,
-            **bounding_box,
-        )
-    else:
-        query_results = cacheable_forecasts_hexgridnogeom(
-            db,
-            instance_id=instance_id,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime,
-        )
+    query_results = cacheable_forecasts_hexgridnogeom(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        bounding_box=bounding_box,
+    )
 
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
@@ -148,7 +135,8 @@ def forecast_hexgrid_json(
     response_model=List[GeometryJson],
 )
 def forecast_hexgrid_geometries(
-    db: Session = Depends(get_db), bounding_box: dict = Depends(bounding_box_params),
+    db: Session = Depends(get_db),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[List[Tuple]]:
     """Retrieve hexgrid geometries in JSON
 
@@ -156,10 +144,7 @@ def forecast_hexgrid_geometries(
         json: JSON containing geometry of each hexgrid point
     """
     # Get forecasts in this range (using a bounding box if specified)
-    if all(bounding_box.values()):
-        query_results = cacheable_geometries_hexgrid_bounded(db, **bounding_box)
-    else:
-        query_results = cacheable_geometries_hexgrid(db)
+    query_results = cacheable_geometries_hexgrid(db, bounding_box=bounding_box)
 
     # Return the query results as a list of tuples
     # This will be automatically converted to GeometryJson using from_orm
@@ -180,7 +165,7 @@ def forecast_hexgrid_geojson(
         example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
-    bounding_box: dict = Depends(bounding_box_params),
+    bounding_box: Tuple[float] = Depends(bounding_box_params),
 ) -> Optional[List[Dict]]:
     """Retrieve one hour of hexgrid forecasts containing the requested time in GeoJSON
 
@@ -201,21 +186,13 @@ def forecast_hexgrid_geojson(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    if all(bounding_box.values()):
-        query_results = cacheable_forecasts_hexgrid_bounded(
-            db,
-            instance_id=instance_id,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime,
-            **bounding_box,
-        )
-    else:
-        query_results = cacheable_forecasts_hexgrid(
-            db,
-            instance_id=instance_id,
-            start_datetime=start_datetime,
-            end_datetime=end_datetime,
-        )
+    query_results = cacheable_forecasts_hexgrid(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        bounding_box=bounding_box,
+    )
 
     # Return the query results as a GeoJSON FeatureCollection
     features = ForecastResultGeoJson.build_features(

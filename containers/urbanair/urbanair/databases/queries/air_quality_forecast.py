@@ -84,30 +84,20 @@ def query_geometries_hexgrid(
     return query
 
 
-@cached(cache=LRUCache(maxsize=1), key="all")
-def cacheable_geometries_hexgrid(db: Session) -> Optional[List[Tuple]]:
-    """Cache geometries without bounding box"""
-    logger.info("Querying all geometries")
-    return all_or_404(query_geometries_hexgrid(db))
-
-
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_geometries_hexgrid_bounded(
-    db: Session, lon_min: float, lon_max: float, lat_min: float, lat_max: float,
+def cacheable_geometries_hexgrid(
+    db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> Optional[List[Tuple]]:
-    """Cache geometries with bounding box"""
-    logger.info(
-        "Querying geometries inside box (%s, %s => %s, %s)",
-        lon_min,
-        lat_min,
-        lon_max,
-        lat_max,
-    )
-    query = query_geometries_hexgrid(
-        db, bounding_box=(lon_min, lat_min, lon_max, lat_max)
-    )
+    """Cache geometries with optional bounding box"""
+    if bounding_box:
+        kwargs = {"bounding_box": bounding_box}
+        logger.info("Querying geometries inside box (%s, %s => %s, %s)", *bounding_box)
+    else:
+        kwargs = {}
+        logger.info("Querying all geometries")
+    query = query_geometries_hexgrid(db, **kwargs)
     return all_or_404(query)
 
 
@@ -148,7 +138,7 @@ def query_forecasts_hexgrid(
         AirQualityResultTable.measurement_start_utc <= end_datetime,
     )
 
-    # Note that the hexgrid uses SRID 4326 which is not aligned with lat/long
+    # Note that the hexgrid uses SRID 4326 which is not aligned with lat/lon
     # We return all hexes that overlap with any part of the bounding box
     if bounding_box:
         query = query.filter(
@@ -161,56 +151,27 @@ def query_forecasts_hexgrid(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cacheable_forecasts_hexgridnogeom(
-    db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> Optional[List[Tuple]]:
-    """Cache forecasts without geometry and without bounding box"""
+    """Cache forecasts without geometry with optional bounding box"""
     logger.info(
         "Querying forecasts for %s between %s and %s",
         instance_id,
         start_datetime,
         end_datetime,
     )
+    kwargs = {"bounding_box": bounding_box} if bounding_box else {}
     query = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=False,
-    )
-    return all_or_404(query)
-
-
-@cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
-)
-def cacheable_forecasts_hexgridnogeom_bounded(
-    db: Session,
-    instance_id: str,
-    start_datetime: datetime,
-    end_datetime: datetime,
-    lon_min: float,
-    lon_max: float,
-    lat_min: float,
-    lat_max: float,
-) -> Optional[List[Tuple]]:
-    """Cache forecasts without geometry and with bounding box"""
-    logger.info(
-        "Querying forecasts for %s between %s and %s inside box (%s, %s => %s, %s)",
-        instance_id,
-        start_datetime,
-        end_datetime,
-        lon_min,
-        lat_min,
-        lon_max,
-        lat_max,
-    )
-    query = query_forecasts_hexgrid(
-        db,
-        instance_id=instance_id,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime,
-        with_geometry=False,
-        bounding_box=(lon_min, lat_min, lon_max, lat_max),
+        **kwargs
     )
     return all_or_404(query)
 
@@ -219,55 +180,26 @@ def cacheable_forecasts_hexgridnogeom_bounded(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
 def cacheable_forecasts_hexgrid(
-    db: Session, instance_id: str, start_datetime: datetime, end_datetime: datetime,
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    bounding_box: Optional[Tuple[float]] = None,
 ) -> Optional[List[Tuple]]:
-    """Cache forecasts with geometry and without bounding box"""
+    """Cache forecasts with geometry with optional bounding box"""
     logger.info(
         "Querying forecast geometries for %s between %s and %s",
         instance_id,
         start_datetime,
         end_datetime,
     )
+    kwargs = {"bounding_box": bounding_box} if bounding_box else {}
     query = query_forecasts_hexgrid(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
         with_geometry=True,
-    )
-    return all_or_404(query)
-
-
-@cached(
-    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
-)
-def cacheable_forecasts_hexgrid_bounded(
-    db: Session,
-    instance_id: str,
-    start_datetime: datetime,
-    end_datetime: datetime,
-    lon_min: float,
-    lon_max: float,
-    lat_min: float,
-    lat_max: float,
-) -> Optional[List[Tuple]]:
-    """Cache forecasts with geometry and with bounding box"""
-    logger.info(
-        "Querying forecast geometries for %s between %s and %s inside box (%s, %s => %s, %s)",
-        instance_id,
-        start_datetime,
-        end_datetime,
-        lon_min,
-        lat_min,
-        lon_max,
-        lat_max,
-    )
-    query = query_forecasts_hexgrid(
-        db,
-        instance_id=instance_id,
-        start_datetime=start_datetime,
-        end_datetime=end_datetime,
-        with_geometry=True,
-        bounding_box=(lon_min, lat_min, lon_max, lat_max),
+        **kwargs
     )
     return all_or_404(query)
