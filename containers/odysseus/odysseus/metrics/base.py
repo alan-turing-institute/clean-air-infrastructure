@@ -14,7 +14,11 @@ from cleanair.loggers import get_logger
 
 from .coverage import percent_coverage
 from .nlpl import nlpl
+<<<<<<< Updated upstream
 from ..dataset import ScootDataset
+=======
+from ..dataset.scoot_dataset import ScootDataset
+>>>>>>> Stashed changes
 
 
 class TrafficMetric(DBWriter):

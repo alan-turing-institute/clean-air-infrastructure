@@ -5,7 +5,11 @@ import pandas as pd
 from .scoot_dataset import ScootDataset
 
 
+<<<<<<< Updated upstream
 def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[ScootDataset]:
+=======
+def prepare_batch(instance_df: pd.DataFrame, secretfile: str,):
+>>>>>>> Stashed changes
     """
     Given a dataframe of instances, return a list of models, x_tests and y_tests.
 
@@ -27,6 +31,10 @@ def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[ScootData
         preprocessing = row["preprocessing"]
 
         # get the dataset for this instance
+<<<<<<< Updated upstream
         datasets[data_id] = ScootDataset(data_config, preprocessing, secretfile)
+=======
+   #     datasets[data_id] = TrafficDataset(data_config, preprocessing, secretfile)
+>>>>>>> Stashed changes
 
     return instance_df["data_id"].map(lambda x: datasets[x])
