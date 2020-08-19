@@ -5,7 +5,7 @@ from datetime import datetime
 from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
 from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
-from ..utils import hash_dict
+from .. import utils
 
 # pylint: disable=invalid-name
 DataConfig = Dict[str, Union[str, bool, List[str]]]
@@ -56,4 +56,4 @@ class FullConfig(BaseConfig):
 
     def data_id(self):
         "Return a hashed data id"
-        return hash_dict(self.json(sort_keys=True))
+        return utils.hashing.hash_dict(self.json(sort_keys=True))

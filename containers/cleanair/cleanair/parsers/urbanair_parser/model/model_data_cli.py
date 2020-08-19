@@ -28,7 +28,7 @@ from ....types import (
     FeatureBufferSize,
 )
 from ....loggers import red, green
-from ....utils import FileManager
+from ..file_manager import FileManager
 
 app = typer.Typer(help="Get data for model fitting")
 

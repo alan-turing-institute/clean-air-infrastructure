@@ -4,7 +4,7 @@ from pathlib import Path
 import typer
 from ..state import MODEL_CACHE
 from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
-from ....utils import FileManager
+from ..file_manager import FileManager
 
 app = typer.Typer(help="SVGP model fitting")
 

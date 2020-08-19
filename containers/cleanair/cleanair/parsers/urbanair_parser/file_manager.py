@@ -5,11 +5,11 @@ from typing import Any, Dict, Union, Optional, TYPE_CHECKING
 import json
 import pickle
 import typer
-from ..loggers import red
-from ..types import (
+from ...loggers import red
+from ...types import (
     BaseConfig, FullConfig, MRDGPParams, Source, SVGPParams, TargetDict
 )
-from ..parsers.urbanair_parser.state import (
+from .state import (
     state,
     DATA_CACHE,
     DATA_CONFIG,

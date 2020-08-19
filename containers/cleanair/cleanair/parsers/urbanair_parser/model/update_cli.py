@@ -9,7 +9,7 @@ from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 from ....models import ModelDataExtractor
-from ....utils import FileManager
+from ..file_manager import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
 
