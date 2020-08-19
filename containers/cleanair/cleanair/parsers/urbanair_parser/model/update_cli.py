@@ -1,27 +1,15 @@
 """Command line interface for updating the database with results."""
 
-from typing import Optional, Union
-import json
-import pickle
 from datetime import datetime
 from pathlib import Path
 import typer
 import pandas as pd
-from .model_data_cli import get_test_arrays, load_model_config, load_test_data
 from ..state import state
-from ..state.configuration import (
-    FORECAST_RESULT_PICKLE,
-    RESULT_CACHE,
-    MODEL_PARAMS,
-    TRAINING_RESULT_PICKLE,
-)
 from ..shared_args.instance_options import ClusterId, Tag
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
-from ....models import ModelData
-from ....types import Source
-from ....types.model_types import SVGPParams, MRDGPParams
-from ....types.dataset_types import TargetDict
+from ....models import ModelDataExtractor
+from ....utils import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -39,11 +27,17 @@ def results(
     logger.info(
         "Reading model params, predictions, test data and data config from files"
     )
-    model_params = load_model_params(model_name, input_dir)
-    y_pred = load_forecast_from_pickle(input_dir)
-    x_test, _, index_dict = get_test_arrays(input_dir=input_dir, return_y=False)
-    test_data = load_test_data(input_dir)
-    full_config = load_model_config(input_dir, full=True)
+    file_manager = FileManager(input_dir)
+    model_params = file_manager.load_model_params(model_name)
+    y_pred = file_manager.load_forecast_from_pickle()
+    full_config = file_manager.load_data_config(full=True)
+
+    # load prediction data
+    model_data = ModelDataExtractor()
+    test_data = file_manager.load_test_data()
+    x_test, y_test, index_test = model_data.get_data_arrays(
+        full_config, test_data, prediction=False,
+    )
 
     # create an instance with correct ids
     secretfile: str = state["secretfile"]
@@ -63,12 +57,12 @@ def results(
 
     all_results = pd.DataFrame()
     for source in test_data.keys():
-        result_df = ModelData.join_forecast_on_dataframe(
-            test_data[source], y_pred[source], index_dict[source]
+        result_df = ModelDataExtractor.join_forecast_on_dataframe(
+            test_data[source], y_pred[source], index_test[source]
         )
         all_results = pd.concat([all_results, result_df], axis=0)
         logger.info("Writing the forecasts to CSV for source %s", source.value)
-        save_forecast_to_csv(result_df, source, input_dir=input_dir)
+        file_manager.save_forecast_to_csv(result_df, source)
 
         # create a results object and write results + params
         logger.info("Writing forecasts to result table for source %s", source.value)
@@ -76,60 +70,3 @@ def results(
             instance.instance_id, instance.data_id, result_df, secretfile
         )
         result.update_remote_tables()  # write results to DB
-
-
-def __load_result_pickle(
-    result_csv_path: Path, input_dir: Optional[Path] = None,
-) -> TargetDict:
-    """Load a results dataframe."""
-    if not input_dir:
-        result_fp = result_csv_path
-    else:
-        result_fp = input_dir.joinpath(*result_csv_path.parts[-2:])
-    with open(result_fp, "rb") as pickle_file:
-        return pickle.load(pickle_file)
-
-
-def load_training_pred_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
-    """Load the predictions on the training set from a pickle."""
-    return __load_result_pickle(TRAINING_RESULT_PICKLE, input_dir)
-
-
-def load_forecast_from_pickle(input_dir: Optional[Path] = None) -> TargetDict:
-    """Load the predictions on the forecast set from a pickle."""
-    return __load_result_pickle(FORECAST_RESULT_PICKLE, input_dir)
-
-def save_forecast_to_csv(
-    forecast_df: pd.DataFrame, source: Source, input_dir: Optional[Path] = None
-) -> None:
-    """Save the forecast dataframe to a csv.
-
-    Args:
-        forecast_df: DataFrame of forecasts for a given source.
-        source: Source predicted at, e.g. laqn, hexgrid.
-
-    Keyword args:
-        input_dir: A optional directory to use as the root.
-    """
-    if not input_dir:
-        result_fp = RESULT_CACHE
-    else:
-        result_fp = input_dir.joinpath(*RESULT_CACHE.parts[-1:])
-    forecast_df.to_csv(result_fp / f"{source.value}_forecast.csv")
-
-
-def load_model_params(
-    model_name, input_dir: Optional[Path] = None
-) -> Union[MRDGPParams, SVGPParams]:
-    """Load the model params from a json file."""
-    if not input_dir:
-        params_fp = MODEL_PARAMS
-    else:
-        params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
-    with open(params_fp, "r") as params_file:
-        params_dict = json.load(params_file)
-    if model_name == "svgp":
-        return SVGPParams(**params_dict)
-    if model_name == "mrdgp":
-        return MRDGPParams(**params_dict)
-    raise ValueError("Must pass a valid model name.")

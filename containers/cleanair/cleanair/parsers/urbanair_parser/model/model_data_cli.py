@@ -1,16 +1,14 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import Dict, List, Tuple, Union, Optional
+from typing import List
 import pickle
 import shutil
-import json
 from pathlib import Path
 import typer
-import pandas as pd
 from ..state import (
     state,
     MODEL_CACHE,
-    MODEL_CONFIG,
-    MODEL_CONFIG_FULL,
+    DATA_CONFIG,
+    DATA_CONFIG_FULL,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
     MODEL_TRAINING_INDEX_PICKLE,
@@ -22,54 +20,24 @@ from ..shared_args import (
     UpTo_callback,
 )
 
-from ....models import ModelData, ModelDataExtractor, ModelConfig
+from ....models import ModelData, ModelConfig
 from ....types import (
     Species,
     Source,
-    BaseConfig,
-    FullConfig,
     FeatureNames,
     FeatureBufferSize,
 )
 from ....loggers import red, green
+from ....utils import FileManager
 
 app = typer.Typer(help="Get data for model fitting")
 
 
-def load_model_config(
-    input_dir: Path = None, full: bool = False
-) -> Union[BaseConfig, FullConfig]:
-    """Load an existing configuration file"""
-
-    if full:
-        config = MODEL_CONFIG_FULL
-    else:
-        config = MODEL_CONFIG
-
-    if input_dir:
-        config = input_dir.joinpath(config.parts[-1])
-
-    if config.exists():
-        with config.open("r") as config_f:
-            if full:
-                return FullConfig(**json.load(config_f))
-
-            return BaseConfig(**json.load(config_f))
-
-    if not full:
-        typer.echo(f"{red(f'A model config does not exist. Run generate-config')}")
-    else:
-        typer.echo(
-            f"{red(f'A full model config does not exist. Run generate-full-config')}"
-        )
-    raise typer.Abort()
-
-
 def delete_model_cache(overwrite: bool):
-    """Delete everything from the MODEL_CACHE"""
+    """Delete everything from the DATA_CACHE"""
 
     if not overwrite:
-        if MODEL_CONFIG.exists():
+        if DATA_CONFIG.exists():
             run = typer.prompt(
                 f"{red('Overwrite cache? WARNING: This will delete the entire cache contents')} y/n"
             )
@@ -78,8 +46,8 @@ def delete_model_cache(overwrite: bool):
                 raise typer.Abort()
 
     cache_content = [
-        MODEL_CONFIG,
-        MODEL_CONFIG_FULL,
+        DATA_CONFIG,
+        DATA_CONFIG_FULL,
         MODEL_TRAINING_PICKLE,
         MODEL_PREDICTION_PICKLE,
         MODEL_TRAINING_INDEX_PICKLE,
@@ -89,36 +57,6 @@ def delete_model_cache(overwrite: bool):
     for cache_file in cache_content:
         if cache_file.exists():
             cache_file.unlink()
-
-
-def get_training_arrays(input_dir: Optional[Path] = None):
-    """Get data arrays for tensorflow models"""
-
-    state["logger"].info(f"Getting data arrays")
-
-    full_config = load_model_config(input_dir, full=True)
-    model_data = ModelDataExtractor()
-
-    if not input_dir:
-        training_pickle = MODEL_TRAINING_PICKLE
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
-
-    if not training_pickle.exists():
-        state["logger"].warning(f"{training_pickle} does not exist")
-        raise typer.Abort()
-
-    training_data_df_norm = load_training_data(input_dir)
-
-    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, training_data_df_norm, prediction=False,
-    )
-
-    return X_dict, Y_dict, index_dict
 
 
 # pylint: disable=too-many-arguments
@@ -203,7 +141,7 @@ def generate_config(
         buffer_sizes=feature_buffer,
     )
 
-    with MODEL_CONFIG.open("w") as config_f:
+    with DATA_CONFIG.open("w") as config_f:
         config_f.write(data_config.json(indent=4))
 
 
@@ -213,7 +151,8 @@ def echo_config(
 ) -> None:
     """Echo the cached config file"""
 
-    config = load_model_config(full)
+    file_manager = FileManager()
+    config = file_manager.load_data_config(full)
     print(config.json(indent=4))
 
 
@@ -224,7 +163,8 @@ def generate_full_config() -> None:
     Overwrites any existing full configuration file"""
 
     state["logger"].info("Validate the cached config file")
-    config = load_model_config()
+    file_manager = FileManager()
+    config = file_manager.load_data_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
     model_config.validate_config(config)  # TODO fix this method
 
@@ -233,7 +173,7 @@ def generate_full_config() -> None:
 
     state["logger"].info(green("Creating full config file"))
 
-    with MODEL_CONFIG_FULL.open("w") as full_config_f:
+    with DATA_CONFIG_FULL.open("w") as full_config_f:
         full_config_f.write(full_config.json(indent=4))
 
 
@@ -256,7 +196,8 @@ def download(
         )
         raise typer.Abort()
 
-    full_config = load_model_config(full=True)
+    file_manager = FileManager()
+    full_config = file_manager.load_data_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
     if training_data:
@@ -280,116 +221,6 @@ def download(
         state["logger"].info("Writing prediction data to cache")
         with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
-
-
-def get_training_arrays(input_dir: Optional[Path] = None):
-    """Get data arrays for tensorflow models"""
-
-    state["logger"].info(f"Getting data arrays")
-
-    full_config = load_model_config(input_dir, full=True)
-    model_data = ModelDataExtractor()
-
-    if not input_dir:
-        training_pickle = MODEL_TRAINING_PICKLE
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        training_pickle = input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
-
-    if not training_pickle.exists():
-        state["logger"].warning(f"{training_pickle} does not exist")
-        raise typer.Abort()
-
-    training_data_df_norm = load_training_data(input_dir)
-
-    X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-        full_config, training_data_df_norm, prediction=False,
-    )
-
-    return X_dict, Y_dict, index_dict
-
-
-def get_test_arrays(
-    input_dir: Optional[Path] = None, return_y=False
-) -> Tuple[Dict, Dict, Dict]:
-    """Get test arrays"""
-    state["logger"].info(f"Getting data arrays")
-
-    full_config = load_model_config(input_dir, full=True)
-    model_data = ModelDataExtractor()
-
-    if not input_dir:
-        prediction_pickle = MODEL_PREDICTION_PICKLE
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        prediction_pickle = input_dir.joinpath(*MODEL_PREDICTION_PICKLE.parts[-2:])
-
-    if not prediction_pickle.exists():
-        state["logger"].warning(f"{prediction_pickle} does not exist")
-        raise typer.Abort()
-
-    prediction_data_df_norm = load_test_data(input_dir)
-
-    return model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=not return_y,
-    )
-
-    # if MODEL_PREDICTION_PICKLE.exists():
-    #     state["logger"].info(f"Getting prediction data arrays")
-
-    #     with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-    #         prediction_data_df_norm = pickle.load(prediction_pickle_f)
-
-    #     X_dict, Y_dict, index_dict = model_data.get_data_arrays(
-    #         full_config, prediction_data_df_norm, prediction=True,
-    #     )
-
-    #     with MODEL_PREDICTION_X_PICKLE.open("wb") as X_pickle_f:
-    #         pickle.dump(X_dict, X_pickle_f)
-
-    #     with MODEL_PREDICTION_Y_PICKLE.open("wb") as Y_pickle_f:
-    #         pickle.dump(Y_dict, Y_pickle_f)
-
-    #     with MODEL_PREDICTION_INDEX_PICKLE.open("wb") as index_pickle_f:
-    #         pickle.dump(index_dict, index_pickle_f)
-
-
-def __load_data_pickle(
-    data_pickle_path: Path, input_dir: Optional[Path]
-) -> Dict[Source, pd.DataFrame]:
-    """Load either training or test data from a pickled file."""
-    if not input_dir:
-        data_fp = data_pickle_path
-    else:
-        if not input_dir.is_dir():
-            state["logger"].warning(f"{input_dir} is not a directory")
-            raise typer.Abort()
-
-        data_fp = input_dir.joinpath(*data_pickle_path.parts[-2:])
-
-    if not data_fp.exists():
-        state["logger"].warning("Data not found. Download and resave cache")
-        raise typer.Abort()
-
-    with data_fp.open("rb") as pickle_f:
-        return pickle.load(pickle_f)
-
-
-def load_training_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
-    """Load training data from either the CACHE or input_dir"""
-    return __load_data_pickle(MODEL_TRAINING_PICKLE, input_dir=input_dir)
-
-
-def load_test_data(input_dir: Optional[Path] = None) -> Dict[Source, pd.DataFrame]:
-    """Load test data from either the CACHE or input_dir"""
-    return __load_data_pickle(MODEL_PREDICTION_PICKLE, input_dir=input_dir)
-
 
 @app.command()
 def save_cache(

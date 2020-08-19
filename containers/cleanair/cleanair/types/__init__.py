@@ -13,7 +13,7 @@ from .dataset_types import (
     FullConfig,
     InterestPointDict,
 )
-from .model_types import ParamsDict
+from .model_types import MRDGPParams, ParamsDict, SVGPParams
 
 
 __all__ = [
@@ -26,8 +26,10 @@ __all__ = [
     "IndexDict",
     "IndexedDatasetDict",
     "InterestPointDict",
+    "MRDGPParams",
     "ParamsDict",
     "NDArrayTuple",
+    "SVGPParams",
     "TargetDict",
     "Source",
     "Species",

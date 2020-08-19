@@ -275,24 +275,6 @@ class ModelDataExtractor:
             data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
         return data_df
 
-    def update_test_df_with_preds(self, test_pred_dict: dict):
-        """Update the normalised_pred_data_df with predictions for all pred sources.
-
-        Args:
-            test_pred_dict: Dictionary of model predictions.
-        """
-        self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
-        )
-
-    def update_training_df_with_preds(self, training_pred_dict):
-        """Updated the normalised_training_data_df with predictions on the training set."""
-        self.normalised_training_data_df = self.get_df_from_pred_dict(
-            self.normalised_training_data_df,
-            self.get_training_data_arrays(),
-            training_pred_dict,
-        )
-
 
 #  pylint: disable=R0904
 class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
@@ -754,17 +736,3 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     static_features.c.measurement_start_utc,
                 )
             )
-
-    def update_remote_tables(
-        self, full_config: FullConfig, preprocessing: Optional[Dict] = None
-    ):
-        """Update the model results table with the model results"""
-        data_config = full_config.json(sort_keys=True)
-        data_id = full_config.data_id()
-
-        row = dict(
-            data_id=self.data_id, data_config=data_config, preprocessing=preprocessing,
-        )
-        records = [row]
-        self.logger.info("Writing data settings to air quality modelling data table.")
-        self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")

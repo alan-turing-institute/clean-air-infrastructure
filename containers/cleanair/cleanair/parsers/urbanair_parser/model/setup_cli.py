@@ -1,10 +1,7 @@
 """Save model parameters to a json file."""
 
-import json
-from typing import Optional
 from pathlib import Path
 import typer
-from pydantic import BaseModel
 from ..shared_args.model_options import (
     Jitter,
     Lengthscales,
@@ -15,8 +12,8 @@ from ..shared_args.model_options import (
     MinibatchSize,
     NumInducingPoints,
 )
-from ..state.configuration import MODEL_PARAMS
 from ....types.model_types import KernelParams, SVGPParams, MRDGPParams
+from ....utils import FileManager
 
 app = typer.Typer(help="Setup model parameters.")
 
@@ -47,7 +44,8 @@ def svgp(
     )
 
     # Save model parameters
-    save_model_params(model_params, input_dir=input_dir)
+    file_manager = FileManager(input_dir)
+    file_manager.save_model_params(model_params)
 
 
 @app.command()
@@ -106,16 +104,6 @@ def mrdgp(input_dir: Path = typer.Argument(None), maxiter: int = MaxIter,) -> No
         "num_prediction_samples": 1,
     }
     model_params = MRDGPParams(**params_dict)
-    save_model_params(model_params, input_dir=input_dir)
-
-
-def save_model_params(
-    model_params: BaseModel, input_dir: Optional[Path] = None
-) -> None:
-    """Load the model params from a json file."""
-    if not input_dir:
-        params_fp = MODEL_PARAMS
-    else:
-        params_fp = input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
-    with open(params_fp, "w") as params_file:
-        json.dump(model_params.dict(), params_file, indent=4)
+    # Save model parameters
+    file_manager = FileManager(input_dir)
+    file_manager.save_model_params(model_params)

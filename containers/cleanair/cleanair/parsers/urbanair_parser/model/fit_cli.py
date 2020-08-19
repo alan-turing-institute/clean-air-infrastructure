@@ -1,19 +1,10 @@
 """Commands for a Sparse Variational GP to model air quality."""
 import logging
-import pickle
 from pathlib import Path
-from typing import Optional
 import typer
-import pandas as pd
-from .model_data_cli import (
-    get_test_arrays,
-    get_training_arrays,
-    load_model_config,
-)
-from .update_cli import load_model_params
-from ..state.configuration import FORECAST_RESULT_PICKLE, MODEL_CACHE
-from ....models import SVGP, ModelMixin, MRDGP
-from ....types import TargetDict
+from ..state import MODEL_CACHE
+from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
+from ....utils import FileManager
 
 app = typer.Typer(help="SVGP model fitting")
 
@@ -31,9 +22,10 @@ def svgp(
 ) -> None:
     """Fit a Sparse Variational Gaussian Process."""
     logging.info("Loading model params from %s", input_dir)
-    model_params = load_model_params("svgp", input_dir)
+    file_manager = FileManager(input_dir)
+    model_params = file_manager.load_model_params("svgp")
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
-    fit_model(model, input_dir, exist_ok=exist_ok)
+    fit_model(model, file_manager, exist_ok=exist_ok)
 
 
 @app.command()
@@ -45,13 +37,11 @@ def mrdgp(
 ) -> None:
     """Fit a Multi-resolution Deep Gaussian Process."""
     # Load the model parameters from a json file
-    model_params = load_model_params("mrdgp", input_dir)
+    file_manager = FileManager(input_dir)
+    model_params = file_manager.load_model_params("mrdgp")
 
     # Get the directory for storing the model
-    if not input_dir:
-        model_dir = MODEL_CACHE
-    else:
-        model_dir = input_dir
+    model_dir = file_manager.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
 
     experiment_config = dict(
         name="MR_DGP",
@@ -67,53 +57,34 @@ def mrdgp(
         refresh=refresh,
         restore=restore,
     )
-    fit_model(model, input_dir, exist_ok=exist_ok)
+    fit_model(model, file_manager, exist_ok=exist_ok)
 
 
-def fit_model(model: ModelMixin, input_dir: Path, exist_ok: bool = False) -> None:
-    """Train a model loading data from INPUT-DIR
+def fit_model(model: ModelMixin, file_manager: FileManager, exist_ok: bool = False) -> None:
+    """Train a model."""
 
-    If INPUT-DIR not provided will try to load data from the urbanair CLI cache
+    # Load configuration file
+    full_config = file_manager.load_data_config(full=True)
+    model_data = ModelDataExtractor()
 
-    INPUT-DIR should be created by running 'urbanair model data save-cache'"""
-
-    # # Load data and configuration file
-    X_train, Y_train, _ = get_training_arrays(input_dir)
+    # load training data
+    training_data_df_norm = file_manager.load_training_data()
+    X_train, Y_train, index_train = model_data.get_data_arrays(
+        full_config, training_data_df_norm, prediction=False,
+    )
+    # load prediction data
+    prediction_data_df_norm = file_manager.load_test_data()
+    X_test, Y_test, index_test = model_data.get_data_arrays(
+        full_config, prediction_data_df_norm, prediction=False,
+    )
 
     # Fit model
     model.fit(X_train, Y_train)
 
     # Prediction
-    x_test, y_test, index = get_test_arrays(input_dir=input_dir, return_y=False)
-    y_forecast = model.predict(x_test)
+    y_forecast = model.predict(X_test)
+    y_training_result = model.predict(X_train)
 
-    save_forecast_to_pickle(y_forecast, input_dir=input_dir, exist_ok=exist_ok)
-
-
-def __save_prediction_to_pickle(
-    y_pred: TargetDict,
-    result_pickle_path: Path,
-    exist_ok: bool = False,
-    input_dir: Optional[Path] = None,
-) -> None:
-    """Save a dictionary of predictions to a pickle."""
-    if not input_dir:
-        result_fp = result_pickle_path
-    else:
-        result_fp = input_dir.joinpath(*result_pickle_path.parts[-2:])
-
-    # create the parent directory - if it exists throw error to avoid overwriting result
-    if not result_fp.parent.exists():
-        result_fp.parent.mkdir(parents=True, exist_ok=exist_ok)
-    logging.info("Writing predictions to %s", result_fp)
-    with open(result_fp, "wb") as pickle_file:
-        pickle.dump(y_pred, pickle_file)
-
-
-def save_forecast_to_pickle(
-    y_pred: TargetDict, exist_ok: bool = False, input_dir: Optional[Path] = None
-) -> None:
-    """Save the results dataframe to a file."""
-    __save_prediction_to_pickle(
-        y_pred, FORECAST_RESULT_PICKLE, exist_ok=exist_ok, input_dir=input_dir
-    )
+    # save forecast to file
+    file_manager.save_forecast_to_pickle(y_forecast)
+    file_manager.save_training_result_to_pickle(y_training_result)
