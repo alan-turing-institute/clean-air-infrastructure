@@ -1,10 +1,12 @@
 
 
 import typer
+from cleanair.parsers.urbanair_parser.shared_args import NDays, NHours, UpTo
 
-app = typer.Typer()
-scoot_app = typer.Typer()
-app.add_typer(scoot_app)
+
+app = typer.Typer(help="Forecasting for Odysseus.")
+scoot_app = typer.Typer(help="Scoot forecasting.")
+app.add_typer(scoot_app, name="scoot")
 
 @scoot_app.command()
 def gpr() -> None:
@@ -17,4 +19,4 @@ def svgp(
     forecast_hours: int = NHours,
     forecast_upto: str = UpTo,
 ) -> None:
-
+    """Forecast an SVGP."""

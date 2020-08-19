@@ -2,10 +2,10 @@
 import logging
 from typing import List
 import pandas as pd
-from .traffic_dataset import TrafficDataset
+from .scoot_dataset import ScootDataset
 
 
-def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[TrafficDataset]:
+def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[ScootDataset]:
     """
     Given a dataframe of instances, return a list of models, x_tests and y_tests.
 
@@ -27,6 +27,6 @@ def prepare_batch(instance_df: pd.DataFrame, secretfile: str,) -> List[TrafficDa
         preprocessing = row["preprocessing"]
 
         # get the dataset for this instance
-        datasets[data_id] = TrafficDataset(data_config, preprocessing, secretfile)
+        datasets[data_id] = ScootDataset(data_config, preprocessing, secretfile)
 
     return instance_df["data_id"].map(lambda x: datasets[x])

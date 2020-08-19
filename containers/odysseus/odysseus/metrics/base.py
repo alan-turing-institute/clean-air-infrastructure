@@ -14,7 +14,7 @@ from cleanair.loggers import get_logger
 
 from .coverage import percent_coverage
 from .nlpl import nlpl
-from ..dataset import TrafficDataset
+from ..dataset import ScootDataset
 
 
 class TrafficMetric(DBWriter):
@@ -31,7 +31,7 @@ class TrafficMetric(DBWriter):
             self.logger = get_logger(__name__)
 
     @staticmethod
-    def evaluate_model(model: gpflow.models.GPModel, dataset: TrafficDataset) -> dict:
+    def evaluate_model(model: gpflow.models.GPModel, dataset: ScootDataset) -> dict:
         """
         Run all metrics on a model given input data and actual observations.
 
@@ -60,7 +60,7 @@ class TrafficMetric(DBWriter):
         self,
         instance_ids: Collection[str],
         gp_models: Collection,
-        traffic_datasets: Collection,
+        scoot_datasets: Collection,
     ) -> pd.DataFrame:
         """
         Multi-process function for sampling from each model on x_test and evaluating against y_test.
@@ -68,12 +68,12 @@ class TrafficMetric(DBWriter):
         Args:
             instance_ids: List of instance ids.
             gp_models: List of gpflow models.
-            traffic_datasets: List of traffic datasets.
+            scoot_datasets: List of traffic datasets.
 
         Returns:
             NLPL and coverage metrics with a column for ids.
         """
-        assert len(instance_ids) == len(gp_models) == len(traffic_datasets)
+        assert len(instance_ids) == len(gp_models) == len(scoot_datasets)
         logging.info("Evaluating metrics for %s instances.", len(instance_ids))
         rows = []
 
@@ -84,7 +84,7 @@ class TrafficMetric(DBWriter):
                     instance_id=instance_id, data_id=dataset.data_id,
                 )
                 for instance_id, model, dataset in zip(
-                    instance_ids, gp_models, traffic_datasets
+                    instance_ids, gp_models, scoot_datasets
                 )
             }
             for future in futures.as_completed(tasks):

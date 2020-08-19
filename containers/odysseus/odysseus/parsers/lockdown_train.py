@@ -17,7 +17,7 @@ from odysseus.dates import (
     LOCKDOWN_BASELINE_START,
     LOCKDOWN_BASELINE_END,
 )
-from odysseus.dataset import prepare_batch, TrafficDataset
+from odysseus.dataset import prepare_batch, ScootDataset
 from odysseus.modelling import parse_kernel
 from odysseus.modelling import train_sensor_model
 
@@ -111,7 +111,7 @@ def main():
             # create an instance object then write instance to DB
             instance = TrafficInstance(
                 model_name=args.model_name,
-                data_id=TrafficDataset.data_id_from_hash(data_config, preprocessing),
+                data_id=ScootDataset.data_id_from_hash(data_config, preprocessing),
                 param_id=TrafficInstance.hash_dict(model_params),
                 cluster_id=args.cluster_id,
                 tag=args.tag,
