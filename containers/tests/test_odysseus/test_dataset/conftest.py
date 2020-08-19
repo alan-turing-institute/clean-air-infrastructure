@@ -50,34 +50,28 @@ def scoot_dataset(
 
 
 @pytest.fixture(scope="function")
-def frame(detectors, train_start, train_upto):
+def frame(scoot_dataset: ScootDataset):
 
-    num_detectors = len(detectors)
+    num_detectors = len(scoot_dataset.data_config.detectors)
 
-    fmt = "%Y-%m-%dT%H:%M:%S"
-    start_time = train_start
-    upto_time = train_upto
+    # Specify example model params that would be passed on CLI
     model_name = 'svgp'
-    preprocessing = {'features': ['time_norm'],
-                     'median': False,
-                     'normaliseby': 'clipped_hour',
-                     'target': ['n_vehicles_in_interval']}
     model_params = {'n_inducing_points': None,
                     'inducing_point_method': 'random',
                     'maxiter': 2000,
                     'model_name': model_name,
                     'kernel': {'name': 'rbf',
                                'hyperparameters': {'lengthscales': 1.0, 'variance': 1.0}}}
-    fit_start_time = datetime.now().strftime(fmt)
+    fit_start_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     cluster_id = 'local'
 
     # create rows ready for dataframe
     dframe = pd.DataFrame()
     dframe["data_config"] = [
-        dict(detectors=[d], start_time=start_time, end_time=upto_time)
-        for d in detectors
+        dict(detectors=[d], start_time=scoot_dataset.data_config.start, end_time=scoot_dataset.data_config.upto)
+        for d in scoot_dataset.data_config.detectors
     ]
-    dframe["preprocessing"] = np.repeat(preprocessing, num_detectors)
+    dframe["preprocessing"] = np.repeat(scoot_dataset.preprocessing, num_detectors)
     dframe["model_param"] = np.repeat(model_params, num_detectors)
     dframe["model_name"] = model_name
     dframe["fit_start_time"] = fit_start_time
