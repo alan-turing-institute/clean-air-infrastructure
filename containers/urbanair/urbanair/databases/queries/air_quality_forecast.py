@@ -15,7 +15,7 @@ from cleanair.decorators import db_query
 from ..database import all_or_404
 
 
-logger = logging.getLogger("fastapi") # pylint: disable=invalid-name
+logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 
 @db_query
@@ -61,7 +61,8 @@ def cachable_available_instance_ids(
     """Cache results of query_available_instance_ids"""
     logger.info(
         "Querying available instance IDs between %s and %s",
-        start_datetime, end_datetime
+        start_datetime,
+        end_datetime,
     )
     return query_available_instance_ids(db, start_datetime, end_datetime).all()
 
@@ -98,7 +99,9 @@ def cachable_forecasts_nogeom(
     """Cache results of query_forecasts_nogeom"""
     logger.info(
         "Querying forecasts for %s between %s and %s",
-        instance_id, start_datetime, end_datetime
+        instance_id,
+        start_datetime,
+        end_datetime,
     )
     query = query_forecasts_nogeom(
         db,
@@ -142,7 +145,9 @@ def cachable_forecasts_hexgrid(
     """Cache results of query_forecasts_hexgrid"""
     logger.info(
         "Querying forecast geometries for %s between %s and %s",
-        instance_id, start_datetime, end_datetime
+        instance_id,
+        start_datetime,
+        end_datetime,
     )
     query = query_forecasts_hexgrid(
         db,

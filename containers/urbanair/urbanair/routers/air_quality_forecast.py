@@ -25,9 +25,11 @@ router = APIRouter()
     response_model=List[ForecastResultJson],
 )
 def forecast_hexgrid_json(
-    time: datetime = Query(
+    time_: datetime = Query(
         None,
-        description="JSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
+        alias="time",
+        description="JSON forecasts for the hour containing this ISO-formatted time",
+        example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
@@ -40,7 +42,7 @@ def forecast_hexgrid_json(
         json: JSON containing one hour of forecasts at each hexgrid point
     """
     # Establish start and end datetimes
-    start_datetime = time.replace(minute=0, second=0, microsecond=0)
+    start_datetime = time_.replace(minute=0, second=0, microsecond=0)
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
@@ -58,6 +60,7 @@ def forecast_hexgrid_json(
     )
 
     # Return the query results as a list of tuples
+    # This will be automatically converted to ForecastResultJson using from_orm
     return query_results
 
 
@@ -68,9 +71,11 @@ def forecast_hexgrid_json(
     response_model=ForecastResultGeoJson,
 )
 def forecast_hexgrid_geojson(
-    time: datetime = Query(
+    time_: datetime = Query(
         None,
-        description="GeoJSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
+        alias="time",
+        description="GeoJSON forecasts for the hour containing this ISO-formatted time",
+        example="2020-08-12T06:00",
     ),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
@@ -83,7 +88,7 @@ def forecast_hexgrid_geojson(
         ForecastResultGeoJson: GeoJSON containing one hour of forecasts at each hexgrid point
     """
     # Establish start and end datetimes
-    start_datetime = time.replace(minute=0, second=0, microsecond=0)
+    start_datetime = time_.replace(minute=0, second=0, microsecond=0)
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
@@ -101,4 +106,7 @@ def forecast_hexgrid_geojson(
     )
 
     # Return the query results as a GeoJSON FeatureCollection
-    return ForecastResultGeoJson([r._asdict() for r in query_results])
+    features = ForecastResultGeoJson.build_features(
+        [r._asdict() for r in query_results]
+    )
+    return ForecastResultGeoJson(features=features)
