@@ -1,6 +1,6 @@
 """Air quality forecast API routes"""
 from typing import List, Dict, Tuple, Optional
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, Query
 from ..databases import get_db
@@ -20,26 +20,28 @@ router = APIRouter()
 
 
 @router.get(
-    "/forecast_json",
-    description="Most up-to-date forecasts for a given day in JSON",
+    "/forecast/hexgrid/json",
+    description="Most up-to-date forecasts for a given hour in JSON",
     response_model=List[ForecastResultJson],
 )
 def forecast_json(
-    start_date: date = Query(None, description="Date to retrieve forecasts for"),
+    time: datetime = Query(
+        None,
+        description="JSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
+    ),
     db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
-    """Retrieve 48hrs of JSON forecasts starting at midnight on the requested date
+    """Retrieve one hour of JSON forecasts containing the requested time
 
     Args:
-        start_date (date): Date to retrieve forecasts for
+        time (datetime): Time to retrieve forecasts for
 
     Returns:
-        json: JSON containing 48hrs of forecasts at each hexgrid point
+        json: JSON containing one hour of forecasts at each hexgrid point
     """
-
     # Establish start and end datetimes
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    end_datetime = start_datetime + timedelta(hours=48)
+    start_datetime = time.replace(minute=0, second=0, microsecond=0)
+    end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
     available_instance_ids = cachable_available_instance_ids(
@@ -59,29 +61,30 @@ def forecast_json(
     return query_results
 
 
-
 @router.get(
-    "/forecast_geojson",
-    description="Most up-to-date forecasts for a given day in GeoJSON",
+    "/forecast/hexgrid/geojson",
+    description="Most up-to-date forecasts for a given hour in GeoJSON",
     response_class=GeoJSONResponse,
     response_model=ForecastResultGeoJson,
 )
 def forecast_geojson(
-    start_date: date = Query(None, description="Date to retrieve forecasts for"),
+    time: datetime = Query(
+        None,
+        description="GeoJSON forecasts for the hour containing this time (in ISO-format eg. 2020-08-12T06:00)",
+    ),
     db: Session = Depends(get_db),
 ) -> Optional[List[Dict]]:
-    """Retrieve 48hrs of GeoJSON forecasts starting at midnight on the requested date
+    """Retrieve one hour of GeoJSON forecasts containing the requested time
 
     Args:
-        start_date (date): Date to retrieve forecasts for
+        time (datetime): Time to retrieve forecasts for
 
     Returns:
-        ForecastResultGeoJson: GeoJSON containing 48hrs of forecasts at each hexgrid point
+        ForecastResultGeoJson: GeoJSON containing one hour of forecasts at each hexgrid point
     """
-
     # Establish start and end datetimes
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    end_datetime = start_datetime + timedelta(hours=48)
+    start_datetime = time.replace(minute=0, second=0, microsecond=0)
+    end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
     available_instance_ids = cachable_available_instance_ids(
