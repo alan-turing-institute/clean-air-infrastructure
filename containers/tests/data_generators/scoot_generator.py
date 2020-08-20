@@ -41,7 +41,10 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
         detectors = self.scoot_detectors(
-            offset=self.offset, limit=self.limit, borough=self.borough.value, output_type="df"
+            offset=self.offset,
+            limit=self.limit,
+            borough=self.borough.value,
+            output_type="df",
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
 

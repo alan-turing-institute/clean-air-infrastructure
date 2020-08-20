@@ -15,7 +15,7 @@ from tensorflow.python.framework.errors import InvalidArgumentError
 from sklearn.preprocessing import MinMaxScaler
 
 
-def hw_forecast(
+def hw_forecast(  # pylint: disable=too-many-statements
     train_data: pd.DataFrame,
     train_start: datetime,
     train_upto: datetime,
