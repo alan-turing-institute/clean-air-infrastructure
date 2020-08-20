@@ -14,7 +14,9 @@ from ..dates import Baseline, BaselineUpto
 from .shared_args import Borough, BoroughOption, GridResolution, ModelName
 from ..scoot import Fishnet, ScanScoot
 
-app = typer.Typer(help="Run scan statistics for scoot against a given training baseline period.")
+app = typer.Typer(
+    help="Run scan statistics for scoot against a given training baseline period."
+)
 
 
 @app.command()
@@ -60,7 +62,9 @@ def scoot(
 
 
 @app.command()
-def setup(borough: Borough = Borough.westminster, grid_resolution: int = GridResolution,) -> None:
+def setup(
+    borough: Borough = Borough.westminster, grid_resolution: int = GridResolution,
+) -> None:
     """Create a fishnet over a borough with the given grid resolution."""
     fishnet = Fishnet(borough, grid_resolution, secretfile=state["secretfile"])
     fishnet.update_remote_tables()

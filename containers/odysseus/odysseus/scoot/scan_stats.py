@@ -84,7 +84,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         processed_test = preprocessor(self.test_readings, readings_type="test")
 
         # 2) Make sure that both of the above dataframes span the same detector set
-        processed_train, processed_test = intersect_processed_data(processed_train, processed_test)
+        processed_train, processed_test = intersect_processed_data(
+            processed_train, processed_test
+        )
 
         # 3) Build Forecast
         forecast_df = forecast(
@@ -162,7 +164,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             self.borough, self.grid_resolution, output_type="df"
         )
         final_scores_df = self.scores_df.merge(
-            fishnet_df[['row', 'col', 'point_id']], on=["row", "col"], how='left',
+            fishnet_df[["row", "col", "point_id"]], on=["row", "col"], how="left",
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
