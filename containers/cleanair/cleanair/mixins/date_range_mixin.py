@@ -2,7 +2,7 @@
 Mixin for classes that need to keep track of date ranges
 """
 from itertools import product
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from dateutil.rrule import rrule
 from dateutil.parser import isoparse
 from ..loggers import get_logger

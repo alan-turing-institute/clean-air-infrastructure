@@ -5,6 +5,7 @@ from typing import List, TYPE_CHECKING
 import pytest
 import pandas as pd
 from odysseus.scoot import Fishnet, ScanScoot
+from odysseus.types import Borough
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
 # pylint: disable=redefined-outer-name
@@ -20,10 +21,10 @@ def forecast_hours() -> int:
     return forecast_days * 24
 
 
-@pytest.fixture(scope="function")
-def forecast_upto() -> str:
+@pytest.fixture(scope="function", params=["2020-01-23", "2020-01-24"])
+def forecast_upto(request) -> str:
     """Upto date of scoot readings."""
-    return "2020-01-23"
+    return request.param
 
 
 @pytest.fixture(scope="function")
@@ -64,9 +65,9 @@ def scoot_df() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="function")
-def borough() -> str:
+def borough() -> Borough:
     """Westminster"""
-    return "Westminster"
+    return Borough.westminster
 
 
 @pytest.fixture(scope="function")
@@ -83,7 +84,7 @@ def scoot_writer(
     forecast_upto: str,
     scoot_offset: int,
     scoot_limit: int,
-    borough: str,
+    borough: Borough,
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
@@ -103,14 +104,14 @@ def detectors(scoot_writer: ScootGenerator) -> List[str]:
     return scoot_writer.scoot_detectors(
         offset=scoot_writer.offset,
         limit=scoot_writer.limit,
-        borough=scoot_writer.borough,
+        borough=scoot_writer.borough.value,
         output_type="df",
     )["detector_id"].to_list()
 
 
 @pytest.fixture(scope="function")
 def westminster_fishnet(
-    borough: str, grid_resolution: int, secretfile: str, connection: Connector,
+    borough: Borough, grid_resolution: int, secretfile: str, connection: Connector,
 ) -> Fishnet:
     """A fishnet cast over Westminster."""
     return Fishnet(
@@ -121,23 +122,27 @@ def westminster_fishnet(
     )
 
 
+@pytest.fixture(scope="function", params=["HW", "GP"])
+def model_name(request) -> str:
+    """Time series mthod used in Scan Stats"""
+    return request.param
+
+
 @pytest.fixture(scope="function")
 def scan_scoot(
     scoot_writer: ScootGenerator,
     westminster_fishnet: Fishnet,
-    borough: str,
+    borough: Borough,
     forecast_hours: int,
     forecast_upto: str,
     grid_resolution: int,
     train_hours: int,
     train_upto: str,
+    model_name: str,
     secretfile: str,
     connection: Connector,
 ) -> ScanScoot:
     """Fixture for scan scoot class."""
-    ts_method = "HW"
-    borough = scoot_writer.borough
-
     scoot_writer.update_remote_tables()
     westminster_fishnet.update_remote_tables()
 
@@ -148,7 +153,7 @@ def scan_scoot(
         train_hours=train_hours,
         train_upto=train_upto,
         grid_resolution=grid_resolution,
-        model_name=ts_method,
+        model_name=model_name,
         secretfile=secretfile,
         connection=connection,
     )

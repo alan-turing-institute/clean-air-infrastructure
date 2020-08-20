@@ -36,10 +36,10 @@ def static_data_sizes():
     return n_rows
 
 
-def test_static_tables_filled(secretfile, static_data_sizes):
+def test_static_tables_filled(secretfile, connection, static_data_sizes):
     "Test all static tables have the expected number of rows"
 
-    connect = DBInteractor(secretfile, initialise_tables=True)
+    connect = DBInteractor(secretfile, connection=connection, initialise_tables=True)
 
     @db_query
     def query_table(table):

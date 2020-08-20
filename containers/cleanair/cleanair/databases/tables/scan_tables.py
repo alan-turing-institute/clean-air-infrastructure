@@ -11,31 +11,28 @@ class FishnetTable(Base):
     """Grid/fishnet cast over a borough or other polygon.
 
     Notes:
-        By convention, you should not define two grids with the same resolution
-        on the same borough (although there is no constraint enforcing this).
+        The primary key is (grid_resolution, row, col, borough).
     """
 
     __tablename__ = "fishnet"
     __table_args__ = {"schema": "traffic_modelling"}
 
-    # TODO once we've decided upon grid resolution this should have a
-    # foreign key to the meta point table
     point_id = Column(
         UUID(as_uuid=True),
-        primary_key=True,
+        primary_key=False,
         unique=True,
         nullable=False,
         default=uuid.uuid4,
     )
-    grid_resolution = Column(Integer, primary_key=False, nullable=False, index=True)
-    row = Column(Integer, nullable=False)  # index starts at 1
-    col = Column(Integer, nullable=False)  # index starts at 1
+    grid_resolution = Column(Integer, primary_key=True, nullable=False, index=True)
+    row = Column(Integer, nullable=False, primary_key=True)  # index starts at 1
+    col = Column(Integer, nullable=False, primary_key=True)  # index starts at 1
     # note borough should be a foreign key to the london_boundary table
     # but because london_boundary doesn't have a unique attribute on
     # the name of a borough we can't create the foreign key
     # see issue: https://github.com/alan-turing-institute/clean-air-infrastructure/issues/465
     # borough = Column(String, ForeignKey("static_data.london_boundary.name"), nullable=False)
-    borough = Column(String, primary_key=False, nullable=False, index=True)
+    borough = Column(String, primary_key=True, nullable=False, index=True)
     geom = Column(
         Geometry(geometry_type="POLYGON", srid=4326, dimension=2, spatial_index=True),
         nullable=False,
