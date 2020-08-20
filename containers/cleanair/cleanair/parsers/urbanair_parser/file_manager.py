@@ -1,7 +1,7 @@
 """Functions for saving and loading models."""
 
 from __future__ import annotations
-from typing import Any, Dict, Union, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
 import json
 import pickle
 import typer
@@ -15,6 +15,7 @@ from .state import (
     DATA_CONFIG,
     DATA_CONFIG_FULL,
     FORECAST_RESULT_PICKLE,
+    MODEL_CACHE,
     MODEL_PARAMS,
     MODEL_TRAINING_PICKLE,
     MODEL_PREDICTION_PICKLE,
@@ -24,6 +25,8 @@ from .state import (
 
 if TYPE_CHECKING:
     from pathlib import Path
+    import gpflow
+    import tensorflow as tf
     import pandas as pd
     from pydantic import BaseModel
 
@@ -135,6 +138,51 @@ class FileManager():
         """
         result_fp = self.input_dir.joinpath(*RESULT_CACHE.parts[-1:])
         result_df.to_csv(result_fp / f"{source.value}_training_results.csv")
+
+    def load_model(
+        self,
+        load_fn: Callable[[Path], gpflow.models.GPModel],
+        compile_model: bool = True,
+        model_name: str = "model",
+        tf_session: Optional[tf.compat.v1.Session] = None,
+    ) -> gpflow.models.GPModel:
+        """Load a model from the cache.
+
+        Args:
+            load_fn: Loads a gpflow model from a filepath. See `cleanair.utils.tf1.load_gpflow1_model_from_file`.
+
+        Keyword args:
+            compile_model: If true compile the GPflow model.
+            model_name: Name of the model.
+            tf_session: Optional[tf.compat.v1.Session] = None,
+
+        Returns:
+            A gpflow model.
+        """
+        # use the load function to get the model from the filepath
+        export_dir = self.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
+        model = load_fn(export_dir, compile_model=compile_model, model_name=model_name, tf_session=tf_session)
+        return model
+
+    def save_model(
+        self,
+        model: gpflow.models.GPModel,
+        save_fn: Optional[Callable[[gpflow.models.GPModel, Path], None]],
+        model_name: Optional[str] = "model",
+    ) -> None:
+        """Save a model to file.
+
+        Args:
+            model: A gpflow model.
+            save_fn: A callable function that takes two arguments (model, filepath) and writes the model to a file.
+
+        Keyword args:
+            model_name: Name of the model.
+        """
+        export_dir = self.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
+        Path(export_dir).mkdir(exist_ok=True)
+        save_fn(model, export_dir, model_name=model_name)
+
 
     def load_model_params(self, model_name: str) -> Union[MRDGPParams, SVGPParams]:
         """Load the model params from a json file."""
