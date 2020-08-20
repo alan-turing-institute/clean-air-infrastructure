@@ -21,10 +21,10 @@ def forecast_hours() -> int:
     return forecast_days * 24
 
 
-@pytest.fixture(scope="function", params=["2020-01-23", "2020-01-24"])
-def forecast_upto(request) -> str:
+@pytest.fixture(scope="function")
+def forecast_upto() -> str:
     """Upto date of scoot readings."""
-    return request.param
+    return "2020-01-23"
 
 
 @pytest.fixture(scope="function")
@@ -128,13 +128,19 @@ def model_name(request) -> str:
     return request.param
 
 
+@pytest.fixture(scope="function", params=["2020-01-23", "2020-01-24"])
+def scan_forecast_upto(request) -> str:
+    """Upto date of scoot readings for use only in scan_scoot fixture."""
+    return request.param
+
+
 @pytest.fixture(scope="function")
 def scan_scoot(
     scoot_writer: ScootGenerator,
     westminster_fishnet: Fishnet,
     borough: Borough,
     forecast_hours: int,
-    forecast_upto: str,
+    scan_forecast_upto: str,
     grid_resolution: int,
     train_hours: int,
     train_upto: str,
@@ -143,13 +149,17 @@ def scan_scoot(
     connection: Connector,
 ) -> ScanScoot:
     """Fixture for scan scoot class."""
+
+    # Test scan class with different forecast_uptos
+    scoot_writer.upto = scan_forecast_upto
+
     scoot_writer.update_remote_tables()
     westminster_fishnet.update_remote_tables()
 
     return ScanScoot(
         borough=borough,
         forecast_hours=forecast_hours,
-        forecast_upto=forecast_upto,
+        forecast_upto=scan_forecast_upto,
         train_hours=train_hours,
         train_upto=train_upto,
         grid_resolution=grid_resolution,

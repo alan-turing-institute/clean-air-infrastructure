@@ -55,7 +55,7 @@ def frame(scoot_dataset: ScootDataset):
     num_detectors = len(scoot_dataset.data_config.detectors)
 
     # Specify example model params that would be passed on CLI
-    model_name = 'svgp'
+    model_name = 'gpr'
     model_params = {'n_inducing_points': None,
                     'inducing_point_method': 'random',
                     'maxiter': 2000,
