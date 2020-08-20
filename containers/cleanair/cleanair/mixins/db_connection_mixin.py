@@ -38,7 +38,10 @@ class DBConnectionMixin:
             )
 
         if allow_env_pass and self.read_environment_password():
-            self.logger.info("Database password loaded from environment variable")
+            self.logger.info(
+                "Database password loaded from %s environment variable",
+                green("PGPASSWORD"),
+            )
             self.connection_info = self.replace_connection_values(
                 self.connection_info, self.read_environment_password()
             )

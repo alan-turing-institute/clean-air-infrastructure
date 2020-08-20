@@ -20,7 +20,11 @@ class ForecastResultGeoJson(BaseModel):
             Feature(
                 geometry=shapely.wkt.loads(row["geom"]),
                 id=row["point_id"],
-                properties={"NO2_mean": row["NO2_mean"], "NO2_var": row["NO2_var"]},
+                properties={
+                    "NO2_mean": row["NO2_mean"],
+                    "NO2_var": row["NO2_var"],
+                    "measurement_start_utc": row["measurement_start_utc"],
+                },
             )
             for row in rows
         ]
@@ -54,6 +58,7 @@ class ForecastResultGeoJson(BaseModel):
                         "properties": {
                             "NO2_mean": 23.8287315367193,
                             "NO2_var": 4.11457257231074,
+                            "measurement_start_utc": "2020-08-20T15:08:32.555Z",
                         },
                     }
                 ],

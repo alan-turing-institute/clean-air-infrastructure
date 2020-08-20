@@ -38,7 +38,7 @@ def query_available_instance_ids(
             AirQualityInstanceTable.tag == "production",
             AirQualityInstanceTable.model_name == "svgp",
             AirQualityResultTable.measurement_start_utc >= start_datetime,
-            AirQualityResultTable.measurement_start_utc <= end_datetime,
+            AirQualityResultTable.measurement_start_utc < end_datetime,
         )
     )
 
@@ -75,13 +75,13 @@ def query_geometries_hexgrid(
     Query geometries for combining with plain JSON forecasts
     """
     query = db.query(
-        AirQualityResultTable.point_id, func.ST_AsText(HexGrid.geom).label("geom"),
+        AirQualityResultTable.point_id, func.ST_AsText(HexGrid.geom).label("geom")
     ).join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
     if bounding_box:
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
         )
-    return query
+    return query.distinct()
 
 
 @cached(
@@ -132,7 +132,7 @@ def query_forecasts_hexgrid(
     ).filter(
         AirQualityResultTable.instance_id == instance_id,
         AirQualityResultTable.measurement_start_utc >= start_datetime,
-        AirQualityResultTable.measurement_start_utc <= end_datetime,
+        AirQualityResultTable.measurement_start_utc < end_datetime,
     )
 
     # Note that the hexgrid uses SRID 4326 which is not aligned with lat/lon

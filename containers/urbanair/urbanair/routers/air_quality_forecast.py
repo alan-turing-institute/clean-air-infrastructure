@@ -77,7 +77,12 @@ def bounding_box_params(
             )
     # Return a bounding box if any bounding parameter was provided
     if all([lon_min, lat_min, lon_max, lat_max]):
-        return (cast(float, lon_min), cast(float, lat_min), cast(float, lon_max), cast(float, lat_max))
+        return (
+            cast(float, lon_min),
+            cast(float, lat_min),
+            cast(float, lon_max),
+            cast(float, lat_max),
+        )
     return None
 
 
