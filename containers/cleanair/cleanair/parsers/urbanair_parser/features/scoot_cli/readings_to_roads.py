@@ -1,45 +1,83 @@
 from typing import List
 from enum import Enum
+import time
+import webbrowser
+import tempfile
 import typer
-
 from .....loggers import initialise_logging
 from .....processors import ScootPerRoadReadingMapper
 from ...state import state
 from ...shared_args import UpTo, NDays, NHours, Species
 from .....features import ScootFeatureExtractor, FEATURE_CONFIG_DYNAMIC
-
 from ...shared_args import (
     ValidSources,
     Sources,
     ValidDynamicFeatureSources,
     ValidInsertMethods,
     InsertMethod,
+    Web,
 )
-
 from .....databases.materialised_views import LondonBoundaryView
-
-app = typer.Typer(help="Map scoot sensor readings to road segments")
 
 feature_names = list(FEATURE_CONFIG_DYNAMIC["scoot"]["features"].keys())
 valid_feature_names = Enum("ValidFeatureNames", zip(feature_names, feature_names))
 
 
-# feature_source = valid_features[i]
-
-# sub_app = typer.Typer()
-# feature_names = list(FEATURE_CONFIG[valid_features[i].value]["features"].keys())
-# valid_feature_names.append(Enum("ValidFeatureNames", zip(feature_names, feature_names)))
+app = typer.Typer(help="Map scoot sensor readings to road segments")
 
 
 @app.command()
-def check():
+def check(
+    upto: str = UpTo,
+    nhours: int = NHours,
+    ndays: int = NDays,
+    feature_name: List[valid_feature_names] = typer.Option(
+        None, help="Features to process. If non given will process all",
+    ),
+    source: List[ValidSources] = Sources,
+    only_missing: bool = typer.Option(
+        False, "--only-missing", help="Only show missing data",
+    ),
+    web: bool = Web,
+):
     """Check which road segments have scoot sensors mapped to them"""
 
     default_logger = initialise_logging(state["verbose"])
 
-    default_logger.warning("Not yet implemented")
+    insert_method = "all"
+    if only_missing:
+        insert_method = "missing"
 
-    raise typer.Abort()
+    if not feature_name:
+        feature_name = list(valid_feature_names)
+
+    scoot_features = ScootFeatureExtractor(
+        features=feature_name,
+        sources=source,
+        insert_method=insert_method,
+        end=upto,
+        nhours=nhours + ndays,
+        secretfile=state["secretfile"],
+    )
+
+    # Set up features to check
+    if web:
+        # show in browser
+        available_data = scoot_features.check_remote_table(output_type="html")
+
+        with tempfile.NamedTemporaryFile(suffix=".html", mode="w") as tmp:
+            tmp.write(
+                f"<h1>Feature availability for features: {[feat.value for feat in feature_name]}"
+            )
+            tmp.write(available_data)
+            tmp.write("<p>Where has_data = False there is missing data</p>")
+            tmp.seek(0)
+            webbrowser.open("file://" + tmp.name, new=2)
+            time.sleep(1)
+    else:
+        available_data = scoot_features.check_remote_table(output_type="tabulate")
+
+        print(available_data)
 
 
 @app.command()
@@ -64,6 +102,8 @@ def fill(
         features=feature_name,
         sources=source,
         insert_method=insert_method,
+        end=upto,
+        nhours=nhours + ndays,
         secretfile=state["secretfile"],
     )
 
@@ -75,6 +115,7 @@ def fill(
     #     )
     # )
 
+    scoot_features.update_remote_tables()
     # print(
     #     scoot_features.get_scoot_features(
     #         point_ids=[
@@ -91,8 +132,6 @@ def fill(
     #         ],
     #         start_datetime="2020-01-01T00:00:00",
     #         end_datetime="2020-01-02T00:00:00",
-    #         column_name  = "max_n_vehicles"
-    #         agg_func =
     #         output_type="sql",
     #     )
     # )
@@ -110,7 +149,7 @@ def fill(
     #     )
     # )
 
-    scoot_features.update_remote_tables()
+    # scoot_features.update_remote_tables()
     # print(
     #     scoot_road_readings.get_processed_data(
     #         "2020-01-01T00:00:00", "2020-01-02T00:00:00", output_type="sql"

@@ -20,7 +20,7 @@ from ..databases.tables import (
 )
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
-from ..mixins import DBQueryMixin
+from ..mixins import DBQueryMixin, DateRangeMixin
 from ..loggers import duration, green, red, get_logger
 from ..databases.base import Values
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
@@ -61,17 +61,9 @@ class FeatureExtractorMixin:
         return q_meta_point
 
 
-class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
+class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     def __init__(
-        self,
-        # feature_source,
-        # table,
-        features,
-        # dynamic=False,
-        batch_size=10,
-        sources=None,
-        insert_method="missing",
-        **kwargs,
+        self, features, sources, batch_size=15, insert_method="missing", **kwargs,
     ):
         """Base class for extracting features.
         args:
@@ -82,6 +74,7 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
         super().__init__(**kwargs)
 
         self.table_per_detector = ScootReading
+        self.output_table = DynamicFeature
 
         self.features = features
         self.sources = sources if sources else []
@@ -196,13 +189,7 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
 
     @db_query
     def get_scoot_features(
-        self,
-        point_ids,
-        start_datetime,
-        end_datetime,
-        feature_name,
-        column_name,
-        agg_func,
+        self, point_ids, start_datetime, end_datetime,
     ):
 
         scoot_road_readings = self.scoot_to_road(
@@ -211,28 +198,54 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(
-                scoot_road_readings.c.id,
-                scoot_road_readings.c.measurement_start_utc,
-                literal(feature_name).label("feature_name"),
-                agg_func(getattr(scoot_road_readings.c, column_name)).label(
-                    "values_1000"
-                ),
-                agg_func(getattr(scoot_road_readings.c, column_name))
-                .filter(scoot_road_readings.c.intersects_500)
-                .label("values_500"),
-                agg_func(getattr(scoot_road_readings.c, column_name))
-                .filter(scoot_road_readings.c.intersects_200)
-                .label("values_200"),
-                agg_func(getattr(scoot_road_readings.c, column_name))
-                .filter(scoot_road_readings.c.intersects_100)
-                .label("values_100"),
-                agg_func(getattr(scoot_road_readings.c, column_name))
-                .filter(scoot_road_readings.c.intersects_10)
-                .label("values_10"),
-            ).group_by(
-                scoot_road_readings.c.id, scoot_road_readings.c.measurement_start_utc
-            )
+            all_queries = []
+            for feature in self.features:
+
+                feature_name = feature.value
+                column_name = list(
+                    self.feature_map[feature.value]["feature_dict"].keys()
+                )[0]
+                agg_func = self.feature_map[feature.value]["aggfunc"]
+
+                all_queries.append(
+                    session.query(
+                        scoot_road_readings.c.id,
+                        scoot_road_readings.c.measurement_start_utc,
+                        literal(feature_name).label("feature_name"),
+                        func.coalesce(
+                            agg_func(getattr(scoot_road_readings.c, column_name)), 0.0
+                        ).label("values_1000"),
+                        func.coalesce(
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_500),
+                            0.0,
+                        ).label("values_500"),
+                        func.coalesce(
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_200),
+                            0.0,
+                        ).label("values_200"),
+                        func.coalesce(
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_100),
+                            0.0,
+                        ).label("values_100"),
+                        func.coalesce(
+                            agg_func(
+                                getattr(scoot_road_readings.c, column_name)
+                            ).filter(scoot_road_readings.c.intersects_10),
+                            0.0,
+                        ).label("values_10"),
+                    ).group_by(
+                        scoot_road_readings.c.id,
+                        scoot_road_readings.c.measurement_start_utc,
+                    )
+                )
+
+            return all_queries[0].union(*all_queries[1:])
 
     @db_query
     def get_scoot_feature_availability(
@@ -310,44 +323,98 @@ class ScootFeatureExtractor(DBWriter, FeatureExtractorMixin):
                 return available_data_q.filter(in_data.c.point_id.is_(None))
             return available_data_q
 
-    def update_remote_tables(self):
+    @db_query
+    def get_scoot_feature_ids(
+        self, feature_names, sources, start_datetime, end_datetime, exclude_has_data
+    ):
 
-        print(self.features)
-        print(self.feature_map)
+        available_sq = self.get_scoot_feature_availability(
+            feature_names,
+            sources,
+            start_datetime,
+            end_datetime,
+            exclude_has_data,
+            output_type="subquery",
+        )
 
-        all_queries = []
-        for feature in self.features:
+        with self.dbcnxn.open_session() as session:
 
-            feature_name = feature.value
-            table_column = list(self.feature_map[feature.value]["feature_dict"].keys())[
-                0
-            ]
-            agg_func = self.feature_map[feature.value]["aggfunc"]
-
-            print(
-                self.get_scoot_features(
-                    point_ids=[
-                        "fa6bf3a7-7448-450b-a6cb-b53694501ea8",
-                        "786246d4-7c6d-4017-adf2-47cabb624f8d",
-                        "8e3f6990-f8a9-427b-8526-2cdb19bbeb55",
-                        "f664314d-ea69-4a57-bd87-5e7cb38ec3d7",
-                        "26cd5561-9374-4b70-ac48-af25ad9f87f7",
-                        "e68bc738-66f2-461c-9988-116e4fbf7904",
-                        "9c61e592-b0f8-4cdd-86cd-aa8a092b2db0",
-                        "cb164b9e-46b9-44c0-8041-5aac4544e17d",
-                        "31b1c7a1-63e8-4d4f-ab6a-227bbe5da0b5",
-                        "42bf0950-8438-498d-8024-ea8c8f43aff9",
-                    ],
-                    start_datetime="2020-01-01T00:00:00",
-                    end_datetime="2020-01-02T00:00:00",
-                    feature_name=feature_name,
-                    column_name=table_column,
-                    agg_func=agg_func,
-                    output_type="sql",
-                )
+            return session.query(
+                func.distinct(available_sq.c.point_id).label("point_id")
             )
 
-            print()
+    @db_query
+    def check_remote_table(self):
+
+        # Check which point ids dont have a full dataset
+        return self.get_scoot_feature_ids(
+            self.features,
+            self.sources,
+            self.start_datetime.isoformat(),
+            self.end_datetime.isoformat(),
+            exclude_has_data=self.exclude_has_data,
+        )
+
+    def update_remote_tables(self):
+
+        update_start = time.time()
+
+        # Check which point ids dont have a full dataset
+        missing_point_ids = self.get_scoot_feature_ids(
+            self.features,
+            self.sources,
+            self.start_datetime.isoformat(),
+            self.end_datetime.isoformat(),
+            exclude_has_data=self.exclude_has_data,
+            output_type="list",
+        )
+
+        missing_point_ids = [str(p) for p in missing_point_ids]
+
+        if not missing_point_ids:
+            self.logger.info("No interest points require processing")
+            return
+
+        n_point_ids = len(missing_point_ids)
+        batch_size = self.batch_size
+        n_batches = ceil(n_point_ids / min(batch_size, n_point_ids))
+
+        self.logger.info(
+            "Processing %s interest points from sources %s in %s batches of max size %s",
+            n_point_ids,
+            [src.value for src in self.sources],
+            n_batches,
+            batch_size,
+        )
+
+        missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
+
+        for batch_no, point_id_batch in enumerate(missing_point_id_batches, start=1):
+
+            batch_start = time.time()
+            self.logger.info("Processing batch %s of %s", batch_no, n_batches)
+
+            sq_select_and_insert = self.get_scoot_features(
+                point_ids=point_id_batch.tolist(),
+                start_datetime=self.start_datetime.isoformat(),
+                end_datetime=self.end_datetime.isoformat(),
+                output_type="subquery",
+            )
+
+            self.commit_records(
+                sq_select_and_insert, on_conflict="ignore", table=self.output_table
+            )
+
+            # Print a timing message at the end of each feature
+            self.logger.info(
+                "Finished adding records after %s",
+                green(duration(batch_start, time.time())),
+            )
+
+        self.logger.info(
+            "Finished adding records after %s",
+            green(duration(update_start, time.time())),
+        )
 
 
 class FeatureExtractor(
