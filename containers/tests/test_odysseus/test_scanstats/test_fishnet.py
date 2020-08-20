@@ -11,6 +11,7 @@ from cleanair.databases.tables import LondonBoundary
 
 if TYPE_CHECKING:
     import pandas as pd
+    from odysseus.types import Borough
     from odysseus.scoot import Fishnet, ScanScoot
     from odysseus.databases.mixins import GridMixin
 
@@ -70,9 +71,8 @@ def test_fishnet_over_square(grid: GridMixin, square: Polygon) -> None:
     fishnet_checks(fishnet_df, square, grid_res)
 
 
-def test_fishnet_over_borough(grid: GridMixin) -> None:
+def test_fishnet_over_borough(grid: GridMixin, borough: Borough) -> None:
     """Test the fishnet is cast over the borough."""
-    borough = "Westminster"
     grid_res = 8
     borough_geom = get_borough_geom(grid, borough)
 
@@ -116,13 +116,13 @@ def test_update_fishnet_tables(westminster_fishnet: Fishnet) -> None:
 
 
 def get_borough_geom(
-    dbreader: DBReader, borough_name: str
+    dbreader: DBReader, borough: Borough
 ) -> Union[Polygon, MultiPolygon]:
     """Get the borough geometry."""
     with dbreader.dbcnxn.open_session() as session:
         result = (
             session.query(LondonBoundary)
-            .filter(LondonBoundary.name == borough_name)
+            .filter(LondonBoundary.name == borough.value)
             .one()
         )
         geom = to_shape(result.geom)

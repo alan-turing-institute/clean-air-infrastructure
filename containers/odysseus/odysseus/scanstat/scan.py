@@ -18,7 +18,7 @@ def scan(
 ) -> pd.DataFrame:
 
     """Main function for looping through the sub-space-time regions (S) of
-    global_region represented by data in forecast_data. We search for regions
+    global_region represented by data in agg_df. We search for regions
     with the highest score according to various different metrics. The EBP one is
     given by:
                 F(S) := Pr (data | H_1 (S)) / Pr (data | H_0)
@@ -27,14 +27,12 @@ def scan(
     this metric.
 
     Args:
-        agg_df: dataframe consisting of the detectors which lie in
-                       global_region, their locations and both their
-                       baseline and actual counts for the past W days.
+        agg_df: dataframe consisting of grid-level, time-indexed counts and estimates.
         grid_partition: Split each spatial axis into this many partitions.
         forecast_start: forecast start time
         forecast_end: forecast end time
     Returns:
-        Dataframe summarising each space-time region's F(S) score.
+        Dataframe summarising each space-time region's scan statistics.
     """
 
     # Set Initial Timer

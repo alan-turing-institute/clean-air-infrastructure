@@ -156,7 +156,7 @@ class ScootQueryMixin:
         """Create a list of tuples (start date, end date) where each start_date is the same day of the week.
 
         Args:
-            
+
             start_date: ISO formatted date. All dates in returned list will be at least this date.
             end_date: ISO formatted date. All dates in the returned list will be at most this date.
 
