@@ -3,6 +3,13 @@ from enum import Enum, unique
 
 
 @unique
+class ScootProcessType(str, Enum):
+
+    forecast = "forecast"
+    real = "real"
+
+
+@unique
 class FeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"

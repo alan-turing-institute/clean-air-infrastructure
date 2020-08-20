@@ -6,6 +6,7 @@ from .enum_types import (
     FeatureNames,
     DynamicFeatureNames,
     FeatureBufferSize,
+    ScootProcessType,
 )
 from .dataset_types import (
     DataConfig,
@@ -33,4 +34,5 @@ __all__ = [
     "TargetDict",
     "Source",
     "Species",
+    "ScootProcessType",
 ]
