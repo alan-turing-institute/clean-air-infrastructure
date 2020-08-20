@@ -304,10 +304,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 expected_data.c.point_id,
                 expected_data.c.measurement_start_utc,
                 expected_data.c.feature_name,
-                in_data.c.point_id.isnot(None).label("has_data")
-                # in_data_cte.c.reference_start_utc.isnot(None).label("has_data"),
-                # in_data_cte.c.n_records,
-                # (in_data_cte.c.n_records == 72 * 32).label("expected_n_records"),
+                in_data.c.point_id.isnot(None).label("has_data"),
             ).join(
                 in_data,
                 (in_data.c.point_id == expected_data.c.point_id)

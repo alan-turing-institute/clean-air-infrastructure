@@ -4,12 +4,14 @@ import time
 import webbrowser
 import tempfile
 import typer
-from .....loggers import initialise_logging
-from .....processors import ScootPerRoadReadingMapper
-from ...state import state
-from ...shared_args import UpTo, NDays, NHours, Species
-from .....features import ScootFeatureExtractor, FEATURE_CONFIG_DYNAMIC
-from ...shared_args import (
+from ....loggers import initialise_logging
+from ..state import state
+from ..shared_args import UpTo, NDays, NHours, Species
+from ....features import (
+    ScootFeatureExtractor,
+    FEATURE_CONFIG_DYNAMIC,
+)
+from ..shared_args import (
     ValidSources,
     Sources,
     ValidDynamicFeatureSources,
@@ -17,13 +19,14 @@ from ...shared_args import (
     InsertMethod,
     Web,
 )
-from .....databases.materialised_views import LondonBoundaryView
+from ....processors import ScootPerRoadDetectors
+from ....databases.materialised_views import LondonBoundaryView
 
 feature_names = list(FEATURE_CONFIG_DYNAMIC["scoot"]["features"].keys())
 valid_feature_names = Enum("ValidFeatureNames", zip(feature_names, feature_names))
 
 
-app = typer.Typer(help="Map scoot sensor readings to road segments")
+app = typer.Typer(help="Process Scoot features")
 
 
 @app.command()
@@ -40,7 +43,7 @@ def check(
     ),
     web: bool = Web,
 ):
-    """Check which road segments have scoot sensors mapped to them"""
+    """Check which scoot features have been processed"""
 
     default_logger = initialise_logging(state["verbose"])
 
@@ -91,7 +94,7 @@ def fill(
     source: List[ValidSources] = Sources,
     insert_method: ValidInsertMethods = InsertMethod,
 ):
-    """Construct maps between roads and SCOOT detectors"""
+    """Process scoot features"""
 
     default_logger = initialise_logging(state["verbose"])
 
@@ -107,63 +110,17 @@ def fill(
         secretfile=state["secretfile"],
     )
 
-    # print(scoot_road_readings.update_remote_tables(output_type="sql"))
-
-    # print(
-    #     scoot_features.oshighway_intersection(
-    #         point_ids=["786246d4-7c6d-4017-adf2-47cabb624f8d"], output_type="sql"
-    #     )
-    # )
-
     scoot_features.update_remote_tables()
-    # print(
-    #     scoot_features.get_scoot_features(
-    #         point_ids=[
-    #             "fa6bf3a7-7448-450b-a6cb-b53694501ea8",
-    #             "786246d4-7c6d-4017-adf2-47cabb624f8d",
-    #             "8e3f6990-f8a9-427b-8526-2cdb19bbeb55",
-    #             "f664314d-ea69-4a57-bd87-5e7cb38ec3d7",
-    #             "26cd5561-9374-4b70-ac48-af25ad9f87f7",
-    #             "e68bc738-66f2-461c-9988-116e4fbf7904",
-    #             "9c61e592-b0f8-4cdd-86cd-aa8a092b2db0",
-    #             "cb164b9e-46b9-44c0-8041-5aac4544e17d",
-    #             "31b1c7a1-63e8-4d4f-ab6a-227bbe5da0b5",
-    #             "42bf0950-8438-498d-8024-ea8c8f43aff9",
-    #         ],
-    #         start_datetime="2020-01-01T00:00:00",
-    #         end_datetime="2020-01-02T00:00:00",
-    #         output_type="sql",
-    #     )
-    # )
 
-    # print()
 
-    # print(
-    #     scoot_features.get_scoot_feature_availability(
-    #         feature_names=feature_name,
-    #         sources=source,
-    #         start_datetime="2020-01-01T00:00:00",
-    #         end_datetime="2020-01-02T00:00:00",
-    #         exclude_has_data=True,
-    #         output_type="sql",
-    #     )
-    # )
+@app.command()
+def update_road_maps():
+    """
+    Construct maps between roads and SCOOT detectors
+    """
 
-    # scoot_features.update_remote_tables()
-    # print(
-    #     scoot_road_readings.get_processed_data(
-    #         "2020-01-01T00:00:00", "2020-01-02T00:00:00", output_type="sql"
-    #     )
-    # )
-
-    # print(scoot_road_readings.get_road_ids(output_type="list"))
-
-    # print(
-    #     scoot_road_readings.get_processed_data(
-    #         road_id="osgb4000000027865913",
-    #         start_datetime="2020-08-01T00:00:00",
-    #         end_datetime="2020-08-05T00:00:00",
-    #         output_type="sql",
-    #     )
-    # )
-
+    road_mapper = ScootPerRoadDetectors(secretfile=state["secretfile"])
+    # Match all road segments to their closest SCOOT detector(s)
+    # - if the segment has detectors on it then match to them
+    # - otherwise match to the five closest detectors
+    road_mapper.update_remote_tables()
