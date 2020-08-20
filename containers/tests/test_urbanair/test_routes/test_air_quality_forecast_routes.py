@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta
 import pytest
 from sqlalchemy.exc import IntegrityError
+from shapely.geometry import shape
+import shapely.wkt
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     AirQualityDataTable,
@@ -11,8 +13,6 @@ from cleanair.databases.tables import (
     HexGrid,
     MetaPoint,
 )
-import shapely.wkt
-from shapely.geometry import shape, MultiPolygon, GeometryCollection
 
 
 class TestBasic:

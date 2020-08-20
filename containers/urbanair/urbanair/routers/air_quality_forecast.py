@@ -14,6 +14,7 @@ from ..databases.schemas.air_quality_forecast import (
 from ..databases.queries.air_quality_forecast import (
     cacheable_available_instance_ids,
     cacheable_forecasts_hexgrid,
+    cacheable_forecast_hexgrid_as_geojson,
     cacheable_geometries_hexgrid,
 )
 from ..responses import GeoJSONResponse
@@ -201,19 +202,15 @@ def forecast_hexgrid_geojson(
     )
     instance_id = available_instance_ids[0][0]
 
-    # Get forecasts in this range (using a bounding box if specified)
-    query_results = cacheable_forecasts_hexgrid(
+    # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
+    query_results = cacheable_forecast_hexgrid_as_geojson(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
-        with_geometry=True,
         bounding_box=bounding_box,
     )
 
     # Return the query results as a GeoJSON FeatureCollection
-    features = ForecastResultGeoJson.build_features(
-        [r._asdict() for r in query_results]
-    )
     logger.info("Processing hexgrid GeoJSON request took %.2fs", time() - request_start)
-    return ForecastResultGeoJson(features=features)
+    return query_results

@@ -13,7 +13,7 @@ from cleanair.databases.tables import (
 )
 from cleanair.decorators import db_query
 from ..database import all_or_404
-
+from ..schemas.air_quality_forecast import ForecastResultGeoJson
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -173,3 +173,28 @@ def cacheable_forecasts_hexgrid(
         bounding_box=bounding_box,
     )
     return all_or_404(query)
+
+@cached(
+    cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
+)
+def cacheable_forecast_hexgrid_as_geojson(
+    db: Session,
+    instance_id: str,
+    start_datetime: datetime,
+    end_datetime: datetime,
+    bounding_box: Optional[Tuple[float]] = None,
+) -> ForecastResultGeoJson:
+    """Cache forecasts with geometry with optional bounding box"""
+    query_results = cacheable_forecasts_hexgrid(
+        db,
+        instance_id=instance_id,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        with_geometry=True,
+        bounding_box=bounding_box,
+    )
+    # Return the query results as a GeoJSON FeatureCollection
+    features = ForecastResultGeoJson.build_features(
+        [r._asdict() for r in query_results]
+    )
+    return ForecastResultGeoJson(features=features)
