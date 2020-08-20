@@ -399,7 +399,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
             self.commit_records(
-                sq_select_and_insert, on_conflict="ignore", table=self.output_table
+                sq_select_and_insert, on_conflict="overwrite", table=self.output_table
             )
 
             # Print a timing message at the end of each feature
