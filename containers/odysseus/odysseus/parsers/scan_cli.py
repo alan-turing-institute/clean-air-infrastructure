@@ -11,16 +11,16 @@ from cleanair.parsers.urbanair_parser.shared_args import (
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.timestamps import as_datetime
 from ..dates import Baseline, BaselineUpto
-from .shared_args import Borough, GridResolution, ModelName
+from .shared_args import Borough, BoroughOption, GridResolution, ModelName
 from ..scoot import Fishnet, ScanScoot
 
-app = typer.Typer()
+app = typer.Typer(help="Run scan statistics for scoot against a given training baseline period.")
 
 
 @app.command()
 def scoot(
     baseline: Baseline,
-    borough: str = Borough,
+    borough: Borough = BoroughOption,
     grid_resolution: int = GridResolution,
     forecast_days: int = NDays,
     forecast_hours: int = NHours,
@@ -60,7 +60,7 @@ def scoot(
 
 
 @app.command()
-def setup(borough: str = Borough, grid_resolution: int = GridResolution,) -> None:
+def setup(borough: Borough = Borough.westminster, grid_resolution: int = GridResolution,) -> None:
     """Create a fishnet over a borough with the given grid resolution."""
     fishnet = Fishnet(borough, grid_resolution, secretfile=state["secretfile"])
     fishnet.update_remote_tables()
