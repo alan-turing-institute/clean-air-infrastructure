@@ -19,6 +19,7 @@ from ..scanstat import (
     scan,
     average_gridcell_scores,
 )
+from ..types import Borough
 
 
 class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
@@ -26,7 +27,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 
     def __init__(
         self,
-        borough: str,
+        borough: Borough,
         forecast_hours: int,
         forecast_upto: str,
         train_hours: int,
@@ -37,7 +38,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
     ) -> None:
         """Initialise the scan scoot class."""
         super().__init__(**kwargs)
-        self.borough: str = borough
+        self.borough: Borough = borough
         self.forecast_hours: int = forecast_hours
         self.forecast_days: int = int(forecast_hours / 24)
         self.forecast_start: str = as_datetime(forecast_upto) - timedelta(
@@ -83,7 +84,9 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         processed_test = preprocessor(self.test_readings, readings_type="test")
 
         # 2) Make sure that both of the above dataframes span the same detector set
-        processed_train, processed_test = intersect_processed_data(processed_train, processed_test)
+        processed_train, processed_test = intersect_processed_data(
+            processed_train, processed_test
+        )
 
         # 3) Build Forecast
         forecast_df = forecast(
@@ -161,7 +164,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             self.borough, self.grid_resolution, output_type="df"
         )
         final_scores_df = self.scores_df.merge(
-            fishnet_df[['row', 'col', 'point_id']], on=["row", "col"], how='left',
+            fishnet_df[["row", "col", "point_id"]], on=["row", "col"], how="left",
         )
         # create records for the scores
         scores_inst = inspect(ScootScanStats)
@@ -175,10 +178,10 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
 class Fishnet(GridMixin, DBWriter):
     """Create and load fishnets over boroughs."""
 
-    def __init__(self, borough: str, grid_resolution: int, **kwargs):
+    def __init__(self, borough: Borough, grid_resolution: int, **kwargs):
         """Initialise the fishnet."""
         super().__init__(**kwargs)
-        self.borough: str = borough
+        self.borough: Borough = borough
         self.grid_resolution: int = grid_resolution
 
     def update_remote_tables(self) -> None:
@@ -188,7 +191,7 @@ class Fishnet(GridMixin, DBWriter):
             borough=self.borough, grid_resolution=self.grid_resolution, output_type="df"
         )
         # add the borough column
-        fishnet_df["borough"] = self.borough
+        fishnet_df["borough"] = self.borough.value
         fishnet_df["grid_resolution"] = self.grid_resolution
 
         # create records for the fishnet

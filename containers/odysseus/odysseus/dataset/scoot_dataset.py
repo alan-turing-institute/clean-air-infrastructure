@@ -202,16 +202,3 @@ class ScootDataset(DBReader, ScootQueryMixin):
             transformation=preprocessing.datetime_transformation,
         )
         return dataframe
-
-    # TODO write data settings to DB - move to instance class
-    # def update_remote_tables(self):
-    #     """Update the data config table for traffic."""
-    #     self.logger.info("Updating the traffic data table.")
-    #     records = [
-    #         dict(
-    #             data_id=self.data_id,
-    #             data_config=self.data_config,
-    #             preprocessing=self.preprocessing,
-    #         )
-    #     ]
-    #     self.commit_records(records, on_conflict="ignore", table=TrafficDataTable)

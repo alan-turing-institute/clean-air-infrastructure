@@ -9,6 +9,7 @@ from cleanair.databases.tables import FishnetTable, LondonBoundary
 
 if TYPE_CHECKING:
     from geoalchemy2.types import WKBElement
+    from ...types import Borough
 
 
 class GridMixin:
@@ -56,7 +57,7 @@ class GridMixin:
     @db_query
     def fishnet_over_borough(
         self,
-        borough: str,
+        borough: Borough,
         grid_resolution: int = 8,
         rotation: float = 0,
         srid: int = 4326,
@@ -101,7 +102,7 @@ class GridMixin:
                         ),
                     ).label("max_distance"),
                 )
-                .filter(LondonBoundary.name == borough)
+                .filter(LondonBoundary.name == borough.value)
                 .one()
             )  # filter by borough name
             # calculate the size of each grid square
@@ -112,7 +113,7 @@ class GridMixin:
             )
 
     @db_query
-    def fishnet_query(self, borough: str, grid_resolution: int) -> Any:
+    def fishnet_query(self, borough: Borough, grid_resolution: int) -> Any:
         """Query the Fishnet table.
 
         Args:
@@ -125,7 +126,7 @@ class GridMixin:
         with self.dbcnxn.open_session() as session:
             fishnet_with_points = (
                 session.query(FishnetTable)
-                .filter(FishnetTable.borough == borough)
+                .filter(FishnetTable.borough == borough.value)
                 .filter(FishnetTable.grid_resolution == grid_resolution)
             )
             return fishnet_with_points

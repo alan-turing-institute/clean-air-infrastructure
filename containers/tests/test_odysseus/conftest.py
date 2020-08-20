@@ -5,6 +5,7 @@ from typing import List, TYPE_CHECKING
 import pytest
 import pandas as pd
 from odysseus.scoot import Fishnet, ScanScoot
+from odysseus.types import Borough
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
 # pylint: disable=redefined-outer-name
@@ -64,9 +65,9 @@ def scoot_df() -> pd.DataFrame:
 
 
 @pytest.fixture(scope="function")
-def borough() -> str:
+def borough() -> Borough:
     """Westminster"""
-    return "Westminster"
+    return Borough.westminster
 
 
 @pytest.fixture(scope="function")
@@ -83,7 +84,7 @@ def scoot_writer(
     forecast_upto: str,
     scoot_offset: int,
     scoot_limit: int,
-    borough: str,
+    borough: Borough,
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
@@ -103,14 +104,14 @@ def detectors(scoot_writer: ScootGenerator) -> List[str]:
     return scoot_writer.scoot_detectors(
         offset=scoot_writer.offset,
         limit=scoot_writer.limit,
-        borough=scoot_writer.borough,
+        borough=scoot_writer.borough.value,
         output_type="df",
     )["detector_id"].to_list()
 
 
 @pytest.fixture(scope="function")
 def westminster_fishnet(
-    borough: str, grid_resolution: int, secretfile: str, connection: Connector,
+    borough: Borough, grid_resolution: int, secretfile: str, connection: Connector,
 ) -> Fishnet:
     """A fishnet cast over Westminster."""
     return Fishnet(
@@ -131,7 +132,7 @@ def model_name(request) -> str:
 def scan_scoot(
     scoot_writer: ScootGenerator,
     westminster_fishnet: Fishnet,
-    borough: str,
+    borough: Borough,
     forecast_hours: int,
     forecast_upto: str,
     grid_resolution: int,
@@ -142,8 +143,6 @@ def scan_scoot(
     connection: Connector,
 ) -> ScanScoot:
     """Fixture for scan scoot class."""
-    borough = scoot_writer.borough
-
     scoot_writer.update_remote_tables()
     westminster_fishnet.update_remote_tables()
 
