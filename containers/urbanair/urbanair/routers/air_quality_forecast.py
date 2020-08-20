@@ -1,5 +1,5 @@
 """Air quality forecast API routes"""
-from typing import List, Dict, Tuple, Optional
+from typing import List, Tuple, Optional, cast
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -55,7 +55,7 @@ def bounding_box_params(
         ge=MIN_LATITUDE,
         le=MAX_LATITUDE,
     ),
-) -> Tuple[float]:
+) -> Optional[Tuple[float, float, float, float]]:
     """Common parameters for defining a bounding box"""
     # Ensure that all bounding box parameters are set if any single one is
     if any([lon_min, lon_max, lat_min, lat_max]):
@@ -73,11 +73,11 @@ def bounding_box_params(
         if lat_min >= lat_max:
             raise HTTPException(
                 400,
-                detail=f"Minimum latitude '{lat_min}' must be less than maximum '{lat_max}'",
+                detail=f"Minimum latitude '{lon_min}' must be less than maximum '{lon_max}'",
             )
     # Return a bounding box if any bounding parameter was provided
-    if all([lon_min, lon_max, lat_min, lat_max]):
-        return (lon_min, lat_min, lon_max, lat_max)
+    if all([lon_min, lat_min, lon_max, lat_max]):
+        return (cast(float, lon_min), cast(float, lat_min), cast(float, lon_max), cast(float, lat_max))
     return None
 
 
@@ -166,7 +166,7 @@ def forecast_hexgrid_geojson(
     ),
     db: Session = Depends(get_db),
     bounding_box: Tuple[float] = Depends(bounding_box_params),
-) -> Optional[List[Dict]]:
+) -> Optional[ForecastResultGeoJson]:
     """Retrieve one hour of hexgrid forecasts containing the requested time in GeoJSON
 
     Args:
