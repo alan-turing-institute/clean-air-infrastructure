@@ -1,7 +1,7 @@
 """Enum types."""
 
 from enum import Enum
-
+import gpflow
 
 class Borough(str, Enum):
     """Enum type for boroughs."""
@@ -39,3 +39,8 @@ class Borough(str, Enum):
     newham = "Newham"
     barking_and_bagenham = "Barking and Dagenham"
     city_of_london = "City of London"
+
+class ScootModelName(Enum):
+
+    gpr: gpflow.models.GPR
+    svgp: gpflow.models.SVGP
