@@ -1,13 +1,14 @@
 """Fixtures for testing reading and writing models."""
 
+from pathlib import Path
 import pytest
 import tensorflow as tf
 
 
 @pytest.fixture(scope="session")
-def model_dir(tmpdir_factory) -> str:
+def model_dir(tmpdir_factory) -> Path:
     """Path to temporary model directory."""
-    return tmpdir_factory.mktemp(".tmp")
+    return Path(tmpdir_factory.mktemp(".tmp"))
 
 
 @pytest.fixture(scope="function")
