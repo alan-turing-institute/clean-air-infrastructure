@@ -67,10 +67,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     def train_models(
         self,
         datasets: List[ScootDataset],
-<<<<<<< HEAD
         optimizer = tf.keras.optimizers.Adam(0.001),
-=======
->>>>>>> iss467_cli
         dryrun: Optional[bool] = False,
         logging_freq: Optional[int] = 100,
     ) -> List[gpflow.models.GPModel]:
@@ -88,25 +85,15 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
             row = self.frame.iloc[i]
 
             model_params = row["model_param"]
-<<<<<<< HEAD
             X = dataset.features_tensor
             Y = dataset.target_tensor
-=======
-            preprocessing: ScootPreprocessing = row["preprocessing"]
-
->>>>>>> iss467_cli
             self.logger.info("Training model on instance %s", row["instance_id"])
 
             if dryrun:
                 continue
-<<<<<<< HEAD
             # get a kernel from settings
             kernel = parse_kernel(model_params["kernel"])  # returns gpflow kernel
 
-=======
-            optimizer = tf.keras.optimizers.Adam(0.001)
-            kernel = parse_kernel(model_params.kernel)  # returns gpflow kernel
->>>>>>> iss467_cli
             model = train_sensor_model(
                 dataset.features_tensor,
                 dataset.target_tensor,
