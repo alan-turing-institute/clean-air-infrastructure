@@ -1,6 +1,7 @@
 """
 Feature extraction Base  class
 """
+from typing import List
 import time
 from datetime import timedelta
 from math import ceil
@@ -24,13 +25,16 @@ from ..mixins import DBQueryMixin, DateRangeMixin
 from ..loggers import duration, green, red, get_logger
 from ..databases.base import Values
 from .feature_conf import FEATURE_CONFIG_DYNAMIC
+from ..types.enum_types import Source
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 
 
 class FeatureExtractorMixin:
+    "Mixin for feature extractors"
+
     @db_query
-    def query_meta_points(self, point_ids):
+    def query_meta_points(self, point_ids: List[str]):
         """
         Query MetaPoints, selecting all matching sources. We do not filter these in
         order to ensure that repeated calls will return the same set of points.
@@ -62,6 +66,8 @@ class FeatureExtractorMixin:
 
 
 class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
+    "Scoot feature extractor"
+
     def __init__(
         self, features, sources, batch_size=15, insert_method="missing", **kwargs,
     ):
@@ -87,8 +93,8 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         self.batch_size = batch_size
 
     @db_query
-    def oshighway_intersection(self, point_ids):
-
+    def oshighway_intersection(self, point_ids: List[str]):
+        "Get intersection between oshighway and buffers"
         buffers = self.query_meta_points(point_ids, output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
@@ -113,7 +119,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query
     def get_scoot_road_match(self, lookup_cte):
-
+        "Query scoot road match table"
         with self.dbcnxn.open_session() as session:
             return (
                 session.query(ScootRoadMatch)
@@ -122,8 +128,10 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
     @db_query
-    def scoot_to_road(self, point_ids, start_datetime, end_datetime):
-
+    def scoot_to_road(
+        self, point_ids: List[str], start_datetime: str, end_datetime: str
+    ):
+        "Map scoot sensor readings to road"
         intersection_lookup_cte = self.oshighway_intersection(point_ids=point_ids).cte(
             "intersection_lookup"
         )
@@ -189,9 +197,9 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query
     def get_scoot_features(
-        self, point_ids, start_datetime, end_datetime,
+        self, point_ids: List[str], start_datetime: str, end_datetime: str,
     ):
-
+        "Extract scoot features"
         scoot_road_readings = self.scoot_to_road(
             point_ids, start_datetime, end_datetime
         ).cte()
@@ -249,9 +257,14 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query
     def get_scoot_feature_availability(
-        self, feature_names, sources, start_datetime, end_datetime, exclude_has_data
+        self,
+        feature_names,
+        sources: List[Source],
+        start_datetime: str,
+        end_datetime: str,
+        exclude_has_data: bool,
     ):
-
+        "Check which scoot features have been processed"
         feature_names = [feature.value for feature in feature_names]
         sources = [source.value for source in sources]
 
@@ -322,9 +335,14 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query
     def get_scoot_feature_ids(
-        self, feature_names, sources, start_datetime, end_datetime, exclude_has_data
+        self,
+        feature_names,
+        sources: List[Source],
+        start_datetime: str,
+        end_datetime: str,
+        exclude_has_data: bool,
     ):
-
+        "Get Ids of interest points and whether they have been processed between start_datetime and end_datetime"
         available_sq = self.get_scoot_feature_availability(
             feature_names,
             sources,
@@ -342,7 +360,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
     @db_query
     def check_remote_table(self):
-
+        "Check what scoot features have been processed"
         # Check which point ids dont have a full dataset
         return self.get_scoot_feature_ids(
             self.features,
@@ -353,6 +371,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         )
 
     def update_remote_tables(self):
+        "Run scoot feature processing and write to database"
 
         update_start = time.time()
 
@@ -488,10 +507,10 @@ class FeatureExtractor(
             ):  # filter out unreasonably tall buildings from UKMap
                 filter_list.append(UKMap.calculated_height_of_building < 999.9)
                 filter_list.append(UKMap.feature_type == "Building")
-            for column, values in self.features[feature_name]["feature_dict"].items():
+            for column_, values in self.features[feature_name]["feature_dict"].items():
                 if (len(values) >= 1) and (values[0] != "*"):
                     filter_list.append(
-                        or_(*[getattr(table, column) == value for value in values])
+                        or_(*[getattr(table, column_) == value for value in values])
                     )
             q_source = q_source.filter(*filter_list)
         return q_source

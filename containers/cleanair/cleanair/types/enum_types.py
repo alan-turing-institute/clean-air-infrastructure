@@ -4,7 +4,7 @@ from enum import Enum, unique
 
 @unique
 class ScootProcessType(str, Enum):
-
+    "Scoot processor type"
     forecast = "forecast"
     real = "real"
 
@@ -36,7 +36,7 @@ class FeatureNames(str, Enum):
 
 @unique
 class DynamicFeatureNames(str, Enum):
-
+    "Valid dynamic feature names"
     max_n_vehicles = "max_n_vehicles"
     avg_n_vehicles = "avg_n_vehicles"
     max_occupancy_percentage = "max_occupancy_percentage"

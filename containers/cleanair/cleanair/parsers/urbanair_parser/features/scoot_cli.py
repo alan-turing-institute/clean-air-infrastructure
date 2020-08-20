@@ -1,3 +1,4 @@
+"Scoot feature processing cli"
 from typing import List
 from enum import Enum
 import time
@@ -6,7 +7,7 @@ import tempfile
 import typer
 from ....loggers import initialise_logging
 from ..state import state
-from ..shared_args import UpTo, NDays, NHours, Species
+from ..shared_args import UpTo, NDays, NHours
 from ....features import (
     ScootFeatureExtractor,
     FEATURE_CONFIG_DYNAMIC,
@@ -14,14 +15,13 @@ from ....features import (
 from ..shared_args import (
     ValidSources,
     Sources,
-    ValidDynamicFeatureSources,
     ValidInsertMethods,
     InsertMethod,
     Web,
 )
 from ....processors import ScootPerRoadDetectors
-from ....databases.materialised_views import LondonBoundaryView
 
+# pylint: disable=C0103,C0200,W0640,R0913,W0612
 feature_names = list(FEATURE_CONFIG_DYNAMIC["scoot"]["features"].keys())
 valid_feature_names = Enum("ValidFeatureNames", zip(feature_names, feature_names))
 
