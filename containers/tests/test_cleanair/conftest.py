@@ -259,7 +259,7 @@ def model_data(
         ModelData, "get_pred_data_inputs", mock.mock_get_pred_data_inputs
     )
     dataset = ModelData(
-        no_features_data_config, secretfile=secretfile, connection=connection
+        secretfile=secretfile, connection=connection
     )
     print(dataset.normalised_training_data_df.head())
     return dataset
