@@ -5,6 +5,7 @@ from typing import List
 import time
 from datetime import timedelta
 from math import ceil
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dateutil.parser import isoparse
 from sqlalchemy import func, literal, or_, case, column, String, text
 from sqlalchemy.sql.selectable import Alias as SUBQUERY_TYPE
@@ -69,7 +70,13 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     "Scoot feature extractor"
 
     def __init__(
-        self, features, sources, batch_size=15, insert_method="missing", **kwargs,
+        self,
+        features,
+        sources,
+        batch_size=15,
+        n_workers=2,
+        insert_method="missing",
+        **kwargs,
     ):
         """Base class for extracting features.
         args:
@@ -405,15 +412,16 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
         missing_point_id_batches = np.array_split(missing_point_ids, n_batches)
 
-        for batch_no, point_id_batch in enumerate(missing_point_id_batches, start=1):
+        def process_batch(
+            point_id_batch, batch_i, n_batches, start_datetime, end_datetime
+        ):
 
-            batch_start = time.time()
-            self.logger.info("Processing batch %s of %s", batch_no, n_batches)
+            self.logger.info(f"Processing batch {batch_i} of {n_batches}")
 
             sq_select_and_insert = self.get_scoot_features(
                 point_ids=point_id_batch.tolist(),
-                start_datetime=self.start_datetime.isoformat(),
-                end_datetime=self.end_datetime.isoformat(),
+                start_datetime=start_datetime.isoformat(),
+                end_datetime=end_datetime.isoformat(),
                 output_type="subquery",
             )
 
@@ -421,11 +429,27 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 sq_select_and_insert, on_conflict="overwrite", table=self.output_table
             )
 
-            # Print a timing message at the end of each feature
-            self.logger.info(
-                "Finished adding records after %s",
-                green(duration(batch_start, time.time())),
-            )
+            self.logger.info(f"Batch {batch_i} finished")
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            self.logger.info(f"Processing {n_batches} on {2} database cores")
+            threads = []
+            for batch_no, point_id_batch in enumerate(
+                missing_point_id_batches, start=1
+            ):
+                threads.append(
+                    executor.submit(
+                        process_batch,
+                        point_id_batch=point_id_batch,
+                        batch_i=batch_no,
+                        n_batches=n_batches,
+                        start_datetime=self.start_datetime,
+                        end_datetime=self.end_datetime,
+                    )
+                )
+
+            for thread in as_completed(threads):
+                thread.result()
 
         self.logger.info(
             "Finished adding records after %s",

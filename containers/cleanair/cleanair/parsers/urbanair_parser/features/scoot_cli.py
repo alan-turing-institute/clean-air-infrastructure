@@ -108,6 +108,7 @@ def fill(
         end=upto,
         nhours=nhours + ndays,
         secretfile=state["secretfile"],
+        threadsafe=True,
     )
 
     scoot_features.update_remote_tables()
