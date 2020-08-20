@@ -9,15 +9,12 @@ from cleanair.databases import DBReader
 def example_db_function(secretfile, connection):
     def f():
 
-        reader = DBReader(secretfile=secretfile, connection=connection)
+        reader = DBReader(secretfile=secretfile, connection=connection, threadsafe=True)
 
         session_ids = []
         for i in range(10):
-
-            with reader.dbcnxn.open_session(threadsafe=True) as session:
-
+            with reader.dbcnxn.open_session() as session:
                 session_ids.append(id(session))
-
         return session_ids
 
     return f
