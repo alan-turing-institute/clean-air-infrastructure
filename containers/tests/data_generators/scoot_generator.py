@@ -12,6 +12,7 @@ from cleanair.mixins import ScootQueryMixin
 
 if TYPE_CHECKING:
     from nptyping import NDArray, Int
+    from odysseus.types import Borough
 
 
 class ScootGenerator(ScootQueryMixin, DBWriter):
@@ -23,7 +24,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         upto: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        borough: Optional[str] = None,
+        borough: Optional[Borough] = None,
         **kwargs
     ) -> None:
         """Initialise a synthetic scoot writer."""
@@ -40,7 +41,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
         detectors = self.scoot_detectors(
-            offset=self.offset, limit=self.limit, borough=self.borough, output_type="df"
+            offset=self.offset, limit=self.limit, borough=self.borough.value, output_type="df"
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
 
