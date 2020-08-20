@@ -1,4 +1,6 @@
 """Air quality forecast API routes"""
+import logging
+from time import time
 from typing import List, Tuple, Optional, cast
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -18,6 +20,7 @@ from ..responses import GeoJSONResponse
 
 
 router = APIRouter()
+logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 # Define the bounding box for London
 MIN_LONGITUDE = -0.510
@@ -109,6 +112,8 @@ def forecast_hexgrid_json(
     Returns:
         json: JSON containing one hour of forecasts at each hexgrid point
     """
+    request_start = time()
+
     # Establish start and end datetimes
     start_datetime = time_.replace(minute=0, second=0, microsecond=0)
     end_datetime = start_datetime + timedelta(hours=1)
@@ -131,6 +136,7 @@ def forecast_hexgrid_json(
 
     # Return the query results as a list of tuples
     # This will be automatically converted to ForecastResultJson using from_orm
+    logger.info("Processing hexgrid JSON request took %.2fs", time() - request_start)
     return query_results
 
 
@@ -148,11 +154,14 @@ def forecast_hexgrid_geometries(
     Returns:
         json: JSON containing geometry of each hexgrid point
     """
+    request_start = time()
+
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cacheable_geometries_hexgrid(db, bounding_box=bounding_box)
 
     # Return the query results as a list of tuples
     # This will be automatically converted to GeometryJson using from_orm
+    logger.info("Processing hexgrid geometries request took %.2fs", time() - request_start)
     return query_results
 
 
@@ -180,6 +189,8 @@ def forecast_hexgrid_geojson(
     Returns:
         ForecastResultGeoJson: GeoJSON containing one hour of forecasts at each hexgrid point
     """
+    request_start = time()
+
     # Establish start and end datetimes
     start_datetime = time_.replace(minute=0, second=0, microsecond=0)
     end_datetime = start_datetime + timedelta(hours=1)
@@ -204,4 +215,5 @@ def forecast_hexgrid_geojson(
     features = ForecastResultGeoJson.build_features(
         [r._asdict() for r in query_results]
     )
+    logger.info("Processing hexgrid GeoJSON request took %.2fs", time() - request_start)
     return ForecastResultGeoJson(features=features)
