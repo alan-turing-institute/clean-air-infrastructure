@@ -156,7 +156,7 @@ class SatelliteBoxSchema(BaseModel):
     @property
     def centroid_tuple(self):
         "Return a tuple of lat and lon"
-        return (float(i) for i in self.centroid[16:].strip(")").split(" "))
+        return tuple([float(i) for i in self.centroid[16:].strip(")").split(" ")])
 
 
 class SatelliteGridSchema(BaseModel):
