@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Dict
 import gpflow
-from ..types.model_params import KernelParams, KernelProduct
+from ..types.model_params import KernelParams, KernelProduct, PeriodicKernelParams
 
 def parse_kernel_token(next_token: KernelProduct, kernel_map: Dict[str, gpflow.kernels.Kernel]) -> gpflow.kernels.Kernel:
     """Parser kernel tokens.
@@ -19,8 +19,14 @@ def parse_kernel_token(next_token: KernelProduct, kernel_map: Dict[str, gpflow.k
     if isinstance(next_token, KernelParams):
         kernel_params = next_token.dict()
         kernel_params.pop("name")
-        print(kernel_params)
+        print(next_token.name, kernel_params)
         return kernel_map[next_token.name](**kernel_params)
+    elif isinstance(next_token, PeriodicKernelParams):
+        base_kernel = parse_kernel_token(next_token.base_kernel, kernel_map)
+        kernel_params = next_token.dict()
+        kernel_params.pop("name")
+        kernel_params.pop("base_kernel")
+        return kernel_map[next_token.name](base_kernel=base_kernel, **kernel_params)
 
     kernel = None
     # take produce of kernels in list

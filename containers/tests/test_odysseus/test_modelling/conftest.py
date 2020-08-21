@@ -11,9 +11,9 @@ def matern32() -> KernelParams:
     return KernelParams(name="matern32", lengthscales=0.1, variance=2.0)
 
 @pytest.fixture(scope="function")
-def periodic() -> PeriodicKernelParams:
+def periodic(matern32: KernelParams) -> PeriodicKernelParams:
     """Matern 32 kernel params."""
-    return PeriodicKernelParams(name="periodic", period=5)
+    return PeriodicKernelParams(name="periodic", period=5, base_kernel=matern32)
 
 @pytest.fixture(scope="function")
 def gpr_params(matern32) -> ScootModelParams:

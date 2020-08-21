@@ -11,11 +11,13 @@ class KernelParams(BaseModel):
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
 
-class PeriodicKernelParams(KernelParams):
+class PeriodicKernelParams(BaseModel):
     """Parameters for a periodic kernel."""
-    period: Optional[float]     # for the periodic kernel
+    name: str
+    period: Optional[Union[float, List[float]]]
+    base_kernel: KernelParams
 
-KernelProduct = Union[KernelParams, List[KernelParams]]
+KernelProduct = Union[KernelParams, PeriodicKernelParams, List[Union[KernelParams, PeriodicKernelParams]]]
 
 class ScootModelParams(ParamIdMixin, BaseModel):
     """Model parameters for a scoot GP model."""
