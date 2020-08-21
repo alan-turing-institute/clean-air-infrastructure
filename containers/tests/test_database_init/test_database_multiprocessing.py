@@ -1,18 +1,19 @@
 """Test we can execute queries in parallel"""
-import pytest
-import time
 from concurrent.futures import ThreadPoolExecutor
+import pytest
 from cleanair.databases import DBReader
 
-
+# pylint: disable=C0103,W0621,W0613
 @pytest.fixture()
 def example_db_function(secretfile, connection):
-    def f():
+    "Return a function"
 
+    def f():
+        "Example database function"
         reader = DBReader(secretfile=secretfile, connection=connection, threadsafe=True)
 
         session_ids = []
-        for i in range(10):
+        for _ in range(10):
             with reader.dbcnxn.open_session() as session:
                 session_ids.append(id(session))
         return session_ids

@@ -70,13 +70,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     "Scoot feature extractor"
 
     def __init__(
-        self,
-        features,
-        sources,
-        batch_size=15,
-        n_workers=2,
-        insert_method="missing",
-        **kwargs,
+        self, features, sources, batch_size=15, insert_method="missing", **kwargs,
     ):
         """Base class for extracting features.
         args:
@@ -416,7 +410,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             point_id_batch, batch_i, n_batches, start_datetime, end_datetime
         ):
 
-            self.logger.info(f"Processing batch {batch_i} of {n_batches}")
+            self.logger.info("Processing batch %s of %s", batch_i, n_batches)
 
             sq_select_and_insert = self.get_scoot_features(
                 point_ids=point_id_batch.tolist(),
@@ -429,10 +423,10 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
                 sq_select_and_insert, on_conflict="overwrite", table=self.output_table
             )
 
-            self.logger.info(f"Batch {batch_i} finished")
+            self.logger.info("Batch %s finished", batch_i)
 
         with ThreadPoolExecutor(max_workers=2) as executor:
-            self.logger.info(f"Processing {n_batches} on {2} database cores")
+            self.logger.info("Processing %s on 2 database cores", n_batches)
             threads = []
             for batch_no, point_id_batch in enumerate(
                 missing_point_id_batches, start=1
@@ -538,159 +532,6 @@ class FeatureExtractor(
                     )
             q_source = q_source.filter(*filter_list)
         return q_source
-
-    # @db_query
-    # def get_dynamic_processed(self, feature_name):
-    #     """Return the features which have already been processed for a given feature name between
-    #     a self.start_datetime and self.end_datetime. To be returned they must have as many hours as would be expected
-    #     from the difference between self.start_datetime and self.end_datetime.
-
-    #     args:
-    #         feature_name: string
-    #             Name of the feature to check for
-    #     """
-
-    #     expected_hours = int(
-    #         (self.end_datetime - self.start_datetime).total_seconds() / (60 * 60)
-    #     )
-
-    #     with self.dbcnxn.open_session() as session:
-    #         already_processed_sq = (
-    #             session.query(
-    #                 DynamicFeature.point_id,
-    #                 (
-    #                     func.count(DynamicFeature.measurement_start_utc)
-    #                     == expected_hours
-    #                 ).label("all_hours"),
-    #             )
-    #             .filter(
-    #                 DynamicFeature.feature_name == feature_name,
-    #                 DynamicFeature.measurement_start_utc
-    #                 >= self.start_datetime.isoformat(),
-    #                 DynamicFeature.measurement_start_utc
-    #                 < self.end_datetime.isoformat(),
-    #             )
-    #             .group_by(DynamicFeature.point_id)
-    #         ).subquery()
-
-    #         already_processed_q = session.query(already_processed_sq.c.point_id).filter(
-    #             already_processed_sq.c.all_hours == True
-    #         )
-
-    #         return already_processed_q
-
-    # @db_query
-    # def query_features_dynamic(self, feature_name, feature_dict, agg_func, batch_size):
-    #     # Get input geometries for this feature
-    #     # self.logger.debug(
-    #     #     "There are %s input geometries to consider",
-    #     #     self.query_input_geometries(feature_name).count(),
-    #     # )
-    #     # sq_source = self.query_input_geometries(feature_name, output_type="query")
-
-    #     # Get all the metapoints and buffer geometries as a common table expression
-    #     cte_buffers = self.query_meta_points(
-    #         feature_name=feature_name, exclude_processed=True, limit=batch_size
-    #     ).cte("buffers")
-
-    #     n_interest_points = self.query_meta_points(
-    #         feature_name=feature_name, exclude_processed=True, output_type="count",
-    #     )
-
-    #     if n_interest_points == 0:
-    #         self.logger.info(
-    #             "There are 0 interest points left to process for feature %s ...",
-    #             feature_name,
-    #         )
-    #         return None
-
-    #     # Output about next batch to be processed
-    #     self.logger.info(
-    #         "Preparing to analyse %s interest points of %s unprocessed...",
-    #         green(batch_size),
-    #         green(n_interest_points),
-    #     )
-
-    #     with self.dbcnxn.open_session() as session:
-
-    #         # Intersect the buffers with roads
-    #         buff_table_intersection_sq = (
-    #             session.query(
-    #                 cte_buffers.c.id,
-    #                 self.table.toid,
-    #                 func.ST_Intersects(
-    #                     cte_buffers.c.buff_geom_500, self.table.geom
-    #                 ).label("Intersects_500"),
-    #                 func.ST_Intersects(
-    #                     cte_buffers.c.buff_geom_200, self.table.geom
-    #                 ).label("Intersects_200"),
-    #                 func.ST_Intersects(
-    #                     cte_buffers.c.buff_geom_100, self.table.geom
-    #                 ).label("Intersects_100"),
-    #                 func.ST_Intersects(
-    #                     cte_buffers.c.buff_geom_10, self.table.geom
-    #                 ).label("Intersects_10"),
-    #             )
-    #             .filter(
-    #                 func.ST_Intersects(cte_buffers.c.buff_geom_1000, self.table.geom)
-    #             )
-    #             .subquery()
-    #         )
-
-    #         # Join the scoot_road_map+data and aggregate over buffers
-    #         res = (
-    #             session.query(
-    #                 buff_table_intersection_sq.c.id,
-    #                 self.table_class.measurement_start_utc,
-    #                 literal(feature_name).label("feature_name"),
-    #                 func.coalesce(
-    #                     agg_func(
-    #                         getattr(self.table_class, list(feature_dict.keys())[0])
-    #                     ),
-    #                     0.0,
-    #                 ).label("value_1000"),
-    #                 func.coalesce(
-    #                     agg_func(
-    #                         getattr(self.table_class, list(feature_dict.keys())[0])
-    #                     ).filter(buff_table_intersection_sq.c.Intersects_500),
-    #                     0.0,
-    #                 ).label("value_500"),
-    #                 func.coalesce(
-    #                     agg_func(
-    #                         getattr(self.table_class, list(feature_dict.keys())[0])
-    #                     ).filter(buff_table_intersection_sq.c.Intersects_200),
-    #                     0.0,
-    #                 ).label("value_200"),
-    #                 func.coalesce(
-    #                     agg_func(
-    #                         getattr(self.table_class, list(feature_dict.keys())[0])
-    #                     ).filter(buff_table_intersection_sq.c.Intersects_100),
-    #                     0.0,
-    #                 ).label("value_100"),
-    #                 func.coalesce(
-    #                     agg_func(
-    #                         getattr(self.table_class, list(feature_dict.keys())[0])
-    #                     ).filter(buff_table_intersection_sq.c.Intersects_10),
-    #                     0.0,
-    #                 ).label("value_10"),
-    #             )
-    #             .join(
-    #                 self.table_class,
-    #                 buff_table_intersection_sq.c.toid == self.table_class.road_toid,
-    #             )
-    #             .filter(
-    #                 self.table_class.measurement_start_utc
-    #                 >= self.start_datetime.isoformat(),
-    #                 self.table_class.measurement_start_utc
-    #                 < self.end_datetime.isoformat(),
-    #             )
-    #             .group_by(
-    #                 buff_table_intersection_sq.c.id,
-    #                 self.table_class.measurement_start_utc,
-    #             )
-    #         )
-
-    #         return res
 
     @db_query
     def query_features(self, point_ids, feature_name, feature_type, agg_func):
@@ -935,38 +776,3 @@ class FeatureExtractor(
             "Finished adding records after %s",
             green(duration(update_start, time.time())),
         )
-
-        # while True:
-
-        #     if self.dynamic:
-        #         # Create full select-and-insert query
-        #         q_select_and_insert = self.query_features_dynamic(
-        #             feature_name,
-        #             feature_dict=self.features[feature_name]["feature_dict"],
-        #             agg_func=self.features[feature_name]["aggfunc"],
-        #             batch_size=self.batch_size,
-        #             output_type="query",
-        #         )
-
-        #     else:
-        #         # Create full select-and-insert query
-        #         q_select_and_insert = self.query_features(
-        #             feature_name,
-        #             feature_type=self.features[feature_name]["type"],
-        #             agg_func=self.features[feature_name]["aggfunc"],
-        #             batch_size=self.batch_size,
-        #             output_type="query",
-        #         )
-
-        #     if q_select_and_insert:
-        #         self.logger.info("Commiting to database")
-        #         with self.dbcnxn.open_session() as session:
-        #             self.commit_records(
-        #                 q_select_and_insert.subquery(),
-        #                 on_conflict="ignore",
-        #                 table=self.output_table,
-        #             )
-
-        #         quit()
-        #     else:
-        #         break
