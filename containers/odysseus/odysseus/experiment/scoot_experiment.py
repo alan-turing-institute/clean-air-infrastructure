@@ -16,7 +16,7 @@ from .utils import save_gpflow2_model_to_file
 if TYPE_CHECKING:
     import gpflow
     from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
-
+    from ..types import ScootModelParams
 
 class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     """Experiment for scoot modelling."""
@@ -40,7 +40,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     def from_scoot_configs(
         data_config: Union[List[ScootConfig], ScootConfig],
         model_name: Union[List[str], str],
-        model_params: Any,  # TODO specify type
+        model_params: Union[List[ScootModelParams], ScootModelParams],
         preprocessing: Union[List[ScootPreprocessing], ScootPreprocessing],
         cluster_id: str = "laptop",
         tag: str = "model_per_detector",
@@ -56,7 +56,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         frame["cluster_id"] = cluster_id
         frame["tag"] = tag
         frame["git_hash"] = get_git_hash()
-        frame["param_id"] = frame["model_param"].apply(lambda x: x.param_id())
+        frame["param_id"] = frame["model_params"].apply(lambda x: x.param_id())
         frame["data_id"] = frame[["data_config", "preprocessing"]].apply(
             lambda x, y: hash_dict(dict(**x.dict(), **y.dict()))
         )

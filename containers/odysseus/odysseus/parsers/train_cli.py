@@ -12,7 +12,7 @@ from ..dataset import ScootDataset, ScootConfig, ScootPreprocessing
 from ..dates import Baseline, BaselineUpto
 from ..experiment import ScootExperiment
 from .shared_args import Borough, KernelName, Limit, Offset
-from ..types import ScootModelParams, PeriodicKernelParams
+from ..types import ScootModelParams, PeriodicKernelParams, KernelParams
 
 app = typer.Typer(help="Train models for odysseus.")
 scoot_app = typer.Typer(help="Train scoot models.", name="scoot")
@@ -56,11 +56,16 @@ def svgp(
     )
     if kernel == "periodic":
         model_params = ScootModelParams(
+            name="svgp",
             maxiter=maxiter,
             kernel=PeriodicKernelParams(name="periodic", base_kernel=ScootModelParams(name="rbf")),
         )
     else:
-        model_params = ScootModelParams(name=kernel)
+        model_params = ScootModelParams(
+            name="svgp",
+            kernel=KernelParams(name=kernel),
+            maxiter=maxiter,
+        )
     logger.info("Get scoot training data from %s to %s for %s detectors.", train_start, train_upto, limit)
     meta_dataset = ScootDataset(data_config, preprocessing, secretfile=secretfile)
     logger.info("Splitting the dataset by detector.")
