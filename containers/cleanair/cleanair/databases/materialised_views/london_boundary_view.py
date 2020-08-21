@@ -12,7 +12,7 @@ class LondonBoundaryView(Base):
     """View of the interest points that gives london's boundary"""
 
     __table__ = create_materialized_view(
-        name="london_boundary",
+        name="london_boundary_view",
         schema="interest_points",
         owner="refresher",
         selectable=select(
