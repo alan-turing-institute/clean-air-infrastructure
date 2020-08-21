@@ -1,53 +1,45 @@
+"""Creating gpflow kernels."""
+
+from __future__ import annotations
+from typing import Dict
 import gpflow
+from ..types.model_params import KernelParams, KernelProduct
 
-KERNELS = [
-    dict(name="matern32", hyperparameters=dict(lengthscale=0.1, variance=0.1,)),
-    dict(name="rbf", hyperparameters=dict(lengthscale=0.1, variance=0.1,)),
-    dict(
-        name="periodic",
-        hyperparameters=dict(period=0.5, lengthscale=0.7, variance=4.5,),
-    ),
-]
+def parse_kernel_token(next_token: KernelProduct, kernel_map: Dict[str, gpflow.kernels.Kernel]) -> gpflow.kernels.Kernel:
+    """Parser kernel tokens.
 
+    Args:
+        next_token: The token to parse.
+        kernel_map: Mapping from kernel names to gpflow kernels.
 
-def parse_kernel_token(next_token, kernel_map):
+    Returns:
+        An initialised gpflow kernel.
     """
-    Takes a list or dict description of a kernel and returns a gpflow kernel.
-    """
+    # return gpflow kernel from params
+    if isinstance(next_token, KernelParams):
+        kernel_params = next_token.dict()
+        kernel_params.pop("name")
+        print(kernel_params)
+        return kernel_map[next_token.name](**kernel_params)
+
     kernel = None
+    # take produce of kernels in list
+    for item in next_token:
+        if not kernel:
+            kernel = parse_kernel_token(item, kernel_map)
+        else:
+            kernel = kernel * parse_kernel_token(item, kernel_map)
+    return kernel
 
-    # multiply kernels together
-    if isinstance(next_token, list):
-        # take produce of kernels in list
-        for item in next_token:
-            if not kernel:
-                kernel = parse_kernel_token(item, kernel_map)
-            else:
-                kernel = kernel * parse_kernel_token(item, kernel_map)
-        return kernel
-    # add kernels together
-    if (
-        isinstance(next_token, dict)
-        and "+" in next_token
-        and isinstance(next_token["+"], list)
-    ):
-        for item in next_token["+"]:
-            if not kernel:
-                kernel = parse_kernel_token(item, kernel_map)
-            else:
-                kernel = kernel + parse_kernel_token(item, kernel_map)
-        return kernel
-    # get kernel with hyperparameters
-    if isinstance(next_token, dict):
-        params = next_token["hyperparameters"].copy()
-        return kernel_map[next_token["name"]](**params)
-    # no matches for tokens
-    raise TypeError("Token was not a list or dict.")
+def parse_kernel(token: KernelProduct) -> gpflow.kernels.Kernel:
+    """Creates a mapping of kernel names to gpflow kernels then parse the token.
 
+    Args:
+        token: Either a list of KernelParams or a single KernelParams.
+            If a list is passed then the product of the kernels is created.
 
-def parse_kernel(token) -> gpflow.kernels.Kernel:
-    """
-    Takes a list or dict and returns a kernel by parsing the datastructure.
+    Returns:
+        An initialised gpflow kernel.
     """
     mod = gpflow.kernels
     kernel_map = dict(
