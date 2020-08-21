@@ -2,13 +2,8 @@
 from __future__ import annotations
 from typing import List
 from datetime import datetime, timedelta
-from sqlalchemy import func, text, and_, cast, String
-from ..databases.tables import (
-    StaticFeature,
-    DynamicFeature,
-    MetaPoint,
-    HexGrid,
-)
+from sqlalchemy import func, text, cast, String
+from ..databases.tables import StaticFeature, MetaPoint
 from ..databases.materialised_views import LondonBoundaryView
 from ..databases import DBReader
 from ..mixins.availability_mixins import (
@@ -39,7 +34,6 @@ class ModelConfig(
     LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
     """Create and validate cleanair model configurations
-    
     Runs checks against the database"""
 
     def __init__(self, **kwargs) -> None:
@@ -91,7 +85,7 @@ class ModelConfig(
 
     def validate_config(self, config: DataConfig):
         """Validate a configuration file
-        
+
         Check:
             1. requested features are available
             2. requested sources are available for training and prediction periods
@@ -234,7 +228,8 @@ class ModelConfig(
 
     @db_query
     def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London. Only get the first row as should only be one entry"""
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
 
             return session.query(LondonBoundaryView.geom).limit(1)

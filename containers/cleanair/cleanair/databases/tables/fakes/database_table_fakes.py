@@ -15,7 +15,7 @@ from ....databases.tables import SatelliteBox
 # pylint: disable=E0213,R0201
 
 # Point regular expression
-RE_POINT = re.compile("^SRID=4326;POINT\((\d*\.?\d*) (\d*\.?\d*)\)$")
+RE_POINT = re.compile(r"^SRID=4326;POINT\((\d*\.?\d*) (\d*\.?\d*)\)$")
 
 
 def get_random_string(length: int) -> str:
@@ -124,13 +124,11 @@ class SatelliteBoxSchema(BaseModel):
     @validator("centroid", always=True)
     def validate_point(cls, v):
         """Generate end time one hour after start time
-        
         Example:
             'SRID=4326;POINT(4.2234 2232342.2342)'
         """
 
         if isinstance(v, str):
-
             if RE_POINT.match(v):
                 return v
             raise ValueError("Not a valid Point string")
@@ -139,6 +137,8 @@ class SatelliteBoxSchema(BaseModel):
             if len(v) != 2:
                 raise ValueError("v must be tuple of length 2")
             return f"SRID=4326;POINT({v[0]} {v[1]})"
+
+        raise ValueError("Must be a tuple or point string")
 
     @validator("geom", always=True)
     def gen_geom(cls, v, values):
@@ -155,8 +155,8 @@ class SatelliteBoxSchema(BaseModel):
 
     @property
     def centroid_tuple(self):
-
-        return [float(i) for i in self.centroid[16:].strip(")").split(" ")]
+        "Return a tuple of lat and lon"
+        return (float(i) for i in self.centroid[16:].strip(")").split(" "))
 
 
 class SatelliteGridSchema(BaseModel):

@@ -1,14 +1,10 @@
 """Commands for a Sparse Variational GP to model air quality."""
-from typing import Dict, List, Tuple, Union, Optional
-import pickle
-import shutil
+from typing import List, Union
 import json
 from pathlib import Path
 import typer
-import pandas as pd
 from ..state import (
     state,
-    DATA_CACHE,
     DATA_CONFIG,
     DATA_CONFIG_FULL,
     MODEL_TRAINING_PICKLE,

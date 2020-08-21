@@ -12,7 +12,6 @@ from ...databases.tables import (
     DynamicFeature,
     LAQNReading,
     LAQNSite,
-    LondonBoundary,
     MetaPoint,
     SatelliteForecast,
 )
@@ -33,7 +32,8 @@ class DBQueryMixin:
 
     @db_query
     def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London. Only get the first row as should only be one entry"""
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
 
             return session.query(LondonBoundaryView.geom).limit(1)
