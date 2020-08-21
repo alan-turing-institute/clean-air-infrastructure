@@ -44,6 +44,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         preprocessing: Union[List[ScootPreprocessing], ScootPreprocessing],
         cluster_id: str = "laptop",
         tag: str = "model_per_detector",
+        secretfile: Optional[str] = None,
     ) -> ScootExperiment:
         """Create a scoot experiment from the data config and model params."""
         frame = pd.DataFrame()
@@ -62,6 +63,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         frame["instance_id"] = frame.apply(
             lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1
         )
+        return ScootExperiment(frame=frame, secretfile=secretfile)
 
 
     def train_models(
