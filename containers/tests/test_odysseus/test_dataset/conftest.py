@@ -49,13 +49,13 @@ def scoot_dataset(
     )
 
 
-@pytest.fixture(scope="function")
-def frame(scoot_dataset: ScootDataset):
+@pytest.fixture(scope="function", params=['gpr', 'svgp'])
+def frame(scoot_dataset: ScootDataset, request):
 
     num_detectors = len(scoot_dataset.data_config.detectors)
 
     # Specify example model params that would be passed on CLI
-    model_name = 'gpr'
+    model_name = request.param
     model_params = {'n_inducing_points': None,
                     'inducing_point_method': 'random',
                     'maxiter': 2000,

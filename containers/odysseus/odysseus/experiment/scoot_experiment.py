@@ -99,13 +99,13 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
             model = train_sensor_model(
                 dataset.features_tensor,
                 dataset.target_tensor,
-                model_params.model_name,
+                model_params["model_name"],
                 kernel,
                 optimizer,
-                maxiter=model_params.maxiter,
+                maxiter=model_params["maxiter"],
                 logging_freq=logging_freq,
-                n_inducing_points=model_params.n_inducing_points,
-                inducing_point_method=model_params.inducing_point_method,
+                n_inducing_points=model_params["n_inducing_points"],
+                inducing_point_method=model_params["inducing_point_method"],
             )
 
             # Save

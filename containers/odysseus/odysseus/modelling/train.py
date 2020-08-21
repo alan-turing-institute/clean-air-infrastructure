@@ -4,6 +4,7 @@ Simple functions for training a model.
 
 import gpflow
 import tensorflow as tf
+from tensorflow.python.framework.errors import InvalidArgumentError
 import numpy as np
 
 
@@ -41,34 +42,39 @@ def train_sensor_model(
             "We are only using one feature - upgrade coming soon."
         )
 
-    if model_name == 'svgp':
-
-        likelihood = gpflow.likelihoods.Poisson() if not likelihood else likelihood
-        ind_points = inducing_points(x_train, n_inducing_points, inducing_point_method)
-
-        model = gpflow.models.SVGP(
+    if model_name == "svgp":
+        model = _train_svgp(
+            x_train=x_train,
+            y_train=y_train,
             kernel=kernel,
+            optimizer=optimizer,
             likelihood=likelihood,
-            inducing_variable=ind_points,
-            mean_function=mean_function
+            mean_function=mean_function,
+            maxiter=maxiter,
+            logging_freq=logging_freq,
+            n_inducing_points=n_inducing_points,
+            inducing_point_method=inducing_point_method,
         )
 
-    elif model_name == 'gpr':
-        model = gpflow.models.GPR(data=(x_train, y_train), kernel=kernel, mean_function=None)
+    elif model_name == "gpr":
+        model = _train_vanilla_gpr(
+            x_train=x_train,
+            y_train=y_train,
+            kernel=kernel,
+            mean_function=mean_function,
+            maxiter=maxiter,
+        )
 
     else:
         raise NotImplementedError('model_name must be either "svgp" or "gpr".')
 
-
-    # Train the model using optimizer
-    simple_training_loop(
-        x_train, y_train, model, optimizer, maxiter=maxiter, logging_freq=logging_freq,
-    )
-
     return model
 
 
-def inducing_points(x_train: tf.Tensor, n_inducing_points: int, inducing_point_method: str) -> tf.Tensor:
+def inducing_points(
+    x_train: tf.Tensor, n_inducing_points: int, inducing_point_method: str
+) -> tf.Tensor:
+    """Calculate inducing points from method."""
 
     # choose inducing points
     if not n_inducing_points or n_inducing_points == x_train.shape[0]:
@@ -88,6 +94,69 @@ def inducing_points(x_train: tf.Tensor, n_inducing_points: int, inducing_point_m
     return ind_points
 
 
+def _train_svgp(
+    x_train: tf.Tensor,
+    y_train: tf.Tensor,
+    kernel: gpflow.kernels.Kernel,
+    optimizer: tf.optimizers.Optimizer,
+    likelihood: gpflow.likelihoods.Likelihood = None,
+    mean_function: gpflow.mean_functions.MeanFunction = None,
+    maxiter: int = 2000,
+    logging_freq: int = 10,
+    n_inducing_points: int = None,
+    inducing_point_method: str = "random",
+) -> gpflow.models.GPModel:
+    """Train a SVGP model"""
+
+    # Set default likelihood
+    likelihood = gpflow.likelihoods.Poisson() if not likelihood else likelihood
+
+    # Calculate inducing points
+    ind_points = inducing_points(x_train, n_inducing_points, inducing_point_method)
+
+    # Initialise model
+    model = gpflow.models.SVGP(
+        kernel=kernel,
+        likelihood=likelihood,
+        inducing_variable=ind_points,
+        mean_function=mean_function,
+    )
+
+    # Train with gradient tapes
+    simple_training_loop(
+        x_train, y_train, model, optimizer, maxiter=maxiter, logging_freq=logging_freq,
+    )
+
+    return model
+
+
+def _train_vanilla_gpr(
+    x_train: tf.Tensor,
+    y_train: tf.Tensor,
+    kernel: gpflow.kernels.Kernel,
+    mean_function: gpflow.mean_functions.MeanFunction = None,
+    maxiter: int = 2000,
+) -> gpflow.models.GPModel:
+    """ Train a Vanilla GPR Model"""
+
+    model = gpflow.models.GPR(
+        data=(x_train, y_train), kernel=kernel, mean_function=mean_function,
+    )
+
+    optimizer = gpflow.optimizers.Scipy()
+
+    # Optimise
+    tf.print("Using SciPy optimizer to train vanilla GPR model")
+    try:
+        optimizer.minimize(
+            model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+        )
+    except InvalidArgumentError:
+        tf.print("Covariance matix could not be inverted.")
+
+    return model
+
+
 def simple_training_loop(
     x_train: tf.Tensor,
     y_train: tf.Tensor,
@@ -100,7 +169,7 @@ def simple_training_loop(
     Iterate train a model for n iterations.
     """
     ## Optimization functions - train the model for the given maxiter
-    def optimization_step(model: gpflow.models.GPModel, x_train, y_train):
+    def optimization_step(model: gpflow.models.SVGP, x_train: tf.Tensor, y_train: tf.Tensor):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
             obj = -model.elbo((x_train, y_train))

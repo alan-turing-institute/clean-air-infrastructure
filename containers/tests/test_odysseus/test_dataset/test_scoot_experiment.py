@@ -23,7 +23,7 @@ def test_scoot_experiment(scoot_dataset: ScootDataset, frame: pd.DataFrame, secr
     X = dataset_sample.features_tensor
 
     # File path variables
-    model_dir = 'models/'
+    model_dir = 'gpflow2_models/'
     instance_id = frame_sample.at[0, 'instance_id']
 
     # Init a ScootExperiment
