@@ -156,26 +156,6 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
-
-  - name: features-scoot-readings-hexgrid
-    schedule: "0 */3 * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-        repository: cleanairdocker.azurecr.io/cleanair
-        imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "features", "scoot", "fill", "--nhours", "5", "--upto", "lasthour", "--source", "hexgrid"]
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
  
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
