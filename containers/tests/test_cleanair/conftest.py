@@ -1,12 +1,12 @@
 """
 Fixtures for the cleanair module.
 """
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,C0103
 from typing import Tuple
+from datetime import timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
-from datetime import timedelta
 import numpy as np
 from nptyping import NDArray
 from cleanair.databases import DBWriter
@@ -47,7 +47,7 @@ def dataset_end_date():
 
 @pytest.fixture(scope="module")
 def site_open_date(dataset_start_date):
-
+    "Fake date for air quality sensors to open on"
     return dataset_start_date - timedelta(days=365)
 
 
@@ -101,7 +101,7 @@ def meta_outside_london():
 
 @pytest.fixture(scope="module")
 def aqe_sites_open(meta_within_london, meta_outside_london, site_open_date):
-
+    "Create AQE sites which are open"
     meta_recs = meta_within_london + meta_outside_london
 
     return [
@@ -113,7 +113,7 @@ def aqe_sites_open(meta_within_london, meta_outside_london, site_open_date):
 
 @pytest.fixture(scope="module")
 def aqe_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
-
+    "Create Aqe sites which are closed"
     return [
         AQESiteSchema(
             point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date
@@ -132,7 +132,7 @@ def aqe_site_records(aqe_sites_open, aqe_sites_closed):
 
 @pytest.fixture(scope="module")
 def laqn_sites_open(meta_within_london, meta_outside_london, site_open_date):
-
+    "Create LAQN sites which are open"
     meta_recs = meta_within_london + meta_outside_london
 
     return [
@@ -144,7 +144,7 @@ def laqn_sites_open(meta_within_london, meta_outside_london, site_open_date):
 
 @pytest.fixture(scope="module")
 def laqn_sites_closed(meta_within_london_closed, site_open_date, site_closed_date):
-
+    "Create LAQN sites which are closed"
     return [
         LAQNSiteSchema(
             point_id=rec.id, date_opened=site_open_date, date_closed=site_closed_date
@@ -214,7 +214,7 @@ def aqe_reading_records(aqe_site_records, dataset_start_date, dataset_end_date):
 
 @pytest.fixture(scope="module")
 def satellite_box_records():
-
+    "Locations (centres) of satellite tiles"
     # Set of grid center locations over london
     locations = [
         (-0.45, 51.65),
