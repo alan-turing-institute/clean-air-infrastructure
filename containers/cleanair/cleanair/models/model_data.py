@@ -20,7 +20,7 @@ from ..loggers import get_logger
 from ..decorators import db_query
 
 from ..types import (
-    FullConfig,
+    FullDataConfig,
     Source,
     Species,
     FeatureNames,
@@ -177,7 +177,7 @@ class ModelDataExtractor:
 
     def get_data_arrays(
         self,
-        full_config: FullConfig,
+        full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
     ) -> IndexedDatasetDict:
@@ -213,7 +213,7 @@ class ModelDataExtractor:
         return X_dict, Y_dict, index_dict
 
     def norm_stats(
-        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Tuple[pd.Series, pd.Series]:
         """Normalise a dataset"""
 
@@ -235,7 +235,7 @@ class ModelDataExtractor:
         return norm_mean, norm_std
 
     def normalize_data(
-        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
 
@@ -374,7 +374,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         return flattend_features_df
 
     def download_training_config_data(
-        self, full_config: FullConfig
+        self, full_config: FullDataConfig
     ) -> Dict[Source, pd.DateFrame]:
         """Download all input data specified in a validated full config file"""
 
@@ -397,7 +397,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         return data_output
 
     def download_prediction_config_data(
-        self, full_config: FullConfig
+        self, full_config: FullDataConfig
     ) -> Dict[Source, pd.DataFrame]:
         """Download prediction data"""
         data_output: Dict[Source, pd.DateFrame] = {}

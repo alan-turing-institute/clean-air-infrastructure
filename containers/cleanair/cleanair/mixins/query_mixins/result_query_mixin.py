@@ -25,9 +25,11 @@ class ResultQueryMixin:
         self,
         instance_id: str,
         source: Source,
-        data_id: Optional[str] = None,
-        with_location: Optional[bool] = True,
         columns: Optional[List[Column]] = None,
+        data_id: Optional[str] = None,
+        start: Optional[str] = None,
+        upto: Optional[str] = None,
+        with_location: Optional[bool] = True,
     ):
         """Get the predictions from a model given an instance and data id.
 
@@ -86,4 +88,10 @@ class ResultQueryMixin:
             # filter by data id
             if data_id:
                 readings = readings.filter(self.result_table.data_id == data_id)
+
+            # filter by datetime
+            if start:
+                readings = readings.filter(self.result_table.measurement_start_utc >= start)
+            if upto:
+                readings = readings.filter(self.result_table.measurement_start_utc < upto)
             return readings

@@ -2,7 +2,8 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name
-from typing import Tuple
+from datetime import datetime
+from typing import Any, Dict, Tuple
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
@@ -18,6 +19,7 @@ from cleanair.instance import (
     AirQualityModelParams,
     AirQualityResult,
 )
+from cleanair.utils import hash_dict
 from nptyping import NDArray
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
@@ -148,7 +150,7 @@ def svgp_instance(  # pylint: disable=too-many-arguments
     test_tag: str,
     fit_start_time: str,
     secretfile: str,
-    connection: Any,
+    connection: Connection,
 ) -> AirQualityInstance:
     """SVGP air quality instance on simple LAQN data."""
     return AirQualityInstance(

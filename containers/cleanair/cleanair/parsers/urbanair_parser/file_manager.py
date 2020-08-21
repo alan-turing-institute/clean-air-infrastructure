@@ -7,7 +7,7 @@ import pickle
 import typer
 from ...loggers import red
 from ...types import (
-    BaseConfig, FullConfig, MRDGPParams, Source, SVGPParams, TargetDict
+    DataConfig, FullDataConfig, MRDGPParams, Source, SVGPParams, TargetDict
 )
 from .state import (
     state,
@@ -72,7 +72,7 @@ class FileManager():
         with data_fp.open("rb") as pickle_f:
             return pickle.load(pickle_f)
 
-    def load_data_config(self, full: bool = False) -> Union[BaseConfig, FullConfig]:
+    def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""
 
         if full:
@@ -85,9 +85,9 @@ class FileManager():
         if config.exists():
             with config.open("r") as config_f:
                 if full:
-                    return FullConfig(**json.load(config_f))
+                    return FullDataConfig(**json.load(config_f))
 
-                return BaseConfig(**json.load(config_f))
+                return DataConfig(**json.load(config_f))
 
         if not full:
             typer.echo(f"{red(f'A model config does not exist. Run generate-config')}")
