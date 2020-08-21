@@ -137,7 +137,7 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: features-scoot-readings-laqn-aqe
+  - name: features-scoot-readings-laqn-aqe-satellite
     schedule: "0 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -145,27 +145,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "features", "scoot", "fill", "--nhours", "5", "--upto", "lasthour", "--source", "laqn", "--source",  "aqe"]
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
-
-  - name: features-scoot-readings-satellite
-    schedule: "0 * * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-        repository: cleanairdocker.azurecr.io/cleanair
-        imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "features", "scoot", "fill", "--nhours", "5", "--upto", "lasthour", "--source", "satellite"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "features", "scoot", "fill", "--nhours", "5", "--upto", "lasthour", "--source", "laqn", "--source",  "aqe", "--source", "satellite"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
