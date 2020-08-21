@@ -9,16 +9,16 @@ from .dataset_types import (
     IndexDict,
     TargetDict,
     NDArrayTuple,
-    BaseConfig,
-    FullConfig,
+    DataConfig,
+    FullDataConfig,
     InterestPointDict,
 )
 from .model_types import MRDGPParams, ParamsDict, SVGPParams
 
 
 __all__ = [
-    "BaseConfig",
-    "FullConfig",
+    "DataConfig",
+    "FullDataConfig",
     "DataConfig",
     "DatasetDict",
     "FeaturesDict",

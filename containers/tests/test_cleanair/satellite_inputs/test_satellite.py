@@ -124,7 +124,7 @@ def test_satellite_availability_mixin(
 
     # Upload readings to database
     satellite_writer.upgrade_reading_table("2020-05-01", Species.NO2.value)
-    return
+    # return
     print(
         satellite_writer.get_satellite_forecast(
             reference_start_date="2020-05-01",

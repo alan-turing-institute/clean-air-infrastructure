@@ -32,14 +32,32 @@ class SatelliteAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query
-    def get_satellite_interest_points(self):
-        """Return all the satellite interest points"""
+    def get_satellite_box_in_boundary(self):
+        "Return box ids that intersect the london boundary"
+        london_boundary = self.query_london_boundary(output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(
-                MetaPoint.id, MetaPoint.source, MetaPoint.location
-            ).filter(MetaPoint.source == "satellite")
+            box_ids = session.query(SatelliteBox.id, london_boundary.c.geom).filter(
+                func.ST_Intersects(london_boundary.c.geom, SatelliteBox.geom)
+            )
+
+            return box_ids
+
+    @db_query
+    def get_satellite_interest_points_in_boundary(self):
+        """Return all the satellite interest points"""
+
+        # ToDo: This returns data from the database. Better to avoid round trips
+        boxes_in_london = [
+            str(i) for i in self.get_satellite_box_in_boundary(output_type="list")
+        ]
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(SatelliteGrid.point_id).filter(
+                SatelliteGrid.box_id.in_(boxes_in_london)
+            )
 
     @db_query
     def get_satellite_box(self, with_centroids=True):

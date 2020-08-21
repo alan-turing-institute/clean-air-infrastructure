@@ -1,4 +1,5 @@
 """Functions for hashing."""
+from typing import Dict, Any
 import os
 import logging
 import hashlib
@@ -45,7 +46,7 @@ def instance_id_from_hash(
     return hash_fn(hash_string)
 
 
-def hash_dict(value: str) -> str:
+def hash_dict(value: Dict[Any, Any]) -> str:
     """Dumps a dictionary to json string then hashes that string.
 
     Args:
@@ -62,7 +63,12 @@ def hash_dict(value: str) -> str:
         >>> B = dict(key=["b", "a"])
     """
 
-    return hash_fn(value)
+    sorted_values = value.copy()
+    for key in sorted_values:
+        if isinstance(sorted_values[key], list):
+            sorted_values[key].sort()
+    hash_string = json.dumps(sorted_values, sort_keys=True)
+    return hash_fn(hash_string)
 
 
 def hash_fn(hash_string: str) -> str:
