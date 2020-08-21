@@ -191,6 +191,8 @@ class ModelConfig(
 
         for key in interest_point_dict:
 
+            self.logger.info("Getting interest point_ids for %s", key.value)
+
             if (
                 isinstance(interest_point_dict[key], str)
                 and interest_point_dict[key] == "all"
@@ -274,7 +276,7 @@ class ModelConfig(
                 output_type="subquery"
             )
 
-        elif source in [Source.satellite, Source.hexgrid]:
+        elif source in [Source.hexgrid]:
 
             point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")
 
@@ -283,11 +285,9 @@ class ModelConfig(
 
         with self.dbcnxn.open_session() as session:
 
-            point_ids = session.query(
-                cast(point_ids_sq.c.point_id, String),
-                bounded_geom.c.geom,
-                MetaPoint.location,
-            ).join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
+            point_ids = session.query(cast(point_ids_sq.c.point_id, String)).join(
+                MetaPoint, point_ids_sq.c.point_id == MetaPoint.id
+            )
 
             if within_london_only:
                 return point_ids.filter(
