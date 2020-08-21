@@ -34,6 +34,7 @@ class SatelliteAvailabilityMixin:
     @db_query
     def get_satellite_box_in_boundary(self):
         "Return box ids that intersect the london boundary"
+
         london_boundary = self.query_london_boundary(output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
