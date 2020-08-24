@@ -101,3 +101,6 @@ def svgp(
     experiment.update_remote_tables()
     logger.info("Training %s Sparse Variational GP models with a %s kernel.", len(datasets), kernel)
     models = experiment.train_models(datasets)
+
+    command = "odysseus forecast scoot --fit_start_time %s --tag %s"
+    logger.info("Models trained and saved to files. If you want to forecast with the models run the following command: " + command, experiment.frame.at[0, "fit_start_time"], tag)
