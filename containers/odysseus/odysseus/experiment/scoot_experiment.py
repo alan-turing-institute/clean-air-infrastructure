@@ -22,6 +22,11 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     """Experiment for scoot modelling."""
 
     @property
+    def data_table(self) -> TrafficDataTable:
+        """Traffic data table."""
+        return TrafficDataTable
+
+    @property
     def instance_table(self) -> TrafficInstanceTable:
         """Traffic instance table."""
         return TrafficInstanceTable
@@ -30,11 +35,6 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     def model_table(self) -> TrafficModelTable:
         """Traffic model table."""
         return TrafficModelTable
-
-    @property
-    def data_config_table(self) -> TrafficDataTable:
-        """Traffic data table."""
-        return TrafficDataTable
 
     @staticmethod
     def from_scoot_configs(
