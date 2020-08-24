@@ -58,8 +58,8 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         frame["git_hash"] = get_git_hash()
         frame["param_id"] = frame["model_params"].apply(lambda x: x.param_id())
         frame["data_id"] = frame[["data_config", "preprocessing"]].apply(
-            lambda x, y: hash_dict(dict(**x.dict(), **y.dict()))
-        )
+            lambda x: hash_dict(dict(**x["data_config"].dict(), **x["preprocessing"].dict())),
+        axis=1)
         frame["instance_id"] = frame.apply(
             lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1
         )
@@ -84,10 +84,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         # loop over datasets training models and saving the trained models
         for i, dataset in enumerate(datasets):
             row = self.frame.iloc[i]
-
-            model_params = row["model_param"]
-            preprocessing: ScootPreprocessing = row["preprocessing"]
-
+            model_params = row["model_params"]
             self.logger.info("Training model on instance %s", row["instance_id"])
             # get a kernel from settings
             if dryrun:
@@ -102,12 +99,8 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
                 maxiter=model_params.maxiter,
                 logging_freq=logging_freq,
                 n_inducing_points=model_params.n_inducing_points,
-                inducing_point_method=model_params.inducing_point_method,
             )
-            save_model(row["instance_id"], model, save_gpflow2_model_to_file)
+            # TODO save models to file
+            # save_model(row["instance_id"], model, save_gpflow2_model_to_file)
             model_list.append(model)
         return model_list
-
-    def update_remote_tables(self):
-        """Update the instance, data and model tables."""
-        ExperimentMixin.update_remote_tables(self)

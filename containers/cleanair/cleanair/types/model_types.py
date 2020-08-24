@@ -1,7 +1,7 @@
 """Types for models and parameters."""
 
 from typing import Dict, Union
-from ..utils import hash_dict
+from ..utils import hash_fn
 
 ModelParams = Dict[str, Union[float, bool, int, Dict, None]]
 
@@ -10,4 +10,4 @@ class ParamIdMixin:
 
     def param_id(self):
         """Return a hashed param id."""
-        return hash_dict(self.json(sort_keys=True))
+        return hash_fn(self.json(sort_keys=True))

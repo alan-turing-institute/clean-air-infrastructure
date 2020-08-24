@@ -60,24 +60,27 @@ class ExperimentMixin:
     def data_config_table(self) -> DataTableMixin:
         """The data config table."""
 
-    def add_instance(self, instance: TrafficInstance):
-        """ToDo."""
 
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
+        # convert pydantic models to dictionaries
+        frame = self.frame.copy()
+        frame["model_params"] = frame.model_params.apply(lambda x: x.dict())
+        frame["data_config"] = frame.data_config.apply(lambda x: x.dict())
+        frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
+
         # update the model params table
-        model_records = self.frame[["model_name", "model_params", "param_id"]].to_dict("records")
+        model_records = frame[["model_name", "model_params", "param_id"]].to_dict("records")
         self.commit_records(
             model_records, on_conflict="overwrite", table=self.model_table,
         )
-
         # update the data config table
-        data_records = self.frame[["data_id", "data_config", "preprocessing"]].to_dict("records")
+        data_records = frame[["data_id", "data_config", "preprocessing"]].to_dict("records")
         self.commit_records(
             data_records, on_conflict="overwrite", table=self.data_config_table,
         )
         # update the instance table
-        site_records = self.frame.to_dict("records")
+        site_records = frame.to_dict("records")
         self.commit_records(
             site_records, on_conflict="overwrite", table=self.instance_table,
         )
