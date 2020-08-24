@@ -406,7 +406,9 @@ def drop_aperiodic_detectors(
     """
 
     proc_df = proc_df.join(
-        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(false_alarm_probability),
+        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(
+            false_alarm_probability
+        ),
         on=["detector_id"],
         rsuffix="X",
     )
