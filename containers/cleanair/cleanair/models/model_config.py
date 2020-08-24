@@ -2,13 +2,8 @@
 from __future__ import annotations
 from typing import List
 from datetime import datetime, timedelta
-from sqlalchemy import func, text, and_, cast, String
-from ..databases.tables import (
-    StaticFeature,
-    DynamicFeature,
-    MetaPoint,
-    HexGrid,
-)
+from sqlalchemy import func, text, cast, String
+from ..databases.tables import StaticFeature, MetaPoint
 from ..databases.materialised_views import LondonBoundaryView
 from ..databases import DBReader
 from ..mixins.availability_mixins import (
@@ -39,7 +34,6 @@ class ModelConfig(
     LAQNAvailabilityMixin, AQEAvailabilityMixin, SatelliteAvailabilityMixin, DBReader
 ):
     """Create and validate cleanair model configurations
-    
     Runs checks against the database"""
 
     def __init__(self, **kwargs) -> None:
@@ -91,7 +85,7 @@ class ModelConfig(
 
     def validate_config(self, config: DataConfig):
         """Validate a configuration file
-        
+
         Check:
             1. requested features are available
             2. requested sources are available for training and prediction periods
@@ -191,6 +185,8 @@ class ModelConfig(
 
         for key in interest_point_dict:
 
+            self.logger.info("Getting interest point_ids for %s", key.value)
+
             if (
                 isinstance(interest_point_dict[key], str)
                 and interest_point_dict[key] == "all"
@@ -232,7 +228,8 @@ class ModelConfig(
 
     @db_query
     def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London. Only get the first row as should only be one entry"""
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
 
             return session.query(LondonBoundaryView.geom).limit(1)
@@ -274,7 +271,7 @@ class ModelConfig(
                 output_type="subquery"
             )
 
-        elif source in [Source.satellite, Source.hexgrid]:
+        elif source in [Source.hexgrid]:
 
             point_ids_sq = self.get_meta_point_ids(source, output_type="subquery")
 
@@ -283,11 +280,9 @@ class ModelConfig(
 
         with self.dbcnxn.open_session() as session:
 
-            point_ids = session.query(
-                cast(point_ids_sq.c.point_id, String),
-                bounded_geom.c.geom,
-                MetaPoint.location,
-            ).join(MetaPoint, point_ids_sq.c.point_id == MetaPoint.id)
+            point_ids = session.query(cast(point_ids_sq.c.point_id, String)).join(
+                MetaPoint, point_ids_sq.c.point_id == MetaPoint.id
+            )
 
             if within_london_only:
                 return point_ids.filter(

@@ -9,7 +9,6 @@ from .dataset_types import (
     IndexDict,
     TargetDict,
     NDArrayTuple,
-    DataConfig,
     FullDataConfig,
     InterestPointDict,
 )
@@ -19,7 +18,6 @@ from .model_types import MRDGPParams, ParamsDict, SVGPParams
 __all__ = [
     "DataConfig",
     "FullDataConfig",
-    "DataConfig",
     "DatasetDict",
     "FeaturesDict",
     "FeatureBufferSize",

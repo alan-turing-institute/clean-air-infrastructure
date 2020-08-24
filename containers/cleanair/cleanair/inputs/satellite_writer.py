@@ -22,10 +22,15 @@ from ..loggers import get_logger, green, red
 from ..mixins import DateGeneratorMixin, DateRangeMixin
 from ..timestamps import to_nearest_hour
 from ..mixins.availability_mixins import SatelliteAvailabilityMixin
+from ..mixins.query_mixins import DBQueryMixin
 
 
 class SatelliteWriter(
-    DateRangeMixin, DBWriter, SatelliteAvailabilityMixin, DateGeneratorMixin
+    DateRangeMixin,
+    DBWriter,
+    SatelliteAvailabilityMixin,
+    DBQueryMixin,
+    DateGeneratorMixin,
 ):
     """
     Get Satellite data from

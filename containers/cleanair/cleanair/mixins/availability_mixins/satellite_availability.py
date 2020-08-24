@@ -1,13 +1,13 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
+# pylint: disable=C0103
 from datetime import timedelta
 from sqlalchemy import func, text, column, String
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
 from ...databases.tables import (
-    MetaPoint,
     SatelliteForecast,
     SatelliteBox,
     SatelliteGrid,
@@ -34,6 +34,7 @@ class SatelliteAvailabilityMixin:
     @db_query
     def get_satellite_box_in_boundary(self):
         "Return box ids that intersect the london boundary"
+
         london_boundary = self.query_london_boundary(output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
@@ -48,7 +49,6 @@ class SatelliteAvailabilityMixin:
     def get_satellite_interest_points_in_boundary(self):
         """Return all the satellite interest points"""
 
-        # ToDo: This returns data from the database. Better to avoid round trips
         boxes_in_london = [
             str(i) for i in self.get_satellite_box_in_boundary(output_type="list")
         ]
