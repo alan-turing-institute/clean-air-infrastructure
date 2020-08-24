@@ -20,7 +20,7 @@ setuptools.setup(
         "gpflow>=2.0.5",
         "shapely>=1.7.0",
         "tensorflow==2.2.0",
-        "cloudpickle==1.4.1", # NOTE https://github.com/tensorflow/probability/issues/991
+        "cloudpickle==1.4.1",  # NOTE https://github.com/tensorflow/probability/issues/991
         "tensorflow_probability==0.10.0",
     ],
     python_requires=">=3.7",
