@@ -79,7 +79,7 @@ class FileManager():
             config = DATA_CONFIG_FULL
         else:
             config = DATA_CONFIG
-
+        # TODO check that this is the correct FP
         config = self.input_dir.joinpath(config.parts[-1])
 
         if config.exists():
