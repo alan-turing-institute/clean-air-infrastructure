@@ -397,15 +397,15 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         return data_output
 
     def download_prediction_config_data(
-        self, full_config: FullDataConfig
-    ) -> Dict[Source, pd.DataFrame]:
+        self, full_config: FullDataConfig, with_sensor_readings: bool = False,
+    ) -> Dict[Source, pd.DataFrame]: 
         """Download prediction data"""
         data_output: Dict[Source, pd.DateFrame] = {}
 
         for source in full_config.pred_sources:
 
             data_output[source] = self.download_source_data(
-                with_sensor_readings=False,
+                with_sensor_readings=with_sensor_readings,
                 start_date=full_config.pred_start_date,
                 end_date=full_config.pred_end_date,
                 species=full_config.species,
