@@ -13,7 +13,7 @@ from cleanair.databases.tables import (
 )
 from cleanair.decorators import db_query
 from ..database import all_or_404
-from ..schemas.air_quality_forecast import ForecastResultGeoJson
+from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJson
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -74,9 +74,9 @@ def query_geometries_hexgrid(
     """
     Query geometries for combining with plain JSON forecasts
     """
-    query = db.query(
-        AirQualityResultTable.point_id, func.ST_AsText(HexGrid.geom).label("geom")
-    ).join(HexGrid, HexGrid.point_id == AirQualityResultTable.point_id)
+    query = db.query(HexGrid.point_id, func.ST_AsText(HexGrid.geom).label("geom"))
+    # Note that the hexgrid uses SRID 4326 which is not aligned with lat/lon
+    # We return all hexes that overlap with any part of the bounding box
     if bounding_box:
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
@@ -89,13 +89,18 @@ def query_geometries_hexgrid(
 )
 def cacheable_geometries_hexgrid(
     db: Session, bounding_box: Optional[Tuple[float]] = None,
-) -> Optional[List[Tuple]]:
+) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
     logger.info("Querying hexgrid geometries")
     if bounding_box:
         logger.info("Restricting to bounding box (%s, %s => %s, %s)", *bounding_box)
-    query = query_geometries_hexgrid(db, bounding_box=bounding_box)
-    return all_or_404(query)
+    query_results = query_geometries_hexgrid(db, bounding_box=bounding_box)
+    # Return the query results as a GeoJSON FeatureCollection
+    features = GeometryGeoJson.build_features([r._asdict() for r in query_results])
+
+    print(GeometryGeoJson.Config.schema_extra)
+
+    return GeometryGeoJson(features=features)
 
 
 @db_query
@@ -147,7 +152,7 @@ def query_forecasts_hexgrid(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_forecasts_hexgrid(
+def cacheable_forecasts_hexgrid_as_json(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -174,10 +179,11 @@ def cacheable_forecasts_hexgrid(
     )
     return all_or_404(query)
 
+
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_forecast_hexgrid_as_geojson(
+def cacheable_forecasts_hexgrid_as_geojson(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -185,7 +191,7 @@ def cacheable_forecast_hexgrid_as_geojson(
     bounding_box: Optional[Tuple[float]] = None,
 ) -> ForecastResultGeoJson:
     """Cache forecasts with geometry with optional bounding box"""
-    query_results = cacheable_forecasts_hexgrid(
+    query_results = cacheable_forecasts_hexgrid_as_json(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,

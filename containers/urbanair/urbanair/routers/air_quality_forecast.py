@@ -9,12 +9,12 @@ from ..databases import get_db
 from ..databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
     ForecastResultJson,
-    GeometryJson,
+    GeometryGeoJson,
 )
 from ..databases.queries.air_quality_forecast import (
     cacheable_available_instance_ids,
-    cacheable_forecasts_hexgrid,
-    cacheable_forecast_hexgrid_as_geojson,
+    cacheable_forecasts_hexgrid_as_json,
+    cacheable_forecasts_hexgrid_as_geojson,
     cacheable_geometries_hexgrid,
 )
 from ..responses import GeoJSONResponse
@@ -34,28 +34,28 @@ def bounding_box_params(
     lon_min: Optional[float] = Query(
         None,
         description="[Optional] Bounding box, minimum longitude",
-        example="-0.29875",
+        example="-0.13",
         ge=MIN_LONGITUDE,
         le=MAX_LONGITUDE,
     ),
     lon_max: Optional[float] = Query(
         None,
         description="[Optional] Bounding box, maximum longitude",
-        example="0.12375",
+        example="-0.12",
         ge=MIN_LONGITUDE,
         le=MAX_LONGITUDE,
     ),
     lat_min: Optional[float] = Query(
         None,
         description="[Optional] Bounding box, minimum latitude",
-        example="51.3875",
+        example="51.525",
         ge=MIN_LATITUDE,
         le=MAX_LATITUDE,
     ),
     lat_max: Optional[float] = Query(
         None,
         description="[Optional] Bounding box, maximum latitude",
-        example="51.5905",
+        example="51.535",
         ge=MIN_LATITUDE,
         le=MAX_LATITUDE,
     ),
@@ -126,7 +126,7 @@ def forecast_hexgrid_json(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cacheable_forecasts_hexgrid(
+    query_results = cacheable_forecasts_hexgrid_as_json(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -144,7 +144,8 @@ def forecast_hexgrid_json(
 @router.get(
     "/forecast/hexgrid/geometries",
     description="Geometries for combining with plain JSON forecasts",
-    response_model=List[GeometryJson],
+    response_class=GeoJSONResponse,
+    response_model=GeometryGeoJson,
 )
 def forecast_hexgrid_geometries(
     db: Session = Depends(get_db),
@@ -160,9 +161,10 @@ def forecast_hexgrid_geometries(
     # Get forecasts in this range (using a bounding box if specified)
     query_results = cacheable_geometries_hexgrid(db, bounding_box=bounding_box)
 
-    # Return the query results as a list of tuples
-    # This will be automatically converted to GeometryJson using from_orm
-    logger.info("Processing hexgrid geometries request took %.2fs", time() - request_start)
+    # Return the query results as a GeoJSON FeatureCollection
+    logger.info(
+        "Processing hexgrid geometries request took %.2fs", time() - request_start
+    )
     return query_results
 
 
@@ -203,7 +205,7 @@ def forecast_hexgrid_geojson(
     instance_id = available_instance_ids[0][0]
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
-    query_results = cacheable_forecast_hexgrid_as_geojson(
+    query_results = cacheable_forecasts_hexgrid_as_geojson(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,

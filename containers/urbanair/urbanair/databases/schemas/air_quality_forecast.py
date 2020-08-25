@@ -6,8 +6,8 @@ from geojson import Feature
 import shapely.wkt
 
 
-class ForecastResultGeoJson(BaseModel):
-    """Forecast results as GeoJSON feature collection"""
+class BaseGeoJson(BaseModel):
+    """Tile geometries as GeoJSON feature collection"""
 
     # Schema attributes
     type: str = "FeatureCollection"
@@ -16,18 +16,7 @@ class ForecastResultGeoJson(BaseModel):
     @staticmethod
     def build_features(rows: List[Dict]) -> List[Feature]:
         """Construct GeoJSON Features from a list of dictionaries"""
-        return [
-            Feature(
-                geometry=shapely.wkt.loads(row["geom"]),
-                id=row["point_id"],
-                properties={
-                    "NO2_mean": row["NO2_mean"],
-                    "NO2_var": row["NO2_var"],
-                    "measurement_start_utc": row["measurement_start_utc"],
-                },
-            )
-            for row in rows
-        ]
+        raise NotImplementedError("Must be implemented by child classes")
 
     class Config:
         """Pydantic configuration"""
@@ -40,7 +29,7 @@ class ForecastResultGeoJson(BaseModel):
                         "type": "Feature",
                         "id": "00015c34-2c2d-4a55-889f-a458ee780b90",
                         "geometry": {
-                            "type": "MultiPolygon",
+                            "type": "Polygon",
                             "coordinates": [
                                 [
                                     [
@@ -55,14 +44,39 @@ class ForecastResultGeoJson(BaseModel):
                                 ]
                             ],
                         },
-                        "properties": {
-                            "NO2_mean": 23.8287315367193,
-                            "NO2_var": 4.11457257231074,
-                            "measurement_start_utc": "2020-08-20T15:08:32.555Z",
-                        },
                     }
                 ],
             }
+        }
+
+
+class ForecastResultGeoJson(BaseGeoJson):
+    """Forecast results as GeoJSON feature collection"""
+
+    @staticmethod
+    def build_features(rows: List[Dict]) -> List[Feature]:
+        """Construct GeoJSON Features from a list of dictionaries"""
+        return [
+            Feature(
+                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
+                id=row["point_id"],
+                properties={
+                    "NO2_mean": row["NO2_mean"],
+                    "NO2_var": row["NO2_var"],
+                    "measurement_start_utc": row["measurement_start_utc"],
+                },
+            )
+            for row in rows
+        ]
+
+    class Config(BaseGeoJson.Config):
+        """Pydantic configuration"""
+
+        schema_extra = BaseGeoJson.Config.schema_extra
+        schema_extra["example"]["features"][0]["properties"] = {
+            "NO2_mean": 23.8287315367193,
+            "NO2_var": 4.11457257231074,
+            "measurement_start_utc": "2020-08-20T15:08:32.555Z",
         }
 
 
@@ -81,14 +95,16 @@ class ForecastResultJson(BaseModel):
         orm_mode = True
 
 
-class GeometryJson(BaseModel):
-    """Forecast results as JSON"""
+class GeometryGeoJson(BaseGeoJson):
+    """Tile geometries as GeoJSON feature collection"""
 
-    # Schema attributes
-    point_id: str
-    geom: str
-
-    class Config:
-        """Pydantic configuration"""
-
-        orm_mode = True
+    @staticmethod
+    def build_features(rows: List[Dict]) -> List[Feature]:
+        """Construct GeoJSON Features from a list of dictionaries"""
+        return [
+            Feature(
+                geometry=list(shapely.wkt.loads(row["geom"]))[0],  # convert to polygon
+                id=row["point_id"],
+            )
+            for row in rows
+        ]
