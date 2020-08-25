@@ -100,7 +100,10 @@ def load_model(
     # TODO dump the model from blob storage to filepath (directory)
     # TODO may need to create a directory for filepath
     try:
-        logger.info("Loading model from blob storage and writing files locally to %s", export_dir)
+        logger.info(
+            "Loading model from blob storage and writing files locally to %s",
+            export_dir,
+        )
         download_blob(
             resource_group,
             storage_container_name,
@@ -113,6 +116,11 @@ def load_model(
         pass  # TODO what exception should be caught?
 
     # use the load function to get the model from the filepath
-    model = load_fn(export_dir, compile_model=compile_model, model_name=model_name, tf_session=tf_session)
+    model = load_fn(
+        export_dir,
+        compile_model=compile_model,
+        model_name=model_name,
+        tf_session=tf_session,
+    )
 
     return model

@@ -11,7 +11,9 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-def save_gpflow1_model_to_file(model: gpflow.models.GPModel, export_dir: Path, **kwargs) -> None:
+def save_gpflow1_model_to_file(
+    model: gpflow.models.GPModel, export_dir: Path, **kwargs
+) -> None:
     """Save a gpflow 1 model to a file.
 
     Args:
@@ -34,6 +36,7 @@ def save_gpflow1_model_to_file(model: gpflow.models.GPModel, export_dir: Path, *
     # save the tensorflow session as well
     tf_saver = tf.compat.v1.train.Saver()
     tf_saver.save(tf_session, str(filepath))
+
 
 def load_gpflow1_model_from_file(export_dir: Path, **kwargs) -> gpflow.models.GPModel:
     """Load a gpflow 1 model from file.

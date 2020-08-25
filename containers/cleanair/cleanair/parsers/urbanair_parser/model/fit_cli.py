@@ -64,7 +64,9 @@ def mrdgp(
     fit_model(model, file_manager, exist_ok=exist_ok)
 
 
-def fit_model(model: ModelMixin, file_manager: FileManager, exist_ok: bool = False) -> ModelMixin:
+def fit_model(
+    model: ModelMixin, file_manager: FileManager, exist_ok: bool = False
+) -> ModelMixin:
     """Train a model."""
 
     # Load configuration file

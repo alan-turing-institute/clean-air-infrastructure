@@ -91,7 +91,11 @@ class ResultQueryMixin:
 
             # filter by datetime
             if start:
-                readings = readings.filter(self.result_table.measurement_start_utc >= start)
+                readings = readings.filter(
+                    self.result_table.measurement_start_utc >= start
+                )
             if upto:
-                readings = readings.filter(self.result_table.measurement_start_utc < upto)
+                readings = readings.filter(
+                    self.result_table.measurement_start_utc < upto
+                )
             return readings

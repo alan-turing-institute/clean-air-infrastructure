@@ -9,11 +9,11 @@ from ...decorators import db_query
 if TYPE_CHECKING:
     from ...databases import Connector
 
+
 class ModelParamsQueryMixin:
     """Class for querying model parameters."""
 
     dbcnxn: Connector
-
 
     @property
     @abstractmethod
@@ -48,13 +48,17 @@ class ModelParamsQueryMixin:
             )
             # maxiter is a first-level for most models except mrdgp
             if (maxiter or kernel) and model_name == "mrdgp":
-                raise NotImplementedError("There are multiple maxiter and kernel parameters for the MR Deep GP.")
+                raise NotImplementedError(
+                    "There are multiple maxiter and kernel parameters for the MR Deep GP."
+                )
             if kernel:
                 readings = readings.filter(
                     self.model_table.model_param["kernel"]["name"].astext == kernel
                 )
             if maxiter:
-                readings = readings.filter(self.model_table.model_param["maxiter"] == maxiter)
+                readings = readings.filter(
+                    self.model_table.model_param["maxiter"] == maxiter
+                )
             if param_id:
                 readings = readings.filter(self.model_table.param_id == param_id)
             return readings

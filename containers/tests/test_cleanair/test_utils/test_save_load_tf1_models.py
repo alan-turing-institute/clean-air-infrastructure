@@ -44,9 +44,9 @@ def test_save_gpflow1_model(tf_session, model_dir, model_name) -> None:
     # check filepaths exist
     model_fp = model_cache / "model.h5"
     checkpoint_fp = model_cache / "checkpoint"
-    assert model_dir.exists()       # check the directory is created
-    assert model_fp.exists()        # check the model is created
-    assert checkpoint_fp.exists()   # check checkpoints for TF session
+    assert model_dir.exists()  # check the directory is created
+    assert model_fp.exists()  # check the model is created
+    assert checkpoint_fp.exists()  # check checkpoints for TF session
 
     # save the dataframe to the temp directory - we can compare the variable values
     model_df = model.as_pandas_table()
@@ -62,10 +62,7 @@ def test_load_gpflow1_model(tf_session, model_dir) -> None:
     assert model_dir.exists()
     assert model_cache.exists()
 
-    model = load_gpflow1_model_from_file(
-        model_cache,
-        tf_session=tf_session,
-    )
+    model = load_gpflow1_model_from_file(model_cache, tf_session=tf_session,)
     assert isinstance(model, gpflow.models.GPR)
 
     print("FROM MODEL")

@@ -5,9 +5,15 @@ from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
 import json
 import pickle
 import typer
+import pandas as pd
 from ...loggers import red
 from ...types import (
-    DataConfig, FullDataConfig, MRDGPParams, Source, SVGPParams, TargetDict
+    DataConfig,
+    FullDataConfig,
+    MRDGPParams,
+    Source,
+    SVGPParams,
+    TargetDict,
 )
 from .state import (
     state,
@@ -27,11 +33,10 @@ if TYPE_CHECKING:
     from pathlib import Path
     import gpflow
     import tensorflow as tf
-    import pandas as pd
     from pydantic import BaseModel
 
 
-class FileManager():
+class FileManager:
     """Class for managing files for the urbanair project."""
 
     def __init__(self, input_dir: Optional[Path] = None) -> None:
@@ -101,43 +106,60 @@ class FileManager():
         """Load training data from either the CACHE or input_dir"""
         return self.__load_pickle(MODEL_TRAINING_PICKLE)
 
-
     def load_test_data(self) -> Dict[Source, pd.DataFrame]:
         """Load test data from either the CACHE or input_dir"""
         return self.__load_pickle(MODEL_PREDICTION_PICKLE)
-
 
     def load_training_pred_from_pickle(self) -> TargetDict:
         """Load the predictions on the training set from a pickle."""
         return self.__load_pickle(TRAINING_RESULT_PICKLE)
 
-
     def load_forecast_from_pickle(self) -> TargetDict:
         """Load the predictions on the forecast set from a pickle."""
         return self.__load_pickle(FORECAST_RESULT_PICKLE)
 
-    def save_forecast_to_csv(
-        self, forecast_df: pd.DataFrame, source: Source
+    def load_forecast_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load the forecasts for a single source as csv."""
+        result_fp = self.input_dir.joinpath(
+            *RESULT_CACHE.parts[-1:], f"{source.value}_forecast.csv"
+        )
+        return pd.read_csv(result_fp)
+
+    def load_training_pred_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load the training predictions for a single source from csv."""
+        result_fp = self.input_dir.joinpath(
+            *RESULT_CACHE.parts[-1:], f"{source.value}_training_pred.csv"
+        )
+        return pd.read_csv(result_fp)
+
+    def __save_result_to_csv(
+        self, result_df: pd.DataFrame, source: Source, filename: str
     ) -> None:
+        """Save a result to file."""
+        result_fp = self.input_dir.joinpath(*RESULT_CACHE.parts[-1:])
+        if not result_fp.exists():
+            result_fp.mkdir(parents=False, exist_ok=True)
+        result_df.to_csv(result_fp / f"{source.value}_{filename}.csv", index=False)
+
+    def save_forecast_to_csv(self, forecast_df: pd.DataFrame, source: Source) -> None:
         """Save the forecast dataframe to a csv.
 
         Args:
             forecast_df: DataFrame of forecasts for a given source.
             source: Source predicted at, e.g. laqn, hexgrid.
         """
-        result_fp = self.input_dir.joinpath(*RESULT_CACHE.parts[-1:])
-        forecast_df.to_csv(result_fp / f"{source.value}_forecast.csv")
+        self.__save_result_to_csv(forecast_df, source, "forecast")
 
-
-    def save_training_result_to_csv(self, result_df: pd.DataFrame, source: Source) -> None:
+    def save_training_pred_to_csv(
+        self, result_df: pd.DataFrame, source: Source
+    ) -> None:
         """Save the predictions on the training set to a csv for a given source.
 
         Args:
             result_df: DataFrame of predictions for a given source on the training set.
             source: Source predicted at, e.g. laqn, hexgrid.
         """
-        result_fp = self.input_dir.joinpath(*RESULT_CACHE.parts[-1:])
-        result_df.to_csv(result_fp / f"{source.value}_training_results.csv")
+        self.__save_result_to_csv(result_df, source, "training_pred")
 
     def load_model(
         self,
@@ -161,7 +183,12 @@ class FileManager():
         """
         # use the load function to get the model from the filepath
         export_dir = self.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
-        model = load_fn(export_dir, compile_model=compile_model, model_name=model_name, tf_session=tf_session)
+        model = load_fn(
+            export_dir,
+            compile_model=compile_model,
+            model_name=model_name,
+            tf_session=tf_session,
+        )
         return model
 
     def save_model(
@@ -182,7 +209,6 @@ class FileManager():
         export_dir = self.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
         Path(export_dir).mkdir(exist_ok=True)
         save_fn(model, export_dir, model_name=model_name)
-
 
     def load_model_params(self, model_name: str) -> Union[MRDGPParams, SVGPParams]:
         """Load the model params from a json file."""
@@ -205,6 +231,6 @@ class FileManager():
         """Save the results dataframe to a file."""
         self.__save_pickle(y_pred, FORECAST_RESULT_PICKLE)
 
-    def save_training_result_to_pickle(self, y_pred: TargetDict) -> None:
-        """Save the training results to a pickled file."""
+    def save_training_pred_to_pickle(self, y_pred: TargetDict) -> None:
+        """Save the training predictions to a pickled file."""
         self.__save_pickle(y_pred, TRAINING_RESULT_PICKLE)

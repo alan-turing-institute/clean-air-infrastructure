@@ -8,6 +8,7 @@ from ...decorators import db_query
 if TYPE_CHECKING:
     from ...databases import Connector
 
+
 class AirQualityDataConfigQueryMixin:
     """Class for querying the data config settings for air quality."""
 
@@ -33,10 +34,12 @@ class AirQualityDataConfigQueryMixin:
             if train_start_date:
                 # NOTE uses a json b query to get the entry of the dictionary
                 readings = readings.filter(
-                    AirQualityDataTable.data_config["train_start_date"].astext >= train_start_date
+                    AirQualityDataTable.data_config["train_start_date"].astext
+                    >= train_start_date
                 )
             if pred_start_date:
                 readings = readings.filter(
-                    AirQualityDataTable.data_config["pred_start_date"].astext >= pred_start_date
+                    AirQualityDataTable.data_config["pred_start_date"].astext
+                    >= pred_start_date
                 )
             return readings
