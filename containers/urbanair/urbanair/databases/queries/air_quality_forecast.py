@@ -74,9 +74,11 @@ def query_geometries_hexgrid(
     """
     Query geometries for combining with plain JSON forecasts
     """
-    query = db.query(HexGrid.point_id, func.ST_AsText(HexGrid.geom).label("geom"))
-    # Note that the hexgrid uses SRID 4326 which is not aligned with lat/lon
-    # We return all hexes that overlap with any part of the bounding box
+    query = db.query(
+        HexGrid.point_id, func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326))
+    )
+    # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
+    # overlap with any part of the lat/lon bounding box
     if bounding_box:
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
@@ -118,7 +120,7 @@ def query_forecasts_hexgrid(
             AirQualityResultTable.measurement_start_utc,
             AirQualityResultTable.NO2_mean,
             AirQualityResultTable.NO2_var,
-            func.ST_AsText(HexGrid.geom).label("geom"),
+            func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
         )
     else:
         query = db.query(
@@ -137,8 +139,8 @@ def query_forecasts_hexgrid(
         AirQualityResultTable.measurement_start_utc < end_datetime,
     )
 
-    # Note that the hexgrid uses SRID 4326 which is not aligned with lat/lon
-    # We return all hexes that overlap with any part of the bounding box
+    # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
+    # overlap with any part of the lat/lon bounding box
     if bounding_box:
         query = query.filter(
             func.ST_Intersects(HexGrid.geom, func.ST_MakeEnvelope(*bounding_box, 4326))
