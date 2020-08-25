@@ -12,10 +12,10 @@ from ..databases.schemas.air_quality_forecast import (
     GeometryGeoJson,
 )
 from ..databases.queries.air_quality_forecast import (
-    cacheable_available_instance_ids,
-    cacheable_forecasts_hexgrid_as_json,
-    cacheable_forecasts_hexgrid_as_geojson,
-    cacheable_geometries_hexgrid,
+    cached_instance_ids,
+    cached_forecast_hexgrid_json,
+    cached_forecast_hexgrid_geojson,
+    cached_geometries_hexgrid,
 )
 from ..responses import GeoJSONResponse
 
@@ -120,13 +120,11 @@ def forecast_hexgrid_json(
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
-    available_instance_ids = cacheable_available_instance_ids(
-        db, start_datetime, end_datetime
-    )
-    instance_id = available_instance_ids[0][0]
+    instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
+    instance_id = instance_ids[0][0]
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cacheable_forecasts_hexgrid_as_json(
+    query_results = cached_forecast_hexgrid_json(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
@@ -159,7 +157,7 @@ def forecast_hexgrid_geometries(
     request_start = time()
 
     # Get forecasts in this range (using a bounding box if specified)
-    query_results = cacheable_geometries_hexgrid(db, bounding_box=bounding_box)
+    query_results = cached_geometries_hexgrid(db, bounding_box=bounding_box)
 
     # Return the query results as a GeoJSON FeatureCollection
     logger.info(
@@ -199,13 +197,11 @@ def forecast_hexgrid_geojson(
     end_datetime = start_datetime + timedelta(hours=1)
 
     # Get the most recent instance ID among those which predict in the required interval
-    available_instance_ids = cacheable_available_instance_ids(
-        db, start_datetime, end_datetime
-    )
-    instance_id = available_instance_ids[0][0]
+    instance_ids = cached_instance_ids(db, start_datetime, end_datetime)
+    instance_id = instance_ids[0][0]
 
     # Get forecasts in this range as a GeoJSON FeatureCollection (using a bounding box if specified)
-    query_results = cacheable_forecasts_hexgrid_as_geojson(
+    query_results = cached_forecast_hexgrid_geojson(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,

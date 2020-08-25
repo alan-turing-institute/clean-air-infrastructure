@@ -16,26 +16,38 @@ from cleanair.databases.tables import (
 
 
 class TestBasic:
-    def test_index(self, client_class):
+    """Basic tests that the API is running"""
+
+    @staticmethod
+    def test_index(client_class):
         """Test the index returns html"""
         response = client_class.get("/")
         assert "text/html" in response.headers["content-type"]
         assert response.status_code == 200
 
-    def test_air_quality_docs(self, client_class):
+    @staticmethod
+    def test_air_quality_docs(client_class):
         "Test air quality docs"
         response = client_class.get("/docs#/air_quality")
         assert response.status_code == 200
 
 
 class TestData:
+    """Tests involving data retrieval"""
+
+    @staticmethod
     def test_hexgrid_data_setup(
-        self, secretfile, connection_class, mock_metapoint, mock_hexgrid
+        secretfile, connection_class, mock_metapoint, mock_hexgrid
     ):
         """Insert test data"""
         try:
             # Insert data
             writer = DBWriter(secretfile=secretfile, connection=connection_class)
+            # Note that the following lines will delete any existing data!
+            with writer.dbcnxn.open_session() as session:
+                session.query(MetaPoint).filter(MetaPoint.source == "hexgrid").delete()
+                session.query(HexGrid).delete()
+                session.commit()
             writer.commit_records(
                 mock_metapoint, on_conflict="overwrite", table=MetaPoint,
             )
@@ -46,8 +58,8 @@ class TestData:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
+    @staticmethod
     def test_aq_data_setup(
-        self,
         secretfile,
         connection_class,
         mock_air_quality_data,
@@ -83,7 +95,8 @@ class TestData:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
-    def test_json_endpoint(self, client_class, mock_air_quality_result):
+    @staticmethod
+    def test_json_endpoint(client_class, mock_air_quality_result):
         """Test JSON endpoint"""
         request_time = datetime.now() + timedelta(hours=1)
 
@@ -103,9 +116,8 @@ class TestData:
         ).isoformat()
         assert all([d["measurement_start_utc"] == request_hour for d in data])
 
-    def test_geojson_endpoint(
-        self, client_class, mock_air_quality_result, mock_hexgrid
-    ):
+    @staticmethod
+    def test_geojson_endpoint(client_class, mock_air_quality_result, mock_hexgrid):
         """Test GeoJSON endpoint"""
         request_time = datetime.now() + timedelta(hours=1)
 
@@ -147,9 +159,8 @@ class TestData:
                 ]
             )
 
-    def test_geometries_endpoint(
-        self, client_class, mock_air_quality_result, mock_hexgrid
-    ):
+    @staticmethod
+    def test_geometries_endpoint(client_class, mock_air_quality_result, mock_hexgrid):
         """Test geometries endpoint"""
         # Check response
         response = client_class.get("/api/v1/air_quality/forecast/hexgrid/geometries")
@@ -157,13 +168,14 @@ class TestData:
         data = response.json()
 
         # Check that we have the correct number of results
-        assert len(data) == len(mock_air_quality_result) / 49
+        assert len(data["features"]) == len(mock_air_quality_result) / 49
 
         # Require that we have the same number of input and output geometries
         input_geometries = [
             shapely.wkt.loads(point["geom"].split(";")[1]) for point in mock_hexgrid
         ]
-        output_geometries = [shapely.wkt.loads(point["geom"]) for point in data]
+        # output_geometries = [shapely.wkt.loads(point["geom"]) for point in data]
+        output_geometries = [shape(feature["geometry"]) for feature in data["features"]]
         assert len(input_geometries) == len(output_geometries)
 
         # Require all output geometries to have (close-to) 100% overlap with an input geometry

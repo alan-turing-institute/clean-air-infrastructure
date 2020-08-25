@@ -19,7 +19,7 @@ logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 
 @db_query
-def query_available_instance_ids(
+def query_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Query:
     """
@@ -55,7 +55,7 @@ def query_available_instance_ids(
     cache=TTLCache(maxsize=256, ttl=60),
     key=lambda _, *args, **kwargs: hashkey(*args, **kwargs),
 )
-def cacheable_available_instance_ids(
+def cached_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Optional[List[Tuple]]:
     """Cache available model instances"""
@@ -64,7 +64,7 @@ def cacheable_available_instance_ids(
         start_datetime,
         end_datetime,
     )
-    return query_available_instance_ids(db, start_datetime, end_datetime).all()
+    return query_instance_ids(db, start_datetime, end_datetime).all()
 
 
 @db_query
@@ -87,7 +87,7 @@ def query_geometries_hexgrid(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_geometries_hexgrid(
+def cached_geometries_hexgrid(
     db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> GeometryGeoJson:
     """Cache geometries with optional bounding box"""
@@ -97,9 +97,6 @@ def cacheable_geometries_hexgrid(
     query_results = query_geometries_hexgrid(db, bounding_box=bounding_box)
     # Return the query results as a GeoJSON FeatureCollection
     features = GeometryGeoJson.build_features([r._asdict() for r in query_results])
-
-    print(GeometryGeoJson.Config.schema_extra)
-
     return GeometryGeoJson(features=features)
 
 
@@ -152,7 +149,7 @@ def query_forecasts_hexgrid(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_forecasts_hexgrid_as_json(
+def cached_forecast_hexgrid_json(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -183,7 +180,7 @@ def cacheable_forecasts_hexgrid_as_json(
 @cached(
     cache=LRUCache(maxsize=256), key=lambda _, *args, **kwargs: hashkey(*args, **kwargs)
 )
-def cacheable_forecasts_hexgrid_as_geojson(
+def cached_forecast_hexgrid_geojson(
     db: Session,
     instance_id: str,
     start_datetime: datetime,
@@ -191,7 +188,7 @@ def cacheable_forecasts_hexgrid_as_geojson(
     bounding_box: Optional[Tuple[float]] = None,
 ) -> ForecastResultGeoJson:
     """Cache forecasts with geometry with optional bounding box"""
-    query_results = cacheable_forecasts_hexgrid_as_json(
+    query_results = cached_forecast_hexgrid_json(
         db,
         instance_id=instance_id,
         start_datetime=start_datetime,
