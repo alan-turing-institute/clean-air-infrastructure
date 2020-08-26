@@ -1,5 +1,5 @@
 """UrbanAir API database interactions"""
-from typing import List, Dict, Optional
+from typing import List, Tuple, Optional
 from fastapi import HTTPException
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Query, Session
@@ -17,7 +17,7 @@ SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 # Dependency
 def get_db() -> Session:
-    "Get a database session"
+    """Get a database session"""
     db = SESSION_LOCAL()
     try:
         yield db
@@ -25,11 +25,8 @@ def get_db() -> Session:
         db.close()
 
 
-def all_or_404(query: Query) -> Optional[List[Dict]]:
-    """
-    Return all rows from a query and raise a 404 if empty
-    """
-
+def all_or_404(query: Query) -> Optional[List[Tuple]]:
+    """Return all rows from a query and raise a 404 if empty."""
     data = query.all()
 
     if len(data) > 0:

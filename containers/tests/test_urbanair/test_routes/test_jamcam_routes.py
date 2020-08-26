@@ -35,18 +35,6 @@ class TestRaw:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
-    # def test_12_hours(self, client_class, video_stat_records):
-    #     """Test 12 hour request starttime"""
-
-    #     # Check response
-    #     response = client_class.get(
-    #         "/api/v1/jamcams/raw/", params={"starttime": "2020-01-01T00:00:00"}
-    #     )
-    #     assert response.status_code == 200
-
-    #     data = response.json()
-    #     assert len(data) == len(video_stat_records) / 2
-
     def test_24_hours(self, client_class, video_stat_records):
         """Test 24 hour request startime/endtime"""
 
@@ -139,7 +127,7 @@ class TestRaw:
     def test_request_404_2w(self, client_class, video_stat_records):
         """Request more than 2 weeks hours"""
 
-        camera_id = video_stat_records[0].camera_id
+        camera_id = video_stat_records[0]["camera_id"]
         response = client_class.get(
             "/api/v1/jamcams/raw/",
             params={
@@ -153,9 +141,9 @@ class TestRaw:
         assert "Cannot request more than one week" in response.json()["detail"]
 
     def test_request_404_1_week(self, client_class, video_stat_records):
-        """Requst when no data is available"""
+        """Request when no data is available"""
 
-        camera_id = video_stat_records[0].camera_id.split(".mp4")[0]
+        camera_id = video_stat_records[0]["camera_id"].split(".mp4")[0]
         response = client_class.get(
             "/api/v1/jamcams/raw/",
             params={
