@@ -75,7 +75,8 @@ def query_geometries_hexgrid(
     Query geometries for combining with plain JSON forecasts
     """
     query = db.query(
-        HexGrid.point_id, func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326))
+        HexGrid.point_id,
+        func.ST_AsText(func.ST_Transform(HexGrid.geom, 4326)).label("geom"),
     )
     # Note that SRID 4326 is not aligned with lat/lon so we return all geometries that
     # overlap with any part of the lat/lon bounding box

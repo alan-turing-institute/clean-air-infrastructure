@@ -36,27 +36,9 @@ class TestData:
     """Tests involving data retrieval"""
 
     @staticmethod
-    def test_hexgrid_data_setup(
-        secretfile, connection_class, mock_metapoint, mock_hexgrid
-    ):
-        """Insert test data"""
-        try:
-            # Insert data
-            writer = DBWriter(secretfile=secretfile, connection=connection_class)
-            # Note that the following lines will delete any existing data!
-            with writer.dbcnxn.open_session() as session:
-                session.query(MetaPoint).filter(MetaPoint.source == "hexgrid").delete()
-                session.query(HexGrid).delete()
-                session.commit()
-            writer.commit_records(
-                mock_metapoint, on_conflict="overwrite", table=MetaPoint,
-            )
-            writer.commit_records(
-                mock_hexgrid, on_conflict="overwrite", table=HexGrid,
-            )
-
-        except IntegrityError:
-            pytest.fail("Dummy data insert")
+    def test_hexgrid_data_setup(sample_hexgrid_points):
+        """Ensure that there are 5 hexgrid points"""
+        assert len(sample_hexgrid_points) == 5
 
     @staticmethod
     def test_aq_data_setup(
@@ -117,7 +99,9 @@ class TestData:
         assert all([d["measurement_start_utc"] == request_hour for d in data])
 
     @staticmethod
-    def test_geojson_endpoint(client_class, mock_air_quality_result, mock_hexgrid):
+    def test_geojson_endpoint(
+        client_class, mock_air_quality_result, sample_hexgrid_points
+    ):
         """Test GeoJSON endpoint"""
         request_time = datetime.now() + timedelta(hours=1)
 
@@ -145,7 +129,8 @@ class TestData:
 
         # Require that we have the same number of input and output geometries
         input_geometries = [
-            shapely.wkt.loads(point["geom"].split(";")[1]) for point in mock_hexgrid
+            shapely.wkt.loads(point["geom"].split(";")[1])
+            for point in sample_hexgrid_points
         ]
         output_geometries = [shape(feature["geometry"]) for feature in data["features"]]
         assert len(input_geometries) == len(output_geometries)
@@ -160,7 +145,9 @@ class TestData:
             )
 
     @staticmethod
-    def test_geometries_endpoint(client_class, mock_air_quality_result, mock_hexgrid):
+    def test_geometries_endpoint(
+        client_class, mock_air_quality_result, sample_hexgrid_points
+    ):
         """Test geometries endpoint"""
         # Check response
         response = client_class.get("/api/v1/air_quality/forecast/hexgrid/geometries")
@@ -168,14 +155,16 @@ class TestData:
         data = response.json()
 
         # Check that we have the correct number of results
-        assert len(data["features"]) == len(mock_air_quality_result) / 49
+        mock_points = list({r["point_id"] for r in mock_air_quality_result})
+        features = [d for d in data["features"] if d["id"] in mock_points]
+        assert len(features) == len(mock_points)
 
         # Require that we have the same number of input and output geometries
         input_geometries = [
-            shapely.wkt.loads(point["geom"].split(";")[1]) for point in mock_hexgrid
+            shapely.wkt.loads(point["geom"].split(";")[1])
+            for point in sample_hexgrid_points
         ]
-        # output_geometries = [shapely.wkt.loads(point["geom"]) for point in data]
-        output_geometries = [shape(feature["geometry"]) for feature in data["features"]]
+        output_geometries = [shape(feature["geometry"]) for feature in features]
         assert len(input_geometries) == len(output_geometries)
 
         # Require all output geometries to have (close-to) 100% overlap with an input geometry
