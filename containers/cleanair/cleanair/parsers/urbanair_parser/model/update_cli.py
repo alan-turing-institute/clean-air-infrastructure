@@ -1,5 +1,6 @@
 """Command line interface for updating the database with results."""
 
+import logging
 from datetime import datetime
 from pathlib import Path
 import typer
@@ -81,6 +82,8 @@ def metrics(instance_id: str):
     logger = get_logger("Update metrics.")
     logger.info("Reading instance parameters and results from the database.")
     secretfile: str = state["secretfile"]
+    if state["verbose"]:
+        logger.setLevel(logging.DEBUG)
 
     instance_metrics = AirQualityMetrics(instance_id, secretfile=secretfile)
     instance_metrics.evaluate_spatial_metrics()

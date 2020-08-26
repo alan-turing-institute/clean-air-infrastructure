@@ -84,7 +84,20 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         train_df["forecast"] = False  # split into train and test
         test_df["forecast"] = True
         self.logger.info("Merging the train and test dataframes for LAQN.")
-        self.observation_df: pd.DataFrame = pd.concat([train_df, test_df])
+        self.logger.debug("Number of points in the train dataframe for LAQN is %s", len(train_df))
+        self.logger.debug("Number of points in the test dataframe for LAQN is %s", len(test_df))
+        self.observation_df: pd.DataFrame = pd.concat([train_df, test_df], ignore_index=True)
+        self.logger.debug(self.observation_df)
+        self.logger.debug("%s rows in the observation dataframe.", len(self.observation_df))
+        self.logger.debug("%s rows in the result dataframe.", len(self.result_df))
+        self.logger.debug("Number of intersecting point ids is %s", len(set(self.observation_df.point_id.unique()).intersection(self.result_df.point_id.unique())))
+        self.logger.debug("Type of point id at index 0 for observation_df is %s and for result_df is %s", type(self.observation_df.at[0, "point_id"]), type(self.result_df.at[0, "point_id"]))
+        print(self.observation_df.at[0, "point_id"], self.result_df.at[0, "point_id"])
+        self.logger.debug("Making sure the datetime cols are in the same format for observation and result dfs.")
+        self.observation_df["measurement_start_utc"] = pd.to_datetime(self.observation_df.measurement_start_utc, utc=True)
+        self.result_df["measurement_start_utc"] = pd.to_datetime(self.result_df.measurement_start_utc, utc=True)
+        self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
+        self.result_df["point_id"] = self.result_df.point_id.apply(str)
         self.spatial_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualitySpatialMetricsTable)
         )
@@ -116,7 +129,12 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self, group_df: pd.DataFrame, pollutant: Species
     ) -> Dict[str, float]:
         """Given a group run the metrics."""
-        group_metrics = dict(source=Source.laqn.value, pollutant=pollutant.value,)
+        group_metrics = dict(
+            instance_id=group_df.instance_id.iloc[0],
+            data_id=group_df.data_id.iloc[0],
+            source=Source.laqn.value,
+            pollutant=pollutant.value,
+        )
         if self.mae:
             group_metrics["mae"] = sklearn.metrics.mean_absolute_error(
                 group_df[pollutant.value], group_df[pollutant.value + "_mean"]
@@ -133,8 +151,8 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
 
     def evaluate_temporal_metrics(self) -> None:
         """Evaluate metrics by grouping by the datetime."""
-        joined_df = self.observation_df.join(
-            self.result_df, on=["point_id", "measurement_start_utc"]
+        joined_df = self.observation_df.merge(
+            self.result_df, on=["point_id", "measurement_start_utc"], how="inner"
         )
         self.logger.info(
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
@@ -143,19 +161,24 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         metrics_records = list()
         for (timestamp, forecast), group_df in groups:
             for pollutant in self.data_config.species:
+                if len(group_df) == 0:
+                    continue
                 row = self.__evaluate_group(group_df, pollutant)
                 row["measurement_start_utc"] = timestamp
                 row["measurement_end_utc"] = timestamp + timedelta(hours=1)
                 row["forecast"] = forecast
                 metrics_records.append(row)
         self.temporal_df = pd.DataFrame(metrics_records)
-        self.logger.info("%s rows in the temporal metrics dataframe.")
+        self.logger.info("%s rows in the temporal metrics dataframe.", len(self.temporal_df))
 
     def evaluate_spatial_metrics(self) -> None:
         """Evaluate metrics by grouping by point id."""
-        joined_df = self.observation_df.join(
-            self.result_df, on=["point_id", "measurement_start_utc"]
+        self.logger.debug("Columns in left (observation) df %s", list(self.observation_df.columns))
+        self.logger.debug("Columns in right (result) df %s", list(self.result_df.columns))
+        joined_df = self.observation_df.merge(
+            self.result_df, on=["point_id", "measurement_start_utc"], how="inner",
         )
+        self.logger.debug(joined_df)
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
@@ -163,12 +186,14 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         metrics_records = list()
         for (point_id, forecast), group_df in groups:
             for pollutant in self.data_config.species:
+                if len(group_df) == 0:
+                    continue
                 row = self.__evaluate_group(group_df, pollutant)
                 row["point_id"] = point_id
                 row["forecast"] = forecast
                 metrics_records.append(row)
         self.spatial_df = pd.DataFrame(metrics_records)
-        self.logger.info("%s rows in the spatial metrics dataframe.")
+        self.logger.info("%s rows in the spatial metrics dataframe.", len(self.spatial_df))
 
     def update_remote_tables(self):
         """Write the metrics to the air quality modelling schema."""
