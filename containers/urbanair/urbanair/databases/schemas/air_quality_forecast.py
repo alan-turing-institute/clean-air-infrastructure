@@ -4,6 +4,7 @@ from typing import List, Dict
 from pydantic import BaseModel
 from geojson import Feature
 import shapely.wkt
+from urbanair.types import JSONType
 
 
 class BaseGeoJson(BaseModel):
@@ -21,7 +22,7 @@ class BaseGeoJson(BaseModel):
     class Config:
         """Pydantic configuration"""
 
-        schema_extra = {
+        schema_extra: JSONType = {
             "example": {
                 "type": "FeatureCollection",
                 "features": [
@@ -73,11 +74,12 @@ class ForecastResultGeoJson(BaseGeoJson):
         """Pydantic configuration"""
 
         schema_extra = BaseGeoJson.Config.schema_extra
-        schema_extra["example"]["features"][0]["properties"] = {
-            "NO2_mean": 23.8287315367193,
-            "NO2_var": 4.11457257231074,
-            "measurement_start_utc": "2020-08-20T15:08:32.555Z",
-        }
+        for feature in schema_extra["example"]["features"]:
+            feature["properties"] = {
+                "NO2_mean": 23.8287315367193,
+                "NO2_var": 4.11457257231074,
+                "measurement_start_utc": "2020-08-20T15:08:32.555Z",
+            }
 
 
 class ForecastResultJson(BaseModel):

@@ -1,6 +1,6 @@
 """Misc types"""
 from enum import Enum, unique
-from typing import List
+from typing import Any, Dict, List, Union
 
 
 @unique
@@ -33,3 +33,8 @@ class DetectionClass(str, Enum):
         """Return a list of 'all' types mapped"""
 
         return [cls.map_detection_class(i) for i in cls if i != cls.all_classes]
+
+
+JSONType = Union[
+    Dict[str, Any], List[dict],
+]
