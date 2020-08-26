@@ -1,5 +1,6 @@
 """Confif for urbanair tests"""
 from datetime import datetime, timedelta
+from itertools import product
 from fastapi.testclient import TestClient
 import pytest
 from dateutil import rrule, parser
@@ -68,24 +69,19 @@ def video_stat_records():
         dtstart=parser.isoparse("2020-01-01T00:00:00"),
         until=parser.isoparse("2020-01-01T23:00:00"),
     )
-
-    records = []
-    idx = 0
-    for vtime in video_upload_datetimes:
-        for dect in DetectionClass.map_all():
-            records.append(
-                {
-                    "id": idx,
-                    "camera_id": "54335.234234",
-                    "video_upload_datetime": vtime,
-                    "detection_class": dect,
-                    "counts": np.random.poisson(lam=10),
-                    "source": 0,
-                }
-            )
-
-            idx += 1
-    return records
+    return [
+        {
+            "id": idx,
+            "camera_id": "54335.234234",
+            "video_upload_datetime": vtime,
+            "detection_class": dect,
+            "counts": np.random.poisson(lam=10),
+            "source": 0,
+        }
+        for idx, (vtime, dect) in enumerate(
+            product(video_upload_datetimes, DetectionClass.map_all())
+        )
+    ]
 
 
 MODEL_INSTANCE_ID = "d2c0a1c0de9f49cb9fbf6073fb08a213e02800325bd04aae83c6ab6b76618ca4"
