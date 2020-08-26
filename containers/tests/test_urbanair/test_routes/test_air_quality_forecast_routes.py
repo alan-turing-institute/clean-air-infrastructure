@@ -10,8 +10,6 @@ from cleanair.databases.tables import (
     AirQualityInstanceTable,
     AirQualityModelTable,
     AirQualityResultTable,
-    HexGrid,
-    MetaPoint,
 )
 
 

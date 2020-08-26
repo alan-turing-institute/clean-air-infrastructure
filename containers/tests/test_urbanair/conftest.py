@@ -153,7 +153,9 @@ def sample_hexgrid_points(secretfile, connection_class):
 
 
 @pytest.fixture(scope="class")
-def mock_air_quality_result(sample_hexgrid_points):
+def mock_air_quality_result(
+    sample_hexgrid_points,
+):  # pylint: disable=redefined-outer-name
     """Fake data for air quality routes test"""
     measurement_datetimes = rrule.rrule(
         rrule.HOURLY,

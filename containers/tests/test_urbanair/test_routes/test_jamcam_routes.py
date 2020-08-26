@@ -35,18 +35,6 @@ class TestRaw:
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
-    # def test_12_hours(self, client_class, video_stat_records):
-    #     """Test 12 hour request starttime"""
-
-    #     # Check response
-    #     response = client_class.get(
-    #         "/api/v1/jamcams/raw/", params={"starttime": "2020-01-01T00:00:00"}
-    #     )
-    #     assert response.status_code == 200
-
-    #     data = response.json()
-    #     assert len(data) == len(video_stat_records) / 2
-
     def test_24_hours(self, client_class, video_stat_records):
         """Test 24 hour request startime/endtime"""
 
