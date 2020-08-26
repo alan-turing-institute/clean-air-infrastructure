@@ -74,7 +74,7 @@ class ForecastResultGeoJson(BaseGeoJson):
         """Pydantic configuration"""
 
         schema_extra = BaseGeoJson.Config.schema_extra
-        for feature in schema_extra["example"]["features"]:
+        for feature in schema_extra["example"]["features"]:  # type: ignore
             feature["properties"] = {
                 "NO2_mean": 23.8287315367193,
                 "NO2_var": 4.11457257231074,

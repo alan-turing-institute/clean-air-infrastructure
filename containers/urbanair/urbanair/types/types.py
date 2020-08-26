@@ -35,6 +35,4 @@ class DetectionClass(str, Enum):
         return [cls.map_detection_class(i) for i in cls if i != cls.all_classes]
 
 
-JSONType = Union[
-    Dict[str, Any], List[dict],
-]
+JSONType = Union[Dict[str, Any], List[Dict[str, Any]]]
