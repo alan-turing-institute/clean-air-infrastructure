@@ -4,7 +4,6 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import typer
-import pandas as pd
 from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
@@ -31,11 +30,16 @@ def results(
     )
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(model_name)
-    y_pred = file_manager.load_forecast_from_pickle()
+    y_forecast = file_manager.load_forecast_from_pickle()
+    y_training_pred = file_manager.load_training_pred_from_pickle()
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
     model_data = ModelDataExtractor()
+    train_data = file_manager.load_training_data()
+    x_train, y_train, index_train = model_data.get_data_arrays(
+        full_config, train_data, prediction=False,
+    )
     test_data = file_manager.load_test_data()
     x_test, y_test, index_test = model_data.get_data_arrays(
         full_config, test_data, prediction=True,
@@ -56,23 +60,35 @@ def results(
     instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
 
-    all_results = pd.DataFrame()
     for source in test_data.keys():
-        result_df = ModelDataExtractor.join_forecast_on_dataframe(
-            test_data[source], y_pred[source], index_test[source]
+        forecast_df = ModelDataExtractor.join_forecast_on_dataframe(
+            test_data[source], y_forecast[source], index_test[source]
         )
+
         # make sure the point id is a string not UUID
-        result_df["point_id"] = result_df.point_id.apply(str)
-        all_results = pd.concat([all_results, result_df], axis=0)
+        forecast_df["point_id"] = forecast_df.point_id.apply(str)
         logger.info("Writing the forecasts to CSV for source %s", source.value)
-        file_manager.save_forecast_to_csv(result_df, source)
+        file_manager.save_forecast_to_csv(forecast_df, source)
 
         # create a results object and write results + params
         logger.info("Writing forecasts to result table for source %s", source.value)
         result = AirQualityResult(
-            instance.instance_id, instance.data_id, result_df, secretfile
+            instance.instance_id, instance.data_id, forecast_df, secretfile
         )
         result.update_remote_tables()  # write results to DB
+    for source in train_data.keys():
+        logger.info("Writing the training predictions to CSV for source %s", source.value)
+
+        training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
+            train_data[source], y_training_pred[source], index_train[source],
+        )
+        training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
+        file_manager.save_training_pred_to_csv(training_pred_df, source)
+        logger.info("Writing training predictions to result table for source %s", source.value)
+        result = AirQualityResult(
+            instance.instance_id, instance.data_id, training_pred_df, secretfile=secretfile
+        )
+        result.update_remote_tables()
     logger.info("Instance %s result written to database.", instance.instance_id)
 
 
