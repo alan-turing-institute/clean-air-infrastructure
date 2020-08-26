@@ -1,6 +1,14 @@
 """Types for the cleanair package."""
 
-from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
+from .enum_types import (
+    ClusterId,
+    Species,
+    Source,
+    FeatureNames,
+    FeatureBufferSize,
+    ModelName,
+    Tag,
+)
 from .dataset_types import (
     DataConfig,
     DatasetDict,

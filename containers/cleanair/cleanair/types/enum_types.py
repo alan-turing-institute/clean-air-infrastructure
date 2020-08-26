@@ -3,6 +3,16 @@ from enum import Enum, unique
 
 
 @unique
+class ClusterId(str, Enum):
+    """Ids for clusters."""
+
+    laptop = "laptop"
+    pearl = "pearl"
+    kubernetes = "kubernetes"
+    orac = "orac"
+
+
+@unique
 class FeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"
