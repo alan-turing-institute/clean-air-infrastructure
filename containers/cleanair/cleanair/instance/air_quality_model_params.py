@@ -1,12 +1,7 @@
 """Class for writing model params to the DB."""
-
-# from __future__ import annotations
-# from typing import TYPE_CHECKING
 from .params import ModelParamsMixin
 from ..databases import DBWriter
 from ..databases.tables import AirQualityModelTable
-
-# if TYPE_CHECKING:
 from ..types import ModelParams
 
 
@@ -27,6 +22,3 @@ class AirQualityModelParams(ModelParamsMixin, DBWriter):
     def model_table(self) -> AirQualityModelTable:
         """The air quality model table."""
         return AirQualityModelTable
-
-    def update_remote_tables(self):
-        """Update all relevant tables on the remote database"""
