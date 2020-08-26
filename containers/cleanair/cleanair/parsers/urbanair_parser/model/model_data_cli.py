@@ -1,5 +1,6 @@
 """Commands for a Sparse Variational GP to model air quality."""
 from typing import List
+from pathlib import Path
 import pickle
 import shutil
 import typer

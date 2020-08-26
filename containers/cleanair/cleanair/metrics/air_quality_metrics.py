@@ -72,7 +72,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             **json.loads(instance_df.at[0, "data_config"])
         )
         model_data = ModelData(secretfile=secretfile)
-        test_data = model_data.download_prediction_config_data(self.data_config)
+        test_data = model_data.download_prediction_config_data(self.data_config, with_sensor_readings=True)
         train_data = model_data.download_training_config_data(self.data_config)
 
         # NOTE: we only care about evaluating metrics on laqn

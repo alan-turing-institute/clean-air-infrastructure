@@ -223,7 +223,9 @@ class FileManager:
 
     def save_model_params(self, model_params: BaseModel) -> None:
         """Load the model params from a json file."""
-        params_fp = self.input_dir.joinpath(*MODEL_PARAMS.parts[-1:])
+        params_fp = self.input_dir.joinpath(*MODEL_PARAMS.parts[-2:])
+        if not params_fp.parent.exists():
+            params_fp.parent.mkdir(parents=False, exist_ok=True)
         with open(params_fp, "w") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
