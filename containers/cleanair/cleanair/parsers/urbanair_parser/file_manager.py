@@ -1,6 +1,7 @@
 """Functions for saving and loading models."""
 
 from __future__ import annotations
+from pathlib import Path
 from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
 import json
 import pickle
@@ -30,7 +31,6 @@ from .state import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
     import gpflow
     import tensorflow as tf
     from pydantic import BaseModel

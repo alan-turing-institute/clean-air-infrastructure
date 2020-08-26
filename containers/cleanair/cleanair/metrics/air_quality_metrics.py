@@ -8,6 +8,9 @@ import sklearn
 from sqlalchemy import inspect
 from ..databases import DBWriter, Base
 from ..databases.tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
     AirQualityResultTable,
     AirQualitySpatialMetricsTable,
     AirQualityTemporalMetricsTable,
@@ -93,6 +96,21 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
     def result_table(self) -> AirQualityResultTable:
         """The air quality result table."""
         return AirQualityResultTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The air quality model parameters table."""
+        return AirQualityModelTable
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The air quality data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The air quality instance table."""
+        return AirQualityInstanceTable
 
     def __evaluate_group(
         self, group_df: pd.DataFrame, pollutant: Species

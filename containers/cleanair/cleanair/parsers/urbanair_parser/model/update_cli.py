@@ -37,7 +37,7 @@ def results(
     model_data = ModelDataExtractor()
     test_data = file_manager.load_test_data()
     x_test, y_test, index_test = model_data.get_data_arrays(
-        full_config, test_data, prediction=False,
+        full_config, test_data, prediction=True,
     )
 
     # create an instance with correct ids
@@ -60,6 +60,8 @@ def results(
         result_df = ModelDataExtractor.join_forecast_on_dataframe(
             test_data[source], y_pred[source], index_test[source]
         )
+        # make sure the point id is a string not UUID
+        result_df["point_id"] = result_df.point_id.apply(str)
         all_results = pd.concat([all_results, result_df], axis=0)
         logger.info("Writing the forecasts to CSV for source %s", source.value)
         file_manager.save_forecast_to_csv(result_df, source)

@@ -54,4 +54,4 @@ class FullDataConfig(DataConfig):
 
     def data_id(self):
         "Return a hashed data id"
-        return utils.hashing.hash_dict(self.json(sort_keys=True))
+        return utils.hashing.hash_fn(self.json(sort_keys=True))

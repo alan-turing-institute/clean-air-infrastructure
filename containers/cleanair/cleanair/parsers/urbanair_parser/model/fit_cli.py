@@ -81,7 +81,7 @@ def fit_model(
     # load prediction data
     prediction_data_df_norm = file_manager.load_test_data()
     X_test, Y_test, index_test = model_data.get_data_arrays(
-        full_config, prediction_data_df_norm, prediction=False,
+        full_config, prediction_data_df_norm, prediction=True,
     )
 
     # Fit model
@@ -93,5 +93,5 @@ def fit_model(
 
     # save forecast to file
     file_manager.save_forecast_to_pickle(y_forecast)
-    file_manager.save_training_result_to_pickle(y_training_result)
+    file_manager.save_training_pred_to_pickle(y_training_result)
     return model

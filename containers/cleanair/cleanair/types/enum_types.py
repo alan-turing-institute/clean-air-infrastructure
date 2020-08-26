@@ -51,8 +51,8 @@ class FeatureBufferSize(str, Enum):
 class ModelName(str, Enum):
     """Valid model names for air quality models."""
 
-    mrdgp: "mrdgp"
-    svgp: "svgp"
+    mrdgp = "mrdgp"
+    svgp = "svgp"
 
 
 @unique
