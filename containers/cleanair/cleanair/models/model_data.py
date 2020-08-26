@@ -398,7 +398,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     def download_prediction_config_data(
         self, full_config: FullDataConfig, with_sensor_readings: bool = False,
-    ) -> Dict[Source, pd.DataFrame]: 
+    ) -> Dict[Source, pd.DataFrame]:
         """Download prediction data"""
         data_output: Dict[Source, pd.DateFrame] = {}
 

@@ -1,14 +1,18 @@
 """Command line interface for updating the database with results."""
 
+import json
 from datetime import datetime
 from pathlib import Path
 import typer
 import pandas as pd
 from ..state import state
 from ..shared_args.instance_options import ClusterId, Tag
+from ....databases.queries import AirQualityInstanceQuery, AirQualityResultQuery
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
-from ....models import ModelDataExtractor
+from ....metrics import AirQualityMetrics
+from ....models import ModelData, ModelDataExtractor
+from ....types import FullDataConfig, Source
 from ..file_manager import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
@@ -70,3 +74,16 @@ def results(
             instance.instance_id, instance.data_id, result_df, secretfile
         )
         result.update_remote_tables()  # write results to DB
+
+
+@app.command()
+def metrics(instance_id: str):
+    """Update the metrics table for the given instance."""
+    logger = get_logger("Update metrics.")
+    logger.info("Reading instance parameters and results from the database.")
+    secretfile: str = state["secretfile"]
+
+    instance_metrics = AirQualityMetrics(instance_id, secretfile=secretfile)
+    instance_metrics.evaluate_spatial_metrics()
+    instance_metrics.evaluate_temporal_metrics()
+    instance_metrics.update_remote_tables()

@@ -29,7 +29,7 @@ class ResultQueryMixin:
         data_id: Optional[str] = None,
         start: Optional[str] = None,
         upto: Optional[str] = None,
-        with_location: Optional[bool] = True,
+        with_location: bool = True,
     ):
         """Get the predictions from a model given an instance and data id.
 
