@@ -15,9 +15,7 @@ from .scoot_config import ScootConfig, ScootPreprocessing
 
 
 class ScootDataset(DBReader, ScootQueryMixin):
-    """
-    A scoot dataset that queries the database given a data config dictionary.
-    """
+    """A scoot dataset that queries the database given a data config dictionary."""
 
     def __init__(
         self,

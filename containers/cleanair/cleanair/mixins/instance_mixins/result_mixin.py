@@ -35,6 +35,9 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         else:
             self.result_df = self.query_results(self.instance_id, self.data_id)
 
+    def merge_point_id(self) -> None:
+        """Merge the point id onto result_df by joining on detector id."""
+
     def update_remote_tables(self):
         """Write air quality results to the database."""
         # get column names of result table

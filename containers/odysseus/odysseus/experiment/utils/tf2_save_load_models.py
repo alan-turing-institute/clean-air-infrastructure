@@ -33,12 +33,16 @@ def save_gpflow2_model_to_file(
 
     module_to_save = tf.Module()
 
-    predict_fn = tf.function(
-        frozen_model.predict_f,
+    # save the predict_f_samples function which also take an integer
+    module_to_save.predict_f_samples = tf.function(
+        frozen_model.predict_f_samples,
+        input_signature=[tf.TensorSpec(shape=[None, input_dim], dtype=tf.float64), tf.TensorSpec(shape=None, dtype=tf.int64)],
+    )
+    # save the predict_f function
+    module_to_save.predict_f = tf.function(
+        frozen_model.predict_f_samples,
         input_signature=[tf.TensorSpec(shape=[None, input_dim], dtype=tf.float64)],
     )
-    # change the predict function
-    module_to_save.predict = predict_fn
 
     # save the trained model to directory
     tf.saved_model.save(module_to_save, export_dir)

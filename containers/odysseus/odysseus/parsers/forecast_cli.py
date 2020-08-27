@@ -2,17 +2,21 @@
 
 import logging
 from datetime import timedelta
+from typing import List, Tuple
 import typer
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from cleanair.loggers import get_logger
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.parsers.urbanair_parser.shared_args import NDays, UpTo, Tag
 from cleanair.timestamps import as_datetime
 from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
 from ..experiment import ScootExperiment
+from ..modelling import sample_n
 from .configuration import SCOOT_MODELLING
 from .shared_args import FitStartTime
+from ..types import ModelName
 
 app = typer.Typer(help="Forecasting for Odysseus.")
 
@@ -22,6 +26,7 @@ def scoot(
     fit_start_time: str = FitStartTime,
     forecast_days: int = NDays,
     forecast_upto: str = UpTo,
+    num_samples: int = typer.Option(10, help="Number of times to sample from posterior."),
     tag: str = Tag,
 ) -> None:
     """Forecast a GP on a Scoot data."""
@@ -43,7 +48,8 @@ def scoot(
     # 2. from the instance ids load the models
     logger.info("Loading models from filepath %s", SCOOT_MODELLING)
     models = experiment.load_models()
-    none_mask = [model is None for model in models]
+    none_mask = [not model is None for model in models]
+    logger.debug("None mask: %s", none_mask)
     experiment.frame = experiment.frame.loc[none_mask]
     models = [model for model in models if not model is None]    
     logger.info("%s out of %s models sucessfully loaded ", len(models), len(none_mask))
@@ -71,8 +77,20 @@ def scoot(
             test_df = test_df.append(detector_df, ignore_index=True)
         datasets.append(ScootDataset(config, preprocessing, dataframe=test_df))
 
-    # TODO 5. forecast on the new forecast dataset
+    # 5. forecast on the new forecast dataset
+    predictions: List[Tuple[tf.Tensor, tf.Tensor]] = list()
+    logger.debug("%s datasets and %s models", len(datasets), len(models))
+    for dataset, model, name in zip(datasets, models, experiment.frame.model_name):
+        logging.debug("Type of model is %s", type(model))
+        # if isinstance(model.likelihood, gpflow.likelihoods.Poisson):
+        if name == ModelName.svgp:
+            y_mean, y_var = sample_n(model, dataset.features_tensor, num_samples)
+            predictions.append()
+        # elif isinstance(model.likelihood, gpflow.likelihoods.Gaussian):
+        elif name == ModelName.gpr:
+            y_mean, y_var = model.predict_f(dataset.features_tensor)
+        logger.debug("Shape of mean is %s, shape of var is %s", y_mean.shape, y_var.shape)
+        predictions.append((y_mean, y_var))
 
-
-    # TODO 6. write the forecast to the results table using the instance id and the new data id
+    # 6. write the forecast to the results table using the instance id and the new data id
     raise NotImplementedError("See TODOs for implementation instructions")
