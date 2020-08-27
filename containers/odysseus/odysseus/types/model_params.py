@@ -29,7 +29,7 @@ class OptimizerName(str, Enum):
 class ModelName(str, Enum):
     """Supported models."""
 
-    gpr = "grp"
+    gpr = "gpr"
     svgp = "svgp"
 
 class ScootModelParams(ParamIdMixin, BaseModel):

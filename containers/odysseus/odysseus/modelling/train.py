@@ -23,9 +23,9 @@ def inducing_points(
     else:
         # randomly select inducing points
         ind_points = tf.random.shuffle(x_train)[:n_inducing_points]
+    # TODO implement the grid method
     # else:
     #     # select of regular grid
-    #     # ToDo: double check this line
     #     ind_points = tf.expand_dims(
     #         tf.linspace(
     #             np.min(x_train[:, 0]), np.max(x_train[:, 0]), n_inducing_points
@@ -100,6 +100,7 @@ def train_vanilla_gpr(
     # Set Optimizer and initial learning rate
     if model_params.optimizer == OptimizerName.adam:
         optimizer = tf.keras.optimizers.Adam(0.001)
+        raise NotImplementedError("GPR does not yet support the Adam optimizer. Try scipy instead.")
     elif model_params.optimizer == OptimizerName.scipy:
         optimizer = gpflow.optimizers.Scipy()
     # declare the model

@@ -115,5 +115,5 @@ def scoot(
     logger.info("Finished training %s models.", len(models))
 
     message = "If you want to forecast with the models run the following command: \n"
-    message += "odysseus forecast scoot --fit_start_time %s --tag %s"
+    message += "odysseus forecast scoot --fit-start-time %s --tag %s"
     logger.info(message, experiment.frame.at[0, "fit_start_time"], tag)

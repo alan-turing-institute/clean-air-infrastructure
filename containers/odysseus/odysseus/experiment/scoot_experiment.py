@@ -89,7 +89,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
             model_params: ScootModelParams = row["model_params"]
             self.logger.info("Training model on instance %s", row["instance_id"])
             # get a kernel from settings
-            kernel = parse_kernel(model_params["kernel"])  # returns gpflow kernel
+            kernel = parse_kernel(model_params.kernel)  # returns gpflow kernel
 
             if dryrun:
                 continue
