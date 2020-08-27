@@ -102,6 +102,18 @@ class FileManager:
             )
         raise typer.Abort()
 
+    def save_data_config(self, data_config: Union[DataConfig, FullDataConfig], full: bool = False) -> None:
+        """Save a data config to file."""
+        if full:
+            config = DATA_CONFIG_FULL
+        else:
+            config = DATA_CONFIG
+        config = self.input_dir.joinpath(config.parts[-1])
+        if not config.parent.exists():
+            config.parent.mkdir(parents=False, exist_ok=True)
+        with config.open("w") as config_f:
+            config_f.write(data_config.json(indent=4))
+
     def load_training_data(self) -> Dict[Source, pd.DataFrame]:
         """Load training data from either the CACHE or input_dir"""
         return self.__load_pickle(MODEL_TRAINING_PICKLE)
