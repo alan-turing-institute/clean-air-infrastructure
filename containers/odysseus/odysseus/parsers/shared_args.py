@@ -11,4 +11,10 @@ BoroughOption = typer.Option(
     case_sensitive=False,
 )
 GridResolution = typer.Option(8, help="Size of the grid for scan stats.")
+KernelName = typer.Option("rbf", help="Name of the kernel.")
+Lengthscales = typer.Option(1.0, help="Lengthscale parameter for the kernel.")
+Limit = typer.Option(None, help="Maximum number of detectors to query.")
 ModelName = typer.Option("HW", help="Name of the forecasting method.")
+NInducingPoints = typer.Option(20, help="Number of inducing points.")
+Offset = typer.Option(None, help="Start index for querying detectors.")
+Variance = typer.Option(1.0, help="Variance parameter for the kernel.")

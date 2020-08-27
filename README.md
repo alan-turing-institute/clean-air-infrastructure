@@ -715,6 +715,24 @@ Upon completion, scan statistics for each grid cell of the fishnet at each of ho
 
 Add the `--help` option for different ways of querying scoot data and changing model parameters/forecast methods.
 
+
+### Train scoot models
+
+To train Gaussian Process models on Scoot data run the following command:
+
+```bash
+odysseus train scoot svgp --limit 20 --train-days 2 --train-upto 2020-05-03 --tag TAG
+```
+
+The `--limit` restricts the number of scoot detectors to at most 20 (note not all detectors have data available).
+
+After training the models the `fit_start_time` will be output in the logs.
+You can use the `fit_start_time` and the `TAG` you passed above the recover the models from the DB/files and forecast on a specified period in time, for example:
+
+```bash
+odysseus forecast scoot svgp --tag TAG --fit_start_time FIT_START_TIME --forecast-days 2 --forecast-upto yesterday
+```
+
 ## GPU support with Docker
 
 For GPU support we strongly recommend using our docker image to run the entrypoint.

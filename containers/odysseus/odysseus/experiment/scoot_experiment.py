@@ -1,23 +1,30 @@
 """Experiment for training multiple models on multiple scoot detectors."""
 
 from __future__ import annotations
-from typing import List, Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import Any, List, Optional, Tuple, Union, TYPE_CHECKING
+import pandas as pd
 import tensorflow as tf
 from cleanair.databases import DBWriter
-from cleanair.databases.tables import TrafficInstanceTable, TrafficModelTable
-from cleanair.utils import save_model
+from cleanair.databases.tables import TrafficDataTable, TrafficInstanceTable, TrafficModelTable
+from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict, save_model
 from cleanair.mixins import ScootQueryMixin
-from ..dataset import TrafficDataset
 from .experiment import ExperimentMixin
 from ..modelling import parse_kernel, train_sensor_model
 from .utils import save_gpflow2_model_to_file
 
 if TYPE_CHECKING:
     import gpflow
-
+    from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
+    from ..types import ScootModelParams
 
 class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
     """Experiment for scoot modelling."""
+
+    @property
+    def data_table(self) -> TrafficDataTable:
+        """Traffic data table."""
+        return TrafficDataTable
 
     @property
     def instance_table(self) -> TrafficInstanceTable:
@@ -29,35 +36,39 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         """Traffic model table."""
         return TrafficModelTable
 
-    # XXX - Can get this info direct from data_config
-    def load_datasets(
-        self, detectors: List, start_date: str, upto: Optional[str] = None,
-    ) -> List[tf.data.Dataset]:
-        """Load the data and train the models."""
-        self.logger.info(
-            "Querying the scoot database for readings on %s detectors.", len(detectors)
+    @staticmethod
+    def from_scoot_configs(
+        data_config: Union[List[ScootConfig], ScootConfig],
+        model_name: Union[List[str], str],
+        model_params: Union[List[ScootModelParams], ScootModelParams],
+        preprocessing: Union[List[ScootPreprocessing], ScootPreprocessing],
+        cluster_id: str = "laptop",
+        tag: str = "model_per_detector",
+        secretfile: Optional[str] = None,
+    ) -> ScootExperiment:
+        """Create a scoot experiment from the data config and model params."""
+        frame = pd.DataFrame()
+        frame["data_config"] = data_config
+        frame["preprocessing"] = preprocessing
+        frame["model_name"] = model_name
+        frame["model_params"] = model_params
+        frame["fit_start_time"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        frame["cluster_id"] = cluster_id
+        frame["tag"] = tag
+        frame["git_hash"] = get_git_hash()
+        frame["param_id"] = frame["model_params"].apply(lambda x: x.param_id())
+        frame["data_id"] = frame[["data_config", "preprocessing"]].apply(
+            lambda x: hash_dict(dict(**x["data_config"].dict(), **x["preprocessing"].dict())),
+        axis=1)
+        frame["instance_id"] = frame.apply(
+            lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1
         )
-        scoot_df = self.scoot_readings(
-            detectors=detectors, start=start_date, upto=upto, output_type="df", with_location=True,
-        )
-        if scoot_df.empty:
-            raise ValueError('No readings in SCOOT dataframe')
+        return ScootExperiment(frame=frame, secretfile=secretfile)
 
-        # list of scoot datasets
-        datasets = []
-        for data_config, preprocessing in zip(self.frame.data_config, self.frame.preprocessing):
-            processed = TrafficDataset.preprocess_dataframe(
-                scoot_df.loc[scoot_df.detector_id.isin(data_config["detectors"])].copy(),
-                preprocessing
-            )
-            datasets.append(
-                TrafficDataset.from_dataframe(processed, preprocessing)
-            )
-        return datasets
 
     def train_models(
         self,
-        datasets: List[tf.data.Dataset],
+        datasets: List[ScootDataset],
         dryrun: Optional[bool] = False,
         logging_freq: Optional[int] = 100,
     ) -> List[gpflow.models.GPModel]:
@@ -73,32 +84,23 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         # loop over datasets training models and saving the trained models
         for i, dataset in enumerate(datasets):
             row = self.frame.iloc[i]
-
-            model_params = row["model_param"]
-            preprocessing = row["preprocessing"]
-            num_features = len(preprocessing["features"])
-            X = tf.stack([element[:num_features] for element in dataset])
-            Y = tf.stack([element[num_features:] for element in dataset])
+            model_params = row["model_params"]
             self.logger.info("Training model on instance %s", row["instance_id"])
             # get a kernel from settings
             if dryrun:
                 continue
             optimizer = tf.keras.optimizers.Adam(0.001)
-            kernel = parse_kernel(model_params["kernel"])  # returns gpflow kernel
+            kernel = parse_kernel(model_params.kernel)  # returns gpflow kernel
             model = train_sensor_model(
-                X,
-                Y,
+                dataset.features_tensor,
+                dataset.target_tensor,
                 kernel,
                 optimizer,
-                maxiter=model_params["maxiter"],
+                maxiter=model_params.maxiter,
                 logging_freq=logging_freq,
-                n_inducing_points=model_params["n_inducing_points"],
-                inducing_point_method=model_params["inducing_point_method"],
+                n_inducing_points=model_params.n_inducing_points,
             )
-            save_model(row["instance_id"], model, save_gpflow2_model_to_file)
+            # TODO save models to file
+            # save_model(row["instance_id"], model, save_gpflow2_model_to_file)
             model_list.append(model)
         return model_list
-
-    def update_remote_tables(self):
-        """Update the instance, data and model tables."""
-        ExperimentMixin.update_remote_tables(self)

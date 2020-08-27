@@ -5,7 +5,8 @@ Experiments summerise multiple instances.
 from abc import abstractmethod
 from typing import Optional
 import pandas as pd
-from cleanair.databases.mixins import InstanceTableMixin, ModelTableMixin
+from sqlalchemy import inspect
+from cleanair.databases.mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
 from .traffic_instance import TrafficInstance
 
 
@@ -47,6 +48,11 @@ class ExperimentMixin:
 
     @property
     @abstractmethod
+    def data_table(self) -> DataTableMixin:
+        """The data config table."""
+
+    @property
+    @abstractmethod
     def instance_table(self) -> InstanceTableMixin:
         """The instance table."""
 
@@ -55,12 +61,32 @@ class ExperimentMixin:
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
-    def add_instance(self, instance: TrafficInstance):
-        """ToDo."""
-
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
-        site_records = self.frame.to_dict("records")
+        # convert pydantic models to dictionaries
+        frame = self.frame.copy()
+        frame["model_params"] = frame.model_params.apply(lambda x: x.dict())
+        frame["data_config"] = frame.data_config.apply(lambda x: x.dict())
+        frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
+
+        # update the model params table
+        model_inst = inspect(self.model_table)
+        model_cols = [c_attr.key for c_attr in model_inst.mapper.column_attrs]
+        model_records = frame[model_cols].to_dict("records")
+        self.commit_records(
+            model_records, on_conflict="overwrite", table=self.model_table,
+        )
+        # update the data config table
+        data_inst = inspect(self.data_table)
+        data_cols = [c_attr.key for c_attr in data_inst.mapper.column_attrs]
+        data_records = frame[data_cols].to_dict("records")
+        self.commit_records(
+            data_records, on_conflict="overwrite", table=self.data_table,
+        )
+        # update the instance table
+        instance_inst = inspect(self.instance_table)
+        instance_cols = [c_attr.key for c_attr in instance_inst.mapper.column_attrs]
+        site_records = frame[instance_cols].to_dict("records")
         self.commit_records(
             site_records, on_conflict="overwrite", table=self.instance_table,
         )

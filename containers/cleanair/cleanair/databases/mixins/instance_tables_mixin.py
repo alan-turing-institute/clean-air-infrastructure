@@ -30,7 +30,7 @@ class ModelTableMixin:
 
     model_name = Column(String(64), primary_key=True, nullable=False)
     param_id = Column(String(64), primary_key=True, nullable=False)
-    model_param = Column(JSONB, nullable=False, index=True)
+    model_params = Column(JSONB, nullable=False, index=True)
 
     def __repr__(self):
         cols = [c.name for c in self.__table__.columns]
