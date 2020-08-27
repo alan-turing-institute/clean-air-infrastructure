@@ -317,7 +317,7 @@ class MRDGP(ModelMixin):
         try:
             if self.experiment_config["train"]:
                 opt = AdamOptimizer(0.1)
-                simple_optimizing_scheme = False
+                simple_optimizing_scheme = True
 
                 if not simple_optimizing_scheme:
                     #train first layer
