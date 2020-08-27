@@ -364,8 +364,9 @@ class MRDGP(ModelMixin):
                                 maxiter=self.model_params["base_laqn"]["maxiter"],
                             )
                 else:
-                    self.model.set_base_gp_noise(False)
-                    self.model.set_dgp_gp_noise(False)
+                    if False:
+                        self.model.set_base_gp_noise(False)
+                        self.model.set_dgp_gp_noise(False)
 
                     #print(tf.gradients())
                     
