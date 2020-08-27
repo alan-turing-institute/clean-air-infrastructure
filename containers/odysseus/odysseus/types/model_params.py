@@ -1,5 +1,6 @@
 """Pydantic for model parameters."""
 
+from enum import Enum
 from typing import List, Optional, Union
 from pydantic import BaseModel
 from cleanair.types.model_types import ParamIdMixin
@@ -19,11 +20,24 @@ class PeriodicKernelParams(BaseModel):
 
 KernelProduct = Union[KernelParams, PeriodicKernelParams, List[Union[KernelParams, PeriodicKernelParams]]]
 
+class OptimizerName(str, Enum):
+    """Supported optimizers."""
+
+    adam = "adam"
+    scipy = "scipy"
+
+class ModelName(str, Enum):
+    """Supported models."""
+
+    gpr = "grp"
+    svgp = "svgp"
+
 class ScootModelParams(ParamIdMixin, BaseModel):
     """Model parameters for a scoot GP model."""
 
     kernel: KernelProduct
     maxiter: int
+    optimizer: OptimizerName
 
 class SparseVariationalParams(ScootModelParams):
     """Model parameters for a SVGP."""

@@ -1,27 +1,31 @@
-"""
-Experiments summerise multiple instances.
-"""
+"""Experiments summerise multiple instances."""
 
 from abc import abstractmethod
+from pathlib import Path
 from typing import Optional
 import pandas as pd
 from sqlalchemy import inspect
 from cleanair.databases.mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
-from .traffic_instance import TrafficInstance
 
 
 class ExperimentMixin:
-    """
-    An experiment contains multiple instances.
-    """
+    """An experiment contains multiple instances."""
 
     def __init__(
         self,
         frame: Optional[pd.DataFrame] = None,
+        input_dir: Path = Path.cwd(),
         secretfile: Optional[str] = None,
         **kwargs
     ):
         super().__init__(secretfile=secretfile, **kwargs)
+
+        # create directory for saving files if it doesn't exist
+        self.input_dir = input_dir
+        if not self.input_dir.exists():
+            self.input_dir.mkdir(parents=True, exist_ok=True)
+
+        # create empty dataframe is none exists
         if not isinstance(frame, pd.DataFrame):
             self._frame = pd.DataFrame(
                 columns=[
