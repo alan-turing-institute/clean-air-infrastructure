@@ -5,21 +5,19 @@ from datetime import datetime
 from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
 from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
-from ..utils import hash_dict
+from .. import utils
 
 # pylint: disable=invalid-name
-DataConfig = Dict[str, Union[str, bool, List[str]]]
 FeaturesDict = Dict[Source, NDArray[Float64]]
 IndexDict = Dict[Source, NDArray[Int]]
 TargetDict = Dict[Source, Dict[Species, NDArray[Float64]]]
 NDArrayTuple = Tuple[NDArray[Float64], NDArray[Float64]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
 IndexedDatasetDict = Tuple[FeaturesDict, TargetDict, IndexDict]
-
 InterestPointDict = Dict[Source, Union[str, List[str]]]
 
 
-class BaseConfig(BaseModel):
+class DataConfig(BaseModel):
     "Base config for clean air models"
     train_start_date: datetime
     train_end_date: datetime
@@ -40,7 +38,7 @@ class BaseConfig(BaseModel):
     model_type: str
 
 
-class FullConfig(BaseConfig):
+class FullDataConfig(DataConfig):
     "Full configuration class"
     x_names: List[str]
     feature_names: List[str]
@@ -56,4 +54,4 @@ class FullConfig(BaseConfig):
 
     def data_id(self):
         "Return a hashed data id"
-        return hash_dict(self.json(sort_keys=True))
+        return utils.hashing.hash_fn(self.json(sort_keys=True))

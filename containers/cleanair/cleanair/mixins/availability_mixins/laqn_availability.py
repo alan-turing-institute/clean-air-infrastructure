@@ -57,7 +57,7 @@ class LAQNAvailabilityMixin:
             return session.query(laqn_site_sq)
 
     @db_query
-    def get_raw_data(
+    def get_raw_laqn_data(
         self, species: List[str], start_date: str, end_date: Optional[str] = None,
     ):
 
@@ -141,7 +141,7 @@ class LAQNAvailabilityMixin:
             reference_end_date (str): Optional. iso date. The last datetimee to check data from
         """
 
-        in_data_cte = self.get_raw_data(species, start_date, end_date).cte()
+        in_data_cte = self.get_raw_laqn_data(species, start_date, end_date).cte()
 
         open_sites_sq = self.get_laqn_open_sites(output_type="subquery")
         expected_dates = self.gen_date_range(

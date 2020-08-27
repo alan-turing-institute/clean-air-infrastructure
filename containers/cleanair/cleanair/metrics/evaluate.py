@@ -9,33 +9,21 @@ from sklearn import metrics
 from . import precision
 
 
-def evaluate_model_data(model_data, metric_methods, **kwargs):
+def evaluate_model_data(
+    observation_df: pd.DataFrame, result_df: pd.DataFrame, metric_methods, **kwargs
+):
     """
     Given a model data object, evaluate the predictions.
 
-    Parameters
-    ___
+    Args:
+        observation_df: Dataframe of the observed readings from sensors.
+        result_df: Dataframe of predictions from a model.
+        metric_methods: Keys are the name of a metric and values
+            are a function that takes two numpy arrays of the same shape.
 
-    model_data : ModelData
-        A model data object with updated predictions.
-
-    metric_methods : dict
-        A dictionary where keys are the name of a metric and values
-        are a function that takes two numpy arrays of the same shape.
-
-    kwargs : dict
-        See Other Parameters.
-
-    Returns
-    ___
-
-    sensor_scores_df : pd.DataFrame
-        For every instance of the experiment, we calculate the score
-        of a sensor over the whole prediction time period.
-
-    temporal_scores_df : pd.DataFrame
-        For every instance of an experiment, we calculate the scores
-        over all sensors given a slice in time.
+    Returns:
+        sensor_scores_df: The score of a sensor over the whole prediction time period.
+        temporal_scores_df : The scores over all sensors given a slice in time.
 
     Other Parameters
     ___

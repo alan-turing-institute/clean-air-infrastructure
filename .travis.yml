@@ -35,7 +35,6 @@ jobs:
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
         - pylint --rcfile=.pylintrc containers/cleanair/*
-        # pylint --rcfile=.pylintrc containers/urbanair/*
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
     # separate parallel job for odysseus
 
@@ -58,7 +57,7 @@ jobs:
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
+        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/*
     
     - name: "urbanair" 
       before_install:

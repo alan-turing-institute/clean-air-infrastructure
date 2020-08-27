@@ -5,6 +5,7 @@ from .db_interactor import DBInteractor
 from .db_reader import DBReader
 from .db_writer import DBWriter
 from .db_config import DBConfig
+from .views import refresh_materialized_view, RawGeometry
 
 __all__ = [
     "Base",
@@ -14,4 +15,6 @@ __all__ = [
     "DBReader",
     "DBWriter",
     "DBConfig",
+    "refresh_materialized_view",
+    "RawGeometry",
 ]

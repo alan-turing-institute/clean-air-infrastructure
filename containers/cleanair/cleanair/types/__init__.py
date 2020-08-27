@@ -1,6 +1,14 @@
 """Types for the cleanair package."""
 
-from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
+from .enum_types import (
+    ClusterId,
+    Species,
+    Source,
+    FeatureNames,
+    FeatureBufferSize,
+    ModelName,
+    Tag,
+)
 from .dataset_types import (
     DataConfig,
     DatasetDict,
@@ -9,25 +17,25 @@ from .dataset_types import (
     IndexDict,
     TargetDict,
     NDArrayTuple,
-    BaseConfig,
-    FullConfig,
+    FullDataConfig,
     InterestPointDict,
 )
-from .model_types import ParamsDict
+from .model_types import MRDGPParams, ParamsDict, SVGPParams
 
 
 __all__ = [
-    "BaseConfig",
-    "FullConfig",
     "DataConfig",
+    "FullDataConfig",
     "DatasetDict",
     "FeaturesDict",
     "FeatureBufferSize",
     "IndexDict",
     "IndexedDatasetDict",
     "InterestPointDict",
+    "MRDGPParams",
     "ParamsDict",
     "NDArrayTuple",
+    "SVGPParams",
     "TargetDict",
     "Source",
     "Species",

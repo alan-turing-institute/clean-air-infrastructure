@@ -49,10 +49,16 @@ class Connector(DBConnectionMixin):
 
     def initialise_tables(self):
         """Ensure that all table connections exist"""
-        # Consider reflected tables first as these already exist
-        DeferredReflection.prepare(self.engine)
+
         # Next create all other tables
-        Base.metadata.create_all(self.engine, checkfirst=True)
+        if self.connection:
+            # Consider reflected tables first as these already exist
+            DeferredReflection.prepare(self.connection)
+            Base.metadata.create_all(self.connection, checkfirst=True)
+        else:
+            # Consider reflected tables first as these already exist
+            DeferredReflection.prepare(self.engine)
+            Base.metadata.create_all(self.engine, checkfirst=True)
 
     @property
     def engine(self):

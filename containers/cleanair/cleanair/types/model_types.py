@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
-from ..utils import hash_dict
+from ..utils import hash_fn
 
 KernelDict = Dict[str, Union[str, float, List[Union[int, float]]]]
 ParamsDict = Dict[str, Union[float, bool, int, KernelDict, List[KernelDict]]]
@@ -13,7 +13,7 @@ class ParamIdMixin:
 
     def param_id(self):
         """Return a hashed param id."""
-        return hash_dict(self.json(sort_keys=True))
+        return hash_fn(self.json(sort_keys=True))
 
 
 class KernelParams(BaseModel):

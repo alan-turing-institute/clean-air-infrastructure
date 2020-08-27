@@ -20,7 +20,7 @@ from ..loggers import get_logger
 from ..decorators import db_query
 
 from ..types import (
-    FullConfig,
+    FullDataConfig,
     Source,
     Species,
     FeatureNames,
@@ -177,7 +177,7 @@ class ModelDataExtractor:
 
     def get_data_arrays(
         self,
-        full_config: FullConfig,
+        full_config: FullDataConfig,
         data_frame_dict: Dict[Source, pd.DataFrame],
         prediction: bool = False,
     ) -> IndexedDatasetDict:
@@ -213,7 +213,7 @@ class ModelDataExtractor:
         return X_dict, Y_dict, index_dict
 
     def norm_stats(
-        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Tuple[pd.Series, pd.Series]:
         """Normalise a dataset"""
 
@@ -235,7 +235,7 @@ class ModelDataExtractor:
         return norm_mean, norm_std
 
     def normalize_data(
-        self, full_config: FullConfig, data_frames: Dict[str, pd.DateFrame]
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
     ) -> Dict[str, pd.DateFrame]:
         """Normalise the x columns"""
 
@@ -274,24 +274,6 @@ class ModelDataExtractor:
             data_df[pollutant + "_mean"] = pred_dict[pollutant]["mean"].flatten()
             data_df[pollutant + "_var"] = pred_dict[pollutant]["var"].flatten()
         return data_df
-
-    def update_test_df_with_preds(self, test_pred_dict: dict):
-        """Update the normalised_pred_data_df with predictions for all pred sources.
-
-        Args:
-            test_pred_dict: Dictionary of model predictions.
-        """
-        self.normalised_pred_data_df = self.get_df_from_pred_dict(
-            self.normalised_pred_data_df, self.get_pred_data_arrays(), test_pred_dict,
-        )
-
-    def update_training_df_with_preds(self, training_pred_dict):
-        """Updated the normalised_training_data_df with predictions on the training set."""
-        self.normalised_training_data_df = self.get_df_from_pred_dict(
-            self.normalised_training_data_df,
-            self.get_training_data_arrays(),
-            training_pred_dict,
-        )
 
 
 #  pylint: disable=R0904
@@ -392,7 +374,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         return flattend_features_df
 
     def download_training_config_data(
-        self, full_config: FullConfig
+        self, full_config: FullDataConfig
     ) -> Dict[Source, pd.DateFrame]:
         """Download all input data specified in a validated full config file"""
 
@@ -415,7 +397,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         return data_output
 
     def download_prediction_config_data(
-        self, full_config: FullConfig
+        self, full_config: FullDataConfig, with_sensor_readings: bool = False,
     ) -> Dict[Source, pd.DataFrame]:
         """Download prediction data"""
         data_output: Dict[Source, pd.DateFrame] = {}
@@ -423,7 +405,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         for source in full_config.pred_sources:
 
             data_output[source] = self.download_source_data(
-                with_sensor_readings=False,
+                with_sensor_readings=with_sensor_readings,
                 start_date=full_config.pred_start_date,
                 end_date=full_config.pred_end_date,
                 species=full_config.species,
@@ -754,17 +736,3 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     static_features.c.measurement_start_utc,
                 )
             )
-
-    def update_remote_tables(
-        self, full_config: FullConfig, preprocessing: Optional[Dict] = None
-    ):
-        """Update the model results table with the model results"""
-        data_config = full_config.json(sort_keys=True)
-        data_id = full_config.data_id()
-
-        row = dict(
-            data_id=self.data_id, data_config=data_config, preprocessing=preprocessing,
-        )
-        records = [row]
-        self.logger.info("Writing data settings to air quality modelling data table.")
-        self.commit_records(records, table=AirQualityDataTable, on_conflict="overwrite")
