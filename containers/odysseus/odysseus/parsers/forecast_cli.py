@@ -12,7 +12,7 @@ from cleanair.parsers.urbanair_parser.state import state
 from cleanair.parsers.urbanair_parser.shared_args import NDays, UpTo, Tag
 from cleanair.timestamps import as_datetime
 from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
-from ..experiment import ScootExperiment
+from ..experiment import ScootExperiment, ScootResult
 from ..modelling import sample_n
 from .configuration import SCOOT_MODELLING
 from .shared_args import FitStartTime
@@ -64,6 +64,7 @@ def scoot(
     logger.info("Creating new datasets for the forecasting period.")
     datasets = list()
     for config, preprocessing in zip(forecast_config_list, experiment.frame.preprocessing):
+        # TODO Patrick - this should be moved to a new functon
         logger.debug("Data config: %s", config)
         logger.debug("Preprocessing: %s", preprocessing)
         test_df = pd.DataFrame(columns=preprocessing.features + preprocessing.target)
@@ -93,4 +94,12 @@ def scoot(
         predictions.append((y_mean, y_var))
 
     # 6. write the forecast to the results table using the instance id and the new data id
+    for dataset, (y_mean, y_var), instance_id in zip(datasets, predictions, experiment.frame.instance_id):
+        result_df = dataset.dataframe.copy()
+        detector_df: pd.DataFrame = experiment.scoot_detectors(detectors=list(result_df.detector_id.unique()), output_type="df")
+        result_df = result_df.merge(detector_df, on="detector_id")
+        result_df["n_vehicles_in_interval"] = y_mean.flatten()
+        result_df["measurement_end_utc"] = result_df.measurement_start_utc + timedelta(hours=1)
+        result = ScootResult(instance_id, dataset.data_id, secretfile=secretfile, result_df=pd.DataFrame)
+        result.update_remote_tables()
     raise NotImplementedError("See TODOs for implementation instructions")
