@@ -109,9 +109,6 @@ def set_objective(_class, objective_str):
             :return: Tensorflow optimization tensor or operation.
         """
 
-        print("self: ", self)
-        print("model: ", model)
-
         session = model.enquire_session(session)
         objective = getattr(model, objective_str)
         full_var_list = self._gen_var_list(model, var_list)

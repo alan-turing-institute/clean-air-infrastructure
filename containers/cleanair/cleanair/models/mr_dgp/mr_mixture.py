@@ -416,7 +416,11 @@ class MR_Mixture(Model):
         self.parent_elbo = -(
             tf.reduce_sum(parent_ell_arr) - tf.reduce_sum(parent_kl_arr)
         )
+
+        ell = tf.Print(ell, [self.base_elbo], 'BASE ELBO: ')
+        ell = tf.Print(ell, [self.dgp_elbo], 'DGP ELBO: ')
         self.elbo = -(parent_elbo + ell - kl)
+
 
         return -self.elbo
 
