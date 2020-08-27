@@ -697,23 +697,41 @@ To create a fishnet over a borough with a given resolution:
 odysseus scan setup --borough NAME --grid-resolution RESOLUTION
 ```
 
-where NAME is the borough name and grid resolution is a (small) integer.
+where NAME is the borough name and grid resolution is a (small) integer. This will insert grid data into the fishnet table in the traffic modelling schema.
+
 To run the scan statistics for scoot on the above fishnet with a specified train and forecast period:
 
 ```bash
-odysseus scan scoot \
+odysseus scan scoot BASELINE_PERIOD \
     --borough NAME \
     --grid-resolution RESOLUTION \
     --forecast-upto 2020-05-20 \
-    --train-upto 2020-05-11 \
-    --train-days 21 \
     --forecast-days 2 
 ```
 
-The above command will have a gap of 7 days between the end of the train period and the beginning of the forecast period.
-If you want to always forecast for the last few days you can specify `--forecast-upto yesterday`.
+The above command will forecast 2 days worth of scoot data using training data specified by `BASELINE_PERIOD`. It is recommended to pass this as `last3weeks` which will use the three weeks of data before the forecasting period to train the model. Other pre/mid/post lockdown training profiles are available.
 
-Add the `--help` option for different ways of querying scoot data and changing model parameters.
+Upon completion, scan statistics for each grid cell of the fishnet at each of hour of the forecast period can be found in the `scoot_scan_stats` table of the traffic modelling schema.
+
+Add the `--help` option for different ways of querying scoot data and changing model parameters/forecast methods.
+
+
+### Train scoot models
+
+To train Gaussian Process models on Scoot data run the following command:
+
+```bash
+odysseus train scoot svgp --limit 20 --train-days 2 --train-upto 2020-05-03 --tag TAG
+```
+
+The `--limit` restricts the number of scoot detectors to at most 20 (note not all detectors have data available).
+
+After training the models the `fit_start_time` will be output in the logs.
+You can use the `fit_start_time` and the `TAG` you passed above the recover the models from the DB/files and forecast on a specified period in time, for example:
+
+```bash
+odysseus forecast scoot svgp --tag TAG --fit_start_time FIT_START_TIME --forecast-days 2 --forecast-upto yesterday
+```
 
 ## GPU support with Docker
 

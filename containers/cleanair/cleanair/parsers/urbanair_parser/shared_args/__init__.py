@@ -1,4 +1,7 @@
 """Shared arguments"""
+
+from .instance_options import ClusterId, Tag
+from .model_options import MaxIter
 from .shared_args import (
     UpTo,
     UpTo_callback,
@@ -18,6 +21,8 @@ from .shared_args import (
 )
 
 __all__ = [
+    "ClusterId",
+    "Tag",
     "UpTo",
     "UpTo_callback",
     "NHours",
@@ -31,4 +36,5 @@ __all__ = [
     "Sources",
     "ValidSources",
     "Species",
+    "MaxIter",
 ]

@@ -364,7 +364,7 @@ def fill_missing_values(scoot_df: pd.DataFrame) -> pd.DataFrame:
     return scoot_df
 
 
-def fap(detector_timeseries: pd.DataFrame) -> float:
+def false_alarm_probability(detector_timeseries: pd.DataFrame) -> float:
 
     """Find the false alarm probability for a given detector of having
     a dominant period in the range of 15 - 30 hours. By setting
@@ -406,7 +406,7 @@ def drop_aperiodic_detectors(
     """
 
     proc_df = proc_df.join(
-        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(fap),
+        proc_df.groupby(level="detector_id")["n_vehicles_in_interval"].apply(false_alarm_probability),
         on=["detector_id"],
         rsuffix="X",
     )
