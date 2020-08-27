@@ -139,9 +139,8 @@ def generate_config(
         features=features,
         buffer_sizes=feature_buffer,
     )
-
-    with DATA_CONFIG.open("w") as config_f:
-        config_f.write(data_config.json(indent=4))
+    file_manager = FileManager()
+    file_manager.save_data_config(data_config, full=False)
 
 
 @app.command()
@@ -170,9 +169,7 @@ def generate_full_config() -> None:
     # Generate a full configuration file
     state["logger"].info(green("Creating full config file"))
     full_config = model_config.generate_full_config(config)
-
-    with DATA_CONFIG_FULL.open("w") as full_config_f:
-        full_config_f.write(full_config.json(indent=4))
+    file_manager.save_data_config(full_config, full=True)
 
 @app.command()
 def download(
