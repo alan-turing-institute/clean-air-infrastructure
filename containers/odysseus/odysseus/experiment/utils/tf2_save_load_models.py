@@ -8,10 +8,14 @@ See the gpflow docs for more info (including checkpoints):
 https://gpflow.readthedocs.io/en/master/notebooks/intro_to_gpflow2.html
 """
 
+from typing import Union
 import gpflow
 import tensorflow as tf
 
-def save_gpflow2_model_to_file(model: gpflow.models.GPModel, export_dir: str, **kwargs) -> None:
+
+def save_gpflow2_model_to_file(
+    model: gpflow.models.GPModel, export_dir: str, **kwargs
+) -> None:
     """Save a gpflow 2 model to file.
 
     Args:
@@ -30,7 +34,8 @@ def save_gpflow2_model_to_file(model: gpflow.models.GPModel, export_dir: str, **
     module_to_save = tf.Module()
 
     predict_fn = tf.function(
-        frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, input_dim], dtype=tf.float64)]
+        frozen_model.predict_f,
+        input_signature=[tf.TensorSpec(shape=[None, input_dim], dtype=tf.float64)],
     )
     # change the predict function
     module_to_save.predict = predict_fn
@@ -38,7 +43,22 @@ def save_gpflow2_model_to_file(model: gpflow.models.GPModel, export_dir: str, **
     # save the trained model to directory
     tf.saved_model.save(module_to_save, export_dir)
 
-def load_gpflow2_model_from_file(export_dir: str, **kwargs) -> gpflow.models.GPModel:
-    """Load a gpflow 2 model from file"""
-    loaded_model = tf.saved_model.load(export_dir)
-    return loaded_model
+
+def load_gpflow2_model_from_file(
+    export_dir: str, **kwargs
+) -> Union[gpflow.models.GPModel, None]:
+    """Load a gpflow 2 model from file.
+
+    Args:
+        export_dir: Directory to load model from.
+
+    Returns:
+        A model if the directory exists, otherwise None.
+    """
+    try:
+        loaded_model = tf.saved_model.load(export_dir)
+        return loaded_model
+
+    except OSError:
+        tf.get_logger().error("Model failed to load from directory %s", export_dir)
+        return None

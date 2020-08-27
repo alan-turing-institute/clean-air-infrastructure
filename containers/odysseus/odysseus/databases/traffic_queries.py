@@ -10,7 +10,7 @@ from cleanair.databases.tables import (
     TrafficModelTable,
 )
 from cleanair.mixins import ScootQueryMixin, InstanceQueryMixin
-from .mixins import TrafficDataQueryMixin
+from .mixins import ScootDataQueryMixin
 
 
 class TrafficQuery(DBReader, ScootQueryMixin):
@@ -20,7 +20,7 @@ class TrafficQuery(DBReader, ScootQueryMixin):
         super().__init__(secretfile=secretfile, **kwargs)
 
 
-class TrafficInstanceQuery(DBReader, InstanceQueryMixin, TrafficDataQueryMixin):
+class ScootInstanceQuery(DBReader, InstanceQueryMixin, ScootDataQueryMixin):
     """Query traffic instances."""
 
     def __init__(self, secretfile: str = None, **kwargs):

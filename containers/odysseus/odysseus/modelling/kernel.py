@@ -5,7 +5,10 @@ from typing import Dict
 import gpflow
 from ..types.model_params import KernelParams, KernelProduct, PeriodicKernelParams
 
-def parse_kernel_token(next_token: KernelProduct, kernel_map: Dict[str, gpflow.kernels.Kernel]) -> gpflow.kernels.Kernel:
+
+def parse_kernel_token(
+    next_token: KernelProduct, kernel_map: Dict[str, gpflow.kernels.Kernel]
+) -> gpflow.kernels.Kernel:
     """Parser kernel tokens.
 
     Args:
@@ -36,6 +39,7 @@ def parse_kernel_token(next_token: KernelProduct, kernel_map: Dict[str, gpflow.k
         else:
             kernel = kernel * parse_kernel_token(item, kernel_map)
     return kernel
+
 
 def parse_kernel(token: KernelProduct) -> gpflow.kernels.Kernel:
     """Creates a mapping of kernel names to gpflow kernels then parse the token.

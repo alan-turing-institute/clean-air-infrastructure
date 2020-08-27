@@ -5,6 +5,7 @@ from ..utils import hash_fn
 
 ModelParams = Dict[str, Union[float, bool, int, Dict, None]]
 
+
 class ParamIdMixin:
     """Add function for creating a param id."""
 
