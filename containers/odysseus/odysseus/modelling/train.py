@@ -2,117 +2,65 @@
 Simple functions for training a model.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import gpflow
 import tensorflow as tf
 from tensorflow.python.framework.errors import InvalidArgumentError
-import numpy as np
+from ..types import OptimizerName
 
-
-def train_sensor_model(
-    x_train: tf.Tensor,
-    y_train: tf.Tensor,
-    model_name: str,
-    kernel: gpflow.kernels.Kernel,
-    optimizer: tf.optimizers.Optimizer,
-    likelihood: gpflow.likelihoods.Likelihood = None,
-    mean_function: gpflow.mean_functions.MeanFunction = None,
-    maxiter: int = 2000,
-    logging_freq: int = 10,
-    n_inducing_points: int = None,
-    inducing_point_method: str = "random",
-) -> gpflow.models.GPModel:
-    """
-    Setup the training of the model.
-
-    Args:
-        x_train: Input data.
-        y_train: Target data.
-        model_name: Name of the GPflow model to use
-        kernel: Kernel for the GP.
-        optimizer: Recommended to use Adam.
-        maxiter (Optional): Max number of times to train the model.
-        logging_freq (Optional): How often to log the ELBO.
-        n_inducing_points (Optional): Number of inducing points.
-        inducing_point_method (Optional): Method for optimizing inducing points
-    """
-    # TODO: generalise for multiple features
-    num_features = x_train.shape[1]
-    if num_features > 1:
-        raise NotImplementedError(
-            "We are only using one feature - upgrade coming soon."
-        )
-
-    if model_name == "svgp":
-        model = _train_svgp(
-            x_train=x_train,
-            y_train=y_train,
-            kernel=kernel,
-            optimizer=optimizer,
-            likelihood=likelihood,
-            mean_function=mean_function,
-            maxiter=maxiter,
-            logging_freq=logging_freq,
-            n_inducing_points=n_inducing_points,
-            inducing_point_method=inducing_point_method,
-        )
-
-    elif model_name == "gpr":
-        model = _train_vanilla_gpr(
-            x_train=x_train,
-            y_train=y_train,
-            kernel=kernel,
-            mean_function=mean_function,
-            maxiter=maxiter,
-        )
-
-    else:
-        raise NotImplementedError('model_name must be either "svgp" or "gpr".')
-
-    return model
-
+if TYPE_CHECKING:
+    from ..types import ScootModelParams, SparseVariationalParams
 
 def inducing_points(
-    x_train: tf.Tensor, n_inducing_points: int, inducing_point_method: str
+    x_train: tf.Tensor, n_inducing_points: int
 ) -> tf.Tensor:
-    """Calculate inducing points from method."""
+    """Calculate inducing points."""
 
     # choose inducing points
     if not n_inducing_points or n_inducing_points == x_train.shape[0]:
         ind_points = x_train
-    elif inducing_point_method == "random":
+    else:
         # randomly select inducing points
         ind_points = tf.random.shuffle(x_train)[:n_inducing_points]
-    else:
-        # select of regular grid
-        # ToDo: double check this line
-        ind_points = tf.expand_dims(
-            tf.linspace(
-                np.min(x_train[:, 0]), np.max(x_train[:, 0]), n_inducing_points
-            ),
-            1,
-        )
+    # else:
+    #     # select of regular grid
+    #     # ToDo: double check this line
+    #     ind_points = tf.expand_dims(
+    #         tf.linspace(
+    #             np.min(x_train[:, 0]), np.max(x_train[:, 0]), n_inducing_points
+    #         ),
+    #         1,
+    #     )
     return ind_points
 
 
-def _train_svgp(
+def train_svgp(
     x_train: tf.Tensor,
     y_train: tf.Tensor,
     kernel: gpflow.kernels.Kernel,
-    optimizer: tf.optimizers.Optimizer,
-    likelihood: gpflow.likelihoods.Likelihood = None,
-    mean_function: gpflow.mean_functions.MeanFunction = None,
-    maxiter: int = 2000,
+    model_params: SparseVariationalParams,
     logging_freq: int = 10,
-    n_inducing_points: int = None,
-    inducing_point_method: str = "random",
-) -> gpflow.models.GPModel:
-    """Train a SVGP model"""
+    mean_function: gpflow.mean_functions.MeanFunction = None,
+) -> gpflow.models.SVGP:
+    """Train a SVGP model.
+
+    Args:
+        x_train: Input data.
+        y_train: Target data.
+        kernel: Kernel for the GP.
+        model_params: All parameters for the model.
+
+    Keyword args:
+        logging_freq: How often to log the ELBO.
+        mean_function: The mean function to use for the model.
+    """
 
     # Set default likelihood
-    likelihood = gpflow.likelihoods.Poisson() if not likelihood else likelihood
+    likelihood = gpflow.likelihoods.Poisson()
 
     # Calculate inducing points
-    ind_points = inducing_points(x_train, n_inducing_points, inducing_point_method)
+    ind_points = inducing_points(x_train, model_params.n_inducing_points)
 
     # Initialise model
     model = gpflow.models.SVGP(
@@ -123,33 +71,47 @@ def _train_svgp(
     )
 
     # Train with gradient tapes
+    optimizer = tf.keras.optimizers.Adam(0.001)
     simple_training_loop(
-        x_train, y_train, model, optimizer, maxiter=maxiter, logging_freq=logging_freq,
+        x_train, y_train, model, optimizer, maxiter=model_params.maxiter, logging_freq=logging_freq,
     )
 
     return model
 
 
-def _train_vanilla_gpr(
+def train_vanilla_gpr(
     x_train: tf.Tensor,
     y_train: tf.Tensor,
     kernel: gpflow.kernels.Kernel,
+    model_params: ScootModelParams,
     mean_function: gpflow.mean_functions.MeanFunction = None,
-    maxiter: int = 2000,
-) -> gpflow.models.GPModel:
-    """ Train a Vanilla GPR Model"""
+) -> gpflow.models.GPR:
+    """ Train a Vanilla GPR Model.
 
+    Args:
+        x_train: Input data.
+        y_train: Target data.
+        kernel: Kernel for the GP.
+        model_params: All parameters for the model.
+
+    Keyword args:
+        mean_function: The mean function to use for the GPR.
+    """
+    # Set Optimizer and initial learning rate
+    if model_params.optimizer == OptimizerName.adam:
+        optimizer = tf.keras.optimizers.Adam(0.001)
+    elif model_params.optimizer == OptimizerName.scipy:
+        optimizer = gpflow.optimizers.Scipy()
+    # declare the model
     model = gpflow.models.GPR(
         data=(x_train, y_train), kernel=kernel, mean_function=mean_function,
     )
-
-    optimizer = gpflow.optimizers.Scipy()
 
     # Optimise
     tf.print("Using SciPy optimizer to train vanilla GPR model")
     try:
         optimizer.minimize(
-            model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+            model.training_loss, model.trainable_variables, options=dict(maxiter=model_params.maxiter)
         )
     except InvalidArgumentError:
         tf.print("Covariance matix could not be inverted.")
@@ -160,14 +122,12 @@ def _train_vanilla_gpr(
 def simple_training_loop(
     x_train: tf.Tensor,
     y_train: tf.Tensor,
-    model: gpflow.models.GPModel,
+    model: gpflow.models.SVGP,
     optimizer: tf.optimizers.Optimizer,
     maxiter: int = 2000,
     logging_freq: int = 10,
 ):
-    """
-    Iterate train a model for n iterations.
-    """
+    """Iterate train a model for n iterations."""
     ## Optimization functions - train the model for the given maxiter
     def optimization_step(model: gpflow.models.SVGP, x_train: tf.Tensor, y_train: tf.Tensor):
         with tf.GradientTape(watch_accessed_variables=False) as tape:

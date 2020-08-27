@@ -100,7 +100,7 @@ def scoot(
     # create an experiment from the datasets
     experiment = ScootExperiment.from_scoot_configs(
         data_config=[x.data_config for x in datasets],
-        model_name="svgp",
+        model_name=model_name,
         model_params=model_params,
         preprocessing=preprocessing,
         cluster_id=cluster_id,

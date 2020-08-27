@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import List, Optional, Union, TYPE_CHECKING
 import pandas as pd
-import tensorflow as tf
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import TrafficDataTable, TrafficInstanceTable, TrafficModelTable
 from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict, save_model
 from cleanair.mixins import ScootQueryMixin
 from .experiment import ExperimentMixin
-from ..modelling import parse_kernel, train_sensor_model
+from ..modelling import parse_kernel, train_svgp, train_vanilla_gpr
+from ..types import ModelName
 from .utils import save_gpflow2_model_to_file
 
 if TYPE_CHECKING:
@@ -91,31 +91,39 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
             # get a kernel from settings
             kernel = parse_kernel(model_params["kernel"])  # returns gpflow kernel
 
-            # Set Optimizer and initial learning rate
-            optimizer = tf.keras.optimizers.Adam(0.001)
-
             if dryrun:
                 continue
 
-            self.logger.info("Training model on instance %s", row["instance_id"])
-            # Train
-            model = train_sensor_model(
-                dataset.features_tensor,
-                dataset.target_tensor,
-                model_params["model_name"],
-                kernel,
-                optimizer,
-                maxiter=model_params["maxiter"],
-                logging_freq=logging_freq,
-                n_inducing_points=model_params.n_inducing_points,
-                inducing_point_method=model_params.inducing_point_method,
-            )
+            # TODO: generalise for multiple features
+            num_features = dataset.features_tensor.shape[1]
+            if num_features > 1:
+                raise NotImplementedError(
+                    "We are only using one feature - upgrade coming soon."
+                )
+            # choose the model training function
+            self.logger.info("Training %s on instance %s", row["model_name"], row["instance_id"])
+            if row["model_name"] == ModelName.svgp:
+                model = train_svgp(
+                    x_train=dataset.features_tensor,
+                    y_train=dataset.target_tensor,
+                    kernel=kernel,
+                    model_params=model_params,
+                    logging_freq=logging_freq,
+                )
+            elif row["model_name"] == ModelName.gpr:
+                model = train_vanilla_gpr(
+                    x_train=dataset.features_tensor,
+                    y_train=dataset.target_tensor,
+                    kernel=kernel,
+                    model_params=model_params,
+                )
 
             # Save
-            save_model(model,
-                       row["instance_id"],
-                       save_gpflow2_model_to_file,
-                       model_dir=self.input_dir,
+            save_model(
+                model=model,
+                instance_id=row["instance_id"],
+                save_fn=save_gpflow2_model_to_file,
+                model_dir=self.input_dir,
             )
             model_list.append(model)
         return model_list
