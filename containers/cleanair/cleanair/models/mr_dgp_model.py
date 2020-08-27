@@ -202,7 +202,6 @@ class MRDGP(ModelMixin):
         x_sat = x_train["satellite"].copy()
         y_sat = y_train["satellite"]["NO2"].copy()
 
-
         # ===========================Setup Data===========================
         features = [0, 1, 2]
         x_laqn = x_laqn[:, features]

@@ -7,7 +7,7 @@ from ..state import state
 
 app = typer.Typer()
 
-# pylint: disable=W0613
+# pylint: disable=W0613,W0612
 @app.command()
 def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
     """Check what AQE data is in the database"""
@@ -24,11 +24,8 @@ def fill(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
     default_logger = initialise_logging(state["verbose"])
 
     # Update the AQE tables on the database, logging any unhandled exceptions
-    try:
-        aqe_writer = AQEWriter(
-            end=upto, nhours=nhours + ndays, secretfile=state["secretfile"]
-        )
-        aqe_writer.update_remote_tables()
-    except Exception as error:
-        default_logger.error("An uncaught exception occurred: %s", str(error))
-        raise
+
+    aqe_writer = AQEWriter(
+        end=upto, nhours=nhours + ndays, secretfile=state["secretfile"]
+    )
+    aqe_writer.update_remote_tables()

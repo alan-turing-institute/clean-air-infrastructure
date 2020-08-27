@@ -5,6 +5,7 @@ from typing import List
 from datetime import datetime
 from sqlalchemy import func
 from ...decorators import db_query
+from ...databases.materialised_views import LondonBoundaryView
 from ...databases.tables import (
     AQEReading,
     AQESite,
@@ -30,13 +31,13 @@ class DBQueryMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+    @db_query
     def query_london_boundary(self):
-        """Query LondonBoundary to obtain the bounding geometry for London"""
+        """Query LondonBoundary to obtain the bounding geometry for London.
+        Only get the first row as should only be one entry"""
         with self.dbcnxn.open_session() as session:
-            hull = session.scalar(
-                func.ST_ConvexHull(func.ST_Collect(LondonBoundary.geom))
-            )
-        return hull
+
+            return session.query(LondonBoundaryView.geom).limit(1)
 
     @db_query
     def get_laqn_readings(

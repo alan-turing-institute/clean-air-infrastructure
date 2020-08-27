@@ -3,6 +3,16 @@ from enum import Enum, unique
 
 
 @unique
+class ClusterId(str, Enum):
+    """Ids for clusters."""
+
+    laptop = "laptop"
+    pearl = "pearl"
+    kubernetes = "kubernetes"
+    orac = "orac"
+
+
+@unique
 class FeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"
@@ -38,6 +48,14 @@ class FeatureBufferSize(str, Enum):
 
 
 @unique
+class ModelName(str, Enum):
+    """Valid model names for air quality models."""
+
+    mrdgp = "mrdgp"
+    svgp = "svgp"
+
+
+@unique
 class Source(str, Enum):
     """Different types of source for metapoints."""
 
@@ -59,14 +77,11 @@ class Species(str, Enum):
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
 
-    @classmethod
-    def has_key(cls, key: str) -> bool:
-        """Returns true if the key is the same as one of the species.
 
-        Args:
-            key: The key to check.
+@unique
+class Tag(str, Enum):
+    """Valid options for tags."""
 
-        Returns:
-            True if key is a species, false otherwise.
-        """
-        return key in cls.__members__.keys()
+    production = "production"
+    test = "test"
+    validation = "validation"
