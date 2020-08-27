@@ -15,6 +15,7 @@ from .utils import save_gpflow2_model_to_file
 
 if TYPE_CHECKING:
     import gpflow
+    from pathlib import Path
     from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
     from ..types import ScootModelParams
 
@@ -43,6 +44,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         model_params: Union[List[ScootModelParams], ScootModelParams],
         preprocessing: Union[List[ScootPreprocessing], ScootPreprocessing],
         cluster_id: str = "laptop",
+        input_dir: Optional[Path] = None,
         tag: str = "model_per_detector",
         secretfile: Optional[str] = None,
     ) -> ScootExperiment:
@@ -63,7 +65,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         frame["instance_id"] = frame.apply(
             lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1
         )
-        return ScootExperiment(frame=frame, secretfile=secretfile)
+        return ScootExperiment(frame=frame, input_dir=input_dir, secretfile=secretfile)
 
 
     def train_models(
@@ -113,7 +115,7 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
             save_model(model,
                        row["instance_id"],
                        save_gpflow2_model_to_file,
-                       model_dir="gpflow2_models/",
+                       model_dir=self.input_dir,
             )
             model_list.append(model)
         return model_list
