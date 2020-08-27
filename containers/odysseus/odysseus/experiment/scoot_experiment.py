@@ -84,23 +84,36 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         # loop over datasets training models and saving the trained models
         for i, dataset in enumerate(datasets):
             row = self.frame.iloc[i]
-            model_params = row["model_params"]
+            model_params: ScootModelParams = row["model_params"]
             self.logger.info("Training model on instance %s", row["instance_id"])
             # get a kernel from settings
+            kernel = parse_kernel(model_params["kernel"])  # returns gpflow kernel
+
+            # Set Optimizer and initial learning rate
+            optimizer = tf.keras.optimizers.Adam(0.001)
+
             if dryrun:
                 continue
-            optimizer = tf.keras.optimizers.Adam(0.001)
-            kernel = parse_kernel(model_params.kernel)  # returns gpflow kernel
+
+            self.logger.info("Training model on instance %s", row["instance_id"])
+            # Train
             model = train_sensor_model(
                 dataset.features_tensor,
                 dataset.target_tensor,
+                model_params["model_name"],
                 kernel,
                 optimizer,
-                maxiter=model_params.maxiter,
+                maxiter=model_params["maxiter"],
                 logging_freq=logging_freq,
                 n_inducing_points=model_params.n_inducing_points,
+                inducing_point_method=model_params.inducing_point_method,
             )
-            # TODO save models to file
-            # save_model(row["instance_id"], model, save_gpflow2_model_to_file)
+
+            # Save
+            save_model(model,
+                       row["instance_id"],
+                       save_gpflow2_model_to_file,
+                       model_dir="gpflow2_models/",
+            )
             model_list.append(model)
         return model_list

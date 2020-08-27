@@ -1,7 +1,7 @@
 """
 A dataset for scoot.
 """
-
+from __future__ import annotations
 from typing import Collection, List, Optional
 import tensorflow as tf
 import numpy as np

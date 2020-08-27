@@ -49,7 +49,7 @@ def save_model(
     # create a local directory
     logger.info("Creating directory to save model (if it doesn't exist).")
     export_dir = os.path.join(model_dir, instance_id)
-    Path(export_dir).mkdir(exist_ok=True)
+    Path(export_dir).mkdir(exist_ok=True, parents=True)
     logger.info("Saving model to %s", export_dir)
 
     # call the save function to write the model to a file
