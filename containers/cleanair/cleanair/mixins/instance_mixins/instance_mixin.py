@@ -3,14 +3,12 @@
 from __future__ import annotations
 from abc import abstractmethod
 from datetime import datetime
-from typing import Dict, Optional, Union, TYPE_CHECKING
+from typing import Dict, Optional, Union
+from pydantic import BaseModel
 from sqlalchemy import inspect
 from ...databases.mixins import DataTableMixin, ModelTableMixin, InstanceTableMixin
 from ...types import ClusterId, ModelName, Tag
 from ...utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
-
-if TYPE_CHECKING:
-    from pydantic import BaseModel
 
 class InstanceMixin:
     """
@@ -64,10 +62,18 @@ class InstanceMixin:
     @property
     def param_id(self) -> str:
         """Parameter id of the model."""
-        return hash_fn(self._model_params.json(sort_keys=True))
+        return hash_fn(self.model_params.json(sort_keys=True))
 
     def dict(self) -> Dict[str, Union[Dict, str]]:
-        """Export instance to dictionary."""
+        """Export instance to dictionary.
+
+        Notes:
+            Any datetimes are converted to ISO format.
+        """
+        data_config = self.data_config.dict()
+        for key, value in data_config.items():
+            if isinstance(value, datetime):
+                data_config[key] = value.isoformat()
         return dict(
             instance_id=self.instance_id,
             param_id=self.param_id,
@@ -77,7 +83,7 @@ class InstanceMixin:
             tag=self.tag,
             git_hash=self.git_hash,
             model_name=self.model_name,
-            data_config=self.data_config.dict(),
+            data_config=data_config,
             preprocessing=self.preprocessing.dict(),
             model_params=self.model_params.dict(),
         )
