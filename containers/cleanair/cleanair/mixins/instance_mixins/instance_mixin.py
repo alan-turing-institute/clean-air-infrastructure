@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Dict, Optional, Union, TYPE_CHECKING
 from sqlalchemy import inspect
 from ...databases.mixins import DataTableMixin, ModelTableMixin, InstanceTableMixin
+from ...types import ClusterId, ModelName, Tag
 from ...utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
 if TYPE_CHECKING:
@@ -31,13 +32,13 @@ class InstanceMixin:
     def __init__(
         self,
         data_config: BaseModel,
-        model_name: str,
+        model_name: ModelName,
         model_params: BaseModel,
-        cluster_id: str = "laptop",
+        cluster_id: ClusterId = ClusterId.laptop,
         fit_start_time: Optional[datetime] = None,
         git_hash: Optional[str] = None,
         preprocessing: Optional[BaseModel] = None,
-        tag: str = "test",
+        tag: Tag = Tag.test,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
