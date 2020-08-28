@@ -3,14 +3,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import pandas as pd
-from cleanair.parsers.urbanair_parser.state import (
-    DATA_CONFIG,
-    FORECAST_RESULT_PICKLE,
-    MODEL_TRAINING_PICKLE,
-    MODEL_PREDICTION_PICKLE,
-    RESULT_CACHE,
-    TRAINING_RESULT_PICKLE,
-)
 from cleanair.types import Source
 from cleanair.utils import FileManager
 
@@ -26,7 +18,7 @@ def test_save_load_data_config(
     file_manager = FileManager(input_dir)
     # save data config to file
     file_manager.save_data_config(valid_config, full=False)
-    assert file_manager.input_dir.joinpath(*DATA_CONFIG.parts[-1:]).exists()
+    assert (file_manager.input_dir / FileManager.DATA_CONFIG).exists()
 
     # load data config from file
     loaded_config = file_manager.load_data_config(full=False)
@@ -43,8 +35,8 @@ def test_save_load_train_test(
     # save the train/test data to file
     file_manager.save_training_data(dataset_dict)
     file_manager.save_test_data(dataset_dict)
-    assert file_manager.input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
-    assert file_manager.input_dir.joinpath(*MODEL_PREDICTION_PICKLE.parts[-2:])
+    assert (file_manager.input_dir / FileManager.TRAINING_DATA_PICKLE).exists()
+    assert (file_manager.input_dir / FileManager.TEST_DATA_PICKLE).exists()
 
     # load the train/test data from file
     train_data = file_manager.load_training_data()
@@ -63,18 +55,18 @@ def test_save_load_result_pickles(
     # save forecast pickle
     file_manager.save_forecast_to_pickle(target_dict)
     assert (
-        file_manager.input_dir.joinpath(*FORECAST_RESULT_PICKLE.parts[-2:])
+        file_manager.input_dir / FileManager.PRED_FORECAST_PICKLE
     ).exists()
 
     # save training result pickle
     file_manager.save_training_pred_to_pickle(target_dict)
     assert (
-        file_manager.input_dir.joinpath(*TRAINING_RESULT_PICKLE.parts[-2:])
+        file_manager.input_dir / FileManager.PRED_TRAINING_PICKLE
     ).exists()
 
     # load training result and forecast
     forecast_pickle = file_manager.load_forecast_from_pickle()
-    training_result_pickle = file_manager.load_training_pred_from_pickle()
+    training_result_pickle = file_manager.load_pred_training_from_pickle()
 
     # check the arrays are the same
     for source, species_dict in target_dict.items():
@@ -92,22 +84,18 @@ def test_save_load_result_csv(
     # save the forecast as csv
     file_manager.save_forecast_to_csv(target_df, source)
     assert (
-        file_manager.input_dir.joinpath(
-            *RESULT_CACHE.parts[-1:], f"{source.value}_forecast.csv"
-        )
-    ).exists()
+        file_manager.input_dir / FileManager.RESULT / f"{source.value}_pred_forecast.csv"
+        ).exists()
 
     # save the training results as csv
     file_manager.save_training_pred_to_csv(target_df, source)
     assert (
-        file_manager.input_dir.joinpath(
-            *RESULT_CACHE.parts[-1:], f"{source.value}_training_pred.csv"
-        )
-    ).exists()
+        file_manager.input_dir / FileManager.RESULT / f"{source.value}_pred_training.csv"
+        ).exists()
 
     # load the results from csv
     forecast_df = file_manager.load_forecast_from_csv(source)
-    training_result_df = file_manager.load_training_pred_from_csv(source)
+    training_result_df = file_manager.load_pred_training_from_csv(source)
 
     # check the columns are the same for the original and loaded data
     assert set(target_df.columns) == set(forecast_df.columns)
