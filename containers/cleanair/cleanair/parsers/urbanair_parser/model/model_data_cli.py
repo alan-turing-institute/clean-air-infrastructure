@@ -6,6 +6,7 @@ import shutil
 import typer
 from ..state import (
     state,
+    DATA_CACHE,
     DATA_CONFIG,
     DATA_CONFIG_FULL,
     MODEL_TRAINING_PICKLE,
@@ -252,7 +253,7 @@ def save_cache(
 
     # Copy directory
     state["logger"].info(f"Copying cache to {output_dir}")
-    shutil.copytree(DATA_CONFIG, output_dir)
+    shutil.copytree(DATA_CACHE, output_dir)
 
     if output_csv:
 
