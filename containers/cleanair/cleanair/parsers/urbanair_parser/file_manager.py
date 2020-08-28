@@ -102,7 +102,9 @@ class FileManager:
             )
         raise typer.Abort()
 
-    def save_data_config(self, data_config: Union[DataConfig, FullDataConfig], full: bool = False) -> None:
+    def save_data_config(
+        self, data_config: Union[DataConfig, FullDataConfig], full: bool = False
+    ) -> None:
         """Save a data config to file."""
         if full:
             config = DATA_CONFIG_FULL

@@ -172,6 +172,7 @@ def generate_full_config() -> None:
     full_config = model_config.generate_full_config(config)
     file_manager.save_data_config(full_config, full=True)
 
+
 @app.command()
 def download(
     training_data: bool = typer.Option(
@@ -213,6 +214,7 @@ def download(
 
         state["logger"].info("Writing prediction data to cache")
         file_manager.save_test_data(prediction_data_df_norm)
+
 
 @app.command()
 def save_cache(
