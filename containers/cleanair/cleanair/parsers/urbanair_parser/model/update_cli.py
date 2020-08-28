@@ -48,16 +48,14 @@ def results(
     # create an instance with correct ids
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
+        data_config=full_config,
         model_name=model_name,
-        param_id=model_params.param_id(),
-        data_id=full_config.data_id(),
+        model_params=model_params,
         cluster_id=cluster_id,
         tag=tag,
-        fit_start_time=datetime.utcnow().isoformat(),
+        fit_start_time=datetime.utcnow(),   # TODO this should be loaded from file somehow
         secretfile=secretfile,
     )
-    instance.update_model_tables(model_params.json())
-    instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
 
     for source in test_data.keys():

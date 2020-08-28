@@ -38,7 +38,9 @@ class InstanceMixin:
         git_hash: Optional[str] = None,
         preprocessing: Optional[BaseModel] = None,
         tag: str = "test",
+        **kwargs,
     ) -> None:
+        super().__init__(**kwargs)
         self.data_config = data_config
         self.cluster_id = cluster_id
         self.fit_start_time = fit_start_time if fit_start_time else datetime.now()
