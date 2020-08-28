@@ -137,6 +137,14 @@ class FileManager:
         )
         return pd.read_csv(result_fp)
 
+    def save_training_data(self, training_data: Dict[Source, pd.DataFrame]) -> None:
+        """Save training data as a pickle."""
+        self.__save_pickle(training_data, MODEL_TRAINING_PICKLE)
+
+    def save_test_data(self, test_data: Dict[Source, pd.DataFrame]) -> None:
+        """Save test data as a pickle."""
+        self.__save_pickle(test_data, MODEL_PREDICTION_PICKLE)
+
     def load_training_pred_from_csv(self, source: Source) -> pd.DataFrame:
         """Load the training predictions for a single source from csv."""
         result_fp = self.input_dir.joinpath(
@@ -219,7 +227,7 @@ class FileManager:
             model_name: Name of the model.
         """
         export_dir = self.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
-        Path(export_dir).mkdir(exist_ok=True)
+        export_dir.mkdir(exist_ok=True)
         save_fn(model, export_dir, model_name=model_name)
 
     def load_model_params(self, model_name: str) -> Union[MRDGPParams, SVGPParams]:

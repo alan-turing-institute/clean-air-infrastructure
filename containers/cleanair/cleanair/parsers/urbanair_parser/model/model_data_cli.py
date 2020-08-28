@@ -201,8 +201,7 @@ def download(
         training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
         state["logger"].info("Writing training data to cache")
-        with MODEL_TRAINING_PICKLE.open("wb") as training_pickle_f:
-            pickle.dump(training_data_df_norm, training_pickle_f)
+        file_manager.save_training_data(training_data_df_norm)
 
     if prediction_data:
         state["logger"].info("Downloading prediction data")
@@ -213,8 +212,7 @@ def download(
         )
 
         state["logger"].info("Writing prediction data to cache")
-        with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
-            pickle.dump(prediction_data_df_norm, prediction_pickle_f)
+        file_manager.save_test_data(prediction_data_df_norm)
 
 @app.command()
 def save_cache(
@@ -256,6 +254,7 @@ def save_cache(
     shutil.copytree(DATA_CACHE, output_dir)
 
     if output_csv:
+        file_manager = FileManager()
 
         data_frame_dir = output_dir / "dataframes"
 
@@ -265,8 +264,7 @@ def save_cache(
         if MODEL_TRAINING_PICKLE.exists():
             state["logger"].info(f"Writing training data csv to {output_dir}")
 
-            with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
-                training_data_df_norm = pickle.load(training_pickle_f)
+            training_data_df_norm = file_manager.load_training_data()
 
             for key in training_data_df_norm:
                 csv_file_path = data_frame_dir / (key.value + "_training.csv")
@@ -274,9 +272,7 @@ def save_cache(
 
         if MODEL_PREDICTION_PICKLE.exists():
             state["logger"].info(f"Writing prediction data csv to {output_dir}")
-
-            with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-                prediction_data_df_norm = pickle.load(prediction_pickle_f)
+            prediction_data_df_norm = file_manager.load_test_data()
 
             for key in prediction_data_df_norm:
                 csv_file_path = data_frame_dir / (key.value + "_prediction.csv")
