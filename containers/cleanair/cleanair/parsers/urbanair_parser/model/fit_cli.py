@@ -7,6 +7,7 @@ import typer
 from ..state import MODEL_CACHE
 from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
 from ..file_manager import FileManager
+from ....types import Source
 from ....utils.tf1 import save_gpflow1_model_to_file
 
 app = typer.Typer(help="SVGP model fitting")
@@ -89,6 +90,8 @@ def fit_model(
 
     # Prediction
     y_forecast = model.predict(X_test)
+    if Source.satellite in X_train: # remove satellite when predicting on training set
+        X_train.pop(Source.satellite)
     y_training_result = model.predict(X_train)
 
     # save forecast to file
