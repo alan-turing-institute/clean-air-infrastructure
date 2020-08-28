@@ -1,24 +1,42 @@
-"""Tests for saving and loading results from an air quality model to files."""
+"""Tests for saving and loading files for an air quality model."""
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import pandas as pd
 from cleanair.parsers.urbanair_parser.state import (
+    DATA_CONFIG,
     FORECAST_RESULT_PICKLE,
     RESULT_CACHE,
     TRAINING_RESULT_PICKLE,
 )
 from cleanair.types import Source
+from cleanair.utils import FileManager
 
 if TYPE_CHECKING:
-    from cleanair.parsers.urbanair_parser import FileManager
-    from cleanair.types import TargetDict
+    from pathlib import Path
+    from cleanair.types import DataConfig, TargetDict
 
+
+def test_save_load_data_config(
+    input_dir: Path, valid_config: DataConfig
+) -> None:
+    """Test data config is saved and loaded correctly."""
+    file_manager = FileManager(input_dir)
+    # save data config to file
+    file_manager.save_data_config(valid_config, full=False)
+    assert file_manager.input_dir.joinpath(*DATA_CONFIG.parts[-1:]).exists()
+
+    # load data config from file
+    loaded_config = file_manager.load_data_config(full=False)
+    for key, value in valid_config:
+        assert hasattr(loaded_config, key)
+        assert value == getattr(loaded_config, key)
 
 def test_save_load_result_pickles(
-    file_manager: FileManager, target_dict: TargetDict
+    input_dir: Path, target_dict: TargetDict
 ) -> None:
     """Test results are loaded and saved."""
+    file_manager = FileManager(input_dir)
     # save forecast pickle
     file_manager.save_forecast_to_pickle(target_dict)
     assert (
@@ -43,9 +61,10 @@ def test_save_load_result_pickles(
 
 
 def test_save_load_result_csv(
-    file_manager: FileManager, target_df: pd.DataFrame
+    input_dir: Path, target_df: pd.DataFrame
 ) -> None:
     """Test result dataframes are saved to csv."""
+    file_manager = FileManager(input_dir)
     source = Source.laqn
     # save the forecast as csv
     file_manager.save_forecast_to_csv(target_df, source)

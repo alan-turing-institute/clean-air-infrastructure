@@ -3,20 +3,12 @@ Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name
 from datetime import datetime, timedelta
-from typing import Dict, Tuple
+from typing import Tuple
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
-from sqlalchemy.engine import Connection
-from cleanair.types import DataConfig, ParamsDict
-from cleanair.models import ModelData
-from cleanair.instance import (
-    AirQualityInstance,
-    AirQualityModelParams,
-    AirQualityResult,
-)
-from cleanair.utils import hash_dict
+from cleanair.types import DataConfig
 from nptyping import NDArray
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
@@ -76,91 +68,10 @@ def meta_within_london():
         for source in [Source.laqn, Source.aqe]
     ]
 
-
 @pytest.fixture(scope="function")
-def base_aq_preprocessing() -> Dict:
-    """An air quality dictionary for preprocessing settings."""
-    return dict()
-
-
-@pytest.fixture(scope="function")
-def svgp_params_dict() -> ParamsDict:
-    """SVGP model parameter fixture."""
-    return {
-        "jitter": 1e-5,
-        "likelihood_variance": 0.1,
-        "minibatch_size": 100,
-        "num_inducing_points": 100,
-        "restore": False,
-        "train": True,
-        "model_state_fp": None,
-        "maxiter": 100,
-        "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
-    }
-
-
-@pytest.fixture(scope="function")
-def svgp_model_params(
-    secretfile, connection, svgp_params_dict
-) -> AirQualityModelParams:
-    """Class to read and write from the database."""
-    return AirQualityModelParams(
-        secretfile, "svgp", svgp_params_dict, connection=connection,
-    )
-
-
-@pytest.fixture(scope="function")
-def svgp_param_id(svgp_params_dict: ParamsDict) -> str:
-    """Param id of svgp model params"""
-    return hash_dict(svgp_params_dict)
-
-
-@pytest.fixture(scope="function")
-def production_tag() -> str:
-    """Production tag."""
-    return "production"
-
-
-@pytest.fixture(scope="function")
-def test_tag() -> str:
-    """Test tag."""
-    return "test"
-
-
-@pytest.fixture(scope="function")
-def cluster_id() -> str:
-    """Cluster id."""
-    return "local_test"
-
-
-@pytest.fixture(scope="function")
-def fit_start_time() -> str:
+def fit_start_time() -> datetime:
     """Datetime for when model started fitting."""
-    return datetime(2020, 1, 1, 0, 0, 0).isoformat()
-
-
-@pytest.fixture(scope="function")
-def svgp_instance(  # pylint: disable=too-many-arguments
-    svgp_param_id: str,
-    model_data: ModelData,
-    cluster_id: str,
-    test_tag: str,
-    fit_start_time: str,
-    secretfile: str,
-    connection: Connection,
-) -> AirQualityInstance:
-    """SVGP air quality instance on simple LAQN data."""
-    return AirQualityInstance(
-        model_name="svgp",
-        param_id=svgp_param_id,
-        data_id=model_data.data_id,
-        cluster_id=cluster_id,
-        tag=test_tag,
-        fit_start_time=fit_start_time,
-        secretfile=secretfile,
-        connection=connection,
-    )
-
+    return datetime(2020, 1, 1, 0, 0, 0)
 
 @pytest.fixture(scope="module")
 def meta_within_london_closed():
@@ -492,4 +403,43 @@ def fake_cleanair_dataset(
         [i.dict() for i in static_feature_records],
         on_conflict="overwrite",
         table=StaticFeature,
+    )
+
+@pytest.fixture()
+def valid_config(dataset_start_date, dataset_end_date):
+    "Valid config for 'fake_cleanair_dataset' fixture"
+
+    return DataConfig(
+        **{
+            "train_start_date": dataset_start_date,
+            "train_end_date": dataset_end_date,
+            "pred_start_date": dataset_end_date,
+            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "include_prediction_y": False,
+            "train_sources": ["laqn", "aqe", "satellite"],
+            "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
+            "train_interest_points": {"laqn": "all", "aqe": "all", "satellite": "all"},
+            "pred_interest_points": {
+                "laqn": "all",
+                "aqe": "all",
+                "satellite": "all",
+                "hexgrid": "all",
+            },
+            "species": ["NO2"],
+            "features": [
+                "total_road_length",
+                "total_a_road_length",
+                "total_a_road_primary_length",
+                "total_b_road_length",
+                "grass",
+                "building_height",
+                "water",
+                "park",
+                "max_canyon_narrowest",
+                "max_canyon_ratio",
+            ],
+            "buffer_sizes": ["1000", "500"],
+            "norm_by": "laqn",
+            "model_type": "svgp",
+        }
     )

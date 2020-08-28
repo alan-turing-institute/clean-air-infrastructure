@@ -54,6 +54,7 @@ class InstanceMixin:
     @property
     def data_id(self) -> str:
         """Data id of configuration of input data."""
+        # TODO preprocessing dict should also be included here
         return hash_fn(self.model_params.json(sort_keys=True))
 
     @property
