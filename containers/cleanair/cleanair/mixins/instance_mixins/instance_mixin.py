@@ -10,6 +10,7 @@ from ...databases.mixins import DataTableMixin, ModelTableMixin, InstanceTableMi
 from ...types import ClusterId, ModelName, Tag
 from ...utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
 
+
 class InstanceMixin:
     """
     An instance a model (with some params) trained on some data (described by a data config)
@@ -27,6 +28,7 @@ class InstanceMixin:
         preprocessing: Settings for preprocessing the training data.
         tag: Name of the instance type, e.g. 'production', 'test', 'validation'.
     """
+
     def __init__(
         self,
         data_config: BaseModel,
@@ -57,7 +59,9 @@ class InstanceMixin:
     @property
     def instance_id(self) -> str:
         """Instance id from the data id, model name and param id."""
-        return instance_id_from_hash(self.model_name, self.param_id, self.data_id, self.git_hash)
+        return instance_id_from_hash(
+            self.model_name, self.param_id, self.data_id, self.git_hash
+        )
 
     @property
     def param_id(self) -> str:
@@ -87,6 +91,7 @@ class InstanceMixin:
             preprocessing=self.preprocessing.dict(),
             model_params=self.model_params.dict(),
         )
+
 
 class UpdateInstanceMixin(InstanceMixin):
     """An instance which writes itself to the database."""
@@ -132,4 +137,3 @@ class UpdateInstanceMixin(InstanceMixin):
         self.commit_records(
             instance_records, on_conflict="overwrite", table=self.instance_table,
         )
-

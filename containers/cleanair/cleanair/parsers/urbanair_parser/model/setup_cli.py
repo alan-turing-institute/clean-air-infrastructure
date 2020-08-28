@@ -13,7 +13,7 @@ from ..shared_args.model_options import (
     NumInducingPoints,
 )
 from ....types.model_types import KernelParams, SVGPParams, MRDGPParams
-from ..file_manager import FileManager
+from ....utils import FileManager
 
 app = typer.Typer(help="Setup model parameters.")
 

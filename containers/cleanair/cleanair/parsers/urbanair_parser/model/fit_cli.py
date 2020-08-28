@@ -6,9 +6,8 @@ from pathlib import Path
 import typer
 from ..state import MODEL_CACHE
 from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
-from ..file_manager import FileManager
 from ....types import Source
-from ....utils.tf1 import save_gpflow1_model_to_file
+from ....utils import FileManager, tf1
 
 app = typer.Typer(help="SVGP model fitting")
 
@@ -30,7 +29,9 @@ def svgp(
     model_params = file_manager.load_model_params("svgp")
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
     model = fit_model(model, file_manager, exist_ok=exist_ok)
-    file_manager.save_model(model.model, save_gpflow1_model_to_file, model_name="svgp")
+    file_manager.save_model(
+        model.model, tf1.save_gpflow1_model_to_file, model_name="svgp"
+    )
 
 
 @app.command()

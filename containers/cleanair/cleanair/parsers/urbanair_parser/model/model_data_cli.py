@@ -1,7 +1,6 @@
 """Commands for a Sparse Variational GP to model air quality."""
 from typing import List
 from pathlib import Path
-import pickle
 import shutil
 import typer
 from ..state import (
@@ -28,7 +27,7 @@ from ....types import (
     FeatureBufferSize,
 )
 from ....loggers import red, green
-from ..file_manager import FileManager
+from ....utils import FileManager
 
 app = typer.Typer(help="Get data for model fitting")
 

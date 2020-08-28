@@ -45,9 +45,10 @@ from .jamcam_tables import JamCamFrameStats, JamCamVideoStats
 __all__ = [
     "AirQualityDataTable",
     "AirQualityInstanceTable",
-    "AirQualityMetricsTable",
     "AirQualityModelTable",
     "AirQualityResultTable",
+    "AirQualitySpatialMetricsTable",
+    "AirQualityTemporalMetricsTable",
     "AQEReading",
     "AQESite",
     "DynamicFeature",

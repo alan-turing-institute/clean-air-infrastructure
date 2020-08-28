@@ -7,8 +7,8 @@ import json
 import pickle
 import typer
 import pandas as pd
-from ...loggers import red
-from ...types import (
+from ..loggers import red
+from ..types import (
     DataConfig,
     FullDataConfig,
     MRDGPParams,
@@ -16,7 +16,7 @@ from ...types import (
     SVGPParams,
     TargetDict,
 )
-from .state import (
+from ..parsers.urbanair_parser.state import (
     state,
     DATA_CACHE,
     DATA_CONFIG,
