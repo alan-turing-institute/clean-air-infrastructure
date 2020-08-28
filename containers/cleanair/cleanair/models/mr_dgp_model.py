@@ -368,7 +368,6 @@ class MRDGP(ModelMixin):
                         self.model.set_dgp_gp_noise(False)
 
                     #print(tf.gradients())
-                    
                     if False:
                         total_parameters = 0
                         for variable in tf.trainable_variables():
