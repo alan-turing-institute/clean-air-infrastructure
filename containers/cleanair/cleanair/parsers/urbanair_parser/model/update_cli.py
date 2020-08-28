@@ -10,7 +10,7 @@ from ....loggers import get_logger
 from ....metrics import AirQualityMetrics
 from ....models import ModelDataExtractor
 from ..file_manager import FileManager
-from ....types import ClusterId, ModelName, Tag
+from ....types import ClusterId, ModelName, Tag, Source
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -19,8 +19,10 @@ app = typer.Typer(help="Update database with model fit.")
 def results(
     model_name: ModelName,
     input_dir: Path = typer.Argument(None),
-    cluster_id: str = ClusterId,
-    tag: str = Tag,
+    cluster_id: ClusterId = typer.Option(
+        ClusterId.laptop, help="The name of the cluster."
+    ),
+    tag: Tag = typer.Option(Tag.test, help="A tag for the instance."),
 ):
     """Update the results to the database."""
     logger = get_logger("update_results")
@@ -77,16 +79,25 @@ def results(
         )
         result.update_remote_tables()  # write results to DB
     for source in train_data.keys():
-        logger.info("Writing the training predictions to CSV for source %s", source.value)
+        if source == Source.satellite:
+            continue
+        logger.info(
+            "Writing the training predictions to CSV for source %s", source.value
+        )
 
         training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
             train_data[source], y_training_pred[source], index_train[source],
         )
         training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
         file_manager.save_training_pred_to_csv(training_pred_df, source)
-        logger.info("Writing training predictions to result table for source %s", source.value)
+        logger.info(
+            "Writing training predictions to result table for source %s", source.value
+        )
         result = AirQualityResult(
-            instance.instance_id, instance.data_id, training_pred_df, secretfile=secretfile
+            instance.instance_id,
+            instance.data_id,
+            training_pred_df,
+            secretfile=secretfile,
         )
         result.update_remote_tables()
     logger.info("Instance %s result written to database.", instance.instance_id)

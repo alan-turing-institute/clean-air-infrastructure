@@ -665,6 +665,18 @@ Remember that the `PGPASSWORD` token will only be valid for ~1h.
 
 To train a model on your local machine you can run a model fitting entrypoint:
 
+TL;DR
+```bash
+urbanair init production
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source laqn
+urbanair model data generate-full-config
+urbanair model data download --training-data --prediction-data
+urbanair model setup mrdgp
+urbanair model fit mrdgp
+urbanair model update result mrdgp
+urbanair model update metrics INSTANCE_ID
+```
+
 ### Generate a model config
 ```bash
 urbanair model data generate-config --train-source laqn --train-source satellite --pred-source satellite --pred-source laqn --pred-source hexgrid
