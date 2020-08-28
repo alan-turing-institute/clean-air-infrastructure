@@ -75,7 +75,7 @@ class MRDGP(ModelMixin):
                 "kernel": [
                     {
                         "name": "MR_LINEAR_SAT_DGP",
-                        #"type": "se",
+                        # "type": "se",
                         "type": "linear",
                         "active_dims": [0],  # previous GP, lat, lon,
                         "variance": [1.0],
@@ -103,7 +103,6 @@ class MRDGP(ModelMixin):
             Construct the DGP multi-res mixture
         """
 
-
         k_base_1 = get_kernel(self.model_params["base_laqn"]["kernel"], "base_laqn")
         k_base_2 = get_kernel(self.model_params["base_sat"]["kernel"], "base_sat")
         k_dgp_1 = get_kernel(self.model_params["dgp_sat"]["kernel"], "dgp_sat")
@@ -114,7 +113,7 @@ class MRDGP(ModelMixin):
         num_z_base_sat = self.model_params["base_sat"]["num_inducing_points"]
         num_z_dgp_sat = self.model_params["dgp_sat"]["num_inducing_points"]
 
-        #inducing points across the whole LAQN, SAT period
+        # inducing points across the whole LAQN, SAT period
         base_z_inducing_locations = [
             get_inducing_points(dataset[0][0], num_z_base_laqn),
             get_inducing_points(dataset[1][0], num_z_base_sat),
@@ -128,7 +127,7 @@ class MRDGP(ModelMixin):
             axis=1,
         )
 
-        #get inducing points in space concatenated with Y_laqn skipping the time dimension
+        # get inducing points in space concatenated with Y_laqn skipping the time dimension
         dgp_z_inducing_locations = get_inducing_points(
             np.concatenate([dataset[0][1], sliced_dataset], axis=1), num_z_dgp_sat
         )
@@ -139,7 +138,7 @@ class MRDGP(ModelMixin):
             d_2 = data[:, i:]
             return np.concatenate([d_1, col, d_2], axis=1)
 
-        #insert a dummy time dimension
+        # insert a dummy time dimension
         dgp_z_inducing_locations = insert(
             dgp_z_inducing_locations, np.ones([dgp_z_inducing_locations.shape[0]]), 1
         )
@@ -207,17 +206,16 @@ class MRDGP(ModelMixin):
         x_laqn = x_laqn[:, features]
         x_sat = x_sat[:, :, features]
 
-
-
         if False:
-            print(np.unique(x_laqn[:,  0]))
+            print(np.unique(x_laqn[:, 0]))
             print(np.unique(x_sat[:, :, 0]))
 
-            print('x_laqn: ', x_laqn.shape)
-            print('x_sat: ', x_sat.shape)
+            print("x_laqn: ", x_laqn.shape)
+            print("x_sat: ", x_sat.shape)
 
             import matplotlib as mpl
             import matplotlib.pyplot as plt
+
             norm = mpl.colors.Normalize(vmin=np.min(y_laqn), vmax=np.max(y_laqn))
 
             try:
@@ -228,26 +226,43 @@ class MRDGP(ModelMixin):
                     N_sat, N_disr, N_d = x_sat.shape
 
                     y_sat_filtered = np.tile(y_sat[:, None, :], [1, N_disr, 1])
-                    x_sat_filtered = x_sat.reshape(N_sat*N_disr, N_d)
-                    y_sat_filtered = y_sat_filtered.reshape(N_sat*N_disr, 1)
-                    idx = x_sat_filtered[:,  0] == time_point
+                    x_sat_filtered = x_sat.reshape(N_sat * N_disr, N_d)
+                    y_sat_filtered = y_sat_filtered.reshape(N_sat * N_disr, 1)
+                    idx = x_sat_filtered[:, 0] == time_point
                     x_sat_filtered = x_sat_filtered[idx, :]
                     y_sat_filtered = y_sat_filtered[idx, :]
 
-
-                    x_sat_filtered = x_sat_filtered.reshape(int(x_sat_filtered.shape[0]/N_disr), N_disr, N_d)
-                    y_sat_filtered = y_sat_filtered.reshape(int(y_sat_filtered.shape[0]/N_disr), N_disr, 1)
+                    x_sat_filtered = x_sat_filtered.reshape(
+                        int(x_sat_filtered.shape[0] / N_disr), N_disr, N_d
+                    )
+                    y_sat_filtered = y_sat_filtered.reshape(
+                        int(y_sat_filtered.shape[0] / N_disr), N_disr, 1
+                    )
 
                     x_laqn_filtered = x_laqn[x_laqn[:, 0] == time_point, :]
                     y_laqn_filtered = y_laqn[x_laqn[:, 0] == time_point, :]
 
-                    print('y_sat_filtered: ', y_sat_filtered.shape)
+                    print("y_sat_filtered: ", y_sat_filtered.shape)
                     print(y_sat_filtered)
-                    print('max laqn , sat: ', np.max(y_laqn_filtered), np.max(y_sat_filtered))
+                    print(
+                        "max laqn , sat: ",
+                        np.max(y_laqn_filtered),
+                        np.max(y_sat_filtered),
+                    )
 
-                    plt.scatter(x_sat_filtered[:, :, 1], x_sat_filtered[:, :, 2], c=np.squeeze(y_sat_filtered[:, :, 0]), norm=norm)
-     
-                    plt.scatter(x_laqn_filtered[:,  1], x_laqn_filtered[:,  2], c=np.squeeze(y_laqn_filtered), norm=norm)
+                    plt.scatter(
+                        x_sat_filtered[:, :, 1],
+                        x_sat_filtered[:, :, 2],
+                        c=np.squeeze(y_sat_filtered[:, :, 0]),
+                        norm=norm,
+                    )
+
+                    plt.scatter(
+                        x_laqn_filtered[:, 1],
+                        x_laqn_filtered[:, 2],
+                        c=np.squeeze(y_laqn_filtered),
+                        norm=norm,
+                    )
                     plt.legend()
                     plt.show()
                     _i += 1
@@ -255,7 +270,7 @@ class MRDGP(ModelMixin):
                     if _i == 24:
                         break
             except KeyboardInterrupt:
-                print('ending')
+                print("ending")
 
             exit()
         # X = [X_laqn[:, None, :], X_sat]
@@ -267,8 +282,8 @@ class MRDGP(ModelMixin):
         print(x_sat)
         print(x_laqn)
         print(np.min(x_laqn, axis=0), np.max(x_laqn, axis=0))
-        print('LAQN: ', np.min(y_laqn), np.max(y_laqn))
-        print('SAT: ', np.min(y_sat), np.max(y_sat))
+        print("LAQN: ", np.min(y_laqn), np.max(y_laqn))
+        print("SAT: ", np.min(y_sat), np.max(y_sat))
 
         if mask:
             # remove any satellite tiles that are not fully in London
@@ -293,7 +308,7 @@ class MRDGP(ModelMixin):
         print(y_laqn.shape)
 
         # ===========================Setup Model===========================
-        #dataset = [LAQN, SAT]
+        # dataset = [LAQN, SAT]
         dataset = [[X[1], Y[1]], [X[0], Y[0]]]
         model_dgp = self.make_mixture(dataset, name_prefix="m1_")
         tf.local_variables_initializer()
@@ -319,7 +334,7 @@ class MRDGP(ModelMixin):
                 simple_optimizing_scheme = True
 
                 if not simple_optimizing_scheme:
-                    #train first layer
+                    # train first layer
                     self.model.disable_dgp_elbo()
                     set_objective(AdamOptimizer, "base_elbo")
                     # TODO maxiter for different models (sat, laqn -> sat)
@@ -332,19 +347,19 @@ class MRDGP(ModelMixin):
                     )
 
                     if True:
-                        #train 2nd layer
+                        # train 2nd layer
                         self.model.disable_base_elbo()
                         self.model.enable_dgp_elbo()
-                        set_objective(AdamOptimizer, 'elbo')
+                        set_objective(AdamOptimizer, "elbo")
                         opt.minimize(
                             self.model,
                             step_callback=self.elbo_logger,
                             maxiter=self.model_params["base_laqn"]["maxiter"],
                         )
 
-                        #train both layers
+                        # train both layers
                         self.model.enable_base_elbo()
-                        set_objective(AdamOptimizer, 'elbo')
+                        set_objective(AdamOptimizer, "elbo")
                         opt.minimize(
                             self.model,
                             step_callback=self.elbo_logger,
@@ -354,9 +369,9 @@ class MRDGP(ModelMixin):
                             self.model.set_base_gp_noise(True)
                             self.model.set_dgp_gp_noise(True)
 
-                            #train both layers
+                            # train both layers
                             self.model.enable_base_elbo()
-                            set_objective(AdamOptimizer, 'elbo')
+                            set_objective(AdamOptimizer, "elbo")
                             opt.minimize(
                                 self.model,
                                 step_callback=self.elbo_logger,
@@ -366,20 +381,30 @@ class MRDGP(ModelMixin):
                     self.model.set_base_gp_noise(False)
                     self.model.set_dgp_gp_noise(False)
 
-                    #print(tf.gradients())
-                    
+                    # print(tf.gradients())
+
                     if False:
                         total_parameters = 0
                         for variable in tf.trainable_variables():
-                            print(variable, ': ', np.sum(np.array(tf.gradients(self.model._build_likelihood(), variable)[0].eval(session=tf_session))))
+                            print(
+                                variable,
+                                ": ",
+                                np.sum(
+                                    np.array(
+                                        tf.gradients(
+                                            self.model._build_likelihood(), variable
+                                        )[0].eval(session=tf_session)
+                                    )
+                                ),
+                            )
 
                     print(self.model_params["base_laqn"]["maxiter"])
-                    set_objective(AdamOptimizer, 'elbo')
+                    set_objective(AdamOptimizer, "elbo")
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
                         maxiter=self.model_params["base_laqn"]["maxiter"],
-                        anchor=True
+                        anchor=True,
                     )
 
         except KeyboardInterrupt:

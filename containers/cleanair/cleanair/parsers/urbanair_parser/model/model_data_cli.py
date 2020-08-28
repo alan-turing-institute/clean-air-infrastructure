@@ -172,6 +172,7 @@ def generate_full_config() -> None:
     full_config = model_config.generate_full_config(config)
     file_manager.save_data_config(full_config, full=True)
 
+
 @app.command()
 def download(
     training_data: bool = typer.Option(
@@ -215,6 +216,7 @@ def download(
         state["logger"].info("Writing prediction data to cache")
         with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
             pickle.dump(prediction_data_df_norm, prediction_pickle_f)
+
 
 @app.command()
 def save_cache(

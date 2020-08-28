@@ -90,7 +90,7 @@ def fit_model(
 
     # Prediction
     y_forecast = model.predict(X_test)
-    if Source.satellite in X_train: # remove satellite when predicting on training set
+    if Source.satellite in X_train:  # remove satellite when predicting on training set
         X_train.pop(Source.satellite)
     y_training_result = model.predict(X_train)
 

@@ -82,26 +82,55 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         train_df["forecast"] = False  # split into train and test
         try:
             self.logger.info("Reading test data from database.")
-            test_data = model_data.download_prediction_config_data(self.data_config, with_sensor_readings=True)
+            test_data = model_data.download_prediction_config_data(
+                self.data_config, with_sensor_readings=True
+            )
             test_df: pd.DataFrame = test_data[Source.laqn]
             test_df["forecast"] = True
             self.logger.info("Merging the train and test dataframes for LAQN.")
-            self.logger.debug("Number of points in the train dataframe for LAQN is %s", len(train_df))
-            self.logger.debug("Number of points in the test dataframe for LAQN is %s", len(test_df))
-            self.observation_df: pd.DataFrame = pd.concat([train_df, test_df], ignore_index=True)
+            self.logger.debug(
+                "Number of points in the train dataframe for LAQN is %s", len(train_df)
+            )
+            self.logger.debug(
+                "Number of points in the test dataframe for LAQN is %s", len(test_df)
+            )
+            self.observation_df: pd.DataFrame = pd.concat(
+                [train_df, test_df], ignore_index=True
+            )
         except KeyError:
             # TODO find out why a key error is raised in download_prediction_config_data - is it because there is missing data?
-            self.logger.error("Key error raised in download_prediction_config_data. This could be because we predicted in the future and theres no data available for laqn?")
+            self.logger.error(
+                "Key error raised in download_prediction_config_data. This could be because we predicted in the future and theres no data available for laqn?"
+            )
             self.observation_df = train_df
         self.logger.debug(self.observation_df)
-        self.logger.debug("%s rows in the observation dataframe.", len(self.observation_df))
+        self.logger.debug(
+            "%s rows in the observation dataframe.", len(self.observation_df)
+        )
         self.logger.debug("%s rows in the result dataframe.", len(self.result_df))
-        self.logger.debug("Number of intersecting point ids is %s", len(set(self.observation_df.point_id.unique()).intersection(self.result_df.point_id.unique())))
-        self.logger.debug("Type of point id at index 0 for observation_df is %s and for result_df is %s", type(self.observation_df.at[0, "point_id"]), type(self.result_df.at[0, "point_id"]))
+        self.logger.debug(
+            "Number of intersecting point ids is %s",
+            len(
+                set(self.observation_df.point_id.unique()).intersection(
+                    self.result_df.point_id.unique()
+                )
+            ),
+        )
+        self.logger.debug(
+            "Type of point id at index 0 for observation_df is %s and for result_df is %s",
+            type(self.observation_df.at[0, "point_id"]),
+            type(self.result_df.at[0, "point_id"]),
+        )
         print(self.observation_df.at[0, "point_id"], self.result_df.at[0, "point_id"])
-        self.logger.debug("Making sure the datetime cols are in the same format for observation and result dfs.")
-        self.observation_df["measurement_start_utc"] = pd.to_datetime(self.observation_df.measurement_start_utc, utc=True)
-        self.result_df["measurement_start_utc"] = pd.to_datetime(self.result_df.measurement_start_utc, utc=True)
+        self.logger.debug(
+            "Making sure the datetime cols are in the same format for observation and result dfs."
+        )
+        self.observation_df["measurement_start_utc"] = pd.to_datetime(
+            self.observation_df.measurement_start_utc, utc=True
+        )
+        self.result_df["measurement_start_utc"] = pd.to_datetime(
+            self.result_df.measurement_start_utc, utc=True
+        )
         self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
         self.result_df["point_id"] = self.result_df.point_id.apply(str)
         self.spatial_df = pd.DataFrame(
@@ -175,12 +204,18 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 row["forecast"] = forecast
                 metrics_records.append(row)
         self.temporal_df = pd.DataFrame(metrics_records)
-        self.logger.info("%s rows in the temporal metrics dataframe.", len(self.temporal_df))
+        self.logger.info(
+            "%s rows in the temporal metrics dataframe.", len(self.temporal_df)
+        )
 
     def evaluate_spatial_metrics(self) -> None:
         """Evaluate metrics by grouping by point id."""
-        self.logger.debug("Columns in left (observation) df %s", list(self.observation_df.columns))
-        self.logger.debug("Columns in right (result) df %s", list(self.result_df.columns))
+        self.logger.debug(
+            "Columns in left (observation) df %s", list(self.observation_df.columns)
+        )
+        self.logger.debug(
+            "Columns in right (result) df %s", list(self.result_df.columns)
+        )
         joined_df = self.observation_df.merge(
             self.result_df, on=["point_id", "measurement_start_utc"], how="inner",
         )
@@ -199,7 +234,9 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 row["forecast"] = forecast
                 metrics_records.append(row)
         self.spatial_df = pd.DataFrame(metrics_records)
-        self.logger.info("%s rows in the spatial metrics dataframe.", len(self.spatial_df))
+        self.logger.info(
+            "%s rows in the spatial metrics dataframe.", len(self.spatial_df)
+        )
 
     def update_remote_tables(self):
         """Write the metrics to the air quality modelling schema."""
