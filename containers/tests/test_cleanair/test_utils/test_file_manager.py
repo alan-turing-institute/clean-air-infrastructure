@@ -6,6 +6,8 @@ import pandas as pd
 from cleanair.parsers.urbanair_parser.state import (
     DATA_CONFIG,
     FORECAST_RESULT_PICKLE,
+    MODEL_TRAINING_PICKLE,
+    MODEL_PREDICTION_PICKLE,
     RESULT_CACHE,
     TRAINING_RESULT_PICKLE,
 )
@@ -14,7 +16,7 @@ from cleanair.utils import FileManager
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from cleanair.types import DataConfig, TargetDict
+    from cleanair.types import DataConfig, FeaturesDict, TargetDict
 
 
 def test_save_load_data_config(
@@ -31,6 +33,27 @@ def test_save_load_data_config(
     for key, value in valid_config:
         assert hasattr(loaded_config, key)
         assert value == getattr(loaded_config, key)
+
+def test_save_load_train_test(
+    input_dir: Path, dataset_dict: FeaturesDict,
+) -> None:
+    """Test training data is saved and loaded correctly."""
+    file_manager = FileManager(input_dir)
+
+    # save the train/test data to file
+    file_manager.save_training_data(dataset_dict)
+    file_manager.save_test_data(dataset_dict)
+    assert file_manager.input_dir.joinpath(*MODEL_TRAINING_PICKLE.parts[-2:])
+    assert file_manager.input_dir.joinpath(*MODEL_PREDICTION_PICKLE.parts[-2:])
+
+    # load the train/test data from file
+    train_data = file_manager.load_training_data()
+    test_data = file_manager.load_test_data()
+    assert train_data.keys() == dataset_dict.keys()
+    assert test_data.keys() == dataset_dict.keys()
+    assert train_data[Source.laqn].equals(dataset_dict[Source.laqn])
+    assert test_data[Source.laqn].equals(dataset_dict[Source.laqn])
+
 
 def test_save_load_result_pickles(
     input_dir: Path, target_dict: TargetDict

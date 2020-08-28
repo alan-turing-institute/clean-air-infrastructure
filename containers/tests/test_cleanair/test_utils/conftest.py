@@ -1,6 +1,7 @@
 """Fixtures for testing reading and writing models."""
 
 from __future__ import annotations
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from pathlib import Path
 import pytest
@@ -10,7 +11,7 @@ import tensorflow as tf
 from cleanair.types import Source, Species
 
 if TYPE_CHECKING:
-    from cleanair.types import TargetDict
+    from cleanair.types import FeaturesDict, TargetDict
 
 
 @pytest.fixture(scope="session")
@@ -54,6 +55,18 @@ def input_dir(tmpdir_factory) -> Path:
     """Temporary input directory."""
     return Path(tmpdir_factory.mktemp(".tmp"))
 
+@pytest.fixture(scope="function")
+def dataset_dict(dataset_start_date, dataset_end_date) -> FeaturesDict:
+    """A fake X and Y wrapped up in a dataframe for a single source (laqn)."""
+    days = 2
+    return {Source.laqn: pd.DataFrame(dict(
+        measurement_start_utc=pd.date_range(
+            dataset_start_date, dataset_end_date - timedelta(days=days), freq="H", closed="left"
+        ),
+        lon=np.random.rand(days * 24),
+        lat=np.random.rand(days * 24),
+        no2=np.random.rand(days * 24),
+    ))}
 
 @pytest.fixture(scope="function")
 def target_dict() -> TargetDict:
@@ -62,14 +75,15 @@ def target_dict() -> TargetDict:
 
 
 @pytest.fixture(scope="function")
-def target_df() -> pd.DataFrame:
+def target_df(dataset_start_date, dataset_end_date) -> pd.DataFrame:
     """A fake target dataframe."""
+    days = 2
     return pd.DataFrame(
         dict(
             measurement_start_utc=pd.date_range(
-                "2020-01-01", "2020-01-02", freq="H", closed="left"
+                dataset_start_date + timedelta(days=days), dataset_end_date, freq="H", closed="left"
             ),
-            NO2=np.ones(24),
-            source=np.repeat(Source.laqn.value, 24),
+            NO2=np.ones(days * 24),
+            source=np.repeat(Source.laqn.value, days * 24),
         )
     )
