@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import typer
+from ..shared_args import InputDir
 from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
@@ -18,7 +19,7 @@ app = typer.Typer(help="Update database with model fit.")
 @app.command()
 def results(
     model_name: ModelName,
-    input_dir: Path = typer.Argument(None),
+    input_dir: Path = InputDir,
     cluster_id: ClusterId = typer.Option(
         ClusterId.laptop, help="The name of the cluster."
     ),
@@ -33,7 +34,7 @@ def results(
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(model_name)
     y_forecast = file_manager.load_forecast_from_pickle()
-    y_training_pred = file_manager.load_training_pred_from_pickle()
+    y_training_pred = file_manager.load_pred_training_from_pickle()
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
