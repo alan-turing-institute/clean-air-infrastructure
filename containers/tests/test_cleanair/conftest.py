@@ -31,7 +31,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteBoxSchema,
     SatelliteGridSchema,
 )
-from cleanair.types import Source, Species, FeatureNames
+from cleanair.types import BaseModelParams, KernelParams, MRDGPParams, Source, Species, SVGPParams, FeatureNames
 
 
 @pytest.fixture(scope="module")
@@ -68,10 +68,12 @@ def meta_within_london():
         for source in [Source.laqn, Source.aqe]
     ]
 
+
 @pytest.fixture(scope="function")
 def fit_start_time() -> datetime:
     """Datetime for when model started fitting."""
     return datetime(2020, 1, 1, 0, 0, 0)
+
 
 @pytest.fixture(scope="module")
 def meta_within_london_closed():
@@ -405,6 +407,7 @@ def fake_cleanair_dataset(
         table=StaticFeature,
     )
 
+
 @pytest.fixture()
 def valid_config(dataset_start_date, dataset_end_date):
     "Valid config for 'fake_cleanair_dataset' fixture"
@@ -442,4 +445,45 @@ def valid_config(dataset_start_date, dataset_end_date):
             "norm_by": "laqn",
             "model_type": "svgp",
         }
+    )
+
+
+@pytest.fixture(scope="function")
+def matern32_params() -> KernelParams:
+    """Matern 32 kernel params."""
+    return KernelParams(
+        name="matern32",
+        type="matern32",
+    )
+
+
+@pytest.fixture(scope="function")
+def base_model(matern32_params: KernelParams) -> BaseModelParams:
+    """Model params for SVGP and sub-MRDGP"""
+    return BaseModelParams(
+        kernel=matern32_params,
+        likelihood_variance=1.0,
+        num_inducing_points=10,
+        maxiter=10,
+        minibatch_size=10,
+    )
+
+@pytest.fixture(scope="function")
+def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
+    """Create a model params pydantic class."""
+    return SVGPParams(
+        **base_model.dict(),
+        jitter=0.1,
+    )
+
+@pytest.fixture(scope="function")
+def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
+    """Create MRDGP model params."""
+    return MRDGPParams(
+        base_laqn=base_model.copy(),
+        base_sat=base_model.copy(),
+        dgp_sat=base_model.copy(),
+        mixing_weight=dict(name="dgp_only", param=None),
+        num_prediction_samples=10,
+        num_samples_between_layers=10,
     )

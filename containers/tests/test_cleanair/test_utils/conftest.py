@@ -14,12 +14,6 @@ if TYPE_CHECKING:
     from cleanair.types import FeaturesDict, TargetDict
 
 
-@pytest.fixture(scope="session")
-def model_dir(tmpdir_factory) -> Path:
-    """Path to temporary model directory."""
-    return Path(tmpdir_factory.mktemp(".tmp"))
-
-
 @pytest.fixture(scope="function")
 def model_name() -> str:
     """Name of model for testing utils."""
@@ -50,23 +44,33 @@ def init_graph():
     with tf.Graph().as_default():
         yield
 
+
 @pytest.fixture(scope="function")
 def input_dir(tmpdir_factory) -> Path:
     """Temporary input directory."""
     return Path(tmpdir_factory.mktemp(".tmp"))
 
+
 @pytest.fixture(scope="function")
 def dataset_dict(dataset_start_date, dataset_end_date) -> FeaturesDict:
     """A fake X and Y wrapped up in a dataframe for a single source (laqn)."""
     days = 2
-    return {Source.laqn: pd.DataFrame(dict(
-        measurement_start_utc=pd.date_range(
-            dataset_start_date, dataset_end_date - timedelta(days=days), freq="H", closed="left"
-        ),
-        lon=np.random.rand(days * 24),
-        lat=np.random.rand(days * 24),
-        no2=np.random.rand(days * 24),
-    ))}
+    return {
+        Source.laqn: pd.DataFrame(
+            dict(
+                measurement_start_utc=pd.date_range(
+                    dataset_start_date,
+                    dataset_end_date - timedelta(days=days),
+                    freq="H",
+                    closed="left",
+                ),
+                lon=np.random.rand(days * 24),
+                lat=np.random.rand(days * 24),
+                no2=np.random.rand(days * 24),
+            )
+        )
+    }
+
 
 @pytest.fixture(scope="function")
 def target_dict() -> TargetDict:
@@ -81,7 +85,10 @@ def target_df(dataset_start_date, dataset_end_date) -> pd.DataFrame:
     return pd.DataFrame(
         dict(
             measurement_start_utc=pd.date_range(
-                dataset_start_date + timedelta(days=days), dataset_end_date, freq="H", closed="left"
+                dataset_start_date + timedelta(days=days),
+                dataset_end_date,
+                freq="H",
+                closed="left",
             ),
             NO2=np.ones(days * 24),
             source=np.repeat(Source.laqn.value, days * 24),

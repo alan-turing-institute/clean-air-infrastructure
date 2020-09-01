@@ -5,7 +5,6 @@ import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from cleanair.parsers.urbanair_parser.state import MODEL_CACHE
 from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
 
 # turn off tensorflow warnings for gpflow
@@ -14,7 +13,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-def test_save_gpflow1_model(tf_session, model_dir, model_name) -> None:
+def test_save_gpflow1_model(tf_session, input_dir, model_name) -> None:
     """Test gpflow models are saved correctly."""
 
     # train model on basic sine curve
@@ -37,39 +36,34 @@ def test_save_gpflow1_model(tf_session, model_dir, model_name) -> None:
     gpflow.train.ScipyOptimizer().minimize(model)
 
     # save the model
-    model_cache = model_dir.joinpath(*MODEL_CACHE.parts[-1:])
-    model_cache.mkdir()
-    save_gpflow1_model_to_file(model, model_cache)
+    save_gpflow1_model_to_file(model, input_dir)
 
     # check filepaths exist
-    model_fp = model_cache / "model.h5"
-    checkpoint_fp = model_cache / "checkpoint"
-    assert model_dir.exists()  # check the directory is created
+    model_fp = input_dir / "model.h5"
+    checkpoint_fp = input_dir / "checkpoint"
+    assert input_dir.exists()  # check the directory is created
     assert model_fp.exists()  # check the model is created
     assert checkpoint_fp.exists()  # check checkpoints for TF session
 
     # save the dataframe to the temp directory - we can compare the variable values
     model_df = model.as_pandas_table()
-    csv_fp = model_cache / "model.csv"
+    csv_fp = input_dir / "model.csv"
     model_df.to_csv(csv_fp, index_label="variable_name")
     assert csv_fp.exists()  # check the params csv exists
 
 
-def test_load_gpflow1_model(tf_session, model_dir) -> None:
+def test_load_gpflow1_model(tf_session, input_dir) -> None:
     """Test models are loaded correctly."""
     # check the directory where models are stored still exists
-    model_cache = model_dir.joinpath(*MODEL_CACHE.parts[-1:])
-    assert model_dir.exists()
-    assert model_cache.exists()
-
-    model = load_gpflow1_model_from_file(model_cache, tf_session=tf_session,)
+    assert input_dir.exists()
+    model = load_gpflow1_model_from_file(input_dir, tf_session=tf_session,)
     assert isinstance(model, gpflow.models.GPR)
 
     print("FROM MODEL")
     print(model.as_pandas_table())
 
     # load the model parameters csv
-    model_df = pd.read_csv(model_cache / "model.csv")
+    model_df = pd.read_csv(input_dir / "model.csv")
     print("FROM FILE")
     print(model_df)
 
