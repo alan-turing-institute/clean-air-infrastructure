@@ -36,6 +36,7 @@ setuptools.setup(
         "sqlalchemy==1.3.11",
         "sqlalchemy-utils==0.36.3",
         "scikit-learn==0.23.1",
+        "shapely==1.7.0",
         "tabulate==0.8.7",
         "termcolor==1.1.0",
         "typer==0.2.1",
