@@ -75,7 +75,7 @@ def test_load_gpflow1_model(tf_session, input_dir) -> None:
     # check the directory where models are stored still exists
     file_manager = FileManager(input_dir)
 
-    # load the model
+    #  load the model
     model = file_manager.load_model(load_gpflow1_model_from_file, tf_session=tf_session)
     assert isinstance(model, gpflow.models.GPR)
 

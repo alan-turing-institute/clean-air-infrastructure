@@ -31,7 +31,15 @@ from cleanair.databases.tables.fakes import (
     SatelliteBoxSchema,
     SatelliteGridSchema,
 )
-from cleanair.types import BaseModelParams, KernelParams, MRDGPParams, Source, Species, SVGPParams, FeatureNames
+from cleanair.types import (
+    BaseModelParams,
+    KernelParams,
+    MRDGPParams,
+    Source,
+    Species,
+    SVGPParams,
+    FeatureNames,
+)
 
 
 @pytest.fixture(scope="module")
@@ -451,10 +459,7 @@ def valid_config(dataset_start_date, dataset_end_date):
 @pytest.fixture(scope="function")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
-    return KernelParams(
-        name="matern32",
-        type="matern32",
-    )
+    return KernelParams(name="matern32", type="matern32",)
 
 
 @pytest.fixture(scope="function")
@@ -468,13 +473,12 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
         minibatch_size=10,
     )
 
+
 @pytest.fixture(scope="function")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
-    return SVGPParams(
-        **base_model.dict(),
-        jitter=0.1,
-    )
+    return SVGPParams(**base_model.dict(), jitter=0.1,)
+
 
 @pytest.fixture(scope="function")
 def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
