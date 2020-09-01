@@ -37,9 +37,13 @@ def delete_model_cache(overwrite: bool):
 
     # delete sub-directories
     cache_content = [
-        DATA_CACHE / FileManager.DATASET,
-        DATA_CACHE / FileManager.MODEL,
-        DATA_CACHE / FileManager.RESULT,
+        DATA_CACHE / FileManager.DATA_CONFIG,
+        DATA_CACHE / FileManager.DATA_CONFIG_FULL,
+        DATA_CACHE / FileManager.MODEL_PARAMS,
+        DATA_CACHE / FileManager.PRED_FORECAST_PICKLE,
+        DATA_CACHE / FileManager.PRED_TRAINING_PICKLE,
+        DATA_CACHE / FileManager.TEST_DATA_PICKLE,
+        DATA_CACHE / FileManager.TRAINING_DATA_PICKLE,
     ]
 
     for cache_file in cache_content:
