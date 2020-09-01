@@ -45,10 +45,10 @@ def init_graph():
         yield
 
 
-@pytest.fixture(scope="function")
-def input_dir(tmpdir_factory) -> Path:
+@pytest.fixture(scope="session")
+def input_dir(tmp_path_factory) -> Path:
     """Temporary input directory."""
-    return Path(tmpdir_factory.mktemp(".tmp"))
+    return tmp_path_factory.mktemp(".tmp")
 
 
 @pytest.fixture(scope="function")
