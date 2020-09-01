@@ -1,17 +1,29 @@
 """UrbanAir API"""
 import os
+import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+import sentry_sdk
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers import air_quality_forecast, jamcam, static
 from .config import get_settings
 
+logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 app = FastAPI(
     title="UrbanAir API",
-    description="High resolution air polution forecasts",
+    description="High resolution air pollution forecasts",
     version="0.0.1",
 )
 
+sentry_dsn = get_settings().sentry_dsn
+if sentry_dsn:
+
+    sentry_sdk.init(dsn=get_settings().sentry_dsn)
+    app.add_middleware(SentryAsgiMiddleware)
+    logger.info("Adding sentry logging middleware")
+else:
+    logging.warning("Sentry is not logging errors")
 
 app.mount(
     "/static",

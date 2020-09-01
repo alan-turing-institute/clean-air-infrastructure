@@ -328,6 +328,9 @@ deployments:
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
+      envFrom:
+      - secretRef:
+          name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
