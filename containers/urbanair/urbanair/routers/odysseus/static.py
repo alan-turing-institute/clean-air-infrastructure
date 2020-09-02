@@ -21,6 +21,11 @@ async def index(request: Request) -> RedirectResponse:
     return RedirectResponse(url=request.url_for("jamcam_map"))
 
 
+@router.get("/usage", include_in_schema=False)
+async def usage(request: Request) -> Response:
+    return templates.TemplateResponse("usage.html", {"request": request})
+
+
 @router.get("/map", include_in_schema=False)
 async def jamcam_map(request: Request) -> Response:
     return templates.TemplateResponse("map.html", {"request": request})
