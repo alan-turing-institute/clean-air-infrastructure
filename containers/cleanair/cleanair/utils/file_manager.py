@@ -137,9 +137,7 @@ class FileManager:
     def load_forecast_from_csv(self, source: Source) -> pd.DataFrame:
         """Load the forecasts for a single source as csv."""
         self.logger.info("Loading the forecasts for %s from csv.", source)
-        result_fp = (
-            self.input_dir / FileManager.RESULT / f"{source}_pred_forecast.csv"
-        )
+        result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_forecast.csv"
         return pd.read_csv(result_fp)
 
     def save_training_data(self, training_data: Dict[Source, pd.DataFrame]) -> None:
@@ -162,7 +160,9 @@ class FileManager:
         filepath = self.input_dir / FileManager.DATASET / f"{source}_test.csv"
         return pd.read_csv(filepath)
 
-    def save_training_source_to_csv(self, training_df: pd.DataFrame, source: Source) -> None:
+    def save_training_source_to_csv(
+        self, training_df: pd.DataFrame, source: Source
+    ) -> None:
         """Save the dataframe to csv. The dataframe should be for just one source."""
         filepath = self.input_dir / FileManager.DATASET / f"{source}_training.csv"
         training_df.to_csv(filepath, index=False)
@@ -184,9 +184,7 @@ class FileManager:
         self.logger.info(
             "Loading predictions on the training set on %s from csv", source
         )
-        result_fp = (
-            self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
-        )
+        result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
         return pd.read_csv(result_fp)
 
     def __save_result_to_csv(

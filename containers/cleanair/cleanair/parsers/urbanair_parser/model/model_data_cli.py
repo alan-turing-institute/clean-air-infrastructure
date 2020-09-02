@@ -174,7 +174,7 @@ def download(
         False, "--prediction-data", help="Download prediction data",
     ),
     output_csv: bool = typer.Option(
-        False, "--output-csv", help="Output dataframes as csv", show_default=True
+        True, "--output-csv", help="Output dataframes as csv", show_default=True
     ),
 ):
     """Download data from the database

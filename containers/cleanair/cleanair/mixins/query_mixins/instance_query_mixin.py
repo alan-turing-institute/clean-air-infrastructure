@@ -124,7 +124,7 @@ class InstanceQueryMixin:
             readings = (
                 session.query(
                     instance_subquery,
-                    self.model_table.model_param,
+                    self.model_table.model_params,
                     self.data_table.data_config,
                     self.data_table.preprocessing,
                 )
