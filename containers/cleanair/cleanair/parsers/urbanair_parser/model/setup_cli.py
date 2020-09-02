@@ -2,7 +2,6 @@
 
 from pathlib import Path
 import typer
-from ..shared_args import InputDir
 from ..shared_args.model_options import (
     Jitter,
     Lengthscales,
@@ -14,14 +13,14 @@ from ..shared_args.model_options import (
     NumInducingPoints,
 )
 from ....types.model_types import KernelParams, SVGPParams, MRDGPParams
-from ....utils import FileManager
+from ..file_manager import FileManager
 
 app = typer.Typer(help="Setup model parameters.")
 
 
 @app.command()
 def svgp(
-    input_dir: Path = InputDir,
+    input_dir: Path = typer.Argument(None),
     jitter: float = Jitter,
     kernel: str = KernelType,
     lengthscales: float = Lengthscales,
@@ -50,7 +49,7 @@ def svgp(
 
 
 @app.command()
-def mrdgp(input_dir: Path = InputDir, maxiter: int = MaxIter,) -> None:
+def mrdgp(input_dir: Path = typer.Argument(None), maxiter: int = MaxIter,) -> None:
     """Create model params for Deep GP."""
     params_dict = {
         "base_laqn": {

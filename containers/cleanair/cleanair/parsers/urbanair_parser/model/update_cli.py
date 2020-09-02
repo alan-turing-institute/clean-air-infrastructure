@@ -4,14 +4,13 @@ import logging
 from datetime import datetime
 from pathlib import Path
 import typer
-from ..shared_args import InputDir
 from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 from ....metrics import AirQualityMetrics
 from ....models import ModelDataExtractor
+from ..file_manager import FileManager
 from ....types import ClusterId, ModelName, Tag, Source
-from ....utils import FileManager
 
 app = typer.Typer(help="Update database with model fit.")
 
@@ -19,7 +18,7 @@ app = typer.Typer(help="Update database with model fit.")
 @app.command()
 def results(
     model_name: ModelName,
-    input_dir: Path = InputDir,
+    input_dir: Path = typer.Argument(None),
     cluster_id: ClusterId = typer.Option(
         ClusterId.laptop, help="The name of the cluster."
     ),
@@ -34,7 +33,7 @@ def results(
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(model_name)
     y_forecast = file_manager.load_forecast_from_pickle()
-    y_training_pred = file_manager.load_pred_training_from_pickle()
+    y_training_pred = file_manager.load_training_pred_from_pickle()
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
@@ -51,14 +50,16 @@ def results(
     # create an instance with correct ids
     secretfile: str = state["secretfile"]
     instance = AirQualityInstance(
-        data_config=full_config,
         model_name=model_name,
-        model_params=model_params,
+        param_id=model_params.param_id(),
+        data_id=full_config.data_id(),
         cluster_id=cluster_id,
         tag=tag,
-        fit_start_time=datetime.utcnow(),  # TODO this should be loaded from file somehow
+        fit_start_time=datetime.utcnow().isoformat(),
         secretfile=secretfile,
     )
+    instance.update_model_tables(model_params.json())
+    instance.update_data_tables(full_config.json())
     instance.update_remote_tables()  # write the instance to the DB
 
     for source in test_data.keys():

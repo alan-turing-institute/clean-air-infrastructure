@@ -5,7 +5,6 @@ import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
-from ..state import DATA_CACHE
 from ....features import FEATURE_CONFIG
 from ....timestamps import day_to_iso
 from ....types import Source as ValidSources
@@ -131,8 +130,6 @@ CopernicusKey = typer.Option(
 )
 
 Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
-
-InputDir = typer.Argument(DATA_CACHE, dir_okay=True, file_okay=False, writable=True, readable=True, resolve_path=True, exists=False)
 
 InsertMethod = typer.Option(
     ValidInsertMethods.missing,

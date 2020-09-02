@@ -22,4 +22,3 @@ NumInducingPoints = typer.Option(
     1000, help="Number of inducing points.", show_default=True
 )
 MaxIter = typer.Option(10, help="Num iterations of training model", show_default=True,)
-Refresh = typer.Option(default=10, help="Frequency of printing ELBO.", show_default=True)

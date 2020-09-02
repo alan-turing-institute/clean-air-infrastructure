@@ -1,38 +1,42 @@
 """Commands for a Sparse Variational GP to model air quality."""
 
 from __future__ import annotations
+import logging
 from pathlib import Path
 import typer
-from ..shared_args import InputDir
-from ..shared_args.model_options import Refresh
+from ..state import MODEL_CACHE
 from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
+from ..file_manager import FileManager
 from ....types import Source
-from ....utils import FileManager, tf1
+from ....utils.tf1 import save_gpflow1_model_to_file
 
 app = typer.Typer(help="SVGP model fitting")
 
+ExistOk = typer.Option(default=False, help="If true overwrite results if they exist.")
+Refresh = typer.Option(default=10, help="Frequency of printing ELBO.")
 Restore = typer.Option(default=False, help="Restore the model state from cache.")
 
 
 @app.command()
 def svgp(
-    input_dir: Path = InputDir,
+    input_dir: Path = typer.Argument(None),
+    exist_ok: bool = ExistOk,
     refresh: int = Refresh,
     restore: bool = Restore,
 ) -> None:
     """Fit a Sparse Variational Gaussian Process."""
+    logging.info("Loading model params from %s", input_dir)
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params("svgp")
     model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
-    model = fit_model(model, file_manager)
-    file_manager.save_model(
-        model.model, tf1.save_gpflow1_model_to_file, model_name="svgp"
-    )
+    model = fit_model(model, file_manager, exist_ok=exist_ok)
+    file_manager.save_model(model.model, save_gpflow1_model_to_file, model_name="svgp")
 
 
 @app.command()
 def mrdgp(
-    input_dir: Path = InputDir,
+    input_dir: Path = typer.Argument(None),
+    exist_ok: bool = ExistOk,
     refresh: int = Refresh,
     restore: bool = Restore,
 ) -> None:
@@ -42,7 +46,7 @@ def mrdgp(
     model_params = file_manager.load_model_params("mrdgp")
 
     # Get the directory for storing the model
-    model_dir = file_manager.input_dir / FileManager.MODEL
+    model_dir = file_manager.input_dir.joinpath(*MODEL_CACHE.parts[-1:])
 
     experiment_config = dict(
         name="MR_DGP",
@@ -58,11 +62,11 @@ def mrdgp(
         refresh=refresh,
         restore=restore,
     )
-    fit_model(model, file_manager)
+    fit_model(model, file_manager, exist_ok=exist_ok)
 
 
 def fit_model(
-    model: ModelMixin, file_manager: FileManager,
+    model: ModelMixin, file_manager: FileManager, exist_ok: bool = False
 ) -> ModelMixin:
     """Train a model."""
 

@@ -3,12 +3,20 @@ Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import Dict, Tuple
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
-from cleanair.types import DataConfig
+from sqlalchemy.engine import Connection
+from cleanair.types import DataConfig, ParamsDict
+from cleanair.models import ModelData
+from cleanair.instance import (
+    AirQualityInstance,
+    AirQualityModelParams,
+    AirQualityResult,
+)
+from cleanair.utils import hash_dict
 from nptyping import NDArray
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
@@ -31,15 +39,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteBoxSchema,
     SatelliteGridSchema,
 )
-from cleanair.types import (
-    BaseModelParams,
-    KernelParams,
-    MRDGPParams,
-    Source,
-    Species,
-    SVGPParams,
-    FeatureNames,
-)
+from cleanair.types import Source, Species, FeatureNames
 
 
 @pytest.fixture(scope="module")
@@ -78,9 +78,88 @@ def meta_within_london():
 
 
 @pytest.fixture(scope="function")
-def fit_start_time() -> datetime:
+def base_aq_preprocessing() -> Dict:
+    """An air quality dictionary for preprocessing settings."""
+    return dict()
+
+
+@pytest.fixture(scope="function")
+def svgp_params_dict() -> ParamsDict:
+    """SVGP model parameter fixture."""
+    return {
+        "jitter": 1e-5,
+        "likelihood_variance": 0.1,
+        "minibatch_size": 100,
+        "num_inducing_points": 100,
+        "restore": False,
+        "train": True,
+        "model_state_fp": None,
+        "maxiter": 100,
+        "kernel": {"name": "rbf", "variance": 0.1, "lengthscale": 0.1,},
+    }
+
+
+@pytest.fixture(scope="function")
+def svgp_model_params(
+    secretfile, connection, svgp_params_dict
+) -> AirQualityModelParams:
+    """Class to read and write from the database."""
+    return AirQualityModelParams(
+        secretfile, "svgp", svgp_params_dict, connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
+def svgp_param_id(svgp_params_dict: ParamsDict) -> str:
+    """Param id of svgp model params"""
+    return hash_dict(svgp_params_dict)
+
+
+@pytest.fixture(scope="function")
+def production_tag() -> str:
+    """Production tag."""
+    return "production"
+
+
+@pytest.fixture(scope="function")
+def test_tag() -> str:
+    """Test tag."""
+    return "test"
+
+
+@pytest.fixture(scope="function")
+def cluster_id() -> str:
+    """Cluster id."""
+    return "local_test"
+
+
+@pytest.fixture(scope="function")
+def fit_start_time() -> str:
     """Datetime for when model started fitting."""
-    return datetime(2020, 1, 1, 0, 0, 0)
+    return datetime(2020, 1, 1, 0, 0, 0).isoformat()
+
+
+@pytest.fixture(scope="function")
+def svgp_instance(  # pylint: disable=too-many-arguments
+    svgp_param_id: str,
+    model_data: ModelData,
+    cluster_id: str,
+    test_tag: str,
+    fit_start_time: str,
+    secretfile: str,
+    connection: Connection,
+) -> AirQualityInstance:
+    """SVGP air quality instance on simple LAQN data."""
+    return AirQualityInstance(
+        model_name="svgp",
+        param_id=svgp_param_id,
+        data_id=model_data.data_id,
+        cluster_id=cluster_id,
+        tag=test_tag,
+        fit_start_time=fit_start_time,
+        secretfile=secretfile,
+        connection=connection,
+    )
 
 
 @pytest.fixture(scope="module")
@@ -413,81 +492,4 @@ def fake_cleanair_dataset(
         [i.dict() for i in static_feature_records],
         on_conflict="overwrite",
         table=StaticFeature,
-    )
-
-
-@pytest.fixture()
-def valid_config(dataset_start_date, dataset_end_date):
-    "Valid config for 'fake_cleanair_dataset' fixture"
-
-    return DataConfig(
-        **{
-            "train_start_date": dataset_start_date,
-            "train_end_date": dataset_end_date,
-            "pred_start_date": dataset_end_date,
-            "pred_end_date": dataset_end_date + timedelta(days=2),
-            "include_prediction_y": False,
-            "train_sources": ["laqn", "aqe", "satellite"],
-            "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
-            "train_interest_points": {"laqn": "all", "aqe": "all", "satellite": "all"},
-            "pred_interest_points": {
-                "laqn": "all",
-                "aqe": "all",
-                "satellite": "all",
-                "hexgrid": "all",
-            },
-            "species": ["NO2"],
-            "features": [
-                "total_road_length",
-                "total_a_road_length",
-                "total_a_road_primary_length",
-                "total_b_road_length",
-                "grass",
-                "building_height",
-                "water",
-                "park",
-                "max_canyon_narrowest",
-                "max_canyon_ratio",
-            ],
-            "buffer_sizes": ["1000", "500"],
-            "norm_by": "laqn",
-            "model_type": "svgp",
-        }
-    )
-
-
-@pytest.fixture(scope="function")
-def matern32_params() -> KernelParams:
-    """Matern 32 kernel params."""
-    return KernelParams(name="matern32", type="matern32",)
-
-
-@pytest.fixture(scope="function")
-def base_model(matern32_params: KernelParams) -> BaseModelParams:
-    """Model params for SVGP and sub-MRDGP"""
-    return BaseModelParams(
-        kernel=matern32_params,
-        likelihood_variance=1.0,
-        num_inducing_points=10,
-        maxiter=10,
-        minibatch_size=10,
-    )
-
-
-@pytest.fixture(scope="function")
-def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
-    """Create a model params pydantic class."""
-    return SVGPParams(**base_model.dict(), jitter=0.1,)
-
-
-@pytest.fixture(scope="function")
-def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
-    """Create MRDGP model params."""
-    return MRDGPParams(
-        base_laqn=base_model.copy(),
-        base_sat=base_model.copy(),
-        dgp_sat=base_model.copy(),
-        mixing_weight=dict(name="dgp_only", param=None),
-        num_prediction_samples=10,
-        num_samples_between_layers=10,
     )
