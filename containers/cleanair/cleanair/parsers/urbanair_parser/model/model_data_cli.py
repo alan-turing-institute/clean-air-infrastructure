@@ -1,19 +1,9 @@
 """Commands for a Sparse Variational GP to model air quality."""
 from typing import List
 from pathlib import Path
-import pickle
 import shutil
 import typer
-from ..state import (
-    state,
-    DATA_CACHE,
-    DATA_CONFIG,
-    DATA_CONFIG_FULL,
-    MODEL_TRAINING_PICKLE,
-    MODEL_PREDICTION_PICKLE,
-    MODEL_TRAINING_INDEX_PICKLE,
-    MODEL_PREDICTION_INDEX_PICKLE,
-)
+from ..state import state, DATA_CACHE
 from ..shared_args import (
     NDays_callback,
     ValidSources,
@@ -28,7 +18,7 @@ from ....types import (
     FeatureBufferSize,
 )
 from ....loggers import red, green
-from ..file_manager import FileManager
+from ....utils import FileManager
 
 app = typer.Typer(help="Get data for model fitting")
 
@@ -37,7 +27,7 @@ def delete_model_cache(overwrite: bool):
     """Delete everything from the DATA_CACHE"""
 
     if not overwrite:
-        if DATA_CONFIG.exists():
+        if (DATA_CACHE / FileManager.DATA_CONFIG).exists():
             run = typer.prompt(
                 f"{red('Overwrite cache? WARNING: This will delete the entire cache contents')} y/n"
             )
@@ -45,17 +35,19 @@ def delete_model_cache(overwrite: bool):
             if run != "y":
                 raise typer.Abort()
 
+    # delete sub-directories
     cache_content = [
-        DATA_CONFIG,
-        DATA_CONFIG_FULL,
-        MODEL_TRAINING_PICKLE,
-        MODEL_PREDICTION_PICKLE,
-        MODEL_TRAINING_INDEX_PICKLE,
-        MODEL_PREDICTION_INDEX_PICKLE,
+        DATA_CACHE / FileManager.DATA_CONFIG,
+        DATA_CACHE / FileManager.DATA_CONFIG_FULL,
+        DATA_CACHE / FileManager.MODEL_PARAMS,
+        DATA_CACHE / FileManager.PRED_FORECAST_PICKLE,
+        DATA_CACHE / FileManager.PRED_TRAINING_PICKLE,
+        DATA_CACHE / FileManager.TEST_DATA_PICKLE,
+        DATA_CACHE / FileManager.TRAINING_DATA_PICKLE,
     ]
 
     for cache_file in cache_content:
-        if cache_file.exists():
+        if (cache_file).exists():
             cache_file.unlink()
 
 
@@ -140,7 +132,7 @@ def generate_config(
         features=features,
         buffer_sizes=feature_buffer,
     )
-    file_manager = FileManager()
+    file_manager = FileManager(DATA_CACHE)
     file_manager.save_data_config(data_config, full=False)
 
 
@@ -150,7 +142,7 @@ def echo_config(
 ) -> None:
     """Echo the cached config file"""
 
-    file_manager = FileManager()
+    file_manager = FileManager(DATA_CACHE)
     config = file_manager.load_data_config(full)
     print(config.json(indent=4))
 
@@ -162,7 +154,7 @@ def generate_full_config() -> None:
     Overwrites any existing full configuration file"""
 
     state["logger"].info("Validate the cached config file")
-    file_manager = FileManager()
+    file_manager = FileManager(DATA_CACHE)
     config = file_manager.load_data_config()
     model_config = ModelConfig(secretfile=state["secretfile"])
     model_config.validate_config(config)
@@ -181,6 +173,9 @@ def download(
     prediction_data: bool = typer.Option(
         False, "--prediction-data", help="Download prediction data",
     ),
+    output_csv: bool = typer.Option(
+        False, "--output-csv", help="Output dataframes as csv", show_default=True
+    ),
 ):
     """Download data from the database
     Downloads data as requested in the full configuration file"""
@@ -191,7 +186,7 @@ def download(
         )
         raise typer.Abort()
 
-    file_manager = FileManager()
+    file_manager = FileManager(DATA_CACHE)
     full_config = file_manager.load_data_config(full=True)
     model_data = ModelData(secretfile=state["secretfile"])
 
@@ -202,8 +197,10 @@ def download(
         training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
         state["logger"].info("Writing training data to cache")
-        with MODEL_TRAINING_PICKLE.open("wb") as training_pickle_f:
-            pickle.dump(training_data_df_norm, training_pickle_f)
+        file_manager.save_training_data(training_data_df_norm)
+        if output_csv:
+            for source, dataframe in training_data_df_norm.items():
+                file_manager.save_training_source_to_csv(dataframe, source)
 
     if prediction_data:
         state["logger"].info("Downloading prediction data")
@@ -214,75 +211,25 @@ def download(
         )
 
         state["logger"].info("Writing prediction data to cache")
-        with MODEL_PREDICTION_PICKLE.open("wb") as prediction_pickle_f:
-            pickle.dump(prediction_data_df_norm, prediction_pickle_f)
+        file_manager.save_test_data(prediction_data_df_norm)
+        if output_csv:
+            for source, dataframe in prediction_data_df_norm.items():
+                file_manager.save_test_source_to_csv(dataframe, source)
 
 
 @app.command()
-def save_cache(
-    output_dir: Path,
-    output_training: bool = typer.Option(
-        True,
-        "--output-training",
-        help="Assert training data is copied from cache",
-        show_default=True,
-    ),
-    output_prediction: bool = typer.Option(
-        False,
-        "--output-prediction",
-        help="Assert prediction data is copied from cache",
-        show_default=True,
-    ),
-    output_csv: bool = typer.Option(
-        False, "--output-csv", help="Output dataframes as csv", show_default=True
-    ),
-):
+def save_cache(output_dir: Path) -> None:
     """Copy all CACHE to OUTPUT-DIR
     Will create OUTPUT-DIR and any missing parent directories"""
-
     if output_dir.exists():
         state["logger"].warning(
             f"'{output_dir}' already exists. 'OUTPUT-DIR' must not already exist"
         )
         raise typer.Abort()
 
-    if output_training and (not MODEL_TRAINING_PICKLE.exists()):
-        state["logger"].warning("Model training data not in cache. Download first")
-        raise typer.Abort()
-    if output_prediction and (not MODEL_PREDICTION_PICKLE.exists()):
-        state["logger"].warning("Model prediction data not in cache. Download first")
-        raise typer.Abort()
-
     # Copy directory
     state["logger"].info(f"Copying cache to {output_dir}")
     shutil.copytree(DATA_CACHE, output_dir)
-
-    if output_csv:
-
-        data_frame_dir = output_dir / "dataframes"
-
-        if not data_frame_dir.exists():
-            data_frame_dir.mkdir()
-
-        if MODEL_TRAINING_PICKLE.exists():
-            state["logger"].info(f"Writing training data csv to {output_dir}")
-
-            with MODEL_TRAINING_PICKLE.open("rb") as training_pickle_f:
-                training_data_df_norm = pickle.load(training_pickle_f)
-
-            for key in training_data_df_norm:
-                csv_file_path = data_frame_dir / (key.value + "_training.csv")
-                training_data_df_norm[key].to_csv(csv_file_path)
-
-        if MODEL_PREDICTION_PICKLE.exists():
-            state["logger"].info(f"Writing prediction data csv to {output_dir}")
-
-            with MODEL_PREDICTION_PICKLE.open("rb") as prediction_pickle_f:
-                prediction_data_df_norm = pickle.load(prediction_pickle_f)
-
-            for key in prediction_data_df_norm:
-                csv_file_path = data_frame_dir / (key.value + "_prediction.csv")
-                prediction_data_df_norm[key].to_csv(csv_file_path)
 
 
 @app.command()
