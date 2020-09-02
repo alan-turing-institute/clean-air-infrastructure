@@ -16,7 +16,7 @@ app = FastAPI(
     version="0.0.1",
 )
 
-sentry_dsn = get_settings().sentry_dsn
+sentry_dsn = get_settings().sentry_dsn # pylint: disable=C0103
 if sentry_dsn:
 
     sentry_sdk.init(dsn=get_settings().sentry_dsn)
