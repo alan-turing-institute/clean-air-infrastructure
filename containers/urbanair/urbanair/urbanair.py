@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 # from .routers.urbanair import static
-from .routers.urbanair import static
+from .routers.urbanair import static, air_quality_forecast
 from .config import get_settings
 
 app = FastAPI(
@@ -24,4 +24,7 @@ app.mount(
 )
 
 app.include_router(static.router)
+app.include_router(
+    air_quality_forecast.router, prefix="/api/v1/air_quality", tags=["airquality"]
+)
 
