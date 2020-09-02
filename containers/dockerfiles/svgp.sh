@@ -22,7 +22,7 @@ urbanair model data download --training-data --prediction-data
 urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
 
 # fit the model and predict
-urbanair model fit svgp --exist-ok --refresh 10 --no-restore
+urbanair model fit svgp --refresh 10 --no-restore
 
 # push the results to the database
 urbanair model update results svgp --tag production --cluster-id kubernetes
