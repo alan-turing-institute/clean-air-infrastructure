@@ -17,16 +17,16 @@ class TestBasic:
     """Basic tests that the API is running"""
 
     @staticmethod
-    def test_index(client_class):
+    def test_index(client_class_urbanair):
         """Test the index returns html"""
-        response = client_class.get("/")
+        response = client_class_urbanair.get("/")
         assert "text/html" in response.headers["content-type"]
         assert response.status_code == 200
 
     @staticmethod
-    def test_air_quality_docs(client_class):
+    def test_air_quality_docs(client_class_urbanair):
         "Test air quality docs"
-        response = client_class.get("/docs#/air_quality")
+        response = client_class_urbanair.get("/docs#/air_quality")
         assert response.status_code == 200
 
 
@@ -76,12 +76,12 @@ class TestData:
             pytest.fail("Dummy data insert")
 
     @staticmethod
-    def test_json_endpoint(client_class, mock_air_quality_result):
+    def test_json_endpoint(client_class_urbanair, mock_air_quality_result):
         """Test JSON endpoint"""
         request_time = datetime.now() + timedelta(hours=1)
 
         # Check response
-        response = client_class.get(
+        response = client_class_urbanair.get(
             "/api/v1/air_quality/forecast/hexgrid/json", params={"time": request_time}
         )
         assert response.status_code == 200
@@ -98,13 +98,13 @@ class TestData:
 
     @staticmethod
     def test_geojson_endpoint(
-        client_class, mock_air_quality_result, sample_hexgrid_points
+        client_class_urbanair, mock_air_quality_result, sample_hexgrid_points
     ):
         """Test GeoJSON endpoint"""
         request_time = datetime.now() + timedelta(hours=1)
 
         # Check response
-        response = client_class.get(
+        response = client_class_urbanair.get(
             "/api/v1/air_quality/forecast/hexgrid/geojson",
             params={"time": request_time},
         )
@@ -144,11 +144,11 @@ class TestData:
 
     @staticmethod
     def test_geometries_endpoint(
-        client_class, mock_air_quality_result, sample_hexgrid_points
+        client_class_urbanair, mock_air_quality_result, sample_hexgrid_points
     ):
         """Test geometries endpoint"""
         # Check response
-        response = client_class.get("/api/v1/air_quality/forecast/hexgrid/geometries")
+        response = client_class_urbanair.get("/api/v1/air_quality/forecast/hexgrid/geometries")
         assert response.status_code == 200
         data = response.json()
 
