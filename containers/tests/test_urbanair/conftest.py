@@ -12,11 +12,12 @@ from cleanair.databases.tables import HexGrid, MetaPoint
 from urbanair import urbanair, odysseus, databases
 from urbanair.types import DetectionClass
 
+# pylint: disable=C0103,W0621
 
 @pytest.fixture()
 def client_db_overide(connection_module):
+    "Client database setup"
 
-    # pylint: disable=C0103
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_module
     )
@@ -30,10 +31,10 @@ def client_db_overide(connection_module):
 
     return override_get_db
 
-@pytest.fixture(scope = "class")
+@pytest.fixture(scope="class")
 def client_db_overide_class(connection_class):
+    "Client database setup with class fixture scope"
 
-    # pylint: disable=C0103
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_class
     )

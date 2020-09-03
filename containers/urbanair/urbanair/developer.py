@@ -1,7 +1,5 @@
 """UrbanAir API"""
-import os
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from .routers.developer import urbanroute
 from .config import get_settings
 

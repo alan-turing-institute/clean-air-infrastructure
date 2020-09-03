@@ -1,10 +1,7 @@
 """UrbanAir API"""
 import os
-from typing import Optional
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-
-# from .routers.urbanair import static
 from .routers.urbanair import static, air_quality_forecast
 from .config import get_settings
 
