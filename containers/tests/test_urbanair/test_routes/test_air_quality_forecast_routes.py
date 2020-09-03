@@ -148,7 +148,9 @@ class TestData:
     ):
         """Test geometries endpoint"""
         # Check response
-        response = client_class_urbanair.get("/api/v1/air_quality/forecast/hexgrid/geometries")
+        response = client_class_urbanair.get(
+            "/api/v1/air_quality/forecast/hexgrid/geometries"
+        )
         assert response.status_code == 200
         data = response.json()
 

@@ -14,6 +14,7 @@ from urbanair.types import DetectionClass
 
 # pylint: disable=C0103,W0621
 
+
 @pytest.fixture()
 def client_db_overide(connection_module):
     "Client database setup"
@@ -30,6 +31,7 @@ def client_db_overide(connection_module):
             db.close()
 
     return override_get_db
+
 
 @pytest.fixture(scope="class")
 def client_db_overide_class(connection_class):
@@ -73,6 +75,7 @@ def client_class_urbanair(client_db_overide_class):
     test_client = TestClient(urbanair.app)
 
     return test_client
+
 
 @pytest.fixture()
 def client_module_odysseus(client_db_overide):
