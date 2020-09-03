@@ -9,4 +9,3 @@ router = APIRouter()
 @router.get("/welcome", description="An example route")
 def welcome() -> Dict:
     return {"Welcome": "add dev routes here"}
-
