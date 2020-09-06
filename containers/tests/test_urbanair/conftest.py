@@ -9,16 +9,16 @@ from sqlalchemy.orm import sessionmaker
 import numpy as np
 from cleanair.databases import DBReader
 from cleanair.databases.tables import HexGrid, MetaPoint
-from urbanair import main, databases
+from urbanair import urbanair, odysseus, databases
 from urbanair.types import DetectionClass
+
+# pylint: disable=C0103,W0621
 
 
 @pytest.fixture()
-def client_module(connection_module):
-    """A fast api client fixture
-    TODO: connection is valid for whole module so database will not reset on each function
-    """
-    # pylint: disable=C0103
+def client_db_overide(connection_module):
+    "Client database setup"
+
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_module
     )
@@ -30,19 +30,13 @@ def client_module(connection_module):
         finally:
             db.close()
 
-    main.app.dependency_overrides[databases.get_db] = override_get_db
-
-    test_client = TestClient(main.app)
-
-    return test_client
+    return override_get_db
 
 
-@pytest.fixture()
-def client_class(connection_class):
-    """A fast api client fixture
-    TODO: connection is valid for whole module so database will not reset on each function
-    """
-    # pylint: disable=C0103
+@pytest.fixture(scope="class")
+def client_db_overide_class(connection_class):
+    "Client database setup with class fixture scope"
+
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_class
     )
@@ -54,9 +48,57 @@ def client_class(connection_class):
         finally:
             db.close()
 
-    main.app.dependency_overrides[databases.get_db] = override_get_db
+    return override_get_db
 
-    test_client = TestClient(main.app)
+
+@pytest.fixture()
+def client_module_urbanair(client_db_overide):
+    """A fast api client fixture
+    TODO: connection is valid for whole module so database will not reset on each function
+    """
+
+    urbanair.app.dependency_overrides[databases.get_db] = client_db_overide
+
+    test_client = TestClient(urbanair.app)
+
+    return test_client
+
+
+@pytest.fixture()
+def client_class_urbanair(client_db_overide_class):
+    """A fast api client fixture
+    TODO: connection is valid for whole module so database will not reset on each function
+    """
+
+    urbanair.app.dependency_overrides[databases.get_db] = client_db_overide_class
+
+    test_client = TestClient(urbanair.app)
+
+    return test_client
+
+
+@pytest.fixture()
+def client_module_odysseus(client_db_overide):
+    """A fast api client fixture
+    TODO: connection is valid for whole module so database will not reset on each function
+    """
+
+    odysseus.app.dependency_overrides[databases.get_db] = client_db_overide
+
+    test_client = TestClient(odysseus.app)
+
+    return test_client
+
+
+@pytest.fixture()
+def client_class_odysseus(client_db_overide_class):
+    """A fast api client fixture
+    TODO: connection is valid for whole module so database will not reset on each function
+    """
+
+    odysseus.app.dependency_overrides[databases.get_db] = client_db_overide_class
+
+    test_client = TestClient(odysseus.app)
 
     return test_client
 

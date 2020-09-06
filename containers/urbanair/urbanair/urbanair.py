@@ -2,16 +2,15 @@
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from .routers import air_quality_forecast, jamcam, static
+from .routers.urbanair import static, air_quality_forecast
 from .config import get_settings
-
 
 app = FastAPI(
     title="UrbanAir API",
-    description="High resolution air polution forecasts",
+    description="High resolution air pollution forecasts",
     version="0.0.1",
+    root_path=get_settings().root_path,
 )
-
 
 app.mount(
     "/static",
@@ -21,20 +20,7 @@ app.mount(
     name="static",
 )
 
-if not get_settings().docker:
-    app.mount(
-        "/package/docs",
-        StaticFiles(
-            directory=os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "packages"
-            ),
-            html=True,
-        ),
-        name="package_docs",
-    )
-
 app.include_router(static.router)
 app.include_router(
     air_quality_forecast.router, prefix="/api/v1/air_quality", tags=["airquality"]
 )
-app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
