@@ -100,6 +100,8 @@ deployments:
           value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
@@ -166,6 +168,8 @@ deployments:
           value: "urbanair.developer:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH

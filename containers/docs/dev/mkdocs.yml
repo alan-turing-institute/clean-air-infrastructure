@@ -1,0 +1,68 @@
+# Project information
+site_name: CleanAir Development Docs
+site_description: Documentation for the CleanAir project
+site_author: Oscar Giles, James Robinson, Patrick O'Hara, Christy Nakou, David Pérez-Suárez, Tim Spain
+site_url: https://urbanair.turing.ac.uk/dev/package/docs
+
+# Repository
+repo_name: alan-turing-institute/clean-air-infrastructure
+repo_url: https://github.com/alan-turing-institute/clean-air-infrastructure
+
+# Copyright
+copyright: Copyright &copy; 2019-2020 Alan Turing Institute
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Extras
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/alan-turing-institute/clean-air-infrastructure
+
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          rendering:
+            show_source: true
+      watch:
+        - containers/cleanair
+
+docs_dir: 'docs_src/'
+nav:
+  - Cleanair: index.md
+
+# ToDo: Add API docs
+# - API: 
+#   - Cleanair: 
+#     - API/cleanair/dashboard.md
+#     - API/cleanair/databases.md
+#     - API/cleanair/decorators.md
+#     - API/cleanair/features.md
+#     - API/cleanair/inputs.md
+#     - API/cleanair/instance.md
+#     - API/cleanair/loggers.md
+#     - API/cleanair/metrics.md
+#     - API/cleanair/models.md
+#     - API/cleanair/parsers.md
+#     - API/cleanair/timestamps.md
