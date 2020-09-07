@@ -15,9 +15,21 @@ class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):
 
     def __init__(self, secretfile, **kwargs):
         super().__init__(secretfile=secretfile, **kwargs)
-        self.data_table = AirQualityDataTable
-        self.instance_table = AirQualityInstanceTable
-        self.model_table = AirQualityModelTable
+
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """Air quality data table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """Air quality instance table."""
+        return AirQualityInstanceQuery
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """Air quality model params table."""
+        return AirQualityModelTable
 
 
 class AirQualityResultQuery(DBReader, ResultQueryMixin):
