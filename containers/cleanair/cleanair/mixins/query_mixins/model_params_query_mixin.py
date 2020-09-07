@@ -5,6 +5,7 @@ from typing import Optional, Any, TYPE_CHECKING
 from abc import abstractmethod
 from ...databases.mixins import ModelTableMixin
 from ...decorators import db_query
+from ...types import ModelName
 
 if TYPE_CHECKING:
     from ...databases import Connector
@@ -23,10 +24,10 @@ class ModelParamsQueryMixin:
     @db_query
     def query_model_params(
         self,
-        model_name: str,
+        model_name: ModelName,
         kernel: Optional[str] = None,
         maxiter: Optional[int] = None,
-        param_id: Optional[int] = None,
+        param_id: Optional[str] = None,
     ) -> Any:
         """Query the model params table, filtering by arguments.
 
@@ -47,17 +48,17 @@ class ModelParamsQueryMixin:
                 self.model_table.model_name == model_name
             )
             # maxiter is a first-level for most models except mrdgp
-            if (maxiter or kernel) and model_name == "mrdgp":
+            if (maxiter or kernel) and model_name == ModelName.mrdgp:
                 raise NotImplementedError(
                     "There are multiple maxiter and kernel parameters for the MR Deep GP."
                 )
             if kernel:
                 readings = readings.filter(
-                    self.model_table.model_param["kernel"]["name"].astext == kernel
+                    self.model_table.model_params["kernel"]["name"].astext == kernel
                 )
             if maxiter:
                 readings = readings.filter(
-                    self.model_table.model_param["maxiter"] == maxiter
+                    self.model_table.model_params["maxiter"] == maxiter
                 )
             if param_id:
                 readings = readings.filter(self.model_table.param_id == param_id)

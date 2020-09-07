@@ -1,7 +1,6 @@
 """Class for evaluating metrics and writing them to the database."""
 
 from datetime import timedelta
-import json
 from typing import Dict, List, Optional
 import pandas as pd
 import sklearn
@@ -71,9 +70,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.logger.info(
             "Reading training and test data to later compare against our predictions."
         )
-        self.data_config = FullDataConfig(
-            **json.loads(instance_df.at[0, "data_config"])
-        )
+        self.data_config = FullDataConfig(**instance_df.at[0, "data_config"])
         # NOTE: we only care about evaluating metrics on laqn
         model_data = ModelData(secretfile=secretfile)
         self.logger.info("Reading training data from database.")
@@ -103,6 +100,17 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 "Key error raised in download_prediction_config_data. This could be because we predicted in the future and theres no data available for laqn?"
             )
             self.observation_df = train_df
+        self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
+        self.result_df["point_id"] = self.result_df.point_id.apply(str)
+        self.logger.debug(
+            "Making sure the datetime cols are in the same format for observation and result dfs."
+        )
+        self.observation_df["measurement_start_utc"] = pd.to_datetime(
+            self.observation_df.measurement_start_utc, utc=True
+        )
+        self.result_df["measurement_start_utc"] = pd.to_datetime(
+            self.result_df.measurement_start_utc, utc=True
+        )
         self.logger.debug(self.observation_df)
         self.logger.debug(
             "%s rows in the observation dataframe.", len(self.observation_df)
@@ -116,23 +124,6 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 )
             ),
         )
-        self.logger.debug(
-            "Type of point id at index 0 for observation_df is %s and for result_df is %s",
-            type(self.observation_df.at[0, "point_id"]),
-            type(self.result_df.at[0, "point_id"]),
-        )
-        print(self.observation_df.at[0, "point_id"], self.result_df.at[0, "point_id"])
-        self.logger.debug(
-            "Making sure the datetime cols are in the same format for observation and result dfs."
-        )
-        self.observation_df["measurement_start_utc"] = pd.to_datetime(
-            self.observation_df.measurement_start_utc, utc=True
-        )
-        self.result_df["measurement_start_utc"] = pd.to_datetime(
-            self.result_df.measurement_start_utc, utc=True
-        )
-        self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
-        self.result_df["point_id"] = self.result_df.point_id.apply(str)
         self.spatial_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualitySpatialMetricsTable)
         )

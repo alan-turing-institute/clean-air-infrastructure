@@ -16,9 +16,7 @@ Restore = typer.Option(default=False, help="Restore the model state from cache."
 
 @app.command()
 def svgp(
-    input_dir: Path = InputDir,
-    refresh: int = Refresh,
-    restore: bool = Restore,
+    input_dir: Path = InputDir, refresh: int = Refresh, restore: bool = Restore,
 ) -> None:
     """Fit a Sparse Variational Gaussian Process."""
     file_manager = FileManager(input_dir)
@@ -32,9 +30,7 @@ def svgp(
 
 @app.command()
 def mrdgp(
-    input_dir: Path = InputDir,
-    refresh: int = Refresh,
-    restore: bool = Restore,
+    input_dir: Path = InputDir, refresh: int = Refresh, restore: bool = Restore,
 ) -> None:
     """Fit a Multi-resolution Deep Gaussian Process."""
     # Load the model parameters from a json file
@@ -61,9 +57,7 @@ def mrdgp(
     fit_model(model, file_manager)
 
 
-def fit_model(
-    model: ModelMixin, file_manager: FileManager,
-) -> ModelMixin:
+def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
     """Train a model."""
 
     # Load configuration file
