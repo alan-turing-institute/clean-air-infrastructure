@@ -1,0 +1,230 @@
+# This is a YAML-formatted file.
+# Variables to be passed into the templates.
+imageTag: 089bacc2ec600659d20ceb61f4900e5c28442114
+
+cronjobs:
+
+  - name: input-aqe
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanair
+        imagePullPolicy: Never
+        tag: local
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "aqe", "fill", "--ndays", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+  
+  - name: input-laqn
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanair
+        imagePullPolicy: Never
+        tag: local
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "laqn", "fill", "--ndays", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: input-satellite
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanair
+        imagePullPolicy: Never
+        tag: local
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "satellite", "fill", "--ndays", "2", "--insert-method", "missing"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: input-scoot
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanair
+        imagePullPolicy: Never
+        tag: local
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "1"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+deployments:
+    - name: cleanair-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.urbanair:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /
+      envFrom:
+      - secretRef:
+          name: sentry
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+
+    - name: odysseus-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.odysseus:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /odysseus
+      envFrom:
+      - secretRef:
+          name: sentry
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+    
+    - name: dev-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.developer:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /dev
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+
+services:
+    - name: cleanair-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: odysseus-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: dev-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+
+ingressRules:
+    # - host: urbanair.turing.ac.uk
+      - paths:
+        - path: /()(.*)
+          serviceName: cleanair-api
+          servicePort: 80
+        - path: /odysseus(/|$)(.*)
+          serviceName: odysseus-api
+          servicePort: 80
+        - path: /dev(/|$)(.*)
+          serviceName: dev-api
+          servicePort: 80
+        
+
+development: true

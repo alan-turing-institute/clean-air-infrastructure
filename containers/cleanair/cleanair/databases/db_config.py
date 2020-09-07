@@ -82,19 +82,24 @@ class DBConfig(Connector):
             # Create a role
             self.create_role(role["role"])
             self.assign_role_connect(role["role"])
-
-            for schema in role["schema"]:
-                self.assign_role_schema_usage(
-                    role["role"], schema["name"], schema["create"]
-                )
-                self.assign_role_schema_privilege(
-                    role["role"], schema["name"], schema["privileges"]
-                )
-                self.assign_role_schema_default_privilege(
-                    role["role"], schema["name"], schema["privileges"]
-                )
-                self.assign_role_schema_sequences(role["role"], schema["name"])
-                self.assign_role_schema_default_sequences(role["role"], schema["name"])
+            if role.get("inherit"):
+                for parent in role["inherit"]:
+                    self.grant_role(role["role"], parent)
+            if role.get("schema"):
+                for schema in role["schema"]:
+                    self.assign_role_schema_usage(
+                        role["role"], schema["name"], schema["create"]
+                    )
+                    self.assign_role_schema_privilege(
+                        role["role"], schema["name"], schema["privileges"]
+                    )
+                    self.assign_role_schema_default_privilege(
+                        role["role"], schema["name"], schema["privileges"]
+                    )
+                    self.assign_role_schema_sequences(role["role"], schema["name"])
+                    self.assign_role_schema_default_sequences(
+                        role["role"], schema["name"]
+                    )
 
     def create_role(self, role_name):
         """Create a new role
@@ -300,7 +305,7 @@ class DBConfig(Connector):
             )
             session.commit()
 
-    def grant_role_to_user(self, username, role):
+    def grant_role(self, username, role):
         """
         Args:
             username (str): A username

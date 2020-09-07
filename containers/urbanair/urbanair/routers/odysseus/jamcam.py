@@ -1,23 +1,23 @@
 """JamCam API routes"""
 # pylint: disable=C0116
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
-from ..databases import get_db, all_or_404
-from ..databases.schemas.jamcam import (
+from ...databases import get_db, all_or_404
+from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
 )
-from ..databases.queries import (
+from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
     get_jamcam_info,
     get_jamcam_hourly,
 )
-from ..types import DetectionClass
+from ...types import DetectionClass
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
 
 
-async def common_jamcam_params(
+def common_jamcam_params(
     camera_id: str = Query(None, description="A unique JamCam id"),
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
@@ -71,7 +71,7 @@ async def common_jamcam_params(
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
 )
-async def camera_info() -> Response:
+def camera_info() -> Response:
     "Get camera info"
     return get_jamcam_info()
 
@@ -83,9 +83,9 @@ async def camera_info() -> Response:
     If starttime and endtime are not provided checks all availability""",
     response_model=List[JamCamAvailable],
 )
-async def camera_available(
+def camera_available(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
         db,
@@ -103,9 +103,9 @@ async def camera_available(
     description="Request counts of objects at jamcam cameras.",
     response_model=List[JamCamVideo],
 )
-async def camera_raw_counts(
+def camera_raw_counts(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
         db,
@@ -123,9 +123,9 @@ async def camera_raw_counts(
     response_model=List[JamCamVideoAverage],
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
-async def camera_hourly_average(
+def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
         db,

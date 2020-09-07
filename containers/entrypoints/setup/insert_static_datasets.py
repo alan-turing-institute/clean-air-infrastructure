@@ -4,22 +4,22 @@ Insert static datasets into the database
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
 import tempfile
 import zipfile
+from datetime import datetime, timedelta
+
 import termcolor
+from azure.common.client_factory import get_client_from_cli_profile
+from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import (
     BlobServiceClient,
     generate_account_sas,
     ResourceTypes,
     AccountSasPermissions,
 )
-from azure.mgmt.storage import StorageManagementClient
-from azure.common.client_factory import get_client_from_cli_profile
-from cleanair.parsers import DatabaseSetupParser
-from cleanair.databases import Connector
+from cleanair.databases import Connector, DBInteractor
 from cleanair.inputs import StaticWriter
-
+from cleanair.parsers import DatabaseSetupParser
 
 DATASETS = {
     "rectgrid_100": {
@@ -167,9 +167,12 @@ def insert(args):
             # print(os.listdir(data_directory))
             static_writer.update_remote_tables()
 
+    # Triggers view creation
+    DBInteractor(args.secretfile, initialise_tables=True)
+
 
 def create_parser(datasets):
-    "Create parser"
+    """Create parser"""
     parsers = DatabaseSetupParser()
 
     # Common arguments

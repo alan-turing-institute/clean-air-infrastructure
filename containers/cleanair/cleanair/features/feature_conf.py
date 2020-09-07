@@ -1,40 +1,41 @@
 """
 Street Canyon feature extraction
 """
-
 from ..databases.tables import StreetCanyon, OSHighway, UKMap
 from .feature_funcs import sum_length, avg_, min_, max_, sum_area
+from ..types import FeatureNames
+
 
 FEATURE_CONFIG = {
     "streetcanyon": {
         "table": StreetCanyon,
         "features": {
-            "min_canyon_ratio": {
+            FeatureNames.min_canyon_ratio.value: {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": min_,
             },
-            "avg_canyon_ratio": {
+            FeatureNames.avg_canyon_ratio.value: {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": avg_,
             },
-            "max_canyon_ratio": {
+            FeatureNames.max_canyon_ratio.value: {
                 "type": "value",
                 "feature_dict": {"ratio_avg": ["*"]},
                 "aggfunc": max_,
             },
-            "min_canyon_narrowest": {
+            FeatureNames.min_canyon_narrowest.value: {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": min_,
             },
-            "avg_canyon_narrowest": {
+            FeatureNames.avg_canyon_narrowest.value: {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": avg_,
             },
-            "max_canyon_narrowest": {
+            FeatureNames.max_canyon_narrowest.value: {
                 "type": "value",
                 "feature_dict": {"min_width": ["*"]},
                 "aggfunc": max_,
@@ -44,27 +45,27 @@ FEATURE_CONFIG = {
     "oshighway": {
         "table": OSHighway,
         "features": {
-            "total_road_length": {
+            FeatureNames.total_road_length.value: {
                 "type": "geom",
                 "feature_dict": {},
                 "aggfunc": sum_length,
             },
-            "total_a_road_primary_length": {
+            FeatureNames.total_a_road_primary_length.value: {
                 "type": "geom",
                 "feature_dict": {"route_hierarchy": ["A Road Primary"]},
                 "aggfunc": sum_length,
             },
-            "total_a_road_length": {
+            FeatureNames.total_a_road_length.value: {
                 "type": "geom",
                 "feature_dict": {"route_hierarchy": ["A Road"]},
                 "aggfunc": sum_length,
             },
-            "total_b_road_length": {
+            FeatureNames.total_b_road_length.value: {
                 "type": "geom",
                 "feature_dict": {"route_hierarchy": ["B Road", "B Road Primary"]},
                 "aggfunc": sum_length,
             },
-            "total_length": {
+            FeatureNames.total_length.value: {
                 "type": "geom",
                 "feature_dict": {"route_hierarchy": ["*"]},
                 "aggfunc": sum_length,
@@ -74,32 +75,32 @@ FEATURE_CONFIG = {
     "ukmap": {
         "table": UKMap,
         "features": {
-            "building_height": {
+            FeatureNames.building_height.value: {
                 "type": "value",
                 "feature_dict": {"calculated_height_of_building": ["*"]},
                 "aggfunc": max_,
             },
-            "flat": {
+            FeatureNames.flat.value: {
                 "type": "geom",
                 "feature_dict": {"feature_type": ["Vegetated", "Water"]},
                 "aggfunc": sum_area,
             },
-            "grass": {
+            FeatureNames.grass.value: {
                 "type": "geom",
                 "feature_dict": {"feature_type": ["Vegetated"]},
                 "aggfunc": sum_area,
             },
-            "hospitals": {
+            FeatureNames.hospitals.value: {
                 "type": "geom",
                 "feature_dict": {"landuse": ["Hospitals"]},
                 "aggfunc": sum_area,
             },
-            "museums": {
+            FeatureNames.museums.value: {
                 "type": "geom",
                 "feature_dict": {"landuse": ["Museum"]},
                 "aggfunc": sum_area,
             },
-            "park": {
+            FeatureNames.park.value: {
                 "type": "geom",
                 "feature_dict": {
                     "feature_type": ["Vegetated"],
@@ -107,7 +108,7 @@ FEATURE_CONFIG = {
                 },
                 "aggfunc": sum_area,
             },
-            "water": {
+            FeatureNames.water.value: {
                 "type": "geom",
                 "feature_dict": {"feature_type": ["Water"]},
                 "aggfunc": sum_area,
@@ -115,3 +116,11 @@ FEATURE_CONFIG = {
         },
     },
 }
+
+ALL_FEATURES = [
+    val
+    for sublist in [
+        list(j.keys()) for j in [ftype["features"] for ftype in FEATURE_CONFIG.values()]
+    ]
+    for val in sublist
+]

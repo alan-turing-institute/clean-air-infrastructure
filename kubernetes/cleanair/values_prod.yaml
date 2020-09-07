@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 089bacc2ec600659d20ceb61f4900e5c28442114
+imageTag: 20278492ed41f82f5262034a989de2d1f56dddf3
 
 # jobs:
 
@@ -63,8 +63,29 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/input_aqe
+        repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "aqe", "fill", "--ndays", "5"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+  
+  - name: input-laqn
+    schedule: "5 * * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "laqn", "fill", "--ndays", "5"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -76,14 +97,35 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: input-laqn
+  - name: input-satellite
+    schedule: "30 10 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "satellite", "fill", "--ndays", "30", "--insert-method", "missing"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: input-scoot
     schedule: "5 * * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/input_laqn
+        repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "2"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -219,45 +261,6 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: input-satellite
-    schedule: "30 10 * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-      repository: cleanairdocker.azurecr.io/input_satellite
-      imagePullPolicy: IfNotPresent
-    args: ["fill", "--ndays", "30", "-k", ""]
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
-
-  - name: input-scoot
-    schedule: "5 * * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-      repository: cleanairdocker.azurecr.io/input_scoot
-      imagePullPolicy: IfNotPresent
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
-
 #   - name: feature_scoot_forecasts
 #     image:
 #       repository: cleanairdocker.azurecr.io/feature_scoot_forecasts
@@ -314,17 +317,22 @@ cronjobs:
 
 deployments:
     - name: cleanair-api
-      replicas: 2
+      replicas: 1
       image:
         repository: cleanairdocker.azurecr.io/urbanairapi
         imagePullPolicy: Always
       env:
         - name: APP_MODULE
-          value: "urbanair.main:app"
+          value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
+        - name: ROOT_PATH
+          value: /
+      envFrom:
+      - secretRef:
+          name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -337,14 +345,91 @@ deployments:
         secret:
             secretName: secrets
       resources:
-        limits:
-            cpu: "8"
         requests:
-            cpu: "2"
-            memory: "5Gi"
+            cpu: "0.5"
+
+    - name: odysseus-api
+      replicas: 1
+      image:
+        repository: cleanairdocker.azurecr.io/urbanairapi
+        imagePullPolicy: Always
+      env:
+        - name: APP_MODULE
+          value: "urbanair.odysseus:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /odysseus
+      envFrom:
+      - secretRef:
+          name: sentry
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        requests:
+            cpu: "0.5"
+    
+    - name: dev-api
+      replicas: 1
+      image:
+        repository: cleanairdocker.azurecr.io/urbanairapi
+        imagePullPolicy: Always
+      env:
+        - name: APP_MODULE
+          value: "urbanair.developer:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /dev
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        requests:
+            cpu: "0.5"
+
 
 services:
     - name: cleanair-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: odysseus-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: dev-api
       ports:
         - name: http
           port: 80
@@ -360,8 +445,14 @@ tls:
 ingressRules:
     - host: urbanair.turing.ac.uk
       paths:
-        - path: /
+        - path: /()(.*)
           serviceName: cleanair-api
+          servicePort: 80
+        - path: /odysseus(/|$)(.*)
+          serviceName: odysseus-api
+          servicePort: 80
+        - path: /dev(/|$)(.*)
+          serviceName: dev-api
           servicePort: 80
 
 # Should always be set to staging to check certificates. Once configured correctly change to prod
@@ -376,6 +467,3 @@ letsencryptIssuer:
       email: ogiles@turing.ac.uk
       server: https://acme-v02.api.letsencrypt.org/directory
       secretName: cleanair-certs-prod
-
-# Mike, CityHall, CityHall2, OscarHome, PatrickHome, JamesWHome, SamHome, Paul(GLA), Theo, Mark Girolami's, OGHOMENEW
-# whitelistSourceRange: 82.69.108.113/32, 195.99.240.222/32, 80.79.211.150/32, 31.50.124.239/32, 81.157.32.234/32, 67.169.85.163/32, 209.93.199.203/32, 81.104.115.221/32, 77.102.185.177/32, 109.145.210.29/32, 86.174.154.231/32
