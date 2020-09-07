@@ -104,6 +104,9 @@ deployments:
           value: "*"
         - name: ROOT_PATH
           value: /
+      envFrom:
+      - secretRef:
+          name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -134,6 +137,9 @@ deployments:
           value: "*"
         - name: ROOT_PATH
           value: /odysseus
+      envFrom:
+      - secretRef:
+          name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
