@@ -88,4 +88,137 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
+deployments:
+    - name: cleanair-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.urbanair:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+
+    - name: odysseus-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.odysseus:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /odysseus
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+    
+    - name: dev-api
+      replicas: 1
+      image:
+        repository: urbanairapi
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "urbanair.developer:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /dev
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+
+services:
+    - name: cleanair-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: odysseus-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+    
+    - name: dev-api
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+
+ingressRules:
+    # - host: urbanair.turing.ac.uk
+      - paths:
+        - path: /()(.*)
+          serviceName: cleanair-api
+          servicePort: 80
+        - path: /odysseus(/|$)(.*)
+          serviceName: odysseus-api
+          servicePort: 80
+        - path: /dev(/|$)(.*)
+          serviceName: dev-api
+          servicePort: 80
+        
+
 development: true

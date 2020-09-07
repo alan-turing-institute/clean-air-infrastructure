@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     db_secret_file: str = ".db_secrets.json"
     docker: bool = True
     sentry_dsn: Optional[str]
+    root_path: str = ""
 
 
 @lru_cache()

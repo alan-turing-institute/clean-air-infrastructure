@@ -5,19 +5,19 @@ from typing import List, Tuple, Optional, cast
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Query
-from ..databases import get_db
-from ..databases.schemas.air_quality_forecast import (
+from ...databases import get_db
+from ...databases.schemas.air_quality_forecast import (
     ForecastResultGeoJson,
     ForecastResultJson,
     GeometryGeoJson,
 )
-from ..databases.queries.air_quality_forecast import (
+from ...databases.queries.air_quality_forecast import (
     cached_instance_ids,
     cached_forecast_hexgrid_json,
     cached_forecast_hexgrid_geojson,
     cached_geometries_hexgrid,
 )
-from ..responses import GeoJSONResponse
+from ...responses import GeoJSONResponse
 
 
 router = APIRouter()
