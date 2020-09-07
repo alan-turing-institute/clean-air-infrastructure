@@ -19,7 +19,6 @@ app = FastAPI(
 
 sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
 if sentry_dsn:
-
     sentry_sdk.init(dsn=get_settings().sentry_dsn)
     app.add_middleware(SentryAsgiMiddleware)
     logger.info("Adding sentry logging middleware")

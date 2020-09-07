@@ -1,5 +1,6 @@
 """UrbanAir API"""
 import os
+import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import sentry_sdk
@@ -7,6 +8,7 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.odysseus import static, jamcam
 from .config import get_settings
 
+logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 app = FastAPI(
     title="Odysseus API",
