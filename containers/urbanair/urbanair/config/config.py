@@ -1,4 +1,5 @@
 """Configurations"""
+from typing import Optional
 from functools import lru_cache
 from pydantic import BaseSettings
 
@@ -10,6 +11,7 @@ class Settings(BaseSettings):
     admin_email: str = "ogiles@turing.ac.uk"
     db_secret_file: str = ".db_secrets.json"
     docker: bool = True
+    sentry_dsn: Optional[str]
     root_path: str = ""
 
 

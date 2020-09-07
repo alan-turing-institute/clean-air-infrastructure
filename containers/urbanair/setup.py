@@ -20,6 +20,7 @@ setuptools.setup(
         "aiofiles",
         "cachetools",
         "geojson",
+        "sentry_sdk",
     ],
     python_requires=">=3.7",
 )
