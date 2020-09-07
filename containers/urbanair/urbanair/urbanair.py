@@ -4,7 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 import sentry_sdk
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from sentry_sdk.integrations.asgi import SentryAsgiMiddlewa
 from .routers.urbanair import static, air_quality_forecast
 from .config import get_settings
 
