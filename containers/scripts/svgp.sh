@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# set the secretfile filepath
+urbanair init local --secretfile $DB_SECRET_FILE
+
 # generate the data config
 urbanair model data generate-config \
     --trainupto yesterday \
@@ -16,13 +19,13 @@ urbanair model data generate-config \
 urbanair model data generate-full-config
 
 # download the data using the config
-urbanair model data download --training-data --prediction-data
+urbanair model data download --training-data --prediction-data --output-csv
 
 # create the model parameters
 urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
 
 # fit the model and predict
-urbanair model fit svgp --refresh 10 --no-restore
+urbanair model fit svgp --refresh 100 --no-restore
 
 # push the results to the database
 urbanair model update results svgp --tag production --cluster-id kubernetes
