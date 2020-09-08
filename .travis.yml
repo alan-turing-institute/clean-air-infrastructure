@@ -36,9 +36,9 @@ jobs:
         - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
         - pylint --rcfile=.pylintrc containers/cleanair/*
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
-    # separate parallel job for odysseus
 
-    - name: "odysseus" 
+    # separate parallel job for odysseus
+    - name: "odysseus"
       before_install:
         - sh .travis/before_install.sh
         - source .travis/env.sh
@@ -58,8 +58,9 @@ jobs:
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
-    
-    - name: "urbanair" 
+
+    # separate parallel job for urbanair
+    - name: "urbanair"
       before_install:
         - sh .travis/before_install.sh
         - source .travis/env.sh
@@ -78,9 +79,9 @@ jobs:
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-        - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/* 
+        - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/*
         - mypy containers/urbanair
-    
+
     - name: "code_style_formatting"
       install:
         - pip install -r containers/requirements.txt

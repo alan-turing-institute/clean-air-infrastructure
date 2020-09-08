@@ -24,7 +24,11 @@ spec:
         app: "{{ $release_name }}-{{ $deployment.name }}"
     spec:
         containers:
+        {{- if $deployment.image.tag}}
+        - image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
+        {{else}}
         - image: "{{ $deployment.image.repository }}:{{ $tag }}"
+        {{- end }}
           imagePullPolicy: {{ $deployment.image.imagePullPolicy }}            
           name: "{{ $release_name }}-{{ $deployment.name }}"
           ports:
@@ -39,6 +43,10 @@ spec:
         {{- end }}
         {{- with $deployment.resources }}
           resources:
+{{ toYaml . | indent 12 }}
+        {{- end }}
+        {{- with $deployment.envFrom }}
+          envFrom:
 {{ toYaml . | indent 12 }}
         {{- end }}
         imagePullSecrets:

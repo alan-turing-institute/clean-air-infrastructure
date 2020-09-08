@@ -9,7 +9,7 @@ from ..views import create_materialized_view, RawGeometry
 
 
 class LondonBoundaryView(Base):
-    """View of the interest points that gives london's boundary"""
+    """View of the interest points that gives London's boundary"""
 
     __table__ = create_materialized_view(
         name="london_boundary_view",
