@@ -4,20 +4,20 @@ from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
-from ..databases import get_db, all_or_404
-from ..databases.schemas.jamcam import (
+from ...databases import get_db, all_or_404
+from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
 )
-from ..databases.queries.jamcam import (
+from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
     get_jamcam_info,
     get_jamcam_hourly,
 )
-from ..types import DetectionClass
+from ...types import DetectionClass
 
 router = APIRouter()
 
