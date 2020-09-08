@@ -67,6 +67,7 @@ disable=duplicate-code,
         too-many-locals,
         too-many-branches,
         bad-continuation,
+        fixme,
 [REPORTS]
 
 signature-mutators=db_query, robust_api
