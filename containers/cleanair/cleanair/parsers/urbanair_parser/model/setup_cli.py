@@ -50,7 +50,11 @@ def svgp(
 
 
 @app.command()
-def mrdgp(input_dir: Path = InputDir, maxiter: int = MaxIter,) -> None:
+def mrdgp(
+    input_dir: Path = InputDir,
+    maxiter: int = MaxIter,
+    num_inducing_points: int = NumInducingPoints,
+) -> None:
     """Create model params for Deep GP."""
     params_dict = {
         "base_laqn": {
@@ -61,7 +65,7 @@ def mrdgp(input_dir: Path = InputDir, maxiter: int = MaxIter,) -> None:
                 "lengthscales": [0.1, 0.1, 0.1],
                 "variance": [1.0, 1.0, 1.0],
             },
-            "num_inducing_points": 300,
+            "num_inducing_points": num_inducing_points,
             "minibatch_size": 100,
             "likelihood_variance": 0.1,
             "maxiter": maxiter,
@@ -74,7 +78,7 @@ def mrdgp(input_dir: Path = InputDir, maxiter: int = MaxIter,) -> None:
                 "lengthscales": [0.1, 0.1, 0.1],
                 "variance": [1.0, 1.0, 1.0],
             },
-            "num_inducing_points": 300,
+            "num_inducing_points": num_inducing_points,
             "minibatch_size": 100,
             "likelihood_variance": 0.1,
             "maxiter": maxiter,
@@ -95,7 +99,7 @@ def mrdgp(input_dir: Path = InputDir, maxiter: int = MaxIter,) -> None:
                     "variance": [1.0, 1.0],
                 },
             ],
-            "num_inducing_points": 300,
+            "num_inducing_points": num_inducing_points,
             "minibatch_size": 100,
             "likelihood_variance": 0.1,
             "maxiter": maxiter,
