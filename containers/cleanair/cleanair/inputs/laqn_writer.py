@@ -159,7 +159,7 @@ class LAQNWriter(DateRangeMixin, APIRequestMixin, LAQNAvailabilityMixin, DBWrite
         # Open a DB session
 
         # Commit the records to the database
-        self.commit_records(site_records, on_conflict="ignore", table=LAQNReading)
+        self.commit_records(site_records, on_conflict="overwrite", table=LAQNReading)
 
         # Commit changes
         self.logger.info(

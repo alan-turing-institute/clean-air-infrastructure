@@ -188,7 +188,7 @@ class AQEWriter(DateRangeMixin, APIRequestMixin, AQEAvailabilityMixin, DBWriter)
         ]
 
         # Commit the records to the database
-        self.commit_records(site_records, on_conflict="ignore", table=AQEReading)
+        self.commit_records(site_records, on_conflict="overwrite", table=AQEReading)
 
         # Commit changes
         self.logger.info(
