@@ -330,8 +330,6 @@ deployments:
           value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
-        - name: ROOT_PATH
-          value: /
       envFrom:
       - secretRef:
           name: sentry
