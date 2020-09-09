@@ -55,7 +55,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         # load the result and instance dataframes from DB
         self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
         self.result_df: pd.DataFrame = self.query_results(
-            instance_id, Source.laqn, output_type="df"
+            instance_id, Source.laqn, output_type="df", with_location=False,
         )
         instance_df = self.get_instances_with_params(
             instance_ids=[instance_id], output_type="df"
@@ -73,42 +73,38 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.data_config = FullDataConfig(**instance_df.at[0, "data_config"])
         # NOTE: we only care about evaluating metrics on laqn
         model_data = ModelData(secretfile=secretfile)
-        self.logger.info("Reading training data from database.")
-        train_data = model_data.download_training_config_data(self.data_config)
-        train_df: pd.DataFrame = train_data[Source.laqn]
+        self.logger.info("Reading training data from database for LAQN.")
+        train_df: pd.DataFrame = model_data.download_source_data(
+            start_date=self.data_config.train_start_date,
+            end_date=self.data_config.train_end_date,
+            species=self.data_config.species,
+            point_ids=self.data_config.train_interest_points,
+            features=self.data_config.features,
+            source=Source.laqn,
+            with_sensor_readings=True,
+        )
         train_df["forecast"] = False  # split into train and test
-        try:
-            self.logger.info("Reading test data from database.")
-            data_config = self.data_config.copy()
-            if Source.hexgrid in data_config.pred_sources:
-                data_config.pred_sources.remove(Source.hexgrid)
 
-            test_data = model_data.download_prediction_config_data(
-                data_config, with_sensor_readings=True
-            )
-            test_df: pd.DataFrame = test_data[Source.laqn]
-            test_df["forecast"] = True
-            self.logger.info("Merging the train and test dataframes for LAQN.")
-            self.logger.debug(
-                "Number of points in the train dataframe for LAQN is %s", len(train_df)
-            )
-            self.logger.debug(
-                "Number of points in the test dataframe for LAQN is %s", len(test_df)
-            )
-            self.observation_df: pd.DataFrame = pd.concat(
-                [train_df, test_df], ignore_index=True
-            )
-        except KeyError:
-            # TODO find out why a key error is raised in download_prediction_config_data - is it because there is missing data?
-            self.logger.error(
-                "Key error raised in download_prediction_config_data. This could be because we predicted in the future and theres no data available for laqn?"
-            )
-            self.observation_df = train_df
+        # only want to query laqn data
+        test_df = model_data.download_source_data(
+            start_date=self.data_config.pred_start_date,
+            end_date=self.data_config.pred_end_date,
+            species=self.data_config.species,
+            point_ids=self.data_config.pred_interest_points,
+            features=self.data_config.features,
+            source=Source.laqn,
+            with_sensor_readings=True,
+        )
+        test_df["forecast"] = True
+        self.observation_df: pd.DataFrame = pd.concat(
+            [train_df, test_df], ignore_index=True
+        )
+
+        # ensure point ids are both strings
         self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
         self.result_df["point_id"] = self.result_df.point_id.apply(str)
-        self.logger.debug(
-            "Making sure the datetime cols are in the same format for observation and result dfs."
-        )
+
+        # ensure both datetimes are utc
         self.observation_df["measurement_start_utc"] = pd.to_datetime(
             self.observation_df.measurement_start_utc, utc=True
         )
@@ -128,9 +124,11 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
                 )
             ),
         )
+        # empty dataframe for spatial metrics
         self.spatial_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualitySpatialMetricsTable)
         )
+        # empty dataframe for temporal metrics
         self.temporal_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualityTemporalMetricsTable)
         )
