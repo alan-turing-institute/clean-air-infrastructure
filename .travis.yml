@@ -57,10 +57,10 @@ jobs:
 
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
-        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/* containers/entrypoints/odysseus/*
-
+        - pylint --rcfile=.pylintrc containers/odysseus/* containers/tests/test_odysseus/*
+    
     # separate parallel job for urbanair
-    - name: "urbanair"
+    - name: "urbanair" 
       before_install:
         - sh .travis/before_install.sh
         - source .travis/env.sh
