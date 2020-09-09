@@ -79,8 +79,12 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         train_df["forecast"] = False  # split into train and test
         try:
             self.logger.info("Reading test data from database.")
+            data_config = self.data_config.copy()
+            if Source.hexgrid in data_config.pred_sources:
+                data_config.pred_sources.remove(Source.hexgrid)
+
             test_data = model_data.download_prediction_config_data(
-                self.data_config, with_sensor_readings=True
+                data_config, with_sensor_readings=True
             )
             test_df: pd.DataFrame = test_data[Source.laqn]
             test_df["forecast"] = True
