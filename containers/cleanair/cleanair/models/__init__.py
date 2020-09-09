@@ -2,7 +2,8 @@
 from .model import ModelMixin
 from .model_data import ModelData
 from .model_config import ModelConfig
-from .svgp import SVGP
 
+# from .svgp import SVGP
 
-__all__ = ["ModelConfig", "ModelMixin", "ModelData", "SVGP"]
+# ToDO: Reimport SVPG.
+__all__ = ["ModelConfig", "ModelMixin", "ModelData"]
