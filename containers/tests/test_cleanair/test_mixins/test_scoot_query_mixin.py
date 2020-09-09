@@ -27,15 +27,15 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
 
 
 def test_scoot_readings(
-    scoot_generator: ScootQueryMixin, train_start, train_upto
+    scoot_generator: ScootQueryMixin, dataset_start_date, dataset_end_date
 ) -> None:
     """Generate some fake readings, insert into table then check they can be queried."""
     scoot_generator.update_remote_tables()
     readings = scoot_generator.scoot_readings(
-        start=train_start, upto=train_upto, with_location=False, output_type="df",
+        start=dataset_start_date, upto=dataset_end_date, with_location=False, output_type="df",
     )
     nhours = (
-        datetime.fromisoformat(train_upto) - datetime.fromisoformat(train_start)
+        datetime.fromisoformat(dataset_start_date) - datetime.fromisoformat(dataset_end_date)
     ).days * 24
     ndetectors = len(readings["detector_id"].unique())
     assert ndetectors == scoot_generator.limit

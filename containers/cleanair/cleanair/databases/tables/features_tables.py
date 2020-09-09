@@ -19,7 +19,7 @@ class StaticFeature(Base):
     )
 
     point_id = Column(
-        UUID,
+        UUID(as_uuid=True),
         ForeignKey("interest_points.meta_point.id"),
         primary_key=True,
         nullable=False,

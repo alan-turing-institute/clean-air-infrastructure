@@ -11,6 +11,3 @@ COPY odysseus /app/odysseus/
 # Install any needed packages specified in requirements.txt
 RUN pip install /app/cleanair
 RUN pip install /app/odysseus
-
-# Run the entrypoint script when the container launches
-ENTRYPOINT ["odysseus", "scan", "scoot"]
