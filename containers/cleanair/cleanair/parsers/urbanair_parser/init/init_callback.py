@@ -1,4 +1,4 @@
-"""Initialising a CLI app."""
+"""Initialising a CLI app from the callback."""
 
 import typer
 from ..state import (
@@ -11,7 +11,7 @@ from ..state import (
 from ....loggers import initialise_logging
 
 
-def init_app(
+def init_callback(
     verbose: bool = False,
     secretfile: str = typer.Option(
         None,

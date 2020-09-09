@@ -4,7 +4,7 @@ import typer
 from ..state import APP_DIR
 from ....loggers.logcolours import red
 
-app = typer.Typer(help="Urbanair configurations.")
+app = typer.Typer(help="Configure CLI")
 
 
 @app.command()
