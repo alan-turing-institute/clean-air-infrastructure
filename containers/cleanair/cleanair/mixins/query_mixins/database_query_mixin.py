@@ -11,7 +11,6 @@ from ...databases.tables import (
     AQESite,
     LAQNReading,
     LAQNSite,
-    LondonBoundary,
     SatelliteForecast,
     SatelliteGrid,
 )
