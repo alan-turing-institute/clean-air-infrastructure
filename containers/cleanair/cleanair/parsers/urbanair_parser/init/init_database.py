@@ -1,4 +1,4 @@
-"""CLI for initialising local and production database."""
+"""CLI for connecting to databases."""
 
 import subprocess
 import os
@@ -14,7 +14,7 @@ from ..state import (
 )
 from ....loggers.logcolours import red, green
 
-app = typer.Typer(help="Initialise the CLI to connect to a local database.")
+app = typer.Typer(help="Initialise the CLI to connect to a database.")
 
 
 @app.command()

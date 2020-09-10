@@ -1,23 +1,22 @@
 """Types for the cleanair package."""
 
-from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
+from .enum_types import Borough, Species, Source, FeatureNames, FeatureBufferSize
 from .dataset_types import (
     DataConfig,
     DatasetDict,
     FeaturesDict,
     TargetDict,
     NDArrayTuple,
-    BaseConfig,
-    FullConfig,
+    FullDataConfig,
     InterestPointDict,
 )
 from .model_types import ModelParams
 
 
 __all__ = [
-    "BaseConfig",
-    "FullConfig",
+    "Borough",
     "DataConfig",
+    "FullDataConfig",
     "DatasetDict",
     "FeaturesDict",
     "FeatureBufferSize",

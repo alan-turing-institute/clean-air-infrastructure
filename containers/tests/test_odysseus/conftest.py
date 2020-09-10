@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 import pytest
 import pandas as pd
+from cleanair.types import Borough
 from odysseus.scoot import Fishnet, ScanScoot
-from odysseus.types import Borough
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
 # pylint: disable=redefined-outer-name

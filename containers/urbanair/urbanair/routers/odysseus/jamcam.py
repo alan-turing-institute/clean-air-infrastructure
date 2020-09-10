@@ -1,23 +1,23 @@
 """JamCam API routes"""
 # pylint: disable=C0116
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
-from ..databases import get_db, all_or_404
-from ..databases.schemas.jamcam import (
+from ...databases import get_db, all_or_404
+from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
 )
-from ..databases.queries import (
+from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
     get_jamcam_info,
     get_jamcam_hourly,
 )
-from ..types import DetectionClass
+from ...types import DetectionClass
 
 router = APIRouter()
 
@@ -85,7 +85,7 @@ def camera_info() -> Response:
 )
 def camera_available(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
         db,
@@ -105,7 +105,7 @@ def camera_available(
 )
 def camera_raw_counts(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
         db,
@@ -125,7 +125,7 @@ def camera_raw_counts(
 )
 def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
-) -> Optional[List[Dict]]:
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
         db,

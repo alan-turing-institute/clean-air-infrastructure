@@ -67,13 +67,13 @@ class SatelliteGrid(Base):
     __table_args__ = {"schema": "interest_points"}
 
     point_id = Column(
-        UUID,
+        UUID(as_uuid=True),
         ForeignKey("interest_points.meta_point.id"),
         primary_key=True,
         nullable=False,
     )
     box_id = Column(
-        UUID,
+        UUID(as_uuid=True),
         ForeignKey("interest_points.satellite_box.id"),
         primary_key=True,
         nullable=False,
