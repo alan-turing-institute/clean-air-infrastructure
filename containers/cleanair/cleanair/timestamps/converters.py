@@ -1,17 +1,22 @@
 """
 Timestamp conversion functions
 """
+from typing import Union
 from datetime import date, datetime, timedelta
 from dateutil import parser
 import pytz
 
 
-def as_datetime(maybe_dt):
+def as_datetime(maybe_dt: Union[datetime, date, str]) -> datetime:
     """Convert an input that might be a datetime into a datetime"""
     if isinstance(maybe_dt, datetime):
         return maybe_dt
     if isinstance(maybe_dt, date):
         return datetime.combine(maybe_dt, datetime.min.time())
+    try:
+        maybe_dt: str = day_to_iso(maybe_dt)
+    except ValueError:
+        pass
     return parser.isoparse(maybe_dt)
 
 
