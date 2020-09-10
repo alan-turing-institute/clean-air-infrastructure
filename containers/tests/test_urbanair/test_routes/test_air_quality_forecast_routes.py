@@ -21,7 +21,7 @@ class TestBasic:
         """Test the index redirects to /welcome"""
         response = client_class_urbanair.get("/", allow_redirects=False)
         assert response.status_code == 307
-        redirect = "/"+response.headers["location"]
+        redirect = "/" + response.headers["location"]
         assert redirect == "/welcome"
 
     @staticmethod
