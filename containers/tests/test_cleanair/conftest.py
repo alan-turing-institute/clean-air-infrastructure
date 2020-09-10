@@ -401,11 +401,20 @@ def fake_cleanair_dataset(
         table=StaticFeature,
     )
 
+
 @pytest.fixture(scope="function")
 def scoot_generator(
-    secretfile: str, connection: Any, dataset_start_date: datetime, dataset_end_date: datetime,
+    secretfile: str,
+    connection: Any,
+    dataset_start_date: datetime,
+    dataset_end_date: datetime,
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
-        dataset_start_date, dataset_end_date, 0, 100, secretfile=secretfile, connection=connection
+        dataset_start_date,
+        dataset_end_date,
+        0,
+        100,
+        secretfile=secretfile,
+        connection=connection,
     )
