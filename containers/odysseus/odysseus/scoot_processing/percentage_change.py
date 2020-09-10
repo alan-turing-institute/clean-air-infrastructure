@@ -94,8 +94,8 @@ class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
 
         # get data from database for the given day_of_week
         baseline_df = self.get_scoot_by_dow(
-            start_time=self.baseline_start,
-            end_time=self.baseline_end,
+            start_date=self.baseline_start,
+            end_date=self.baseline_end,
             day_of_week=day_of_week,
             output_type="df",
             error_empty=True,
