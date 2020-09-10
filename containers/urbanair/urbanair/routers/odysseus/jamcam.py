@@ -2,7 +2,8 @@
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, Query, Response, HTTPException
+from fastapi import APIRouter, Depends, Query, Response, HTTPException, sat
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from ...databases import get_db, all_or_404
 from ...databases.schemas.jamcam import (
@@ -18,8 +19,11 @@ from ...databases.queries import (
     get_jamcam_hourly,
 )
 from ...types import DetectionClass
+import secrets
 
 router = APIRouter()
+
+security = HTTPBasic()
 
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
@@ -65,11 +69,22 @@ def common_jamcam_params(
         "endtime": endtime,
     }
 
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = secrets.compare_digest(credentials.username, "moose")
+    correct_password = secrets.compare_digest(credentials.password, "swordfish")
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            401,
+            detail = "Incorrect username or password",
+            headers = {"WWW-Authenticate": "Basic"},
+            )
+    return credentials.username
 
 @router.get(
     "/camera_info",
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
+    username: str = Depends(get_current_username),
 )
 def camera_info() -> Response:
     "Get camera info"
