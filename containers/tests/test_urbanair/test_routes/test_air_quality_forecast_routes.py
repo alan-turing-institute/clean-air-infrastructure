@@ -18,10 +18,11 @@ class TestBasic:
 
     @staticmethod
     def test_index(client_class_urbanair):
-        """Test the index returns html"""
-        response = client_class_urbanair.get("/")
-        assert "text/html" in response.headers["content-type"]
-        assert response.status_code == 200
+        """Test the index redirects to /welcome"""
+        response = client_class_urbanair.get("/", allow_redirects=False)
+        assert response.status_code == 307
+        redirect = "/"+response.headers["location"]
+        assert redirect == "/welcome"
 
     @staticmethod
     def test_air_quality_docs(client_class_urbanair):
