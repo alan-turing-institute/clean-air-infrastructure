@@ -1,6 +1,6 @@
 """Testing database query mixins."""
 
-from datetime import date, datetime
+from datetime import date
 from cleanair.mixins import ScootQueryMixin
 
 
@@ -37,10 +37,7 @@ def test_scoot_readings(
         with_location=False,
         output_type="df",
     )
-    nhours = (
-        datetime.fromisoformat(dataset_start_date)
-        - datetime.fromisoformat(dataset_end_date)
-    ).days * 24
+    nhours = (dataset_end_date - dataset_start_date).days * 24
     ndetectors = len(readings["detector_id"].unique())
     assert ndetectors == scoot_generator.limit
     assert len(readings) == nhours * ndetectors
