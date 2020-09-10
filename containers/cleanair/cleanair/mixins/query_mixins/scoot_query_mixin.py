@@ -1,6 +1,7 @@
 """Queries for the scoot dataset."""
 
-from typing import Any, Iterable, List, Optional
+from __future__ import annotations
+from typing import Any, Iterable, List, Optional, TYPE_CHECKING
 from sqlalchemy import func, or_, and_
 import pandas as pd
 from ...databases.tables import (
@@ -10,6 +11,9 @@ from ...databases.tables import (
     ScootReading,
 )
 from ...decorators import db_query
+
+if TYPE_CHECKING:
+    from ...types import Borough
 
 
 class ScootQueryMixin:
@@ -24,7 +28,7 @@ class ScootQueryMixin:
         limit: Optional[int] = None,
         geom_label: str = "location",
         detectors: Optional[List] = None,
-        borough: Optional[str] = None,
+        borough: Optional[Borough] = None,
     ):
         """
         Get all scoot detectors from the interest point schema.
@@ -57,7 +61,7 @@ class ScootQueryMixin:
             if borough:
                 borough_sq = (
                     session.query(LondonBoundary)
-                    .filter(LondonBoundary.name == borough)
+                    .filter(LondonBoundary.name == borough.value)
                     .subquery()
                 )
                 readings = readings.filter(
@@ -76,7 +80,7 @@ class ScootQueryMixin:
         detectors: Optional[List] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-        borough: Optional[str] = None,
+        borough: Optional[Borough] = None,
     ):
         """Get scoot data with lat and long positions.
 
@@ -103,7 +107,7 @@ class ScootQueryMixin:
         ]
         if borough and not with_location:
             error_message = "If passing a borough, you must set `with_location` to True. You passed borough: %s"
-            error_message = error_message.format(borough)
+            error_message = error_message.format(borough.value)
             return ValueError(error_message)
         # get the location of detectors
         if with_location:
@@ -143,8 +147,8 @@ class ScootQueryMixin:
                     # append AND statement
                     or_statements.append(
                         and_(
-                            scoot_readings.c.measurement_start_utc >= start_date,
-                            scoot_readings.c.measurement_start_utc < upto_date,
+                            ScootReading.measurement_start_utc >= start_date,
+                            ScootReading.measurement_start_utc < upto_date,
                         )
                     )
                 scoot_readings = scoot_readings.filter(or_(*or_statements))

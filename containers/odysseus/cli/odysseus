@@ -2,17 +2,17 @@
 
 import typer
 from cleanair.parsers.urbanair_parser import config, init, inputs
-from odysseus.parsers import baseline_cli, forecast_cli, metrics_cli, train_cli, scan_cli
+from odysseus import parsers
 
-app = typer.Typer(callback=init.init_app, help="Project Odysseus")
-app.add_typer(baseline_cli.app, name="baseline")
+app = typer.Typer(callback=init.init_callback, help="Project Odysseus")
+app.add_typer(parsers.baseline_cli.app, name="baseline")
 app.add_typer(config.app, name="config")
-app.add_typer(forecast_cli.app, name="forecast")
+app.add_typer(parsers.forecast_cli.app, name="forecast")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")
-app.add_typer(metrics_cli.app, name="metrics")
-app.add_typer(scan_cli.app, name="scan")
-app.add_typer(train_cli.app, name="train")
+app.add_typer(parsers.metrics_cli.app, name="metrics")
+app.add_typer(parsers.scan_cli.app, name="scan")
+app.add_typer(parsers.train_cli.app, name="train")
 
 if __name__ == "__main__":
     app()

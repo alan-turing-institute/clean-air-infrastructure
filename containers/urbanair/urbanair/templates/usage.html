@@ -1,0 +1,47 @@
+<!doctype html>
+
+<head>
+    <title>UrbanAir - The Alan Turing Institute</title>
+</head>
+
+<body>
+    <h1>Example usage</h1>
+    <p>Here is a simple example for using the UrbanAir API developed by the Alan Turing Institute.</p>
+
+    <p>Here's a bash one-liner for downloading one day's worth of data:</p>
+
+    <pre>
+        <code>
+            for HOUR in $(seq -w 0 100 2400); do curl -X GET "http://127.0.0.1:8000/api/v1/air_quality/forecast/hexgrid/geojson?time=2020-08-12T${HOUR:0:2}:${HOUR:2:2}&lon_min=-0.13&lon_max=-0.12&lat_min=51.525&lat_max=51.535" > geojson_$HOUR.json; done<p>
+        </code>
+    </pre>
+
+    <p>Here's a minimal python script for combining the data into a single GeoJSON file:</p>
+
+    <pre>
+        <code>
+
+            import json
+            import sys
+
+            def merge(filenames):
+                output = {
+                    "type": "FeatureCollection",
+                    "features": []
+                }
+                for filename in filenames:
+                    with open(filename, "r") as f_in:
+                        data = json.load(f_in)
+                        output["features"].extend(data['features'])
+                return json.dumps(output)
+
+            if __name__ == "__main__":
+                print(merge(list(sys.argv[1:])))
+            To combine the files from the above you can do the following:
+
+            python merge.py geojson* > combined.json
+
+        </code>
+    </pre>
+
+</body>

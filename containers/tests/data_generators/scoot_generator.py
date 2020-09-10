@@ -12,7 +12,7 @@ from cleanair.mixins import ScootQueryMixin
 
 if TYPE_CHECKING:
     from nptyping import NDArray, Int
-    from odysseus.types import Borough
+    from cleanair.types import Borough
 
 
 class ScootGenerator(ScootQueryMixin, DBWriter):
@@ -43,7 +43,7 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         detectors = self.scoot_detectors(
             offset=self.offset,
             limit=self.limit,
-            borough=self.borough.value,
+            borough=self.borough,
             output_type="df",
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
