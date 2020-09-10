@@ -1,6 +1,8 @@
 """Testing database query mixins."""
 
 from datetime import date
+from geoalchemy2.shape import to_shape
+from shapely.geometry import Point
 from cleanair.mixins import ScootQueryMixin
 
 
@@ -39,6 +41,49 @@ def test_scoot_readings(
     )
     nhours = (dataset_end_date - dataset_start_date).days * 24
     ndetectors = len(readings["detector_id"].unique())
+    assert ndetectors == scoot_generator.limit
+    assert len(readings) == nhours * ndetectors
+
+
+def test_dow_scoot_readings(
+    scoot_generator: ScootQueryMixin, dataset_start_date, dataset_end_date
+) -> None:
+    """Check the scoot_readings function when a day of the week is specified."""
+    scoot_generator.update_remote_tables()
+    readings = scoot_generator.scoot_readings(
+        start=dataset_start_date,
+        upto=dataset_end_date,
+        with_location=False,
+        day_of_week=dataset_start_date.weekday(),
+        output_type="df",
+    )
+    nhours = 24
+    ndetectors = len(readings["detector_id"].unique())
+    assert ndetectors == scoot_generator.limit
+    assert len(readings) == nhours * ndetectors
+    assert (
+        readings.measurement_start_utc.dt.weekday == dataset_start_date.weekday()
+    ).all()
+
+
+def test_readings_with_location(
+    scoot_generator: ScootQueryMixin, dataset_start_date, dataset_end_date,
+) -> None:
+    """Test scoot query returns locations of detectors when specified."""
+    scoot_generator.update_remote_tables()
+    readings = scoot_generator.scoot_readings(
+        start=dataset_start_date,
+        upto=dataset_end_date,
+        with_location=True,  # set to True
+        output_type="df",
+    )
+    nhours = (dataset_end_date - dataset_start_date).days * 24
+    ndetectors = len(readings["detector_id"].unique())
+    assert "location" in readings.columns
+    assert "lon" in readings.columns
+    assert "lat" in readings.columns
+    print(type(readings.location.iloc[0]))
+    assert (readings.location.apply(lambda x: isinstance(to_shape(x), Point))).all()
     assert ndetectors == scoot_generator.limit
     assert len(readings) == nhours * ndetectors
 

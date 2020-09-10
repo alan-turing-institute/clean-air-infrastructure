@@ -146,8 +146,8 @@ class ScootQueryMixin:
                     # append AND statement
                     or_statements.append(
                         and_(
-                            scoot_readings.c.measurement_start_utc >= start_date,
-                            scoot_readings.c.measurement_start_utc < upto_date,
+                            ScootReading.measurement_start_utc >= start_date,
+                            ScootReading.measurement_start_utc < upto_date,
                         )
                     )
                 scoot_readings = scoot_readings.filter(or_(*or_statements))
