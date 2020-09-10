@@ -32,10 +32,14 @@ def test_scoot_readings(
     """Generate some fake readings, insert into table then check they can be queried."""
     scoot_generator.update_remote_tables()
     readings = scoot_generator.scoot_readings(
-        start=dataset_start_date, upto=dataset_end_date, with_location=False, output_type="df",
+        start=dataset_start_date,
+        upto=dataset_end_date,
+        with_location=False,
+        output_type="df",
     )
     nhours = (
-        datetime.fromisoformat(dataset_start_date) - datetime.fromisoformat(dataset_end_date)
+        datetime.fromisoformat(dataset_start_date)
+        - datetime.fromisoformat(dataset_end_date)
     ).days * 24
     ndetectors = len(readings["detector_id"].unique())
     assert ndetectors == scoot_generator.limit

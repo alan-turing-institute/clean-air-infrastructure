@@ -15,6 +15,7 @@ from ...decorators import db_query
 if TYPE_CHECKING:
     from ...types import Borough
 
+
 class ScootQueryMixin:
     """Queries for the scoot dataset."""
 
