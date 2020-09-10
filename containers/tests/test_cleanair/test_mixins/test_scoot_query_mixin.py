@@ -4,6 +4,7 @@ from datetime import date
 from geoalchemy2.shape import to_shape
 from shapely.geometry import Point
 from cleanair.mixins import ScootQueryMixin
+from cleanair.types import Borough
 
 
 def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
@@ -18,6 +19,7 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
     assert "location" in detector_df.columns
     assert "lon" in detector_df.columns
     assert "lat" in detector_df.columns
+    assert (detector_df.location.apply(lambda x: isinstance(to_shape(x), Point))).all()
 
     # now check we can query a set of detectors
     detector_list = detector_df["detector_id"].to_list()
@@ -26,6 +28,12 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
     )
     assert set(detector_df["detector_id"]) == set(detector_list)
     assert "geom" in detector_df.columns
+
+    # finally check that we can filter by borough
+    borough_df = scoot_query.scoot_detectors(
+        borough=Borough.westminster, output_type="df",
+    )
+    assert len(borough_df) > 0  # TODO how many detectors in Westminster?
 
 
 def test_scoot_readings(
@@ -82,8 +90,6 @@ def test_readings_with_location(
     assert "location" in readings.columns
     assert "lon" in readings.columns
     assert "lat" in readings.columns
-    print(type(readings.location.iloc[0]))
-    assert (readings.location.apply(lambda x: isinstance(to_shape(x), Point))).all()
     assert ndetectors == scoot_generator.limit
     assert len(readings) == nhours * ndetectors
 
