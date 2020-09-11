@@ -22,7 +22,7 @@ urbanair model data generate-full-config
 urbanair model data download --training-data --prediction-data --output-csv
 
 # create the model parameters
-urbanair model setup mrdgp --maxiter 10000 --num-inducing-points 300
+urbanair model setup mrdgp --maxiter 10000 --num-inducing-points 500
 
 # fit the model and predict
 urbanair model fit mrdgp --refresh 10 --no-restore
