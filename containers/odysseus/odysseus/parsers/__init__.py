@@ -1,5 +1,5 @@
 """CLI parsers for the odysseus project."""
 
-# from . import baseline
+from . import baseline
 
-# __all__ = ["baseline"]
+__all__ = ["baseline"]

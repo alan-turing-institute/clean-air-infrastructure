@@ -3,7 +3,7 @@
 import typer
 from cleanair.parsers.urbanair_parser import config, init, inputs, features, model
 
-app = typer.Typer(callback=init.init_app)
+app = typer.Typer(callback=init.init_callback)
 app.add_typer(config.app, name="config")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")

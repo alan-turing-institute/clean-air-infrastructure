@@ -36,8 +36,8 @@ stages:
     # Todo: Remove this image if no longer in use (check with Patrick)
     # GLA Lockdown images
     - script: |
-         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion) -f containers/dockerfiles/lockdown_baseline.Dockerfile containers
-      displayName: 'Building the GLA lockdown baseline image'
+         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
+      displayName: 'Building the Odysseus image'
     # List available images
     - script: |
         docker images
@@ -50,7 +50,7 @@ stages:
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
