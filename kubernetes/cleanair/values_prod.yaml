@@ -136,6 +136,27 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
+
+  - name: fit-svgp
+    schedule: "30 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting
+        imagePullPolicy: Always
+        tag: latest
+    args: ["sh", "/app/scripts/svgp.sh"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
  
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
