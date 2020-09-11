@@ -49,7 +49,6 @@ stages:
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:latest
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
 - stage: Kubernetes
