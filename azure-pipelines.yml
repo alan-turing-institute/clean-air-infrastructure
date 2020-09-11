@@ -33,7 +33,9 @@ stages:
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
-    # Todo: Remove this image if no longer in use (check with Patrick)
+    # Model fitting
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
     # GLA Lockdown images
     - script: |
          docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion) -f containers/dockerfiles/lockdown_baseline.Dockerfile containers
@@ -50,6 +52,7 @@ stages:
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
