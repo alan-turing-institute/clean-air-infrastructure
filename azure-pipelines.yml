@@ -40,10 +40,6 @@ stages:
     - script: | 
         docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:latest -f containers/dockerfiles/model_fitting.Dockerfile containers
       displayName: "Build model_fitting image"
-    # GLA Lockdown images
-    - script: |
-         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/lockdown_baseline:$(Build.SourceVersion) -f containers/dockerfiles/lockdown_baseline.Dockerfile containers
-      displayName: 'Building the GLA lockdown baseline image'
     # List available images
     - script: |
         docker images
