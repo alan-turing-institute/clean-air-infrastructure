@@ -109,7 +109,7 @@ class ModelConfig(
 
         self.logger.info("Validate config complete")
 
-    def generate_full_config(self, config: DataConfig):
+    def generate_full_config(self, config: DataConfig) -> FullDataConfig:
         """Generate a full config file by querying the cleanair
            database to check available interest point sources and features"""
 
@@ -203,7 +203,7 @@ class ModelConfig(
 
         return output_dict
 
-    @db_query
+    @db_query()
     def get_available_static_features(self):
         """Return available static features from the CleanAir database
         """
@@ -216,7 +216,7 @@ class ModelConfig(
 
             return feature_types_q
 
-    @db_query
+    @db_query()
     def get_available_sources(self):
         """Return the available interest point sources in a database"""
 
@@ -226,7 +226,7 @@ class ModelConfig(
 
             return feature_types_q
 
-    @db_query
+    @db_query()
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
@@ -234,7 +234,7 @@ class ModelConfig(
 
             return session.query(LondonBoundaryView.geom).limit(1)
 
-    @db_query
+    @db_query()
     def get_meta_point_ids(self, source: Source):
         """Get metapoint ids"""
         with self.dbcnxn.open_session() as session:
@@ -243,7 +243,7 @@ class ModelConfig(
                 MetaPoint.source == source
             )
 
-    @db_query
+    @db_query()
     def get_available_interest_points(self, source: Source, within_london_only: bool):
         """
         Get available interest points for a particular source
