@@ -19,6 +19,7 @@ get_satellite_readings
 from typing import List
 import pytest
 from enum import Enum
+import uuid
 from dateutil.parser import isoparse
 from datetime import timedelta
 from pydantic import ValidationError
@@ -131,6 +132,42 @@ class TestModelData:
         )
 
         assert len(static_species_time) == expected_size
+
+    def test_select_static_missing_id(
+        self, model_data, valid_full_config_dataset, point_ids_valid
+    ):
+        """
+        Test that we can cross join ModelData.select_static_features
+        with a range of datetimes and species
+        """
+        source = Source.laqn
+        species = [Species.NO2]
+
+        # Id's from config file and another UUID
+        config_ids = valid_full_config_dataset.train_interest_points[source] + [
+            str(uuid.uuid4())
+        ]
+        start_datetime = valid_full_config_dataset.train_start_date
+        end_datetime = valid_full_config_dataset.train_end_date
+
+        features = [FeatureNames.building_height, FeatureNames.grass]
+
+        # Return Pydantic model types
+        static_species_time = model_data.get_static_features(
+            start_datetime,
+            end_datetime,
+            features,
+            source,
+            config_ids,
+            species,
+            output_type="all",
+        )
+
+        expected_size = len(config_ids) - 1 * len(features) * len(species) * (
+            (end_datetime - start_datetime).total_seconds() / (60.0 * 60.0)
+        )
+
+        assert len(static_species_time) != expected_size
 
         # print(StaticFeatureTimeSpecies.from_orm(static_species_time[0]))
 
