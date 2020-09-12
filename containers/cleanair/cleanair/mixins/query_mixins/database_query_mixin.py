@@ -30,7 +30,7 @@ class DBQueryMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    @db_query
+    @db_query()
     def query_london_boundary(self):
         """Query LondonBoundary to obtain the bounding geometry for London.
         Only get the first row as should only be one entry"""
@@ -38,7 +38,7 @@ class DBQueryMixin:
 
             return session.query(LondonBoundaryView.geom).limit(1)
 
-    @db_query
+    @db_query()
     def get_laqn_readings(
         self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
@@ -64,7 +64,7 @@ class DBQueryMixin:
             )
             return laqn_reading_q
 
-    @db_query
+    @db_query()
     def get_aqe_readings(
         self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
@@ -90,7 +90,7 @@ class DBQueryMixin:
             )
             return aqe_reading_q
 
-    @db_query
+    @db_query()
     def get_satellite_readings(
         self, start_date: datetime, end_date: datetime, species: List[Species]
     ):
@@ -132,7 +132,7 @@ class DBQueryMixin:
 
             return sat_q
 
-    @db_query
+    @db_query()
     def get_satellite_readings_pred(self, start_date, end_date, species):
         """Get Satellite data for the prediction period
            Gets up to 72 hours of predicted data from the satellite readings
