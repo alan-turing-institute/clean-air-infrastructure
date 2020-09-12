@@ -2,8 +2,21 @@
 from .model import ModelMixin
 from .model_data import ModelData, ModelDataExtractor
 from .model_config import ModelConfig
+from .schemas import (
+    StaticFeatureSchema,
+    StaticFeatureLocSchema,
+    StaticFeatureTimeSpecies,
+)
 
 # from .svgp import SVGP
 
 
-__all__ = ["ModelConfig", "ModelMixin", "ModelData", "ModelDataExtractor"]
+__all__ = [
+    "ModelConfig",
+    "ModelMixin",
+    "ModelData",
+    "ModelDataExtractor",
+    "StaticFeatureSchema",
+    "StaticFeatureLocSchema",
+    "StaticFeatureTimeSpecies",
+]

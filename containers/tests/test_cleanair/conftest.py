@@ -33,7 +33,7 @@ from cleanair.databases.tables.fakes import (
 from cleanair.types import Source, Species, FeatureNames, DataConfig
 
 
-@pytest.fixture()
+@pytest.fixture(scope="class")
 def valid_config(dataset_start_date, dataset_end_date):
     "Valid config for 'fake_cleanair_dataset' fixture"
 
@@ -71,6 +71,12 @@ def valid_config(dataset_start_date, dataset_end_date):
             "model_type": "svgp",
         }
     )
+
+
+@pytest.fixture(scope="class")
+def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
+
+    return model_config.generate_full_config(valid_config)
 
 
 @pytest.fixture(scope="module")
