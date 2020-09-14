@@ -7,8 +7,9 @@ import numpy as np
 from nptyping import NDArray, Float64
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import func, text, column, String
+from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
+from sqlalchemy.dialects.postgresql import UUID
 from ..databases.tables import (
     StaticFeature,
     MetaPoint,
@@ -29,7 +30,7 @@ from ..types import (
     IndexedDatasetDict,
     TargetDict,
 )
-from .schemas import StaticFeatureTimeSpecies
+from .schemas import StaticFeatureTimeSpecies, StaticFeatureSchema
 
 # pylint: disable=too-many-lines
 
@@ -416,14 +417,16 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
-    @db_query()
+    @db_query(StaticFeatureSchema)
     def select_static_features(
         self, point_ids: List[str], features: List[FeatureNames], source: Source
     ):
         """
-        Return static features from the database for a list of point its
-        for a particular source.
+        Return static features from the database for a list of point ids
+            for a particular source.
         If point ids are not of the correct source they will not be returned
+        Ensures that we always get all point id rows, even if they are not in the database 
+            (all other columns will be null), by doing an outer join
 
         Args:
             features: A list of [FeatureNames]
@@ -432,45 +435,72 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         with self.dbcnxn.open_session() as session:
 
-            return (
+            # Get a row with all the point ids requested
+            point_id_sq = session.query(
+                Values(
+                    [column("point_id", String),],
+                    *[(point_id,) for point_id in point_ids],
+                    alias_name="point_ids",
+                )
+            ).subquery()
+
+            feature_sq = session.query(
+                Values(
+                    [column("feature_name", String),],
+                    *[(feature.value,) for feature in features],
+                    alias_name="point_ids",
+                )
+            ).subquery()
+
+            point_id_feature_cross_join_sq = session.query(
+                point_id_sq, feature_sq
+            ).subquery()
+
+            static_features_with_loc_sq = (
                 session.query(
-                    StaticFeature,
+                    StaticFeature.point_id,
+                    StaticFeature.feature_name,
+                    StaticFeature.feature_source,
+                    StaticFeature.value_1000,
+                    StaticFeature.value_500,
+                    StaticFeature.value_200,
+                    StaticFeature.value_100,
+                    StaticFeature.value_10,
                     func.ST_X(MetaPoint.location).label("lon"),
                     func.ST_Y(MetaPoint.location).label("lat"),
                 )
+                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
                 .filter(
                     MetaPoint.id.in_(point_ids),
                     StaticFeature.feature_name.in_(features),
                     MetaPoint.source == source,
                 )
-                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id)
+                .subquery()
             )
 
-    @staticmethod
-    def __expand_time(start_date, end_date, feature_df):
-        """
-        Returns a new dataframe with static features merged with
-        hourly timestamps between start_date(inclusive) and end_date
-        """
-        start_date = start_date.date()
-        end_date = end_date.date()
-
-        ids = feature_df["point_id"].to_numpy()
-        times = rrule.rrule(
-            rrule.HOURLY, dtstart=start_date, until=end_date - relativedelta(hours=+1)
-        )
-        index = pd.MultiIndex.from_product(
-            [ids, pd.to_datetime(list(times), utc=False)],
-            names=["point_id", "measurement_start_utc"],
-        )
-        time_df = pd.DataFrame(index=index).reset_index()
-
-        time_df_merged = time_df.merge(feature_df)
-
-        time_df_merged["epoch"] = time_df_merged["measurement_start_utc"].apply(
-            lambda x: x.timestamp()
-        )
-        return time_df_merged
+            return session.query(
+                point_id_feature_cross_join_sq.c.point_id,
+                point_id_feature_cross_join_sq.c.feature_name,
+                static_features_with_loc_sq.c.feature_source,
+                static_features_with_loc_sq.c.value_1000,
+                static_features_with_loc_sq.c.value_500,
+                static_features_with_loc_sq.c.value_200,
+                static_features_with_loc_sq.c.value_100,
+                static_features_with_loc_sq.c.value_10,
+            ).join(
+                static_features_with_loc_sq,
+                and_(
+                    (
+                        static_features_with_loc_sq.c.point_id
+                        == cast(point_id_feature_cross_join_sq.c.point_id, UUID)
+                    ),
+                    (
+                        static_features_with_loc_sq.c.feature_name
+                        == point_id_feature_cross_join_sq.c.feature_name
+                    ),
+                ),
+                isouter=True,
+            )
 
     @db_query()
     def get_sensor_readings(

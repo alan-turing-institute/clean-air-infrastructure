@@ -16,6 +16,9 @@ class StaticFeatureSchema(BaseModel):
     value_100: float
     value_10: float
 
+    class Config:
+        orm_mode = True
+
 
 class StaticFeatureLocSchema(StaticFeatureSchema):
 
