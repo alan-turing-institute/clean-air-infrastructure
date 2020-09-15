@@ -109,43 +109,46 @@ class TestModelData:
                 point_id, features, source, output_type="all",
             )
 
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
+    def test_select_static_features_config(
+        self,
+        model_data,
+        point_ids_all,
+        point_ids_valid,
+        valid_full_config_dataset,
+        source,
+    ):
+        """
+        Test that we get the correct static features.
+        Should return static features for interest points that are
+        in London and Open (for LAQN and AQE)
+        """
 
-#     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
-#     def test_select_static_features_config(
-#         self,
-#         model_data,
-#         point_ids_all,
-#         point_ids_valid,
-#         valid_full_config_dataset,
-#         source,
-#     ):
-#         """
-#         Test that we get the correct static features.
-#         Should return static features for interest points that are
-#         in London and Open (for LAQN and AQE)
-#         """
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
 
-#         # Id's from config file
-#         config_ids = valid_full_config_dataset.train_interest_points[source]
+        # Request static features
+        dat = model_data.select_static_features(
+            config_ids,
+            [FeatureNames.building_height, FeatureNames.grass],
+            source,
+            output_type="all",
+        )
 
-#         # Request static features
-#         dat = model_data.select_static_features(
-#             config_ids, [FeatureNames.building_height, FeatureNames.grass], source
-#         ).all()
+        returned_static_features = {i.point_id for i in dat}
 
-#         returned_static_features = {i.point_id for i in dat}
+        # assert set(config_ids) == set(point_ids_valid(source))
 
-#         # assert set(config_ids) == set(point_ids_valid(source))
+        if source != Source.satellite:
+            # Check we get the subset of ids that are open and withing the London Boundary
+            assert set(point_ids_valid(source)) == returned_static_features
 
-#         # if source != Source.satellite:
-#         #     # Check we get the subset of ids that are open and withing the London Boundary
-#         #     assert set(point_ids_valid(source)) == returned_static_features
+        # Check we don't get all point ids
+        assert set(point_ids_all(source)) != returned_static_features
 
-#         # Check we don't get all point ids
-#         assert set(point_ids_all(source)) != returned_static_features
+        # Check this is the set of ids that ModelConfig.generate_full_config() returns
+        assert set(config_ids) == {str(i) for i in returned_static_features}
 
-#         # Check this is the set of ids that ModelConfig.generate_full_config() returns
-#         assert set(config_ids) == {str(i) for i in returned_static_features}
 
 #     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
 #     @pytest.mark.parametrize(
