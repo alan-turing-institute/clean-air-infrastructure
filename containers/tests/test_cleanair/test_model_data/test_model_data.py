@@ -64,6 +64,52 @@ def point_ids_invalid(meta_within_london_closed):
     return _point_ids_valid
 
 
+@pytest.fixture()
+def lookup_sensor_reading(
+    meta_records,
+    laqn_site_records,
+    laqn_reading_records,
+    aqe_site_records,
+    aqe_reading_records,
+):
+    def _lookup_sensor_reading(point_id, measurement_start_utc, species):
+
+        sources = list(filter(lambda x: x.id == point_id, meta_records))
+        if len(sources) != 1:
+            raise ValueError("Got more than one source at lookup")
+        source = sources[0].source
+
+        if source == Source.laqn.value:
+
+            site_records = laqn_site_records
+            reading_records = laqn_reading_records
+
+        elif source == Source.aqe.value:
+
+            site_records = aqe_site_records
+            reading_records = aqe_reading_records
+
+        source_record = list(filter(lambda x: x.point_id == point_id, site_records))[0]
+
+        record = list(
+            filter(
+                lambda x: (
+                    (source_record.site_code == x.site_code)
+                    and (measurement_start_utc == x.measurement_start_utc)
+                    and (species.value == x.species_code)
+                ),
+                reading_records,
+            )
+        )
+
+        if len(record) != 1:
+            raise ValueError("Failed to get record value")
+
+        return record[0].value
+
+    return _lookup_sensor_reading
+
+
 class TestModelData:
     def test_setup(self, fake_cleanair_dataset):
         """Insert test data"""
@@ -155,8 +201,6 @@ class TestModelData:
     @pytest.mark.parametrize(
         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
     )
-    # @pytest.mark.parametrize("source", [Source.laqn])
-    # @pytest.mark.parametrize("species", [[Species.NO2]])
     def test_select_static_time_species(
         self, model_data, valid_full_config_dataset, point_ids_valid, source, species
     ):
@@ -206,6 +250,51 @@ class TestModelData:
         )
 
         assert sorted(expected_values) == sorted(static_species_tuples)
+
+    # @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
+    # @pytest.mark.parametrize(
+    #     "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
+    # )
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
+    @pytest.mark.parametrize("species", [[Species.NO2]])
+    def test_get_training_data_inputs(
+        self,
+        model_data,
+        valid_full_config_dataset,
+        point_ids_valid,
+        source,
+        species,
+        lookup_sensor_reading,
+    ):
+
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
+        start_datetime = valid_full_config_dataset.train_start_date
+        end_datetime = valid_full_config_dataset.train_end_date
+
+        features = [FeatureNames.building_height, FeatureNames.grass]
+
+        data = model_data.get_training_data_inputs(
+            start_datetime,
+            end_datetime,
+            species,
+            config_ids,
+            features,
+            source,
+            output_type="all",
+        )
+
+        assert all(
+            map(
+                lambda v: lookup_sensor_reading(
+                    v.point_id,
+                    v.measurement_start_utc.replace(tzinfo=None),
+                    v.species_code,
+                )
+                == v.value,
+                data,
+            )
+        )
 
 
 #     # def test_select_static_missing_id(

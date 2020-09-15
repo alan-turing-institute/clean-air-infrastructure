@@ -31,5 +31,7 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
     measurement_start_utc: datetime
     species_code: Species
 
-    class Config:
-        orm_mode = True
+
+class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
+
+    value: float

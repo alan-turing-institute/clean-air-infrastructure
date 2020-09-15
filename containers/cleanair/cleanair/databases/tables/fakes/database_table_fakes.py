@@ -166,6 +166,25 @@ class SatelliteGridSchema(BaseModel):
     box_id: uuid.UUID
 
 
+class SatelliteForecastSchema(BaseModel):
+    "Satellite Forecast fake data"
+    reference_start_utc: datetime
+    measurement_start_utc: datetime
+    measurement_end_utc: Optional[datetime]
+    species_code: str
+    box_id: uuid.UUID
+    value: Optional[float]
+
+    _gen_value = validator("value", always=True, allow_reuse=True)(gen_norm_value)
+
+    @validator("measurement_end_utc", always=True)
+    def gen_measurement_end_time(cls, v, values):
+        "Generate end time one hour after start time"
+        if v:
+            return v
+        return values["measurement_start_utc"] + timedelta(hours=1)
+
+
 class StaticFeaturesSchema(BaseModel):
     "Static features schema"
     point_id: uuid.UUID

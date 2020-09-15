@@ -34,6 +34,7 @@ from .schemas import (
     StaticFeatureTimeSpecies,
     StaticFeatureSchema,
     StaticFeatureLocSchema,
+    StaticFeaturesWithSensors,
 )
 
 # pylint: disable=too-many-lines
@@ -452,7 +453,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 Values(
                     [column("feature_name", String),],
                     *[(feature.value,) for feature in features],
-                    alias_name="point_ids",
+                    alias_name="features",
                 )
             ).subquery()
 
@@ -483,7 +484,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
 
             return session.query(
-                point_id_feature_cross_join_sq.c.point_id,
+                cast(point_id_feature_cross_join_sq.c.point_id, UUID).label("point_id"),
                 point_id_feature_cross_join_sq.c.feature_name,
                 static_features_with_loc_sq.c.feature_source,
                 static_features_with_loc_sq.c.value_1000,
@@ -622,7 +623,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         return static_features_expand
 
-    @db_query()
+    @db_query(StaticFeaturesWithSensors)
     def join_features_to_sensors(
         self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
@@ -631,6 +632,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             static_features.c.point_id,
             static_features.c.measurement_start_utc,
             static_features.c.feature_name,
+            static_features.c.feature_source,
             static_features.c.value_1000,
             static_features.c.value_500,
             static_features.c.value_200,
@@ -651,17 +653,18 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 session.query(*columns)
                 .join(
                     sensor_readings,
-                    (static_features.c.point_id == sensor_readings.c.point_id)
-                    & (
-                        static_features.c.measurement_start_utc
-                        == sensor_readings.c.measurement_start_utc
-                    )
-                    & (
-                        static_features.c.species_code == sensor_readings.c.species_code
+                    and_(
+                        and_(
+                            static_features.c.point_id == sensor_readings.c.point_id,
+                            static_features.c.measurement_start_utc
+                            == sensor_readings.c.measurement_start_utc,
+                        ),
+                        static_features.c.species_code
+                        == sensor_readings.c.species_code,
                     ),
                     isouter=True,
                 )
-                .filter(static_features.c.source == source.value)
+                .filter(static_features.c.feature_source == source.value)
                 .order_by(
                     static_features.c.point_id,
                     static_features.c.feature_name,
@@ -672,7 +675,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             return static_with_sensor_readings
 
-    @db_query()
+    @db_query(StaticFeaturesWithSensors)
     def get_training_data_inputs(
         self,
         start_date: datetime,
@@ -716,10 +719,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             sensor_readings = self.get_satellite_readings(
                 start_date, end_date, species, output_type="subquery"
             )
-
-        # static_with_sensors = self.join_features_to_sensors(
-        #     static_features, sensor_readings, source, output_type="sql"
-        # )
 
         return self.join_features_to_sensors(
             static_features, sensor_readings, source, output_type="query",
