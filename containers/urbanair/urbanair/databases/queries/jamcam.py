@@ -116,7 +116,7 @@ def get_jamcam_info(
     return out
 
 
-@db_query
+@db_query()
 def get_jamcam_available(
     db: Session,
     camera_id: Optional[str],
@@ -149,7 +149,7 @@ def get_jamcam_available(
     return res
 
 
-@db_query
+@db_query()
 def get_jamcam_raw(
     db: Session,
     camera_id: Optional[str],
@@ -180,7 +180,7 @@ def get_jamcam_raw(
     return res
 
 
-@db_query
+@db_query()
 def get_jamcam_hourly(
     db: Session,
     camera_id: Optional[str],

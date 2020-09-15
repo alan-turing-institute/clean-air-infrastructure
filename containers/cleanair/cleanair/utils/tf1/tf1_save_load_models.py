@@ -11,7 +11,9 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
 
-def save_gpflow1_model_to_file(model: gpflow.models.GPModel, export_dir: Path, **kwargs) -> None:
+def save_gpflow1_model_to_file(
+    model: gpflow.models.GPModel, export_dir: Path, **kwargs
+) -> None:
     """Save a gpflow 1 model to a file.
 
     Args:

@@ -69,7 +69,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             )
         return detectors
 
-    @db_query
+    @db_query()
     def get_existing_scoot_data(self):
         """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
         with self.dbcnxn.open_session() as session:

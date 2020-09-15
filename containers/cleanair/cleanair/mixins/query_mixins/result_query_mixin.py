@@ -20,7 +20,7 @@ class ResultQueryMixin:
     def result_table(self) -> ResultTableMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
 
-    @db_query
+    @db_query()
     def query_results(
         self,
         instance_id: str,
