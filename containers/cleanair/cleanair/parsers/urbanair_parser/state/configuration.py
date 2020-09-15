@@ -7,7 +7,6 @@ APP_DIR: Path = Path(typer.get_app_dir(APP_NAME))
 DATA_CACHE: Path = APP_DIR / "model_fit_cache"
 DATA_CONFIG: Path = DATA_CACHE / "data_config.json"
 DATA_CONFIG_FULL: Path = DATA_CACHE / "data_config_full.json"
-MODEL_CACHE: Path = DATA_CACHE / "model"
 MODEL_DATA_CACHE: Path = DATA_CACHE / "model_data"
 MODEL_TRAINING_PICKLE: Path = MODEL_DATA_CACHE / "training_data.pkl"
 MODEL_PREDICTION_PICKLE: Path = MODEL_DATA_CACHE / "prediction_data.pkl"
