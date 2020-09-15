@@ -2,7 +2,7 @@
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, Query, Response, HTTPException, sat
+from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from ...databases import get_db, all_or_404
@@ -84,9 +84,8 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     "/camera_info",
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
-    username: str = Depends(get_current_username),
 )
-def camera_info() -> Response:
+def camera_info(username: str = Depends(get_current_username),) -> Response:
     "Get camera info"
     return get_jamcam_info()
 
