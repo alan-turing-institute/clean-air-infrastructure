@@ -27,7 +27,7 @@ class StaticFeatureAvailabilityMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    @db_query
+    @db_query()
     def get_static_feature_availability(self, feature_names, sources, exclude_has_data):
         """
         Return all the intest points of a particular source which have

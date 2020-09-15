@@ -1,0 +1,159 @@
+"""Functions for saving and loading models."""
+
+from __future__ import annotations
+from pathlib import Path
+from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
+import json
+import pickle
+import pandas as pd
+from ..loggers import get_logger
+from ..types import (
+    DataConfig,
+    FullDataConfig,
+    Source,
+    TargetDict,
+)
+
+if TYPE_CHECKING:
+    import gpflow
+    import tensorflow as tf
+    from pydantic import BaseModel
+
+
+class FileManager:
+    """Class for managing files for the urbanair project."""
+
+    # data config / train test data
+    DATASET = Path("dataset")
+    DATA_CONFIG = DATASET / "data_config.json"
+    DATA_CONFIG_FULL = DATASET / "data_config_full.json"
+    TRAINING_DATA_PICKLE = DATASET / "training_dataset.pkl"
+    TEST_DATA_PICKLE = DATASET / "test_dataset.pkl"
+
+    # model filepaths
+    MODEL = Path("model")
+    MODEL_PARAMS = MODEL / "model_params.json"
+
+    # forecasts / results / predictions
+    RESULT = Path("result")
+    PRED_FORECAST_PICKLE = RESULT / "pred_forecast.pkl"
+    PRED_TRAINING_PICKLE = RESULT / "pred_training.pkl"
+
+    def __init__(self, input_dir: Path) -> None:
+        if not hasattr(self, "logger"):
+            self.logger = get_logger("file_manager")
+        input_dir.mkdir(parents=False, exist_ok=True)
+        if not input_dir.is_dir():
+            raise IOError(f"{input_dir} is not a directory")
+        self.input_dir = input_dir
+
+        # create subdirectories
+        (self.input_dir / FileManager.DATASET).mkdir(exist_ok=True, parents=False)
+        (self.input_dir / FileManager.MODEL).mkdir(exist_ok=True, parents=False)
+        (self.input_dir / FileManager.RESULT).mkdir(exist_ok=True, parents=False)
+
+    def __save_pickle(self, obj: Any, pickle_path: Path) -> None:
+        """Save an object to a filepath by pickling.
+
+        Args:
+            obj: The object to be pickled.
+            pickle_path: The filepath.
+
+        Notes:
+            Create the parent directory of the pickle if it doesn't exist
+            but do not create any grandparent directories.
+        """
+        self.logger.debug("Saving object to pickle file at %s", pickle_path)
+        with open(pickle_path, "wb") as pickle_file:
+            pickle.dump(obj, pickle_file)
+
+    def __load_pickle(self, pickle_path: Path) -> Any:
+        """Load either training or test data from a pickled file."""
+        self.logger.debug("Loading object from pickle file from %s", pickle_path)
+        if not pickle_path.exists():
+            raise FileNotFoundError(f"Could not find file at path {pickle_path}")
+
+        with pickle_path.open("rb") as pickle_f:
+            return pickle.load(pickle_f)
+
+    def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
+        """Load an existing configuration file"""
+        self.logger.info("Loading the data config from file.")
+
+        if full:
+            config = self.input_dir / FileManager.DATA_CONFIG_FULL
+        else:
+            config = self.input_dir / FileManager.DATA_CONFIG
+
+        if config.exists():
+            with config.open("r") as config_f:
+                if full:
+                    return FullDataConfig(**json.load(config_f))
+
+                return DataConfig(**json.load(config_f))
+
+        if not full:
+            message = "A data config does not exist. Run generate-config"
+        else:
+            message = "A full data config does not exist. Run generate-full-config"
+        raise FileNotFoundError(message)
+
+    def save_data_config(
+        self, data_config: Union[DataConfig, FullDataConfig], full: bool = False
+    ) -> None:
+        """Save a data config to file."""
+        self.logger.info("Saving the data config to a file.")
+        if full:
+            config = self.input_dir / FileManager.DATA_CONFIG_FULL
+        else:
+            config = self.input_dir / FileManager.DATA_CONFIG
+
+        with config.open("w") as config_f:
+            config_f.write(data_config.json(indent=4))
+
+    def save_training_data(self, training_data: Dict[Source, pd.DataFrame]) -> None:
+        """Save training data as a pickle."""
+        self.logger.info(
+            "Saving the training data to a pickle. Sources are %s",
+            list(training_data.keys()),
+        )
+        self.__save_pickle(
+            training_data, self.input_dir / FileManager.TRAINING_DATA_PICKLE
+        )
+
+    def save_test_source_to_csv(self, test_df: pd.DataFrame, source: Source) -> None:
+        """Save the test dataframe to csv. The dataframe should be for just one source."""
+        filepath = self.input_dir / FileManager.DATASET / f"{source}_test.csv"
+        test_df.to_csv(filepath, index=False)
+
+    def load_test_source_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load a test dataframe from csv for a given source."""
+        filepath = self.input_dir / FileManager.DATASET / f"{source}_test.csv"
+        return pd.read_csv(filepath)
+
+    def save_training_source_to_csv(
+        self, training_df: pd.DataFrame, source: Source
+    ) -> None:
+        """Save the dataframe to csv. The dataframe should be for just one source."""
+        filepath = self.input_dir / FileManager.DATASET / f"{source}_training.csv"
+        training_df.to_csv(filepath, index=False)
+
+    def load_training_source_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load a dataframe from csv for a given source."""
+        filepath = self.input_dir / FileManager.DATASET / f"{source}_training.csv"
+        return pd.read_csv(filepath)
+
+    def save_test_data(self, test_data: Dict[Source, pd.DataFrame]) -> None:
+        """Save test data as a pickle."""
+        self.logger.info(
+            "Saving the test data to a pickle. Sources are %s", list(test_data.keys())
+        )
+        self.__save_pickle(test_data, self.input_dir / FileManager.TEST_DATA_PICKLE)
+
+    def load_pred_training_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load the training predictions for a single source from csv."""
+        self.logger.info(
+            "Loading predictions on the training set on %s from csv", source
+        )
+        result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
+        return pd.read_csv(result_fp)

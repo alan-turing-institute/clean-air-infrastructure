@@ -2,17 +2,17 @@
 
 from typing import Dict, List, Tuple, Union
 from datetime import datetime
-from nptyping import NDArray, Float64
+from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
 from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
-from ..utils import hash_dict
 
 # pylint: disable=invalid-name
 FeaturesDict = Dict[Source, NDArray[Float64]]
+IndexDict = Dict[Source, NDArray[Int]]
 TargetDict = Dict[Source, Dict[Species, NDArray[Float64]]]
 NDArrayTuple = Tuple[NDArray[Float64], NDArray[Float64]]
 DatasetDict = Dict[str, Union[FeaturesDict, TargetDict]]
-
+IndexedDatasetDict = Tuple[FeaturesDict, TargetDict, IndexDict]
 InterestPointDict = Dict[Source, Union[str, List[str]]]
 
 
@@ -50,7 +50,3 @@ class FullDataConfig(DataConfig):
         if parts[0] != "value":
             raise ValueError("must start with 'value_'")
         return v
-
-    def data_id(self):
-        "Return a hashed data id"
-        return hash_dict(self.dict())

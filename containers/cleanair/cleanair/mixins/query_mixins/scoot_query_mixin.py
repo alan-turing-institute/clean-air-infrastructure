@@ -17,7 +17,7 @@ class ScootQueryMixin:
 
     dbcnxn: Any
 
-    @db_query
+    @db_query()
     def get_scoot_with_location(
         self, start_time: str, end_time: str = None, detectors: List = None
     ):
@@ -92,7 +92,7 @@ class ScootQueryMixin:
 
         return zip(starts, ends)
 
-    @db_query
+    @db_query()
     def get_scoot_by_dow(
         self,
         day_of_week: int,
@@ -149,7 +149,7 @@ class ScootQueryMixin:
 
             return scoot_readings
 
-    @db_query
+    @db_query()
     def get_scoot_detectors(
         self, offset: int = None, limit: int = None,
     ):
