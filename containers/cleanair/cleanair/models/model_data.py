@@ -30,7 +30,11 @@ from ..types import (
     IndexedDatasetDict,
     TargetDict,
 )
-from .schemas import StaticFeatureTimeSpecies, StaticFeatureSchema
+from .schemas import (
+    StaticFeatureTimeSpecies,
+    StaticFeatureSchema,
+    StaticFeatureLocSchema,
+)
 
 # pylint: disable=too-many-lines
 
@@ -417,7 +421,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
-    @db_query(StaticFeatureSchema)
+    @db_query(StaticFeatureLocSchema)
     def select_static_features(
         self, point_ids: List[str], features: List[FeatureNames], source: Source
     ):
@@ -487,6 +491,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 static_features_with_loc_sq.c.value_200,
                 static_features_with_loc_sq.c.value_100,
                 static_features_with_loc_sq.c.value_10,
+                static_features_with_loc_sq.c.lon,
+                static_features_with_loc_sq.c.lat,
             ).join(
                 static_features_with_loc_sq,
                 and_(
@@ -602,6 +608,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
     ) -> pd.DateFrame:
         """
         Query the database for static features
+            and then cross join with the datetime range and 
+            species requested.
         """
 
         static_features = self.select_static_features(

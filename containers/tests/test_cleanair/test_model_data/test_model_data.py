@@ -20,8 +20,10 @@ from typing import List
 import pytest
 from enum import Enum
 import uuid
+from itertools import product
 from dateutil.parser import isoparse
-from datetime import timedelta
+from dateutil import rrule
+from datetime import timedelta, datetime
 from pydantic import ValidationError
 from cleanair.models import ModelConfig, StaticFeatureTimeSpecies
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
@@ -149,47 +151,62 @@ class TestModelData:
         # Check this is the set of ids that ModelConfig.generate_full_config() returns
         assert set(config_ids) == {str(i) for i in returned_static_features}
 
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
+    @pytest.mark.parametrize(
+        "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
+    )
+    # @pytest.mark.parametrize("source", [Source.laqn])
+    # @pytest.mark.parametrize("species", [[Species.NO2]])
+    def test_select_static_time_species(
+        self, model_data, valid_full_config_dataset, point_ids_valid, source, species
+    ):
+        """
+        Test that we can cross join ModelData.select_static_features
+        with a range of datetimes and species
+        """
 
-#     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
-#     @pytest.mark.parametrize(
-#         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
-#     )
-#     def test_select_static_time_species(
-#         self, model_data, valid_full_config_dataset, point_ids_valid, source, species
-#     ):
-#         """
-#         Test that we can cross join ModelData.select_static_features
-#         with a range of datetimes and species
-#         """
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
+        start_datetime = valid_full_config_dataset.train_start_date
+        end_datetime = valid_full_config_dataset.train_end_date
 
-#         # Id's from config file
-#         config_ids = valid_full_config_dataset.train_interest_points[source]
-#         start_datetime = valid_full_config_dataset.train_start_date
-#         end_datetime = valid_full_config_dataset.train_end_date
+        features = [FeatureNames.building_height, FeatureNames.grass]
 
-#         features = [FeatureNames.building_height, FeatureNames.grass]
+        # Return Pydantic model types
+        static_species_time = model_data.get_static_features(
+            start_datetime,
+            end_datetime,
+            features,
+            source,
+            config_ids,
+            species,
+            output_type="all",
+        )
+        static_species_tuples = [
+            (
+                i.point_id,
+                i.feature_name,
+                i.species_code,
+                i.measurement_start_utc.replace(tzinfo=None),
+            )
+            for i in static_species_time
+        ]
 
-#         # Return Pydantic model types
-#         static_species_time = model_data.get_static_features(
-#             start_datetime,
-#             end_datetime,
-#             features,
-#             source,
-#             config_ids,
-#             species,
-#             output_type="all",
-#         )
+        expected_values = list(
+            product(
+                [uuid.UUID(id) for id in config_ids],
+                features,
+                species,
+                rrule.rrule(
+                    freq=rrule.HOURLY,
+                    dtstart=start_datetime,
+                    until=end_datetime - timedelta(hours=1),
+                ),
+            )
+        )
 
-#         assert map(lambda x: type(x) == StaticFeatureTimeSpecies, static_species_time)
+        assert sorted(expected_values) == sorted(static_species_tuples)
 
-#         expected_size = (
-#             len(point_ids_valid(source))
-#             * len(features)
-#             * len(species)
-#             * ((end_datetime - start_datetime).total_seconds() / (60.0 * 60.0))
-#         )
-
-#         assert len(static_species_time) == expected_size
 
 #     # def test_select_static_missing_id(
 #     #     self, model_data, valid_full_config_dataset, point_ids_valid
