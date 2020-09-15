@@ -1,9 +1,5 @@
-"""
-Useful functions for filepath management and others.
-"""
+"""CLI parsers for the odysseus project."""
 
-from .parser import BaselineParser
+from . import baseline
 
-__all__ = [
-    "BaselineParser",
-]
+__all__ = ["baseline"]

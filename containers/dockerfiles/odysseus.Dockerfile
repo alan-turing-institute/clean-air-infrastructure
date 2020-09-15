@@ -11,9 +11,3 @@ COPY odysseus /app/odysseus/
 # Install any needed packages specified in requirements.txt
 RUN pip install /app/cleanair
 RUN pip install /app/odysseus
-
-# Copy the run script into the container
-COPY entrypoints/odysseus/lockdown_baseline_comparison.py /app
-
-# Run the entrypoint script when the container launches
-ENTRYPOINT ["python", "lockdown_baseline_comparison.py"]

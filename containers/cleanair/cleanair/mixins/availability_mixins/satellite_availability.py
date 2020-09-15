@@ -1,13 +1,13 @@
 """
 Mixin for checking what satellite data is in database and what is missing
 """
+# pylint: disable=C0103
 from datetime import timedelta
 from sqlalchemy import func, text, column, String
 from dateutil.parser import isoparse
 
 from ...decorators import db_query
 from ...databases.tables import (
-    MetaPoint,
     SatelliteForecast,
     SatelliteBox,
     SatelliteGrid,
@@ -32,14 +32,32 @@ class SatelliteAvailabilityMixin:
             self.logger = get_logger(__name__)
 
     @db_query
-    def get_satellite_interest_points(self):
-        """Return all the satellite interest points"""
+    def get_satellite_box_in_boundary(self):
+        "Return box ids that intersect the london boundary"
+
+        london_boundary = self.query_london_boundary(output_type="subquery")
 
         with self.dbcnxn.open_session() as session:
 
-            return session.query(
-                MetaPoint.id, MetaPoint.source, MetaPoint.location
-            ).filter(MetaPoint.source == "satellite")
+            box_ids = session.query(SatelliteBox.id, london_boundary.c.geom).filter(
+                func.ST_Intersects(london_boundary.c.geom, SatelliteBox.geom)
+            )
+
+            return box_ids
+
+    @db_query
+    def get_satellite_interest_points_in_boundary(self):
+        """Return all the satellite interest points"""
+
+        boxes_in_london = [
+            str(i) for i in self.get_satellite_box_in_boundary(output_type="list")
+        ]
+
+        with self.dbcnxn.open_session() as session:
+
+            return session.query(SatelliteGrid.point_id).filter(
+                SatelliteGrid.box_id.in_(boxes_in_london)
+            )
 
     @db_query
     def get_satellite_box(self, with_centroids=True):
