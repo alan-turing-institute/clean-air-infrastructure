@@ -5,6 +5,12 @@ from .model_config import ModelConfig
 from .svgp import SVGP
 from .mr_dgp_model import MRDGP
 
+from .schemas import (
+    StaticFeatureSchema,
+    StaticFeatureLocSchema,
+    StaticFeatureTimeSpecies,
+)
+
 __all__ = [
     "ModelConfig",
     "ModelMixin",
@@ -12,4 +18,7 @@ __all__ = [
     "ModelDataExtractor",
     "SVGP",
     "MRDGP",
+    "StaticFeatureSchema",
+    "StaticFeatureLocSchema",
+    "StaticFeatureTimeSpecies",
 ]

@@ -31,7 +31,7 @@ class SatelliteAvailabilityMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    @db_query
+    @db_query()
     def get_satellite_box_in_boundary(self):
         "Return box ids that intersect the london boundary"
 
@@ -45,7 +45,7 @@ class SatelliteAvailabilityMixin:
 
             return box_ids
 
-    @db_query
+    @db_query()
     def get_satellite_interest_points_in_boundary(self):
         """Return all the satellite interest points"""
 
@@ -59,7 +59,7 @@ class SatelliteAvailabilityMixin:
                 SatelliteGrid.box_id.in_(boxes_in_london)
             )
 
-    @db_query
+    @db_query()
     def get_satellite_box(self, with_centroids=True):
         """Satellite box geometries over london"""
         with self.dbcnxn.open_session() as session:
@@ -73,14 +73,14 @@ class SatelliteAvailabilityMixin:
 
             return session.query(SatelliteBox)
 
-    @db_query
+    @db_query()
     def get_satellite_grid(self):
         """Mapping of satellite interest points to box"""
 
         with self.dbcnxn.open_session() as session:
             return session.query(SatelliteGrid)
 
-    @db_query
+    @db_query()
     def get_satellite_forecast(
         self, reference_start_date=None, reference_end_date=None
     ):
@@ -107,7 +107,7 @@ class SatelliteAvailabilityMixin:
 
             return sat_forecast_q
 
-    @db_query
+    @db_query()
     def get_satellite_availability(
         self, reference_start_date, reference_end_date=None, species=None
     ):

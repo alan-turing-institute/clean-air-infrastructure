@@ -1,5 +1,5 @@
 """UrbanAir API custom Types"""
 
-from .types import DetectionClass
+from .types import DetectionClass, JSONType
 
-__all__ = ["DetectionClass"]
+__all__ = ["DetectionClass", "JSONType"]

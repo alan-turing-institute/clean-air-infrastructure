@@ -12,7 +12,7 @@ class TrafficDataQueryMixin:
     # necessary to stop mypy complaining during type hinting
     dbcnxn: Connector
 
-    @db_query
+    @db_query()
     def get_data_config(
         self,
         start_time: str = None,

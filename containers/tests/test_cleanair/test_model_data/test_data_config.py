@@ -237,11 +237,16 @@ class TestDataConfig:
             satellite_interest_points_available
         )
 
-    def test_generate_full_config(self, valid_config, model_config):
+    def test_generate_full_config(self, valid_config, model_config, meta_within_london):
         """Test full config doesnt raise any validation errors"""
         # ToDo: Write a full config file for the test set to verify
         try:
             full_config = model_config.generate_full_config(valid_config)
+
+            for source in [Source.laqn, Source.aqe]:
+                full_config.train_interest_points[source] == [
+                    i for i in meta_within_london if i.source == source.value
+                ]
 
         except ValidationError:
             pytest.raises("Full config failed")

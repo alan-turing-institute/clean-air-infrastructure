@@ -7,8 +7,9 @@ import numpy as np
 from nptyping import NDArray, Float64
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import func, text, column, String
+from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
+from sqlalchemy.dialects.postgresql import UUID
 from ..databases.tables import (
     StaticFeature,
     MetaPoint,
@@ -29,6 +30,7 @@ from ..types import (
     IndexedDatasetDict,
     TargetDict,
 )
+from .schemas import StaticFeatureTimeSpecies, StaticFeatureSchema
 
 # pylint: disable=too-many-lines
 
@@ -415,52 +417,92 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
-    @db_query
-    def select_static_features(self, features: List[FeatureNames], source: Source):
+    @db_query(StaticFeatureSchema)
+    def select_static_features(
+        self, point_ids: List[str], features: List[FeatureNames], source: Source
+    ):
+        """
+        Return static features from the database for a list of point ids
+            for a particular source.
+        If point ids are not of the correct source they will not be returned
+        Ensures that we always get all point id rows, even if they are not in the database 
+            (all other columns will be null), by doing an outer join
+
+        Args:
+            features: A list of [FeatureNames]
+            source: A [Source] (e.g. Source.laqn)
+        """
 
         with self.dbcnxn.open_session() as session:
 
-            return (
+            # Get a row with all the point ids requested
+            point_id_sq = session.query(
+                Values(
+                    [column("point_id", String),],
+                    *[(point_id,) for point_id in point_ids],
+                    alias_name="point_ids",
+                )
+            ).subquery()
+
+            feature_sq = session.query(
+                Values(
+                    [column("feature_name", String),],
+                    *[(feature.value,) for feature in features],
+                    alias_name="point_ids",
+                )
+            ).subquery()
+
+            point_id_feature_cross_join_sq = session.query(
+                point_id_sq, feature_sq
+            ).subquery()
+
+            static_features_with_loc_sq = (
                 session.query(
-                    StaticFeature,
-                    MetaPoint.source,
+                    StaticFeature.point_id,
+                    StaticFeature.feature_name,
+                    StaticFeature.feature_source,
+                    StaticFeature.value_1000,
+                    StaticFeature.value_500,
+                    StaticFeature.value_200,
+                    StaticFeature.value_100,
+                    StaticFeature.value_10,
                     func.ST_X(MetaPoint.location).label("lon"),
                     func.ST_Y(MetaPoint.location).label("lat"),
                 )
+                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
                 .filter(
+                    MetaPoint.id.in_(point_ids),
                     StaticFeature.feature_name.in_(features),
                     MetaPoint.source == source,
                 )
-                .join(MetaPoint, MetaPoint.id == StaticFeature.point_id)
+                .subquery()
             )
 
-    @staticmethod
-    def __expand_time(start_date, end_date, feature_df):
-        """
-        Returns a new dataframe with static features merged with
-        hourly timestamps between start_date(inclusive) and end_date
-        """
-        start_date = start_date.date()
-        end_date = end_date.date()
+            return session.query(
+                point_id_feature_cross_join_sq.c.point_id,
+                point_id_feature_cross_join_sq.c.feature_name,
+                static_features_with_loc_sq.c.feature_source,
+                static_features_with_loc_sq.c.value_1000,
+                static_features_with_loc_sq.c.value_500,
+                static_features_with_loc_sq.c.value_200,
+                static_features_with_loc_sq.c.value_100,
+                static_features_with_loc_sq.c.value_10,
+            ).join(
+                static_features_with_loc_sq,
+                and_(
+                    (
+                        static_features_with_loc_sq.c.point_id
+                        == cast(point_id_feature_cross_join_sq.c.point_id, UUID)
+                    ),
+                    (
+                        static_features_with_loc_sq.c.feature_name
+                        == point_id_feature_cross_join_sq.c.feature_name
+                    ),
+                ),
+                isouter=True,
+            )
 
-        ids = feature_df["point_id"].to_numpy()
-        times = rrule.rrule(
-            rrule.HOURLY, dtstart=start_date, until=end_date - relativedelta(hours=+1)
-        )
-        index = pd.MultiIndex.from_product(
-            [ids, pd.to_datetime(list(times), utc=False)],
-            names=["point_id", "measurement_start_utc"],
-        )
-        time_df = pd.DataFrame(index=index).reset_index()
-
-        time_df_merged = time_df.merge(feature_df)
-
-        time_df_merged["epoch"] = time_df_merged["measurement_start_utc"].apply(
-            lambda x: x.timestamp()
-        )
-        return time_df_merged
-
-    @db_query
+    @db_query()
     def get_sensor_readings(
         self,
         start_date: datetime,
@@ -513,14 +555,17 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         return sensor_df[species].reset_index()
 
-    @db_query
-    def expand_time_species(
+    @db_query()
+    def __expand_time_species(
         self,
         subquery: Alias,
         start_date: datetime,
         end_date: datetime,
         species: Optional[List[Species]] = None,
     ):
+        """
+        Cross product of a date range, a list of species and a subquery
+        """
 
         with self.dbcnxn.open_session() as session:
 
@@ -545,6 +590,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             return session.query(*cols)
 
+    @db_query(model=StaticFeatureTimeSpecies)
     def get_static_features(
         self,
         start_date: datetime,
@@ -553,42 +599,22 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         source: Source,
         point_ids: List[str],
         species: Optional[List[Species]] = None,
-        output_type="df",
     ) -> pd.DateFrame:
         """
         Query the database for static features
         """
 
         static_features = self.select_static_features(
-            features, source, output_type="subquery"
+            point_ids, features, source, output_type="subquery"
         )
 
-        static_features_expand = self.expand_time_species(
-            static_features, start_date, end_date, species, output_type=output_type
+        static_features_expand = self.__expand_time_species(
+            static_features, start_date, end_date, species
         )
 
         return static_features_expand
 
-        # print(static_features_expand)
-        # quit()
-        # dynamic_features = self.__select_dynamic_features(
-        #     start_date, end_date, features, sources, point_ids
-        # )
-
-        # if dynamic_features.empty:
-        #     self.logger.warning(
-        #         """No dynamic features were returned from the database.
-        #         If dynamic features were not requested then ignore."""
-        #     )
-        #     return static_features_expand
-
-        # return static_features_expand.merge(
-        #     dynamic_features,
-        #     how="left",
-        #     on=["point_id", "measurement_start_utc", "source", "lon", "lat"],
-        # )
-
-    @db_query
+    @db_query()
     def join_features_to_sensors(
         self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
@@ -638,7 +664,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             return static_with_sensor_readings
 
-    @db_query
+    @db_query()
     def get_training_data_inputs(
         self,
         start_date: datetime,
@@ -691,7 +717,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             static_features, sensor_readings, source, output_type="query",
         )
 
-    @db_query
+    @db_query()
     def get_prediction_data_inputs(
         self,
         start_date: datetime,

@@ -33,6 +33,7 @@ from cleanair.databases.tables.fakes import (
 )
 from cleanair.types import (
     BaseModelParams,
+    DataConfig,
     KernelParams,
     MRDGPParams,
     Source,
@@ -40,6 +41,52 @@ from cleanair.types import (
     SVGPParams,
     FeatureNames,
 )
+
+
+@pytest.fixture(scope="class")
+def valid_config(dataset_start_date, dataset_end_date):
+    "Valid config for 'fake_cleanair_dataset' fixture"
+
+    return DataConfig(
+        **{
+            "train_start_date": dataset_start_date,
+            "train_end_date": dataset_end_date,
+            "pred_start_date": dataset_end_date,
+            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "include_prediction_y": False,
+            "train_sources": ["laqn", "aqe", "satellite"],
+            "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
+            "train_interest_points": {"laqn": "all", "aqe": "all", "satellite": "all"},
+            "pred_interest_points": {
+                "laqn": "all",
+                "aqe": "all",
+                "satellite": "all",
+                "hexgrid": "all",
+            },
+            "species": ["NO2"],
+            "features": [
+                "total_road_length",
+                "total_a_road_length",
+                "total_a_road_primary_length",
+                "total_b_road_length",
+                "grass",
+                "building_height",
+                "water",
+                "park",
+                "max_canyon_narrowest",
+                "max_canyon_ratio",
+            ],
+            "buffer_sizes": ["1000", "500"],
+            "norm_by": "laqn",
+            "model_type": "svgp",
+        }
+    )
+
+
+@pytest.fixture(scope="class")
+def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
+
+    return model_config.generate_full_config(valid_config)
 
 
 @pytest.fixture(scope="module")
@@ -413,46 +460,6 @@ def fake_cleanair_dataset(
         [i.dict() for i in static_feature_records],
         on_conflict="overwrite",
         table=StaticFeature,
-    )
-
-
-@pytest.fixture()
-def valid_config(dataset_start_date, dataset_end_date):
-    "Valid config for 'fake_cleanair_dataset' fixture"
-
-    return DataConfig(
-        **{
-            "train_start_date": dataset_start_date,
-            "train_end_date": dataset_end_date,
-            "pred_start_date": dataset_end_date,
-            "pred_end_date": dataset_end_date + timedelta(days=2),
-            "include_prediction_y": False,
-            "train_sources": ["laqn", "aqe", "satellite"],
-            "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
-            "train_interest_points": {"laqn": "all", "aqe": "all", "satellite": "all"},
-            "pred_interest_points": {
-                "laqn": "all",
-                "aqe": "all",
-                "satellite": "all",
-                "hexgrid": "all",
-            },
-            "species": ["NO2"],
-            "features": [
-                "total_road_length",
-                "total_a_road_length",
-                "total_a_road_primary_length",
-                "total_b_road_length",
-                "grass",
-                "building_height",
-                "water",
-                "park",
-                "max_canyon_narrowest",
-                "max_canyon_ratio",
-            ],
-            "buffer_sizes": ["1000", "500"],
-            "norm_by": "laqn",
-            "model_type": "svgp",
-        }
     )
 
 

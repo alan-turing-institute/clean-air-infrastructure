@@ -4,7 +4,7 @@ import typer
 from cleanair.parsers.urbanair_parser import config, init, inputs
 from odysseus.parsers import baseline
 
-app = typer.Typer(callback=init.init_app)
+app = typer.Typer(callback=init.init_callback)
 app.add_typer(baseline.app, name="baseline")
 app.add_typer(config.app, name="config")
 app.add_typer(init.app, name="init")

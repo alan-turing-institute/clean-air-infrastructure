@@ -68,7 +68,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
         """Return a list of all feature names"""
         return self.features.keys()
 
-    @db_query
+    @db_query()
     def query_input_geometries(self, feature_name):
         """Query inputs selecting all input geometries matching the requirements in self.feature_dict"""
 
@@ -99,7 +99,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
             q_source = q_source.filter(*filter_list)
         return q_source
 
-    # @db_query
+    # @db_query()
     # def get_dynamic_processed(self, feature_name):
     #     """Return the features which have already been processed for a given feature name between
     #     a self.start_datetime and self.end_datetime. To be returned they must have as many hours as would be expected
@@ -139,7 +139,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
     #         return already_processed_q
 
-    @db_query
+    @db_query()
     def query_meta_points(self, point_ids):
         """
         Query MetaPoints, selecting all matching sources. We do not filter these in
@@ -170,7 +170,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
         return q_meta_point
 
-    # @db_query
+    # @db_query()
     # def query_features_dynamic(self, feature_name, feature_dict, agg_func, batch_size):
     #     # Get input geometries for this feature
     #     # self.logger.debug(
@@ -283,7 +283,7 @@ class FeatureExtractor(DBWriter, StaticFeatureAvailabilityMixin, DBQueryMixin):
 
     #         return res
 
-    @db_query
+    @db_query()
     def query_features(self, point_ids, feature_name, feature_type, agg_func):
         """
         For a given features, produce a query containing the full feature processing stage.

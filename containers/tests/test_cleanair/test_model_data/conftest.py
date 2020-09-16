@@ -25,6 +25,12 @@ def model_config(secretfile, connection_class):
     return ModelConfig(secretfile=secretfile, connection=connection_class)
 
 
+@pytest.fixture(scope="class")
+def model_data(secretfile, connection_class):
+
+    return ModelData(secretfile=secretfile, connection=connection_class)
+
+
 @pytest.fixture()
 def valid_full_config(valid_config, model_config):
 

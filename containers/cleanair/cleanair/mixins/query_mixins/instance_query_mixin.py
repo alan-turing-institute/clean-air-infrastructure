@@ -43,7 +43,7 @@ class InstanceQueryMixin:
         """Model params table."""
         return ModelTableMixin
 
-    @db_query
+    @db_query()
     def get_instances(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
@@ -90,7 +90,7 @@ class InstanceQueryMixin:
                 )
             return readings
 
-    @db_query
+    @db_query()
     def get_instances_with_params(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
