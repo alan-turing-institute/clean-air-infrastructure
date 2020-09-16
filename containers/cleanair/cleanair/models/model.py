@@ -6,8 +6,9 @@ from typing import Callable, Dict, List, Optional
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
+from pydantic import BaseModel
 from ..loggers import get_logger
-from ..types import FeaturesDict, ModelParams, NDArrayTuple, TargetDict
+from ..types import FeaturesDict, NDArrayTuple, TargetDict
 
 
 class ModelMixin:
@@ -18,9 +19,9 @@ class ModelMixin:
 
     def __init__(
         self,
+        model_params: BaseModel,
         batch_size: int = 100,
         experiment_config: Optional[Dict] = None,
-        model_params: Optional[ModelParams] = None,
         refresh: int = 10,
         tasks: Optional[List] = None,
         **kwargs
@@ -34,12 +35,7 @@ class ModelMixin:
             refresh: How often to print out the ELBO.
             tasks: The name of the tasks (pollutants) we are modelling. Default is ['NO2'].
         """
-        # get the parameters for training the model
-        if not model_params:
-            self.model_params = self.get_default_model_params()
-        else:
-            self.model_params = model_params
-            self.check_model_params_are_valid()
+        self.model_params = model_params
 
         # get filepaths and other configs
         default_config = dict(
@@ -61,38 +57,12 @@ class ModelMixin:
             )
         # other misc arguments
         self.model = None
-        self.minimum_param_keys = []
         self.epoch = 0
         self.batch_size = batch_size
         self.refresh = refresh
         # Ensure logging is available
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
-
-    @abstractmethod
-    def get_default_model_params(self) -> ModelParams:
-        """
-        The default model parameters if none are supplied.
-
-        Returns:
-            Default model parameters.
-        """
-
-    def check_model_params_are_valid(self) -> None:
-        """
-        Check the model parameters are valid for the model.
-
-        Raises:
-            KeyError: If the model parameters are not sufficient.
-        """
-        min_keys = set(self.minimum_param_keys)
-        actual_keys = set(self.model_params.keys())
-        diff = min_keys - actual_keys
-        # if the set of minimial keys is NOT a subset of the parameters
-        if len(diff) > 0:
-            error_message = "Model parameters are not sufficient."
-            error_message += " You must also supply {d}.".format(d=diff)
-            raise KeyError(error_message)
 
     @abstractmethod
     def fit(self, x_train: FeaturesDict, y_train: TargetDict) -> None:
