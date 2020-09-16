@@ -7,7 +7,7 @@ from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
 from ..loggers import get_logger
-from ..types import FeaturesDict, ModelParams, NDArrayTuple, TargetDict
+from ..types import FeaturesDict, ParamsDict, NDArrayTuple, TargetDict
 
 
 class ModelMixin:
@@ -20,7 +20,7 @@ class ModelMixin:
         self,
         batch_size: int = 100,
         experiment_config: Optional[Dict] = None,
-        model_params: Optional[ModelParams] = None,
+        model_params: Optional[ParamsDict] = None,
         refresh: int = 10,
         tasks: Optional[List] = None,
         **kwargs
@@ -70,7 +70,7 @@ class ModelMixin:
             self.logger = get_logger(__name__)
 
     @abstractmethod
-    def get_default_model_params(self) -> ModelParams:
+    def get_default_model_params(self) -> ParamsDict:
         """
         The default model parameters if none are supplied.
 
