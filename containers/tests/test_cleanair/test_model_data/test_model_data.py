@@ -23,7 +23,7 @@ import uuid
 from itertools import product
 from dateutil.parser import isoparse
 from dateutil import rrule
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, time
 from pydantic import ValidationError
 from cleanair.models import ModelConfig, StaticFeatureTimeSpecies
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
@@ -32,6 +32,17 @@ from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
+
+
+def unique_filter(lam, iter):
+    "A filter that should return a single item or raise a ValueError"
+    x = filter(lam, iter)
+    val = next(x, None)
+
+    if val and not next(x, None):
+        return val
+
+    raise ValueError("Filter did not return exactly on item")
 
 
 @pytest.fixture()
@@ -71,13 +82,12 @@ def lookup_sensor_reading(
     laqn_reading_records,
     aqe_site_records,
     aqe_reading_records,
+    satellite_meta_point_and_box_records,
+    satellite_forecast,
 ):
     def _lookup_sensor_reading(point_id, measurement_start_utc, species):
 
-        sources = list(filter(lambda x: x.id == point_id, meta_records))
-        if len(sources) != 1:
-            raise ValueError("Got more than one source at lookup")
-        source = sources[0].source
+        source = unique_filter(lambda x: x.id == point_id, meta_records).source
 
         if source == Source.laqn.value:
 
@@ -89,23 +99,39 @@ def lookup_sensor_reading(
             site_records = aqe_site_records
             reading_records = aqe_reading_records
 
-        source_record = list(filter(lambda x: x.point_id == point_id, site_records))[0]
+        elif source == Source.satellite:
 
-        record = list(
-            filter(
-                lambda x: (
-                    (source_record.site_code == x.site_code)
-                    and (measurement_start_utc == x.measurement_start_utc)
-                    and (species.value == x.species_code)
-                ),
-                reading_records,
+            reference_start_utc = datetime.combine(
+                measurement_start_utc.date(), time.min
             )
+
+            box_id = unique_filter(
+                lambda x: x.point_id == point_id,
+                satellite_meta_point_and_box_records[1],
+            ).box_id
+
+            record = unique_filter(
+                lambda x: (x.reference_start_utc == reference_start_utc)
+                and (x.measurement_start_utc == measurement_start_utc)
+                and (x.species_code == species)
+                and (x.box_id == box_id),
+                satellite_forecast,
+            )
+
+            return record.value
+
+        source_record = unique_filter(lambda x: x.point_id == point_id, site_records)
+
+        record = unique_filter(
+            lambda x: (
+                (source_record.site_code == x.site_code)
+                and (measurement_start_utc == x.measurement_start_utc)
+                and (species.value == x.species_code)
+            ),
+            reading_records,
         )
 
-        if len(record) != 1:
-            raise ValueError("Failed to get record value")
-
-        return record[0].value
+        return record.value
 
     return _lookup_sensor_reading
 
@@ -251,12 +277,10 @@ class TestModelData:
 
         assert sorted(expected_values) == sorted(static_species_tuples)
 
-    # @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
-    # @pytest.mark.parametrize(
-    #     "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
-    # )
     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
-    @pytest.mark.parametrize("species", [[Species.NO2]])
+    @pytest.mark.parametrize(
+        "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
+    )
     def test_get_training_data_inputs(
         self,
         model_data,
@@ -283,6 +307,10 @@ class TestModelData:
             source,
             output_type="all",
         )
+
+        if source == Source.satellite:
+            # There's a lot of data in satellite. So just test a subset
+            data = data[:5000]
 
         assert all(
             map(
