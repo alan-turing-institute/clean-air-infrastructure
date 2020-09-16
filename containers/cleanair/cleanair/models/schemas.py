@@ -16,6 +16,7 @@ class StaticFeatureSchema(BaseModel):
     value_200: float
     value_100: float
     value_10: float
+    in_london: bool
 
     class Config:
         orm_mode = True
@@ -79,6 +80,7 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
 class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
 
     value: Optional[float]
+    box_id: Optional[UUID]
 
     def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name

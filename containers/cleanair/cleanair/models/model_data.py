@@ -544,6 +544,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 point_id_sq, feature_sq
             ).subquery()
 
+            london_boundary = self.query_london_boundary(output_type="subquery")
+
             static_features_with_loc_sq = (
                 session.query(
                     StaticFeature.point_id,
@@ -556,6 +558,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     StaticFeature.value_10,
                     func.ST_X(MetaPoint.location).label("lon"),
                     func.ST_Y(MetaPoint.location).label("lat"),
+                    func.ST_Within(MetaPoint.location, london_boundary.c.geom).label(
+                        "in_london"
+                    ),
                 )
                 .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
                 .filter(
@@ -577,6 +582,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 static_features_with_loc_sq.c.value_10,
                 static_features_with_loc_sq.c.lon,
                 static_features_with_loc_sq.c.lat,
+                static_features_with_loc_sq.c.in_london,
             ).join(
                 static_features_with_loc_sq,
                 and_(
@@ -723,6 +729,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             static_features.c.value_10,
             static_features.c.lat,
             static_features.c.lon,
+            static_features.c.in_london,
             sensor_readings.c.species_code,
             sensor_readings.c.value,
         ]
@@ -843,6 +850,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     static_features.c.value_10,
                     static_features.c.lat,
                     static_features.c.lon,
+                    static_features.c.in_london,
                 )
                 .filter(static_features.c.source == source.value)
                 .order_by(
