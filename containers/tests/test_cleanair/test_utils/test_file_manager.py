@@ -6,7 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import pandas as pd
-from cleanair.types import ModelName
+from cleanair.types import ModelName, Source
 from cleanair.utils import FileManager
 from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
 
@@ -149,3 +149,44 @@ def test_save_load_svgp_params(input_dir: Path, svgp_model_params: SVGPParams,) 
     for key, value in svgp_model_params:
         assert hasattr(loaded_svgp_params, key)
         assert value == getattr(loaded_svgp_params, key)
+
+
+def test_save_load_train_test(input_dir: Path, dataset_dict: FeaturesDict,) -> None:
+    """Test training data is saved and loaded correctly."""
+    file_manager = FileManager(input_dir)
+
+    # save the train/test data to file
+    file_manager.save_training_data(dataset_dict)
+    file_manager.save_test_data(dataset_dict)
+    assert (file_manager.input_dir / FileManager.TRAINING_DATA_PICKLE).exists()
+    assert (file_manager.input_dir / FileManager.TEST_DATA_PICKLE).exists()
+
+    # load the train/test data from file
+    train_data = file_manager.load_training_data()
+    test_data = file_manager.load_test_data()
+    assert train_data.keys() == dataset_dict.keys()
+    assert test_data.keys() == dataset_dict.keys()
+    assert train_data[Source.laqn].equals(dataset_dict[Source.laqn])
+    assert test_data[Source.laqn].equals(dataset_dict[Source.laqn])
+
+
+def test_save_load_result_pickles(input_dir: Path, target_dict: TargetDict) -> None:
+    """Test results are loaded and saved."""
+    file_manager = FileManager(input_dir)
+    # save forecast pickle
+    file_manager.save_forecast_to_pickle(target_dict)
+    assert (file_manager.input_dir / FileManager.PRED_FORECAST_PICKLE).exists()
+
+    # save training result pickle
+    file_manager.save_training_pred_to_pickle(target_dict)
+    assert (file_manager.input_dir / FileManager.PRED_TRAINING_PICKLE).exists()
+
+    # load training result and forecast
+    forecast_pickle = file_manager.load_forecast_from_pickle()
+    training_result_pickle = file_manager.load_pred_training_from_pickle()
+
+    # check the arrays are the same
+    for source, species_dict in target_dict.items():
+        for species, y_array in species_dict.items():
+            assert (y_array == forecast_pickle[source][species]).all()
+            assert (y_array == training_result_pickle[source][species]).all()

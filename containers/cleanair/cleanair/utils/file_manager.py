@@ -14,6 +14,7 @@ from ..types import (
     MRDGPParams,
     Source,
     SVGPParams,
+    TargetDict,
 )
 
 if TYPE_CHECKING:
@@ -112,6 +113,26 @@ class FileManager:
 
         with config.open("w") as config_f:
             config_f.write(data_config.json(indent=4))
+
+    def load_training_data(self) -> Dict[Source, pd.DataFrame]:
+        """Load training data from either the CACHE or input_dir"""
+        self.logger.info("Loading the training data from a pickle.")
+        return self.__load_pickle(self.input_dir / FileManager.TRAINING_DATA_PICKLE)
+
+    def load_test_data(self) -> Dict[Source, pd.DataFrame]:
+        """Load test data from either the CACHE or input_dir"""
+        self.logger.info("Loading the test data from a pickle.")
+        return self.__load_pickle(self.input_dir / FileManager.TEST_DATA_PICKLE)
+
+    def load_pred_training_from_pickle(self) -> TargetDict:
+        """Load the predictions on the training set from a pickle."""
+        self.logger.info("Loading the predictions on the training set from a pickle.")
+        return self.__load_pickle(self.input_dir / FileManager.PRED_TRAINING_PICKLE)
+
+    def load_forecast_from_pickle(self) -> TargetDict:
+        """Load the predictions on the forecast set from a pickle."""
+        self.logger.info("Loading the prediction on the forecast period from a pickle.")
+        return self.__load_pickle(self.input_dir / FileManager.PRED_FORECAST_PICKLE)
 
     def save_training_data(self, training_data: Dict[Source, pd.DataFrame]) -> None:
         """Save training data as a pickle."""
@@ -230,3 +251,13 @@ class FileManager:
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "w") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
+
+    def save_forecast_to_pickle(self, y_pred: TargetDict) -> None:
+        """Save the results dataframe to a file."""
+        self.logger.info("Saving the forecasts to a pickle.")
+        self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_FORECAST_PICKLE)
+
+    def save_training_pred_to_pickle(self, y_pred: TargetDict) -> None:
+        """Save the training predictions to a pickled file."""
+        self.logger.info("Saving the predictions on the training set to a pickle.")
+        self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_TRAINING_PICKLE)
