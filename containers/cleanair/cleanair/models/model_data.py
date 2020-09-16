@@ -1,7 +1,9 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, overload
+from typing import Dict, List, Optional, Tuple, overload, Callable
 from datetime import datetime, timedelta
+from functools import reduce, partial
+from itertools import groupby
 import pandas as pd
 import numpy as np
 from nptyping import NDArray, Float64
@@ -51,6 +53,23 @@ def get_val(x):
         """Pandas pivot table trying to return an array of values.
                         Here it must only return a single value"""
     )
+
+
+def flatten_dict(dict_list):
+    "Concatenate a list of dictionaries into a single dictionary"
+    return {k: v for d in dict_list for k, v in d.items()}
+
+
+def split_apply_combine(function, key: Callable, iterable: List[Dict]):
+    """
+    Split list_of_dicts by grouping key and then apply function to each group
+    and returning a list
+    """
+
+    # Sort the input
+    iterable.sort(key=key)
+    groups = groupby(iterable, key=key)
+    return map(function, map(lambda x: x[1], groups))
 
 
 class ModelDataExtractor:
@@ -303,6 +322,40 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+    @staticmethod
+    def source_data_wide(source_data):
+        def make_wider(unique_tuple, data):
+            "Helper function to covert long data to wide"
+
+            flattened_filtered = list(
+                map(
+                    lambda x: x.dict_flatten(),
+                    filter(
+                        lambda x: (x.point_id, x.measurement_start_utc, x.lat, x.lon,)
+                        == unique_tuple,
+                        data,
+                    ),
+                )
+            )
+            return flattened_filtered
+
+        #  Get a list of unique tuples
+        unique_point_time = list(
+            set(
+                map(
+                    lambda x: (x.point_id, x.measurement_start_utc, x.lat, x.lon,),
+                    source_data,
+                )
+            )
+        )
+
+        # print(make_wider(unique_point_time[0], source_data))
+        # quit()
+
+        # print(len(unique_point_time))
+
+        return map(lambda x: make_wider(x, source_data), unique_point_time)
+
     # pylint: disable=R0913
     def download_source_data(
         self,
@@ -319,47 +372,77 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         if with_sensor_readings:
-            # Get source dataframe
-            source_data = self.get_training_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                species=species,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
-            )
-            if source == Source.satellite:
-                index_names = self.sensor_satellite_index_names
-            else:
-                index_names = self.sensor_index_names
-
+            f_get_data = partial(self.get_training_data_inputs, species=species)
         else:
-            # Get source dataframe
-            source_data = self.get_prediction_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
+            f_get_data = self.get_prediction_data_inputs
+
+        # Get source dataframe
+        source_data = f_get_data(
+            start_date=start_date,
+            end_date=end_date,
+            point_ids=point_ids,
+            features=features,
+            source=source,
+            output_type="all",
+        )
+
+        # Get dictionaries of wide data
+        self.logger.debug("Postprocessing downloaded data")
+
+        source_data_dicts = [i.dict_flatten(exclude={"source"}) for i in source_data]
+
+        wide_pd = pd.DataFrame(
+            list(
+                split_apply_combine(
+                    lambda x: flatten_dict(x),
+                    lambda x: (x["point_id"], x["measurement_start_utc"]),
+                    source_data_dicts,
+                )
             )
-            index_names = self.feature_index_names
+        )
 
-        source_data_index = source_data.set_index(index_names)
+        return wide_pd
 
-        if not set(source_data_index.columns) == set(self.column_names):
-            raise AttributeError("Wrong column names")
-        if not set(source_data_index.index.names) == set(index_names):
-            raise AttributeError("Wrong index names")
+        #     wide_pd.to_csv("out.csv")
 
-        features_df = pd.pivot_table(
-            source_data, index=index_names, columns="feature_name", aggfunc=get_val,
-        ).reset_index()
-        flattend_features_df = self.flatten_column_names(features_df)
-        flattend_features_df["epoch"] = flattend_features_df[
-            "measurement_start_utc"
-        ].apply(lambda x: x.timestamp())
+        #     quit()
+        #     #
+
+        #     if source == Source.satellite:
+        #         index_names = self.sensor_satellite_index_names
+        #     else:
+        #         index_names = self.sensor_index_names
+
+        # else:
+        #     # Get source dataframe
+        #     source_data = self.get_prediction_data_inputs(
+        #         start_date=start_date,
+        #         end_date=end_date,
+        #         point_ids=point_ids,
+        #         features=features,
+        #         source=source,
+        #         output_type="all",
+        #     )
+
+        #     source_data_df = pd.DataFrame(
+        #         [i.dict_enums(exclude={"source"}) for i in source_data]
+        #     )
+        #     index_names = self.feature_index_names
+
+        # source_data_index = source_data_df.set_index(index_names)
+
+        # if not set(source_data_index.columns) == set(self.column_names):
+        #     raise AttributeError("Wrong column names")
+        # if not set(source_data_index.index.names) == set(index_names):
+        #     raise AttributeError("Wrong index names")
+
+        # features_df = pd.pivot_table(
+        #     source_data_df, index=index_names, columns="feature_name", aggfunc=get_val,
+        # ).reset_index()
+        # flattend_features_df = self.flatten_column_names(features_df)
+        # flattend_features_df["epoch"] = flattend_features_df[
+        #     "measurement_start_utc"
+        # ].apply(lambda x: x.timestamp())
 
         # If sensor readings then make species a columns
         if with_sensor_readings:
@@ -465,7 +548,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 session.query(
                     StaticFeature.point_id,
                     StaticFeature.feature_name,
-                    StaticFeature.feature_source,
+                    MetaPoint.source,
                     StaticFeature.value_1000,
                     StaticFeature.value_500,
                     StaticFeature.value_200,
@@ -486,7 +569,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             return session.query(
                 cast(point_id_feature_cross_join_sq.c.point_id, UUID).label("point_id"),
                 point_id_feature_cross_join_sq.c.feature_name,
-                static_features_with_loc_sq.c.feature_source,
+                static_features_with_loc_sq.c.source,
                 static_features_with_loc_sq.c.value_1000,
                 static_features_with_loc_sq.c.value_500,
                 static_features_with_loc_sq.c.value_200,
@@ -632,7 +715,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             static_features.c.point_id,
             static_features.c.measurement_start_utc,
             static_features.c.feature_name,
-            static_features.c.feature_source,
+            static_features.c.source,
             static_features.c.value_1000,
             static_features.c.value_500,
             static_features.c.value_200,
@@ -664,7 +747,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     ),
                     isouter=True,
                 )
-                .filter(static_features.c.feature_source == source.value)
+                .filter(static_features.c.source == source.value)
                 .order_by(
                     static_features.c.point_id,
                     static_features.c.feature_name,
@@ -692,7 +775,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             [s.value for s in species],
             source.value,
         )
-        self.logger.info(
+        self.logger.debug(
             "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
@@ -720,11 +803,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date, end_date, species, output_type="subquery"
             )
 
-        return self.join_features_to_sensors(
-            static_features, sensor_readings, source, output_type="query",
-        )
+        return self.join_features_to_sensors(static_features, sensor_readings, source,)
 
-    @db_query()
+    @db_query(StaticFeatureTimeSpecies)
     def get_prediction_data_inputs(
         self,
         start_date: datetime,
@@ -738,7 +819,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         self.logger.info(
             "Loading prediction data for source: %s", source.value,
         )
-        self.logger.info(
+        self.logger.debug(
             "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
         )
 
@@ -754,6 +835,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     static_features.c.point_id,
                     static_features.c.measurement_start_utc,
                     static_features.c.feature_name,
+                    static_features.c.source,
                     static_features.c.value_1000,
                     static_features.c.value_500,
                     static_features.c.value_200,
