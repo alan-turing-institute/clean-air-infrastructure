@@ -2,13 +2,13 @@
 The interface for London air quality models.
 """
 
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
 from pydantic import BaseModel
 from ..loggers import get_logger
-from ..types import FeaturesDict, NDArrayTuple, TargetDict
+from ..types import FeaturesDict, NDArrayTuple, Species, TargetDict
 
 
 class ModelMixin:
@@ -21,7 +21,6 @@ class ModelMixin:
         self,
         model_params: BaseModel,
         batch_size: int = 100,
-        experiment_config: Optional[Dict] = None,
         refresh: int = 10,
         tasks: Optional[List] = None,
         **kwargs
@@ -30,30 +29,17 @@ class ModelMixin:
 
         Keyword args:
             batch_size: Size of batch for prediction.
-            experiment_config: Filepaths, modelname and other settings for execution.
             model_params: Initialising parameters of the model, kernel and optimizer.
             refresh: How often to print out the ELBO.
             tasks: The name of the tasks (pollutants) we are modelling. Default is ['NO2'].
         """
         self.model_params = model_params
 
-        # get filepaths and other configs
-        default_config = dict(
-            name="model",
-            restore=False,
-            model_state_fp="./",
-            save_model_state=False,
-            train=False,
-        )
-        self.experiment_config = (
-            default_config if experiment_config is None else experiment_config
-        )
-
         # get the tasks we will be predicting at
-        self.tasks = ["NO2"] if tasks is None else tasks
-        if self.tasks != ["NO2"]:
+        self.tasks = [Species.NO2] if tasks is None else tasks
+        if len(self.tasks) > 1:
             raise NotImplementedError(
-                "Multiple pollutants not supported. Use only NO2."
+                "Multiple pollutants not supported yet."
             )
         # other misc arguments
         self.model = None
