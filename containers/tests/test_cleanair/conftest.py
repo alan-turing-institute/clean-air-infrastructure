@@ -34,7 +34,7 @@ from cleanair.databases.tables.fakes import (
 )
 from cleanair.types import Source, Species, FeatureNames, DataConfig
 
-
+# pylint: disable=W0613
 @pytest.fixture(scope="class")
 def valid_config(dataset_start_date, dataset_end_date):
     "Valid config for 'fake_cleanair_dataset' fixture"
@@ -77,7 +77,7 @@ def valid_config(dataset_start_date, dataset_end_date):
 
 @pytest.fixture(scope="class")
 def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
-
+    "Generate a full configuration file"
     return model_config.generate_full_config(valid_config)
 
 
@@ -349,11 +349,9 @@ def satellite_meta_point_and_box_records(satellite_box_records):
 
 @pytest.fixture(scope="module")
 def satellite_forecast(
-    satellite_meta_point_and_box_records,
-    satellite_box_records,
-    dataset_start_date,
-    dataset_end_date,
+    satellite_box_records, dataset_start_date, dataset_end_date,
 ):
+    """Generate satellitee forecast data"""
 
     box_ids = [i.id for i in satellite_box_records]
     all_satellite_forecast = []
