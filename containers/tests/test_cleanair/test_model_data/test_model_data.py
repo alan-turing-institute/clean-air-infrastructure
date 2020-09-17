@@ -298,7 +298,7 @@ class TestModelData:
 
         features = [FeatureNames.building_height, FeatureNames.grass]
 
-        data = model_data.get_training_data_inputs(
+        data = model_data.get_static_with_sensors(
             start_datetime,
             end_datetime,
             species,

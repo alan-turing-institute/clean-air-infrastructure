@@ -63,7 +63,7 @@ def flatten_dict(dict_list):
 def split_apply_combine(function, key: Callable, iterable: List[Dict]):
     """
     Split list_of_dicts by grouping key and then apply function to each group
-    and returning a list
+    and returning a new list of dictionaries
     """
 
     # Sort the input
@@ -314,7 +314,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             config_dir: A directory containing config files
                         (created by ModelData.save_config_state())
         """
-
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -385,9 +384,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         if with_sensor_readings:
-            f_get_data = partial(self.get_training_data_inputs, species=species)
+            f_get_data = partial(self.get_static_with_sensors, species=species)
         else:
-            f_get_data = self.get_prediction_data_inputs
+            f_get_data = self.get_static_features
 
         # Get source dataframe
         source_data = f_get_data(
@@ -402,6 +401,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         # Get dictionaries of wide data
         self.logger.debug("Postprocessing downloaded data")
         source_data_dicts = [i.dict_flatten(exclude={"source"}) for i in source_data]
+
+        # Create a dataframe from a list of dictionaries
         wide_pd = pd.DataFrame(
             list(
                 split_apply_combine(
@@ -413,77 +414,31 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         )
         return wide_pd
 
-    @db_query(StaticFeaturesWithSensors)
-    def get_training_data_inputs(
+    @db_query(model=StaticFeatureTimeSpecies)
+    def get_static_features(
         self,
         start_date: datetime,
         end_date: datetime,
-        species: List[Species],
-        point_ids: List[str],
         features: List[FeatureNames],
         source: Source,
-    ):
-        """Query the database to get inputs for model fitting."""
-
-        self.logger.info(
-            "Loading training data for species: %s from sources: %s",
-            [s.value for s in species],
-            source.value,
-        )
-        self.logger.debug(
-            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
-        )
-
-        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
-        static_features = self.get_static_features(
-            start_date,
-            end_date,
-            features,
-            source,
-            point_ids,
-            species,
-            output_type="subquery",
-        )
-
-        if source == Source.laqn:
-            sensor_readings = self.get_laqn_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
-        elif source == Source.aqe:
-            sensor_readings = self.get_aqe_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
-        elif source == Source.satellite:
-            sensor_readings = self.get_satellite_readings(
-                start_date, end_date, species, output_type="subquery"
-            )
-
-        return self.join_features_to_sensors(static_features, sensor_readings, source,)
-
-    @db_query(StaticFeatureTimeSpecies)
-    def get_prediction_data_inputs(
-        self,
-        start_date: datetime,
-        end_date: datetime,
         point_ids: List[str],
-        features: List[FeatureNames],
-        source: Source,
-    ):
-        """Query the database to get inputs for model fitting."""
+        species: Optional[List[Species]] = None,
+    ) -> pd.DateFrame:
+        """
+        Query the database for static features
+            and then cross join with the datetime range and 
+            species requested.
+        """
 
-        self.logger.info(
-            "Loading prediction data for source: %s", source.value,
-        )
-        self.logger.debug(
-            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
-        )
-
-        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
-        static_features = self.get_static_features(
-            start_date, end_date, features, source, point_ids, output_type="query"
+        static_features = self.select_static_features(
+            point_ids, features, source, output_type="subquery"
         )
 
-        return static_features
+        static_features_expand = self.__expand_time_species(
+            static_features, start_date, end_date, species
+        )
+
+        return static_features_expand
 
     @db_query(StaticFeatureLocSchema)
     def select_static_features(
@@ -579,59 +534,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
 
     @db_query()
-    def get_sensor_readings(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        sources: List[Source],
-        species: List[Species],
-    ):
-        """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
-
-        self.logger.debug(
-            "Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
-        )
-
-        sensor_dfs = []
-        if "laqn" in sources:
-            laqn_sensor_data = self.get_laqn_readings(
-                start_date, end_date, output_type="df"
-            )
-            sensor_dfs.append(laqn_sensor_data)
-            if laqn_sensor_data.shape[0] == 0:
-                raise AttributeError(
-                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates"
-                )
-
-        if "aqe" in sources:
-            aqe_sensor_data = self.get_aqe_readings(
-                start_date, end_date, output_type="df"
-            )
-            sensor_dfs.append(aqe_sensor_data)
-            if aqe_sensor_data.shape[0] == 0:
-                raise AttributeError(
-                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates"
-                )
-
-        sensor_df = pd.concat(sensor_dfs, axis=0)
-
-        sensor_df["point_id"] = sensor_df["point_id"].astype(str)
-        sensor_df["epoch"] = sensor_df["measurement_start_utc"].apply(
-            lambda x: x.timestamp()
-        )
-        sensor_df = sensor_df.pivot_table(
-            index=["point_id", "source", "measurement_start_utc", "epoch"],
-            columns=["species_code"],
-            values="value",
-        )
-
-        return sensor_df[species].reset_index()
-
-    @db_query()
     def __expand_time_species(
         self,
         subquery: Alias,
@@ -666,31 +568,43 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             return session.query(*cols)
 
-    @db_query(model=StaticFeatureTimeSpecies)
-    def get_static_features(
+    @db_query(StaticFeaturesWithSensors)
+    def get_static_with_sensors(
         self,
         start_date: datetime,
         end_date: datetime,
+        species: List[Species],
+        point_ids: List[str],
         features: List[FeatureNames],
         source: Source,
-        point_ids: List[str],
-        species: Optional[List[Species]] = None,
-    ) -> pd.DateFrame:
-        """
-        Query the database for static features
-            and then cross join with the datetime range and 
-            species requested.
-        """
+    ):
+        """Get static features with sensor readings joined"""
 
-        static_features = self.select_static_features(
-            point_ids, features, source, output_type="subquery"
+        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
+        static_features = self.get_static_features(
+            start_date,
+            end_date,
+            features,
+            source,
+            point_ids,
+            species,
+            output_type="subquery",
         )
 
-        static_features_expand = self.__expand_time_species(
-            static_features, start_date, end_date, species
-        )
+        if source == Source.laqn:
+            sensor_readings = self.get_laqn_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
+        elif source == Source.aqe:
+            sensor_readings = self.get_aqe_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
+        elif source == Source.satellite:
+            sensor_readings = self.get_satellite_readings(
+                start_date, end_date, species, output_type="subquery"
+            )
 
-        return static_features_expand
+        return self.join_features_to_sensors(static_features, sensor_readings, source,)
 
     @db_query(StaticFeaturesWithSensors)
     def join_features_to_sensors(
