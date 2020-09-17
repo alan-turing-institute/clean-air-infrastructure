@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
+from typing import Any, Dict, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
@@ -11,7 +11,6 @@ from ..types import (
     DataConfig,
     FullDataConfig,
     Source,
-    TargetDict,
 )
 
 if TYPE_CHECKING:

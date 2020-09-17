@@ -2,13 +2,11 @@
 from __future__ import annotations
 from typing import Dict, List, Optional, Tuple, overload, Callable
 from datetime import datetime, timedelta
-from functools import reduce, partial
+from functools import partial
 from itertools import groupby
 import pandas as pd
 import numpy as np
 from nptyping import NDArray, Float64
-from dateutil import rrule
-from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
@@ -19,7 +17,7 @@ from ..databases.tables import (
 from ..databases import DBReader
 from ..databases.base import Values
 from ..mixins import DBQueryMixin
-from ..loggers import get_logger
+from ..loggers import get_logger, green
 from ..decorators import db_query
 
 from ..types import (
@@ -28,13 +26,11 @@ from ..types import (
     Species,
     FeatureNames,
     FeaturesDict,
-    IndexDict,
     IndexedDatasetDict,
     TargetDict,
 )
 from .schemas import (
     StaticFeatureTimeSpecies,
-    StaticFeatureSchema,
     StaticFeatureLocSchema,
     StaticFeaturesWithSensors,
 )
@@ -113,7 +109,8 @@ class ModelDataExtractor:
 
         return norm_mean, norm_std
 
-    def __x_names_norm(self, x_names):
+    @staticmethod
+    def __x_names_norm(x_names):
         """Get the normalised x names"""
         return [x + "_norm" for x in x_names]
 
@@ -222,7 +219,7 @@ class ModelDataExtractor:
     ) -> IndexedDatasetDict:
 
         species = full_config.species
-        x_names = self.x_names_norm(full_config.x_names)
+        x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
         Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
         index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
@@ -252,9 +249,7 @@ class ModelDataExtractor:
         return X_dict, Y_dict, index_dict
 
     @staticmethod
-    def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
-    ):
+    def join_forecast_on_dataframe(data_df: pd.DataFrame, pred_dict: TargetDict):
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources
         # TODO take the index as a parameter and match pred_dict onto data_df using index
@@ -289,9 +284,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
     def download_config_data(
         self, full_config: FullDataConfig, training_data: bool = True
     ) -> Dict[Source, pd.DateFrame]:
-        """Download all input data specified in a validated full config file 
+        """Download all input data specified in a validated full config file
         by calling self.download_config_data() for all sources
-        
+
         Args:
             full_config: A configuration class
             prediction_data: When True get training data, else get prediction data
@@ -319,7 +314,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in sources:
             self.logger.info(
-                "Downloading source: %s. Training data?: %s", source, training_data
+                "Downloading source: %s. Training data?: %s",
+                green(source),
+                green(training_data),
             )
             # Satellite data is only a training option  and gets all data from training to prediction
             _end_date = (
@@ -371,6 +368,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         source_data_dicts = [i.dict_flatten(exclude={"source"}) for i in source_data]
 
         # Create a dataframe from a list of dictionaries
+        # pylint: disable=W0108
         wide_pd = pd.DataFrame(
             list(
                 split_apply_combine(
@@ -394,7 +392,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
     ) -> pd.DateFrame:
         """
         Query the database for static features
-            and then cross join with the datetime range and 
+            and then cross join with the datetime range and
             species requested.
         """
 
@@ -416,7 +414,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         Return static features from the database for a list of point ids
             for a particular source.
         If point ids are not of the correct source they will not be returned
-        Ensures that we always get all point id rows, even if they are not in the database 
+        Ensures that we always get all point id rows, even if they are not in the database
             (all other columns will be null), by doing an outer join
 
         Args:
@@ -578,7 +576,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
     def join_features_to_sensors(
         self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
-
+        """Join sensor readings and static features"""
         columns = [
             static_features.c.point_id,
             static_features.c.measurement_start_utc,
@@ -626,4 +624,3 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
 
             return static_with_sensor_readings
-

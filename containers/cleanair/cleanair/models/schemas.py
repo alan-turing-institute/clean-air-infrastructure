@@ -1,12 +1,18 @@
+"""
+PydanticModels for serialising database query results
+"""
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from enum import Enum
-from pydantic import BaseModel, validator
 from uuid import UUID
+from pydantic import BaseModel, validator, ValidationError
 from ..types import FeatureNames, Source, Species
+
+# pylint: disable=R0201,C0115,E0213
 
 
 class StaticFeatureSchema(BaseModel):
+    """Static Feartures Schema"""
 
     point_id: UUID
     feature_name: FeatureNames
@@ -56,12 +62,14 @@ class StaticFeatureSchema(BaseModel):
 
 
 class StaticFeatureLocSchema(StaticFeatureSchema):
+    """Static Features Schema with lon and lat"""
 
     lon: float
     lat: float
 
 
 class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
+    """Static Features Schema with measurement_start_utc, epoch and species_code"""
 
     measurement_start_utc: datetime
     epoch: Optional[int]
@@ -78,10 +86,12 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
 
 
 class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
+    """Static Features Schema with sensor reading and optional box_id"""
 
     value: Optional[float]
     box_id: Optional[UUID]
 
+    # pylint: disable=E1101
     def dict_flatten(self, *args, **kwargs):
         """Same as self.dict_enums except values and feature name
         are replaced with 'value_1000_{feature_name}
