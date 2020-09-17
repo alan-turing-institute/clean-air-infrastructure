@@ -91,40 +91,53 @@ class ModelDataExtractor:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        self.feature_index_names = [
-            "point_id",
-            "measurement_start_utc",
-            "lat",
-            "lon",
-        ]
-        self.sensor_index_names = self.feature_index_names + [
-            "species_code",
-            "value",
-        ]
-        self.sensor_satellite_index_names = self.sensor_index_names + ["box_id"]
+    def __norm_stats(
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Tuple[pd.Series, pd.Series]:
+        """Normalise a dataset"""
 
-        self.column_names = [
-            "feature_name",
-            "value_1000",
-            "value_500",
-            "value_200",
-            "value_100",
-            "value_10",
-        ]
-        self.preprocessing: Dict = dict()
+        norm_mean: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].mean(axis=0)
 
-    @staticmethod
-    def flatten_column_names(data_frame: pd.DataFrame) -> pd.DataFrame:
-        "Flaten column names of 2D column names"
+        norm_std: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].std(axis=0)
 
-        new_column_names = [
-            "_".join(col).strip() if (len(col[1]) > 0) else col[0]
-            for col in data_frame.columns.to_numpy()
-        ]
+        if norm_std.eq(0).any().any():
+            self.logger.warning(
+                "No variance in feature: %s. Setting variance to 1.",
+                norm_std[norm_std == 0].index,
+            )
+            norm_std[norm_std == 0] = 1
 
-        data_frame.columns = new_column_names
+        return norm_mean, norm_std
 
-        return data_frame
+    def __x_names_norm(self, x_names):
+        """Get the normalised x names"""
+        return [x + "_norm" for x in x_names]
+
+    def normalize_data(
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Dict[str, pd.DateFrame]:
+        """Normalise the x columns"""
+
+        norm_mean, norm_std = self.__norm_stats(full_config, data_frames)
+
+        x_names_norm = self.__x_names_norm(full_config.x_names)
+
+        data_output: Dict[str, pd.DateFrame] = {}
+        for source, data_df in data_frames.items():
+
+            data_df_normed = data_df.copy()
+
+            data_df_normed[x_names_norm] = (
+                data_df_normed[full_config.x_names] - norm_mean
+            ) / norm_std
+
+            data_output[source] = data_df_normed
+
+        return data_output
 
     # pylint: disable=C0116,R0201
     @overload
@@ -238,54 +251,6 @@ class ModelDataExtractor:
 
         return X_dict, Y_dict, index_dict
 
-    def norm_stats(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Tuple[pd.Series, pd.Series]:
-        """Normalise a dataset"""
-
-        norm_mean: pd.Series = data_frames[full_config.norm_by.value][
-            full_config.x_names
-        ].mean(axis=0)
-
-        norm_std: pd.Series = data_frames[full_config.norm_by.value][
-            full_config.x_names
-        ].std(axis=0)
-
-        if norm_std.eq(0).any().any():
-            self.logger.warning(
-                "No variance in feature: %s. Setting variance to 1.",
-                norm_std[norm_std == 0].index,
-            )
-            norm_std[norm_std == 0] = 1
-
-        return norm_mean, norm_std
-
-    def normalize_data(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Dict[str, pd.DateFrame]:
-        """Normalise the x columns"""
-
-        norm_mean, norm_std = self.norm_stats(full_config, data_frames)
-
-        x_names_norm = self.x_names_norm(full_config.x_names)
-
-        data_output: Dict[str, pd.DateFrame] = {}
-        for source, data_df in data_frames.items():
-
-            data_df_normed = data_df.copy()
-
-            data_df_normed[x_names_norm] = (
-                data_df_normed[full_config.x_names] - norm_mean
-            ) / norm_std
-
-            data_output[source] = data_df_normed
-
-        return data_output
-
-    def x_names_norm(self, x_names):
-        """Get the normalised x names"""
-        return [x + "_norm" for x in x_names]
-
     @staticmethod
     def join_forecast_on_dataframe(
         data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
@@ -353,6 +318,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in sources:
+            self.logger.info(
+                "Downloading source: %s. Training data?: %s", source, training_data
+            )
             # Satellite data is only a training option  and gets all data from training to prediction
             _end_date = (
                 end_date if source != Source.satellite else full_config.pred_end_date
