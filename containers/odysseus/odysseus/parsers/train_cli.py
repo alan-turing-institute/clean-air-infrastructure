@@ -65,6 +65,7 @@ def scoot(
 
     # create data and preprocessing settings
     train_start = (as_datetime(train_upto) - timedelta(hours=train_days)).isoformat()
+    logger.debug("Limit is %s. Offset is %s", limit, offset)
     data_config = ScootConfig(
         limit=limit, offset=offset, start=train_start, upto=train_upto,
     )

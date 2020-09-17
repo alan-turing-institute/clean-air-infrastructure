@@ -95,10 +95,10 @@ class ExperimentMixin:
         frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
 
         # update the model params table
-        self.__update_table_from_frame(frame, self.model_table)
+        self.update_table_from_frame(frame, self.model_table)
 
         # update the data config table
-        self.__update_table_from_frame(frame, self.data_table)
+        self.update_table_from_frame(frame, self.data_table)
 
         # update the instance table
-        self.__update_table_from_frame(frame, self.instance_table)
+        self.update_table_from_frame(frame, self.instance_table)

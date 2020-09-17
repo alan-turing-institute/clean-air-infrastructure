@@ -35,6 +35,7 @@ class ScootDataset(DBReader, ScootQueryMixin):
             super().__init__(secretfile=secretfile, **kwargs)
             # load scoot from the data config
             scoot_df = self.scoot_readings(**self.data_config.dict(), output_type="df")
+            self.logger.debug("%s readings from %s detectors loaded from database.", len(scoot_df), len(list(scoot_df.detector_id.unique())))
             # assign list of detectors if it doesn't exist already
             if not self.data_config.detectors:
                 self._data_config.detectors = list(scoot_df.detector_id.unique())
