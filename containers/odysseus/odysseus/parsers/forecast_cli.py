@@ -86,7 +86,7 @@ def scoot(
         # if isinstance(model.likelihood, gpflow.likelihoods.Poisson):
         if name == ModelName.svgp:
             y_mean, y_var = sample_n(model, dataset.features_tensor, num_samples)
-            predictions.append()
+            predictions.append((y_mean, y_var))
         # elif isinstance(model.likelihood, gpflow.likelihoods.Gaussian):
         elif name == ModelName.gpr:
             y_mean, y_var = model.predict_f(dataset.features_tensor)
@@ -94,12 +94,18 @@ def scoot(
         predictions.append((y_mean, y_var))
 
     # 6. write the forecast to the results table using the instance id and the new data id
+    forecast_df = pd.DataFrame()
+    forecast_df["data_id"] = [x.data_id for x in datasets]
+    forecast_df["data_config"] = [x.data_config.dict() for x in datasets]
+    forecast_df["preprocessing"] = experiment.frame.preprocessing.apply(lambda x: x.dict())
+    experiment.update_table_from_frame(forecast_df, experiment.data_table)
+    logger.info("Writing %s forecasts to the database.", len(datasets))
     for dataset, (y_mean, y_var), instance_id in zip(datasets, predictions, experiment.frame.instance_id):
         result_df = dataset.dataframe.copy()
         detector_df: pd.DataFrame = experiment.scoot_detectors(detectors=list(result_df.detector_id.unique()), output_type="df")
         result_df = result_df.merge(detector_df, on="detector_id")
         result_df["n_vehicles_in_interval"] = y_mean.flatten()
         result_df["measurement_end_utc"] = result_df.measurement_start_utc + timedelta(hours=1)
-        result = ScootResult(instance_id, dataset.data_id, secretfile=secretfile, result_df=pd.DataFrame)
+        result = ScootResult(instance_id, dataset.data_id, secretfile=secretfile, result_df=result_df)
         result.update_remote_tables()
-    raise NotImplementedError("See TODOs for implementation instructions")
+    logger.info("Forecasts completed and written to database.")

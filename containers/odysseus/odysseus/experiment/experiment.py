@@ -40,7 +40,7 @@ class ExperimentMixin:
             "git_hash",
             "fit_start_time",
             "data_config",
-            "model_param",
+            "model_params",
             "preprocessing",
         ]
         if not isinstance(frame, pd.DataFrame):
@@ -56,7 +56,7 @@ class ExperimentMixin:
     @frame.setter
     def frame(self, value: pd.DataFrame) -> None:
         """Set the value of the experiment frame."""
-        if set(self._cols).issubset(set(value.columns)):
+        if not set(self._cols).issubset(set(value.columns)):
             raise ValueError(
                 f"The dataframe passed as argument to frame is missing the following columns: {set(self._cols) - set(value.columns)}"
             )
@@ -77,6 +77,15 @@ class ExperimentMixin:
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
+    def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
+        """Update a table with the dataframe."""
+        inst = inspect(table)
+        cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
+        records = frame[cols].to_dict("records")
+        self.commit_records(
+            records, on_conflict="overwrite", table=table,
+        )
+
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
         # convert pydantic models to dictionaries
@@ -86,23 +95,10 @@ class ExperimentMixin:
         frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
 
         # update the model params table
-        model_inst = inspect(self.model_table)
-        model_cols = [c_attr.key for c_attr in model_inst.mapper.column_attrs]
-        model_records = frame[model_cols].to_dict("records")
-        self.commit_records(
-            model_records, on_conflict="overwrite", table=self.model_table,
-        )
+        self.__update_table_from_frame(frame, self.model_table)
+
         # update the data config table
-        data_inst = inspect(self.data_table)
-        data_cols = [c_attr.key for c_attr in data_inst.mapper.column_attrs]
-        data_records = frame[data_cols].to_dict("records")
-        self.commit_records(
-            data_records, on_conflict="overwrite", table=self.data_table,
-        )
+        self.__update_table_from_frame(frame, self.data_table)
+
         # update the instance table
-        instance_inst = inspect(self.instance_table)
-        instance_cols = [c_attr.key for c_attr in instance_inst.mapper.column_attrs]
-        site_records = frame[instance_cols].to_dict("records")
-        self.commit_records(
-            site_records, on_conflict="overwrite", table=self.instance_table,
-        )
+        self.__update_table_from_frame(frame, self.instance_table)
