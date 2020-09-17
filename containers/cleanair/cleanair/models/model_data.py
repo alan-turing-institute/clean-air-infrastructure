@@ -590,7 +590,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             static_features.c.lat,
             static_features.c.lon,
             static_features.c.in_london,
-            sensor_readings.c.species_code,
+            static_features.c.species_code,
             sensor_readings.c.value,
         ]
 

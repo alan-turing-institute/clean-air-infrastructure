@@ -72,8 +72,8 @@ class StaticFeatureTimeSpecies(StaticFeatureLocSchema):
     """Static Features Schema with measurement_start_utc, epoch and species_code"""
 
     measurement_start_utc: datetime
+    species_code: Species
     epoch: Optional[int]
-    species_code: Optional[Species]
 
     @validator("epoch", always=True)
     def gen_measurement_end_time(cls, v, values):
@@ -97,22 +97,25 @@ class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
         are replaced with 'value_1000_{feature_name}
         """
 
-        item = self.dict_enums(*args, **kwargs)
-        new_dict = {}
-        for key, value in item.items():
-            if key in ("value", "feature_name"):
-                continue
-
+        def flatten_entries(key, value):
+            "Helper function for flattening values"
             if "value_" in key:
-                new_key = f"{key}_{self.feature_name.value}"
-                new_value = value
+                return (f"{key}_{self.feature_name.value}", value)
             elif key == "species_code":
-                new_key = f"{self.species_code}"
-                new_value = self.value
-            else:
-                new_key = key
-                new_value = value
+                return (f"{self.species_code}", self.value)
+            return (key, value)
 
-            new_dict[new_key] = new_value
+        item = self.dict_enums(*args, **kwargs)
+
+        new_dict = dict(
+            filter(
+                lambda x: (x[0] not in ("value", "feature_name")),
+                map(lambda x: flatten_entries(x[0], x[1]), item.items()),
+            )
+        )
+
+        # Only give box_id for satellite type
+        if self.source != Source.satellite:
+            new_dict.pop("box_id")
 
         return new_dict
