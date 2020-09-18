@@ -314,7 +314,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in sources:
             self.logger.info(
-                "Downloading source: %s. Training data?: %s",
+                "Downloading source: %s. Training data: %s",
                 green(source),
                 green(training_data),
             )
@@ -349,7 +349,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         if with_sensor_readings:
-            f_get_data = partial(self.get_static_with_sensors, species=species)
+            f_get_data = self.get_static_with_sensors
         else:
             f_get_data = self.get_static_features
 
@@ -360,6 +360,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             point_ids=point_ids,
             features=features,
             source=source,
+            species=species,
             output_type="all",
         )
 
