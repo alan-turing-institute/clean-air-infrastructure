@@ -389,7 +389,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         features: List[FeatureNames],
         source: Source,
         point_ids: List[str],
-        species: Optional[List[Species]] = None,
+        species: List[Species],
     ) -> pd.DateFrame:
         """
         Query the database for static features
@@ -506,7 +506,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         subquery: Alias,
         start_date: datetime,
         end_date: datetime,
-        species: Optional[List[Species]] = None,
+        species: List[Species],
     ):
         """
         Cross product of a date range, a list of species and a subquery
@@ -523,15 +523,13 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 subquery,
             ]
 
-            if species:
-
-                cols.append(
-                    Values(
-                        [column("species_code", String),],
-                        *[(polutant.value,) for polutant in species],
-                        alias_name="t2",
-                    )
+            cols.append(
+                Values(
+                    [column("species_code", String),],
+                    *[(polutant.value,) for polutant in species],
+                    alias_name="t2",
                 )
+            )
 
             return session.query(*cols)
 
