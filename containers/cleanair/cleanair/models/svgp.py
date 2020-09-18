@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import FeaturesDict, Source, Species, TargetDict
+from ..types import FeaturesDict, KernelName, Source, Species, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -20,6 +20,13 @@ class SVGP(ModelMixin):
     """
     Sparse Variational Gaussian Process for air quality.
     """
+
+    KERNELS = {
+        KernelName.matern12: gpflow.kernels.Matern12,
+        KernelName.matern32: gpflow.kernels.Matern32,
+        KernelName.matern52: gpflow.kernels.Matern52,
+        KernelName.rbf: gpflow.kernels.RBF,
+    }
 
     def setup_model(
         self,
@@ -43,26 +50,15 @@ class SVGP(ModelMixin):
         with gpflow.settings.temp_settings(
             custom_config
         ), gpflow.session_manager.get_session().as_default():
-            kernel_type = self.model_params.kernel.type
-            if kernel_type == "rbf":
-                kern = gpflow.kernels.RBF(
-                    name=self.model_params.kernel.name,
-                    input_dim=num_input_dimensions,
-                    lengthscales=self.model_params.kernel.lengthscales,
-                    ARD=True,
-                )
-            elif kernel_type == "matern32":
-                kern = gpflow.kernels.Matern32(
-                    input_dim=num_input_dimensions,
-                    variance=1,
-                    lengthscales=[0.1 for i in range(num_input_dimensions)],
-                    ARD=True,
-                )
+            kernel_dict = self.model_params.kernel.dict()
+            kernel_dict.pop("type")
+            kernel_dict["input_dim"] = num_input_dimensions
+            kernel = SVGP.KERNELS[self.model_params.kernel.name](**kernel_dict)
 
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
-                kern,
+                kernel,
                 gpflow.likelihoods.Gaussian(
                     variance=self.model_params.likelihood_variance,
                 ),

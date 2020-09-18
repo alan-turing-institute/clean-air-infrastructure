@@ -38,6 +38,16 @@ class FeatureBufferSize(str, Enum):
 
 
 @unique
+class KernelName(str, Enum):
+    """Valid kernels."""
+
+    matern12 = "matern12"
+    matern32 = "matern32"
+    matern52 = "matern52"
+    rbf = "rbf"
+
+
+@unique
 class ModelName(str, Enum):
     """Valid model names for air quality models."""
 

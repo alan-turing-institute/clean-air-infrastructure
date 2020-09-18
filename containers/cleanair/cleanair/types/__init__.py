@@ -5,6 +5,7 @@ from .enum_types import (
     Source,
     FeatureNames,
     FeatureBufferSize,
+    KernelName,
     ModelName,
 )
 from .dataset_types import (
@@ -22,7 +23,6 @@ from .model_types import (
     BaseModelParams,
     KernelParams,
     MRDGPParams,
-    ParamsDict,
     SVGPParams,
 )
 
@@ -37,9 +37,8 @@ __all__ = [
     "IndexDict",
     "IndexedDatasetDict",
     "InterestPointDict",
-    "KernelParams",
+    "KernelName",
     "MRDGPParams",
-    "ParamsDict",
     "NDArrayTuple",
     "SVGPParams",
     "TargetDict",
