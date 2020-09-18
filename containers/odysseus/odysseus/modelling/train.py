@@ -12,9 +12,8 @@ from ..types import OptimizerName
 if TYPE_CHECKING:
     from ..types import ScootModelParams, SparseVariationalParams
 
-def inducing_points(
-    x_train: tf.Tensor, n_inducing_points: int
-) -> tf.Tensor:
+
+def inducing_points(x_train: tf.Tensor, n_inducing_points: int) -> tf.Tensor:
     """Calculate inducing points."""
 
     # choose inducing points
@@ -73,7 +72,12 @@ def train_svgp(
     # Train with gradient tapes
     optimizer = tf.keras.optimizers.Adam(0.001)
     simple_training_loop(
-        x_train, y_train, model, optimizer, maxiter=model_params.maxiter, logging_freq=logging_freq,
+        x_train,
+        y_train,
+        model,
+        optimizer,
+        maxiter=model_params.maxiter,
+        logging_freq=logging_freq,
     )
 
     return model
@@ -100,7 +104,9 @@ def train_vanilla_gpr(
     # Set Optimizer and initial learning rate
     if model_params.optimizer == OptimizerName.adam:
         optimizer = tf.keras.optimizers.Adam(0.001)
-        raise NotImplementedError("GPR does not yet support the Adam optimizer. Try scipy instead.")
+        raise NotImplementedError(
+            "GPR does not yet support the Adam optimizer. Try scipy instead."
+        )
     elif model_params.optimizer == OptimizerName.scipy:
         optimizer = gpflow.optimizers.Scipy()
     # declare the model
@@ -112,7 +118,9 @@ def train_vanilla_gpr(
     tf.print("Using SciPy optimizer to train vanilla GPR model")
     try:
         optimizer.minimize(
-            model.training_loss, model.trainable_variables, options=dict(maxiter=model_params.maxiter)
+            model.training_loss,
+            model.trainable_variables,
+            options=dict(maxiter=model_params.maxiter),
         )
     except InvalidArgumentError:
         tf.print("Covariance matix could not be inverted.")
@@ -130,7 +138,9 @@ def simple_training_loop(
 ):
     """Iterate train a model for n iterations."""
     ## Optimization functions - train the model for the given maxiter
-    def optimization_step(model: gpflow.models.SVGP, x_train: tf.Tensor, y_train: tf.Tensor):
+    def optimization_step(
+        model: gpflow.models.SVGP, x_train: tf.Tensor, y_train: tf.Tensor
+    ):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
             obj = -model.elbo((x_train, y_train))

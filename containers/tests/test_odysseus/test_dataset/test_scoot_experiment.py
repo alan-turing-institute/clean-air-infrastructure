@@ -1,4 +1,3 @@
-
 from typing import List
 
 import pandas as pd
@@ -10,7 +9,9 @@ from odysseus.experiment.utils import load_gpflow2_model_from_file
 from odysseus.dataset import ScootDataset
 
 
-def test_scoot_experiment(scoot_dataset: ScootDataset, frame: pd.DataFrame, secretfile: str) -> None:
+def test_scoot_experiment(
+    scoot_dataset: ScootDataset, frame: pd.DataFrame, secretfile: str
+) -> None:
 
     datasets = scoot_dataset.split_by_detector()
     assert np.all([isinstance(dataset, ScootDataset) for dataset in datasets])
@@ -23,8 +24,8 @@ def test_scoot_experiment(scoot_dataset: ScootDataset, frame: pd.DataFrame, secr
     X = dataset_sample.features_tensor
 
     # File path variables
-    model_dir = 'gpflow2_models/'
-    instance_id = frame_sample.at[0, 'instance_id']
+    model_dir = "gpflow2_models/"
+    instance_id = frame_sample.at[0, "instance_id"]
 
     # Init a ScootExperiment
     scoot_xp = ScootExperiment(frame=frame_sample, secretfile=secretfile)

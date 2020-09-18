@@ -4,9 +4,10 @@ import typer
 
 app = typer.Typer()
 
+
 @app.command()
 def scoot() -> None:
-    """Evaluate a Gaussian Process Regression model on scoot.""" 
+    """Evaluate a Gaussian Process Regression model on scoot."""
 
     # TODO 1. get experiment class from the tag and fit_start_time
     # TODO 2. using the instance ids get all the forecasts for each of those instance ids

@@ -38,7 +38,11 @@ def test_save_model(tf_session, save_load_instance_id, model_dir, model_name) ->
 
     # save the model
     save_model(
-        model, save_load_instance_id, save_gpflow1_model_to_file, model_dir=str(model_dir), model_name=model_name
+        model,
+        save_load_instance_id,
+        save_gpflow1_model_to_file,
+        model_dir=str(model_dir),
+        model_name=model_name,
     )
 
     # check filepaths exist

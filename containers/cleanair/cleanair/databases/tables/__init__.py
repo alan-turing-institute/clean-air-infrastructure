@@ -36,6 +36,7 @@ from .traffic_modelling_tables import (
     TrafficInstanceTable,
     TrafficMetricTable,
     TrafficModelTable,
+    TrafficResultTable,
 )
 from .ukmap_tables import UKMap
 from .urban_village_tables import UrbanVillage

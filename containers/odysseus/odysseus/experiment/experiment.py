@@ -5,7 +5,11 @@ from pathlib import Path
 from typing import Optional
 import pandas as pd
 from sqlalchemy import inspect
-from cleanair.databases.mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
+from cleanair.databases.mixins import (
+    DataTableMixin,
+    InstanceTableMixin,
+    ModelTableMixin,
+)
 
 
 class ExperimentMixin:
@@ -16,7 +20,7 @@ class ExperimentMixin:
         frame: Optional[pd.DataFrame] = None,
         input_dir: Path = Path.cwd(),
         secretfile: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
 
@@ -26,29 +30,37 @@ class ExperimentMixin:
             self.input_dir.mkdir(parents=True, exist_ok=True)
 
         # create empty dataframe is none exists
+        self._cols = [
+            "instance_id",
+            "model_name",
+            "param_id",
+            "data_id",
+            "cluster_id",
+            "tag",
+            "git_hash",
+            "fit_start_time",
+            "data_config",
+            "model_params",
+            "preprocessing",
+        ]
         if not isinstance(frame, pd.DataFrame):
-            self._frame = pd.DataFrame(
-                columns=[
-                    "instance_id",
-                    "model_name",
-                    "param_id",
-                    "data_id",
-                    "cluster_id",
-                    "tag",
-                    "git_hash",
-                    "fit_start_time",
-                    "data_config",
-                    "model_param",
-                    "preprocessing",
-                ]
-            )
+            self._frame = pd.DataFrame(self._cols)
         else:
-            self._frame = frame
+            self.frame = frame
 
     @property
     def frame(self):
         """Information about the instances"""
         return self._frame
+
+    @frame.setter
+    def frame(self, value: pd.DataFrame) -> None:
+        """Set the value of the experiment frame."""
+        if not set(self._cols).issubset(set(value.columns)):
+            raise ValueError(
+                f"The dataframe passed as argument to frame is missing the following columns: {set(self._cols) - set(value.columns)}"
+            )
+        self._frame = value
 
     @property
     @abstractmethod
@@ -65,6 +77,15 @@ class ExperimentMixin:
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
+    def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
+        """Update a table with the dataframe."""
+        inst = inspect(table)
+        cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
+        records = frame[cols].to_dict("records")
+        self.commit_records(
+            records, on_conflict="ignore", table=table,
+        )
+
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
         # convert pydantic models to dictionaries
@@ -74,23 +95,10 @@ class ExperimentMixin:
         frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
 
         # update the model params table
-        model_inst = inspect(self.model_table)
-        model_cols = [c_attr.key for c_attr in model_inst.mapper.column_attrs]
-        model_records = frame[model_cols].to_dict("records")
-        self.commit_records(
-            model_records, on_conflict="overwrite", table=self.model_table,
-        )
+        self.update_table_from_frame(frame, self.model_table)
+
         # update the data config table
-        data_inst = inspect(self.data_table)
-        data_cols = [c_attr.key for c_attr in data_inst.mapper.column_attrs]
-        data_records = frame[data_cols].to_dict("records")
-        self.commit_records(
-            data_records, on_conflict="overwrite", table=self.data_table,
-        )
+        self.update_table_from_frame(frame, self.data_table)
+
         # update the instance table
-        instance_inst = inspect(self.instance_table)
-        instance_cols = [c_attr.key for c_attr in instance_inst.mapper.column_attrs]
-        site_records = frame[instance_cols].to_dict("records")
-        self.commit_records(
-            site_records, on_conflict="overwrite", table=self.instance_table,
-        )
+        self.update_table_from_frame(frame, self.instance_table)

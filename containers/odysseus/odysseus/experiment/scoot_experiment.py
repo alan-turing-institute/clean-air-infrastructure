@@ -5,13 +5,24 @@ from datetime import datetime
 from typing import List, Optional, Union, TYPE_CHECKING
 import pandas as pd
 from cleanair.databases import DBWriter
-from cleanair.databases.tables import TrafficDataTable, TrafficInstanceTable, TrafficModelTable
-from cleanair.utils import get_git_hash, instance_id_from_hash, hash_dict, save_model
-from cleanair.mixins import ScootQueryMixin
+from cleanair.databases.tables import (
+    TrafficDataTable,
+    TrafficInstanceTable,
+    TrafficModelTable,
+)
+from cleanair.utils import (
+    get_git_hash,
+    instance_id_from_hash,
+    hash_dict,
+    load_model,
+    save_model,
+)
+from cleanair.mixins import InstanceQueryMixin, ScootQueryMixin
+from ..databases.mixins import ScootDataQueryMixin
 from .experiment import ExperimentMixin
 from ..modelling import parse_kernel, train_svgp, train_vanilla_gpr
 from ..types import ModelName
-from .utils import save_gpflow2_model_to_file
+from .utils import load_gpflow2_model_from_file, save_gpflow2_model_to_file
 
 if TYPE_CHECKING:
     import gpflow
@@ -19,7 +30,10 @@ if TYPE_CHECKING:
     from ..dataset import ScootConfig, ScootDataset, ScootPreprocessing
     from ..types import ScootModelParams
 
-class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
+
+class ScootExperiment(
+    ExperimentMixin, InstanceQueryMixin, ScootDataQueryMixin, ScootQueryMixin, DBWriter
+):
     """Experiment for scoot modelling."""
 
     @property
@@ -60,13 +74,18 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
         frame["git_hash"] = get_git_hash()
         frame["param_id"] = frame["model_params"].apply(lambda x: x.param_id())
         frame["data_id"] = frame[["data_config", "preprocessing"]].apply(
-            lambda x: hash_dict(dict(**x["data_config"].dict(), **x["preprocessing"].dict())),
-        axis=1)
+            lambda x: hash_dict(
+                dict(**x["data_config"].dict(), **x["preprocessing"].dict())
+            ),
+            axis=1,
+        )
         frame["instance_id"] = frame.apply(
-            lambda x: instance_id_from_hash(x.model_name, x.param_id, x.data_id, x.git_hash), axis=1
+            lambda x: instance_id_from_hash(
+                x.model_name, x.param_id, x.data_id, x.git_hash
+            ),
+            axis=1,
         )
         return ScootExperiment(frame=frame, input_dir=input_dir, secretfile=secretfile)
-
 
     def train_models(
         self,
@@ -101,7 +120,9 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
                     "We are only using one feature - upgrade coming soon."
                 )
             # choose the model training function
-            self.logger.info("Training %s on instance %s", row["model_name"], row["instance_id"])
+            self.logger.info(
+                "Training %s on instance %s", row["model_name"], row["instance_id"]
+            )
             if row["model_name"] == ModelName.svgp:
                 model = train_svgp(
                     x_train=dataset.features_tensor,
@@ -124,6 +145,19 @@ class ScootExperiment(ScootQueryMixin, ExperimentMixin, DBWriter):
                 instance_id=row["instance_id"],
                 save_fn=save_gpflow2_model_to_file,
                 model_dir=self.input_dir,
+                model_name=row["model_name"],
             )
             model_list.append(model)
         return model_list
+
+    def load_models(self) -> List[gpflow.models.GPModel]:
+        """Load the models matching the instance id in frame from the input_dir."""
+        return self.frame.apply(
+            lambda row: load_model(
+                row["instance_id"],
+                load_gpflow2_model_from_file,
+                model_dir=self.input_dir,
+                model_name=row["model_name"],
+            ),
+            axis=1,
+        )
