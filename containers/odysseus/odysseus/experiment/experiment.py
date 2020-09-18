@@ -83,7 +83,7 @@ class ExperimentMixin:
         cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
         records = frame[cols].to_dict("records")
         self.commit_records(
-            records, on_conflict="overwrite", table=table,
+            records, on_conflict="ignore", table=table,
         )
 
     def update_remote_tables(self):
