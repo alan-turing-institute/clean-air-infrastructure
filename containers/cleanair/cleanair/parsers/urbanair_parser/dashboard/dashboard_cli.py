@@ -1,52 +1,54 @@
 """
 Visualise and run metrics for a single model data fit.
 """
+from pathlib import Path
+import typer
 import pandas as pd
-from cleanair import metrics
-from cleanair.dashboard import apps
-from cleanair.databases import queries
-from cleanair.loggers import initialise_logging
-from cleanair.models import ModelData
-from cleanair.parsers import DashboardParser
+from .... import metrics
+from ....dashboard import apps
+from ....databases import queries
+from ....loggers import initialise_logging
+from ....models import ModelData
+from ....types import DataConfig
+from ..shared_args import InputDir  # TODO this is coming from future PR
+from ..state import state
 
 
-def main():  # pylint: disable=too-many-locals
+app = typer.Typer(help="Dashboard for visualising model fits.")
+
+def production(instance_id: str, mapbox_token: str):  # pylint: disable=too-many-locals
     """
     Run the model fitting entrypoint and show the scores in a plotly dashboard.
     """
-    # Parse and interpret command line arguments
-    parser = DashboardParser(description="Dashboard")
-    args = parser.parse_args()
 
     # Extract arguments that should not be passed onwards
-    logger = initialise_logging(args.verbose)
+    logger = initialise_logging(state["verbose"])
     logger.debug("In debugging mode.")
+    logger.warning("This code is expected to break.")
 
     # Get query objects
-    instance_query = queries.AirQualityInstanceQuery(secretfile=args.secretfile)
-    result_query = queries.AirQualityResultQuery(secretfile=args.secretfile)
+    instance_query = queries.AirQualityInstanceQuery(secretfile=state["secretfile"])
+    result_query = queries.AirQualityResultQuery(secretfile=state["secretfile"])
 
     # Get data config
     logger.info("Querying the air quality modelling instance table.")
     instance_df = instance_query.get_instances_with_params(
-        instance_ids=[args.instance_id], output_type="df"
+        instance_ids=[instance_id], output_type="df"
     )
     logger.debug("%s rows returned from the instance query.", len(instance_df))
     data_id = instance_df["data_id"].iloc[0]
-    data_config = instance_df["data_config"].iloc[0]
+    data_config = DataConfig(**instance_df["data_config"].iloc[0])
     logger.info("Data id is %s", data_id)
 
     # Get the results
     logger.info("Querying the air quality modelling results table.")
     results_df = result_query.query_results(
-        args.instance_id, data_id=data_id, output_type="df"
+        instance_id, data_id=data_id, output_type="df"
     )
 
     # Get the data
     logger.info("Querying the database of input data.")
-    data_config = ModelData.config_to_datetime(data_config)
-    data_config["include_prediction_y"] = True
-    model_data = ModelData(config=data_config, secretfile=args.secretfile)
+    model_data = ModelData(secretfile=state["secretfile"])
     logger.debug("%s rows in test dataframe.", len(model_data.normalised_pred_data_df))
 
     # change datetime to be the same format
@@ -107,11 +109,12 @@ def main():  # pylint: disable=too-many-locals
         model_data,
         sensor_scores_df,
         temporal_scores_df,
-        args.mapbox_token,
+        mapbox_token,
         all_metrics=list(metric_methods.keys()) + list(precision_methods.keys()),
     )
     model_data_fit_app.run_server(debug=True)
 
-
-if __name__ == "__main__":
-    main()
+@app.command()
+def local(mapbox_token: str, input_dir: Path = InputDir) -> None:
+    """Run the dashboard from local files."""
+    raise NotImplementedError("Coming soon.")
