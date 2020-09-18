@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import Any, Iterable, List, Optional, TYPE_CHECKING
 from sqlalchemy import func, or_, and_
+from sqlalchemy.orm import contains_eager
 import pandas as pd
 from ...databases.tables import (
     LondonBoundary,
@@ -13,6 +14,7 @@ from ...databases.tables import (
 from ...decorators import db_query
 
 if TYPE_CHECKING:
+    from datetime import datetime
     from ...types import Borough
 
 
@@ -48,16 +50,16 @@ class ScootQueryMixin:
                 MetaPoint.location.label(geom_label),
             ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
 
-            if offset and limit:
-                readings = readings.order_by(ScootDetector.detector_n).slice(
-                    offset, offset + limit
-                )
             # get subset of detectors
-            if detectors:
+            if offset:
+                readings = readings.offset(offset)
+            if limit:
+                readings = readings.limit(limit)
+            if detectors is not None:
                 readings = readings.filter(ScootDetector.detector_n.in_(detectors))
 
             # only get detectors in this borough
-            if borough:
+            if borough is not None:
                 borough_sq = (
                     session.query(LondonBoundary)
                     .filter(LondonBoundary.name == borough.value)
@@ -72,8 +74,8 @@ class ScootQueryMixin:
     @db_query
     def scoot_readings(
         self,
-        start: str,
-        upto: Optional[str] = None,
+        start: datetime,
+        upto: Optional[datetime] = None,
         with_location: bool = True,
         day_of_week: Optional[int] = None,
         detectors: Optional[List] = None,
@@ -108,6 +110,14 @@ class ScootQueryMixin:
             error_message = "If passing a borough, you must set `with_location` to True. You passed borough: %s"
             error_message = error_message.format(borough.value)
             return ValueError(error_message)
+
+        not_implemented_error = "You passed the {arg} argument. You should call scoot_detectors directly to use limit and offset before joining with scoot_readings."
+        not_implemented_error += " See this issue on GitHub https://github.com/alan-turing-institute/clean-air-infrastructure/issues/533"
+        if limit is not None:
+            raise NotImplementedError(not_implemented_error.format(arg="limit"))
+        if offset is not None:
+            raise NotImplementedError(not_implemented_error.format(arg="offset"))
+
         # get the location of detectors
         if with_location:
             detector_query = self.scoot_detectors(

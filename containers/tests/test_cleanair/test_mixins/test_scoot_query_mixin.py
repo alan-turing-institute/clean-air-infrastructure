@@ -1,10 +1,17 @@
 """Testing database query mixins."""
 
 from datetime import date
+import pytest
 from geoalchemy2.shape import to_shape
 from shapely.geometry import Point
 from cleanair.mixins import ScootQueryMixin
 from cleanair.types import Borough
+
+
+def check_number_of_readings(readings_df, ndetectors, nhours):
+    """Check the correct number of readings are returned given the expected num of detectors and hours."""
+    assert ndetectors == len(readings_df.detector_id.unique())
+    assert len(readings_df) == nhours * ndetectors
 
 
 def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
@@ -48,9 +55,22 @@ def test_scoot_readings(
         output_type="df",
     )
     nhours = (dataset_end_date - dataset_start_date).days * 24
-    ndetectors = len(readings["detector_id"].unique())
-    assert ndetectors == scoot_generator.limit
-    assert len(readings) == nhours * ndetectors
+    check_number_of_readings(readings, scoot_generator.limit, nhours)
+
+    # test with offset and limit
+    with pytest.raises(NotImplementedError):
+        offset = scoot_generator.offset
+        limit = scoot_generator.limit - 3
+        readings = scoot_generator.scoot_readings(
+            start=dataset_start_date.isoformat(),
+            upto=dataset_end_date.isoformat(),
+            with_location=True,
+            limit=limit,
+            offset=offset,
+            output_type="df",
+        )
+        print(readings)
+        check_number_of_readings(readings, limit, nhours)
 
 
 def test_dow_scoot_readings(
@@ -66,9 +86,7 @@ def test_dow_scoot_readings(
         output_type="df",
     )
     nhours = 24
-    ndetectors = len(readings["detector_id"].unique())
-    assert ndetectors == scoot_generator.limit
-    assert len(readings) == nhours * ndetectors
+    check_number_of_readings(readings, scoot_generator.limit, nhours)
     assert (
         readings.measurement_start_utc.dt.weekday == dataset_start_date.weekday()
     ).all()
@@ -86,12 +104,10 @@ def test_readings_with_location(
         output_type="df",
     )
     nhours = (dataset_end_date - dataset_start_date).days * 24
-    ndetectors = len(readings["detector_id"].unique())
     assert "location" in readings.columns
     assert "lon" in readings.columns
     assert "lat" in readings.columns
-    assert ndetectors == scoot_generator.limit
-    assert len(readings) == nhours * ndetectors
+    check_number_of_readings(readings, scoot_generator.limit, nhours)
 
 
 def test_create_dow_daterange():
