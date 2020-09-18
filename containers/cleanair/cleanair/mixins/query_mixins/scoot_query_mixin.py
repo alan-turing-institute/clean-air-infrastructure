@@ -3,7 +3,6 @@
 from __future__ import annotations
 from typing import Any, Iterable, List, Optional, TYPE_CHECKING
 from sqlalchemy import func, or_, and_
-from sqlalchemy.orm import contains_eager
 import pandas as pd
 from ...databases.tables import (
     LondonBoundary,
@@ -111,8 +110,10 @@ class ScootQueryMixin:
             error_message = error_message.format(borough.value)
             return ValueError(error_message)
 
-        not_implemented_error = "You passed the {arg} argument. You should call scoot_detectors directly to use limit and offset before joining with scoot_readings."
-        not_implemented_error += " See this issue on GitHub https://github.com/alan-turing-institute/clean-air-infrastructure/issues/533"
+        not_implemented_error = "You passed the {arg} argument. You should call scoot_detectors "
+        not_implemented_error += "directly to use limit and offset before joining with scoot_readings."
+        not_implemented_error += " See this issue on GitHub "
+        not_implemented_error += "https://github.com/alan-turing-institute/clean-air-infrastructure/issues/533"
         if limit is not None:
             raise NotImplementedError(not_implemented_error.format(arg="limit"))
         if offset is not None:
