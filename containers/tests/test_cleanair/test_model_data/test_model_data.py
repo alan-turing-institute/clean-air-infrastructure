@@ -313,14 +313,16 @@ class TestModelData:
             data = data[:5000]
 
         assert all(
-            map(
-                lambda v: lookup_sensor_reading(
-                    v.point_id,
-                    v.measurement_start_utc.replace(tzinfo=None),
-                    v.species_code,
+            list(
+                map(
+                    lambda v: lookup_sensor_reading(
+                        v.point_id,
+                        v.measurement_start_utc.replace(tzinfo=None),
+                        v.species_code,
+                    )
+                    == v.value,
+                    data,
                 )
-                == v.value,
-                data,
             )
         )
 
