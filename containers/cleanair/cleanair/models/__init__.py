@@ -6,6 +6,7 @@ from .schemas import (
     StaticFeatureSchema,
     StaticFeatureLocSchema,
     StaticFeatureTimeSpecies,
+    StaticFeaturesWithSensors,
 )
 
 # from .svgp import SVGP
@@ -19,4 +20,5 @@ __all__ = [
     "StaticFeatureSchema",
     "StaticFeatureLocSchema",
     "StaticFeatureTimeSpecies",
+    "StaticFeaturesWithSensors",
 ]

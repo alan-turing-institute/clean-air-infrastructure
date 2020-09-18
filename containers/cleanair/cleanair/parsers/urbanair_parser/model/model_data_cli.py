@@ -193,7 +193,9 @@ def download(
     if training_data:
         # Get training data
         state["logger"].info("Downloading training_data")
-        training_data_df = model_data.download_training_config_data(full_config)
+        training_data_df = model_data.download_config_data(
+            full_config, training_data=True
+        )
         training_data_df_norm = model_data.normalize_data(full_config, training_data_df)
 
         state["logger"].info("Writing training data to cache")
@@ -205,7 +207,9 @@ def download(
     if prediction_data:
         state["logger"].info("Downloading prediction data")
         # Get prediction data
-        prediction_data_df = model_data.download_prediction_config_data(full_config)
+        prediction_data_df = model_data.download_config_data(
+            full_config, training_data=False
+        )
         prediction_data_df_norm = model_data.normalize_data(
             full_config, prediction_data_df
         )
