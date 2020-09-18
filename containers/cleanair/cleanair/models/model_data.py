@@ -314,7 +314,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         data_output: Dict[Source, pd.DateFrame] = {}
         for source in sources:
             self.logger.info(
-                "Downloading source: %s. Training data?: %s",
+                "Downloading source: %s. Training data: %s",
                 green(source),
                 green(training_data),
             )
@@ -349,7 +349,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         if with_sensor_readings:
-            f_get_data = partial(self.get_static_with_sensors, species=species)
+            f_get_data = self.get_static_with_sensors
         else:
             f_get_data = self.get_static_features
 
@@ -360,6 +360,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             point_ids=point_ids,
             features=features,
             source=source,
+            species=species,
             output_type="all",
         )
 
@@ -388,7 +389,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         features: List[FeatureNames],
         source: Source,
         point_ids: List[str],
-        species: Optional[List[Species]] = None,
+        species: List[Species],
     ) -> pd.DateFrame:
         """
         Query the database for static features
@@ -505,7 +506,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         subquery: Alias,
         start_date: datetime,
         end_date: datetime,
-        species: Optional[List[Species]] = None,
+        species: List[Species],
     ):
         """
         Cross product of a date range, a list of species and a subquery
@@ -522,15 +523,13 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 subquery,
             ]
 
-            if species:
-
-                cols.append(
-                    Values(
-                        [column("species_code", String),],
-                        *[(polutant.value,) for polutant in species],
-                        alias_name="t2",
-                    )
+            cols.append(
+                Values(
+                    [column("species_code", String),],
+                    *[(polutant.value,) for polutant in species],
+                    alias_name="t2",
                 )
+            )
 
             return session.query(*cols)
 
