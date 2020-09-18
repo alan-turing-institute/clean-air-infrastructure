@@ -50,10 +50,6 @@ class ScootQueryMixin:
             ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
 
             # get subset of detectors
-            if offset:
-                readings = readings.offset(offset)
-            if limit:
-                readings = readings.limit(limit)
             if detectors is not None:
                 readings = readings.filter(ScootDetector.detector_n.in_(detectors))
 
@@ -67,6 +63,11 @@ class ScootQueryMixin:
                 readings = readings.filter(
                     func.ST_Intersects(MetaPoint.location, borough_sq.c.geom)
                 )
+            # limit / offset detectors
+            if offset:
+                readings = readings.offset(offset)
+            if limit:
+                readings = readings.limit(limit)
 
             return readings
 
