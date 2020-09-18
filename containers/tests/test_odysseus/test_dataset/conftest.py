@@ -58,7 +58,7 @@ def frame(scoot_dataset: ScootDataset, request):
     model_name = request.param
     model_params = {'n_inducing_points': None,
                     'inducing_point_method': 'random',
-                    'maxiter': 2000,
+                    'maxiter': 10,
                     'model_name': model_name,
                     'kernel': {'name': 'rbf',
                                'hyperparameters': {'lengthscales': 1.0, 'variance': 1.0}}}
