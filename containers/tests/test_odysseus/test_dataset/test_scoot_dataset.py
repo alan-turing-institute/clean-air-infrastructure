@@ -39,10 +39,8 @@ def test_scoot_dataset_init(
     validate_scoot_dataset(dataset_from_db)
 
     # remove a detector
-    assert len(scoot_config.detectors) > 1
     detector_id = scoot_config.detectors.pop()
     assert detector_id not in scoot_config.detectors
-    print(scoot_config)
 
     # create a new dataset from the dataset previously loaded from DB
     dataset_from_df = ScootDataset(
