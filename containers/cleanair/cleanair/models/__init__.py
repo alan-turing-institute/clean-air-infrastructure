@@ -8,6 +8,7 @@ from .schemas import (
     StaticFeatureSchema,
     StaticFeatureLocSchema,
     StaticFeatureTimeSpecies,
+    StaticFeaturesWithSensors,
 )
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "StaticFeatureSchema",
     "StaticFeatureLocSchema",
     "StaticFeatureTimeSpecies",
+    "StaticFeaturesWithSensors",
 ]

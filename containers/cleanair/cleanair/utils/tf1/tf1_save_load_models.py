@@ -10,7 +10,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
 
-
+# pylint: disable=unused-argument
 def save_gpflow1_model_to_file(
     model: gpflow.models.GPModel, export_dir: Path, **kwargs
 ) -> None:
@@ -19,7 +19,7 @@ def save_gpflow1_model_to_file(
     Args:
         model: A gpflow model.
         instance_id: A unique identifier for the model.
-    
+
     Keyword args:
         model_name: A name for the model.
     """

@@ -1,12 +1,12 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, overload
+from typing import Dict, List, Optional, Tuple, overload, Callable
 from datetime import datetime, timedelta
+from functools import partial
+from itertools import groupby
 import pandas as pd
 import numpy as np
 from nptyping import NDArray, Float64
-from dateutil import rrule
-from dateutil.relativedelta import relativedelta
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,7 +17,7 @@ from ..databases.tables import (
 from ..databases import DBReader
 from ..databases.base import Values
 from ..mixins import DBQueryMixin
-from ..loggers import get_logger
+from ..loggers import get_logger, green
 from ..decorators import db_query
 
 from ..types import (
@@ -26,11 +26,14 @@ from ..types import (
     Species,
     FeatureNames,
     FeaturesDict,
-    IndexDict,
     IndexedDatasetDict,
     TargetDict,
 )
-from .schemas import StaticFeatureTimeSpecies, StaticFeatureSchema
+from .schemas import (
+    StaticFeatureTimeSpecies,
+    StaticFeatureLocSchema,
+    StaticFeaturesWithSensors,
+)
 
 # pylint: disable=too-many-lines
 
@@ -46,6 +49,23 @@ def get_val(x):
         """Pandas pivot table trying to return an array of values.
                         Here it must only return a single value"""
     )
+
+
+def flatten_dict(dict_list):
+    "Concatenate a list of dictionaries into a single dictionary"
+    return {k: v for d in dict_list for k, v in d.items()}
+
+
+def split_apply_combine(function, key: Callable, iterable: List[Dict]):
+    """
+    Split list_of_dicts by grouping key and then apply function to each group
+    and returning a new list of dictionaries
+    """
+
+    # Sort the input
+    iterable.sort(key=key)
+    groups = groupby(iterable, key=key)
+    return map(function, map(lambda x: x[1], groups))
 
 
 class ModelDataExtractor:
@@ -67,40 +87,54 @@ class ModelDataExtractor:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        self.feature_index_names = [
-            "point_id",
-            "measurement_start_utc",
-            "lat",
-            "lon",
-        ]
-        self.sensor_index_names = self.feature_index_names + [
-            "species_code",
-            "value",
-        ]
-        self.sensor_satellite_index_names = self.sensor_index_names + ["box_id"]
+    def __norm_stats(
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Tuple[pd.Series, pd.Series]:
+        """Normalise a dataset"""
 
-        self.column_names = [
-            "feature_name",
-            "value_1000",
-            "value_500",
-            "value_200",
-            "value_100",
-            "value_10",
-        ]
-        self.preprocessing: Dict = dict()
+        norm_mean: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].mean(axis=0)
+
+        norm_std: pd.Series = data_frames[full_config.norm_by.value][
+            full_config.x_names
+        ].std(axis=0)
+
+        if norm_std.eq(0).any().any():
+            self.logger.warning(
+                "No variance in feature: %s. Setting variance to 1.",
+                norm_std[norm_std == 0].index,
+            )
+            norm_std[norm_std == 0] = 1
+
+        return norm_mean, norm_std
 
     @staticmethod
-    def flatten_column_names(data_frame: pd.DataFrame) -> pd.DataFrame:
-        "Flaten column names of 2D column names"
+    def __x_names_norm(x_names):
+        """Get the normalised x names"""
+        return [x + "_norm" for x in x_names]
 
-        new_column_names = [
-            "_".join(col).strip() if (len(col[1]) > 0) else col[0]
-            for col in data_frame.columns.to_numpy()
-        ]
+    def normalize_data(
+        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
+    ) -> Dict[str, pd.DateFrame]:
+        """Normalise the x columns"""
 
-        data_frame.columns = new_column_names
+        norm_mean, norm_std = self.__norm_stats(full_config, data_frames)
 
-        return data_frame
+        x_names_norm = self.__x_names_norm(full_config.x_names)
+
+        data_output: Dict[str, pd.DateFrame] = {}
+        for source, data_df in data_frames.items():
+
+            data_df_normed = data_df.copy()
+
+            data_df_normed[x_names_norm] = (
+                data_df_normed[full_config.x_names] - norm_mean
+            ) / norm_std
+
+            data_output[source] = data_df_normed
+
+        return data_output
 
     # pylint: disable=C0116,R0201
     @overload
@@ -185,7 +219,7 @@ class ModelDataExtractor:
     ) -> IndexedDatasetDict:
 
         species = full_config.species
-        x_names = self.x_names_norm(full_config.x_names)
+        x_names = self.__x_names_norm(full_config.x_names)
         X_dict: FeaturesDict = {}
         Y_dict: TargetDict = {source: {} for source in data_frame_dict.keys()}
         index_dict: FeaturesDict = {source: {} for source in data_frame_dict.keys()}
@@ -214,58 +248,8 @@ class ModelDataExtractor:
 
         return X_dict, Y_dict, index_dict
 
-    def norm_stats(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Tuple[pd.Series, pd.Series]:
-        """Normalise a dataset"""
-
-        norm_mean: pd.Series = data_frames[full_config.norm_by.value][
-            full_config.x_names
-        ].mean(axis=0)
-
-        norm_std: pd.Series = data_frames[full_config.norm_by.value][
-            full_config.x_names
-        ].std(axis=0)
-
-        if norm_std.eq(0).any().any():
-            self.logger.warning(
-                "No variance in feature: %s. Setting variance to 1.",
-                norm_std[norm_std == 0].index,
-            )
-            norm_std[norm_std == 0] = 1
-
-        return norm_mean, norm_std
-
-    def normalize_data(
-        self, full_config: FullDataConfig, data_frames: Dict[str, pd.DateFrame]
-    ) -> Dict[str, pd.DateFrame]:
-        """Normalise the x columns"""
-
-        norm_mean, norm_std = self.norm_stats(full_config, data_frames)
-
-        x_names_norm = self.x_names_norm(full_config.x_names)
-
-        data_output: Dict[str, pd.DateFrame] = {}
-        for source, data_df in data_frames.items():
-
-            data_df_normed = data_df.copy()
-
-            data_df_normed[x_names_norm] = (
-                data_df_normed[full_config.x_names] - norm_mean
-            ) / norm_std
-
-            data_output[source] = data_df_normed
-
-        return data_output
-
-    def x_names_norm(self, x_names):
-        """Get the normalised x names"""
-        return [x + "_norm" for x in x_names]
-
     @staticmethod
-    def join_forecast_on_dataframe(
-        data_df: pd.DataFrame, pred_dict: TargetDict, index: NDArray
-    ):
+    def join_forecast_on_dataframe(data_df: pd.DataFrame, pred_dict: TargetDict):
         """Return a new dataframe with columns updated from pred_dict."""
         # TODO implement this for multiple sources
         # TODO take the index as a parameter and match pred_dict onto data_df using index
@@ -290,7 +274,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             config_dir: A directory containing config files
                         (created by ModelData.save_config_state())
         """
-
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -298,8 +281,60 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+    def download_config_data(
+        self, full_config: FullDataConfig, training_data: bool = True
+    ) -> Dict[Source, pd.DateFrame]:
+        """Download all input data specified in a validated full config file
+        by calling self.download_config_data() for all sources
+
+        Args:
+            full_config: A configuration class
+            prediction_data: When True get training data, else get prediction data
+                Defaults to True. However, if the source  is Satellite it always gets sensor
+                readings regardless of this flag
+        """
+
+        start_date = (
+            full_config.train_start_date
+            if training_data
+            else full_config.pred_start_date
+        )
+        end_date = (
+            full_config.train_end_date if training_data else full_config.pred_end_date
+        )
+        sources = (
+            full_config.train_sources if training_data else full_config.pred_sources
+        )
+        point_ids = (
+            full_config.train_interest_points
+            if training_data
+            else full_config.pred_interest_points
+        )
+
+        data_output: Dict[Source, pd.DateFrame] = {}
+        for source in sources:
+            self.logger.info(
+                "Downloading source: %s. Training data?: %s",
+                green(source),
+                green(training_data),
+            )
+            # Satellite data is only a training option  and gets all data from training to prediction
+            _end_date = (
+                end_date if source != Source.satellite else full_config.pred_end_date
+            )
+            data_output[source] = self.__download_config_data(
+                with_sensor_readings=training_data,
+                start_date=start_date,
+                end_date=_end_date,
+                species=full_config.species,
+                point_ids=point_ids[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
+
     # pylint: disable=R0913
-    def download_source_data(
+    def __download_config_data(
         self,
         with_sensor_readings: bool,
         start_date: datetime,
@@ -314,110 +349,64 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         """
 
         if with_sensor_readings:
-            # Get source dataframe
-            source_data = self.get_training_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                species=species,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
-            )
-            if source == Source.satellite:
-                index_names = self.sensor_satellite_index_names
-            else:
-                index_names = self.sensor_index_names
-
+            f_get_data = partial(self.get_static_with_sensors, species=species)
         else:
-            # Get source dataframe
-            source_data = self.get_prediction_data_inputs(
-                start_date=start_date,
-                end_date=end_date,
-                point_ids=point_ids,
-                features=features,
-                source=source,
-                output_type="df",
+            f_get_data = self.get_static_features
+
+        # Get source dataframe
+        source_data = f_get_data(
+            start_date=start_date,
+            end_date=end_date,
+            point_ids=point_ids,
+            features=features,
+            source=source,
+            output_type="all",
+        )
+
+        # Get dictionaries of wide data
+        self.logger.debug("Postprocessing downloaded data")
+        source_data_dicts = [i.dict_flatten(exclude={"source"}) for i in source_data]
+
+        # Create a dataframe from a list of dictionaries
+        # pylint: disable=W0108
+        wide_pd = pd.DataFrame(
+            list(
+                split_apply_combine(
+                    lambda x: flatten_dict(x),
+                    lambda x: (x["point_id"], x["measurement_start_utc"]),
+                    source_data_dicts,
+                )
             )
-            index_names = self.feature_index_names
+        )
+        return wide_pd
 
-        source_data_index = source_data.set_index(index_names)
+    @db_query(model=StaticFeatureTimeSpecies)
+    def get_static_features(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        features: List[FeatureNames],
+        source: Source,
+        point_ids: List[str],
+        species: Optional[List[Species]] = None,
+    ) -> pd.DateFrame:
+        """
+        Query the database for static features
+            and then cross join with the datetime range and
+            species requested.
+        """
 
-        if not set(source_data_index.columns) == set(self.column_names):
-            raise AttributeError("Wrong column names")
-        if not set(source_data_index.index.names) == set(index_names):
-            raise AttributeError("Wrong index names")
+        static_features = self.select_static_features(
+            point_ids, features, source, output_type="subquery"
+        )
 
-        features_df = pd.pivot_table(
-            source_data, index=index_names, columns="feature_name", aggfunc=get_val,
-        ).reset_index()
-        flattend_features_df = self.flatten_column_names(features_df)
-        flattend_features_df["epoch"] = flattend_features_df[
-            "measurement_start_utc"
-        ].apply(lambda x: x.timestamp())
+        static_features_expand = self.__expand_time_species(
+            static_features, start_date, end_date, species
+        )
 
-        # If sensor readings then make species a columns
-        if with_sensor_readings:
+        return static_features_expand
 
-            index_cols = [
-                col
-                for col in flattend_features_df.columns
-                if col not in ("species_code", "value")
-            ]
-
-            return pd.pivot_table(
-                flattend_features_df,
-                index=index_cols,
-                columns="species_code",
-                values="value",
-                aggfunc=get_val,
-            ).reset_index()
-
-        return flattend_features_df
-
-    def download_training_config_data(
-        self, full_config: FullDataConfig
-    ) -> Dict[Source, pd.DateFrame]:
-        """Download all input data specified in a validated full config file"""
-
-        data_output: Dict[Source, pd.DateFrame] = {}
-        for source in full_config.train_sources:
-
-            train_end_date = full_config.train_end_date
-            if source == Source.satellite:
-                train_end_date = full_config.pred_end_date
-
-            data_output[source] = self.download_source_data(
-                with_sensor_readings=True,
-                start_date=full_config.train_start_date,
-                end_date=train_end_date,
-                species=full_config.species,
-                point_ids=full_config.train_interest_points[source],
-                features=full_config.features,
-                source=source,
-            )
-        return data_output
-
-    def download_prediction_config_data(
-        self, full_config: FullDataConfig, with_sensor_readings: bool = False,
-    ) -> Dict[Source, pd.DataFrame]:
-        """Download prediction data"""
-        data_output: Dict[Source, pd.DateFrame] = {}
-
-        for source in full_config.pred_sources:
-
-            data_output[source] = self.download_source_data(
-                with_sensor_readings=with_sensor_readings,
-                start_date=full_config.pred_start_date,
-                end_date=full_config.pred_end_date,
-                species=full_config.species,
-                point_ids=full_config.pred_interest_points[source],
-                features=full_config.features,
-                source=source,
-            )
-        return data_output
-
-    @db_query(StaticFeatureSchema)
+    @db_query(StaticFeatureLocSchema)
     def select_static_features(
         self, point_ids: List[str], features: List[FeatureNames], source: Source
     ):
@@ -425,7 +414,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         Return static features from the database for a list of point ids
             for a particular source.
         If point ids are not of the correct source they will not be returned
-        Ensures that we always get all point id rows, even if they are not in the database 
+        Ensures that we always get all point id rows, even if they are not in the database
             (all other columns will be null), by doing an outer join
 
         Args:
@@ -448,7 +437,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 Values(
                     [column("feature_name", String),],
                     *[(feature.value,) for feature in features],
-                    alias_name="point_ids",
+                    alias_name="features",
                 )
             ).subquery()
 
@@ -456,11 +445,13 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 point_id_sq, feature_sq
             ).subquery()
 
+            london_boundary = self.query_london_boundary(output_type="subquery")
+
             static_features_with_loc_sq = (
                 session.query(
                     StaticFeature.point_id,
                     StaticFeature.feature_name,
-                    StaticFeature.feature_source,
+                    MetaPoint.source,
                     StaticFeature.value_1000,
                     StaticFeature.value_500,
                     StaticFeature.value_200,
@@ -468,6 +459,9 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                     StaticFeature.value_10,
                     func.ST_X(MetaPoint.location).label("lon"),
                     func.ST_Y(MetaPoint.location).label("lat"),
+                    func.ST_Within(MetaPoint.location, london_boundary.c.geom).label(
+                        "in_london"
+                    ),
                 )
                 .join(MetaPoint, MetaPoint.id == StaticFeature.point_id, isouter=True,)
                 .filter(
@@ -479,14 +473,17 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
 
             return session.query(
-                point_id_feature_cross_join_sq.c.point_id,
+                cast(point_id_feature_cross_join_sq.c.point_id, UUID).label("point_id"),
                 point_id_feature_cross_join_sq.c.feature_name,
-                static_features_with_loc_sq.c.feature_source,
+                static_features_with_loc_sq.c.source,
                 static_features_with_loc_sq.c.value_1000,
                 static_features_with_loc_sq.c.value_500,
                 static_features_with_loc_sq.c.value_200,
                 static_features_with_loc_sq.c.value_100,
                 static_features_with_loc_sq.c.value_10,
+                static_features_with_loc_sq.c.lon,
+                static_features_with_loc_sq.c.lat,
+                static_features_with_loc_sq.c.in_london,
             ).join(
                 static_features_with_loc_sq,
                 and_(
@@ -501,59 +498,6 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 ),
                 isouter=True,
             )
-
-    @db_query()
-    def get_sensor_readings(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        sources: List[Source],
-        species: List[Species],
-    ):
-        """Get sensor readings for the sources between the start_date(inclusive) and end_date"""
-
-        self.logger.debug(
-            "Getting sensor readings for sources: %s, species: %s, from %s (inclusive) to %s (exclusive)",
-            sources,
-            species,
-            start_date,
-            end_date,
-        )
-
-        sensor_dfs = []
-        if "laqn" in sources:
-            laqn_sensor_data = self.get_laqn_readings(
-                start_date, end_date, output_type="df"
-            )
-            sensor_dfs.append(laqn_sensor_data)
-            if laqn_sensor_data.shape[0] == 0:
-                raise AttributeError(
-                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates"
-                )
-
-        if "aqe" in sources:
-            aqe_sensor_data = self.get_aqe_readings(
-                start_date, end_date, output_type="df"
-            )
-            sensor_dfs.append(aqe_sensor_data)
-            if aqe_sensor_data.shape[0] == 0:
-                raise AttributeError(
-                    "No laqn sensor data was retrieved from the database. Check data exists for the requested dates"
-                )
-
-        sensor_df = pd.concat(sensor_dfs, axis=0)
-
-        sensor_df["point_id"] = sensor_df["point_id"].astype(str)
-        sensor_df["epoch"] = sensor_df["measurement_start_utc"].apply(
-            lambda x: x.timestamp()
-        )
-        sensor_df = sensor_df.pivot_table(
-            index=["point_id", "source", "measurement_start_utc", "epoch"],
-            columns=["species_code"],
-            values="value",
-        )
-
-        return sensor_df[species].reset_index()
 
     @db_query()
     def __expand_time_species(
@@ -590,82 +534,8 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
             return session.query(*cols)
 
-    @db_query(model=StaticFeatureTimeSpecies)
-    def get_static_features(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        features: List[FeatureNames],
-        source: Source,
-        point_ids: List[str],
-        species: Optional[List[Species]] = None,
-    ) -> pd.DateFrame:
-        """
-        Query the database for static features
-        """
-
-        static_features = self.select_static_features(
-            point_ids, features, source, output_type="subquery"
-        )
-
-        static_features_expand = self.__expand_time_species(
-            static_features, start_date, end_date, species
-        )
-
-        return static_features_expand
-
-    @db_query()
-    def join_features_to_sensors(
-        self, static_features: Alias, sensor_readings: Alias, source: Source,
-    ):
-
-        columns = [
-            static_features.c.point_id,
-            static_features.c.measurement_start_utc,
-            static_features.c.feature_name,
-            static_features.c.value_1000,
-            static_features.c.value_500,
-            static_features.c.value_200,
-            static_features.c.value_100,
-            static_features.c.value_10,
-            static_features.c.lat,
-            static_features.c.lon,
-            sensor_readings.c.species_code,
-            sensor_readings.c.value,
-        ]
-
-        if source == Source.satellite:
-            columns.append(sensor_readings.c.box_id)
-
-        with self.dbcnxn.open_session() as session:
-
-            static_with_sensor_readings = (
-                session.query(*columns)
-                .join(
-                    sensor_readings,
-                    (static_features.c.point_id == sensor_readings.c.point_id)
-                    & (
-                        static_features.c.measurement_start_utc
-                        == sensor_readings.c.measurement_start_utc
-                    )
-                    & (
-                        static_features.c.species_code == sensor_readings.c.species_code
-                    ),
-                    isouter=True,
-                )
-                .filter(static_features.c.source == source.value)
-                .order_by(
-                    static_features.c.point_id,
-                    static_features.c.feature_name,
-                    static_features.c.measurement_start_utc,
-                    sensor_readings.c.species_code,
-                )
-            )
-
-            return static_with_sensor_readings
-
-    @db_query()
-    def get_training_data_inputs(
+    @db_query(StaticFeaturesWithSensors)
+    def get_static_with_sensors(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -674,16 +544,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         features: List[FeatureNames],
         source: Source,
     ):
-        """Query the database to get inputs for model fitting."""
-
-        self.logger.info(
-            "Loading training data for species: %s from sources: %s",
-            [s.value for s in species],
-            source.value,
-        )
-        self.logger.info(
-            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
-        )
+        """Get static features with sensor readings joined"""
 
         # Get sensor readings and summary of available data from start_date (inclusive) to end_date
         static_features = self.get_static_features(
@@ -709,56 +570,57 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 start_date, end_date, species, output_type="subquery"
             )
 
-        # static_with_sensors = self.join_features_to_sensors(
-        #     static_features, sensor_readings, source, output_type="sql"
-        # )
+        return self.join_features_to_sensors(static_features, sensor_readings, source,)
 
-        return self.join_features_to_sensors(
-            static_features, sensor_readings, source, output_type="query",
-        )
-
-    @db_query()
-    def get_prediction_data_inputs(
-        self,
-        start_date: datetime,
-        end_date: datetime,
-        point_ids: List[str],
-        features: List[FeatureNames],
-        source: Source,
+    @db_query(StaticFeaturesWithSensors)
+    def join_features_to_sensors(
+        self, static_features: Alias, sensor_readings: Alias, source: Source,
     ):
-        """Query the database to get inputs for model fitting."""
+        """Join sensor readings and static features"""
+        columns = [
+            static_features.c.point_id,
+            static_features.c.measurement_start_utc,
+            static_features.c.feature_name,
+            static_features.c.source,
+            static_features.c.value_1000,
+            static_features.c.value_500,
+            static_features.c.value_200,
+            static_features.c.value_100,
+            static_features.c.value_10,
+            static_features.c.lat,
+            static_features.c.lon,
+            static_features.c.in_london,
+            static_features.c.species_code,
+            sensor_readings.c.value,
+        ]
 
-        self.logger.info(
-            "Loading prediction data for source: %s", source.value,
-        )
-        self.logger.info(
-            "Loading data from %s (inclusive) to %s (exclusive)", start_date, end_date,
-        )
-
-        # Get sensor readings and summary of available data from start_date (inclusive) to end_date
-        static_features = self.get_static_features(
-            start_date, end_date, features, source, point_ids, output_type="subquery"
-        )
+        if source == Source.satellite:
+            columns.append(sensor_readings.c.box_id)
 
         with self.dbcnxn.open_session() as session:
 
-            return (
-                session.query(
-                    static_features.c.point_id,
-                    static_features.c.measurement_start_utc,
-                    static_features.c.feature_name,
-                    static_features.c.value_1000,
-                    static_features.c.value_500,
-                    static_features.c.value_200,
-                    static_features.c.value_100,
-                    static_features.c.value_10,
-                    static_features.c.lat,
-                    static_features.c.lon,
+            static_with_sensor_readings = (
+                session.query(*columns)
+                .join(
+                    sensor_readings,
+                    and_(
+                        and_(
+                            static_features.c.point_id == sensor_readings.c.point_id,
+                            static_features.c.measurement_start_utc
+                            == sensor_readings.c.measurement_start_utc,
+                        ),
+                        static_features.c.species_code
+                        == sensor_readings.c.species_code,
+                    ),
+                    isouter=True,
                 )
                 .filter(static_features.c.source == source.value)
                 .order_by(
                     static_features.c.point_id,
                     static_features.c.feature_name,
                     static_features.c.measurement_start_utc,
+                    sensor_readings.c.species_code,
                 )
             )
+
+            return static_with_sensor_readings
