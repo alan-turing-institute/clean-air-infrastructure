@@ -19,11 +19,16 @@ from ...databases.queries import (
     get_jamcam_hourly,
 )
 from ...types import DetectionClass
-import secrets
+
+from passlib.apache import HtpasswdFile
+
+import logging
 
 router = APIRouter()
 
 security = HTTPBasic()
+
+logger = logging.getLogger("fastapi")
 
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
@@ -70,9 +75,10 @@ def common_jamcam_params(
     }
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = secrets.compare_digest(credentials.username, "moose")
-    correct_password = secrets.compare_digest(credentials.password, "swordfish")
-    if not (correct_username and correct_password):
+    ht = HtpasswdFile("test.htpasswd")
+    correct_username_and_password = ht.check_password(credentials.username, credentials.password)
+
+    if not (correct_username_and_password):
         raise HTTPException(
             401,
             detail = "Incorrect username or password",
@@ -87,6 +93,7 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
 )
 def camera_info(username: str = Depends(get_current_username),) -> Response:
     "Get camera info"
+    logger.info("Authenticated(?) camera info")
     return get_jamcam_info()
 
 
