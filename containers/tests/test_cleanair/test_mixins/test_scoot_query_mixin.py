@@ -38,9 +38,9 @@ def test_scoot_detectors(scoot_query: ScootQueryMixin) -> None:
 
     # finally check that we can filter by borough
     borough_df = scoot_query.scoot_detectors(
-        borough=Borough.westminster, output_type="df",
+        borough=Borough.westminster, limit=limit, offset=offset, output_type="df",
     )
-    assert len(borough_df) > 0  # TODO how many detectors in Westminster?
+    assert len(borough_df) == limit
 
 
 def test_scoot_readings(
