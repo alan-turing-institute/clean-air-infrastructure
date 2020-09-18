@@ -33,9 +33,22 @@ class ScootDataset(DBReader, ScootQueryMixin):
         if secretfile:
             # load a database reader super class
             super().__init__(secretfile=secretfile, **kwargs)
+
+            # load detectors and locations
+            config_dict = self.data_config.dict()
+            detectors_df = self.scoot_detectors(
+                detectors=config_dict.get("detectors"),
+                limit=config_dict.get("limit"),
+                offset=config_dict.get("offset"),
+                output_type="df",
+            )
             # load scoot from the data config
-            scoot_df = self.scoot_readings(**self.data_config.dict(), output_type="df")
-            self.logger.debug("%s readings from %s detectors loaded from database.", len(scoot_df), len(list(scoot_df.detector_id.unique())))
+            scoot_df = self.scoot_readings(
+                detectors=detectors_df.detector_id.unique(),
+                start=self.data_config.start,
+                upto=self.data_config.upto,
+                output_type="df"
+            )
             # assign list of detectors if it doesn't exist already
             if not self.data_config.detectors:
                 self._data_config.detectors = list(scoot_df.detector_id.unique())

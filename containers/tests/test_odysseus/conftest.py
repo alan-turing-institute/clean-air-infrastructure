@@ -55,7 +55,7 @@ def scoot_offset() -> int:
 @pytest.fixture(scope="function")
 def scoot_limit() -> int:
     """Limit the number of detectors to this number."""
-    return 1
+    return 100
 
 
 @pytest.fixture(scope="function")
@@ -101,12 +101,14 @@ def scoot_writer(
 @pytest.fixture(scope="function")
 def detectors(scoot_writer: ScootGenerator) -> List[str]:
     """Get the list of detectors the scoot writer creates readings for."""
-    return scoot_writer.scoot_detectors(
+    detector_list = scoot_writer.scoot_detectors(
         offset=scoot_writer.offset,
         limit=scoot_writer.limit,
-        borough=scoot_writer.borough.value,
+        borough=scoot_writer.borough,
         output_type="df",
     )["detector_id"].to_list()
+    assert len(detector_list) == scoot_writer.limit
+    return detector_list
 
 
 @pytest.fixture(scope="function")

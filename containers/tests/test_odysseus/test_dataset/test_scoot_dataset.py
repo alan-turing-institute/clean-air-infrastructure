@@ -13,6 +13,7 @@ def validate_scoot_dataset(dataset: ScootDataset) -> None:
         as_datetime(dataset.data_config.upto) - as_datetime(dataset.data_config.start)
     ).days * 24
     ndetectors = len(dataset.data_config.detectors)
+    assert ndetectors == len(dataset.dataframe.detector_id.unique())
     assert nhours * ndetectors == len(dataset.dataframe)
 
 
@@ -49,6 +50,20 @@ def test_scoot_dataset_init(
     assert detector_id not in dataset_from_df.dataframe.detector_id.to_list()
     # run other validation checks
     validate_scoot_dataset(dataset_from_df)
+
+    # check what happens when the offset and limit are passed instead of detectors
+    limit = scoot_writer.limit / 2
+    offset = scoot_writer.offset
+    limit_config = ScootConfig(
+        limit=limit,
+        offset=offset,
+        start=scoot_config.start,
+        upto=scoot_config.upto,
+    )
+    limit_dataset = ScootDataset(
+        limit_config, scoot_preprocessing, secretfile=secretfile, connection=connection
+    )
+    validate_scoot_dataset(limit_dataset)
 
 
 def test_scoot_dataset_shapes(scoot_dataset: ScootDataset) -> None:
