@@ -101,7 +101,7 @@ class StaticFeaturesWithSensors(StaticFeatureTimeSpecies):
             "Helper function for flattening values"
             if "value_" in key:
                 return (f"{key}_{self.feature_name.value}", value)
-            elif key == "species_code":
+            if key == "species_code":
                 return (f"{self.species_code}", self.value)
             return (key, value)
 
