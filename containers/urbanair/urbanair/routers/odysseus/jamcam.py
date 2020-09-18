@@ -3,7 +3,6 @@
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 from ...databases import get_db, all_or_404
 from ...databases.schemas.jamcam import (
@@ -25,8 +24,6 @@ from passlib.apache import HtpasswdFile
 import logging
 
 router = APIRouter()
-
-security = HTTPBasic()
 
 logger = logging.getLogger("fastapi")
 
@@ -74,24 +71,12 @@ def common_jamcam_params(
         "endtime": endtime,
     }
 
-def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    ht = HtpasswdFile("test.htpasswd")
-    correct_username_and_password = ht.check_password(credentials.username, credentials.password)
-
-    if not (correct_username_and_password):
-        raise HTTPException(
-            401,
-            detail = "Incorrect username or password",
-            headers = {"WWW-Authenticate": "Basic"},
-            )
-    return credentials.username
-
 @router.get(
     "/camera_info",
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
 )
-def camera_info(username: str = Depends(get_current_username),) -> Response:
+def camera_info() -> Response:
     "Get camera info"
     logger.info("Authenticated(?) camera info")
     return get_jamcam_info()

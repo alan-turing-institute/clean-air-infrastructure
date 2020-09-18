@@ -1,14 +1,18 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from passlib.apache import HtpasswdFile
 from .routers.odysseus import static, jamcam
 from .config import get_settings
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
+
+security = HTTPBasic()
 
 app = FastAPI(
     title="Odysseus API",
@@ -35,3 +39,20 @@ app.mount(
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
+
+def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
+    ht = HtpasswdFile("test.htpasswd")
+    correct_username_and_password = ht.check_password(credentials.username, credentials.password)
+
+    if not (correct_username_and_password):
+        raise HTTPException(
+            401,
+            detail = "Incorrect username or password",
+            headers = {"WWW-Authenticate": "Basic"},
+            )
+    return credentials.username
+
+@app.middleware("http")
+async def authenticate(request: Request, call_next, username: str = Depends(get_current_username),) -> Response:
+    logging.info("Calling authentication middleware")
+    return await call_next(request)
