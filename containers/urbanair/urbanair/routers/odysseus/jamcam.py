@@ -20,6 +20,8 @@ from ...databases.queries import (
 from ...types import DetectionClass
 
 from passlib.apache import HtpasswdFile
+from fastapi_contrib.permissions import PermissionsDependency
+from fastapi_contrib.auth.permissions import IsAuthenticated
 
 import logging
 
@@ -75,6 +77,7 @@ def common_jamcam_params(
     "/camera_info",
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
+    dependencies=[Depends(PermissionsDependency([IsAuthenticated]))]
 )
 def camera_info() -> Response:
     "Get camera info"

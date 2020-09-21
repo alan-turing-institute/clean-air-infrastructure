@@ -10,6 +10,14 @@ from passlib.apache import HtpasswdFile
 from .routers.odysseus import static, jamcam
 from .config import get_settings
 
+from starlette.authentication import (
+    AuthenticationBackend, AuthenticationError, SimpleUser,
+    UnauthenticatedUser, AuthCredentials
+    )
+from fastapi_contrib.auth.middlewares import AuthenticationMiddleware
+import binascii
+import base64
+
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 security = HTTPBasic()
@@ -52,7 +60,33 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
             )
     return credentials.username
 
-@app.middleware("http")
-async def authenticate(request: Request, call_next, username: str = Depends(get_current_username),) -> Response:
-    logging.info("Calling authentication middleware")
-    return await call_next(request)
+class BasicAuthBackend(AuthenticationBackend):
+    async def authenticate(self, request):
+        if "Authorization" not in request.headers:
+            logging.info("Authorization not in request headers")
+            return
+
+        logging.info("Authorization is in request headers")
+
+        auth = request.headers["Authorization"]
+        try:
+            scheme, credentials = auth.split()
+            if scheme.lower() != "basic":
+                return
+            decoded = base64.b64decode(credentials).decode("ascii")
+        except (ValueError, UnicodeDecodeError, binascii.Error) as e:
+            raise AuthenticationError("Invalid basic authentication credentials")
+        username, _, password = decoded.partition(":")
+        logging.info(f"Supplied username={username}, password={password}")
+
+        # Verify
+        ht = HtpasswdFile("test.htpasswd")
+        correct_username_and_password = ht.check_password(username, password)
+        if not (correct_username_and_password):
+            raise AuthenticationError("Incorrect username or password")
+        return AuthCredentials(["authenticated"]), SimpleUser(username)
+
+# Add the authentication middleware on startup
+@app.on_event("startup")
+async def startup():
+    app.add_middleware(AuthenticationMiddleware, backend=BasicAuthBackend())
