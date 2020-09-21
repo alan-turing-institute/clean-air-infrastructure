@@ -19,3 +19,13 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return a settings object"""
     return Settings()
+
+
+class AzureApp(BaseSettings):
+    """
+    Setting configuration for Azure applications
+    """
+
+    app_id: str
+    tenant_id: str
+    azure_directory: str
