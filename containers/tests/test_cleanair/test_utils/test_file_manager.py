@@ -9,11 +9,6 @@ import pandas as pd
 from cleanair.types import Source
 from cleanair.utils import FileManager
 
-# turn off tensorflow warnings for gpflow
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
-
 if TYPE_CHECKING:
     from pathlib import Path
     from cleanair.types import (
