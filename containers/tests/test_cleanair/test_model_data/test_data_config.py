@@ -40,7 +40,7 @@ class TestDataConfig:
             pytest.fail(e)
 
     @pytest.mark.parametrize(
-        "trainupto,train_sources,pred_sources,species,features,buffer_sizes,norm_by,model_type",
+        "trainupto,train_sources,pred_sources,species,features,buffer_sizes,norm_by",
         [
             # Uses an invalid source
             pytest.param(
@@ -51,7 +51,6 @@ class TestDataConfig:
                 [i.value for i in FeatureNames],
                 [i.value for i in FeatureBufferSize],
                 "not_a_source",
-                "svgp",
             ),
             # Species rather than source in pred source
             pytest.param(
@@ -62,7 +61,6 @@ class TestDataConfig:
                 [i.value for i in FeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
-                "svgp",
             ),
         ],
     )
@@ -76,7 +74,6 @@ class TestDataConfig:
         features,
         buffer_sizes,
         norm_by,
-        model_type,
     ):
         "Test parameter validation"
 
@@ -91,7 +88,6 @@ class TestDataConfig:
                 features,
                 buffer_sizes,
                 norm_by,
-                model_type,
             )
 
     def test_validation_static_features(

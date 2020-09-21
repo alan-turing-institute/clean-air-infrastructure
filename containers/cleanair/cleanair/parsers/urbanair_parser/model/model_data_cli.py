@@ -128,7 +128,6 @@ def generate_config(
         pred_sources=pred_source,
         species=species,
         norm_by=norm_by,
-        model_type="svgp",
         features=features,
         buffer_sizes=feature_buffer,
     )

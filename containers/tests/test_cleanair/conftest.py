@@ -70,7 +70,6 @@ def valid_config(dataset_start_date, dataset_end_date):
             ],
             "buffer_sizes": ["1000", "500"],
             "norm_by": "laqn",
-            "model_type": "svgp",
         }
     )
 
