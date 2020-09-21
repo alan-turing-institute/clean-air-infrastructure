@@ -312,30 +312,17 @@ class TestModelData:
             # There's a lot of data in satellite. So just test a subset
             data = data[:5000]
 
-        # print(
-        #     list(
-        #         map(
-        #             lambda v: lookup_sensor_reading(
-        #                 v.point_id,
-        #                 v.measurement_start_utc.replace(tzinfo=None),
-        #                 v.species_code,
-        #             )
-        #             == v.value,
-        #             data,
-        #         )
-        #     )
-        # )
-        assert all(
-                map(
-                    lambda v: lookup_sensor_reading(
-                        v.point_id,
-                        v.measurement_start_utc.replace(tzinfo=None),
-                        v.species_code,
-                    )
-                    == v.value,
-                    data,
+        
+        print(data[:10])
+        assert all(map(lambda v: lookup_sensor_reading(
+                            v.point_id,
+                            v.measurement_start_utc.replace(tzinfo=None),
+                            v.species_code,
+                        )
+                        == v.value,
+                        data,
+                        )
                 )
-            )
         
 
 
