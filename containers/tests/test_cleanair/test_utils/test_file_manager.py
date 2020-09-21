@@ -10,11 +10,6 @@ from cleanair.types import ModelName
 from cleanair.utils import FileManager
 from cleanair.utils.tf1 import load_gpflow1_model_from_file, save_gpflow1_model_to_file
 
-# turn off tensorflow warnings for gpflow
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
-
 if TYPE_CHECKING:
     from pathlib import Path
     from cleanair.types import (

@@ -57,7 +57,6 @@ class ModelConfig(
         features: List[FeatureNames],
         buffer_sizes: List[FeatureBufferSize],
         norm_by: str,
-        model_type: str,
     ) -> DataConfig:
         """Return a configuration class
         """
@@ -79,7 +78,6 @@ class ModelConfig(
             features=features,
             buffer_sizes=buffer_sizes,
             norm_by=norm_by,
-            model_type=model_type,
             include_prediction_y=False,
         )
 
