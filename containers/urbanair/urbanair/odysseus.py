@@ -48,10 +48,7 @@ app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
 class BasicAuthBackend(AuthenticationBackend):
     async def authenticate(self, request: Request,):
         if "Authorization" not in request.headers:
-            logging.info("Authorization not in request headers")
             return
-
-        logging.info("Authorization is in request headers")
 
         auth = request.headers["Authorization"]
         try:
@@ -62,7 +59,6 @@ class BasicAuthBackend(AuthenticationBackend):
         except (ValueError, UnicodeDecodeError, binascii.Error) as e:
             raise AuthenticationError("Invalid basic authentication credentials")
         username, _, password = decoded.partition(":")
-        logging.info(f"Supplied username={username}, password={password}")
 
         # Verify
         ht = HtpasswdFile("test.htpasswd")
