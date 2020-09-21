@@ -1,8 +1,7 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, overload, Callable
+from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
-from functools import partial
 from itertools import groupby
 import pandas as pd
 import numpy as np
@@ -556,7 +555,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         else:
             raise ValueError(
-                "Source must be one of %s", [Source.laqn, Source.aqe, Source.satellite]
+                f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
             )
 
         return self.join_features_to_sensors(static_features, sensor_readings, source,)
