@@ -19,17 +19,12 @@ from ...databases.queries import (
 )
 from ...types import DetectionClass
 
-from passlib.apache import HtpasswdFile
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi_contrib.permissions import PermissionsDependency
 from fastapi_contrib.auth.permissions import IsAuthenticated
 
-import logging
-
 router = APIRouter()
 security = HTTPBasic()
-
-logger = logging.getLogger("fastapi")
 
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
@@ -83,7 +78,6 @@ def common_jamcam_params(
 )
 def camera_info(credentials: HTTPBasicCredentials = Depends(security)) -> Response:
     "Get camera info"
-    logger.info("Authenticated(?) camera info")
     return get_jamcam_info()
 
 

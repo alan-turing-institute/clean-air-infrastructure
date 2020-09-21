@@ -3,7 +3,6 @@ import os
 import logging
 from fastapi import FastAPI, Request, Depends, Response, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from passlib.apache import HtpasswdFile
@@ -19,8 +18,6 @@ import binascii
 import base64
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
-
-security = HTTPBasic()
 
 app = FastAPI(
     title="Odysseus API",
@@ -47,18 +44,6 @@ app.mount(
 
 app.include_router(static.router)
 app.include_router(jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"])
-
-def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    ht = HtpasswdFile("test.htpasswd")
-    correct_username_and_password = ht.check_password(credentials.username, credentials.password)
-
-    if not (correct_username_and_password):
-        raise HTTPException(
-            401,
-            detail = "Incorrect username or password",
-            headers = {"WWW-Authenticate": "Basic"},
-            )
-    return credentials.username
 
 class BasicAuthBackend(AuthenticationBackend):
     async def authenticate(self, request: Request,):
