@@ -268,11 +268,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     def __init__(self, **kwargs):
         """
-        Initialise the ModelData object with a config file
-        args:
-            config: A config dictionary
-            config_dir: A directory containing config files
-                        (created by ModelData.save_config_state())
+        Initialise a ModelData class
         """
         # Initialise parent classes
         super().__init__(**kwargs)
