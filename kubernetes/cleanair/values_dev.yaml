@@ -76,7 +76,7 @@ cronjobs:
         repository: cleanair
         imagePullPolicy: Never
         tag: local
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "1"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--nhours", "5"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"

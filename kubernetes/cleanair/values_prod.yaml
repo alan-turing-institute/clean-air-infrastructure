@@ -125,7 +125,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "2"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--nhours", "5"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
