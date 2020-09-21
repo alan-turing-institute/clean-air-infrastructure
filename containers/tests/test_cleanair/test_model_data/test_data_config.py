@@ -34,7 +34,6 @@ class TestDataConfig:
                 [i.value for i in FeatureNames],
                 [i.value for i in FeatureBufferSize],
                 Source.laqn,
-                "svgp",
             )
         except ValueError as e:
             pytest.fail(e)
