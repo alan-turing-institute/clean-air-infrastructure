@@ -14,17 +14,15 @@ from .dataset_types import (
     FeaturesDict,
     TargetDict,
     NDArrayTuple,
-    BaseConfig,
-    FullConfig,
+    FullDataConfig,
     InterestPointDict,
 )
 from .model_types import ModelParams
 
 
 __all__ = [
-    "BaseConfig",
-    "FullConfig",
     "DataConfig",
+    "FullDataConfig",
     "DatasetDict",
     "FeaturesDict",
     "FeatureBufferSize",

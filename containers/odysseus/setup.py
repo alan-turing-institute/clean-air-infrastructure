@@ -21,4 +21,5 @@ setuptools.setup(
         "tensorflow_probability==0.9",
     ],
     python_requires=">=3.7",
+    scripts=["cli/odysseus"],
 )

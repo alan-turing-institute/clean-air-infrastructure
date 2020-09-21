@@ -3,19 +3,27 @@
 import os
 from fastapi import APIRouter, Request, Response
 from fastapi.templating import Jinja2Templates
+from starlette.responses import RedirectResponse
+
 
 router = APIRouter()
 
 templates = Jinja2Templates(
     directory=os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "..", "templates"
+        os.path.dirname(os.path.abspath(__file__)), "..", "..", "templates"
     )
 )
 
 
 @router.get("/", include_in_schema=False)
-async def home(request: Request) -> Response:
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index(request: Request) -> RedirectResponse:
+
+    return RedirectResponse(url=request.url_for("jamcam_map"))
+
+
+@router.get("/usage", include_in_schema=False)
+async def usage(request: Request) -> Response:
+    return templates.TemplateResponse("usage.html", {"request": request})
 
 
 @router.get("/map", include_in_schema=False)
