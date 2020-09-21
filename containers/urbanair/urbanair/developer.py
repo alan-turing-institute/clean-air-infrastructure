@@ -1,5 +1,6 @@
 """UrbanAir API"""
 import json
+from typing import List
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -17,19 +18,19 @@ azure_directory = azapp.azure_directory
 
 security = HTTPBasic()
 
-def HTTPException401(detail):
+def HTTPException401(detail: str):
     return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
             headers={"WWW-Authenticate": "Basic"},
         )
 
-def check_issuer(issuer):
+def check_issuer(issuer: str):
     if issuer != f"https://sts.windows.net/{tenant_id}/":
         raise HTTPException401(f"Unrecognised issuer {issuer} in token")
     return issuer
 
-def get_key(issuer, key_id):
+def get_key(issuer: str, key_id: str):
     keys = requests.get(f"{issuer}/discovery/keys").json()['keys']
     decode_key = next(filter(lambda x: x['kid'] == key_id, keys), None)
 
@@ -37,7 +38,7 @@ def get_key(issuer, key_id):
         raise HTTPException401("Unrecognised key in token")
     return decode_key
 
-def check_roles(roles):
+def check_roles(roles: List):
     if roles is None or 'premium_user_access' not in roles:
         raise HTTPException401("Unauthorised access")
 
