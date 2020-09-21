@@ -564,6 +564,10 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             sensor_readings = self.get_satellite_readings(
                 start_date, end_date, species, output_type="subquery"
             )
+        else:
+            raise ValueError(
+                "Source must be one of %s", [Source.laqn, Source.aqe, Source.satellite]
+            )
 
         return self.join_features_to_sensors(static_features, sensor_readings, source,)
 
