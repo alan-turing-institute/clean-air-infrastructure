@@ -61,7 +61,7 @@ def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
     return credentials.username
 
 class BasicAuthBackend(AuthenticationBackend):
-    async def authenticate(self, request):
+    async def authenticate(self, request: Request,):
         if "Authorization" not in request.headers:
             logging.info("Authorization not in request headers")
             return

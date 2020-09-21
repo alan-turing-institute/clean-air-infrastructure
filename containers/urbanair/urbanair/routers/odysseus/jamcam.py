@@ -20,12 +20,14 @@ from ...databases.queries import (
 from ...types import DetectionClass
 
 from passlib.apache import HtpasswdFile
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi_contrib.permissions import PermissionsDependency
 from fastapi_contrib.auth.permissions import IsAuthenticated
 
 import logging
 
 router = APIRouter()
+security = HTTPBasic()
 
 logger = logging.getLogger("fastapi")
 
@@ -79,7 +81,7 @@ def common_jamcam_params(
     response_model=JamCamFeatureCollection,
     dependencies=[Depends(PermissionsDependency([IsAuthenticated]))]
 )
-def camera_info() -> Response:
+def camera_info(credentials: HTTPBasicCredentials = Depends(security)) -> Response:
     "Get camera info"
     logger.info("Authenticated(?) camera info")
     return get_jamcam_info()
