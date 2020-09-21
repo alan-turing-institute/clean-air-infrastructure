@@ -41,16 +41,6 @@ ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
 
 
-def get_val(x):
-    """Return x if it has length=1"""
-    if len(x) == 1:
-        return x
-    raise ValueError(
-        """Pandas pivot table trying to return an array of values.
-                        Here it must only return a single value"""
-    )
-
-
 def flatten_dict(dict_list):
     "Concatenate a list of dictionaries into a single dictionary"
     return {k: v for d in dict_list for k, v in d.items()}
