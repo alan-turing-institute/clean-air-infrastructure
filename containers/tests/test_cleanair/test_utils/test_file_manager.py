@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import os
 import numpy as np
 import tensorflow as tf
+import gpflow
 import pandas as pd
 from cleanair.types import ModelName
 from cleanair.utils import FileManager
