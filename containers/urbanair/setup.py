@@ -17,6 +17,7 @@ setuptools.setup(
     install_requires=[
         "cleanair",
         "fastapi[all]==0.60.1",
+        "fastapi_contrib==0.2.8",
         "aiofiles",
         "cachetools",
         "geojson",
