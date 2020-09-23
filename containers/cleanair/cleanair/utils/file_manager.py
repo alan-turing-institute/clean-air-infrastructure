@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Dict, Union, TYPE_CHECKING
+from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
@@ -10,7 +10,10 @@ from ..loggers import get_logger
 from ..types import (
     DataConfig,
     FullDataConfig,
+    ModelName,
+    MRDGPParams,
     Source,
+    SVGPParams,
 )
 
 if TYPE_CHECKING:
@@ -156,3 +159,74 @@ class FileManager:
         )
         result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
         return pd.read_csv(result_fp)
+
+    def load_model(
+        self,
+        load_fn: Callable[[Path], gpflow.models.GPModel],
+        compile_model: bool = True,
+        model_name: str = "model",
+        tf_session: Optional[tf.compat.v1.Session] = None,
+    ) -> gpflow.models.GPModel:
+        """Load a model from the cache.
+
+        Args:
+            load_fn: Loads a gpflow model from a filepath. See `cleanair.utils.tf1.load_gpflow1_model_from_file`.
+
+        Keyword args:
+            compile_model: If true compile the GPflow model.
+            model_name: Name of the model.
+            tf_session: Optional[tf.compat.v1.Session] = None,
+
+        Returns:
+            A gpflow model.
+        """
+        self.logger.info("Loading a model from a file.")
+        # use the load function to get the model from the filepath
+        export_dir = self.input_dir / FileManager.MODEL
+        model = load_fn(
+            export_dir,
+            compile_model=compile_model,
+            model_name=model_name,
+            tf_session=tf_session,
+        )
+        return model
+
+    def save_model(
+        self,
+        model: gpflow.models.GPModel,
+        save_fn: Optional[Callable[[gpflow.models.GPModel, Path], None]],
+        model_name: Optional[str] = "model",
+    ) -> None:
+        """Save a model to file.
+
+        Args:
+            model: A gpflow model.
+            save_fn: A callable function that takes two arguments (model, filepath) and writes the model to a file.
+
+        Keyword args:
+            model_name: Name of the model.
+        """
+        self.logger.info("Saving model to file.")
+        export_dir = self.input_dir / FileManager.MODEL
+        save_fn(model, export_dir, model_name=model_name)
+
+    def load_model_params(
+        self, model_name: ModelName
+    ) -> Union[MRDGPParams, SVGPParams]:
+        """Load the model params from a json file."""
+        self.logger.info("Loading model parameters from a json file for %s", model_name)
+        params_fp = self.input_dir / FileManager.MODEL_PARAMS
+        with open(params_fp, "r") as params_file:
+            params_dict = json.load(params_file)
+        if model_name == ModelName.svgp:
+            return SVGPParams(**params_dict)
+        if model_name == ModelName.mrdgp:
+            return MRDGPParams(**params_dict)
+        raise ValueError("Must pass a valid model name.")
+
+    def save_model_params(self, model_params: BaseModel) -> None:
+        """Load the model params from a json file."""
+        self.logger.info("Saving model params to a json file.")
+        params_fp = self.input_dir / FileManager.MODEL_PARAMS
+        with open(params_fp, "w") as params_file:
+            json.dump(model_params.dict(), params_file, indent=4)
