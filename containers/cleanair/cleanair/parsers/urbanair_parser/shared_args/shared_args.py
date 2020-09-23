@@ -1,5 +1,5 @@
 """Shared CLI arguments"""
-from typing import Dict
+from typing import Dict, List
 import os
 import json
 from enum import Enum
@@ -67,6 +67,10 @@ def NDays_callback(value: int) -> int:
     return value * 24
 
 
+def CommaSeparate_callback(values: str) -> List[str]:
+    "Convert comma-separated string into list"
+    return [item for item in values.split(',') if item]
+
 def CopernicusKey_callback(value: str) -> str:
     "Process CopernicusKey arg"
     if value == "":
@@ -121,7 +125,7 @@ def AWSKey_callback(value: str) -> str:
 
 UpTo = typer.Option(
     "tomorrow",
-    help=f"up to what datetime to process data. Must be iso datetime or in {UP_TO_VALUES}",
+    help=f"up to what datetime to process data. Must be either an ISO datetime or one of {UP_TO_VALUES}",
     callback=UpTo_callback,
     show_default=True,
 )
@@ -129,7 +133,10 @@ UpTo = typer.Option(
 NHours = typer.Option(0, help="Number of hours of data to process", show_default=True)
 
 NDays = typer.Option(
-    ..., help="Number of days of data to process", callback=NDays_callback,
+    0,
+    help="Number of days of data to process",
+    show_default=True,
+    callback=NDays_callback,
 )
 
 CopernicusKey = typer.Option(
@@ -163,6 +170,8 @@ AWSId = typer.Option(
 AWSKey = typer.Option(
     "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
 )
+
+ScootDetectors = typer.Option("", help="Comma-separated string of SCOOT detectors to forecast for  [default: all of them]", callback=CommaSeparate_callback, show_default=False)
 
 Sources = typer.Option(..., help="List sources to process")
 
