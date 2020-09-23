@@ -1,8 +1,7 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple, overload, Callable
+from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
-from functools import partial
 from itertools import groupby
 import pandas as pd
 import numpy as np
@@ -39,16 +38,6 @@ from .schemas import (
 
 ONE_HOUR_INTERVAL = text("interval '1 hour'")
 ONE_DAY_INTERVAL = text("interval '1 day'")
-
-
-def get_val(x):
-    """Return x if it has length=1"""
-    if len(x) == 1:
-        return x
-    raise ValueError(
-        """Pandas pivot table trying to return an array of values.
-                        Here it must only return a single value"""
-    )
 
 
 def flatten_dict(dict_list):
@@ -268,11 +257,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
     def __init__(self, **kwargs):
         """
-        Initialise the ModelData object with a config file
-        args:
-            config: A config dictionary
-            config_dir: A directory containing config files
-                        (created by ModelData.save_config_state())
+        Initialise a ModelData class
         """
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -567,6 +552,10 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         elif source == Source.satellite:
             sensor_readings = self.get_satellite_readings(
                 start_date, end_date, species, output_type="subquery"
+            )
+        else:
+            raise ValueError(
+                f"Source must be one of {[Source.laqn, Source.aqe, Source.satellite]}"
             )
 
         return self.join_features_to_sensors(static_features, sensor_readings, source,)
