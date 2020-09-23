@@ -10,7 +10,15 @@ from ....features import FEATURE_CONFIG
 from ....timestamps import day_to_iso
 from ....types import Source as ValidSources
 
-UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
+UP_TO_VALUES = [
+    "lasthour",
+    "now",
+    "today",
+    "tomorrow",
+    "yesterday",
+    "overmorrow",
+    "thirdmorrow",
+]
 
 # pylint: disable=C0103
 zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))

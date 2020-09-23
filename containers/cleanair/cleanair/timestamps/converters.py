@@ -91,6 +91,16 @@ def day_to_iso(day: str) -> str:
             date.today() + timedelta(days=1), datetime.min.time()
         ).isoformat()
 
+    if day == "overmorrow":
+        return datetime.combine(
+            date.today() + timedelta(days=2), datetime.min.time()
+        ).isoformat()
+
+    if day == "thirdmorrow":
+        return datetime.combine(
+            date.today() + timedelta(days=3), datetime.min.time()
+        ).isoformat()
+
     if day == "yesterday":
         return datetime.combine(
             date.today() - timedelta(days=1), datetime.min.time()
