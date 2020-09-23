@@ -10,7 +10,9 @@ class TestSVGP:
     def test_setup(self, fake_cleanair_dataset):
         pass
 
-    def test_svgp_training(self, svgp_model_params, laqn_training_data, laqn_full_config) -> None:
+    def test_svgp_training(
+        self, svgp_model_params, laqn_training_data, laqn_full_config
+    ) -> None:
         """Test the SVGP trains."""
         model_data = ModelDataExtractor()
         model = SVGP(svgp_model_params)

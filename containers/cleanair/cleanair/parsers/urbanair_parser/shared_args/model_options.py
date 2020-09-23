@@ -13,7 +13,9 @@ Lengthscales = typer.Option(
 LikelihoodVariance = typer.Option(
     0.1, help="Noise variance for the likelihood.", show_default=True,
 )
-KernelType = typer.Option(KernelName.matern32, help="Type of kernel.", show_default=True)
+KernelType = typer.Option(
+    KernelName.matern32, help="Type of kernel.", show_default=True
+)
 KernelVariance = typer.Option(
     1.0, help="Initialising variance of the kernel.", show_default=True
 )
@@ -23,7 +25,9 @@ MinibatchSize = typer.Option(
 NumInducingPoints = typer.Option(
     1000, help="Number of inducing points.", show_default=True
 )
-MaxIter = typer.Option(10000, help="Num iterations of training model", show_default=True,)
+MaxIter = typer.Option(
+    10000, help="Num iterations of training model", show_default=True,
+)
 Refresh = typer.Option(
     default=10, help="Frequency of printing ELBO.", show_default=True
 )

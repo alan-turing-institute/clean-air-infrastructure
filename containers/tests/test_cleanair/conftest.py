@@ -531,6 +531,7 @@ def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
         num_samples_between_layers=10,
     )
 
+
 @pytest.fixture(scope="class")
 def model_config(secretfile, connection_class):
 

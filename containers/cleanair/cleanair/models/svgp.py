@@ -93,9 +93,7 @@ class SVGP(ModelMixin):
         if self.model_params.num_inducing_points > x_array.shape[0]:
             self.model_params.num_inducing_points = x_array.shape[0]
 
-        z_r = kmeans2(
-            x_array, self.model_params.num_inducing_points, minit="points"
-        )[0]
+        z_r = kmeans2(x_array, self.model_params.num_inducing_points, minit="points")[0]
 
         # setup SVGP model
         self.setup_model(x_array, y_array, z_r, x_array.shape[1])
