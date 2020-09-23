@@ -20,7 +20,7 @@ logging.getLogger("fbprophet").setLevel(logging.ERROR)
 class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
     """Traffic forecasting using FB prophet"""
 
-    def __init__(self, forecast_length_hrs=72, detector_ids=None, **kwargs):
+    def __init__(self, forecast_start_time: datetime, forecast_length_hrs: int, detector_ids=None, **kwargs):
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -35,13 +35,17 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+        # Set which detector IDs to use
         self.detector_ids = detector_ids
-        self.forecast_length_hrs = forecast_length_hrs
+        if self.detector_ids:
+            self.logger.warning(
+                "Only forecasting for %s of the available SCOOT detectors",
+                green(len(self.detector_ids)),
+            )
 
-        # The end of the forecast will happen `self.forecast_length_hrs` into the future
-        self.forecast_end_time = datetime.datetime.now().replace(
-            second=0, microsecond=0, minute=0
-        ) + datetime.timedelta(hours=self.forecast_length_hrs)
+        # Set forecast time parameters
+        self.forecast_start_time = forecast_start_time
+        self.forecast_end_time = self.forecast_start_time + datetime.timedelta(hours=forecast_length_hrs)
 
     def scoot_readings(self):
         """Get SCOOT readings between start and end times"""
@@ -70,13 +74,13 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         self.logger.info(
             "Retrieved %s SCOOT readings from %i detectors in %s",
             green(len(df_scoot_readings)),
-            len(self.detector_ids),
+            len(df_scoot_readings["detector_id"].unique()),
             green(duration(start_time, time.time())),
         )
         return df_scoot_readings
 
     def forecasts(self, pool_size=10):
-        """Forecast all features at each detector up until `self.forecast_end_time`"""
+        """Forecast all features at each detector until the forecast end-time"""
         # Get all SCOOT readings within the relevant time period from the database and
         # group them by detector ID
         df_scoot_readings = self.scoot_readings()
@@ -130,7 +134,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                         # Make a copy with a 'cap' column included
                         capped_time_range = time_range.assign(cap=capacity)
                         forecast = model.predict(capped_time_range)[["ds", "yhat"]]
-                except (ValueError, RuntimeError):
+                except (ValueError, RuntimeError, AttributeError):
                     logger.error(
                         "Prophet prediction failed at '%s' for %s. Using zero instead.",
                         detector_id,
@@ -197,7 +201,9 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
     def update_remote_tables(self):
         """Update the database with new Scoot traffic forecasts."""
         self.logger.info(
-            "Preparing to forecast SCOOT up until %s", self.forecast_end_time
+            "Preparing to forecast SCOOT between %s and %s",
+            green(self.forecast_start_time),
+            green(self.forecast_end_time),
         )
         start_time = time.time()
         n_records = 0
@@ -213,7 +219,6 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                 )
 
                 # Add forecasts to the database
-
                 # Commit and override any existing forecasts
                 self.commit_records(
                     forecast_records, on_conflict="overwrite", table=ScootForecast,
