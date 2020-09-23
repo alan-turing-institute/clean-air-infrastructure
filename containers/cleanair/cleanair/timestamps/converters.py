@@ -1,6 +1,7 @@
 """
 Timestamp conversion functions
 """
+from contextlib import suppress
 from datetime import date, datetime, timedelta
 from dateutil import parser
 import pytz
@@ -8,6 +9,8 @@ import pytz
 
 def as_datetime(maybe_dt):
     """Convert an input that might be a datetime into a datetime"""
+    with suppress(ValueError):
+        return day_to_iso(maybe_dt)
     if isinstance(maybe_dt, datetime):
         return maybe_dt
     if isinstance(maybe_dt, date):
