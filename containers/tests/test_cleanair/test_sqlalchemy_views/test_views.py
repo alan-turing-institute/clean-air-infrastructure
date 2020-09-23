@@ -1,4 +1,5 @@
 import pytest
+from cleanair.databases.materialised_views.jamcam_view import JamCamView
 from sqlalchemy import select, func
 from sqlalchemy.exc import ProgrammingError
 from cleanair.databases import (
@@ -88,3 +89,30 @@ def test_materialised_view_not_persisted(secretfile, connection, londonView):
             refresh_materialized_view(session, "jamcam.test_view")
 
             assert "psycopg2.errors.UndefinedTable" in str(error)
+
+
+@pytest.fixture()
+def jamcam_view():
+    return JamCamView
+
+
+def test_jamcam_view(secretfile, connection, jamcam_view):
+
+    db_instance = DBWriter(
+        secretfile=secretfile, connection=connection, initialise_tables=True
+    )
+    db_instance.commit_records(
+        [JamCamVideoStats(id=4232, camera_id="matviewtest", source=1)],
+        on_conflict="ignore",
+        table=JamCamVideoStats,
+    )
+
+    with db_instance.dbcnxn.open_session() as session:
+
+        refresh_materialized_view(session, "jamcam.jamcam_hourly_view")
+
+        output = session.query(jamcam_view)
+
+        result = output.first()
+        assert result.camera_id == "matviewtest"
+
