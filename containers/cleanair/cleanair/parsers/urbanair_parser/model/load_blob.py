@@ -25,7 +25,7 @@ def blob(
         "", help="URL of the Azure account holding the data."
         ),
     target_dir: str = typer.Option(
-        DATA_CACHE, help="Local directory to stor the blob in."
+        DATA_CACHE, help="Local directory to store the blob in."
     ),
 ) -> None:
     """Load a model from blob storage"""
