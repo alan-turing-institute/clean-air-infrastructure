@@ -79,7 +79,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         )
         return df_scoot_readings
 
-    def forecasts(self, pool_size=10):
+    def forecasts(self, forecasted_at_utc, pool_size=10):
         """Forecast all features at each detector until the forecast end-time"""
         # Get all SCOOT readings within the relevant time period from the database and
         # group them by detector ID
@@ -99,7 +99,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         )
 
         # Obtain the forecast for all features at a single detector
-        def forecast_one_detector(input_data, logger, features, forecast_end_time):
+        def forecast_one_detector(input_data, logger, features, forecasted_at_utc, forecast_end_time):
             # Construct the time range to predict over. This is functionally identical
             # to `make_future_dataframe` but works even in cases where there is
             # insufficient data for Prophet to run.
@@ -161,6 +161,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                 feature_predictions,
             )
             combined_predictions["detector_id"] = detector_id
+            combined_predictions["forecasted_at_utc"] = forecasted_at_utc
             combined_predictions["measurement_end_utc"] = combined_predictions[
                 "measurement_start_utc"
             ] + datetime.timedelta(hours=1)
@@ -178,6 +179,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             forecast_one_detector,
             logger=self.logger,
             features=self.features,
+            forecasted_at_utc=forecasted_at_utc,
             forecast_end_time=self.forecast_end_time,
         )
 
@@ -209,7 +211,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         n_records = 0
 
         # Get the forecasts and convert to a list of dictionaries
-        for detector_id, forecast_df in self.forecasts():
+        for detector_id, forecast_df in self.forecasts(datetime.datetime.utcnow()):
             forecast_records = forecast_df.to_dict("records")
             if len(forecast_records) > 0:
                 self.logger.info(

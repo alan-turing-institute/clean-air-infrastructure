@@ -71,6 +71,7 @@ class ScootForecast(Base):
         primary_key=True,
         nullable=False,
     )
+    forecasted_at_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_start_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
     n_vehicles_in_interval = Column(Integer)
@@ -85,6 +86,7 @@ class ScootForecast(Base):
         return "<ScootForecast(" + ", ".join(
             [
                 "detector_id='{}'".format(self.detector_id),
+                "forecasted_at_utc='{}'".format(self.forecasted_at_utc),
                 "measurement_start_utc='{}'".format(self.measurement_start_utc),
                 "measurement_end_utc='{}'".format(self.measurement_end_utc),
                 "n_vehicles_in_interval='{}'".format(self.n_vehicles_in_interval),
