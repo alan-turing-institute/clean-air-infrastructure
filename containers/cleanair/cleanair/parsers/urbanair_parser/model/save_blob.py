@@ -40,7 +40,7 @@ def blob(
         permit_write = True
     )
 
-    for zipname in ("data.zip",):# "model.zip", "results.zip"):
+    for zipname in ("data.zip", "model.zip", "results.zip"):
         source_file = Path(source_dir).joinpath(zipname)
 
         state["logger"].info(f"dir = {source_dir}, file name = {zipname}, source file = {source_file}")
@@ -49,7 +49,7 @@ def blob(
         blob_storage.upload_blob(
             resource_group="",
             storage_container_name=storage_container,
-            blob_name=model_id+ "/"+"model.zip",
+            blob_name=model_id+ "/"+zipname,
             account_url=account_url,
             source_file=source_file,
             sas_token=SAS_TOKEN,

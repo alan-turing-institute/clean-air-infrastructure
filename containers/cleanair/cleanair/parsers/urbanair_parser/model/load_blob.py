@@ -46,7 +46,7 @@ def blob(
         blob_storage.download_blob(
             resource_group="",
             storage_container_name=storage_container,
-            blob_name=model_id+ "/"+"model.zip",
+            blob_name=model_id+ "/"+zipname,
             account_url=account_url,
             target_file=target_file,
             sas_token=SAS_TOKEN,
