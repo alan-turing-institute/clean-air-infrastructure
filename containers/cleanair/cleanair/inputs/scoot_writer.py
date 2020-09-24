@@ -8,7 +8,6 @@ from dateutil import rrule
 import pytz
 import boto3
 import botocore
-import numpy as np
 import pandas
 from sqlalchemy import func
 from sqlalchemy import Table
@@ -289,8 +288,8 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         if not self.detector_ids:
             self.detector_ids = self.request_site_entries()
         self.logger.info(
-            "Requesting readings from %s for %s sites",
-            green("TfL AWS storage"),
+            "Requesting readings from %s for %s detector(s)",
+            green("TfL AWS S3 storage"),
             green(len(self.detector_ids)),
         )
 
@@ -323,19 +322,18 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             ]
             if unprocessed_detectors:
                 self.logger.info(
-                    "%s of the %s known detectors have already been processed from %s to %s.",
-                    green(len(processed_detectors)),
-                    green(len(self.detector_ids)),
+                    "Processing S3 data from %s to %s for %s detector(s).",
                     green(start_datetime_utc),
                     green(end_datetime_utc),
+                    green(len(unprocessed_detectors)),
                 )
             else:
                 # If all detectors have been processed then skip this hour
                 self.logger.info(
-                    "All %s detectors have already been processed from %s to %s. No further data will be requested from S3 bucket",
-                    green(len(self.detector_ids)),
+                    "No S3 data is needed from %s to %s. %s detector(s) have already been processed.",
                     green(start_datetime_utc),
                     green(end_datetime_utc),
+                    green(len(processed_detectors)),
                 )
                 continue
 

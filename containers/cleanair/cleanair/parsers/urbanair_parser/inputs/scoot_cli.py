@@ -2,7 +2,7 @@
 import typer
 from cleanair.inputs import ScootWriter
 from cleanair.loggers import initialise_logging
-from ..shared_args import UpTo, NDays, NHours, Web, AWSId, AWSKey
+from ..shared_args import UpTo, NDays, NHours, Web, AWSId, AWSKey, ScootDetectors
 from ..state import state
 
 app = typer.Typer()
@@ -27,6 +27,7 @@ def fill(
     ndays: int = NDays,
     aws_key_id: str = AWSId,
     aws_key: str = AWSKey,
+    detectors: str = ScootDetectors,
 ) -> None:
     """Query the Scoot S3 bucket and insert into the database"""
     typer.echo("Fill scoot data")
@@ -42,5 +43,6 @@ def fill(
         secretfile=state["secretfile"],
         aws_key_id=aws_key_id,
         aws_key=aws_key,
+        detector_ids=detectors if detectors else None
     )
     scoot_writer.update_remote_tables()
