@@ -37,6 +37,7 @@ def blob(
         resource_group="TIMTEST",
         storage_container_name="cleanairtimtest",
         suffix=None,
+        permit_write = True
     )
 
     for zipname in ("data.zip",):# "model.zip", "results.zip"):
