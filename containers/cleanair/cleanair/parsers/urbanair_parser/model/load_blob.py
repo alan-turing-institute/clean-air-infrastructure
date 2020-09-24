@@ -3,13 +3,29 @@ import typer
 from ....loggers import red, green
 from ..state import state, DATA_CACHE
 from ....utils.azure import blob_storage
+from pathlib import Path
 
 app = typer.Typer(help="Load a model from blob storage")
 
 @app.command()
 def blob(
     model_id: str = typer.Option(
-        "CACHE", help="ID of the model to load",
+        "", help="ID of the model to load",
+    ),
+    token_group: str = typer.Option(
+        "", help="Name of the resource group to obtain the SAS token for.",
+    ),
+    token_container: str = typer.Option(
+        "", help="Name of the storage container to obtain the SAS token for.",
+    ),
+    storage_container: str = typer.Option(
+        "", help="Name of the storage container holding the blob."
+    ),
+    account_url: str = typer.Option(
+        "", help="URL of the Azure account holding the data."
+        ),
+    target_dir: str = typer.Option(
+        DATA_CACHE, help="Local directory to stor the blob in."
     ),
 ) -> None:
     """Load a model from blob storage"""
@@ -17,21 +33,23 @@ def blob(
 
     # Tokens and the like
     SAS_TOKEN = blob_storage.generate_sas_token(
-        resource_group="Datasets",
-        storage_container_name="londonaqdatasets",
+        resource_group="TIMTEST",
+        storage_container_name="cleanairtimtest",
         suffix=None,
     )
 
-    state["logger"].info("Have token")
+    for zipname in ("data.zip", "model.zip", "results.zip"):
+    
+        target_file = Path(target_dir).joinpath(zipname)
 
-    # Do the download
-    blob_storage.download_blob(
-        resource_group="Datasets",
-        storage_container_name="glahexgrid",
-        blob_name="Hex350_grid_GLA.zip",
-        account_url="https://londonaqdatasets.blob.core.windows.net",
-        target_file="test.txt",
-        sas_token=SAS_TOKEN,
+        # Download the three compessed files to the data cache
+        blob_storage.download_blob(
+            resource_group="",
+            storage_container_name=storage_container,
+            blob_name=model_id+ "/"+"model.zip",
+            account_url=account_url,
+            target_file=target_file,
+            sas_token=SAS_TOKEN,
         )
 
     state["logger"].info("Download complete")
