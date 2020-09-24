@@ -17,6 +17,7 @@ def generate_sas_token(
     days: int = 1,
     hours: int = 0,
     suffix: Optional[str] = "?",
+    permit_write: Optional[bool] = False
 ):
     """Generate a SAS token when logged in using az login
     
@@ -39,7 +40,7 @@ def generate_sas_token(
         storage_container_name,
         account_key=storage_account_key,
         resource_types=ResourceTypes(service=True, container=True, object=True),
-        permission=AccountSasPermissions(read=True, list=True),
+        permission=AccountSasPermissions(read=True, list=True, write=permit_write),
         expiry=datetime.utcnow() + timedelta(days=days, hours=hours),
     )
 
