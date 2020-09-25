@@ -93,9 +93,10 @@ class TestData:
         assert len(data) == len(mock_air_quality_result) / 49
 
         # Require that all results have the correct timestamp
-        request_hour = request_time.replace(
-            minute=0, second=0, microsecond=0
-        ).isoformat()+"+00:00"
+        request_hour = (
+            request_time.replace(minute=0, second=0, microsecond=0).isoformat()
+            + "+00:00"
+        )
 
         assert all([d["measurement_start_utc"] == request_hour for d in data])
 
@@ -118,9 +119,10 @@ class TestData:
         assert len(data["features"]) == len(mock_air_quality_result) / 49
 
         # Require that all results have the correct timestamp
-        request_hour = request_time.replace(
-            minute=0, second=0, microsecond=0
-        ).isoformat()+"+00:00"
+        request_hour = (
+            request_time.replace(minute=0, second=0, microsecond=0).isoformat()
+            + "+00:00"
+        )
         assert all(
             [
                 d["properties"]["measurement_start_utc"] == request_hour

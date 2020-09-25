@@ -9,18 +9,19 @@ from sqlalchemy import text
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
+
 class UTCTime(BaseModel):
 
     measurement_start_utc: datetime
 
-    @validator('measurement_start_utc')
+    @validator("measurement_start_utc")
     def contains_timezone(cls, v):
         if v.tzinfo:
             return v
         return v.replace(tzinfo=timezone.utc)
 
-class JamCamAvailable(UTCTime):
 
+class JamCamAvailable(UTCTime):
     class Config:
         orm_mode = True
 
@@ -57,6 +58,7 @@ class JamCamVideo(JamCamCounts, UTCTime):
 class JamCamVideoAverage(JamCamAverageCounts, UTCTime):
 
     detection_class: str
+
 
 # GeoJson Types
 
