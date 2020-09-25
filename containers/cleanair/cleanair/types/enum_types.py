@@ -38,6 +38,14 @@ class FeatureBufferSize(str, Enum):
 
 
 @unique
+class ModelName(str, Enum):
+    """Valid model names for air quality models."""
+
+    mrdgp = "mrdgp"
+    svgp = "svgp"
+
+
+@unique
 class Source(str, Enum):
     """Different types of source for metapoints."""
 
@@ -58,15 +66,3 @@ class Species(str, Enum):
     PM25 = "PM25"
     PM10 = "PM10"
     O3 = "O3"  # species to get data for
-
-    @classmethod
-    def has_key(cls, key: str) -> bool:
-        """Returns true if the key is the same as one of the species.
-
-        Args:
-            key: The key to check.
-
-        Returns:
-            True if key is a species, false otherwise.
-        """
-        return key in cls.__members__.keys()

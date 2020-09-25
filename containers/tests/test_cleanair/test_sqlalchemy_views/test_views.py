@@ -85,6 +85,6 @@ def test_materialised_view_not_persisted(secretfile, connection, londonView):
     with db_instance.dbcnxn.open_session() as session:
 
         with pytest.raises(ProgrammingError) as error:
-            refresh_materialized_view(session, "interest_points.london_boundary_view")
+            refresh_materialized_view(session, "jamcam.test_view")
 
             assert "psycopg2.errors.UndefinedTable" in str(error)

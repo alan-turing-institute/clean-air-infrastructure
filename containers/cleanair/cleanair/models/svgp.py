@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import FeaturesDict, ModelParams, TargetDict
+from ..types import FeaturesDict, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -31,7 +31,7 @@ class SVGP(ModelMixin):
         "kernel",
     ]
 
-    def get_default_model_params(self) -> ModelParams:
+    def get_default_model_params(self):
         """The default model parameters if none are supplied.
 
         Returns:

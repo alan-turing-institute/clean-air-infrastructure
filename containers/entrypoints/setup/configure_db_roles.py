@@ -22,6 +22,8 @@ def main():
         secretfile=args.secretfile,
         secret_dict=args.secret_dict,
     )
+    db_config.ensure_database_exists()
+    db_config.ensure_extensions()
     db_config.configure_all_roles()
 
 
