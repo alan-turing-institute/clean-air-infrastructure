@@ -146,6 +146,9 @@ cronjobs:
         repository: cleanairdocker.azurecr.io/model_fitting
         imagePullPolicy: IfNotPresent
     args: ["sh", "/app/scripts/svgp.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "db_secrets.json"
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
