@@ -1,16 +1,15 @@
 import pytest
-from cleanair.databases.materialised_views.jamcam_view import JamCamView
-from sqlalchemy import select, func
-from sqlalchemy.exc import ProgrammingError
 from cleanair.databases import (
     DBWriter,
-    connector,
     refresh_materialized_view,
     Base,
 )
-from cleanair.databases.views import create_materialized_view
-from cleanair.databases.tables import JamCamVideoStats, HexGrid
 from cleanair.databases.materialised_views import LondonBoundaryView
+from cleanair.databases.materialised_views.jamcam_view import JamCamViewToday
+from cleanair.databases.tables import JamCamVideoStats
+from cleanair.databases.views import create_materialized_view
+from sqlalchemy import select, func
+from sqlalchemy.exc import ProgrammingError
 
 
 @pytest.fixture()
@@ -93,7 +92,7 @@ def test_materialised_view_not_persisted(secretfile, connection, londonView):
 
 @pytest.fixture()
 def jamcam_view():
-    return JamCamView
+    return JamCamViewToday
 
 
 def test_jamcam_view(secretfile, connection, jamcam_view):
@@ -102,14 +101,14 @@ def test_jamcam_view(secretfile, connection, jamcam_view):
         secretfile=secretfile, connection=connection, initialise_tables=True
     )
     db_instance.commit_records(
-        [JamCamVideoStats(id=4232, camera_id="matviewtest", source=1)],
+        [JamCamVideoStats(id=4232, camera_id="matviewtest", video_upload_datetime=func.current_timestamp(), source=1)],
         on_conflict="ignore",
         table=JamCamVideoStats,
     )
 
     with db_instance.dbcnxn.open_session() as session:
 
-        refresh_materialized_view(session, "jamcam.jamcam_hourly_view")
+        refresh_materialized_view(session, "jamcam.jamcam_hourly_view_today")
 
         output = session.query(jamcam_view)
 
