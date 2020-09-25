@@ -16,6 +16,7 @@ class UTCTime(BaseModel):
 
     @validator("measurement_start_utc")
     def contains_timezone(cls, v):
+        """Enforce presence of timezone in datetime objects"""
         if v.tzinfo:
             return v
         return v.replace(tzinfo=timezone.utc)
