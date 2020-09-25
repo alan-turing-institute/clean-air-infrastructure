@@ -19,8 +19,8 @@ class ResultMixin(ResultQueryMixin):  # pylint: disable=abstract-method
         self,
         instance_id: str,
         data_id: str,
-        secretfile: str,
         result_df: Optional[pd.DataFrame] = None,
+        secretfile: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(secretfile=secretfile, **kwargs)
