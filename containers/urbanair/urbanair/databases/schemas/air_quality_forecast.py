@@ -2,6 +2,7 @@
 from typing import List, Dict
 from pydantic import BaseModel
 from geojson import Feature
+import json
 import shapely.wkt
 from urbanair.types import JSONType
 from .jamcam import UTCTime
@@ -64,7 +65,7 @@ class ForecastResultGeoJson(BaseGeoJson):
                 properties={
                     "NO2_mean": row["NO2_mean"],
                     "NO2_var": row["NO2_var"],
-                    "measurement_start_utc": UTCTime(measurement_start_utc=row["measurement_start_utc"]),
+                    "measurement_start_utc": json.loads(UTCTime(measurement_start_utc=row["measurement_start_utc"]).json())['measurement_start_utc'],
                 },
             )
             for row in rows

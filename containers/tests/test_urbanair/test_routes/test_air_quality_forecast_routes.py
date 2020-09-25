@@ -4,6 +4,8 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from shapely.geometry import shape
 import shapely.wkt
+import json
+from urbanair.databases.schemas.jamcam import UTCTime
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     AirQualityDataTable,
@@ -93,7 +95,8 @@ class TestData:
         # Require that all results have the correct timestamp
         request_hour = request_time.replace(
             minute=0, second=0, microsecond=0
-        ).isoformat()
+        ).isoformat()+"+00:00"
+
         assert all([d["measurement_start_utc"] == request_hour for d in data])
 
     @staticmethod
@@ -117,7 +120,7 @@ class TestData:
         # Require that all results have the correct timestamp
         request_hour = request_time.replace(
             minute=0, second=0, microsecond=0
-        ).isoformat()
+        ).isoformat()+"+00:00"
         assert all(
             [
                 d["properties"]["measurement_start_utc"] == request_hour
