@@ -64,7 +64,7 @@ class ForecastResultGeoJson(BaseGeoJson):
                 properties={
                     "NO2_mean": row["NO2_mean"],
                     "NO2_var": row["NO2_var"],
-                    "measurement_start_utc": row["measurement_start_utc"],
+                    "measurement_start_utc": UTCTime(measurement_start_utc=row["measurement_start_utc"]),
                 },
             )
             for row in rows
