@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
 # set the secretfile filepath
 urbanair init local --secretfile $DB_SECRET_FILE
 
