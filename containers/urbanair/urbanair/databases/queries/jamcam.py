@@ -1,6 +1,8 @@
 """Jamcam database queries and external api calls"""
 from typing import Optional
 from datetime import datetime, timedelta
+
+from cleanair.databases.materialised_views.jamcam_view import JamCamViewToday
 from fastapi import HTTPException
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
@@ -222,3 +224,32 @@ def get_jamcam_hourly(
     res = detection_class_filter(res, detection_class)
 
     return res
+
+
+@db_query()
+def get_jamcam_today(
+    db: Session,
+    detection_class: DetectionClass = DetectionClass.all_classes
+) -> Query:
+    """Get hourly aggregates"""
+
+    res = (
+        db.query(
+            JamCamViewToday.camera_id,
+            JamCamViewToday.counts,
+            JamCamViewToday.detection_class,
+            JamCamViewToday.measurement_start_utc
+        )
+    )
+
+    if detection_class == DetectionClass.all_classes:
+        res = res.filter(
+            JamCamViewToday.detection_class.in_(DetectionClass.map_all())
+        )
+
+    res = res.filter(
+        JamCamViewToday.detection_class == DetectionClass.map_detection_class(detection_class)
+    )
+
+    return res
+

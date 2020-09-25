@@ -2,8 +2,12 @@
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
+
+from cleanair.databases.materialised_views import jamcam_view
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
+from urbanair.databases.queries.jamcam import get_jamcam_today
+
 from ...databases import get_db, all_or_404
 from ...databases.schemas.jamcam import (
     JamCamVideo,
@@ -127,12 +131,17 @@ def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
-    data = get_jamcam_hourly(
-        db,
-        commons["camera_id"],
-        commons["detection_class"],
-        commons["starttime"],
-        commons["endtime"],
-    )
-
+    if commons["starttime"].date() == datetime.today().date():
+        data = get_jamcam_today(
+            db,
+            commons["detection_class"],
+        )
+    else:
+        data = get_jamcam_hourly(
+            db,
+            commons["camera_id"],
+            commons["detection_class"],
+            commons["starttime"],
+            commons["endtime"],
+        )
     return all_or_404(data)
