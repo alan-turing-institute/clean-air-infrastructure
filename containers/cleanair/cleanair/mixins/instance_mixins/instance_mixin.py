@@ -124,8 +124,9 @@ class UpdateInstanceMixin(InstanceMixin):
         model_records = [{key: instance_dict[key] for key in model_cols}]
 
         self.logger.info(
-            "Writing %s to table: %s",
+            "Writing %s with instance_id %s to table: %s",
             green("model parameters"),
+            green(instance_dict["instance_id"]),
             self.model_table.__tablename__,
         )
         self.commit_records(

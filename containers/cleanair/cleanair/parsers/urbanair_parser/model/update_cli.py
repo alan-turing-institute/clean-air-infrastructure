@@ -62,45 +62,48 @@ def results(
     )
     instance.update_remote_tables()  # write the instance to the DB
 
-    # for source in test_data.keys():
-    #     forecast_df = ModelDataExtractor.join_forecast_on_dataframe(
-    #         test_data[source], y_forecast[source], index_test[source]
-    #     )
+    for source in test_data.keys():
 
-    #     # make sure the point id is a string not UUID
-    #     forecast_df["point_id"] = forecast_df.point_id.apply(str)
-    #     logger.info("Writing the forecasts to CSV for source %s", source.value)
-    #     file_manager.save_forecast_to_csv(forecast_df, source)
+        forecast_df = ModelDataExtractor.join_forecast_on_dataframe(
+            test_data[source], y_forecast[source]
+        )
 
-    #     # create a results object and write results + params
-    #     logger.info("Writing forecasts to result table for source %s", source.value)
-    #     result = AirQualityResult(
-    #         instance.instance_id, instance.data_id, forecast_df, secretfile
-    #     )
-    #     result.update_remote_tables()  # write results to DB
-    # for source in train_data.keys():
-    #     if source == Source.satellite:
-    #         continue
-    #     logger.info(
-    #         "Writing the training predictions to CSV for source %s", source.value
-    #     )
+        # make sure the point id is a string not UUID
+        forecast_df["point_id"] = forecast_df.point_id.apply(str)
+        logger.info("Writing the forecasts to CSV for source %s", source.value)
+        file_manager.save_forecast_to_csv(forecast_df, source)
 
-    #     training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
-    #         train_data[source], y_training_pred[source], index_train[source],
-    #     )
-    #     training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
-    #     file_manager.save_training_pred_to_csv(training_pred_df, source)
-    #     logger.info(
-    #         "Writing training predictions to result table for source %s", source.value
-    #     )
-    #     result = AirQualityResult(
-    #         instance.instance_id,
-    #         instance.data_id,
-    #         training_pred_df,
-    #         secretfile=secretfile,
-    #     )
-    #     result.update_remote_tables()
-    # logger.info("Instance %s result written to database.", instance.instance_id)
+        # create a results object and write results + params
+        logger.info("Writing forecasts to result table for source %s", source.value)
+        result = AirQualityResult(
+            instance.instance_id, instance.data_id, forecast_df, secretfile
+        )
+        result.update_remote_tables()  # write results to DB
+
+    # ToDo: Update this section. Not sure what its doing?
+    for source in train_data.keys():
+        if source == Source.satellite:
+            continue
+        logger.info(
+            "Writing the training predictions to CSV for source %s", source.value
+        )
+
+        training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
+            train_data[source], y_training_pred[source]
+        )
+        training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
+        file_manager.save_training_pred_to_csv(training_pred_df, source)
+        logger.info(
+            "Writing training predictions to result table for source %s", source.value
+        )
+        result = AirQualityResult(
+            instance.instance_id,
+            instance.data_id,
+            training_pred_df,
+            secretfile=secretfile,
+        )
+        result.update_remote_tables()
+    logger.info("Instance %s result written to database.", instance.instance_id)
 
 
 # @app.command()
