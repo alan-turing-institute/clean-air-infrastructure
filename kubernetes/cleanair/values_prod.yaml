@@ -144,7 +144,7 @@ cronjobs:
     failedJobsHistoryLimit: 10
     image:
         repository: cleanairdocker.azurecr.io/model_fitting
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         tag: latest
     args: ["sh", "/app/scripts/svgp.sh"]
     volumeMounts:
