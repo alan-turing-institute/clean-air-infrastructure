@@ -13,18 +13,18 @@ from ..views import create_materialized_view
 class JamCamViewToday(Base):
 	"""View of the interest points that gives London's boundary"""
 
+
+
 	__table__ = create_materialized_view(
 		name="jamcam_hourly_view_today",
 		schema="jamcam",
 		owner="refresher",
 		selectable=select(
 			[
-				JamCamVideoStats.camera_id,
+				JamCamVideoStats.camera_id.label("camera_id"),
 				func.avg(JamCamVideoStats.counts).label("counts"),
-				JamCamVideoStats.detection_class,
-				func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label(
-					"measurement_start_utc"
-				)
+				JamCamVideoStats.detection_class.label("detection_class"),
+				func.date_trunc("hour", JamCamVideoStats.video_upload_datetime).label("measurement_start_utc")
 			]
 		).where(
 			cast(JamCamVideoStats.video_upload_datetime, Date) == func.current_date(),
