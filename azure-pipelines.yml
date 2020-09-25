@@ -38,7 +38,7 @@ stages:
       displayName: 'Build urbanair API image'
     # Model fitting
     - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:latest -f containers/dockerfiles/model_fitting.Dockerfile containers
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
       displayName: "Build model_fitting image"
     # Odysseus
     - script: |
@@ -52,7 +52,7 @@ stages:
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:latest
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 

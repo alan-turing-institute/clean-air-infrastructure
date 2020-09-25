@@ -145,7 +145,6 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/model_fitting
         imagePullPolicy: IfNotPresent
-        tag: latest
     args: ["sh", "/app/scripts/svgp.sh"]
     volumeMounts:
     - name: secrets
