@@ -123,6 +123,13 @@ def AWSKey_callback(value: str) -> str:
     return value
 
 
+From = typer.Option(
+    "tomorrow",
+    help=f"which datetime to start process data from. Must be either an ISO datetime or one of {UP_TO_VALUES}",
+    callback=UpTo_callback,
+    show_default=True,
+)
+
 UpTo = typer.Option(
     "tomorrow",
     help=f"up to what datetime to process data. Must be either an ISO datetime or one of {UP_TO_VALUES}",
