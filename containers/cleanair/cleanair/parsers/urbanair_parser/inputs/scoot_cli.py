@@ -43,6 +43,6 @@ def fill(
         secretfile=state["secretfile"],
         aws_key_id=aws_key_id,
         aws_key=aws_key,
-        detector_ids=detectors if detectors else None
+        detector_ids=detectors if detectors else None,
     )
     scoot_writer.update_remote_tables()

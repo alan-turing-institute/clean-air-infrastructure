@@ -29,7 +29,9 @@ def main():
         scoot_forecaster = ScootPerDetectorForecaster(
             nhours=args.nhours,
             end=args.upto,
-            forecast_start_time=datetime.now().replace(second=0, microsecond=0, minute=0),
+            forecast_start_time=datetime.now().replace(
+                second=0, microsecond=0, minute=0
+            ),
             forecast_length_hrs=args.forecasthrs,
             detector_ids=detector_ids,
             secretfile=args.secretfile,

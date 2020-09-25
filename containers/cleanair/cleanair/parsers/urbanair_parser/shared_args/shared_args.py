@@ -69,7 +69,8 @@ def NDays_callback(value: int) -> int:
 
 def CommaSeparate_callback(values: str) -> List[str]:
     "Convert comma-separated string into list"
-    return [item for item in values.split(',') if item]
+    return [item for item in values.split(",") if item]
+
 
 def CopernicusKey_callback(value: str) -> str:
     "Process CopernicusKey arg"
@@ -178,7 +179,12 @@ AWSKey = typer.Option(
     "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
 )
 
-ScootDetectors = typer.Option("", help="Comma-separated string of SCOOT detectors to forecast for  [default: all of them]", callback=CommaSeparate_callback, show_default=False)
+ScootDetectors = typer.Option(
+    "",
+    help="Comma-separated string of SCOOT detectors to forecast for  [default: all of them]",
+    callback=CommaSeparate_callback,
+    show_default=False,
+)
 
 Sources = typer.Option(..., help="List sources to process")
 

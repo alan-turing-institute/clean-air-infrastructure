@@ -1,5 +1,5 @@
 """AQE input CLI"""
-from datetime import datetime #, timedelta
+from datetime import datetime  # , timedelta
 from typing import List
 import typer
 from cleanair.processors import ScootPerDetectorForecaster
@@ -25,7 +25,7 @@ def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
 
 @app.command()
 def forecast(
-    fromDate: str = From,
+    fromdate: str = From,
     nhours: int = NHours,
     ndays: int = NDays,
     modeldays: int = ModelDays,
@@ -38,8 +38,7 @@ def forecast(
     # Set time parameters
     model_data_end_time = datetime.now().replace(second=0, microsecond=0, minute=0)
     forecast_length_hrs = nhours + ndays  # note that this is auto-converted to hours
-    forecast_start_time = as_datetime(fromDate)
-    # forecast_start_time = as_datetime(upto) - timedelta(hours=forecast_length_hrs)
+    forecast_start_time = as_datetime(fromdate)
 
     # Fit SCOOT readings using Prophet and forecast into the future
     scoot_forecaster = ScootPerDetectorForecaster(
