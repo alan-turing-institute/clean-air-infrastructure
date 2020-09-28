@@ -1,7 +1,7 @@
 """Air quality forecast API route tests"""
+import json
 from datetime import datetime
 from urbanair.databases.schemas.jamcam import UTCTime
-import json
 
 
 class TestUTCTime:

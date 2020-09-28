@@ -1,8 +1,8 @@
 """Return schemas for air quality forecast routes"""
 from typing import List, Dict
+import json
 from pydantic import BaseModel
 from geojson import Feature
-import json
 import shapely.wkt
 from urbanair.types import JSONType
 from .jamcam import UTCTime

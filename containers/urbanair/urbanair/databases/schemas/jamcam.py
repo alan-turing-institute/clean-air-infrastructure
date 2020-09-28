@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
-
+ # pylint: disable=E0213, R0201
 class UTCTime(BaseModel):
 
     measurement_start_utc: datetime

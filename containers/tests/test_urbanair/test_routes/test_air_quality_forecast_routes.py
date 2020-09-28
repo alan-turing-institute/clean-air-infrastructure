@@ -4,8 +4,6 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from shapely.geometry import shape
 import shapely.wkt
-import json
-from urbanair.databases.schemas.jamcam import UTCTime
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import (
     AirQualityDataTable,
