@@ -40,6 +40,18 @@ stages:
     - script: | 
         docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
       displayName: "Build model_fitting image"
+
+    # Model fitting GPU 
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_gpu_py37.Dockerfile containers
+      displayName: "Build tensorflow 1 image"
+
+    # Model fitting
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/mfgpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+      displayName: "Build gpu model fitting image"
+
+
     # Odysseus
     - script: |
          docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
@@ -53,6 +65,8 @@ stages:
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/mfgpu:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 
