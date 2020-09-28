@@ -73,6 +73,18 @@ resource "azurerm_kubernetes_cluster_node_pool" "jamcam_pool" {
   node_taints           = ["group=gpu:NoSchedule"]
 }
 
+resource "azurerm_kubernetes_cluster_node_pool" "cleanair_pool" {
+  name                  = "cleanair"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+  vm_size               = "Standard_NC6_promo"
+  enable_auto_scaling   = true
+  max_count             = 1
+  min_count             = 1
+  node_count            = 1
+  os_disk_size_gb       = 100
+  node_taints           = ["group=cleangpu:NoSchedule"]
+}
+
 # Set permissions for the pre-existing service principal
 # ------------------------------------------------------
 # Create a role with appropriate permissions for Kubernetes clusters
