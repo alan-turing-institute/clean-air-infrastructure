@@ -9,13 +9,13 @@ from sqlalchemy import text
 
 TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
 
- # pylint: disable=E0213, R0201
+# pylint: disable=E0213, R0201
 class UTCTime(BaseModel):
 
     measurement_start_utc: datetime
 
     @validator("measurement_start_utc")
-    def contains_timezone(cls, v):
+    def contains_timezone(cls, v: datetime) -> datetime:
         """Enforce presence of timezone in datetime objects"""
         if v.tzinfo:
             return v
