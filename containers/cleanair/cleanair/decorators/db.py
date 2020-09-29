@@ -18,6 +18,13 @@ def check_empty_df(data_frame, raise_error=True):
 
 # pylint: disable=too-many-return-statements
 def db_query(model=None):
+    """
+    Wrapper for functions that return an sqlalchemy query object
+
+    Args:
+        model: A Pydantic model for data serialization to dict or json
+    """
+
     def _db_query(query_f):
         """
         Wrapper for functions that return an sqlalchemy query object.

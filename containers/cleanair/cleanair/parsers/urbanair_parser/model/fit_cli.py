@@ -11,6 +11,7 @@ from ....utils import FileManager, tf1
 
 app = typer.Typer(help="SVGP model fitting")
 
+# pylint: disable=C0103
 Restore = typer.Option(default=False, help="Restore the model state from cache.")
 
 
@@ -21,7 +22,7 @@ def svgp(
     """Fit a Sparse Variational Gaussian Process."""
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params("svgp")
-    model = SVGP(model_params=model_params.dict(), refresh=refresh, restore=restore)
+    model = SVGP(model_params, refresh=refresh, restore=restore)
     model = fit_model(model, file_manager)
     file_manager.save_model(
         model.model, tf1.save_gpflow1_model_to_file, model_name="svgp"
@@ -66,12 +67,12 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
 
     # load training data
     training_data_df_norm = file_manager.load_training_data()
-    X_train, Y_train, index_train = model_data.get_data_arrays(
+    X_train, Y_train, _ = model_data.get_data_arrays(
         full_config, training_data_df_norm, prediction=False,
     )
     # load prediction data
     prediction_data_df_norm = file_manager.load_test_data()
-    X_test, Y_test, index_test = model_data.get_data_arrays(
+    X_test, _, _ = model_data.get_data_arrays(
         full_config, prediction_data_df_norm, prediction=True,
     )
 

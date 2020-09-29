@@ -101,7 +101,7 @@ class SatelliteForecast(Base):
     measurement_end_utc = Column(TIMESTAMP, nullable=False)
     species_code = Column(String(4), primary_key=True, nullable=False)
     box_id = Column(
-        UUID,
+        UUID(as_uuid=True),
         ForeignKey("interest_points.satellite_box.id"),
         primary_key=True,
         nullable=False,

@@ -4,6 +4,7 @@ from pathlib import Path
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import (
+    Ard,
     Jitter,
     Lengthscales,
     LikelihoodVariance,
@@ -21,6 +22,7 @@ app = typer.Typer(help="Setup model parameters.")
 
 @app.command()
 def svgp(
+    ard: bool = Ard,
     input_dir: Path = InputDir,
     jitter: float = Jitter,
     kernel: str = KernelType,
@@ -36,7 +38,11 @@ def svgp(
     model_params = SVGPParams(
         jitter=jitter,
         kernel=KernelParams(
-            lengthscales=lengthscales, name=kernel, type=kernel, variance=variance,
+            ARD=ard,
+            lengthscales=lengthscales,
+            name=kernel,
+            type=kernel,
+            variance=variance,
         ),
         likelihood_variance=likelihood_variance,
         num_inducing_points=num_inducing_points,

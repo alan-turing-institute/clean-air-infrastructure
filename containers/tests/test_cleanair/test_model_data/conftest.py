@@ -15,20 +15,7 @@ from cleanair.databases.tables import (
     SatelliteForecast,
     SatelliteBox,
 )
-from cleanair.models import ModelConfig, ModelData
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
-
-
-@pytest.fixture(scope="class")
-def model_config(secretfile, connection_class):
-
-    return ModelConfig(secretfile=secretfile, connection=connection_class)
-
-
-@pytest.fixture(scope="class")
-def model_data(secretfile, connection_class):
-
-    return ModelData(secretfile=secretfile, connection=connection_class)
 
 
 @pytest.fixture()

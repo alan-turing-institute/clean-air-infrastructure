@@ -9,6 +9,7 @@ from sqlalchemy import inspect
 from ...databases.mixins import DataTableMixin, ModelTableMixin, InstanceTableMixin
 from ...types import ClusterId, ModelName, Tag
 from ...utils.hashing import hash_fn, instance_id_from_hash, get_git_hash
+from ...loggers import green
 
 
 class InstanceMixin:
@@ -121,6 +122,13 @@ class UpdateInstanceMixin(InstanceMixin):
         model_inst = inspect(self.model_table)
         model_cols = [c_attr.key for c_attr in model_inst.mapper.column_attrs]
         model_records = [{key: instance_dict[key] for key in model_cols}]
+
+        self.logger.info(
+            "Writing %s with instance_id %s to table: %s",
+            green("model parameters"),
+            green(instance_dict["instance_id"]),
+            self.model_table.__tablename__,
+        )
         self.commit_records(
             model_records, on_conflict="overwrite", table=self.model_table,
         )
@@ -128,6 +136,11 @@ class UpdateInstanceMixin(InstanceMixin):
         data_inst = inspect(self.data_table)
         data_cols = [c_attr.key for c_attr in data_inst.mapper.column_attrs]
         data_records = [{key: instance_dict[key] for key in data_cols}]
+        self.logger.info(
+            "Writing %s to table: %s",
+            green("data configuration"),
+            self.data_table.__tablename__,
+        )
         self.commit_records(
             data_records, on_conflict="overwrite", table=self.data_table,
         )
@@ -135,6 +148,11 @@ class UpdateInstanceMixin(InstanceMixin):
         instance_inst = inspect(self.instance_table)
         instance_cols = [c_attr.key for c_attr in instance_inst.mapper.column_attrs]
         instance_records = [{key: instance_dict[key] for key in instance_cols}]
+        self.logger.info(
+            "Writing %s to table: %s",
+            green("model fitting instance data"),
+            self.instance_table.__tablename__,
+        )
         self.commit_records(
             instance_records, on_conflict="overwrite", table=self.instance_table,
         )

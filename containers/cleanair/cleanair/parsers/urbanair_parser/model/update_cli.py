@@ -1,6 +1,5 @@
 """Command line interface for updating the database with results."""
 
-import logging
 from datetime import datetime
 from pathlib import Path
 import typer
@@ -8,7 +7,8 @@ from ..shared_args import InputDir
 from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
-from ....metrics import AirQualityMetrics
+
+# from ....metrics import AirQualityMetrics
 from ....models import ModelDataExtractor
 from ....types import ClusterId, ModelName, Tag, Source
 from ....utils import FileManager
@@ -38,15 +38,8 @@ def results(
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
-    model_data = ModelDataExtractor()
     train_data = file_manager.load_training_data()
-    x_train, y_train, index_train = model_data.get_data_arrays(
-        full_config, train_data, prediction=False,
-    )
     test_data = file_manager.load_test_data()
-    x_test, y_test, index_test = model_data.get_data_arrays(
-        full_config, test_data, prediction=True,
-    )
 
     # create an instance with correct ids
     secretfile: str = state["secretfile"]
@@ -62,8 +55,9 @@ def results(
     instance.update_remote_tables()  # write the instance to the DB
 
     for source in test_data.keys():
+
         forecast_df = ModelDataExtractor.join_forecast_on_dataframe(
-            test_data[source], y_forecast[source], index_test[source]
+            test_data[source], y_forecast[source]
         )
 
         # make sure the point id is a string not UUID
@@ -77,6 +71,8 @@ def results(
             instance.instance_id, instance.data_id, forecast_df, secretfile
         )
         result.update_remote_tables()  # write results to DB
+
+    # ToDo: Update this section. Not sure what its doing?
     for source in train_data.keys():
         if source == Source.satellite:
             continue
@@ -85,7 +81,7 @@ def results(
         )
 
         training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
-            train_data[source], y_training_pred[source], index_train[source],
+            train_data[source], y_training_pred[source]
         )
         training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
         file_manager.save_training_pred_to_csv(training_pred_df, source)
@@ -102,16 +98,16 @@ def results(
     logger.info("Instance %s result written to database.", instance.instance_id)
 
 
-@app.command()
-def metrics(instance_id: str):
-    """Update the metrics table for the given instance."""
-    logger = get_logger("Update metrics.")
-    logger.info("Reading instance parameters and results from the database.")
-    secretfile: str = state["secretfile"]
-    if state["verbose"]:
-        logger.setLevel(logging.DEBUG)
+# @app.command()
+# def metrics(instance_id: str):
+#     """Update the metrics table for the given instance."""
+#     logger = get_logger("Update metrics.")
+#     logger.info("Reading instance parameters and results from the database.")
+#     secretfile: str = state["secretfile"]
+#     if state["verbose"]:
+#         logger.setLevel(logging.DEBUG)
 
-    instance_metrics = AirQualityMetrics(instance_id, secretfile=secretfile)
-    instance_metrics.evaluate_spatial_metrics()
-    instance_metrics.evaluate_temporal_metrics()
-    instance_metrics.update_remote_tables()
+#     instance_metrics = AirQualityMetrics(instance_id, secretfile=secretfile)
+#     instance_metrics.evaluate_spatial_metrics()
+#     instance_metrics.evaluate_temporal_metrics()
+#     instance_metrics.update_remote_tables()

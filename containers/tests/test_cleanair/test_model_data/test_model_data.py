@@ -20,8 +20,10 @@ from typing import List
 import pytest
 from enum import Enum
 import uuid
+from itertools import product
 from dateutil.parser import isoparse
-from datetime import timedelta
+from dateutil import rrule
+from datetime import timedelta, datetime, time
 from pydantic import ValidationError
 from cleanair.models import ModelConfig, StaticFeatureTimeSpecies
 from cleanair.types.dataset_types import DataConfig, FullDataConfig
@@ -30,6 +32,17 @@ from cleanair.types import Species, Source, FeatureNames, FeatureBufferSize
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import MetaPoint
 from cleanair.exceptions import MissingFeatureError, MissingSourceError
+
+
+def unique_filter(lam, iter):
+    "A filter that should return a single item or raise a ValueError"
+    x = filter(lam, iter)
+    val = next(x, None)
+
+    if val and not next(x, None):
+        return val
+
+    raise ValueError("Filter did not return exactly on item")
 
 
 @pytest.fixture()
@@ -60,6 +73,67 @@ def point_ids_invalid(meta_within_london_closed):
         return [i.id for i in meta_within_london_closed if i.source == source]
 
     return _point_ids_valid
+
+
+@pytest.fixture()
+def lookup_sensor_reading(
+    meta_records,
+    laqn_site_records,
+    laqn_reading_records,
+    aqe_site_records,
+    aqe_reading_records,
+    satellite_meta_point_and_box_records,
+    satellite_forecast,
+):
+    def _lookup_sensor_reading(point_id, measurement_start_utc, species):
+
+        source = unique_filter(lambda x: x.id == point_id, meta_records).source
+
+        if source == Source.laqn.value:
+
+            site_records = laqn_site_records
+            reading_records = laqn_reading_records
+
+        elif source == Source.aqe.value:
+
+            site_records = aqe_site_records
+            reading_records = aqe_reading_records
+
+        elif source == Source.satellite:
+
+            reference_start_utc = datetime.combine(
+                measurement_start_utc.date(), time.min
+            )
+
+            box_id = unique_filter(
+                lambda x: x.point_id == point_id,
+                satellite_meta_point_and_box_records[1],
+            ).box_id
+
+            record = unique_filter(
+                lambda x: (x.reference_start_utc == reference_start_utc)
+                and (x.measurement_start_utc == measurement_start_utc)
+                and (x.species_code == species)
+                and (x.box_id == box_id),
+                satellite_forecast,
+            )
+
+            return record.value
+
+        source_record = unique_filter(lambda x: x.point_id == point_id, site_records)
+
+        record = unique_filter(
+            lambda x: (
+                (source_record.site_code == x.site_code)
+                and (measurement_start_utc == x.measurement_start_utc)
+                and (species.value == x.species_code)
+            ),
+            reading_records,
+        )
+
+        return record.value
+
+    return _lookup_sensor_reading
 
 
 class TestModelData:
@@ -109,128 +183,146 @@ class TestModelData:
                 point_id, features, source, output_type="all",
             )
 
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
+    def test_select_static_features_config(
+        self,
+        model_data,
+        point_ids_all,
+        point_ids_valid,
+        valid_full_config_dataset,
+        source,
+    ):
+        """
+        Test that we get the correct static features.
+        Should return static features for interest points that are
+        in London and Open (for LAQN and AQE)
+        """
 
-#     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe, Source.satellite])
-#     def test_select_static_features_config(
-#         self,
-#         model_data,
-#         point_ids_all,
-#         point_ids_valid,
-#         valid_full_config_dataset,
-#         source,
-#     ):
-#         """
-#         Test that we get the correct static features.
-#         Should return static features for interest points that are
-#         in London and Open (for LAQN and AQE)
-#         """
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
 
-#         # Id's from config file
-#         config_ids = valid_full_config_dataset.train_interest_points[source]
+        # Request static features
+        dat = model_data.select_static_features(
+            config_ids,
+            [FeatureNames.building_height, FeatureNames.grass],
+            source,
+            output_type="all",
+        )
 
-#         # Request static features
-#         dat = model_data.select_static_features(
-#             config_ids, [FeatureNames.building_height, FeatureNames.grass], source
-#         ).all()
+        returned_static_features = {i.point_id for i in dat}
 
-#         returned_static_features = {i.point_id for i in dat}
+        # assert set(config_ids) == set(point_ids_valid(source))
 
-#         # assert set(config_ids) == set(point_ids_valid(source))
+        if source != Source.satellite:
+            # Check we get the subset of ids that are open and withing the London Boundary
+            assert set(point_ids_valid(source)) == returned_static_features
 
-#         # if source != Source.satellite:
-#         #     # Check we get the subset of ids that are open and withing the London Boundary
-#         #     assert set(point_ids_valid(source)) == returned_static_features
+        # Check we don't get all point ids
+        assert set(point_ids_all(source)) != returned_static_features
 
-#         # Check we don't get all point ids
-#         assert set(point_ids_all(source)) != returned_static_features
+        # Check this is the set of ids that ModelConfig.generate_full_config() returns
+        assert set(config_ids) == {str(i) for i in returned_static_features}
 
-#         # Check this is the set of ids that ModelConfig.generate_full_config() returns
-#         assert set(config_ids) == {str(i) for i in returned_static_features}
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
+    @pytest.mark.parametrize(
+        "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
+    )
+    def test_select_static_time_species(
+        self, model_data, valid_full_config_dataset, point_ids_valid, source, species
+    ):
+        """
+        Test that we can cross join ModelData.select_static_features
+        with a range of datetimes and species
+        """
 
-#     @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
-#     @pytest.mark.parametrize(
-#         "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
-#     )
-#     def test_select_static_time_species(
-#         self, model_data, valid_full_config_dataset, point_ids_valid, source, species
-#     ):
-#         """
-#         Test that we can cross join ModelData.select_static_features
-#         with a range of datetimes and species
-#         """
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
+        start_datetime = valid_full_config_dataset.train_start_date
+        end_datetime = valid_full_config_dataset.train_end_date
 
-#         # Id's from config file
-#         config_ids = valid_full_config_dataset.train_interest_points[source]
-#         start_datetime = valid_full_config_dataset.train_start_date
-#         end_datetime = valid_full_config_dataset.train_end_date
+        features = [FeatureNames.building_height, FeatureNames.grass]
 
-#         features = [FeatureNames.building_height, FeatureNames.grass]
+        # Return Pydantic model types
+        static_species_time = model_data.get_static_features(
+            start_datetime,
+            end_datetime,
+            features,
+            source,
+            config_ids,
+            species,
+            output_type="all",
+        )
+        static_species_tuples = [
+            (
+                i.point_id,
+                i.feature_name,
+                i.species_code,
+                i.measurement_start_utc.replace(tzinfo=None),
+            )
+            for i in static_species_time
+        ]
 
-#         # Return Pydantic model types
-#         static_species_time = model_data.get_static_features(
-#             start_datetime,
-#             end_datetime,
-#             features,
-#             source,
-#             config_ids,
-#             species,
-#             output_type="all",
-#         )
+        expected_values = list(
+            product(
+                [uuid.UUID(id) for id in config_ids],
+                features,
+                species,
+                rrule.rrule(
+                    freq=rrule.HOURLY,
+                    dtstart=start_datetime,
+                    until=end_datetime - timedelta(hours=1),
+                ),
+            )
+        )
 
-#         assert map(lambda x: type(x) == StaticFeatureTimeSpecies, static_species_time)
+        assert sorted(expected_values) == sorted(static_species_tuples)
 
-#         expected_size = (
-#             len(point_ids_valid(source))
-#             * len(features)
-#             * len(species)
-#             * ((end_datetime - start_datetime).total_seconds() / (60.0 * 60.0))
-#         )
+    @pytest.mark.parametrize("source", [Source.laqn, Source.aqe])
+    @pytest.mark.parametrize(
+        "species", [[Species.NO2], [Species.PM10], [Species.NO2, Species.PM10]]
+    )
+    def test_get_training_data_inputs(
+        self,
+        model_data,
+        valid_full_config_dataset,
+        point_ids_valid,
+        source,
+        species,
+        lookup_sensor_reading,
+    ):
 
-#         assert len(static_species_time) == expected_size
+        # Id's from config file
+        config_ids = valid_full_config_dataset.train_interest_points[source]
+        start_datetime = valid_full_config_dataset.train_start_date
+        end_datetime = valid_full_config_dataset.train_end_date
 
-#     # def test_select_static_missing_id(
-#     #     self, model_data, valid_full_config_dataset, point_ids_valid
-#     # ):
-#     #     """
-#     #     Test that we can cross join ModelData.select_static_features
-#     #     with a range of datetimes and species
-#     #     """
-#     #     source = Source.laqn
-#     #     species = [Species.NO2]
+        features = [FeatureNames.building_height, FeatureNames.grass]
 
-#     #     # Id's from config file and another UUID
-#     #     extra_id = str(uuid.uuid4())
+        data = model_data.get_static_with_sensors(
+            start_datetime,
+            end_datetime,
+            species,
+            config_ids,
+            features,
+            source,
+            output_type="all",
+        )
 
-#     #     config_ids = valid_full_config_dataset.train_interest_points[source] + [
-#     #         extra_id
-#     #     ]
-#     #     start_datetime = valid_full_config_dataset.train_start_date
-#     #     end_datetime = valid_full_config_dataset.train_end_date
+        if source == Source.satellite:
+            # There's a lot of data in satellite. So just test a subset
+            data = data[:5000]
 
-#     #     features = [FeatureNames.building_height, FeatureNames.grass]
-
-#     #     # Return Pydantic model types
-#     #     static_species_time = model_data.get_static_features(
-#     #         start_datetime,
-#     #         end_datetime,
-#     #         features,
-#     #         source,
-#     #         config_ids,
-#     #         species,
-#     #         output_type="all",
-#     #     )
-
-#     # print(list(filter(lambda x: x.point_id == extra_id, static_species_time)))
-#     # expected_size = (
-#     #     len(config_ids)
-#     #     * len(features)
-#     #     * len(species)
-#     #     * ((end_datetime - start_datetime).total_seconds() / (60.0 * 60.0))
-#     # )
-
-#     # assert len(static_species_time) == expected_size
-
-#     # print(StaticFeatureTimeSpecies.from_orm(static_species_time[0]))
+        assert all(
+            map(
+                lambda v: lookup_sensor_reading(
+                    v.point_id,
+                    v.measurement_start_utc.replace(tzinfo=None),
+                    v.species_code,
+                )
+                == pytest.approx(v.value),
+                data,
+            )
+        )
 
 
 # # ToDo: Refactor when ModelData class if refactored

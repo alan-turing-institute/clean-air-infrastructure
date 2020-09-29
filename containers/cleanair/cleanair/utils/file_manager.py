@@ -1,8 +1,8 @@
-"""Functions for saving and loading models."""
+"""Functions for saving and loading models"""
 
 from __future__ import annotations
 from pathlib import Path
-from typing import Any, Callable, Dict, Union, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, Optional, Union, TYPE_CHECKING
 import json
 import pickle
 import pandas as pd
@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     import tensorflow as tf
     from pydantic import BaseModel
 
-
+# pylint: disable=R0904
 class FileManager:
-    """Class for managing files for the urbanair project."""
+    """Class for managing files for the urbanair project"""
 
     # data config / train test data
     DATASET = Path("dataset")
@@ -71,7 +71,7 @@ class FileManager:
             pickle.dump(obj, pickle_file)
 
     def __load_pickle(self, pickle_path: Path) -> Any:
-        """Load either training or test data from a pickled file."""
+        """Load either training or test data from a pickled file"""
         self.logger.debug("Loading object from pickle file from %s", pickle_path)
         if not pickle_path.exists():
             raise FileNotFoundError(f"Could not find file at path {pickle_path}")
@@ -81,7 +81,7 @@ class FileManager:
 
     def load_data_config(self, full: bool = False) -> Union[DataConfig, FullDataConfig]:
         """Load an existing configuration file"""
-        self.logger.info("Loading the data config from file.")
+        self.logger.debug("Loading the data config from file")
 
         if full:
             config = self.input_dir / FileManager.DATA_CONFIG_FULL
@@ -104,8 +104,8 @@ class FileManager:
     def save_data_config(
         self, data_config: Union[DataConfig, FullDataConfig], full: bool = False
     ) -> None:
-        """Save a data config to file."""
-        self.logger.info("Saving the data config to a file.")
+        """Save a data config to file"""
+        self.logger.debug("Saving the data config to a file")
         if full:
             config = self.input_dir / FileManager.DATA_CONFIG_FULL
         else:
@@ -116,33 +116,27 @@ class FileManager:
 
     def load_training_data(self) -> Dict[Source, pd.DataFrame]:
         """Load training data from either the CACHE or input_dir"""
-        self.logger.info("Loading the training data from a pickle.")
+        self.logger.debug("Loading the training data from a pickle")
         return self.__load_pickle(self.input_dir / FileManager.TRAINING_DATA_PICKLE)
 
     def load_test_data(self) -> Dict[Source, pd.DataFrame]:
         """Load test data from either the CACHE or input_dir"""
-        self.logger.info("Loading the test data from a pickle.")
+        self.logger.debug("Loading the test data from a pickle")
         return self.__load_pickle(self.input_dir / FileManager.TEST_DATA_PICKLE)
 
     def load_pred_training_from_pickle(self) -> TargetDict:
-        """Load the predictions on the training set from a pickle."""
-        self.logger.info("Loading the predictions on the training set from a pickle.")
+        """Load the predictions on the training set from a pickle"""
+        self.logger.debug("Loading the predictions on the training set from a pickle")
         return self.__load_pickle(self.input_dir / FileManager.PRED_TRAINING_PICKLE)
 
     def load_forecast_from_pickle(self) -> TargetDict:
-        """Load the predictions on the forecast set from a pickle."""
-        self.logger.info("Loading the prediction on the forecast period from a pickle.")
+        """Load the predictions on the forecast set from a pickle"""
+        self.logger.debug("Loading the prediction on the forecast period from a pickle")
         return self.__load_pickle(self.input_dir / FileManager.PRED_FORECAST_PICKLE)
 
-    def load_forecast_from_csv(self, source: Source) -> pd.DataFrame:
-        """Load the forecasts for a single source as csv."""
-        self.logger.info("Loading the forecasts for %s from csv.", source)
-        result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_forecast.csv"
-        return pd.read_csv(result_fp)
-
     def save_training_data(self, training_data: Dict[Source, pd.DataFrame]) -> None:
-        """Save training data as a pickle."""
-        self.logger.info(
+        """Save training data as a pickle"""
+        self.logger.debug(
             "Saving the training data to a pickle. Sources are %s",
             list(training_data.keys()),
         )
@@ -151,37 +145,37 @@ class FileManager:
         )
 
     def save_test_source_to_csv(self, test_df: pd.DataFrame, source: Source) -> None:
-        """Save the test dataframe to csv. The dataframe should be for just one source."""
+        """Save the test dataframe to csv. The dataframe should be for just one source"""
         filepath = self.input_dir / FileManager.DATASET / f"{source}_test.csv"
         test_df.to_csv(filepath, index=False)
 
     def load_test_source_from_csv(self, source: Source) -> pd.DataFrame:
-        """Load a test dataframe from csv for a given source."""
+        """Load a test dataframe from csv for a given source"""
         filepath = self.input_dir / FileManager.DATASET / f"{source}_test.csv"
         return pd.read_csv(filepath)
 
     def save_training_source_to_csv(
         self, training_df: pd.DataFrame, source: Source
     ) -> None:
-        """Save the dataframe to csv. The dataframe should be for just one source."""
+        """Save the dataframe to csv. The dataframe should be for just one source"""
         filepath = self.input_dir / FileManager.DATASET / f"{source}_training.csv"
         training_df.to_csv(filepath, index=False)
 
     def load_training_source_from_csv(self, source: Source) -> pd.DataFrame:
-        """Load a dataframe from csv for a given source."""
+        """Load a dataframe from csv for a given source"""
         filepath = self.input_dir / FileManager.DATASET / f"{source}_training.csv"
         return pd.read_csv(filepath)
 
     def save_test_data(self, test_data: Dict[Source, pd.DataFrame]) -> None:
-        """Save test data as a pickle."""
-        self.logger.info(
+        """Save test data as a pickle"""
+        self.logger.debug(
             "Saving the test data to a pickle. Sources are %s", list(test_data.keys())
         )
         self.__save_pickle(test_data, self.input_dir / FileManager.TEST_DATA_PICKLE)
 
     def load_pred_training_from_csv(self, source: Source) -> pd.DataFrame:
-        """Load the training predictions for a single source from csv."""
-        self.logger.info(
+        """Load the training predictions for a single source from csv"""
+        self.logger.debug(
             "Loading predictions on the training set on %s from csv", source
         )
         result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
@@ -244,7 +238,7 @@ class FileManager:
         Returns:
             A gpflow model.
         """
-        self.logger.info("Loading a model from a file.")
+        self.logger.debug("Loading a model from a file")
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
@@ -270,15 +264,17 @@ class FileManager:
         Keyword args:
             model_name: Name of the model.
         """
-        self.logger.info("Saving model to file.")
+        self.logger.debug("Saving model to file")
         export_dir = self.input_dir / FileManager.MODEL
         save_fn(model, export_dir, model_name=model_name)
 
     def load_model_params(
         self, model_name: ModelName
     ) -> Union[MRDGPParams, SVGPParams]:
-        """Load the model params from a json file."""
-        self.logger.info("Loading model parameters from a json file for %s", model_name)
+        """Load the model params from a json file"""
+        self.logger.debug(
+            "Loading model parameters from a json file for %s", model_name
+        )
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "r") as params_file:
             params_dict = json.load(params_file)
@@ -286,21 +282,58 @@ class FileManager:
             return SVGPParams(**params_dict)
         if model_name == ModelName.mrdgp:
             return MRDGPParams(**params_dict)
-        raise ValueError("Must pass a valid model name.")
+        raise ValueError("Must pass a valid model name")
 
     def save_model_params(self, model_params: BaseModel) -> None:
-        """Load the model params from a json file."""
-        self.logger.info("Saving model params to a json file.")
+        """Load the model params from a json file"""
+        self.logger.debug("Saving model params to a json file")
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "w") as params_file:
             json.dump(model_params.dict(), params_file, indent=4)
 
     def save_forecast_to_pickle(self, y_pred: TargetDict) -> None:
-        """Save the results dataframe to a file."""
-        self.logger.info("Saving the forecasts to a pickle.")
+        """Save the results dataframe to a file"""
+        self.logger.debug("Saving the forecasts to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_FORECAST_PICKLE)
 
     def save_training_pred_to_pickle(self, y_pred: TargetDict) -> None:
-        """Save the training predictions to a pickled file."""
-        self.logger.info("Saving the predictions on the training set to a pickle.")
+        """Save the training predictions to a pickled file"""
+        self.logger.debug("Saving the predictions on the training set to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_TRAINING_PICKLE)
+
+    def __save_result_to_csv(
+        self, result_df: pd.DataFrame, source: Source, filename: str
+    ) -> None:
+        """Save a result to file."""
+        result_fp = self.input_dir / FileManager.RESULT
+        result_df.to_csv(result_fp / f"{source}_{filename}.csv", index=False)
+
+    def save_forecast_to_csv(self, forecast_df: pd.DataFrame, source: Source) -> None:
+        """Save the forecast dataframe to a csv.
+
+        Args:
+            forecast_df: DataFrame of forecasts for a given source.
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info(
+            "Saving a forecast for %s to csv. Dataframe has %s rows.",
+            source,
+            len(forecast_df),
+        )
+        self.__save_result_to_csv(forecast_df, source, "pred_forecast")
+
+    def save_training_pred_to_csv(
+        self, result_df: pd.DataFrame, source: Source
+    ) -> None:
+        """Save the predictions on the training set to a csv for a given source.
+
+        Args:
+            result_df: DataFrame of predictions for a given source on the training set.
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info(
+            "Saving predictions on training set for %s to csv. Dataframe has %s rows.",
+            source,
+            len(result_df),
+        )
+        self.__save_result_to_csv(result_df, source, "pred_training")

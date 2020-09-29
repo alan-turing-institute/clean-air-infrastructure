@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit when any command fails
+set -e
+
 # set the secretfile filepath
 urbanair init local --secretfile $DB_SECRET_FILE
 
@@ -13,6 +16,8 @@ urbanair model data generate-config \
     --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
+    --feature-buffer 500 \
+    --feature-buffer 100 \
     --overwrite
 
 # check the data exists in the DB
