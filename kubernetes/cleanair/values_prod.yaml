@@ -167,6 +167,9 @@ cronjobs:
     nodeSelector:
       agentpool: cleanair
     resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
       requests:
         cpu: "3"
         nvidia.com/gpu: 1
