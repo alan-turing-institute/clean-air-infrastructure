@@ -6,7 +6,6 @@ from typing import Callable, List, Optional
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
-from pydantic import BaseModel
 from ..loggers import get_logger
 from ..types import FeaturesDict, NDArrayTuple, Species, TargetDict, BaseModelParams
 

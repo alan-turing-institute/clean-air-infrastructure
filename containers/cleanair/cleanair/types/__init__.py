@@ -1,6 +1,8 @@
 """Types for the cleanair package."""
 
 from .enum_types import (
+    ClusterId,
+    Tag,
     Species,
     Source,
     FeatureNames,

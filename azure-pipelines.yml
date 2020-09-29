@@ -24,17 +24,35 @@ stages:
         azureSubscription: 'cleanair-scn'
         KeyVaultName: 'cleanair-secrets'
         SecretsFilter: 'container-registry-admin-password,container-registry-admin-username,container-registry-login-server'
-    
+    # Login to ACR
+    - script: |
+        echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
+      displayName: 'Login to ACR'
     # Inputs and feature processing
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
       displayName: 'Build a docker image for inputs and feature processing'
-    # Output API
+    # Urbanair API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
-    # Todo: Remove this image if no longer in use (check with Patrick)
-    # GLA Lockdown images
+    # Model fitting
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
+      displayName: "Build model_fitting image"
+
+    # Model fitting GPU 
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_gpu_py37.Dockerfile containers
+      displayName: "Build tensorflow 1 image"
+
+    # Model fitting
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/mfgpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+      displayName: "Build gpu model fitting image"
+
+
+    # Odysseus
     - script: |
          docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
       displayName: 'Building the Odysseus image'
@@ -42,14 +60,13 @@ stages:
     - script: |
         docker images
       displayName: 'List images'
-    # Login to ACR
-    - script: |
-        echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
-      displayName: 'Login to ACR'
     # Push Docker images to ACR
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/mfgpu:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'
 

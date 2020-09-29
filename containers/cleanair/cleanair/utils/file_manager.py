@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import tensorflow as tf
     from pydantic import BaseModel
 
-
+# pylint: disable=R0904
 class FileManager:
     """Class for managing files for the urbanair project"""
 
@@ -263,3 +263,40 @@ class FileManager:
         """Save the training predictions to a pickled file"""
         self.logger.debug("Saving the predictions on the training set to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_TRAINING_PICKLE)
+
+    def __save_result_to_csv(
+        self, result_df: pd.DataFrame, source: Source, filename: str
+    ) -> None:
+        """Save a result to file."""
+        result_fp = self.input_dir / FileManager.RESULT
+        result_df.to_csv(result_fp / f"{source}_{filename}.csv", index=False)
+
+    def save_forecast_to_csv(self, forecast_df: pd.DataFrame, source: Source) -> None:
+        """Save the forecast dataframe to a csv.
+
+        Args:
+            forecast_df: DataFrame of forecasts for a given source.
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info(
+            "Saving a forecast for %s to csv. Dataframe has %s rows.",
+            source,
+            len(forecast_df),
+        )
+        self.__save_result_to_csv(forecast_df, source, "pred_forecast")
+
+    def save_training_pred_to_csv(
+        self, result_df: pd.DataFrame, source: Source
+    ) -> None:
+        """Save the predictions on the training set to a csv for a given source.
+
+        Args:
+            result_df: DataFrame of predictions for a given source on the training set.
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info(
+            "Saving predictions on training set for %s to csv. Dataframe has %s rows.",
+            source,
+            len(result_df),
+        )
+        self.__save_result_to_csv(result_df, source, "pred_training")

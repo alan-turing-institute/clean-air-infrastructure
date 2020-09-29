@@ -228,7 +228,6 @@ class ModelDataExtractor:
                     )
 
             else:
-
                 (
                     index_dict[source],
                     X_dict[source],
