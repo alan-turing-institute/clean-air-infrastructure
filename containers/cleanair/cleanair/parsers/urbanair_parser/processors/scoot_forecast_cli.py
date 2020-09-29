@@ -1,6 +1,5 @@
 """AQE input CLI"""
 from datetime import datetime  # , timedelta
-from typing import List
 import typer
 from cleanair.processors import ScootPerDetectorForecaster
 from ..shared_args import From, UpTo, NDays, NDays_callback, NHours, ScootDetectors
@@ -21,6 +20,7 @@ ModelDays = typer.Option(  # pylint: disable=invalid-name
 def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
     """Check what SCOOT forecasts are in the database"""
     typer.echo("Not yet implemented")
+    typer.echo(f"Options provided: upto: {upto}; nhours {nhours}; ndays {ndays}")
 
 
 @app.command()
