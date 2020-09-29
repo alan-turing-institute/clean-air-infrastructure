@@ -390,6 +390,8 @@ deployments:
       env:
         - name: APP_MODULE
           value: "urbanair.developer:app"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
