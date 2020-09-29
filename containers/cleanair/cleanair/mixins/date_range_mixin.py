@@ -86,7 +86,6 @@ class DateGeneratorMixin:
         )
 
         if transpose:
-
             return zip(*arg_gen)
 
         return arg_gen

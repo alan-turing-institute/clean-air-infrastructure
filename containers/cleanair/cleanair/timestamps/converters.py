@@ -7,16 +7,32 @@ from typing import Any, Union
 from dateutil import parser
 import pytz
 
+TIMESTRINGS = [
+    "now",
+    "lasthour",
+    "yesterday",
+    "today",
+    "tomorrow",
+    "overmorrow",
+    "thirdmorrow",
+]
+
 
 def as_datetime(maybe_dt: Any) -> datetime:
     """Convert an input that might be a datetime into a datetime"""
-    with suppress(ValueError):
-        return day_to_datetime(maybe_dt)
+    # If we have a date or datetime then convert to a datetime
     if isinstance(maybe_dt, datetime):
         return maybe_dt
     if isinstance(maybe_dt, date):
         return datetime.combine(maybe_dt, datetime.min.time())
-    return parser.isoparse(maybe_dt)
+    # Attempt to parse a word into a datetime
+    with suppress(ValueError):
+        return datetime_from_word(maybe_dt)
+    # Otherwise attempt to parse as an ISO string
+    try:
+        return parser.isoparse(maybe_dt)
+    except ValueError:
+        raise ValueError(f"Could not convert {maybe_dt} into a datetime.")
 
 
 def safe_strptime(naive_string: str, format_str: str) -> datetime:
@@ -77,33 +93,43 @@ def to_nearest_hour(input_datetime: datetime) -> datetime:
     return input_datetime.replace(minute=0, second=0, microsecond=0)
 
 
-def day_to_datetime(day: str) -> datetime:
-    """Convert one of 'now', 'lasthour', 'today', 'tomorrow' or 'yesterday' to a datetime"""
-    # Convert end argument into a datetime
-    if day == "now":
-        return datetime.now().replace(microsecond=0, second=0, minute=0)
-    if day == "lasthour":
-        return (datetime.now() - timedelta(hours=1)).replace(
+def datetime_from_word(timestring: str) -> datetime:
+    """Convert one of a set of known meaningful words to a datetime"""
+    # Hour-based strings (truncated to hour)
+    if timestring == "now":
+        output_dt = datetime.now().replace(microsecond=0, second=0, minute=0)
+
+    elif timestring == "lasthour":
+        output_dt = (datetime.now() - timedelta(hours=1)).replace(
             microsecond=0, second=0, minute=0
         )
-    if day == "today":
-        return datetime.combine(date.today(), datetime.min.time())
 
-    if day == "tomorrow":
-        return datetime.combine(date.today() + timedelta(days=1), datetime.min.time())
+    # Day-based strings (truncated to midnight)
+    elif timestring == "yesterday":
+        output_dt = datetime.combine(
+            date.today() - timedelta(days=1), datetime.min.time()
+        )
 
-    if day == "overmorrow":
-        return datetime.combine(date.today() + timedelta(days=2), datetime.min.time())
+    elif timestring == "today":
+        output_dt = datetime.combine(date.today(), datetime.min.time())
 
-    if day == "thirdmorrow":
-        return datetime.combine(date.today() + timedelta(days=3), datetime.min.time())
+    elif timestring == "tomorrow":
+        output_dt = datetime.combine(
+            date.today() + timedelta(days=1), datetime.min.time()
+        )
 
-    if day == "yesterday":
-        return datetime.combine(date.today() - timedelta(days=1), datetime.min.time())
+    elif timestring == "overmorrow":
+        output_dt = datetime.combine(
+            date.today() + timedelta(days=2), datetime.min.time()
+        )
 
-    raise ValueError(f"{day} is not a valid day")
+    elif timestring == "thirdmorrow":
+        output_dt = datetime.combine(
+            date.today() + timedelta(days=3), datetime.min.time()
+        )
 
+    # Return an output datetime if we have constructed one
+    if output_dt:
+        return output_dt
 
-def day_to_iso(day: str) -> str:
-    """Convert one of 'now', 'lasthour', 'today', 'tomorrow' or 'yesterday' to a iso string"""
-    return day_to_datetime(day).isoformat()
+    raise ValueError(f"{timestring} is not a valid time description")

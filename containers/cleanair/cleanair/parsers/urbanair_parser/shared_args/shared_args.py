@@ -4,21 +4,11 @@ import os
 import json
 from enum import Enum
 import typer
-from dateutil.parser import isoparse
 from ..state import DATA_CACHE
 from ....features import FEATURE_CONFIG
-from ....timestamps import day_to_iso
+from ....timestamps import as_datetime, TIMESTRINGS
 from ....types import Source as ValidSources
 
-UP_TO_VALUES = [
-    "lasthour",
-    "now",
-    "today",
-    "tomorrow",
-    "yesterday",
-    "overmorrow",
-    "thirdmorrow",
-]
 
 # pylint: disable=C0103
 zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
@@ -34,32 +24,14 @@ class ValidInsertMethods(str, Enum):
     all = "all"
 
 
-def is_iso_string(isostring: str) -> bool:
-    """Check if isostring is a valid iso string
-
-        Arguments:
-            isostring (str): An iso string
-        """
-    try:
-        isoparse(isostring)
-    except ValueError:
-        return False
-
-    return True
-
-
 def UpTo_callback(value: str) -> str:
     "process UpTo arg"
-
-    if value in UP_TO_VALUES:
-        return day_to_iso(value)
-
-    if is_iso_string(value):
-        return value
-
-    raise typer.BadParameter(
-        f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {UP_TO_VALUES}"
-    )
+    try:
+        return as_datetime(value).isoformat()
+    except ValueError:
+        raise typer.BadParameter(
+            f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {TIMESTRINGS}"
+        )
 
 
 def NDays_callback(value: int) -> int:
@@ -126,14 +98,14 @@ def AWSKey_callback(value: str) -> str:
 
 From = typer.Option(
     "tomorrow",
-    help=f"which datetime to start process data from. Must be either an ISO datetime or one of {UP_TO_VALUES}",
+    help=f"which datetime to start process data from. Must be either an ISO datetime or one of {TIMESTRINGS}",
     callback=UpTo_callback,
     show_default=True,
 )
 
 UpTo = typer.Option(
     "tomorrow",
-    help=f"up to what datetime to process data. Must be either an ISO datetime or one of {UP_TO_VALUES}",
+    help=f"up to what datetime to process data. Must be either an ISO datetime or one of {TIMESTRINGS}",
     callback=UpTo_callback,
     show_default=True,
 )
