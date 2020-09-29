@@ -9,7 +9,6 @@ from .enum_types import (
     FeatureBufferSize,
     KernelName,
     ModelName,
-    Tag,
 )
 from .dataset_types import (
     DataConfig,
