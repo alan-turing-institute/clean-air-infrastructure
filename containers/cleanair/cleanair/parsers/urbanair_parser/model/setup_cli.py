@@ -38,7 +38,11 @@ def svgp(
     model_params = SVGPParams(
         jitter=jitter,
         kernel=KernelParams(
-            ARD=ard, lengthscales=lengthscales, name=kernel, type=kernel, variance=variance,
+            ARD=ard,
+            lengthscales=lengthscales,
+            name=kernel,
+            type=kernel,
+            variance=variance,
         ),
         likelihood_variance=likelihood_variance,
         num_inducing_points=num_inducing_points,

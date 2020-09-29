@@ -6,9 +6,8 @@ from typing import Callable, List, Optional
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
-from pydantic import BaseModel
 from ..loggers import get_logger
-from ..types import FeaturesDict, NDArrayTuple, Species, TargetDict
+from ..types import FeaturesDict, NDArrayTuple, Species, TargetDict, BaseModelParams
 
 
 class ModelMixin:
@@ -19,7 +18,7 @@ class ModelMixin:
 
     def __init__(
         self,
-        model_params: BaseModel,
+        model_params: BaseModelParams,
         batch_size: int = 100,
         refresh: int = 10,
         tasks: Optional[List] = None,
@@ -38,9 +37,7 @@ class ModelMixin:
         # get the tasks we will be predicting at
         self.tasks = [Species.NO2] if tasks is None else tasks
         if len(self.tasks) > 1:
-            raise NotImplementedError(
-                "Multiple pollutants not supported yet."
-            )
+            raise NotImplementedError("Multiple pollutants not supported yet.")
         # other misc arguments
         self.model = None
         self.epoch = 0

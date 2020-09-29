@@ -1,5 +1,5 @@
 # Use an official tensorflow gpu runtime as a parent image
-FROM cleanairdocker.azurecr.io/tf1_py37:latest
+FROM cleanairdocker.azurecr.io/tf2_gpu:latest
 
 # Get the arg value of the git hash
 ARG git_hash
@@ -15,5 +15,9 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
 
+RUN pip --version
+RUN python --version
+
 # Install cleanair
 RUN pip install '/app/cleanair'
+
