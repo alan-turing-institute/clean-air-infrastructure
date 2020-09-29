@@ -1,16 +1,15 @@
 """
-Scoot
+Retrieve and process data from the SCOOT traffic detector network
 """
 import datetime
 import os
 import time
 from dateutil import rrule
-import pytz
 import boto3
 import botocore
 import pandas
-from sqlalchemy import func
-from sqlalchemy import Table
+import pytz
+from sqlalchemy import func, Table
 from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..decorators import db_query
@@ -21,7 +20,7 @@ from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
     """
-    Class to get data from the Scoot traffic detector network via the S3 bucket maintained by TfL:
+    Class to get data from the SCOOT traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
 
@@ -105,6 +104,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
             tzinfo=datetime.timezone.utc
         ).astimezone(tz=pytz.timezone("Europe/London"))
 
+        # List all the relevant CSV files for the time range under consideration
         file_list = []
         for date in rrule.rrule(
             rrule.HOURLY, dtstart=start_datetime, until=end_datetime

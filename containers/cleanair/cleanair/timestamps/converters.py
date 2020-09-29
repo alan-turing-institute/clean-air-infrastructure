@@ -95,41 +95,40 @@ def to_nearest_hour(input_datetime: datetime) -> datetime:
 
 def datetime_from_word(timestring: str) -> datetime:
     """Convert one of a set of known meaningful words to a datetime"""
-    # Hour-based strings (truncated to hour)
-    if timestring == "now":
-        output_dt = datetime.now().replace(microsecond=0, second=0, minute=0)
+    if timestring in TIMESTRINGS:
+        # Hour-based strings (truncated to hour)
+        if timestring == "now":
+            output_dt = datetime.now().replace(microsecond=0, second=0, minute=0)
 
-    elif timestring == "lasthour":
-        output_dt = (datetime.now() - timedelta(hours=1)).replace(
-            microsecond=0, second=0, minute=0
-        )
+        elif timestring == "lasthour":
+            output_dt = (datetime.now() - timedelta(hours=1)).replace(
+                microsecond=0, second=0, minute=0
+            )
 
-    # Day-based strings (truncated to midnight)
-    elif timestring == "yesterday":
-        output_dt = datetime.combine(
-            date.today() - timedelta(days=1), datetime.min.time()
-        )
+        # Day-based strings (truncated to midnight)
+        elif timestring == "yesterday":
+            output_dt = datetime.combine(
+                date.today() - timedelta(days=1), datetime.min.time()
+            )
 
-    elif timestring == "today":
-        output_dt = datetime.combine(date.today(), datetime.min.time())
+        elif timestring == "today":
+            output_dt = datetime.combine(date.today(), datetime.min.time())
 
-    elif timestring == "tomorrow":
-        output_dt = datetime.combine(
-            date.today() + timedelta(days=1), datetime.min.time()
-        )
+        elif timestring == "tomorrow":
+            output_dt = datetime.combine(
+                date.today() + timedelta(days=1), datetime.min.time()
+            )
 
-    elif timestring == "overmorrow":
-        output_dt = datetime.combine(
-            date.today() + timedelta(days=2), datetime.min.time()
-        )
+        elif timestring == "overmorrow":
+            output_dt = datetime.combine(
+                date.today() + timedelta(days=2), datetime.min.time()
+            )
 
-    elif timestring == "thirdmorrow":
-        output_dt = datetime.combine(
-            date.today() + timedelta(days=3), datetime.min.time()
-        )
+        elif timestring == "thirdmorrow":
+            output_dt = datetime.combine(
+                date.today() + timedelta(days=3), datetime.min.time()
+            )
 
-    # Return an output datetime if we have constructed one
-    if output_dt:
         return output_dt
 
     raise ValueError(f"{timestring} is not a valid time description")
