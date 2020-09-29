@@ -346,10 +346,10 @@ deployments:
           value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
-        - name: ROOT_PATH
-          value: /
       envFrom:
       - secretRef:
           name: sentry
@@ -378,6 +378,8 @@ deployments:
           value: "urbanair.odysseus:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
