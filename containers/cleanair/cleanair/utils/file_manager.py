@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import tensorflow as tf
     from pydantic import BaseModel
 
-
+# pylint: disable=R0904
 class FileManager:
     """Class for managing files for the urbanair project"""
 

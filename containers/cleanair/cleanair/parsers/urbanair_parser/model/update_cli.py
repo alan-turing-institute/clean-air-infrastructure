@@ -1,6 +1,5 @@
 """Command line interface for updating the database with results."""
 
-import logging
 from datetime import datetime
 from pathlib import Path
 import typer
@@ -39,15 +38,8 @@ def results(
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
-    model_data = ModelDataExtractor()
     train_data = file_manager.load_training_data()
-    x_train, y_train, index_train = model_data.get_data_arrays(
-        full_config, train_data, prediction=False,
-    )
     test_data = file_manager.load_test_data()
-    x_test, y_test, index_test = model_data.get_data_arrays(
-        full_config, test_data, prediction=True,
-    )
 
     # create an instance with correct ids
     secretfile: str = state["secretfile"]

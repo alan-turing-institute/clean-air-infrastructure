@@ -534,11 +534,11 @@ def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
 
 @pytest.fixture(scope="class")
 def model_config(secretfile, connection_class):
-
+    "Return a ModelConfig instance"
     return ModelConfig(secretfile=secretfile, connection=connection_class)
 
 
 @pytest.fixture(scope="class")
 def model_data(secretfile, connection_class):
-
+    "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
