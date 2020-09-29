@@ -16,6 +16,10 @@ urbanair model data generate-config \
     --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
+    # --feature-buffer 1000 \
+    --feature-buffer 500 \
+    # --feature-buffer 200 \
+    --feature-buffer 100 \
     --overwrite
 
 # check the data exists in the DB
