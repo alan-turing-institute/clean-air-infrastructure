@@ -137,41 +137,18 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  - name: air-forecast-svgp
-    schedule: "30 0 * * *"
-    concurrencyPolicy: Allow
-    restartPolicy: OnFailure
-    failedJobsHistoryLimit: 10
-    image:
-        repository: cleanairdocker.azurecr.io/model_fitting
-        imagePullPolicy: IfNotPresent
-    args: ["sh", "/app/scripts/svgp.sh"]
-    env:
-      - name: DB_SECRET_FILE
-        value: "db_secrets.json"
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    imagePullSecrets:
-        - name: regcred
-
   - name: air-forecast-svgp-gpu
     schedule: "30 0 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/model_fitting
+        repository: cleanairdocker.azurecr.io/mfgpu
         imagePullPolicy: IfNotPresent
-    args: ["python", "/app/scripts/test_gpu.py"]
+    args: ["bash", "/app/scripts/svgp.sh"]
     env:
       - name: DB_SECRET_FILE
-        value: "db_secrets.json"
+        value: "/secrets/db_secrets.json"
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -190,9 +167,6 @@ cronjobs:
     nodeSelector:
       agentpool: cleanair
     resources:
-      limits:
-        cpu: "3"
-        nvidia.com/gpu: 1
       requests:
         cpu: "3"
         nvidia.com/gpu: 1
