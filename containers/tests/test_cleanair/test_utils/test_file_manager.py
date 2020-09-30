@@ -157,11 +157,11 @@ def test_save_load_train_test(file_manager, dataset_dict: FeaturesDict,) -> None
     assert (file_manager.input_dir / FileManager.TEST_DATA_PICKLE).exists()
 
     # load the train/test data from file
-    # train_data = file_manager.load_training_data()
+    train_data = file_manager.load_training_data()
     test_data = file_manager.load_test_data()
-    # assert train_data.keys() == dataset_dict.keys()
+    assert train_data.keys() == dataset_dict.keys()
     assert test_data.keys() == dataset_dict.keys()
-    # assert train_data[Source.laqn].equals(dataset_dict[Source.laqn])
+    assert train_data[Source.laqn].equals(dataset_dict[Source.laqn])
     assert test_data[Source.laqn].equals(dataset_dict[Source.laqn])
 
 
@@ -185,3 +185,36 @@ def test_save_load_result_pickles(input_dir: Path, target_dict: TargetDict) -> N
         for species, y_array in species_dict.items():
             assert (y_array == forecast_pickle[source][species]).all()
             assert (y_array == training_result_pickle[source][species]).all()
+
+
+def test_save_load_result_csv(input_dir: Path, target_df: pd.DataFrame) -> None:
+    """Test result dataframes are saved to csv."""
+    file_manager = FileManager(input_dir)
+    source = Source.laqn
+    # save the forecast as csv
+    file_manager.save_forecast_to_csv(target_df, source)
+    assert (
+        file_manager.input_dir
+        / FileManager.RESULT
+        / f"{source.value}_pred_forecast.csv"
+    ).exists()
+
+    # save the training results as csv
+    file_manager.save_training_pred_to_csv(target_df, source)
+    assert (
+        file_manager.input_dir
+        / FileManager.RESULT
+        / f"{source.value}_pred_training.csv"
+    ).exists()
+
+    # load the results from csv
+    forecast_df = file_manager.load_forecast_from_csv(source)
+    training_result_df = file_manager.load_pred_training_from_csv(source)
+
+    # check the columns are the same for the original and loaded data
+    assert set(target_df.columns) == set(forecast_df.columns)
+    assert set(target_df.columns) == set(training_result_df.columns)
+    for col in target_df.columns:
+        if pd.api.types.is_numeric_dtype(target_df[col].dtype):
+            assert (target_df[col] == forecast_df[col]).all()
+            assert (target_df[col] == training_result_df[col]).all()

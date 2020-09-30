@@ -633,28 +633,75 @@ Remember that the `PGPASSWORD` token will only be valid for ~1h.
 ## Training models
 To train a model on your local machine you can run a model fitting entrypoint:
 
+TL;DR
 ```bash
-python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+urbanair init production
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source laqn
+urbanair model data generate-full-config
+urbanair model data download --training-data --prediction-data
+urbanair model setup mrdgp
+urbanair model fit mrdgp
+urbanair model update result mrdgp
+urbanair model update metrics INSTANCE_ID
 ```
 
-You can adjust the model parameters and data settings by changing the command line arguments.
-Use the `--help` flag to see available options.
-
-## GPU support with Docker
-For GPU support we strongly recommend using our docker image to run the entrypoint.
-This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
-
-You can build our custom GPU dockerfile with the following command:
-
+### Generate a model config
 ```bash
-docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source satellite --pred-source laqn --pred-source hexgrid
 ```
 
-To run the latest version of this entrypoint:
+### Validate the config
+```bash
+urbanair model data generate-full-config
+```
+
+### Download all data
 
 ```bash
-docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+urbanair model data download --training-data --prediction-data
 ```
+
+### Export data to directory
+```bash
+urbanair model data save-cache <data-dir-name>
+```
+
+### Run model
+```bash
+urbanair model svgp fit <data-directory>
+```
+
+or for deep gp
+
+```bash
+urbanair model deep-gp fit <data-directory>
+```
+
+## Model fitting with docker
+
+Build a model fitting docker image with tensorflow installed:
+```
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting -f containers/dockerfiles/model_fitting.Dockerfile containers
+```
+
+Alternatively you can pull the docker image if you haven't made any changes:
+
+```bash
+docker pull cleanairdocker.azurecr.io/model_fitting
+```
+
+To fit and predict using the SVGP you can run:
+
+```bash
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+```
+
+To fit and predict using the MRDGP run:
+```bash
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+```
+
+If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).
 
 ## Singularity for HPC
 Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).
