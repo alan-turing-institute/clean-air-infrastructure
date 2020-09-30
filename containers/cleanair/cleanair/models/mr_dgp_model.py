@@ -22,7 +22,7 @@ from .mr_dgp.mr_mixing_weights import (
 from .mr_dgp.utils import set_objective
 
 from .model import ModelMixin
-from ..types import FeaturesDict, NDArrayTuple, Source, Species, TargetDict
+from ..types import FeaturesDict, KernelParams, KernelType, NDArrayTuple, Source, Species, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -37,7 +37,7 @@ class MRDGP(ModelMixin):
     MR-DGP for air quality.
     """
 
-    def make_mixture(self, dataset: List[List[NDArray, NDArray]], parent_mixtures=None, name_prefix: str = "") -> MR_Mixture:
+    def make_mixture(self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = "") -> MR_Mixture:
         """
             Construct the DGP multi-res mixture
         """
@@ -322,12 +322,12 @@ def get_inducing_points(X, num_z=None):
     return z_inducing_locations
 
 
-def get_kernel(kernels, base_name):
+def get_kernel(kernels: List[KernelParams], base_name):
     """
         Returns product of kernels
     """
 
-    kernel_dict = {"linear": MR_Linear, "se": MR_SE}
+    kernel_dict = {KernelType.mr_linear: MR_Linear, KernelType.mr_se: MR_SE}
 
     # make sure kernels is a list
     if not isinstance(kernels, list):
@@ -336,34 +336,27 @@ def get_kernel(kernels, base_name):
     kernels_objs = []
 
     for kernel_idx, kernel in enumerate(kernels):
-        kernel_type = kernel["type"]
-        print(kernel_type)
 
-        if kernel_type not in kernel_dict.keys():
-            raise NotImplementedError(
-                "Kernel {kernel} does not exist".format(kernel=kernel_type)
-            )
-
-        for idx, _ in enumerate(kernel["active_dims"]):
+        for idx, _ in enumerate(kernel.active_dims):
             # kernel name must be unique, so include both active dim idx and kernel idx
 
-            if kernel_type == "linear":
+            if kernel.type == KernelType.mr_linear:
                 # construct linear kernel on current active dim
-                kernel_obj = kernel_dict[kernel_type](
+                kernel_obj = kernel_dict[kernel.type](
                     input_dim=1,
-                    variance=kernel["variance"][idx],
-                    active_dims=[kernel["active_dims"][idx]],
+                    variance=kernel.variance[idx],
+                    active_dims=[kernel.active_dims[idx]],
                     name="{kernel}_{kernel_idx}_{idx}".format(
-                        kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
+                        kernel=kernel.name, kernel_idx=kernel_idx, idx=idx
                     ),
                 )
-            elif kernel_type == "se":
+            elif kernel.type == KernelType.mr_se:
                 # construct se kernel on current active dim
-                kernel_obj = kernel_dict[kernel_type](
+                kernel_obj = kernel_dict[kernel.type](
                     input_dim=1,
-                    lengthscales=kernel["lengthscales"][idx],
-                    variance=kernel["variance"][idx],
-                    active_dims=[kernel["active_dims"][idx]],
+                    lengthscales=kernel.lengthscales[idx],
+                    variance=kernel.variance[idx],
+                    active_dims=[kernel.active_dims[idx]],
                     name="{kernel}_{kernel_idx}_{idx}".format(
                         kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
                     ),
