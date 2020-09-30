@@ -42,9 +42,9 @@ class MRDGP(ModelMixin):
             Construct the DGP multi-res mixture
         """
 
-        k_base_1 = get_kernel(self.model_params.base_laqn.kernel.dict(), "base_laqn")
-        k_base_2 = get_kernel(self.model_params.base_sat.kernel.dict(), "base_sat")
-        k_dgp_1 = get_kernel(self.model_params.dgp_sat.kernel.dict(), "dgp_sat")
+        k_base_1 = get_kernel(self.model_params.base_laqn.kernel, "base_laqn")
+        k_base_2 = get_kernel(self.model_params.base_sat.kernel, "base_sat")
+        k_dgp_1 = get_kernel(self.model_params.dgp_sat.kernel, "dgp_sat")
 
         k_parent_1 = None
 
@@ -339,6 +339,9 @@ def get_kernel(kernels: List[KernelParams], base_name):
 
         for idx, _ in enumerate(kernel.active_dims):
             # kernel name must be unique, so include both active dim idx and kernel idx
+            kernel_name = "{base}_{kernel}_{kernel_idx}_{idx}".format(
+                base=base_name, kernel=kernel.name, kernel_idx=kernel_idx, idx=idx
+            )
 
             if kernel.type == KernelType.mr_linear:
                 # construct linear kernel on current active dim
@@ -346,9 +349,7 @@ def get_kernel(kernels: List[KernelParams], base_name):
                     input_dim=1,
                     variance=kernel.variance[idx],
                     active_dims=[kernel.active_dims[idx]],
-                    name="{kernel}_{kernel_idx}_{idx}".format(
-                        kernel=kernel.name, kernel_idx=kernel_idx, idx=idx
-                    ),
+                    name=kernel_name
                 )
             elif kernel.type == KernelType.mr_se:
                 # construct se kernel on current active dim
@@ -357,9 +358,7 @@ def get_kernel(kernels: List[KernelParams], base_name):
                     lengthscales=kernel.lengthscales[idx],
                     variance=kernel.variance[idx],
                     active_dims=[kernel.active_dims[idx]],
-                    name="{kernel}_{kernel_idx}_{idx}".format(
-                        kernel=kernel["name"], kernel_idx=kernel_idx, idx=idx
-                    ),
+                    name=kernel_name,
                 )
 
             kernels_objs.append(kernel_obj)

@@ -37,6 +37,7 @@ from cleanair.types import (
     BaseModelParams,
     DataConfig,
     KernelParams,
+    KernelType,
     MRDGPParams,
     Source,
     Species,
@@ -498,7 +499,13 @@ def fake_cleanair_dataset(
 @pytest.fixture(scope="function")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
-    return KernelParams(name="matern32", type="matern32",)
+    return KernelParams(
+        name="matern32",
+        type=KernelType.matern32,
+        lengthscales=1.0,
+        variance=1.0,
+        ARD=True,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -517,19 +524,6 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
     return SVGPParams(**base_model.dict(), jitter=0.1,)
-
-
-@pytest.fixture(scope="function")
-def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
-    """Create MRDGP model params."""
-    return MRDGPParams(
-        base_laqn=base_model.copy(),
-        base_sat=base_model.copy(),
-        dgp_sat=base_model.copy(),
-        mixing_weight=dict(name="dgp_only", param=None),
-        num_prediction_samples=10,
-        num_samples_between_layers=10,
-    )
 
 
 @pytest.fixture(scope="class")
