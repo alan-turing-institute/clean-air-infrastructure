@@ -57,13 +57,15 @@ class FeatureBufferSize(str, Enum):
 
 
 @unique
-class KernelName(str, Enum):
+class KernelType(str, Enum):
     """Valid kernels."""
 
     matern12 = "matern12"
     matern32 = "matern32"
     matern52 = "matern52"
     rbf = "rbf"
+    mr_linear = "mr_linear"
+    mr_se = "mr_se"
 
 
 @unique
