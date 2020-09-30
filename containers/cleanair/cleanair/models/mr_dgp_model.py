@@ -206,84 +206,8 @@ class MRDGP(ModelMixin):
         x_laqn = x_laqn[:, features]
         x_sat = x_sat[:, :, features]
 
-        if False:
-            print(np.unique(x_laqn[:, 0]))
-            print(np.unique(x_sat[:, :, 0]))
-
-            print("x_laqn: ", x_laqn.shape)
-            print("x_sat: ", x_sat.shape)
-
-            import matplotlib as mpl
-            import matplotlib.pyplot as plt
-
-            norm = mpl.colors.Normalize(vmin=np.min(y_laqn), vmax=np.max(y_laqn))
-
-            try:
-                _i = 0
-                for i in np.unique(x_sat[:, :, 0]):
-                    time_point = i
-
-                    N_sat, N_disr, N_d = x_sat.shape
-
-                    y_sat_filtered = np.tile(y_sat[:, None, :], [1, N_disr, 1])
-                    x_sat_filtered = x_sat.reshape(N_sat * N_disr, N_d)
-                    y_sat_filtered = y_sat_filtered.reshape(N_sat * N_disr, 1)
-                    idx = x_sat_filtered[:, 0] == time_point
-                    x_sat_filtered = x_sat_filtered[idx, :]
-                    y_sat_filtered = y_sat_filtered[idx, :]
-
-                    x_sat_filtered = x_sat_filtered.reshape(
-                        int(x_sat_filtered.shape[0] / N_disr), N_disr, N_d
-                    )
-                    y_sat_filtered = y_sat_filtered.reshape(
-                        int(y_sat_filtered.shape[0] / N_disr), N_disr, 1
-                    )
-
-                    x_laqn_filtered = x_laqn[x_laqn[:, 0] == time_point, :]
-                    y_laqn_filtered = y_laqn[x_laqn[:, 0] == time_point, :]
-
-                    print("y_sat_filtered: ", y_sat_filtered.shape)
-                    print(y_sat_filtered)
-                    print(
-                        "max laqn , sat: ",
-                        np.max(y_laqn_filtered),
-                        np.max(y_sat_filtered),
-                    )
-
-                    plt.scatter(
-                        x_sat_filtered[:, :, 1],
-                        x_sat_filtered[:, :, 2],
-                        c=np.squeeze(y_sat_filtered[:, :, 0]),
-                        norm=norm,
-                    )
-
-                    plt.scatter(
-                        x_laqn_filtered[:, 1],
-                        x_laqn_filtered[:, 2],
-                        c=np.squeeze(y_laqn_filtered),
-                        norm=norm,
-                    )
-                    plt.legend()
-                    plt.show()
-                    _i += 1
-
-                    if _i == 24:
-                        break
-            except KeyboardInterrupt:
-                print("ending")
-
-            exit()
-        # X = [X_laqn[:, None, :], X_sat]
-        # Y = [Y_laqn, Y_sat]
-
         x_sat, y_sat = ModelMixin.clean_data(x_sat, y_sat)
         x_laqn, y_laqn = ModelMixin.clean_data(x_laqn, y_laqn)
-
-        print(x_sat)
-        print(x_laqn)
-        print(np.min(x_laqn, axis=0), np.max(x_laqn, axis=0))
-        print("LAQN: ", np.min(y_laqn), np.max(y_laqn))
-        print("SAT: ", np.min(y_sat), np.max(y_sat))
 
         if mask:
             # remove any satellite tiles that are not fully in London
@@ -297,15 +221,9 @@ class MRDGP(ModelMixin):
             # replace nans in x_sat with zeros
             nan_idx = np.isnan(x_sat)
             x_sat[nan_idx] = 0.0
-            print(x_sat.shape)
 
         X = [x_sat, x_laqn[:, None, :]]
         Y = [y_sat, y_laqn]
-
-        print(x_sat.shape)
-        print(y_sat.shape)
-        print(x_laqn.shape)
-        print(y_laqn.shape)
 
         # ===========================Setup Model===========================
         # dataset = [LAQN, SAT]
@@ -333,11 +251,18 @@ class MRDGP(ModelMixin):
                 opt = AdamOptimizer(0.1)
                 simple_optimizing_scheme = True
 
-                if not simple_optimizing_scheme:
-                    # train first layer
+                if simple_optimizing_scheme:
+                    set_objective(AdamOptimizer, "elbo")
+                    opt.minimize(
+                        self.model,
+                        step_callback=self.elbo_logger,
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
+                        anchor=True,
+                    )
+                else:
+                    # train first layer and fix both noises
                     self.model.disable_dgp_elbo()
                     set_objective(AdamOptimizer, "base_elbo")
-                    # TODO maxiter for different models (sat, laqn -> sat)
                     self.model.set_base_gp_noise(False)
                     self.model.set_dgp_gp_noise(False)
                     opt.minimize(
@@ -346,72 +271,41 @@ class MRDGP(ModelMixin):
                         maxiter=self.model_params["base_laqn"]["maxiter"],
                     )
 
-                    if True:
-                        # train 2nd layer
-                        self.model.disable_base_elbo()
-                        self.model.enable_dgp_elbo()
-                        set_objective(AdamOptimizer, "elbo")
-                        opt.minimize(
-                            self.model,
-                            step_callback=self.elbo_logger,
-                            maxiter=self.model_params["base_laqn"]["maxiter"],
-                        )
-
-                        # train both layers
-                        self.model.enable_base_elbo()
-                        set_objective(AdamOptimizer, "elbo")
-                        opt.minimize(
-                            self.model,
-                            step_callback=self.elbo_logger,
-                            maxiter=self.model_params["base_laqn"]["maxiter"],
-                        )
-                        if False:
-                            self.model.set_base_gp_noise(True)
-                            self.model.set_dgp_gp_noise(True)
-
-                            # train both layers
-                            self.model.enable_base_elbo()
-                            set_objective(AdamOptimizer, "elbo")
-                            opt.minimize(
-                                self.model,
-                                step_callback=self.elbo_logger,
-                                maxiter=self.model_params["base_laqn"]["maxiter"],
-                            )
-                else:
-                    if False:
-                        self.model.set_base_gp_noise(False)
-                        self.model.set_dgp_gp_noise(False)
-
-                    # print(tf.gradients())
-
-                    if False:
-                        total_parameters = 0
-                        for variable in tf.trainable_variables():
-                            print(
-                                variable,
-                                ": ",
-                                np.sum(
-                                    np.array(
-                                        tf.gradients(
-                                            self.model._build_likelihood(), variable
-                                        )[0].eval(session=tf_session)
-                                    )
-                                ),
-                            )
-
-                    print(self.model_params["base_laqn"]["maxiter"])
+                    # train 2nd layer
+                    self.model.disable_base_elbo()
+                    self.model.enable_dgp_elbo()
                     set_objective(AdamOptimizer, "elbo")
                     opt.minimize(
                         self.model,
                         step_callback=self.elbo_logger,
                         maxiter=self.model_params["base_laqn"]["maxiter"],
-                        anchor=True,
                     )
+
+                    # jointly train both layers
+                    self.model.enable_base_elbo()
+                    set_objective(AdamOptimizer, "elbo")
+                    opt.minimize(
+                        self.model,
+                        step_callback=self.elbo_logger,
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
+                    )
+
+                    #release likelihood noises
+                    self.model.set_base_gp_noise(True)
+                    self.model.set_dgp_gp_noise(True)
+
+                    # jointly train both layers
+                    self.model.enable_base_elbo()
+                    set_objective(AdamOptimizer, "elbo")
+                    opt.minimize(
+                        self.model,
+                        step_callback=self.elbo_logger,
+                        maxiter=self.model_params["base_laqn"]["maxiter"],
+                    )
+
 
         except KeyboardInterrupt:
             print("Ending early")
-
-        print(self.model)
 
         if self.experiment_config["save_model_state"]:
             saver = tf.train.Saver()
@@ -432,8 +326,6 @@ class MRDGP(ModelMixin):
 
     def predict(self, x_test, species=None):
         species = species if species is not None else ["NO2"]
-        # TODO there used be an ignore here? can we remove it
-        # ignore = ignore if ignore is not None else None
 
         return self.predict_srcs(x_test, self._predict)
 
