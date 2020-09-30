@@ -1,7 +1,9 @@
 """
 Multi-resolution DGP (LAQN + Satellite)
 """
+from typing import Dict, Optional, List
 import os
+from nptyping import NDArray
 import numpy as np
 import tensorflow as tf
 from scipy.cluster.vq import kmeans2
@@ -20,15 +22,14 @@ from .mr_dgp.mr_mixing_weights import (
 from .mr_dgp.utils import set_objective
 
 from .model import ModelMixin
-from ..types import FeaturesDict, ParamsDict, TargetDict
+from ..types import FeaturesDict, NDArrayTuple, Source, Species, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
-from gpflow.training import AdamOptimizer
-
-import json
+# pylint: disable=wrong-import-position,wrong-import-order
+import gpflow
+from gpflow.training import AdamOptimizer   # pylint: disable=no-name-in-module
 
 
 class MRDGP(ModelMixin):
@@ -36,82 +37,20 @@ class MRDGP(ModelMixin):
     MR-DGP for air quality.
     """
 
-    def get_default_model_params(self) -> ParamsDict:
-        """
-        The default model parameters of MR-DGP if none are supplied.
-
-        Returns
-        ___
-
-        dict
-            Dictionary of parameters.
-        """
-        return {
-            "base_laqn": {
-                "kernel": {
-                    "name": "MR_SE_LAQN_BASE",
-                    "type": "se",
-                    "active_dims": [0, 1, 2],  # epoch, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0.1],
-                    "variance": [1.0, 1.0, 1.0],
-                },
-                "num_inducing_points": 500,
-                "minibatch_size": 100,
-                "likelihood_variance": 0.1,
-            },
-            "base_sat": {
-                "kernel": {
-                    "name": "MR_SE_SAT_BASE",
-                    "type": "se",
-                    "active_dims": [0, 1, 2],  # epoch, lat, lon,
-                    "lengthscales": [0.1, 0.1, 0.1],
-                    "variance": [1.0, 1.0, 1.0],
-                },
-                "num_inducing_points": 500,
-                "minibatch_size": 100,
-                "likelihood_variance": 0.1,
-            },
-            "dgp_sat": {
-                "kernel": [
-                    {
-                        "name": "MR_LINEAR_SAT_DGP",
-                        # "type": "se",
-                        "type": "linear",
-                        "active_dims": [0],  # previous GP, lat, lon,
-                        "variance": [1.0],
-                    },
-                    {
-                        "name": "MR_SE_SAT_DGP",
-                        "type": "se",
-                        "active_dims": [2, 3],  # previous GP, lat, lon,
-                        "lengthscales": [0.1, 0.1],
-                        "variance": [1.0, 1.0],
-                    },
-                ],
-                "num_inducing_points": 500,
-                "minibatch_size": 100,
-                "likelihood_variance": 0.1,
-            },
-            "mixing_weight": {"name": "dgp_only", "param": None},
-            "num_samples_between_layers": 1,
-            "num_prediction_samples": 10,
-            "maxiter": 10000,
-        }
-
-    def make_mixture(self, dataset, parent_mixtures=None, name_prefix=""):
+    def make_mixture(self, dataset: List[List[NDArray, NDArray]], parent_mixtures=None, name_prefix: str = "") -> MR_Mixture:
         """
             Construct the DGP multi-res mixture
         """
 
-        k_base_1 = get_kernel(self.model_params["base_laqn"]["kernel"], "base_laqn")
-        k_base_2 = get_kernel(self.model_params["base_sat"]["kernel"], "base_sat")
-        k_dgp_1 = get_kernel(self.model_params["dgp_sat"]["kernel"], "dgp_sat")
+        k_base_1 = get_kernel(self.model_params.base_laqn.kernel.dict(), "base_laqn")
+        k_base_2 = get_kernel(self.model_params.base_sat.kernel.dict(), "base_sat")
+        k_dgp_1 = get_kernel(self.model_params.dgp_sat.kernel.dict(), "dgp_sat")
 
         k_parent_1 = None
 
-        num_z_base_laqn = self.model_params["base_laqn"]["num_inducing_points"]
-        num_z_base_sat = self.model_params["base_sat"]["num_inducing_points"]
-        num_z_dgp_sat = self.model_params["dgp_sat"]["num_inducing_points"]
+        num_z_base_laqn = self.model_params.base_laqn.num_inducing_points
+        num_z_base_sat = self.model_params.base_sat.num_inducing_points
+        num_z_dgp_sat = self.model_params.dgp_sat.num_inducing_points
 
         # inducing points across the whole LAQN, SAT period
         base_z_inducing_locations = [
@@ -154,16 +93,16 @@ class MRDGP(ModelMixin):
 
         noise_sigmas = [
             [
-                self.model_params["base_laqn"]["likelihood_variance"],
-                self.model_params["base_sat"]["likelihood_variance"],
+                self.model_params.base_laqn.likelihood_variance,
+                self.model_params.base_sat.likelihood_variance,
             ],
-            [self.model_params["dgp_sat"]["likelihood_variance"]],
+            [self.model_params.dgp_sat.likelihood_variance],
             [1.0],
         ]
 
         minibatch_sizes = [
-            self.model_params["base_laqn"]["minibatch_size"],
-            self.model_params["base_sat"]["minibatch_size"],
+            self.model_params.base_laqn.minibatch_size,
+            self.model_params.base_sat.minibatch_size,
         ]
 
         model = MR_Mixture(
@@ -173,33 +112,36 @@ class MRDGP(ModelMixin):
             noise_sigmas=noise_sigmas,
             minibatch_sizes=minibatch_sizes,
             mixing_weight=get_mixing_weight(
-                self.model_params["mixing_weight"]["name"],
-                self.model_params["mixing_weight"]["param"],
+                self.model_params.mixing_weight["name"],
+                self.model_params.mixing_weight["param"],
             ),
             # mixing_weight=MR_DGP_Only(),
             # mixing_weight = MR_Variance_Mixing_1(),
             # mixing_weight=MR_Base_Only(i=1),
             parent_mixtures=parent_mixtures,
-            num_samples=self.model_params["num_samples_between_layers"],
+            num_samples=self.model_params.num_samples_between_layers,
             name=name_prefix + "MRDGP",
         )
 
         return model
 
     def fit(
-        self, x_train: FeaturesDict, y_train: TargetDict, mask: bool = None
+        self,
+        x_train: FeaturesDict,
+        y_train: TargetDict,
+        mask: Optional[Dict[Source, List[bool]]] = None,
     ) -> None:
         """
             Fit MR_DGP to the multi resolution x_train and y_train
         """
 
-        print(json.dumps(self.model_params, sort_keys=True, indent=3))
+        self.logger.info(self.model_params.json(sort_keys=True, indent=3))
 
-        x_laqn = x_train["laqn"].copy()
-        y_laqn = y_train["laqn"]["NO2"].copy()
+        x_laqn = x_train[Source.laqn].copy()
+        y_laqn = y_train[Source.laqn][Species.NO2].copy()
         # ===========================Setup SAT Data===========================
-        x_sat = x_train["satellite"].copy()
-        y_sat = y_train["satellite"]["NO2"].copy()
+        x_sat = x_train[Source.satellite].copy()
+        y_sat = y_train[Source.satellite][Species.NO2].copy()
 
         # ===========================Setup Data===========================
         features = [0, 1, 2]
@@ -211,7 +153,7 @@ class MRDGP(ModelMixin):
 
         if mask:
             # remove any satellite tiles that are not fully in London
-            in_london_index = ~np.all(mask["satellite"], axis=1)
+            in_london_index = ~np.all(mask[Source.satellite], axis=1)
 
             x_sat = x_sat[in_london_index]
             y_sat = y_sat[in_london_index]
@@ -234,99 +176,98 @@ class MRDGP(ModelMixin):
         model_dgp.compile()
         self.model = model_dgp
 
-        tf_session = self.model.enquire_session()
+        # tf_session = self.model.enquire_session()
         # ===========================Train===========================
-        if self.experiment_config["restore"]:
-            saver = tf.train.Saver()
-            saver.restore(
-                tf_session,
-                "{folder}/restore/{name}.ckpt".format(
-                    folder=self.experiment_config["model_state_fp"],
-                    name=self.experiment_config["name"],
-                ),
-            )
+        # TODO move restore and save into their own functions (reuse file manager)
+        # if self.experiment_config["restore"]:
+        #     saver = tf.train.Saver()
+        #     saver.restore(
+        #         tf_session,
+        #         "{folder}/restore/{name}.ckpt".format(
+        #             folder=self.experiment_config["model_state_fp"],
+        #             name=self.experiment_config["name"],
+        #         ),
+        #     )
 
         try:
-            if self.experiment_config["train"]:
-                opt = AdamOptimizer(0.1)
-                simple_optimizing_scheme = True
+            # if self.experiment_config["train"]:
+            opt = AdamOptimizer(0.1)
+            simple_optimizing_scheme = True
 
-                if simple_optimizing_scheme:
-                    set_objective(AdamOptimizer, "elbo")
-                    opt.minimize(
-                        self.model,
-                        step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
-                        anchor=True,
-                    )
-                else:
-                    # train first layer and fix both noises
-                    self.model.disable_dgp_elbo()
-                    set_objective(AdamOptimizer, "base_elbo")
-                    self.model.set_base_gp_noise(False)
-                    self.model.set_dgp_gp_noise(False)
-                    opt.minimize(
-                        self.model,
-                        step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
-                    )
+            if simple_optimizing_scheme:
+                set_objective(AdamOptimizer, "elbo")
+                opt.minimize(
+                    self.model,
+                    step_callback=self.elbo_logger,
+                    maxiter=self.model_params.base_laqn.maxiter,
+                    anchor=True,
+                )
+            else:
+                # train first layer and fix both noises
+                self.model.disable_dgp_elbo()
+                set_objective(AdamOptimizer, "base_elbo")
+                self.model.set_base_gp_noise(False)
+                self.model.set_dgp_gp_noise(False)
+                opt.minimize(
+                    self.model,
+                    step_callback=self.elbo_logger,
+                    maxiter=self.model_params.base_laqn.maxiter,
+                )
 
-                    # train 2nd layer
-                    self.model.disable_base_elbo()
-                    self.model.enable_dgp_elbo()
-                    set_objective(AdamOptimizer, "elbo")
-                    opt.minimize(
-                        self.model,
-                        step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
-                    )
+                # train 2nd layer
+                self.model.disable_base_elbo()
+                self.model.enable_dgp_elbo()
+                set_objective(AdamOptimizer, "elbo")
+                opt.minimize(
+                    self.model,
+                    step_callback=self.elbo_logger,
+                    maxiter=self.model_params.base_laqn.maxiter,
+                )
 
-                    # jointly train both layers
-                    self.model.enable_base_elbo()
-                    set_objective(AdamOptimizer, "elbo")
-                    opt.minimize(
-                        self.model,
-                        step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
-                    )
+                # jointly train both layers
+                self.model.enable_base_elbo()
+                set_objective(AdamOptimizer, "elbo")
+                opt.minimize(
+                    self.model,
+                    step_callback=self.elbo_logger,
+                    maxiter=self.model_params.base_laqn.maxiter,
+                )
 
-                    #release likelihood noises
-                    self.model.set_base_gp_noise(True)
-                    self.model.set_dgp_gp_noise(True)
+                #release likelihood noises
+                self.model.set_base_gp_noise(True)
+                self.model.set_dgp_gp_noise(True)
 
-                    # jointly train both layers
-                    self.model.enable_base_elbo()
-                    set_objective(AdamOptimizer, "elbo")
-                    opt.minimize(
-                        self.model,
-                        step_callback=self.elbo_logger,
-                        maxiter=self.model_params["base_laqn"]["maxiter"],
-                    )
+                # jointly train both layers
+                self.model.enable_base_elbo()
+                set_objective(AdamOptimizer, "elbo")
+                opt.minimize(
+                    self.model,
+                    step_callback=self.elbo_logger,
+                    maxiter=self.model_params.base_laqn.maxiter,
+                )
 
 
         except KeyboardInterrupt:
-            print("Ending early")
+            self.logger.info("Keyboard interrupt. Ending training of model early.")
 
-        if self.experiment_config["save_model_state"]:
-            saver = tf.train.Saver()
-            saver.save(
-                tf_session,
-                "{folder}/restore/{name}.ckpt".format(
-                    folder=self.experiment_config["model_state_fp"],
-                    name=self.experiment_config["name"],
-                ),
-            )
+        # if self.experiment_config["save_model_state"]:
+        #     saver = tf.train.Saver()
+        #     saver.save(
+        #         tf_session,
+        #         "{folder}/restore/{name}.ckpt".format(
+        #             folder=self.experiment_config["model_state_fp"],
+        #             name=self.experiment_config["name"],
+        #         ),
+        #     )
 
-    def _predict(self, x_test):
+    def _predict(self, x_test: NDArray) -> NDArrayTuple:
         ys_mean, ys_var = self.model.predict_y_experts(
-            x_test, self.model_params["num_prediction_samples"]
+            x_test, self.model_params.num_prediction_samples
         )
         ys_mean, ys_var = get_sample_mean_var(ys_mean, ys_var)
         return ys_mean, ys_var
 
-    def predict(self, x_test, species=None):
-        species = species if species is not None else ["NO2"]
-
+    def predict(self, x_test: FeaturesDict) -> TargetDict:
         return self.predict_srcs(x_test, self._predict)
 
 
