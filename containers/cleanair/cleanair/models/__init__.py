@@ -1,9 +1,24 @@
 """Model fitting classes"""
 from .model import ModelMixin
-from .model_data import ModelData
+from .model_data import ModelData, ModelDataExtractor
 from .model_config import ModelConfig
+from .schemas import (
+    StaticFeatureSchema,
+    StaticFeatureLocSchema,
+    StaticFeatureTimeSpecies,
+    StaticFeaturesWithSensors,
+)
 
 # from .svgp import SVGP
 
-# ToDO: Reimport SVPG.
-__all__ = ["ModelConfig", "ModelMixin", "ModelData"]
+
+__all__ = [
+    "ModelConfig",
+    "ModelMixin",
+    "ModelData",
+    "ModelDataExtractor",
+    "StaticFeatureSchema",
+    "StaticFeatureLocSchema",
+    "StaticFeatureTimeSpecies",
+    "StaticFeaturesWithSensors",
+]

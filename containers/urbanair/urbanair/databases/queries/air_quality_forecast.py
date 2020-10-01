@@ -18,7 +18,7 @@ from ..schemas.air_quality_forecast import ForecastResultGeoJson, GeometryGeoJso
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
 
-@db_query
+@db_query()
 def query_instance_ids(
     db: Session, start_datetime: datetime, end_datetime: datetime,
 ) -> Query:
@@ -67,7 +67,7 @@ def cached_instance_ids(
     return query_instance_ids(db, start_datetime, end_datetime).all()
 
 
-@db_query
+@db_query()
 def query_geometries_hexgrid(
     db: Session, bounding_box: Optional[Tuple[float]] = None,
 ) -> Query:
@@ -103,7 +103,7 @@ def cached_geometries_hexgrid(
     return GeometryGeoJson(features=features)
 
 
-@db_query
+@db_query()
 def query_forecasts_hexgrid(
     db: Session,
     instance_id: str,

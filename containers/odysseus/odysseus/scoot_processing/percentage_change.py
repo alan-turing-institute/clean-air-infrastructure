@@ -51,7 +51,7 @@ class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):
         else:
             raise ValueError("baseline_tag must be 'normal' or 'lockdown'")
 
-    @db_query
+    @db_query()
     def get_percent_of_baseline(
         self, baseline_period, comparison_start, comparison_end=None, detectors=None
     ):
