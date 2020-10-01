@@ -1,5 +1,5 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text
+from sqlalchemy import Column, String, BigInteger, Text, Integer, Date
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     SMALLINT,
@@ -61,3 +61,24 @@ class JamCamVideoStats(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamVideoStats(" + ", ".join(vals) + ")>"
+
+
+class JamCamDayStats(Base):
+    """Table of detection counts"""
+
+    __tablename__ = "day_stats"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)  # TODO Fix types  >>>  these were set manually, not defined here, correct to follow other tables
+    camera_id = Column(VARCHAR(20))
+    date = Column(Date)
+    detection_class = Column(String(20))
+    count = Column(REAL)
+    source = Column(SMALLINT, nullable=False)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamDayStats(" + ", ".join(vals) + ")>"

@@ -1,7 +1,7 @@
 """Return Schemas for JamCam routes"""
 # pylint: disable=C0115
 from typing import List, Tuple
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel
 from pydantic.dataclasses import dataclass
 from sqlalchemy import text
@@ -51,7 +51,14 @@ class JamCamVideo(JamCamCounts):
 class JamCamVideoAverage(JamCamAverageCounts):
 
     detection_class: str
-    measurement_start_utc: datetime
+    date: date
+
+
+class JamCamDailyAverage(JamCamAverageCounts):
+
+    camera_id: str
+    detection_class: str
+    counts: int
 
 
 # GeoJson Types

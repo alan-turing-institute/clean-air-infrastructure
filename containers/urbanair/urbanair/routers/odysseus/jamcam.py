@@ -1,7 +1,8 @@
 """JamCam API routes"""
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
-from datetime import datetime
+import json
+import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
 from ...databases import get_db, all_or_404
@@ -10,12 +11,14 @@ from ...databases.schemas.jamcam import (
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
+    JamCamDailyAverage,
 )
 from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
     get_jamcam_info,
     get_jamcam_hourly,
+    get_jamcam_daily,
 )
 from ...types import DetectionClass
 
@@ -30,12 +33,16 @@ def common_jamcam_params(
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
-    starttime: datetime = Query(
+    starttime: datetime.datetime = Query(
         None, description="""ISO UTC datetime to request data from""",
     ),
-    endtime: datetime = Query(
+    endtime: datetime.datetime = Query(
         None,
         description="ISO UTC datetime to request data up to (not including this datetime)",
+    ),
+    date: datetime.date = Query(
+        None,
+        description="ISO UTC date to request data for",
     ),
 ) -> Dict:
     """Common parameters in jamcam routes.
@@ -63,6 +70,7 @@ def common_jamcam_params(
         "detection_class": detection_class,
         "starttime": starttime,
         "endtime": endtime,
+        "date": date
     }
 
 
@@ -133,6 +141,25 @@ def camera_hourly_average(
         commons["detection_class"],
         commons["starttime"],
         commons["endtime"],
+    )
+
+    return all_or_404(data)
+
+
+@router.get(
+    "/daily",
+    response_model=List[JamCamDailyAverage],
+    description="Request hourly counts of objects at jamcam cameras averaged by day",
+)
+def camera_daily_average(
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    data = get_jamcam_daily(
+        db,
+        commons["camera_id"],
+        commons["detection_class"],
+        commons["date"],
     )
 
     return all_or_404(data)
