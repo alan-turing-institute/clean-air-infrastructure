@@ -36,7 +36,7 @@ class TrafficMetricQueryMixin(InstanceQueryMixin):
                 instance_subquery.c.tag,
                 instance_subquery.c.fit_start_time,
                 instance_subquery.c.git_hash,
-                instance_subquery.c.model_param,
+                instance_subquery.c.model_params,
                 instance_subquery.c.data_config,
             ).join(
                 instance_subquery,
