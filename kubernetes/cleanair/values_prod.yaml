@@ -125,7 +125,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "2"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "0", "--nhours", "5"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -363,10 +363,10 @@ deployments:
           value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
-        - name: ROOT_PATH
-          value: /
       envFrom:
       - secretRef:
           name: sentry
@@ -395,6 +395,8 @@ deployments:
           value: "urbanair.odysseus:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
@@ -425,6 +427,8 @@ deployments:
       env:
         - name: APP_MODULE
           value: "urbanair.developer:app"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS

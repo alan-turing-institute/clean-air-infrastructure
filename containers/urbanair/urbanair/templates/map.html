@@ -145,7 +145,7 @@
                 let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                 for (type of detection_classes) {
                     let subdat = result.filter(function(item){return item.detection_class == type})
-                    let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
+                    let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts})) 
                     
                 //     zeroIdxs = result.counts[type].filter(i => i > 0);
                     detailsChartConfig.data.datasets.push(
@@ -277,8 +277,8 @@
                         avg_at_camera.push(sum_at_camera/count.length);
 
                         if (new Date(getDate()).toDateString() == new Date().toDateString()){
-                            let counts =  items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
-                            let time =  items.map(({measurement_start_utc}) => (new Date(measurement_start_utc + 'Z')))
+                            let counts =  items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts})) 
+                            let time =  items.map(({measurement_start_utc}) => (new Date(measurement_start_utc)))
                             let last_hour = counts.filter(function(last){return last.t == new Date(Math.max(...time)).toString()})
                                 
                             last_hours.push(last_hour[0].y)
