@@ -10,6 +10,7 @@ class ClusterId(str, Enum):
     pearl = "pearl"
     kubernetes = "kubernetes"
     orac = "orac"
+    nc6 = "nc6"
 
 
 @unique
