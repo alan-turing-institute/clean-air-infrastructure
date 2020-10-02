@@ -183,19 +183,19 @@ class FileManager:
 
     def load_model(
         self,
-        load_fn: Callable[[Path], gpflow.models.GPModel],
+        load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
+        model_name: ModelName,
         compile_model: bool = True,
-        model_name: str = "model",
         tf_session: Optional[tf.compat.v1.Session] = None,
     ) -> gpflow.models.GPModel:
         """Load a model from the cache.
 
         Args:
             load_fn: Loads a gpflow model from a filepath. See `cleanair.utils.tf1.load_gpflow1_model_from_file`.
+            model_name: Name of the model.
 
         Keyword args:
             compile_model: If true compile the GPflow model.
-            model_name: Name of the model.
             tf_session: Optional[tf.compat.v1.Session] = None,
 
         Returns:
@@ -205,31 +205,26 @@ class FileManager:
         # use the load function to get the model from the filepath
         export_dir = self.input_dir / FileManager.MODEL
         model = load_fn(
-            export_dir,
-            compile_model=compile_model,
-            model_name=model_name,
-            tf_session=tf_session,
+            export_dir, model_name, compile_model=compile_model, tf_session=tf_session,
         )
         return model
 
     def save_model(
         self,
         model: gpflow.models.GPModel,
-        save_fn: Optional[Callable[[gpflow.models.GPModel, Path], None]],
-        model_name: Optional[str] = "model",
+        save_fn: Callable[[gpflow.models.GPModel, Path, ModelName], None],
+        model_name: ModelName,
     ) -> None:
         """Save a model to file.
 
         Args:
             model: A gpflow model.
             save_fn: A callable function that takes two arguments (model, filepath) and writes the model to a file.
-
-        Keyword args:
             model_name: Name of the model.
         """
         self.logger.debug("Saving model to file")
         export_dir = self.input_dir / FileManager.MODEL
-        save_fn(model, export_dir, model_name=model_name)
+        save_fn(model, export_dir, model_name)
 
     def load_model_params(
         self, model_name: ModelName
