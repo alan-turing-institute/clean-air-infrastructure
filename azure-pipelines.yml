@@ -41,14 +41,23 @@ stages:
         docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
       displayName: "Build model_fitting image"
 
-    # Model fitting GPU 
+    # Tensorflow docker images with python 3.7
     - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_gpu_py37.Dockerfile containers
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
+      displayName: "Build tensorflow 1 image"
+    - script: | 
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_py37_gpu.Dockerfile containers
       displayName: "Build tensorflow 1 GPU image"
+    - script: | 
+      docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
+    displayName: "Build tensorflow 2 GPU image"
 
     # Model fitting
     - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/mfgpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
+      displayName: "Build model fitting image"
+    - script: | 
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
       displayName: "Build gpu model fitting image"
 
 
