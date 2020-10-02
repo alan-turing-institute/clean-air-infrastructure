@@ -1,4 +1,4 @@
-# Use an official tensorflow gpu runtime as a parent image
+# Use custom tensorflow gpu runtime as a parent image
 FROM cleanairdocker.azurecr.io/tf1_py37_gpu:latest
 
 # Get the arg value of the git hash

@@ -43,8 +43,8 @@ stages:
 
     # Model fitting GPU 
     - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_gpu_py37.Dockerfile containers
-      displayName: "Build tensorflow 1 image"
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_gpu_py37.Dockerfile containers
+      displayName: "Build tensorflow 1 GPU image"
 
     # Model fitting
     - script: | 

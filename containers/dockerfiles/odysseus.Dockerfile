@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.7
+FROM cleanairdocker.azurecr.io/tf2_gpu_py37:latest
 
 # Set the working directory to /app
 WORKDIR /app

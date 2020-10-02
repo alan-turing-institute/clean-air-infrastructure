@@ -23,12 +23,6 @@ def model_name() -> ModelName:
     return ModelName.svgp
 
 
-@pytest.fixture
-def save_load_instance_id() -> str:
-    """Test id for instance."""
-    return "fake_instance_id"
-
-
 @pytest.fixture(scope="function")
 def tf_session():
     """A tensorflow session that lasts for only the scope of a function.
