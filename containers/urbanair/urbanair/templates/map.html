@@ -237,7 +237,7 @@
 
         let cameras; // To hold the camera data in between api calls
 
-        fetch('https://api.tfl.gov.uk/Place/Type/JamCam/')
+        fetch('/static/data/jamcam_locations.json')
         .then((response) => {
             return response.json();
         })
