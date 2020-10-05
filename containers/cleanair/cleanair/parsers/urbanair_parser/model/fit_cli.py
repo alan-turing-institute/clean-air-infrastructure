@@ -1,13 +1,17 @@
 """Commands for a Sparse Variational GP to model air quality."""
 
 from __future__ import annotations
-from pathlib import Path
+from typing import TYPE_CHECKING
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
-from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
+from ....models import SVGP, MRDGP, ModelDataExtractor
 from ....types import ModelName, Source
 from ....utils import FileManager, tf1
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from ....models import ModelMixin
 
 app = typer.Typer(help="SVGP model fitting")
 
