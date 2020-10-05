@@ -241,14 +241,9 @@ def get_jamcam_daily(
         )
     )
 
-    if detection_class == DetectionClass.all_classes:
-        query = query.filter(
-            JamCamDayStats.detection_class.in_(DetectionClass.map_all())
-        )
-    else:
-        query = query.filter(
-            JamCamDayStats.detection_class == DetectionClass.map_detection_class(detection_class)
-        )
+    query = query.filter(
+        JamCamDayStats.detection_class == DetectionClass.map_detection_class(detection_class)
+    )
 
     if camera_id:
         query = query.filter(JamCamDayStats.camera_id == camera_id)
