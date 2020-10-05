@@ -32,6 +32,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
+from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
@@ -529,3 +530,15 @@ def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
         num_prediction_samples=10,
         num_samples_between_layers=10,
     )
+
+
+@pytest.fixture(scope="class")
+def model_config(secretfile, connection_class):
+    "Return a ModelConfig instance"
+    return ModelConfig(secretfile=secretfile, connection=connection_class)
+
+
+@pytest.fixture(scope="class")
+def model_data(secretfile, connection_class):
+    "Return a ModelData instance"
+    return ModelData(secretfile=secretfile, connection=connection_class)

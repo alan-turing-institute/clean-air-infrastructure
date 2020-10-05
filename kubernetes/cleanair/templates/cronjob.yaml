@@ -48,6 +48,10 @@ spec:
             volumeMounts:
 {{ toYaml . | indent 12 }}
             {{- end }}
+            {{- with $cronjob.env }}
+            env:
+{{ toYaml . | indent 12 }}
+          {{- end }}
         {{- with $cronjob.imagePullSecrets }}
           imagePullSecrets:
 {{ toYaml . | indent 10 }}
@@ -56,10 +60,7 @@ spec:
           volumes:
 {{ toYaml . | indent 10 }}
           {{- end }}
-          {{- with $cronjob.env }}
-          env:
-{{ toYaml . | indent 10 }}
-          {{- end }}
+          
           {{- with $cronjob.nodeSelector }}
           nodeSelector:
 {{ toYaml . | indent 12 }}
