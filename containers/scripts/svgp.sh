@@ -33,4 +33,4 @@ urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
 urbanair model fit svgp --refresh 100
 
 # push the results to the database
-urbanair model update results svgp --tag production --cluster-id kubernetes
+urbanair model update results svgp --tag production --cluster-id nc6

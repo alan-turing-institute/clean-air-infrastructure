@@ -13,13 +13,16 @@ from ...loggers import green
 
 
 class InstanceMixin:
-    """
-    An instance a model (with some params) trained on some data (described by a data config)
-    for a given version of code (git hash).
+    """An instance uniquely identifies a model fit by assigning ids.
+
+    The data id is generated from the data config and preprocessing settings.
+    The param id is generated from the model params.
+    The git hash is taken from the git repo or the environment variable.
+    The instance id is generated from the data id, param id, git hash and model name.
 
     Attributes:
         cluster_id: The id of the machine used to run the model.
-        data_config: The settings for loading the training data.
+        data_config: The settings for loading data.
         data_id: Uniquely identifies a data configuration/preprocessing combination.
         fit_start_time: Datetime when the model started fitting.
         git_hash: Git hash of the code version.
@@ -55,8 +58,10 @@ class InstanceMixin:
     @property
     def data_id(self) -> str:
         """Data id of configuration of input data."""
-        # TODO preprocessing dict should also be included here
-        return hash_fn(self.model_params.json(sort_keys=True))
+        hash_str = self.data_config.json(sort_keys=True) + self.preprocessing.json(
+            sort_keys=True
+        )
+        return hash_fn(hash_str)
 
     @property
     def instance_id(self) -> str:

@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "Urban Air API"
     admin_email: str = "ogiles@turing.ac.uk"
     db_secret_file: str = ".db_secrets.json"
-    docker: bool = True
+    mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
 
