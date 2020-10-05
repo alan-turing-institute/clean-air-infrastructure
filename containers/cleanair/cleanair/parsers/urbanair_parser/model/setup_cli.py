@@ -14,7 +14,13 @@ from ..shared_args.model_options import (
     MinibatchSize,
     NumInducingPoints,
 )
-from ....types.model_types import BaseModelParams, KernelParams, SVGPParams, MRDGPParams, KernelType
+from ....types.model_types import (
+    BaseModelParams,
+    KernelParams,
+    SVGPParams,
+    MRDGPParams,
+    KernelType,
+)
 from ....utils import FileManager
 
 app = typer.Typer(help="Setup model parameters.")
@@ -103,7 +109,7 @@ def mrdgp(
             active_dims=[2, 3],
             lengthscales=[0.1, 0.1],
             variance=[1.0, 1.0],
-        )
+        ),
     ]
     dgp_sat = BaseModelParams(
         kernel=dgp_sat_kernel,

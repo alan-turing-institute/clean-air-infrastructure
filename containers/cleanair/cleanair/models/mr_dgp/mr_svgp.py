@@ -5,33 +5,24 @@ from .mr_gaussian import MR_Gaussian
 from . import utils
 
 from gpflow.params import Parameter, Parameterized
-from gpflow.features import InducingPoints
 from gpflow import transforms
 from gpflow import settings
-from gpflow import params_as_tensors, ParamList
+from gpflow import params_as_tensors
+
+# TODO lots of undefined variables, not sure what they are
 
 
 class MR_SVGP(Parameterized):
     def __init__(self, Z, K, noise_sigma, white=True, **kwargs):
         Parameterized.__init__(self, **kwargs)
 
-        self.white = True
+        self.white = white
         self.num_inducing = Z.shape[0]
         self.inducing_locations = Z
         self.K = K
-
         self.likelihood = MR_Gaussian(variance=noise_sigma)
-
-        self.setup()
-
-    def setup(self):
-        self.setup_variational_parameters()
-
-    def setup_variational_parameters(self):
         self.Z = Parameter(self.inducing_locations)  # M x D
-
         self.q_mu = Parameter(np.zeros((self.num_inducing, 1)))  # M x 1
-
         q_sqrt = np.tile(np.eye(self.num_inducing)[None, :, :], [1, 1, 1])
         transform = transforms.LowerTriangular(self.num_inducing, num_matrices=1)
         self.q_sqrt = Parameter(q_sqrt, transform=transform)  # 1 x M x M

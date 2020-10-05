@@ -1,7 +1,8 @@
 import tensorflow as tf
-import numpy as np
 import gpflow
 from gpflow import settings
+
+# pylint: disable=protected-access
 
 
 def reparameterize(mean, var, z, full_cov=False):
@@ -27,7 +28,7 @@ def reparameterize(mean, var, z, full_cov=False):
         return mean + z * (var + settings.jitter) ** 0.5
 
     else:
-        S, N, D = tf.shape(mean)[0], tf.shape(mean)[1], tf.shape(mean)[2]  # var is SNND
+        _, N, _ = tf.shape(mean)[0], tf.shape(mean)[1], tf.shape(mean)[2]  # var is SNND
         mean = tf.transpose(mean, (0, 2, 1))  # SND -> SDN
         var = tf.transpose(var, (0, 3, 1, 2))  # SNND -> SDNN
         I = (

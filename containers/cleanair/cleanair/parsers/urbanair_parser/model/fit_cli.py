@@ -17,23 +17,17 @@ app = typer.Typer(help="SVGP model fitting")
 
 
 @app.command()
-def svgp(
-    input_dir: Path = InputDir, refresh: int = Refresh,
-) -> None:
+def svgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     """Fit a Sparse Variational Gaussian Process."""
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(ModelName.svgp)
     model = SVGP(model_params, refresh=refresh)
     model = fit_model(model, file_manager)
-    file_manager.save_model(
-        model.model, tf1.save_gpflow1_model_to_file, ModelName.svgp
-    )
+    file_manager.save_model(model.model, tf1.save_gpflow1_model_to_file, ModelName.svgp)
 
 
 @app.command()
-def mrdgp(
-    input_dir: Path = InputDir, refresh: int = Refresh,
-) -> None:
+def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     """Fit a Multi-resolution Deep Gaussian Process."""
     # Load the model parameters from a json file
     file_manager = FileManager(input_dir)

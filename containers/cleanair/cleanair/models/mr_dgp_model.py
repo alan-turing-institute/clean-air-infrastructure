@@ -22,14 +22,22 @@ from .mr_dgp.mr_mixing_weights import (
 from .mr_dgp.utils import set_objective
 
 from .model import ModelMixin
-from ..types import FeaturesDict, KernelParams, KernelType, NDArrayTuple, Source, Species, TargetDict
+from ..types import (
+    FeaturesDict,
+    KernelParams,
+    KernelType,
+    NDArrayTuple,
+    Source,
+    Species,
+    TargetDict,
+)
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 # pylint: disable=wrong-import-position,wrong-import-order
 import gpflow
-from gpflow.training import AdamOptimizer   # pylint: disable=no-name-in-module
+from gpflow.training import AdamOptimizer  # pylint: disable=no-name-in-module
 
 
 class MRDGP(ModelMixin):
@@ -37,7 +45,9 @@ class MRDGP(ModelMixin):
     MR-DGP for air quality.
     """
 
-    def make_mixture(self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = "") -> MR_Mixture:
+    def make_mixture(
+        self, dataset: List[List[NDArray]], parent_mixtures=None, name_prefix: str = ""
+    ) -> MR_Mixture:
         """
             Construct the DGP multi-res mixture
         """
@@ -145,7 +155,7 @@ class MRDGP(ModelMixin):
         y_sat = y_train[Source.satellite][Species.NO2].copy()
 
         # ===========================Setup Data===========================
-        features = [0, 1, 2]    # TODO change hardcoded features
+        features = [0, 1, 2]  # TODO change hardcoded features
         x_laqn = x_laqn[:, features]
         x_sat = x_sat[:, :, features]
 
@@ -228,7 +238,7 @@ class MRDGP(ModelMixin):
                     maxiter=self.model_params.base_laqn.maxiter,
                 )
 
-                #release likelihood noises
+                # release likelihood noises
                 self.model.set_base_gp_noise(True)
                 self.model.set_dgp_gp_noise(True)
 
@@ -240,7 +250,6 @@ class MRDGP(ModelMixin):
                     step_callback=self.elbo_logger,
                     maxiter=self.model_params.base_laqn.maxiter,
                 )
-
 
         except KeyboardInterrupt:
             self.logger.info("Keyboard interrupt. Ending training of model early.")
@@ -344,7 +353,7 @@ def get_kernel(kernels: List[KernelParams], base_name):
                     input_dim=1,
                     variance=kernel.variance[idx],
                     active_dims=[kernel.active_dims[idx]],
-                    name=kernel_name
+                    name=kernel_name,
                 )
             elif kernel.type == KernelType.mr_se:
                 # construct se kernel on current active dim

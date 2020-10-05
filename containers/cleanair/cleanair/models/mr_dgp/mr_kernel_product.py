@@ -1,14 +1,11 @@
-import numpy as np
 import tensorflow as tf
 import gpflow
-from gpflow import settings
-from gpflow import params_as_tensors
 
 
 class MR_KERNEL_PRODUCT(gpflow.kernels.Kernel):
     def __init__(self, kernels):
+        # TODO: Ollie should the super.init be called here?
         self.kernels = kernels
-        pass
 
     def fK(self, kernels):
         return tf.reduce_prod(kernels, axis=1)

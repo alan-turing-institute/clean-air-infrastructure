@@ -1,12 +1,11 @@
 import numpy as np
 import tensorflow as tf
 
-import gpflow
 from gpflow.likelihoods import Likelihood
-from gpflow import params_as_tensors, ParamList
+from gpflow import params_as_tensors
 from gpflow import transforms
 from gpflow import settings
-from gpflow.params import Parameter, Parameterized
+from gpflow.params import Parameter
 
 
 class MR_Gaussian(Likelihood):
