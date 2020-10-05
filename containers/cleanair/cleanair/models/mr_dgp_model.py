@@ -125,6 +125,7 @@ class MRDGP(ModelMixin):
 
         return model
 
+    # pylint: disable=arguments-differ
     def fit(
         self,
         x_train: FeaturesDict,
@@ -157,12 +158,6 @@ class MRDGP(ModelMixin):
 
             x_sat = x_sat[in_london_index]
             y_sat = y_sat[in_london_index]
-
-        # TODO: can remove when SAT data is stable
-        if False:
-            # replace nans in x_sat with zeros
-            nan_idx = np.isnan(x_sat)
-            x_sat[nan_idx] = 0.0
 
         X = [x_sat, x_laqn[:, None, :]]
         Y = [y_sat, y_laqn]
