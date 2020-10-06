@@ -6,11 +6,11 @@ from gpflow import params_as_tensors
 
 
 class MR_SE(gpflow.kernels.Stationary):
+    """Multi-resolution squared exponental kernel."""
+
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
-
-    # TODO Ollie should K_r be implemented?
 
     @params_as_tensors
     def K(self, X, X2=None, presliced=False):
@@ -47,3 +47,7 @@ class MR_SE(gpflow.kernels.Stationary):
             )
 
         return val
+
+    @params_as_tensors
+    def K_r(self, r):
+        raise NotImplementedError("Function not needed - feel free to contribute.")

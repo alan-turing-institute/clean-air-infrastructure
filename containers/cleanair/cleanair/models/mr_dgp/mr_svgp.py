@@ -13,6 +13,8 @@ from gpflow import params_as_tensors
 
 
 class MR_SVGP(Parameterized):
+    """Multi resolution sparse variational Gaussian process."""
+
     def __init__(self, Z, K, noise_sigma, white=True, **kwargs):
         Parameterized.__init__(self, **kwargs)
 
