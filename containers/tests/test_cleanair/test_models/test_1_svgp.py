@@ -1,10 +1,19 @@
-"""Test the SVGP based on a simple LAQN dataset."""
+"""Test the SVGP based on a simple LAQN dataset.
+
+Note: SVGP must be run before testing mrdgp.
+See https://github.com/alan-turing-institute/clean-air-infrastructure/issues/556
+"""
 
 
 from cleanair.models import ModelDataExtractor, SVGP
 
 
-# TODO: Write tests for models
+def test_svgp_init(svgp_model_params):
+    """Test the init function of the SVGP."""
+    model = SVGP(svgp_model_params)
+    assert model.epoch == 0
+
+
 class TestSVGP:
     """Class for testing the SVGP on LAQN data."""
 
