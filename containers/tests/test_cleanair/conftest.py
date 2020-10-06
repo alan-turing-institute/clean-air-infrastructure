@@ -36,12 +36,13 @@ from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
+    FeatureNames,
     KernelParams,
     KernelType,
+    MRDGPParams,
     Source,
     Species,
     SVGPParams,
-    FeatureNames,
 )
 
 # pylint: disable=W0613
@@ -523,6 +524,44 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
     return SVGPParams(**base_model.dict(), jitter=0.1,)
+
+
+@pytest.fixture(scope="function")
+def mr_linear_params() -> KernelParams:
+    """Matern 32 kernel params."""
+    return KernelParams(
+        name="mr_linear",
+        type=KernelType.mr_linear,
+        lengthscales=[1.0, 1.0, 1.0],
+        variance=[1.0, 1.0, 1.0],
+        ARD=True,
+        active_dims=[0, 1, 2],
+    )
+
+
+@pytest.fixture(scope="function")
+def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
+    """Model params for sub-MRDGP"""
+    return BaseModelParams(
+        kernel=mr_linear_params,
+        likelihood_variance=1.0,
+        num_inducing_points=10,
+        maxiter=10,
+        minibatch_size=10,
+    )
+
+
+@pytest.fixture(scope="function")
+def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
+    """Create MRDGP model params."""
+    return MRDGPParams(
+        base_laqn=sub_model.copy(),
+        base_sat=sub_model.copy(),
+        dgp_sat=sub_model.copy(),
+        mixing_weight=dict(name="dgp_only", param=None),
+        num_prediction_samples=10,
+        num_samples_between_layers=10,
+    )
 
 
 @pytest.fixture(scope="class")
