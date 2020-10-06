@@ -169,7 +169,7 @@ def test_save_load_result_pickles(input_dir: Path, target_dict: TargetDict) -> N
     assert (file_manager.input_dir / FileManager.PRED_FORECAST_PICKLE).exists()
 
     # save training result pickle
-    file_manager.save_training_pred_to_pickle(target_dict)
+    file_manager.save_pred_training_to_pickle(target_dict)
     assert (file_manager.input_dir / FileManager.PRED_TRAINING_PICKLE).exists()
 
     # load training result and forecast
@@ -196,7 +196,7 @@ def test_save_load_result_csv(input_dir: Path, target_df: pd.DataFrame) -> None:
     ).exists()
 
     # save the training results as csv
-    file_manager.save_training_pred_to_csv(target_df, source)
+    file_manager.save_pred_training_to_csv(target_df, source)
     assert (
         file_manager.input_dir
         / FileManager.RESULT

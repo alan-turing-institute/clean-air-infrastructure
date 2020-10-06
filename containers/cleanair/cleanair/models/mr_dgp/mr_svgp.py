@@ -80,16 +80,12 @@ class MR_SVGP(Parameterized):
         )  # N x M x S
         sig = k_xx - tf.matmul(tf.transpose(A, [0, 2, 1]), A)  # N x S x S
 
-        if self.white:
-            a = tf.linalg.triangular_solve(
-                tf.transpose(_k_zz_chol[0, :, :]), _s_chol, lower=False, name="A2_"
-            )
-            a = tf.expand_dims(a, 0)
-            a = tf.tile(a, [tf.shape(k_xz)[0], 1, 1])
-            A = tf.matmul(k_xz, a)
-            # A = tf.matmul(k_xz, util.tri_mat_solve(tf.transpose(k_zz_chol, [0, 2, 1]), s_chol, lower=False, name='A2_'))
-        else:
-            A = tf.matmul(k_xz, util.mat_solve(k_zz, s_chol))
+        a = tf.linalg.triangular_solve(
+            tf.transpose(_k_zz_chol[0, :, :]), _s_chol, lower=False, name="A2_"
+        )
+        a = tf.expand_dims(a, 0)
+        a = tf.tile(a, [tf.shape(k_xz)[0], 1, 1])
+        A = tf.matmul(k_xz, a)
 
         sig = sig + tf.matmul(A, tf.transpose(A, [0, 2, 1]))
 
@@ -107,24 +103,15 @@ class MR_SVGP(Parameterized):
         k_zz = self.K.K(_Z)  # 1 x M x M
 
         m = tf.tile(tf.expand_dims(self.q_mu, 0), [N, 1, 1])  # N x M x 1
+        # pylint: disable=unsubscriptable-object
         s_sqrt = self.q_sqrt[0, :, :]  # M x M
         return self.marginal(m, s_sqrt, k_zz, k_xz, k_xx)
 
     def kl_term(self):
         KL = -0.5 * tf.cast(self.num_inducing, settings.float_type)
         KL -= 0.5 * tf.reduce_sum(tf.log(tf.matrix_diag_part(self.q_sqrt) ** 2))
-
-        if not self.white:
-            KL += tf.reduce_sum(tf.log(tf.matrix_diag_part(self.Lu)))
-            KL += 0.5 * tf.reduce_sum(
-                tf.square(tf.matrix_triangular_solve(self.Lu_tiled, q_sqrt, lower=True))
-            )
-            Kinv_m = tf.cholesky_solve(self.Lu, q_mu)
-            KL += 0.5 * tf.reduce_sum(q_mu * Kinv_m)
-        else:
-            KL += 0.5 * tf.reduce_sum(tf.square(self.q_sqrt))
-            KL += 0.5 * tf.reduce_sum(self.q_mu ** 2)
-
+        KL += 0.5 * tf.reduce_sum(tf.square(self.q_sqrt))
+        KL += 0.5 * tf.reduce_sum(self.q_mu ** 2)
         return KL
 
     @params_as_tensors

@@ -173,51 +173,6 @@ class FileManager:
         )
         self.__save_pickle(test_data, self.input_dir / FileManager.TEST_DATA_PICKLE)
 
-    def load_pred_training_from_csv(self, source: Source) -> pd.DataFrame:
-        """Load the training predictions for a single source from csv"""
-        self.logger.debug(
-            "Loading predictions on the training set on %s from csv", source
-        )
-        result_fp = self.input_dir / FileManager.RESULT / f"{source}_pred_training.csv"
-        return pd.read_csv(result_fp)
-
-    def __save_result_to_csv(
-        self, result_df: pd.DataFrame, source: Source, filename: str
-    ) -> None:
-        """Save a result to file."""
-        result_fp = self.input_dir / FileManager.RESULT
-        result_df.to_csv(result_fp / f"{source}_{filename}.csv", index=False)
-
-    def save_forecast_to_csv(self, forecast_df: pd.DataFrame, source: Source) -> None:
-        """Save the forecast dataframe to a csv.
-
-        Args:
-            forecast_df: DataFrame of forecasts for a given source.
-            source: Source predicted at, e.g. laqn, hexgrid.
-        """
-        self.logger.info(
-            "Saving a forecast for %s to csv. Dataframe has %s rows.",
-            source,
-            len(forecast_df),
-        )
-        self.__save_result_to_csv(forecast_df, source, "pred_forecast")
-
-    def save_training_pred_to_csv(
-        self, result_df: pd.DataFrame, source: Source
-    ) -> None:
-        """Save the predictions on the training set to a csv for a given source.
-
-        Args:
-            result_df: DataFrame of predictions for a given source on the training set.
-            source: Source predicted at, e.g. laqn, hexgrid.
-        """
-        self.logger.info(
-            "Saving predictions on training set for %s to csv. Dataframe has %s rows.",
-            source,
-            len(result_df),
-        )
-        self.__save_result_to_csv(result_df, source, "pred_training")
-
     def load_model(
         self,
         load_fn: Callable[[Path, ModelName], gpflow.models.GPModel],
@@ -291,7 +246,7 @@ class FileManager:
         self.logger.debug("Saving the forecasts to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_FORECAST_PICKLE)
 
-    def save_training_pred_to_pickle(self, y_pred: TargetDict) -> None:
+    def save_pred_training_to_pickle(self, y_pred: TargetDict) -> None:
         """Save the training predictions to a pickled file"""
         self.logger.debug("Saving the predictions on the training set to a pickle")
         self.__save_pickle(y_pred, self.input_dir / FileManager.PRED_TRAINING_PICKLE)
@@ -317,7 +272,7 @@ class FileManager:
         )
         self.__save_result_to_csv(forecast_df, source, "pred_forecast")
 
-    def save_training_pred_to_csv(
+    def save_pred_training_to_csv(
         self, result_df: pd.DataFrame, source: Source
     ) -> None:
         """Save the predictions on the training set to a csv for a given source.
@@ -332,3 +287,28 @@ class FileManager:
             len(result_df),
         )
         self.__save_result_to_csv(result_df, source, "pred_training")
+
+    def __load_result_from_csv(self, source: Source, filename: str) -> pd.DataFrame:
+        """Load a result (either training or test) from csv."""
+        result_fp = self.input_dir / FileManager.RESULT / f"{source}_{filename}.csv"
+        return pd.read_csv(result_fp)
+
+    def load_forecast_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load the forecasts for a single source as csv.
+
+        Args:
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info("Loading the forecasts for %s from csv.", source)
+        return self.__load_result_from_csv(source, "pred_forecast")
+
+    def load_pred_training_from_csv(self, source: Source) -> pd.DataFrame:
+        """Load the predictions on the training set for a given source from csv.
+
+        Args:
+            source: Source predicted at, e.g. laqn, hexgrid.
+        """
+        self.logger.info(
+            "Loading the prediction on the training set for %s from csv.", source
+        )
+        return self.__load_result_from_csv(source, "pred_training")

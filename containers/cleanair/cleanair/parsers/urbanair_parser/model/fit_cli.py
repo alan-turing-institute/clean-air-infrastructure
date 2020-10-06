@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from pathlib import Path
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
@@ -10,7 +11,6 @@ from ....types import ModelName, Source
 from ....utils import FileManager, tf1
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from ....models import ModelMixin
 
 app = typer.Typer(help="SVGP model fitting")
@@ -36,9 +36,10 @@ def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     # Create the Deep GP model
     model = MRDGP(model_params, refresh=refresh)
     model = fit_model(model, file_manager)
-    file_manager.save_model(
-        model.model, tf1.save_gpflow1_model_to_file, ModelName.mrdgp
-    )
+    # TODO fix the below method such that it works for mrdgp
+    # file_manager.save_model(
+    #     model.model, tf1.save_gpflow1_model_to_file, ModelName.mrdgp
+    # )
 
 
 def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
@@ -70,5 +71,5 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
 
     # save forecast to file
     file_manager.save_forecast_to_pickle(y_forecast)
-    file_manager.save_training_pred_to_pickle(y_training_result)
+    file_manager.save_pred_training_to_pickle(y_training_result)
     return model
