@@ -129,9 +129,7 @@ def sat_full_config(sat_config, model_config):
 
 @pytest.fixture(scope="function")
 def sat_training_data(sat_full_config, model_data):
-    training_data = model_data.download_config_data(
-        sat_full_config, training_data=True
-    )
+    training_data = model_data.download_config_data(sat_full_config, training_data=True)
     return model_data.normalize_data(sat_full_config, training_data)
 
 

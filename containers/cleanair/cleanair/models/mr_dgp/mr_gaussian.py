@@ -1,12 +1,11 @@
 import numpy as np
 import tensorflow as tf
 
-import gpflow
 from gpflow.likelihoods import Likelihood
-from gpflow import params_as_tensors, ParamList
+from gpflow import params_as_tensors
 from gpflow import transforms
 from gpflow import settings
-from gpflow.params import Parameter, Parameterized
+from gpflow.params import Parameter
 
 
 class MR_Gaussian(Likelihood):
@@ -15,10 +14,6 @@ class MR_Gaussian(Likelihood):
         self.variance = Parameter(
             variance, transform=transforms.positive, dtype=settings.float_type
         )
-
-    @params_as_tensors
-    def logp(self, F, Y):
-        return logdensities.gaussian(Y, F, self.variance)
 
     @params_as_tensors
     def conditional_mean(self, F):  # pylint: disable=R0201
@@ -31,10 +26,6 @@ class MR_Gaussian(Likelihood):
     @params_as_tensors
     def predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
-
-    @params_as_tensors
-    def predict_density(self, Fmu, Fvar, Y):
-        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
 
     @params_as_tensors
     def variational_expectations(self, Fmu, Fvar, Y):

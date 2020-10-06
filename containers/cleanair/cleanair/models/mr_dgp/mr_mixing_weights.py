@@ -1,25 +1,25 @@
+from abc import ABC, abstractmethod
 import tensorflow as tf
-import numpy as np
-
-from gpflow import autoflow, params_as_tensors, ParamList
-from gpflow.models.model import Model
 from gpflow import settings
-
 from . import utils
 
 
-class MR_Mixing_Weights(object):
+class MR_Mixing_Weights(ABC):
     def __init__(self):
         pass
 
-    def predict(self):
-        pass
+    @abstractmethod
+    def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
+        """Prediction."""
+        # NOTE functionality from below classes could be abstracted into here
+
+    @abstractmethod
+    def sample(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples):
+        """Sample."""
+        # NOTE functionality from below classes could be abstracted into here
 
 
 class MR_Average_Mixture(MR_Mixing_Weights):
-    def __init__(self):
-        MR_Mixing_Weights.__init__(self)
-
     def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         base_mu_samples = tf.tile(
             tf.expand_dims(base_mu[0], 0), [tf.shape(dgp_mu[0])[0], 1, 1, 1]
@@ -108,9 +108,6 @@ class MR_DGP_Only(MR_Mixing_Weights):
 
 
 class MR_Variance_Mixing(MR_Mixing_Weights):
-    def __init__(self):
-        MR_Mixing_Weights.__init__(self)
-
     def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         pred_vars = []
         for i in range(len(base_sig)):
@@ -135,9 +132,6 @@ class MR_Variance_Mixing(MR_Mixing_Weights):
 
         base_mu_samples = tf.tile(
             tf.expand_dims(base_mu[0], 0), [tf.shape(dgp_mu[0])[0], 1, 1, 1]
-        )
-        base_sig_samples = tf.tile(
-            tf.expand_dims(base_sig[0], 0), [tf.shape(dgp_mu[0])[0], 1, 1, 1]
         )
 
         mu_weight = pred_vars[0]
@@ -196,9 +190,6 @@ class MR_Variance_Mixing(MR_Mixing_Weights):
 
 
 class MR_Variance_Mixing_1(MR_Mixing_Weights):
-    def __init__(self):
-        MR_Mixing_Weights.__init__(self)
-
     def predict(self, base_mu, base_sig, dgp_mu, dgp_sig, num_samples=1):
         pred_vars = []
         for i in range(len(base_sig)):

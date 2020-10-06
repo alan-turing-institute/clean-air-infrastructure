@@ -38,7 +38,6 @@ from cleanair.types import (
     DataConfig,
     KernelParams,
     KernelType,
-    MRDGPParams,
     Source,
     Species,
     SVGPParams,
