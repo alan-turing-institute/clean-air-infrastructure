@@ -4,9 +4,10 @@ Module for interacting with tables in the Azure Postgres database
 from .air_quality_instance_tables import (
     AirQualityDataTable,
     AirQualityInstanceTable,
-    AirQualityMetricsTable,
     AirQualityModelTable,
     AirQualityResultTable,
+    AirQualitySpatialMetricsTable,
+    AirQualityTemporalMetricsTable,
 )
 from .aqe_tables import AQESite, AQEReading
 from .features_tables import StaticFeature, DynamicFeature
@@ -44,9 +45,10 @@ from .jamcam_tables import JamCamFrameStats, JamCamVideoStats
 __all__ = [
     "AirQualityDataTable",
     "AirQualityInstanceTable",
-    "AirQualityMetricsTable",
     "AirQualityModelTable",
     "AirQualityResultTable",
+    "AirQualitySpatialMetricsTable",
+    "AirQualityTemporalMetricsTable",
     "AQEReading",
     "AQESite",
     "DynamicFeature",
