@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from pathlib import Path
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
@@ -10,7 +11,6 @@ from ....types import ModelName, Source
 from ....utils import FileManager, tf1
 
 if TYPE_CHECKING:
-    from pathlib import Path
     from ....models import ModelMixin
 
 app = typer.Typer(help="SVGP model fitting")
