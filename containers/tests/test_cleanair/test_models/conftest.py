@@ -13,6 +13,7 @@ from cleanair.types import (
 
 #  pylint: disable=redefined-outer-name
 
+
 @pytest.fixture(scope="function")
 def laqn_config(dataset_start_date, dataset_end_date):
     """LAQN dataset with just one feature."""

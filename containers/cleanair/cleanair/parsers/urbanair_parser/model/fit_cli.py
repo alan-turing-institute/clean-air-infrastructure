@@ -70,5 +70,5 @@ def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
 
     # save forecast to file
     file_manager.save_forecast_to_pickle(y_forecast)
-    file_manager.save_training_pred_to_pickle(y_training_result)
+    file_manager.save_pred_training_to_pickle(y_training_result)
     return model
