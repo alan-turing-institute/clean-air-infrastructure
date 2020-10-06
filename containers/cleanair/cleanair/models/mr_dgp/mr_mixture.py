@@ -282,7 +282,6 @@ class MR_Mixture(Model):
             Evaluate the expected log likelihood for each sample
         """
         if mask is not None:
-            _y = y
             mask.set_shape([None])
             y = tf.boolean_mask(mask=mask, tensor=y, axis=0)
             mu = tf.boolean_mask(mask=mask, tensor=mu, axis=1)
@@ -337,7 +336,6 @@ class MR_Mixture(Model):
             mask_0 = getattr(self, "mask_{i}".format(i=0))
 
         for i in range(self.num_datasets):
-            x_i = getattr(self, "x_{i}".format(i=i))
             y_i = getattr(self, "y_{i}".format(i=i))
             mask_i = None
 
@@ -381,6 +379,7 @@ class MR_Mixture(Model):
                 kl = self.parent_gps[i].kl_term()  # -1 as there are |base_gps| -1 DGPs
                 parent_kl_arr.append(tf.reduce_sum(kl))
 
+                # pylint: disable=protected-access
                 ell_p = self.parent_mixtures[i]._build_likelihood()
                 parent_elbo += ell_p
 

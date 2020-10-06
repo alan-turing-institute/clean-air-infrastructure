@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 from typing import TYPE_CHECKING
-import os
-import pytest
 import numpy as np
 import tensorflow as tf
 import gpflow
@@ -23,12 +21,6 @@ if TYPE_CHECKING:
     )
 
 
-@pytest.fixture()
-def file_manager(input_dir) -> FileManager:
-
-    return FileManager(input_dir)
-
-
 def test_save_gpflow1_model(tf_session, file_manager, model_name) -> None:
     """Test gpflow models are saved correctly."""
 
@@ -44,7 +36,9 @@ def test_save_gpflow1_model(tf_session, file_manager, model_name) -> None:
     # wait to compile to model
     with gpflow.defer_build():
         kern = gpflow.kernels.RBF(input_dim=1)
-        model = gpflow.models.GPR(X, Y, kern=kern, mean_function=None, name=model_name)
+        model = gpflow.models.GPR(
+            X, Y, kern=kern, mean_function=None, name=model_name.value
+        )
 
     tf.local_variables_initializer()
     tf.global_variables_initializer()
@@ -55,10 +49,10 @@ def test_save_gpflow1_model(tf_session, file_manager, model_name) -> None:
     gpflow.train.ScipyOptimizer().minimize(model)
 
     # save the model
-    file_manager.save_model(model, save_gpflow1_model_to_file)
+    file_manager.save_model(model, save_gpflow1_model_to_file, model_name)
 
     # check filepaths exist
-    model_fp = model_dir / "model.h5"
+    model_fp = model_dir / (model_name.value + ".h5")
     checkpoint_fp = model_dir / "checkpoint"
     assert model_fp.exists()  # check the model is created
     assert checkpoint_fp.exists()  # check checkpoints for TF session
@@ -70,14 +64,16 @@ def test_save_gpflow1_model(tf_session, file_manager, model_name) -> None:
     assert csv_fp.exists()  # check the params csv exists
 
 
-def test_load_gpflow1_model(tf_session, input_dir, file_manager) -> None:
+def test_load_gpflow1_model(tf_session, input_dir, file_manager, model_name) -> None:
     """Test models are loaded correctly."""
     model_dir = input_dir / FileManager.MODEL
     assert model_dir.exists()  # check the directory is created
     # check the directory where models are stored still exists
 
     #  load the model
-    model = file_manager.load_model(load_gpflow1_model_from_file, tf_session=tf_session)
+    model = file_manager.load_model(
+        load_gpflow1_model_from_file, model_name, tf_session=tf_session
+    )
     assert isinstance(model, gpflow.models.GPR)
 
     print("FROM MODEL")

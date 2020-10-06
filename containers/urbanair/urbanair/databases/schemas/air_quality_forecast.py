@@ -1,10 +1,11 @@
 """Return schemas for air quality forecast routes"""
-from datetime import datetime
 from typing import List, Dict
+import json
 from pydantic import BaseModel
 from geojson import Feature
 import shapely.wkt
 from urbanair.types import JSONType
+from .jamcam import UTCTime
 
 
 class BaseGeoJson(BaseModel):
@@ -64,7 +65,11 @@ class ForecastResultGeoJson(BaseGeoJson):
                 properties={
                     "NO2_mean": row["NO2_mean"],
                     "NO2_var": row["NO2_var"],
-                    "measurement_start_utc": row["measurement_start_utc"],
+                    "measurement_start_utc": json.loads(
+                        UTCTime(
+                            measurement_start_utc=row["measurement_start_utc"]
+                        ).json()
+                    )["measurement_start_utc"],
                 },
             )
             for row in rows
@@ -82,12 +87,11 @@ class ForecastResultGeoJson(BaseGeoJson):
             }
 
 
-class ForecastResultJson(BaseModel):
+class ForecastResultJson(UTCTime):
     """Forecast results as JSON"""
 
     # Schema attributes
     point_id: str
-    measurement_start_utc: datetime
     NO2_mean: float
     NO2_var: float
 

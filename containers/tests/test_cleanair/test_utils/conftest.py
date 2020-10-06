@@ -8,22 +8,19 @@ import pytest
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from cleanair.types import Source, Species
+from cleanair.types import ModelName, Source, Species
+from cleanair.utils import FileManager
 
 if TYPE_CHECKING:
     from cleanair.types import FeaturesDict, TargetDict
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(scope="function")
-def model_name() -> str:
+def model_name() -> ModelName:
     """Name of model for testing utils."""
-    return "test_model"
-
-
-@pytest.fixture
-def save_load_instance_id() -> str:
-    """Test id for instance."""
-    return "fake_instance_id"
+    return ModelName.svgp
 
 
 @pytest.fixture(scope="function")
@@ -49,6 +46,12 @@ def init_graph():
 def input_dir(tmp_path_factory) -> Path:
     """Temporary input directory."""
     return tmp_path_factory.mktemp(".tmp")
+
+
+@pytest.fixture(scope="function")
+def file_manager(input_dir) -> FileManager:
+    """Fixture for file manager."""
+    return FileManager(input_dir)
 
 
 @pytest.fixture(scope="function")

@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 import typer
-from ..shared_args import InputDir
+from ..shared_args import ClusterIdOption, InputDir, TagOption
 from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
@@ -20,10 +20,8 @@ app = typer.Typer(help="Update database with model fit.")
 def results(
     model_name: ModelName,
     input_dir: Path = InputDir,
-    cluster_id: ClusterId = typer.Option(
-        ClusterId.laptop, help="The name of the cluster."
-    ),
-    tag: Tag = typer.Option(Tag.test, help="A tag for the instance."),
+    cluster_id: ClusterId = ClusterIdOption,
+    tag: Tag = TagOption,
 ):
     """Update the results to the database."""
     logger = get_logger("update_results")

@@ -8,6 +8,7 @@ def test_mrdgp_init(mrdgp_model_params):
     model = MRDGP(mrdgp_model_params)
     assert model.epoch == 0
 
+
 class TestMRDGP:
     """Class for testing MRDGP."""
 
@@ -25,4 +26,3 @@ class TestMRDGP:
         )
         model.fit(X_train, Y_train)
         # assert model.epoch == mrdgp_model_params
-

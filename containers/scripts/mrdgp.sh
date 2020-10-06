@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # set the secretfile filepath
-urbanair init local --secretfile $DB_SECRET_FILE
+urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # generate the data config
 urbanair model data generate-config \
@@ -25,7 +25,7 @@ urbanair model data download --training-data --prediction-data --output-csv
 urbanair model setup mrdgp --maxiter 10000 --num-inducing-points 500
 
 # fit the model and predict
-urbanair model fit mrdgp --refresh 10 --no-restore
+urbanair model fit mrdgp --refresh 10
 
 # push the results to the database
 urbanair model update results mrdgp --tag production --cluster-id kubernetes

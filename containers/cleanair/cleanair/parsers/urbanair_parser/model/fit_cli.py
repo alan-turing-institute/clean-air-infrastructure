@@ -1,56 +1,44 @@
 """Commands for a Sparse Variational GP to model air quality."""
 
 from __future__ import annotations
-from pathlib import Path
+from typing import TYPE_CHECKING
 import typer
 from ..shared_args import InputDir
 from ..shared_args.model_options import Refresh
-from ....models import SVGP, ModelMixin, MRDGP, ModelDataExtractor
+from ....models import SVGP, MRDGP, ModelDataExtractor
 from ....types import ModelName, Source
 from ....utils import FileManager, tf1
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from ....models import ModelMixin
 
 app = typer.Typer(help="SVGP model fitting")
 
 
 @app.command()
-def svgp(
-    input_dir: Path = InputDir, refresh: int = Refresh,
-) -> None:
+def svgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     """Fit a Sparse Variational Gaussian Process."""
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(ModelName.svgp)
     model = SVGP(model_params, refresh=refresh)
     model = fit_model(model, file_manager)
-    file_manager.save_model(
-        model.model, tf1.save_gpflow1_model_to_file, model_name=ModelName.svgp
-    )
+    file_manager.save_model(model.model, tf1.save_gpflow1_model_to_file, ModelName.svgp)
 
 
 @app.command()
-def mrdgp(
-    input_dir: Path = InputDir, refresh: int = Refresh,
-) -> None:
+def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     """Fit a Multi-resolution Deep Gaussian Process."""
     # Load the model parameters from a json file
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(ModelName.mrdgp)
 
-    # Get the directory for storing the model
-    # model_dir = file_manager.input_dir / FileManager.MODEL
-
-    # experiment_config = dict(
-    #     name="MR_DGP",
-    #     restore=restore,
-    #     model_state_fp=model_dir,
-    #     save_model_state=True,
-    #     train=True,
-    # )
     # Create the Deep GP model
-    model = MRDGP(
-        model_params=model_params,
-        refresh=refresh,
+    model = MRDGP(model_params, refresh=refresh)
+    model = fit_model(model, file_manager)
+    file_manager.save_model(
+        model.model, tf1.save_gpflow1_model_to_file, ModelName.mrdgp
     )
-    fit_model(model, file_manager)
 
 
 def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:

@@ -6,30 +6,31 @@ from gpflow import params_as_tensors
 
 
 class MR_SE(gpflow.kernels.Stationary):
+    """Multi-resolution squared exponental kernel."""
+
     @params_as_tensors
     def Kdiag(self, X, presliced=False):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     @params_as_tensors
-    def K(self, _X1, _X2=None, presliced=False):
+    def K(self, X, X2=None, presliced=False):
         # Only implemented for input_dimension = 1
 
         jitter_flag = False
-        if _X2 is None:
+        if X2 is None:
             jitter_flag = True
-            _X2 = _X1
+            X2 = X
 
         if not presliced:
             if isinstance(self.active_dims, np.ndarray):
-                _X1 = tf.expand_dims(_X1[:, :, self.active_dims[0]], -1)
-                _X2 = tf.expand_dims(_X2[:, :, self.active_dims[0]], -1)
+                X = tf.expand_dims(X[:, :, self.active_dims[0]], -1)
+                X2 = tf.expand_dims(X2[:, :, self.active_dims[0]], -1)
 
         # X2 in N1 x S x 1
         # X2 in N2 x S x 1
 
-        X1 = _X1
-        X2 = tf.transpose(_X2, perm=[0, 2, 1])  # D x 1 x N2
-        T = tf.transpose(tf.subtract(X1, X2), perm=[0, 1, 2])  # D x N1 x N2
+        X2 = tf.transpose(X2, perm=[0, 2, 1])  # D x 1 x N2
+        T = tf.transpose(tf.subtract(X, X2), perm=[0, 1, 2])  # D x N1 x N2
 
         val = tf.exp(-tf.square(T) / (2 * tf.expand_dims(self.lengthscales, -1)))
         val = self.variance * val
@@ -46,3 +47,7 @@ class MR_SE(gpflow.kernels.Stationary):
             )
 
         return val
+
+    @params_as_tensors
+    def K_r(self, r):
+        raise NotImplementedError("Function not needed - feel free to contribute.")

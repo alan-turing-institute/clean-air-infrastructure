@@ -144,7 +144,7 @@ def mock_air_quality_data():
 def mock_air_quality_model():
     """Fake data for air quality routes test"""
     records = [
-        {"model_name": MODEL_NAME, "param_id": MODEL_PARAM_ID, "model_param": {},}
+        {"model_name": MODEL_NAME, "param_id": MODEL_PARAM_ID, "model_params": {},}
     ]
     return records
 

@@ -18,17 +18,17 @@ class AirQualityInstanceQuery(DBReader, InstanceQueryMixin):
 
     @property
     def data_table(self) -> AirQualityDataTable:
-        """Air quality data table."""
+        """The data config table."""
         return AirQualityDataTable
 
     @property
     def instance_table(self) -> AirQualityInstanceTable:
-        """Air quality instance table."""
+        """The instance table."""
         return AirQualityInstanceTable
 
     @property
     def model_table(self) -> AirQualityModelTable:
-        """Air quality model params table."""
+        """The modelling table."""
         return AirQualityModelTable
 
 
