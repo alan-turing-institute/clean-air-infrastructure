@@ -36,9 +36,10 @@ def mrdgp(input_dir: Path = InputDir, refresh: int = Refresh,) -> None:
     # Create the Deep GP model
     model = MRDGP(model_params, refresh=refresh)
     model = fit_model(model, file_manager)
-    file_manager.save_model(
-        model.model, tf1.save_gpflow1_model_to_file, ModelName.mrdgp
-    )
+    # TODO fix the below method such that it works for mrdgp
+    # file_manager.save_model(
+    #     model.model, tf1.save_gpflow1_model_to_file, ModelName.mrdgp
+    # )
 
 
 def fit_model(model: ModelMixin, file_manager: FileManager,) -> ModelMixin:
