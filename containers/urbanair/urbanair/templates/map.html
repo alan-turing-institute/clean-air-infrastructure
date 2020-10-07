@@ -243,10 +243,13 @@
         })
         .then((json) => {
             cameras = new Map(json.map(cam => [cam.id.replace("JamCams_", ""), cam])); // Creates a list of cameras indexed by their id
-
-            // camera_hourly_average
-            const camera_daily_url = "{{ url_for('camera_daily_average') }}"
-            return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_daily_url}?detection_class=${detection_class}&date=${date}`)));
+            if (date == new Date().toISOString().split("T")[0]) {
+                const camera_today_url = "{{ url_for('camera_today_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_today_url}?detection_class=${detection_class}`)));
+            } else {
+                const camera_daily_url = "{{ url_for('camera_daily_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_daily_url}?detection_class=${detection_class}&date=${date}`)));
+            }
         })
         .then((responses) => {
             return Promise.all(responses.map(res => res.json()));

@@ -19,6 +19,7 @@ from ...databases.queries import (
     get_jamcam_info,
     get_jamcam_hourly,
     get_jamcam_daily,
+    get_jamcam_today,
 )
 from ...types import DetectionClass
 
@@ -149,7 +150,7 @@ def camera_hourly_average(
 @router.get(
     "/daily",
     response_model=List[JamCamDailyAverage],
-    description="Request hourly counts of objects at jamcam cameras averaged by day",
+    description="Request averaged counts of objects at jamcam cameras day",
 )
 def camera_daily_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
@@ -160,6 +161,24 @@ def camera_daily_average(
         commons["camera_id"],
         commons["detection_class"],
         commons["date"],
+    )
+
+    return all_or_404(data)
+
+
+@router.get(
+    "/today",
+    response_model=List[JamCamDailyAverage],
+    description="Request averaged counts of objects at jamcam cameras for today",
+)
+def camera_today_average(
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    data = get_jamcam_today(
+        db,
+        commons["camera_id"],
+        commons["detection_class"],
     )
 
     return all_or_404(data)

@@ -4,7 +4,8 @@ from .jamcam import (
     get_jamcam_hourly,
     get_jamcam_raw,
     get_jamcam_available,
-    get_jamcam_daily
+    get_jamcam_daily,
+    get_jamcam_today
 )
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "get_jamcam_hourly",
     "get_jamcam_raw",
     "get_jamcam_available",
-    "get_jamcam_daily"
+    "get_jamcam_daily",
+    "get_jamcam_today"
 ]
