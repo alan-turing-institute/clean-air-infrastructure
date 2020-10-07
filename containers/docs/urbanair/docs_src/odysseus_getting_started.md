@@ -1,4 +1,4 @@
-# Odysseus
+# Project Odysseus
 
 ## Introduction
 
@@ -16,9 +16,10 @@ REST API documentation is available for both [project Odysseus](https://urbanair
 
 A dashboard displaying some of the primary outputs of the camera work from Project Odysseus is available at [urbanair.turing.ac.uk/odysseus/map](https://urbanair.turing.ac.uk/odysseus/map).
 
-## New Partners
+## New footage sources
 ### Getting Started
 The typical process for including your footage into our detection framework is to first contact the project developers at [urbanair@turing.ac.uk](mailto:urbanair@turing.ac.uk) to evaluate current processing capacity and confirm your feeds meet the following requirements:
+
  - Maximum resolution of Half D1 (720x288 PAL / 720x240 NTSC)
  - Minimum frame rate of 1Hz (1 FPS)
  - May be compressed as either MP4 or MKV format
