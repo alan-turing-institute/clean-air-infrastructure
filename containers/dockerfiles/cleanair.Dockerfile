@@ -9,6 +9,8 @@ RUN    apt-get update \
 # Dependencies for satellite processing
 RUN apt-get install libeccodes0 -y
 
+RUN pip install tensorflow==1.15.0
+
 # Set the working directory to /app
 WORKDIR /app
 
