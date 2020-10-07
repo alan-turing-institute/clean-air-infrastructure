@@ -2,14 +2,12 @@
 FROM python:3.7
 
 # Update certificates
-RUN    apt-get update \
+RUN apt-get update \
     && apt-get install openssl \
     && apt-get install ca-certificates  cmake build-essential gfortran -y
 
 # Dependencies for satellite processing
 RUN apt-get install libeccodes0 -y
-
-RUN pip install tensorflow==1.15.0
 
 # Set the working directory to /app
 WORKDIR /app
@@ -18,4 +16,4 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install /app/cleanair pyopenssl
+RUN pip install '/app/cleanair[models]' pyopenssl
