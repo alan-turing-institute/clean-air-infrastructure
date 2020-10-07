@@ -1,4 +1,8 @@
 """Shared arguments"""
+from .instance_options import (
+    ClusterIdOption,
+    TagOption,
+)
 from .shared_args import (
     AWSId,
     AWSKey,
@@ -23,6 +27,7 @@ from .shared_args import (
 __all__ = [
     "AWSId",
     "AWSKey",
+    "ClusterIdOption",
     "CopernicusKey",
     "From",
     "InputDir",
@@ -35,6 +40,7 @@ __all__ = [
     "Species",
     "UpTo_callback",
     "UpTo",
+    "TagOption",
     "ValidFeatureSources",
     "ValidInsertMethods",
     "ValidSources",
