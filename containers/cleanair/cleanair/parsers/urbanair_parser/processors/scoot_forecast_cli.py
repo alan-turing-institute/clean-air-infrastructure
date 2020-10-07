@@ -36,9 +36,11 @@ def forecast(
     typer.echo("Forecasting SCOOT readings")
 
     # Set time parameters
-    model_data_end_time = datetime.now().replace(second=0, microsecond=0, minute=0)
     forecast_length_hrs = nhours + ndays  # note that this is auto-converted to hours
     forecast_start_time = as_datetime(fromdate)
+    model_data_end_time = min(datetime.now(), forecast_start_time).replace(
+        second=0, microsecond=0, minute=0
+    )
 
     # Fit SCOOT readings using Prophet and forecast into the future
     scoot_forecaster = ScootPerDetectorForecaster(
