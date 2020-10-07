@@ -59,4 +59,7 @@ with open(upload_file_path, "rb") as data:
 ```
 
 ### Scheduling
-Once a script is managing the uploads has been tested, please decide a schedule on which to upload. Presently, we're operating on continuous feeds with processing scheduled every 30 minutes from 0500 BST - 2100 BST, with roughly 300 cameras processed within the following 36 minutes, resulting in the longest delay nearing 66 minutes from real-time.
+Once a script managing the uploads has been tested, we may decide upon a schedule on which to upload. We've completed most testing on sampled feeds once every 2-4 minutes with processing scheduled every 30 minutes from 0500 BST - 2100 BST, with roughly 900 cameras processed within the following 36 minutes, resulting in the longest delay nearing 66 minutes from real-time. Some consideration should also be given to the sampling rate of each clip.
+
+### Choosing a sample rate
+Most footage from CCTV cameras can be captured at 25.00Hz, in most instances it is unnecessary to run detections on each frame provided there is usually little change per frame. At present, TFL footage is processed at once per 330ms (or ~3 Hz), we recommend at least a sample rate of once per second for both scene count accuracy, denoising, and also potential future vehicle speed estimation.
