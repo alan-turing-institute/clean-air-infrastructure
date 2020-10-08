@@ -42,15 +42,15 @@ stages:
       displayName: "Build model_fitting image"
 
     # Tensorflow docker images with python 3.7
-    - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
-      displayName: "Build tensorflow 1 image"
+    # - script: | 
+    #     docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
+    #   displayName: "Build tensorflow 1 image"
     - script: | 
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_py37_gpu.Dockerfile containers
       displayName: "Build tensorflow 1 GPU image"
-    - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
-      displayName: "Build tensorflow 2 GPU image"
+    # - script: | 
+    #     docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
+    #   displayName: "Build tensorflow 2 GPU image"
 
     # Model fitting
     - script: | 
@@ -73,7 +73,7 @@ stages:
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
+        # docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
