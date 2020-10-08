@@ -1,12 +1,13 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.urbanair import static, air_quality_forecast
 from .config import get_settings
+from .security import get_http_username
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -42,5 +43,8 @@ if get_settings().mount_docs:
 
 app.include_router(static.router)
 app.include_router(
-    air_quality_forecast.router, prefix="/api/v1/air_quality", tags=["airquality"]
+    air_quality_forecast.router,
+    prefix="/api/v1/air_quality",
+    tags=["airquality"],
+    dependencies=[Depends(get_http_username)],
 )

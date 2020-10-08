@@ -22,6 +22,7 @@ setuptools.setup(
         "cachetools",
         "geojson",
         "sentry_sdk",
+        "passlib[bcrypt]",
     ],
     python_requires=">=3.7",
 )

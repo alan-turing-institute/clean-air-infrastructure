@@ -19,12 +19,12 @@ from ...databases.queries import (
 )
 from ...types import DetectionClass
 
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi_contrib.permissions import PermissionsDependency
-from fastapi_contrib.auth.permissions import IsAuthenticated
+
+from fastapi.security import HTTPBasicCredentials
+
 
 router = APIRouter()
-security = HTTPBasic()
+
 
 ONE_WEEK_SECONDS = 7 * 24 * 60 * 60
 ONE_DAYS_SECONDS = 1 * 24 * 60 * 60
@@ -70,13 +70,13 @@ def common_jamcam_params(
         "endtime": endtime,
     }
 
+
 @router.get(
     "/camera_info",
     description="GeoJSON: JamCam camera locations.",
     response_model=JamCamFeatureCollection,
-    dependencies=[Depends(PermissionsDependency([IsAuthenticated]))]
 )
-def camera_info(credentials: HTTPBasicCredentials = Depends(security)) -> Response:
+def camera_info() -> Response:
     "Get camera info"
     return get_jamcam_info()
 

@@ -1,6 +1,7 @@
 """Configurations"""
 from typing import Optional
 from functools import lru_cache
+from pathlib import Path
 from pydantic import BaseSettings
 
 
@@ -13,6 +14,7 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
+    htpasswdfile: Optional[Path] = None
 
 
 @lru_cache()
