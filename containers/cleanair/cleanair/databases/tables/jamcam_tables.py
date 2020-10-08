@@ -67,10 +67,10 @@ class JamCamVideoStats(Base):
 class JamCamDayStats(Base):
     """Table of detection counts"""
 
-    __tablename__ = "day_stats"
+    __tablename__ = "day_stats_v3"
     __table_args__ = {"schema": "jamcam"}
 
-    id = Column(Integer, primary_key=True, autoincrement=True)  # TODO Fix types  >>>  these were set manually, not defined here, correct to follow other tables
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
     camera_id = Column(VARCHAR(20))
     date = Column(DATE)
     detection_class = Column(String(20))
