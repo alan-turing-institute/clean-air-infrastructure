@@ -37,9 +37,9 @@ stages:
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
     # Model fitting
-    - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
-      displayName: "Build model_fitting image"
+    # - script: | 
+    #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
+    #   displayName: "Build model_fitting image"
 
     # Tensorflow docker images with python 3.7
     # - script: | 
