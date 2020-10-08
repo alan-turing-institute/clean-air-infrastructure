@@ -22,6 +22,7 @@ The typical process for including your footage into our detection framework is t
 
  - Maximum resolution of Half D1 (720x288 PAL / 720x240 NTSC)
  - Minimum frame rate of 1Hz (1 FPS)
+ - Lens is _Natural_ (e.g. not _Fisheye_)
  - May be compressed as either MP4 or MKV format
  - Subject to a minimum 31 day data retention period
 
@@ -34,6 +35,9 @@ https://dssg.blob.core.windows.net/footagesubset?sp=rl&st=2020-05-01T00:00:00Z&s
 ```
 
 This can be accomplished using any of the supported Azure APIs, presently supported are [Python](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python), [Java](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-java), [JavaScript](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-nodejs), [.NET](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet), [Go](), [PHP](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-php?tabs=windows), [Ruby](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-ruby), [Xamarin](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-xamarin) and more directly with [PowerShell](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-powershell) and [Azure CLI](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-cli).
+
+To access this location graphically, Microsoft provides the following application: [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/). The "new connection" button is the one that looks like a US power plug.
+
 
 ### Python upload example 
 ```python
