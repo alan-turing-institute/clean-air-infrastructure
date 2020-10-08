@@ -1,7 +1,8 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text, Integer, Date
+from sqlalchemy import Column, String, BigInteger, Text, Integer
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
+    DATE,
     SMALLINT,
     REAL,
     VARCHAR,
@@ -71,7 +72,7 @@ class JamCamDayStats(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)  # TODO Fix types  >>>  these were set manually, not defined here, correct to follow other tables
     camera_id = Column(VARCHAR(20))
-    date = Column(Date)
+    date = Column(DATE)
     detection_class = Column(String(20))
     count = Column(REAL)
     source = Column(SMALLINT, nullable=False)
