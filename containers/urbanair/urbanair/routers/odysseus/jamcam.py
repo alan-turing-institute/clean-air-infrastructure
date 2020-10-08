@@ -1,18 +1,12 @@
 """JamCam API routes"""
+import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
-import json
-import datetime
+
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
+
 from ...databases import get_db, all_or_404
-from ...databases.schemas.jamcam import (
-    JamCamVideo,
-    JamCamVideoAverage,
-    JamCamFeatureCollection,
-    JamCamAvailable,
-    JamCamDailyAverage,
-)
 from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
@@ -20,6 +14,13 @@ from ...databases.queries import (
     get_jamcam_hourly,
     get_jamcam_daily,
     get_jamcam_today,
+)
+from ...databases.schemas.jamcam import (
+    JamCamVideo,
+    JamCamVideoAverage,
+    JamCamFeatureCollection,
+    JamCamAvailable,
+    JamCamDailyAverage,
 )
 from ...types import DetectionClass
 

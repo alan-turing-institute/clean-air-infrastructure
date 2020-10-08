@@ -1,16 +1,18 @@
 """Jamcam database queries and external api calls"""
-from typing import Optional
 from datetime import datetime, timedelta, date
+from typing import Optional
 
-from cleanair.databases.materialised_views.jamcam_today_stats_view import JamcamTodayStatsView
+import requests
 from fastapi import HTTPException
+from geojson import Feature, Point, FeatureCollection
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
-from geojson import Feature, Point, FeatureCollection
-import requests
+
+from cleanair.databases.materialised_views.jamcam_today_stats_view import JamcamTodayStatsView
 from cleanair.databases.tables import JamCamVideoStats, JamCamDayStats
 from cleanair.decorators import db_query
+
 from ...types import DetectionClass
 
 # TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
@@ -231,7 +233,7 @@ def get_jamcam_daily(
     db: Session,
     camera_id: Optional[str],
     detection_class: DetectionClass = DetectionClass.all_classes,
-    date: Optional[date] = None,
+    day: Optional[date] = None,
 ) -> Query:
     """Get daily hourly average count"""
 
@@ -251,7 +253,7 @@ def get_jamcam_daily(
         query = query.filter(JamCamDayStats.camera_id == camera_id)
 
     if date:
-        query = query.filter(JamCamDayStats.date == date)
+        query = query.filter(JamCamDayStats.date == day)
 
     return query
 
