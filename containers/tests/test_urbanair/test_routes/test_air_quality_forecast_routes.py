@@ -18,10 +18,11 @@ class TestBasic:
 
     @staticmethod
     def test_index(client_class_urbanair):
-        """Test the index returns html"""
-        response = client_class_urbanair.get("/")
-        assert "text/html" in response.headers["content-type"]
-        assert response.status_code == 200
+        """Test the index redirects to /welcome"""
+        response = client_class_urbanair.get("/", allow_redirects=False)
+        assert response.status_code == 307
+        redirect = "/" + response.headers["location"]
+        assert redirect == "/welcome"
 
     @staticmethod
     def test_air_quality_docs(client_class_urbanair):
@@ -91,9 +92,11 @@ class TestData:
         assert len(data) == len(mock_air_quality_result) / 49
 
         # Require that all results have the correct timestamp
-        request_hour = request_time.replace(
-            minute=0, second=0, microsecond=0
-        ).isoformat()
+        request_hour = (
+            request_time.replace(minute=0, second=0, microsecond=0).isoformat()
+            + "+00:00"
+        )
+
         assert all([d["measurement_start_utc"] == request_hour for d in data])
 
     @staticmethod
@@ -115,9 +118,10 @@ class TestData:
         assert len(data["features"]) == len(mock_air_quality_result) / 49
 
         # Require that all results have the correct timestamp
-        request_hour = request_time.replace(
-            minute=0, second=0, microsecond=0
-        ).isoformat()
+        request_hour = (
+            request_time.replace(minute=0, second=0, microsecond=0).isoformat()
+            + "+00:00"
+        )
         assert all(
             [
                 d["properties"]["measurement_start_utc"] == request_hour

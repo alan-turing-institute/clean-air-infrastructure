@@ -26,7 +26,7 @@ class AQEAvailabilityMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    @db_query
+    @db_query()
     def get_aqe_open_sites(self, with_location=False):
         """Get open AQE sites
 
@@ -55,7 +55,7 @@ class AQEAvailabilityMixin:
 
             return aqe_site_q
 
-    @db_query
+    @db_query()
     def get_readings_between_dates(
         self, start_date: str, end_date: Optional[str] = None
     ):
@@ -79,7 +79,7 @@ class AQEAvailabilityMixin:
                 in_data = in_data.filter(AQEReading.measurement_start_utc < end_date)
             return in_data
 
-    @db_query
+    @db_query()
     def gen_date_range(self, start_date: str, end_date: Optional[str] = None):
         """Generate a data range"""
         with self.dbcnxn.open_session() as session:
@@ -106,7 +106,7 @@ class AQEAvailabilityMixin:
 
             return expected_date_times
 
-    @db_query
+    @db_query()
     def get_aqe_availability(self, start_date: str, end_date: Optional[str] = None):
         """
         Return all the available data aggregated by reference_start_utc

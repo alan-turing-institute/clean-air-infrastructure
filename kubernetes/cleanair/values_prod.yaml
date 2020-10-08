@@ -125,7 +125,7 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "2"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "0", "--nhours", "5", "--upto", "lasthour"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -136,7 +136,44 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
- 
+
+  - name: air-forecast-svgp-gpu
+    schedule: "30 0 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/svgp.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanair
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+        cpu: "3"
+        nvidia.com/gpu: 1
+
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Allow
@@ -173,17 +210,17 @@ cronjobs:
     nodeSelector:
         agentpool: jamcam
     tolerations:
-        - key: "group"
-          operator: "Equal"
-          value: "gpu"
-          effect: "NoSchedule"
+      - key: "group"
+        operator: "Equal"
+        value: "gpu"
+        effect: "NoSchedule"
     resources:
-        limits:
-            cpu: "23"
-            nvidia.com/gpu: 4
-        requests:
-            cpu: "23"
-            nvidia.com/gpu: 4
+      limits:
+          cpu: "23"
+          nvidia.com/gpu: 4
+      requests:
+          cpu: "23"
+          nvidia.com/gpu: 4
 
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
@@ -326,10 +363,10 @@ deployments:
           value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
-        - name: ROOT_PATH
-          value: /
       envFrom:
       - secretRef:
           name: sentry
@@ -358,6 +395,8 @@ deployments:
           value: "urbanair.odysseus:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
@@ -388,6 +427,8 @@ deployments:
       env:
         - name: APP_MODULE
           value: "urbanair.developer:app"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
         - name: FORWARDED_ALLOW_IPS
