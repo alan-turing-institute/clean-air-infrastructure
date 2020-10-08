@@ -48,9 +48,9 @@ stages:
     - script: | 
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_py37_gpu.Dockerfile containers
       displayName: "Build tensorflow 1 GPU image"
-    # - script: | 
-    #     docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
-    #   displayName: "Build tensorflow 2 GPU image"
+    - script: | 
+        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf2_py37_gpu:latest -f containers/dockerfiles/tf2_py37_gpu.Dockerfile containers
+      displayName: "Build tensorflow 2 GPU image"
 
     # Model fitting
     - script: | 
