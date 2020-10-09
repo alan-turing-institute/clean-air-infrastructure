@@ -222,6 +222,56 @@ cronjobs:
           cpu: "23"
           nvidia.com/gpu: 4
 
+  - name: compute_daily_average_counts
+      schedule: "0 23 * * *"
+      concurrencyPolicy: Allow
+      restartPolicy: OnFailure
+      failedJobsHistoryLimit: 10
+      image:
+          repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+          tag: latest
+          imagePullPolicy: Always
+      env:
+        - name: DB_SECRET_FILE
+          value: "/secrets/db_secrets.json"
+      command: ["bash", "/application/deployscripts/jamcam_daily_stats.py"]
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+      - mountPath: /application/conf/local/
+        name: credentials
+        readOnly: true
+      - mountPath: /dev/shm
+        name: dshm
+      volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+      - name: credentials
+        secret:
+          secretName: credentials.yaml
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: "200Gi"
+      imagePullSecrets:
+          - name: regcred
+      nodeSelector:
+          agentpool: jamcam
+      tolerations:
+        - key: "group"
+          operator: "Equal"
+          value: "gpu"
+          effect: "NoSchedule"
+      resources:
+        limits:
+            cpu: "23"
+            nvidia.com/gpu: 4
+        requests:
+            cpu: "23"
+            nvidia.com/gpu: 4
+
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
     concurrencyPolicy: Allow
