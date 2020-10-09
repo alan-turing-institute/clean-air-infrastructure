@@ -97,7 +97,6 @@ def test_materialised_view_not_persisted(secretfile, connection, londonView):
             assert "psycopg2.errors.UndefinedTable" in str(error)
 
 
-
 def test_today_stats_view(secretfile, connection, todayStatsView):
     """Check that the materialised view of today's stats contains the correct results from the video_stats table"""
 
@@ -114,8 +113,20 @@ def test_today_stats_view(secretfile, connection, todayStatsView):
 
     db_instance.commit_records(
         [
-            JamCamVideoStats(id=100000000, camera_id="test", video_upload_datetime=today, detection_class='car', source=1),
-            JamCamVideoStats(id=100000001, camera_id="test", video_upload_datetime=yesterday, detection_class='bus', source=1)
+            JamCamVideoStats(
+                id=100000000,
+                camera_id="test",
+                video_upload_datetime=today,
+                detection_class="car",
+                source=1,
+            ),
+            JamCamVideoStats(
+                id=100000001,
+                camera_id="test",
+                video_upload_datetime=yesterday,
+                detection_class="bus",
+                source=1,
+            ),
         ],
         on_conflict="ignore",
         table=JamCamVideoStats,
@@ -133,4 +144,3 @@ def test_today_stats_view(secretfile, connection, todayStatsView):
         assert len(view_output.all()) == 1
         assert result.camera_id == "test"
         assert result.detection_class == "car"
-

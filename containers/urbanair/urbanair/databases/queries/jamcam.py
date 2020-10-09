@@ -9,7 +9,9 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
 
-from cleanair.databases.materialised_views.jamcam_today_stats_view import JamcamTodayStatsView
+from cleanair.databases.materialised_views.jamcam_today_stats_view import (
+    JamcamTodayStatsView,
+)
 from cleanair.databases.tables import JamCamVideoStats, JamCamDayStats
 from cleanair.decorators import db_query
 
@@ -237,16 +239,15 @@ def get_jamcam_daily(
 ) -> Query:
     """Get daily hourly average count"""
 
-    query = (
-        db.query(
-            JamCamDayStats.camera_id.label("camera_id"),
-            JamCamDayStats.count.label("counts"),
-            JamCamDayStats.detection_class.label("detection_class"),
-        )
+    query = db.query(
+        JamCamDayStats.camera_id.label("camera_id"),
+        JamCamDayStats.count.label("counts"),
+        JamCamDayStats.detection_class.label("detection_class"),
     )
 
     query = query.filter(
-        JamCamDayStats.detection_class == DetectionClass.map_detection_class(detection_class)
+        JamCamDayStats.detection_class
+        == DetectionClass.map_detection_class(detection_class)
     )
 
     if camera_id:
@@ -269,7 +270,8 @@ def get_jamcam_today(
     query = db.query(JamcamTodayStatsView)
 
     query = query.filter(
-        JamCamDayStats.detection_class == DetectionClass.map_detection_class(detection_class)
+        JamCamDayStats.detection_class
+        == DetectionClass.map_detection_class(detection_class)
     )
 
     if camera_id:

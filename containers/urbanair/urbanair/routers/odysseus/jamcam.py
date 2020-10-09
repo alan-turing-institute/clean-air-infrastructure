@@ -1,5 +1,6 @@
 """JamCam API routes"""
 import datetime
+
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
@@ -42,10 +43,7 @@ def common_jamcam_params(
         None,
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
-    date: datetime.date = Query(
-        None,
-        description="ISO UTC date to request data for",
-    ),
+    date: datetime.date = Query(None, description="ISO UTC date to request data for",),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -72,7 +70,7 @@ def common_jamcam_params(
         "detection_class": detection_class,
         "starttime": starttime,
         "endtime": endtime,
-        "date": date
+        "date": date,
     }
 
 
@@ -158,10 +156,7 @@ def camera_daily_average(
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_daily(
-        db,
-        commons["camera_id"],
-        commons["detection_class"],
-        commons["date"],
+        db, commons["camera_id"], commons["detection_class"], commons["date"],
     )
 
     return all_or_404(data)
@@ -176,10 +171,6 @@ def camera_today_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
-    data = get_jamcam_today(
-        db,
-        commons["camera_id"],
-        commons["detection_class"],
-    )
+    data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"],)
 
     return all_or_404(data)
