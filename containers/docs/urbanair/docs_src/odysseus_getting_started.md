@@ -20,7 +20,7 @@ A dashboard displaying some of the primary outputs of the camera work from Proje
 ### Getting Started
 The typical process for including your footage into our detection framework is to first contact the project developers at [urbanair@turing.ac.uk](mailto:urbanair@turing.ac.uk) to evaluate current processing capacity and confirm your feeds meet the following requirements:
 
- - Maximum resolution of Half D1 (720x288 PAL / 720x240 NTSC)
+ - Maximum resolution of 704 x 480
  - Minimum frame rate of 1Hz (1 FPS)
  - Lens is _Natural_ (e.g. not _Fisheye_)
  - May be compressed as either MP4 or MKV format
@@ -38,6 +38,16 @@ This can be accomplished using any of the supported Azure APIs, presently suppor
 
 To access this location graphically, Microsoft provides the following application: [Azure Storage Explorer](https://azure.microsoft.com/en-us/features/storage-explorer/). The "new connection" button is the one that looks like a US power plug.
 
+### Azure CLI upload example
+```bash
+# upload a single file to test, use 'upload-batch' for a directory
+az storage blob upload
+        --container-name footage-ex # container name
+        --file example.mp4          # local file name
+        --name example.mp4          # remote file name
+        --account-name dssg         # storage account name
+        --sas-token "?sp=<demo>"    # authorisation
+```
 
 ### Python upload example 
 ```python
