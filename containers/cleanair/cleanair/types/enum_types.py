@@ -3,6 +3,26 @@ from enum import Enum, unique
 
 
 @unique
+class ClusterId(str, Enum):
+    """Ids for clusters."""
+
+    laptop = "laptop"
+    pearl = "pearl"
+    kubernetes = "kubernetes"
+    orac = "orac"
+    nc6 = "nc6"
+
+
+@unique
+class Tag(str, Enum):
+    """Valid options for tags."""
+
+    production = "production"
+    test = "test"
+    validation = "validation"
+
+
+@unique
 class FeatureNames(str, Enum):
     "Features"
     min_canyon_ratio = "min_canyon_ratio"
@@ -35,6 +55,16 @@ class FeatureBufferSize(str, Enum):
     two_hundred = 200
     one_hundred = 100
     ten = 10
+
+
+@unique
+class KernelName(str, Enum):
+    """Valid kernels."""
+
+    matern12 = "matern12"
+    matern32 = "matern32"
+    matern52 = "matern52"
+    rbf = "rbf"
 
 
 @unique

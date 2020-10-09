@@ -2,19 +2,18 @@
 
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
-
-KernelDict = Dict[str, Union[str, float, List[Union[int, float]]]]
-ParamsDict = Dict[str, Union[float, bool, int, KernelDict, List[KernelDict]]]
+from .enum_types import KernelName
 
 
 class KernelParams(BaseModel):
     """Validation for kernel parameters."""
 
-    name: str
+    name: KernelName
     type: str
     active_dims: Optional[List[int]]
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
+    ARD: Optional[bool]
 
 
 class BaseModelParams(BaseModel):

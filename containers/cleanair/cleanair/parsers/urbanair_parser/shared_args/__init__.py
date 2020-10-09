@@ -1,4 +1,8 @@
 """Shared arguments"""
+from .instance_options import (
+    ClusterIdOption,
+    TagOption,
+)
 from .shared_args import (
     UpTo,
     UpTo_callback,
@@ -33,4 +37,6 @@ __all__ = [
     "Sources",
     "ValidSources",
     "Species",
+    "ClusterIdOption",
+    "TagOption",
 ]

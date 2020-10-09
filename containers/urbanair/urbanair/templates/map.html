@@ -145,7 +145,7 @@
                 let detection_classes = Array.from(new Set(result.map(({detection_class}) => detection_class)))
                 for (type of detection_classes) {
                     let subdat = result.filter(function(item){return item.detection_class == type})
-                    let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc + 'Z'), y: counts})) 
+                    let counts =  subdat.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts})) 
                     
                 //     zeroIdxs = result.counts[type].filter(i => i > 0);
                     detailsChartConfig.data.datasets.push(
@@ -261,7 +261,6 @@
                 let all_counts = activities.map(({counts}) => (counts));
                 const max_count = Math.max(...all_counts);
                 histogramData[detection_class] = all_counts;
-
                 for (const measurement of activities) {
                     const camera_id = measurement.camera_id;
                     const camera = cameras.get(camera_id);
