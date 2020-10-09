@@ -1,5 +1,5 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text, Integer
+from sqlalchemy import Column, String, BigInteger, Text
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     DATE,
