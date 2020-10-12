@@ -16,9 +16,8 @@ setuptools.setup(
     ],
     install_requires=[
         "cleanair",
-        "gpflow==2.1.1",
-        "tensorflow==2.2.0",
-        "tensorflow_probability==0.9",
+        "gpflow>=2.1.3",
+        "tensorflow>=2.2.0",
     ],
     python_requires=">=3.7",
     scripts=["cli/odysseus"],
