@@ -15,13 +15,12 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "cleanair>=0.0.1",
         "astropy>=4.0.1",
-        "gpflow==2.1.1",
-        "shapely>=1.7.0",
-        "tensorflow==2.2.0",
+        "cleanair>=0.0.1",
         "cloudpickle==1.4.1",  # NOTE https://github.com/tensorflow/probability/issues/991
-        "tensorflow_probability==0.10.0",
+        "gpflow>=2.1.3",
+        "shapely>=1.7.0",
+        "tensorflow>=2.3.0",
     ],
     python_requires=">=3.7",
     scripts=["cli/odysseus"],
