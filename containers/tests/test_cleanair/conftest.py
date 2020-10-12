@@ -513,6 +513,8 @@ def scoot_generator(
         secretfile=secretfile,
         connection=connection,
     )
+
+
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
