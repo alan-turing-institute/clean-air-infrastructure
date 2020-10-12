@@ -79,3 +79,21 @@ def dataset_dict(dataset_start_date, dataset_end_date) -> FeaturesDict:
 def target_dict() -> TargetDict:
     """A fake target/result dictionary."""
     return {Source.laqn: {Species.NO2: np.ones((24, 1))}}
+
+
+@pytest.fixture(scope="function")
+def target_df(dataset_start_date, dataset_end_date) -> pd.DataFrame:
+    """A fake target dataframe."""
+    days = 2
+    return pd.DataFrame(
+        dict(
+            measurement_start_utc=pd.date_range(
+                dataset_start_date + timedelta(days=days),
+                dataset_end_date,
+                freq="H",
+                closed="left",
+            ),
+            NO2=np.ones(days * 24),
+            source=np.repeat(Source.laqn.value, days * 24),
+        )
+    )

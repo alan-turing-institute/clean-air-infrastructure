@@ -174,6 +174,43 @@ cronjobs:
         cpu: "3"
         nvidia.com/gpu: 1
 
+  - name: air-forecast-mrdgp-gpu
+    schedule: "30 2 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/mrdgp.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanair
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+        cpu: "3"
+        nvidia.com/gpu: 1
+
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Allow
