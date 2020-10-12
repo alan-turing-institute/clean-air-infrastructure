@@ -8,7 +8,7 @@ from cleanair.databases.tables import TrafficMetricTable
 class TrafficMetricQueryMixin(InstanceQueryMixin):
     """Query the metrics of traffic models that have been evaluated."""
 
-    @db_query
+    @db_query()
     def get_instance_metrics(
         self, tag=None, data_ids=None, param_ids=None, models=None
     ):
@@ -36,7 +36,7 @@ class TrafficMetricQueryMixin(InstanceQueryMixin):
                 instance_subquery.c.tag,
                 instance_subquery.c.fit_start_time,
                 instance_subquery.c.git_hash,
-                instance_subquery.c.model_param,
+                instance_subquery.c.model_params,
                 instance_subquery.c.data_config,
             ).join(
                 instance_subquery,

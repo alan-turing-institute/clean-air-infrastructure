@@ -9,6 +9,7 @@ from .database_table_fakes import (
     SatelliteBoxSchema,
     SatelliteGridSchema,
     StaticFeaturesSchema,
+    SatelliteForecastSchema,
 )
 
 
@@ -21,4 +22,5 @@ __all__ = [
     "SatelliteBoxSchema",
     "SatelliteGridSchema",
     "StaticFeaturesSchema",
+    "SatelliteForecastSchema",
 ]

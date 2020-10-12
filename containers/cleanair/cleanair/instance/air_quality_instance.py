@@ -1,15 +1,28 @@
 """Air quality instance."""
 
-from .instance import Instance
-from ..databases.tables import AirQualityInstanceTable
+from ..mixins import UpdateInstanceMixin
+from ..databases import DBWriter
+from ..databases.tables import (
+    AirQualityDataTable,
+    AirQualityInstanceTable,
+    AirQualityModelTable,
+)
 
 
-class AirQualityInstance(Instance):
+class AirQualityInstance(UpdateInstanceMixin, DBWriter):
     """A model instance on air quality data."""
 
-    def update_remote_tables(self):
-        """Write instance to the air quality instance table."""
-        records = [self.to_dict()]
-        self.commit_records(
-            records, on_conflict="ignore", table=AirQualityInstanceTable
-        )
+    @property
+    def data_table(self) -> AirQualityDataTable:
+        """The data config table."""
+        return AirQualityDataTable
+
+    @property
+    def instance_table(self) -> AirQualityInstanceTable:
+        """The instance table."""
+        return AirQualityInstanceTable
+
+    @property
+    def model_table(self) -> AirQualityModelTable:
+        """The modelling table."""
+        return AirQualityModelTable
