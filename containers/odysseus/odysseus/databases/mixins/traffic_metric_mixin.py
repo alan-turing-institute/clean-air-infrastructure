@@ -2,11 +2,31 @@
 
 from cleanair.decorators import db_query
 from cleanair.mixins import InstanceQueryMixin
-from cleanair.databases.tables import TrafficMetricTable
+from cleanair.databases.tables import (
+    TrafficDataTable,
+    TrafficInstanceTable,
+    TrafficMetricTable,
+    TrafficModelTable,
+)
 
 
 class TrafficMetricQueryMixin(InstanceQueryMixin):
     """Query the metrics of traffic models that have been evaluated."""
+
+    @property
+    def data_table(self) -> TrafficDataTable:
+        """Data table."""
+        return TrafficDataTable
+
+    @property
+    def instance_table(self) -> TrafficInstanceTable:
+        """Instances for traffic table."""
+        return TrafficInstanceTable
+
+    @property
+    def model_table(self) -> TrafficModelTable:
+        """Model parameters for traffic models."""
+        return TrafficModelTable
 
     @db_query()
     def get_instance_metrics(

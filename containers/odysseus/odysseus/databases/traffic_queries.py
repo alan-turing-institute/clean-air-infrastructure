@@ -23,8 +23,17 @@ class TrafficQuery(DBReader, ScootQueryMixin):
 class TrafficInstanceQuery(DBReader, InstanceQueryMixin, TrafficDataQueryMixin):
     """Query traffic instances."""
 
-    def __init__(self, secretfile: str = None, **kwargs):
-        super().__init__(secretfile=secretfile, **kwargs)
-        self.instance_table = TrafficInstanceTable
-        self.model_table = TrafficModelTable
-        self.data_table = TrafficDataTable
+    @property
+    def data_table(self) -> TrafficDataTable:
+        """Data table."""
+        return TrafficDataTable
+
+    @property
+    def instance_table(self) -> TrafficInstanceTable:
+        """Instances for traffic table."""
+        return TrafficInstanceTable
+
+    @property
+    def model_table(self) -> TrafficModelTable:
+        """Model parameters for traffic models."""
+        return TrafficModelTable

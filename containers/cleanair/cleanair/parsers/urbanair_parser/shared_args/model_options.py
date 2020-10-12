@@ -1,7 +1,7 @@
 """Options for modelling."""
 
 import typer
-from ....types import KernelName
+from ....types import KernelType
 
 # pylint: disable=C0103
 
@@ -14,7 +14,7 @@ LikelihoodVariance = typer.Option(
     0.1, help="Noise variance for the likelihood.", show_default=True,
 )
 KernelType = typer.Option(
-    KernelName.matern32, help="Type of kernel.", show_default=True
+    KernelType.matern32, help="Type of kernel.", show_default=True
 )
 KernelVariance = typer.Option(
     1.0, help="Initialising variance of the kernel.", show_default=True

@@ -8,7 +8,7 @@ from .enum_types import (
     Source,
     FeatureNames,
     FeatureBufferSize,
-    KernelName,
+    KernelType,
     ModelName,
 )
 from .dataset_types import (
@@ -41,7 +41,7 @@ __all__ = [
     "IndexDict",
     "IndexedDatasetDict",
     "InterestPointDict",
-    "KernelName",
+    "KernelType",
     "MRDGPParams",
     "NDArrayTuple",
     "SVGPParams",
