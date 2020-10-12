@@ -242,8 +242,6 @@ cronjobs:
       - mountPath: /application/conf/local/
         name: credentials
         readOnly: true
-      - mountPath: /dev/shm
-        name: dshm
       volumes:
       - name: secrets
         secret:
@@ -251,26 +249,6 @@ cronjobs:
       - name: credentials
         secret:
           secretName: credentials.yaml
-      - name: dshm
-        emptyDir:
-          medium: Memory
-          sizeLimit: "200Gi"
-      imagePullSecrets:
-          - name: regcred
-      nodeSelector:
-          agentpool: jamcam
-      tolerations:
-        - key: "group"
-          operator: "Equal"
-          value: "gpu"
-          effect: "NoSchedule"
-      resources:
-        limits:
-            cpu: "23"
-            nvidia.com/gpu: 4
-        requests:
-            cpu: "23"
-            nvidia.com/gpu: 4
 
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
