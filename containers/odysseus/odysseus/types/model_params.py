@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 from pydantic import BaseModel
 from cleanair.types.model_types import ParamIdMixin
 
+
 class KernelParams(BaseModel):
     """Parameters for a gpflow kernel."""
 
@@ -12,13 +13,19 @@ class KernelParams(BaseModel):
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]
 
+
 class PeriodicKernelParams(BaseModel):
     """Parameters for a periodic kernel."""
+
     name: str
     period: Optional[Union[float, List[float]]]
     base_kernel: KernelParams
 
-KernelProduct = Union[KernelParams, PeriodicKernelParams, List[Union[KernelParams, PeriodicKernelParams]]]
+
+KernelProduct = Union[
+    KernelParams, PeriodicKernelParams, List[Union[KernelParams, PeriodicKernelParams]]
+]
+
 
 class OptimizerName(str, Enum):
     """Supported optimizers."""
@@ -26,11 +33,13 @@ class OptimizerName(str, Enum):
     adam = "adam"
     scipy = "scipy"
 
+
 class ModelName(str, Enum):
     """Supported models."""
 
     gpr = "gpr"
     svgp = "svgp"
+
 
 class ScootModelParams(ParamIdMixin, BaseModel):
     """Model parameters for a scoot GP model."""
@@ -38,6 +47,7 @@ class ScootModelParams(ParamIdMixin, BaseModel):
     kernel: KernelProduct
     maxiter: int
     optimizer: OptimizerName
+
 
 class SparseVariationalParams(ScootModelParams):
     """Model parameters for a SVGP."""

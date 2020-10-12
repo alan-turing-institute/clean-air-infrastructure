@@ -1,11 +1,11 @@
 """Result class for traffic modellling predictions."""
 
 from cleanair.databases import DBWriter
-from cleanair.databases.tables import TrafficResultTable
-from cleanair.mixins import ResultMixin
+from cleanair.databases.tables import TrafficResultTable, ScootDetector
+from cleanair.mixins import ResultMixin, ScootQueryMixin
 
 
-class TrafficResult(ResultMixin, DBWriter):
+class ScootResult(ResultMixin, ScootQueryMixin, DBWriter):
     """A traffic model prediction."""
 
     @property

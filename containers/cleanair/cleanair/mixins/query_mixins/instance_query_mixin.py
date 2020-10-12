@@ -52,17 +52,18 @@ class InstanceQueryMixin:
         param_ids: list = None,
         models: list = None,
         fit_start_time: str = None,
+        fit_upto_time: str = None,
     ):
-        """
-        Get traffic instances and optionally filter by parameters.
+        """Get traffic instances and optionally filter by parameters.
 
-        Args:
+        Keyword args:
             tag: String to group model fits, e.g. 'test', 'validation'.
             instance_ids: Filter by instance ids in the list.
             data_ids: Filter by data ids in the list.
             param_ids: Filter by model parameter ids in the list.
             models: Filter by names of models in the list.
             fit_start_time: Filter by models that were fit on or after this timestamp.
+            fit_upto_time: Models must be fit stricly before this timestamp.
         """
         with self.dbcnxn.open_session() as session:
             readings = session.query(self.instance_table)
@@ -87,6 +88,10 @@ class InstanceQueryMixin:
             if fit_start_time:
                 readings = readings.filter(
                     self.instance_table.fit_start_time >= fit_start_time
+                )
+            if fit_upto_time:
+                readings = readings.filter(
+                    self.instance_table.fit_start_time < fit_upto_time
                 )
             return readings
 

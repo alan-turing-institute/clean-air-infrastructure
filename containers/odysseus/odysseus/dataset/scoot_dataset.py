@@ -15,9 +15,7 @@ from .scoot_config import ScootConfig, ScootPreprocessing
 
 
 class ScootDataset(DBReader, ScootQueryMixin):
-    """
-    A scoot dataset that queries the database given a data config dictionary.
-    """
+    """A scoot dataset that queries the database given a data config dictionary."""
 
     def __init__(
         self,
@@ -62,7 +60,9 @@ class ScootDataset(DBReader, ScootQueryMixin):
             ]
             # filter dataframe by detector list
             if data_config.detectors:
-                scoot_df = scoot_df.loc[dataframe.detector_id.isin(data_config.detectors)]
+                scoot_df = scoot_df.loc[
+                    dataframe.detector_id.isin(data_config.detectors)
+                ]
         else:
             raise ValueError(
                 "Must pass either secretfile or dataframe as an argument to the ScootDataset init."
@@ -121,7 +121,9 @@ class ScootDataset(DBReader, ScootQueryMixin):
                 start=self.data_config.start,
                 upto=self.data_config.upto,
             )
-            datasets.append(ScootDataset(data_config, self.preprocessing, dataframe=self.dataframe))
+            datasets.append(
+                ScootDataset(data_config, self.preprocessing, dataframe=self.dataframe)
+            )
         return datasets
 
     @staticmethod

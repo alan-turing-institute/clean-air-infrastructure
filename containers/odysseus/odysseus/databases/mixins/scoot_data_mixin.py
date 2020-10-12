@@ -1,28 +1,26 @@
 """Mixin query for traffic data config."""
 
 import json
+from typing import List, Optional
 from cleanair.databases import Connector
 from cleanair.decorators import db_query
 from cleanair.databases.tables import TrafficDataTable
 
 
-class TrafficDataQueryMixin:
+class ScootDataQueryMixin:
     """Queries for the traffic data table."""
 
     # necessary to stop mypy complaining during type hinting
     dbcnxn: Connector
 
     @db_query()
-    def get_data_config(
+    def scoot_config(
         self,
-        start_time: str = None,
-        end_time: str = None,
-        detectors: list = None,
-        baseline_period: str = None,
+        start: Optional[str] = None,
+        upto: Optional[str] = None,
+        detectors: Optional[List[str]] = None,
     ):
-        """
-        Get the data id and config from the TrafficDataTable.
-        """
+        """Get the data id and config from the Scoot data config table."""
         # detectors = set(detectors)
         with self.dbcnxn.open_session() as session:
             readings = session.query(TrafficDataTable)
@@ -34,20 +32,13 @@ class TrafficDataQueryMixin:
                     )
                 )
 
-            if start_time:
+            if start:
                 readings = readings.filter(
-                    TrafficDataTable.data_config["start"].astext >= start_time
+                    TrafficDataTable.data_config["start"].astext >= start
                 )
 
-            if end_time:
+            if upto:
                 readings = readings.filter(
-                    TrafficDataTable.data_config["end"].astext <= end_time
+                    TrafficDataTable.data_config["upto"].astext < upto
                 )
-
-            if baseline_period:
-                readings = readings.filter(
-                    TrafficDataTable.data_config["baseline_period"].astext
-                    == baseline_period
-                )
-
             return readings
