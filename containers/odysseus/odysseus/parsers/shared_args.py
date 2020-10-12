@@ -1,7 +1,7 @@
 """Arguments and options shared between CLI commands."""
 
 import typer
-from ..types import Borough
+from cleanair.types import Borough
 
 # pylint: disable=invalid-name
 BoroughOption = typer.Option(

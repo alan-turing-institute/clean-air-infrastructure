@@ -19,7 +19,7 @@ from ..scanstat import (
     scan,
     average_gridcell_scores,
 )
-from ..types import Borough
+from cleanair.types import Borough
 
 
 class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):

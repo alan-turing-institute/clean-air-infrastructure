@@ -10,8 +10,9 @@ from cleanair.parsers.urbanair_parser.shared_args import (
 )
 from cleanair.parsers.urbanair_parser.state import state
 from cleanair.timestamps import as_datetime
+from cleanair.types import Borough
 from ..dates import Baseline, BaselineUpto
-from .shared_args import Borough, BoroughOption, GridResolution, ModelName
+from .shared_args import BoroughOption, GridResolution, ModelName
 from ..scoot import Fishnet, ScanScoot
 
 app = typer.Typer(

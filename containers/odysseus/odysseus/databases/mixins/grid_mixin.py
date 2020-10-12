@@ -9,7 +9,7 @@ from cleanair.databases.tables import FishnetTable, LondonBoundary
 
 if TYPE_CHECKING:
     from geoalchemy2.types import WKBElement
-    from ...types import Borough
+    from cleanair.types import Borough
 
 
 class GridMixin:
