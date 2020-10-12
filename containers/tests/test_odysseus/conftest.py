@@ -8,7 +8,7 @@ from cleanair.types import Borough
 from odysseus.scoot import Fishnet, ScanScoot
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,ungrouped-imports
 
 if TYPE_CHECKING:
     from cleanair.databases import Connector
@@ -104,7 +104,7 @@ def detectors(scoot_writer: ScootGenerator) -> List[str]:
     return scoot_writer.scoot_detectors(
         offset=scoot_writer.offset,
         limit=scoot_writer.limit,
-        borough=scoot_writer.borough.value,
+        borough=scoot_writer.borough,
         output_type="df",
     )["detector_id"].to_list()
 

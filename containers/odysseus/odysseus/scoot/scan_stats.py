@@ -10,6 +10,7 @@ from cleanair.decorators import db_query
 from cleanair.loggers import get_logger
 from cleanair.mixins import ScootQueryMixin
 from cleanair.timestamps import as_datetime
+from cleanair.types import Borough
 from ..databases.mixins import GridMixin
 from ..scanstat import (
     preprocessor,
@@ -19,7 +20,6 @@ from ..scanstat import (
     scan,
     average_gridcell_scores,
 )
-from cleanair.types import Borough
 
 
 class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
@@ -115,7 +115,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
         # Return dataframe to be stored in database
         return grid_level_scores
 
-    @db_query
+    @db_query()
     def scoot_fishnet(self):
         """Get a grid over a borough and join on scoot detectors.
 
@@ -133,7 +133,7 @@ class ScanScoot(GridMixin, ScootQueryMixin, DBWriter):
             )
             return readings
 
-    @db_query
+    @db_query()
     def scoot_fishnet_readings(
         self, start: str, upto: Optional[str] = None,
     ):

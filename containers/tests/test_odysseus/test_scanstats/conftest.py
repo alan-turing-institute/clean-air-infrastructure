@@ -5,7 +5,6 @@ import pytest
 from shapely.geometry import Polygon
 from cleanair.databases import DBReader
 from odysseus.databases.mixins import GridMixin
-from odysseus.scoot import Fishnet
 
 
 @pytest.fixture(scope="function")
