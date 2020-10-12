@@ -249,6 +249,9 @@ cronjobs:
       - name: credentials
         secret:
           secretName: credentials.yaml
+      resources:
+        limits:
+          cpu: "0.5"
 
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
