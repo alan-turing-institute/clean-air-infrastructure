@@ -17,7 +17,7 @@ setuptools.setup(
     install_requires=[
         "cleanair>=0.0.1",
         "astropy>=4.0.1",
-        "gpflow>=2.0.5",
+        "gpflow==2.1.1",
         "shapely>=1.7.0",
         "tensorflow==2.2.0",
         "cloudpickle==1.4.1",  # NOTE https://github.com/tensorflow/probability/issues/991

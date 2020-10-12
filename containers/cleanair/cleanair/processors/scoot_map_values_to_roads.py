@@ -39,7 +39,7 @@ class ScootPerRoadValueMapperBase(DateRangeMixin, DBWriter):
             green(self.end_datetime),
         )
 
-    @db_query
+    @db_query()
     def update_remote_tables(self):
         session_start = time.time()
         with self.dbcnxn.open_session() as session:

@@ -1,13 +1,43 @@
 """Types for models and parameters."""
 
-from typing import Dict, Union
-from ..utils import hash_fn
+from typing import Dict, List, Optional, Union
+from pydantic import BaseModel
+from .enum_types import KernelType
 
-ModelParams = Dict[str, Union[float, bool, int, Dict, None]]
 
-class ParamIdMixin:
-    """Add function for creating a param id."""
+class KernelParams(BaseModel):
+    """Validation for kernel parameters."""
 
-    def param_id(self):
-        """Return a hashed param id."""
-        return hash_fn(self.json(sort_keys=True))
+    name: str
+    type: KernelType
+    active_dims: Optional[List[int]]
+    lengthscales: Optional[Union[float, List[float]]]
+    variance: Optional[Union[float, List[float]]]
+    ARD: Optional[bool]
+
+
+class BaseModelParams(BaseModel):
+    """Validation of a (sub) model parameters."""
+
+    kernel: Union[KernelParams, List[KernelParams]]
+    likelihood_variance: float
+    num_inducing_points: int
+    maxiter: int
+    minibatch_size: int
+
+
+class SVGPParams(BaseModelParams):
+    """Model parameters for the SVGP."""
+
+    jitter: float
+
+
+class MRDGPParams(BaseModel):
+    """Model parameters for the Deep GP."""
+
+    base_laqn: BaseModelParams
+    base_sat: BaseModelParams
+    dgp_sat: BaseModelParams
+    mixing_weight: Dict[str, Union[str, None]]
+    num_prediction_samples: int
+    num_samples_between_layers: int

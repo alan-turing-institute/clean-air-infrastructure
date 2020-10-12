@@ -1,7 +1,10 @@
 """Shared arguments"""
 
-from .instance_options import ClusterId, Tag
 from .model_options import MaxIter
+from .instance_options import (
+    ClusterIdOption,
+    TagOption,
+)
 from .shared_args import (
     UpTo,
     UpTo_callback,
@@ -10,6 +13,7 @@ from .shared_args import (
     NDays_callback,
     CopernicusKey,
     Web,
+    InputDir,
     InsertMethod,
     AWSId,
     AWSKey,
@@ -30,6 +34,7 @@ __all__ = [
     "NDays_callback",
     "CopernicusKey",
     "Web",
+    "InputDir",
     "InsertMethod",
     "ValidInsertMethods",
     "ValidFeatureSources",
@@ -37,4 +42,6 @@ __all__ = [
     "ValidSources",
     "Species",
     "MaxIter",
+    "ClusterIdOption",
+    "TagOption",
 ]

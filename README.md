@@ -146,12 +146,11 @@ Certain functionality requires optional dependencies. These can be installed by 
 | ------------------ | --------------------------- |
 | models             | CleanAir GPFlow models      |
 | traffic            | FBProphet Trafic Models     |
-| dashboards         | Model fitting Dashboards    |
 
 For getting started we recommend:
 
 ```bash
-pip install -e 'containers/cleanair[models, traffic, dashboard]'
+pip install -e 'containers/cleanair[models, traffic]'
 ```
 
 ### UATraffic (London Busyness only)
@@ -229,7 +228,7 @@ pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-pip install -e 'containers/cleanair[models, dashboard]'
+pip install -e 'containers/cleanair[models]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
@@ -635,12 +634,49 @@ Remember that the `PGPASSWORD` token will only be valid for ~1h.
 ## Training models
 To train a model on your local machine you can run a model fitting entrypoint:
 
+TL;DR
 ```bash
-python containers/entrypoints/model_fitting/model_fitting.py --secretfile $SECRETS
+urbanair init production
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source laqn
+urbanair model data generate-full-config
+urbanair model data download --training-data --prediction-data
+urbanair model setup mrdgp
+urbanair model fit mrdgp
+urbanair model update result mrdgp
+urbanair model update metrics INSTANCE_ID
 ```
 
-You can adjust the model parameters and data settings by changing the command line arguments.
-Use the `--help` flag to see available options.
+### Generate a model config
+```bash
+urbanair model data generate-config --train-source laqn --train-source satellite --pred-source satellite --pred-source laqn --pred-source hexgrid
+```
+
+### Validate the config
+```bash
+urbanair model data generate-full-config
+```
+
+### Download all data
+
+```bash
+urbanair model data download --training-data --prediction-data
+```
+
+### Export data to directory
+```bash
+urbanair model data save-cache <data-dir-name>
+```
+
+### Run model
+```bash
+urbanair model svgp fit <data-directory>
+```
+
+or for deep gp
+
+```bash
+urbanair model deep-gp fit <data-directory>
+```
 
 ## Odysseus
 
@@ -702,21 +738,36 @@ You can use the `fit_start_time` and the `TAG` you passed above the recover the 
 odysseus forecast scoot svgp --tag TAG --fit_start_time FIT_START_TIME --forecast-days 2 --forecast-upto yesterday
 ```
 
-## GPU support with Docker
-For GPU support we strongly recommend using our docker image to run the entrypoint.
-This docker image extends the tensorflow 1.15 GPU dockerfile for python 3.6 with gpflow 1.5 installed.
+## Model fitting with docker
 
-You can build our custom GPU dockerfile with the following command:
-
-```bash
-docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
+Build a model fitting docker image with tensorflow installed:
+```
+docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting -f containers/dockerfiles/model_fitting.Dockerfile containers
 ```
 
-To run the latest version of this entrypoint:
+Alternatively you can pull the docker image if you haven't made any changes:
 
 ```bash
-docker run -it -e PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv) --rm -v $(pwd)/.secrets:/secrets cleanairdocker.azurecr.io/mf:latest --secretfile /secrets/.db_secrets_ad.json
+docker pull cleanairdocker.azurecr.io/model_fitting
 ```
+
+To fit and predict using the SVGP you can run:
+
+```bash
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/svgp.sh
+```
+
+To fit and predict using the MRDGP run:
+```bash
+docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scripts/mrdgp.sh
+```
+
+If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).
+
+### GPU support with Docker
+
+For GPU support we strongly recommend using our docker images.
+
 
 ## Singularity for HPC
 Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).
