@@ -41,7 +41,7 @@ if get_settings().mount_docs:
     )
     logger.info("Mount API documentation")
 
-app.include_router(static.router)
+app.include_router(static.router,)
 app.include_router(
     air_quality_forecast.router,
     prefix="/api/v1/air_quality",

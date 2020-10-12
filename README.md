@@ -482,26 +482,51 @@ Ensure you have configured a secrets file for the CleanAir database
 ```bash
 export PGPASSWORD=$(az account get-access-token --resource-type oss-rdbms --query accessToken -o tsv)
 ```
-
-### Run the application
-
-#### On development server
 ```bash
-DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json uvicorn urbanair.main:app --reload
+export DB_SECRET_FILE=$(pwd)/.secrets/.db_secrets_ad.json
+```
+```bash
+export HTPASSWDFILE=$(pwd)/.secrets/localhtpasswd-users
 ```
 
+### Create a htpassword file
+
+This step only need to be completed once.
+Run the following command:
+```bash
+htpasswd -c -B $HTPASSWDFILE local
+```
+You will be asked to enter a password. This can be something unsecure like `password` when you are testing locally.
+
+When running the API you can then use username `local` and your password for authentication.
+
+## Run the application
+
+You can run using a local development server for rapid development. For all features (e.g. mounted docs) use the docker image
+
+## On development server
+
+```bash
+uvicorn urbanair.urbanair:app --reload
+```
+```bash
+uvicorn urbanair.odysseus:app --reload
+```
+```bash
+uvicorn urbanair.developer:app --reload
+```
 #### In a docker image
 
 To build the API docker image
 ```bash
-docker build -t fastapi:test -f containers/dockerfiles/urbanairapi.Dockerfile 'containers'
+docker build -t urbanairapi:test -f containers/dockerfiles/urbanairapi.Dockerfile 'containers'
 ```
 
 Then run the docker image:
 ```bash
-DB_SECRET_FILE='.db_secrets_ad.json'
+DB_SECRET_FILE_NAME='.db_secrets_ad.json'
 SECRET_DIR=$(pwd)/.secrets
-docker run -i -p 80:80 -e DB_SECRET_FILE -e PGPASSWORD -e APP_MODULE="urbanair.main:app" -v $SECRET_DIR:/secrets fastapi:test
+docker run -i -p 80:80 -e DB_SECRET_FILE_NAME -e PGPASSWORD -e HTPASSWDFILE="/secrets/localhtpasswd-users" -e MOUNT_DOCS=true -e APP_MODULE="urbanair.urbanair:app" -v $SECRET_DIR:/secrets urbanairapi:test
 ```
 
 # Developer guide

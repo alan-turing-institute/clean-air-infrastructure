@@ -2,7 +2,7 @@
 from typing import Optional
 from functools import lru_cache
 from pathlib import Path
-from pydantic import BaseSettings
+from pydantic import BaseSettings, validator
 
 
 class Settings(BaseSettings):
@@ -14,7 +14,13 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
-    htpasswdfile: Optional[Path] = None
+    htpasswdfile: Path
+
+    @validator("htpasswdfile")
+    def check_htpasswdfile_exists(cls, v):
+
+        if not v.exists():
+            raise IOError("htpasswdfile could not be found")
 
 
 @lru_cache()
