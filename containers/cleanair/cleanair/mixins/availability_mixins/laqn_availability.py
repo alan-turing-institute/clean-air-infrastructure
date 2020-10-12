@@ -27,7 +27,7 @@ class LAQNAvailabilityMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-    @db_query
+    @db_query()
     def get_laqn_open_sites(self, exclude_closed=True):
         """Get open LAQN sites
 
@@ -56,7 +56,7 @@ class LAQNAvailabilityMixin:
 
             return session.query(laqn_site_sq)
 
-    @db_query
+    @db_query()
     def get_raw_laqn_data(
         self, species: List[str], start_date: str, end_date: Optional[str] = None,
     ):
@@ -90,7 +90,7 @@ class LAQNAvailabilityMixin:
                 LAQNReading.measurement_start_utc,
             )
 
-    @db_query
+    @db_query()
     def gen_date_range(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
     ):
@@ -128,7 +128,7 @@ class LAQNAvailabilityMixin:
 
             return session.query(expected_date_times.subquery(), species_sub_q)
 
-    @db_query
+    @db_query()
     def get_laqn_availability(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
     ):
@@ -177,7 +177,7 @@ class LAQNAvailabilityMixin:
                 )
             )
 
-    @db_query
+    @db_query()
     def get_laqn_availability_daily(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
     ):
@@ -210,7 +210,7 @@ class LAQNAvailabilityMixin:
             )
 
     # pylint: disable=C0103
-    @db_query
+    @db_query()
     def get_laqn_availability_daily_total(
         self, species: List[str], start_date: str, end_date: Optional[str] = None
     ):

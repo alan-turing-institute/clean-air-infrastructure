@@ -25,13 +25,20 @@ if sentry_dsn:
 else:
     logging.warning("Sentry is not logging errors")
 
-app.mount(
-    "/static",
-    StaticFiles(
-        directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-    ),
-    name="static",
-)
+# Mount documentation
+if get_settings().mount_docs:
+
+    app.mount(
+        "/welcome",
+        StaticFiles(
+            directory=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "docs", "urbanair"
+            ),
+            html=True,
+        ),
+        name="welcome",
+    )
+    logger.info("Mount API documentation")
 
 app.include_router(static.router)
 app.include_router(

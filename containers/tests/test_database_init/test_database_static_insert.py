@@ -41,7 +41,7 @@ def test_static_tables_filled(secretfile, connection, static_data_sizes):
 
     connect = DBInteractor(secretfile, connection=connection, initialise_tables=True)
 
-    @db_query
+    @db_query()
     def query_table(table):
         """Helper function to return scoot query"""
         with connect.dbcnxn.open_session() as session:

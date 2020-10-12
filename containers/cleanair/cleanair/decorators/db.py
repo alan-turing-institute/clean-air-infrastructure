@@ -17,54 +17,71 @@ def check_empty_df(data_frame, raise_error=True):
 
 
 # pylint: disable=too-many-return-statements
-def db_query(query_f):
+def db_query(model=None):
     """
-    Wrapper for functions that return an sqlalchemy query object.
+    Wrapper for functions that return an sqlalchemy query object
+
     Args:
-        output_type (str): Either 'query', 'subquery', 'df' or 'list'. list returns the first column of the query
+        model: A Pydantic model for data serialization to dict or json
     """
 
-    @functools.wraps(query_f)
-    def db_query_output(
-        *args, output_type="query", limit=None, error_empty=False, **kwargs
-    ):
+    def _db_query(query_f):
+        """
+        Wrapper for functions that return an sqlalchemy query object.
+        Args:
+            output_type (str): Either 'query', 'subquery', 'df' or 'list'. list returns the first column of the query
+        """
 
-        output_q = query_f(*args, **kwargs)
+        @functools.wraps(query_f)
+        def db_query_output(
+            *args, output_type="query", limit=None, error_empty=False, **kwargs
+        ):
 
-        if limit:
-            output_q = output_q.limit(limit)
+            output_q = query_f(*args, **kwargs)
 
-        if output_type == "df":
-            data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
-            check_empty_df(data_frame, error_empty)
-            return data_frame
+            if limit:
+                output_q = output_q.limit(limit)
 
-        if output_type == "html":
-            data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
-            check_empty_df(data_frame, error_empty)
-            return data_frame.to_html()
+            if output_type == "df":
+                data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
+                check_empty_df(data_frame, error_empty)
+                return data_frame
 
-        if output_type == "tabulate":
-            data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
-            check_empty_df(data_frame, error_empty)
-            return tabulate(data_frame, headers="keys", tablefmt="psq")
+            if output_type == "html":
+                data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
+                check_empty_df(data_frame, error_empty)
+                return data_frame.to_html()
 
-        if output_type == "list":
-            query_df = pd.read_sql(output_q.statement, output_q.session.bind)
-            return query_df[query_df.columns[0]].tolist()
+            if output_type == "tabulate":
+                data_frame = pd.read_sql(output_q.statement, output_q.session.bind)
+                check_empty_df(data_frame, error_empty)
+                return tabulate(data_frame, headers="keys", tablefmt="psq")
 
-        if output_type == "query":
-            return output_q
+            if output_type == "list":
+                query_df = pd.read_sql(output_q.statement, output_q.session.bind)
+                return query_df[query_df.columns[0]].tolist()
 
-        if output_type == "subquery":
-            return output_q.subquery()
+            if output_type == "query":
+                return output_q
 
-        if output_type == "count":
-            return output_q.count()
+            if output_type == "subquery":
+                return output_q.subquery()
 
-        if output_type == "sql":
-            return output_q.statement.compile(compile_kwargs={"literal_binds": True})
+            if output_type == "count":
+                return output_q.count()
 
-        raise ValueError("output_type {} is not valid".format(output_type))
+            if output_type == "sql":
+                return output_q.statement.compile(
+                    compile_kwargs={"literal_binds": True}
+                )
 
-    return db_query_output
+            if output_type == "all":
+                if model:
+                    return [model.from_orm(i) for i in output_q]
+                return output_q.all()
+
+            raise ValueError("output_type {} is not valid".format(output_type))
+
+        return db_query_output
+
+    return _db_query
