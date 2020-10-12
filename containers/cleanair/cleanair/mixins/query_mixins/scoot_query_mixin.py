@@ -22,7 +22,7 @@ class ScootQueryMixin:
 
     dbcnxn: Any
 
-    @db_query
+    @db_query()
     def scoot_detectors(
         self,
         offset: Optional[int] = None,
@@ -71,7 +71,7 @@ class ScootQueryMixin:
 
             return readings
 
-    @db_query
+    @db_query()
     def scoot_readings(
         self,
         start: datetime,
