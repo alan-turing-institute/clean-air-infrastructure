@@ -22,7 +22,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
     def __init__(
         self,
-        forecast_start_time: datetime,
+        forecast_start_time: datetime.datetime,
         forecast_length_hrs: int,
         detector_ids=None,
         **kwargs
