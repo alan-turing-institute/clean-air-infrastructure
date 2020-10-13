@@ -125,7 +125,27 @@ cronjobs:
     image:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "0", "--nhours", "5"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "0", "--nhours", "5", "--upto", "lasthour"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: forecast-scoot
+    schedule: "* 22 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--ndays", "2"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -143,7 +163,7 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/mfgpu
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
         imagePullPolicy: IfNotPresent
     args: ["bash", "/app/scripts/svgp.sh"]
     env:
@@ -174,15 +194,18 @@ cronjobs:
         cpu: "3"
         nvidia.com/gpu: 1
 
-  - name: forecast-scoot
-    schedule: "* 22 * * *"
+  - name: air-forecast-mrdgp-gpu
+    schedule: "30 2 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/cleanair
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
         imagePullPolicy: IfNotPresent
-    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--ndays", "2"]
+    args: ["bash", "/app/scripts/mrdgp.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -192,7 +215,23 @@ cronjobs:
       secret:
         secretName: secrets
     imagePullSecrets:
-        - name: regcred
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanair
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+        cpu: "3"
+        nvidia.com/gpu: 1
+
+  
 
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
