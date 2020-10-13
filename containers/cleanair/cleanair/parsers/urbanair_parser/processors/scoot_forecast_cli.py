@@ -1,7 +1,7 @@
 """AQE input CLI"""
 from datetime import datetime  # , timedelta
 import typer
-from cleanair.processors import ScootPerDetectorForecaster
+from ....processors import ScootPerDetectorForecaster
 from ..shared_args import From, UpTo, NDays, NDays_callback, NHours, ScootDetectors
 from ..state import state
 from ....timestamps import as_datetime
