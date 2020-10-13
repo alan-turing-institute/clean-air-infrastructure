@@ -5,6 +5,9 @@ from functools import partial, reduce
 import logging
 import time
 from pathos.multiprocessing import ProcessingPool as Pool
+
+# Turn off fbprophet stdout logger
+logging.getLogger("fbprophet").setLevel(logging.CRITICAL)
 from fbprophet import Prophet
 import pandas as pd
 from ..databases import DBWriter
@@ -13,16 +16,13 @@ from ..decorators import SuppressStdoutStderr
 from ..loggers import duration, duration_from_seconds, get_logger, green, red
 from ..mixins import DateRangeMixin
 
-# Turn off fbprophet stdout logger
-logging.getLogger("fbprophet").setLevel(logging.ERROR)
-
 
 class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
     """Traffic forecasting using FB prophet"""
 
     def __init__(
         self,
-        forecast_start_time: datetime,
+        forecast_start_time: datetime.datetime,
         forecast_length_hrs: int,
         detector_ids=None,
         **kwargs
