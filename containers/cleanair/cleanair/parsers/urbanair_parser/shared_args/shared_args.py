@@ -5,6 +5,7 @@ import json
 from enum import Enum
 import typer
 from dateutil.parser import isoparse
+from ..state import DATA_CACHE
 from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
 from ....timestamps import day_to_iso
 from ....types import Source as ValidSources
