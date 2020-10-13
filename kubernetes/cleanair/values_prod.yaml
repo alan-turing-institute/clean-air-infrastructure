@@ -231,8 +231,6 @@ cronjobs:
         cpu: "3"
         nvidia.com/gpu: 1
 
-  
-
   - name: test-jamcam-cron-on-hour
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Allow
