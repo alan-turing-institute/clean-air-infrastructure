@@ -1,0 +1,39 @@
+# Project information
+site_name: UrbanAir
+site_description: Overview of the UrbanAir API
+site_author: Oscar Giles, James Robinson, Patrick O'Hara, Christy Nakou, Harry Moss, David Pérez-Suárez, Tim Spain
+site_url: https://urbanair.turing.ac.uk/
+
+# Repository
+repo_name: alan-turing-institute/clean-air-infrastructure
+repo_url: https://github.com/alan-turing-institute/clean-air-infrastructure
+
+# Copyright
+copyright: Copyright &copy; 2019-2020 Alan Turing Institute
+
+# Configuration
+theme:
+  name: material
+  language: en
+  palette:
+    primary: indigo
+    accent: indigo
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+docs_dir: 'docs_src/'
+nav:
+  - UrbanAir API: index.md
+  - Project Odysseus: odysseus_getting_started.md

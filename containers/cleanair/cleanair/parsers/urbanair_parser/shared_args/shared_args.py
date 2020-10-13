@@ -134,6 +134,16 @@ CopernicusKey = typer.Option(
 
 Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
 
+InputDir = typer.Argument(
+    DATA_CACHE,
+    dir_okay=True,
+    file_okay=False,
+    writable=True,
+    readable=True,
+    resolve_path=True,
+    exists=False,
+)
+
 InsertMethod = typer.Option(
     ValidInsertMethods.missing,
     help="Only missing data or process all data",

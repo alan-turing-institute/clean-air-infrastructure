@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import FeaturesDict, ModelParams, TargetDict
+from ..types import FeaturesDict, KernelType, Source, Species, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -21,30 +21,12 @@ class SVGP(ModelMixin):
     Sparse Variational Gaussian Process for air quality.
     """
 
-    minimum_param_keys = [
-        "likelihood_variance",
-        "minibatch_size",
-        "n_inducing_points",
-        "train",
-        "jitter",
-        "maxiter",
-        "kernel",
-    ]
-
-    def get_default_model_params(self) -> ModelParams:
-        """The default model parameters if none are supplied.
-
-        Returns:
-            Default model parameters for SVGP.
-        """
-        dict(
-            jitter=1e-5,
-            likelihood_variance=0.1,
-            minibatch_size=100,
-            n_inducing_points=2000,
-            maxiter=100,
-            kernel=dict(name="mat32+linear", variance=0.1, lengthscale=0.1),
-        )
+    KERNELS = {
+        KernelType.matern12: gpflow.kernels.Matern12,
+        KernelType.matern32: gpflow.kernels.Matern32,
+        KernelType.matern52: gpflow.kernels.Matern52,
+        KernelType.rbf: gpflow.kernels.RBF,
+    }
 
     def setup_model(
         self,
@@ -64,34 +46,24 @@ class SVGP(ModelMixin):
         """
         custom_config = gpflow.settings.get_settings()
         # jitter is added for numerically stability in cholesky operations.
-        custom_config.jitter = self.model_params["jitter"]
+        custom_config.jitter = self.model_params.jitter
         with gpflow.settings.temp_settings(
             custom_config
         ), gpflow.session_manager.get_session().as_default():
-            kernel_name = self.model_params["kernel"]["name"]
-            if kernel_name == "rbf":
-                kern = gpflow.kernels.RBF(
-                    input_dim=num_input_dimensions,
-                    lengthscales=self.model_params["kernel"]["lengthscale"],
-                    ARD=True,
-                )
-            elif kernel_name == "matern32":
-                kern = gpflow.kernels.Matern32(
-                    input_dim=num_input_dimensions,
-                    variance=1,
-                    lengthscales=[0.1 for i in range(num_input_dimensions)],
-                    ARD=True,
-                )
+            kernel_dict = self.model_params.kernel.dict()
+            kernel_type = kernel_dict.pop("type")
+            kernel_dict["input_dim"] = num_input_dimensions
+            kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
 
             self.model = gpflow.models.SVGP(
                 x_array,
                 y_array,
-                kern,
+                kernel,
                 gpflow.likelihoods.Gaussian(
-                    variance=self.model_params["likelihood_variance"]
+                    variance=self.model_params.likelihood_variance,
                 ),
                 inducing_locations,
-                minibatch_size=self.model_params["minibatch_size"],
+                minibatch_size=self.model_params.minibatch_size,
                 mean_function=gpflow.mean_functions.Linear(
                     A=np.ones((x_array.shape[1], 1)), b=np.ones((1,))
                 ),
@@ -112,18 +84,16 @@ class SVGP(ModelMixin):
         self.check_training_set_is_valid(x_train, y_train)
 
         # With a standard GP only use LAQN data and collapse discrisation dimension
-        x_array = x_train["laqn"].copy()
-        y_array = y_train["laqn"]["NO2"].copy()
+        x_array = x_train[Source.laqn].copy()
+        y_array = y_train[Source.laqn][Species.NO2].copy()
 
         x_array, y_array = self.clean_data(x_array, y_array)
 
         # setup inducing points
-        if self.model_params["n_inducing_points"] > x_array.shape[0]:
-            self.model_params["n_inducing_points"] = x_array.shape[0]
+        if self.model_params.num_inducing_points > x_array.shape[0]:
+            self.model_params.num_inducing_points = x_array.shape[0]
 
-        z_r = kmeans2(x_array, self.model_params["n_inducing_points"], minit="points")[
-            0
-        ]
+        z_r = kmeans2(x_array, self.model_params.num_inducing_points, minit="points")[0]
 
         # setup SVGP model
         self.setup_model(x_array, y_array, z_r, x_array.shape[1])
@@ -134,7 +104,7 @@ class SVGP(ModelMixin):
         opt.minimize(
             self.model,
             step_callback=self.elbo_logger,
-            maxiter=self.model_params["maxiter"],
+            maxiter=self.model_params.maxiter,
         )
 
     def predict(self, x_test: FeaturesDict) -> TargetDict:

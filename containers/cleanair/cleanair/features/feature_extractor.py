@@ -502,7 +502,7 @@ class FeatureExtractor(
         """Return a list of all feature names"""
         return self.features.keys()
 
-    @db_query
+    @db_query()
     def query_input_geometries(self, feature_name):
         """Query inputs selecting all input geometries matching the requirements in self.feature_dict"""
 
@@ -533,7 +533,7 @@ class FeatureExtractor(
             q_source = q_source.filter(*filter_list)
         return q_source
 
-    @db_query
+    @db_query()
     def query_features(self, point_ids, feature_name, feature_type, agg_func):
         """
         For a given features, produce a query containing the full feature processing stage.

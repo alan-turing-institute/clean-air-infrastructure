@@ -1,5 +1,6 @@
 """Mixin class for querying instances."""
 
+from abc import abstractmethod
 from typing import Any
 from sqlalchemy import and_
 from ...decorators import db_query
@@ -24,12 +25,25 @@ class InstanceQueryMixin:
     """
 
     # declaring these attributes prevents mypy errors
-    data_table: DataTableMixin
-    instance_table: InstanceTableMixin
-    model_table: ModelTableMixin
     dbcnxn: Any
 
-    @db_query
+    @property
+    @abstractmethod
+    def data_table(self) -> DataTableMixin:
+        """Data table."""
+
+    @property
+    @abstractmethod
+    def instance_table(self) -> InstanceTableMixin:
+        """Instance table."""
+
+    @property
+    @abstractmethod
+    def model_table(self) -> ModelTableMixin:
+        """Model params table."""
+        return ModelTableMixin
+
+    @db_query()
     def get_instances(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
@@ -76,7 +90,7 @@ class InstanceQueryMixin:
                 )
             return readings
 
-    @db_query
+    @db_query()
     def get_instances_with_params(  # pylint: disable=too-many-arguments
         self,
         tag: str = None,
@@ -110,7 +124,7 @@ class InstanceQueryMixin:
             readings = (
                 session.query(
                     instance_subquery,
-                    self.model_table.model_param,
+                    self.model_table.model_params,
                     self.data_table.data_config,
                     self.data_table.preprocessing,
                 )
