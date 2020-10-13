@@ -185,6 +185,36 @@ deployments:
         limits:
             cpu: "0.5"
 
+    - name: signup
+      replicas: 1
+      image:
+        repository: signup
+        tag: local
+        imagePullPolicy: Never
+      env:
+        - name: APP_MODULE
+          value: "signup.app:app"
+        - name: DB_SECRET_FILE
+          value: "db_secrets.json"
+        - name: FORWARDED_ALLOW_IPS
+          value: "*"
+        - name: ROOT_PATH
+          value: /signup
+      ports:
+        containerPort: 80
+      restartPolicy: Always
+      volumeMounts:
+      - name: secrets
+        mountPath: "/secrets"
+        readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+            secretName: secrets
+      resources:
+        limits:
+            cpu: "0.5"
+
 services:
     - name: cleanair-api
       ports:
@@ -213,6 +243,15 @@ services:
           port: 443
           targetPort: 80
 
+    - name: signup
+      ports:
+        - name: http
+          port: 80
+          targetPort: 80
+        - name: https
+          port: 443
+          targetPort: 80
+
 ingressRules:
     # - host: urbanair.turing.ac.uk
       - paths:
@@ -224,6 +263,9 @@ ingressRules:
           servicePort: 80
         - path: /dev(/|$)(.*)
           serviceName: dev-api
+          servicePort: 80
+        - path: /signup(/|$)(.*)
+          serviceName: signup
           servicePort: 80
         
 

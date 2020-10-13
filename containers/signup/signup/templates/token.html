@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <a href="javascript:window.history.go(-1)">Back</a> <!-- Displayed on top of a potentially large JSON response, so it will remain visible -->
+    <h1>Token</h1>
+    <p>Valid till {{ expiredate }}</p>
+    <pre>{{ token }}</pre> <!-- Just a generic json viewer -->
+    <h2> Test it </h2>
+    <pre>
+     curl -H "Authorization: Bearer {{ token }}" http://localhost:6000/hello
+    </pre>
+</body>
+</html>
