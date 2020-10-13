@@ -28,23 +28,28 @@ stages:
     - script: |
         echo "$(CONTAINER-REGISTRY-ADMIN-PASSWORD)" | docker login -u "$(CONTAINER-REGISTRY-ADMIN-USERNAME)" --password-stdin "$(CONTAINER-REGISTRY-LOGIN-SERVER)"
       displayName: 'Login to ACR'
-    # Inputs and feature processing
+
+    # CleanAir Package (inputs, feature processing)
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) -f containers/dockerfiles/cleanair.Dockerfile containers
       displayName: 'Build a docker image for inputs and feature processing'
+
     # Urbanair API
     - script: |
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
-    # Model fitting
-    - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
-      displayName: "Build model_fitting image"
 
-    # Tensorflow docker images with python 3.7
-    - script: | 
-        docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
-      displayName: "Build tensorflow 1 image"
+    # Push CleanAir and UrbanAir to ACR and remove local images
+    - script: |
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+        docker image rmi $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+      displayName: 'Push CleanAir and UrbanAir and remove images'
+
+    # Tensorflow docker images with python 3.7
+    # - script: | 
+    #     docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37:latest -f containers/dockerfiles/tf1_py37.Dockerfile containers
+    #   displayName: "Build tensorflow 1 image"
     - script: | 
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest -f containers/dockerfiles/tf1_py37_gpu.Dockerfile containers
       displayName: "Build tensorflow 1 GPU image"
@@ -53,14 +58,12 @@ stages:
       displayName: "Build tensorflow 2 GPU image"
 
     # Model fitting
-    - script: | 
-        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
-      displayName: "Build model fitting image"
+    # - script: | 
+    #     docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting.Dockerfile containers
+    #   displayName: "Build model fitting image"
     - script: | 
         docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion) -f containers/dockerfiles/model_fitting_gpu.Dockerfile containers
       displayName: "Build gpu model fitting image"
-
-
     # Odysseus
     - script: |
          docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion) -f containers/dockerfiles/odysseus.Dockerfile containers
@@ -71,10 +74,8 @@ stages:
       displayName: 'List images'
     # Push Docker images to ACR
     - script: |
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
-        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
+        # docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting:$(Build.SourceVersion)
+        # docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/tf1_py37_gpu:latest
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/model_fitting_gpu:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/odysseus:$(Build.SourceVersion)
       displayName: 'Push Docker images to ACR'

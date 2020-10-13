@@ -2,14 +2,14 @@
 
 from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
-from .enum_types import KernelName
+from .enum_types import KernelType
 
 
 class KernelParams(BaseModel):
     """Validation for kernel parameters."""
 
-    name: KernelName
-    type: str
+    name: str
+    type: KernelType
     active_dims: Optional[List[int]]
     lengthscales: Optional[Union[float, List[float]]]
     variance: Optional[Union[float, List[float]]]

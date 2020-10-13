@@ -2,12 +2,19 @@
 The interface for London air quality models.
 """
 
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Union
 from abc import abstractmethod
 import numpy as np
 from nptyping import Float64, NDArray
 from ..loggers import get_logger
-from ..types import FeaturesDict, NDArrayTuple, Species, TargetDict, BaseModelParams
+from ..types import (
+    FeaturesDict,
+    NDArrayTuple,
+    Species,
+    TargetDict,
+    SVGPParams,
+    MRDGPParams,
+)
 
 
 class ModelMixin:
@@ -18,7 +25,7 @@ class ModelMixin:
 
     def __init__(
         self,
-        model_params: BaseModelParams,
+        model_params: Union[MRDGPParams, SVGPParams],
         batch_size: int = 100,
         refresh: int = 10,
         tasks: Optional[List] = None,
