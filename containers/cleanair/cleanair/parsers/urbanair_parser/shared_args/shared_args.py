@@ -1,16 +1,14 @@
 """Shared CLI arguments"""
-from typing import Dict
+from typing import Dict, List
 import os
 import json
 from enum import Enum
 import typer
-from dateutil.parser import isoparse
 from ..state import DATA_CACHE
 from ....features import FEATURE_CONFIG, FEATURE_CONFIG_DYNAMIC
-from ....timestamps import day_to_iso
+from ....timestamps import as_datetime, TIMESTRINGS
 from ....types import Source as ValidSources
 
-UP_TO_VALUES = ["lasthour", "now", "today", "tomorrow", "yesterday"]
 
 # pylint: disable=C0103
 zip_features: Dict = dict(zip(FEATURE_CONFIG.keys(), FEATURE_CONFIG.keys()))
@@ -29,37 +27,24 @@ class ValidInsertMethods(str, Enum):
     all = "all"
 
 
-def is_iso_string(isostring: str) -> bool:
-    """Check if isostring is a valid iso string
-
-        Arguments:
-            isostring (str): An iso string
-        """
-    try:
-        isoparse(isostring)
-    except ValueError:
-        return False
-
-    return True
-
-
 def UpTo_callback(value: str) -> str:
     "process UpTo arg"
-
-    if value in UP_TO_VALUES:
-        return day_to_iso(value)
-
-    if is_iso_string(value):
-        return value
-
-    raise typer.BadParameter(
-        f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {UP_TO_VALUES}"
-    )
+    try:
+        return as_datetime(value).isoformat()
+    except ValueError:
+        raise typer.BadParameter(
+            f"Value must be a iso datetime of the form %Y-%m-%d, %Y-%m-%dT%H:%M:%S. Or in {TIMESTRINGS}"
+        )
 
 
 def NDays_callback(value: int) -> int:
     "convert days to hours"
     return value * 24
+
+
+def CommaSeparate_callback(values: str) -> List[str]:
+    "Convert comma-separated string into list"
+    return [item for item in values.split(",") if item]
 
 
 def CopernicusKey_callback(value: str) -> str:
@@ -114,9 +99,16 @@ def AWSKey_callback(value: str) -> str:
     return value
 
 
+From = typer.Option(
+    "tomorrow",
+    help=f"which datetime to start process data from. Must be either an ISO datetime or one of {TIMESTRINGS}",
+    callback=UpTo_callback,
+    show_default=True,
+)
+
 UpTo = typer.Option(
     "tomorrow",
-    help=f"up to what datetime to process data. Must be iso datetime or in {UP_TO_VALUES}",
+    help=f"up to what datetime to process data. Must be either an ISO datetime or one of {TIMESTRINGS}",
     callback=UpTo_callback,
     show_default=True,
 )
@@ -124,7 +116,10 @@ UpTo = typer.Option(
 NHours = typer.Option(0, help="Number of hours of data to process", show_default=True)
 
 NDays = typer.Option(
-    ..., help="Number of days of data to process", callback=NDays_callback,
+    0,
+    help="Number of days of data to process",
+    show_default=True,
+    callback=NDays_callback,
 )
 
 CopernicusKey = typer.Option(
@@ -157,6 +152,13 @@ AWSId = typer.Option(
 
 AWSKey = typer.Option(
     "", help="AWS key for accessing TfL SCOOT data", callback=AWSKey_callback
+)
+
+ScootDetectors = typer.Option(
+    "",
+    help="Comma-separated string of SCOOT detectors to forecast for  [default: all of them]",
+    callback=CommaSeparate_callback,
+    show_default=False,
 )
 
 Sources = typer.Option(..., help="List sources to process")
