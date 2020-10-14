@@ -42,6 +42,12 @@ def NDays_callback(value: int) -> int:
     return value * 24
 
 
+def NWorkers_callback(value: int) -> int:
+    if value > 2:
+        raise ValueError("nworkers must be less than 3")
+    return value
+
+
 def CommaSeparate_callback(values: str) -> List[str]:
     "Convert comma-separated string into list"
     return [item for item in values.split(",") if item]
@@ -164,3 +170,10 @@ ScootDetectors = typer.Option(
 Sources = typer.Option(..., help="List sources to process")
 
 Species = typer.Option(..., help="Species of pollutant")
+
+NWorkers = typer.Option(
+    1,
+    show_default=True,
+    help="Number of threads and database cores to use",
+    callback=NWorkers_callback,
+)

@@ -70,7 +70,13 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
     "Scoot feature extractor"
 
     def __init__(
-        self, features, sources, batch_size=15, insert_method="missing", **kwargs,
+        self,
+        features,
+        sources,
+        batch_size=15,
+        n_workers=1,
+        insert_method="missing",
+        **kwargs,
     ):
         """Base class for extracting features.
         args:
@@ -80,6 +86,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         # Initialise parent classes
         super().__init__(**kwargs)
 
+        self.n_workers = n_workers
         self.table_per_detector = ScootForecast
         self.output_table = DynamicFeature
 
@@ -462,8 +469,10 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
 
             self.logger.info("Batch %s finished", batch_i)
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            self.logger.info("Processing %s on 2 database cores", n_batches)
+        with ThreadPoolExecutor(max_workers=self.n_workers) as executor:
+            self.logger.info(
+                "Processing %s on %s database cores", n_batches, self.n_workers
+            )
             threads = []
             for batch_no, point_id_batch in enumerate(
                 missing_point_id_batches, start=1

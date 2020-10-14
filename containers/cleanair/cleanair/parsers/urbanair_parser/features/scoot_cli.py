@@ -7,7 +7,7 @@ import tempfile
 import typer
 from ....loggers import initialise_logging
 from ..state import state
-from ..shared_args import UpTo, NDays, NHours
+from ..shared_args import UpTo, NDays, NHours, NWorkers
 from ....features import (
     ScootFeatureExtractor,
     FEATURE_CONFIG_DYNAMIC,
@@ -57,6 +57,7 @@ def check(
     scoot_features = ScootFeatureExtractor(
         features=feature_name,
         sources=source,
+        n_workers=1,
         insert_method=insert_method,
         end=upto,
         nhours=nhours + ndays,
@@ -93,6 +94,7 @@ def fill(
     ),
     source: List[ValidSources] = Sources,
     insert_method: ValidInsertMethods = InsertMethod,
+    nworkers: int = NWorkers,
 ):
     """Process scoot features"""
 
@@ -104,6 +106,7 @@ def fill(
     scoot_features = ScootFeatureExtractor(
         features=feature_name,
         sources=source,
+        n_workers=nworkers,
         insert_method=insert_method,
         end=upto,
         nhours=nhours + ndays,
