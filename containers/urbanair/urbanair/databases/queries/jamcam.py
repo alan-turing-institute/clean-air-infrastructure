@@ -227,7 +227,7 @@ def get_jamcam_hourly(
 @db_query()
 def get_jamcam_metadata(db: Session) -> Query:
     return db.query(
-        JamCamMetaData.camera_id.label("camera_id"),
+        JamCamMetaData.camera_id.label("id"),
         func.ST_Y(JamCamMetaData.location).label("lat"),
         func.ST_X(JamCamMetaData.location).label("lon"),
         JamCamMetaData.flag.label("flag"),

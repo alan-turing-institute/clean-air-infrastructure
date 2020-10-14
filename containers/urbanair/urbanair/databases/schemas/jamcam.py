@@ -90,7 +90,7 @@ class JamCamFeatureCollection(BaseModel):
 
 
 class JamCamMetaData(BaseModel):
-    camera_id: str
+    id: str
     lat: float
     lon: float
     flag: int
