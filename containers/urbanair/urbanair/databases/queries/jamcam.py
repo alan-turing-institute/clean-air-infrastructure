@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
 from geojson import Feature, Point, FeatureCollection
 import requests
-from cleanair.databases.tables import JamCamVideoStats
+from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
 from cleanair.decorators import db_query
 from ...types import DetectionClass
 
@@ -222,3 +222,13 @@ def get_jamcam_hourly(
     res = detection_class_filter(res, detection_class)
 
     return res
+
+
+@db_query()
+def get_jamcam_metadata(db: Session) -> Query:
+    return db.query(
+        JamCamMetaData.camera_id.label("camera_id"),
+        func.ST_Y(JamCamMetaData.location).label("lat"),
+        func.ST_X(JamCamMetaData.location).label("lon"),
+        JamCamMetaData.flag.label("flag"),
+    )

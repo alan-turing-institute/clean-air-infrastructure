@@ -72,7 +72,7 @@ class JamCamMetaData(Base):
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     camera_id = Column(VARCHAR(20))
-    location = Column(Geometry())
+    location = Column(Geometry(geometry_type="POINT"))
     notes = Column(VARCHAR(128))
     u0 = Column(SMALLINT)
     v0 = Column(SMALLINT)

@@ -87,3 +87,13 @@ class JamCamFeature:
 class JamCamFeatureCollection(BaseModel):
     type: str
     features: List[JamCamFeature]
+
+
+class JamCamMetaData(BaseModel):
+    camera_id: str
+    lat: float
+    lon: float
+    flag: int
+
+    class Config:
+        orm_mode = True

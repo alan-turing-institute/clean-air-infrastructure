@@ -4,12 +4,15 @@ from typing import List, Dict, Tuple, Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, Response, HTTPException
 from sqlalchemy.orm import Session
+from urbanair.databases.queries import get_jamcam_metadata
+
 from ...databases import get_db, all_or_404
 from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
+    JamCamMetaData,
 )
 from ...databases.queries import (
     get_jamcam_available,
@@ -134,5 +137,17 @@ def camera_hourly_average(
         commons["starttime"],
         commons["endtime"],
     )
+
+    return all_or_404(data)
+
+
+@router.get(
+    "/metadata",
+    response_model=List[JamCamMetaData],
+    description="The locations and other metadata of all jamcams",
+)
+def metadata(db: Session = Depends(get_db),) -> Optional[List[JamCamMetaData]]:
+
+    data = get_jamcam_metadata(db)
 
     return all_or_404(data)
