@@ -1,21 +1,250 @@
 """
 Retrieve and process data from the SCOOT traffic detector network
 """
+from typing import List, Optional
 import datetime
 import os
 import time
 from dateutil import rrule
+from dateutil.parser import isoparse
 import boto3
 import botocore
 import pandas
 import pytz
-from sqlalchemy import func, Table
-from ..databases import DBWriter
+from sqlalchemy import func, Table, text, and_, cast, Integer, Float
+from ..databases import DBWriter, DBReader
 from ..databases.tables import ScootReading
 from ..decorators import db_query
 from ..loggers import get_logger, green, duration, duration_from_seconds
-from ..mixins import DateRangeMixin
+from ..mixins import DateRangeMixin, ScootQueryMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
+
+
+ONE_HOUR_INTERVAL = text("interval '1 hour'")
+ONE_DAY_INTERVAL = text("interval '1 day'")
+
+
+class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
+    def __init__(self, detector_ids=None, **kwargs):
+
+        # Initialise parent classes
+        super().__init__(**kwargs)
+
+        # Ensure logging is available
+        if not hasattr(self, "logger"):
+            self.logger = get_logger(__name__)
+
+        self.detector_ids = detector_ids
+
+    @db_query()
+    def gen_date_range(self, start_date: str, end_date: Optional[str] = None):
+        "Generate a data range and cross join with species"
+        with self.dbcnxn.open_session() as session:
+
+            # Generate expected time series
+            if end_date:
+                reference_end_date_minus_1h = (
+                    isoparse(end_date) - datetime.timedelta(hours=1)
+                ).isoformat()
+
+                expected_date_times = session.query(
+                    func.generate_series(
+                        start_date, reference_end_date_minus_1h, ONE_HOUR_INTERVAL,
+                    ).label("measurement_start_utc")
+                )
+            else:
+                expected_date_times = session.query(
+                    func.generate_series(
+                        start_date,
+                        func.current_date() - ONE_HOUR_INTERVAL,
+                        ONE_HOUR_INTERVAL,
+                    ).label("measurement_start_utc")
+                )
+
+            return expected_date_times
+
+    @db_query()
+    def gen_expected_readings(
+        self,
+        start_date: str,
+        end_date: Optional[str] = None,
+        detector_ids: Optional[List[str]] = None,
+    ):
+        """Generate expected scoot readings between start_date and end_date"""
+
+        detectors_sq = self.scoot_detectors(
+            detectors=detector_ids, output_type="subquery"
+        )
+        daterange_sq = self.gen_date_range(start_date, end_date, output_type="subquery")
+
+        with self.dbcnxn.open_session() as session:
+
+            output = session.query(detectors_sq, daterange_sq)
+
+        if detector_ids:
+            return output.filter(detectors_sq.c.detector_id.in_(detector_ids))
+        return output
+
+    @db_query()
+    def get_reading_status(
+        self,
+        start_date: str,
+        end_date: Optional[str] = None,
+        detector_ids: Optional[List[str]] = None,
+        only_missing: bool = True,
+    ):
+
+        expected_readings = self.gen_expected_readings(
+            start_date, end_date, detector_ids, output_type="subquery"
+        )
+
+        actual_readings = self.scoot_readings(
+            start=start_date,
+            upto=end_date,
+            detectors=detector_ids,
+            output_type="subquery",
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            output = session.query(
+                expected_readings.c.detector_id,
+                expected_readings.c.measurement_start_utc,
+                actual_readings.c.measurement_start_utc.is_(None).label("missing"),
+            ).join(
+                actual_readings,
+                and_(
+                    expected_readings.c.detector_id == actual_readings.c.detector_id,
+                    expected_readings.c.measurement_start_utc
+                    == actual_readings.c.measurement_start_utc,
+                ),
+                isouter=True,
+            )
+
+            if only_missing:
+                return output.filter(actual_readings.c.measurement_start_utc.is_(None))
+
+            return output
+
+    @db_query()
+    def get_percentage_readings_by_sensor(
+        self,
+        start_date: str,
+        end_date: Optional[str] = None,
+        detector_ids: Optional[List[str]] = None,
+        group_daily: bool = False,
+    ):
+
+        reading_status_sq = self.get_reading_status(
+            start_date,
+            end_date,
+            detector_ids,
+            only_missing=False,
+            output_type="subquery",
+        )
+
+        with self.dbcnxn.open_session() as session:
+
+            if group_daily:
+
+                return (
+                    session.query(
+                        reading_status_sq.c.detector_id,
+                        func.date_trunc(
+                            "day", reading_status_sq.c.measurement_start_utc
+                        ).label("day"),
+                        (
+                            cast(
+                                func.sum(
+                                    cast(
+                                        (reading_status_sq.c.missing == False), Integer,
+                                    )
+                                ),
+                                Float,
+                            )
+                            / cast(func.count(reading_status_sq.c.missing), Float)
+                        ).label("percent_complete"),
+                    )
+                    .group_by(
+                        reading_status_sq.c.detector_id,
+                        func.date_trunc(
+                            "day", reading_status_sq.c.measurement_start_utc
+                        ),
+                    )
+                    .order_by(
+                        reading_status_sq.c.detector_id,
+                        func.date_trunc(
+                            "day", reading_status_sq.c.measurement_start_utc
+                        ),
+                    )
+                )
+
+            return session.query(
+                reading_status_sq.c.detector_id,
+                (
+                    cast(
+                        func.sum(cast(reading_status_sq.c.missing == False, Integer)),
+                        Float,
+                    )
+                    / cast(func.count(reading_status_sq.c.missing), Float)
+                ).label("percent_complete"),
+            ).group_by(reading_status_sq.c.detector_id)
+
+    @db_query()
+    def get_percentage_readings_quantiles(
+        self,
+        start_date: str,
+        end_date: Optional[str] = None,
+        detector_ids: Optional[List[str]] = None,
+    ):
+
+        percentage_by_sensor_day_sq = self.get_percentage_readings_by_sensor(
+            start_date,
+            end_date,
+            group_daily=True,
+            detector_ids=detector_ids,
+            output_type="subquery",
+        )
+
+        def cum_quant(lower, upper):
+            "Calculate the percentage in (lower, upper] and label the column [upper]"
+            return (
+                cast(
+                    func.sum(
+                        cast(
+                            and_(
+                                percentage_by_sensor_day_sq.c.percent_complete > lower,
+                                percentage_by_sensor_day_sq.c.percent_complete <= upper,
+                            ),
+                            Integer,
+                        )
+                    ),
+                    Float,
+                )
+                / cast(
+                    func.count(percentage_by_sensor_day_sq.c.percent_complete), Float
+                )
+                * 100
+            ).label(f"{upper}")
+
+        with self.dbcnxn.open_session() as session:
+
+            return (
+                session.query(
+                    percentage_by_sensor_day_sq.c.day,
+                    cum_quant(-1, 0.0),
+                    cum_quant(0.0, 0.25),
+                    cum_quant(0.25, 0.5),
+                    cum_quant(0.5, 0.75),
+                    cum_quant(0.75, 0.9),
+                    cum_quant(0.9, 1),
+                    func.count(percentage_by_sensor_day_sq.c.percent_complete).label(
+                        "n_sensors"
+                    ),
+                )
+                .group_by(percentage_by_sensor_day_sq.c.day)
+                .order_by(percentage_by_sensor_day_sq.c.day)
+            )
 
 
 class ScootWriter(DateRangeMixin, DBWriter):
