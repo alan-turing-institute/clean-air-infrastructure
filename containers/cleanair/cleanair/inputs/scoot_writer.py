@@ -14,11 +14,11 @@ from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..decorators import db_query
 from ..loggers import get_logger, green, duration, duration_from_seconds
-from ..mixins import DateRangeMixin, DBQueryMixin
+from ..mixins import DateRangeMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
+class ScootWriter(DateRangeMixin, DBWriter):
     """
     Class to get data from the SCOOT traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
