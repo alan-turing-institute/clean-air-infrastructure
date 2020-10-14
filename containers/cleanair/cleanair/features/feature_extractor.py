@@ -19,6 +19,7 @@ from ..databases.tables import (
     OSHighway,
     ScootRoadMatch,
     ScootForecast,
+    ScootReading,
 )
 from ..mixins.availability_mixins import StaticFeatureAvailabilityMixin
 from ..decorators import db_query
@@ -75,6 +76,7 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         sources,
         batch_size=15,
         n_workers=1,
+        forecast=True,
         insert_method="missing",
         **kwargs,
     ):
@@ -87,7 +89,12 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
         super().__init__(**kwargs)
 
         self.n_workers = n_workers
-        self.table_per_detector = ScootForecast
+        self.forecast = forecast
+
+        self.table_per_detector = ScootReading
+        if self.forecast:
+            self.table_per_detector = ScootForecast
+
         self.output_table = DynamicFeature
 
         self.features = features
@@ -173,6 +180,23 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             )
 
     @db_query()
+    def raw_scoot_readings(self, start_datetime: str, end_datetime: str):
+
+        with self.dbcnxn.open_session() as session:
+
+            return (
+                session.query(self.table_per_detector)
+                .filter(
+                    self.table_per_detector.measurement_start_utc >= start_datetime,
+                    self.table_per_detector.measurement_start_utc < end_datetime,
+                )
+                .order_by(
+                    self.table_per_detector.detector_id,
+                    self.table_per_detector.measurement_start_utc,
+                )
+            )
+
+    @db_query()
     def scoot_to_road(
         self, point_ids: List[str], start_datetime: str, end_datetime: str
     ):
@@ -185,52 +209,56 @@ class ScootFeatureExtractor(DateRangeMixin, DBWriter, FeatureExtractorMixin):
             intersection_lookup_cte, output_type="subquery"
         )
 
-        scoot_detector_forecast = self.latest_forecast(
-            start_datetime, end_datetime, output_type="subquery"
-        )
+        if self.forecast:
+            detector_readings = self.latest_forecast(
+                start_datetime, end_datetime, output_type="subquery"
+            )
+        else:
+            detector_readings = self.raw_scoot_readings(
+                start_datetime, end_datetime, output_type="subquery"
+            )
 
         with self.dbcnxn.open_session() as session:
 
             per_road_forecasts_sq = (
                 session.query(
                     scoot_road_match_sq.c.road_toid,
-                    scoot_detector_forecast.c.measurement_start_utc,
+                    detector_readings.c.measurement_start_utc,
                     (
                         func.sum(
-                            scoot_detector_forecast.c.n_vehicles_in_interval
+                            detector_readings.c.n_vehicles_in_interval
                             * scoot_road_match_sq.c.weight
                         )
                         / func.sum(scoot_road_match_sq.c.weight)
                     ).label("n_vehicles_in_interval"),
                     (
                         func.sum(
-                            scoot_detector_forecast.c.occupancy_percentage
+                            detector_readings.c.occupancy_percentage
                             * scoot_road_match_sq.c.weight
                         )
                         / func.sum(scoot_road_match_sq.c.weight)
                     ).label("occupancy_percentage"),
                     (
                         func.sum(
-                            scoot_detector_forecast.c.congestion_percentage
+                            detector_readings.c.congestion_percentage
                             * scoot_road_match_sq.c.weight
                         )
                         / func.sum(scoot_road_match_sq.c.weight)
                     ).label("congestion_percentage"),
                     (
                         func.sum(
-                            scoot_detector_forecast.c.saturation_percentage
+                            detector_readings.c.saturation_percentage
                             * scoot_road_match_sq.c.weight
                         )
                         / func.sum(scoot_road_match_sq.c.weight)
                     ).label("saturation_percentage"),
                 )
                 .join(
-                    scoot_detector_forecast,
-                    scoot_road_match_sq.c.detector_n
-                    == scoot_detector_forecast.c.detector_id,
+                    detector_readings,
+                    scoot_road_match_sq.c.detector_n == detector_readings.c.detector_id,
                 )
                 .group_by(
-                    scoot_detector_forecast.c.measurement_start_utc,
+                    detector_readings.c.measurement_start_utc,
                     scoot_road_match_sq.c.road_toid,
                 )
             ).subquery()

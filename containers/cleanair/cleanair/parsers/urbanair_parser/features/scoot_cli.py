@@ -95,6 +95,11 @@ def fill(
     source: List[ValidSources] = Sources,
     insert_method: ValidInsertMethods = InsertMethod,
     nworkers: int = NWorkers,
+    readings: bool = typer.Option(
+        False,
+        "--use-readings",
+        help="Use raw scoot readings instead of scoot forecasts",
+    ),
 ):
     """Process scoot features"""
 
@@ -110,6 +115,7 @@ def fill(
         insert_method=insert_method,
         end=upto,
         nhours=nhours + ndays,
+        forcast=not readings,
         secretfile=state["secretfile"],
         threadsafe=True,
     )
