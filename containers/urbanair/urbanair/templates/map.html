@@ -30,7 +30,7 @@
         <div class="controls-options">Options</div>
         <div class="controls-container">
             <label for="controls">Detection Classs</label><br>
-            <select id="select-detection-class" onchange="changeMarkerType()">
+            <select id="select-detection-class" onchange="changeDetectionClass()">
                 <option value="person">People</option>
                 <option value="car">Cars</option>
                 <option value="bus">Buses</option>
@@ -41,7 +41,6 @@
             <br>
             <label for="controls">Date</label><br>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            <span style="color: red;">(experimental)</span>
         </div><br>
     </div>
 
@@ -55,7 +54,9 @@
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
             <strong id="panel-camera-id">CAMERA:</strong>
-            <br><br>
+            <br>
+            <p id="camera-count">Average count</p>
+            <br>
             <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
             <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
             <br>
@@ -322,6 +323,7 @@
                             'properties': {
                                 'id': camera_id,
                                 'type': detection_class,
+                                'count': final_value,
                                 'red': 255 * colour[0],
                                 'blue': 255 * colour[1],
                                 'green': 255 * colour[2],
@@ -390,6 +392,7 @@
         document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
         document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
+        changeDetectionClassCount();
     }
 
     function setDetectionClassFilter(){
@@ -400,8 +403,17 @@
         updateBar(histogramData[markerType], markerType);
     }
 
-    function changeMarkerType() {
+    function changeDetectionClassCount(){
+        if (selectedCam != "") {
+            document.getElementById("camera-count").innerText = `Average ${markerType} count: ${mapData.features.filter((el) => {
+                return el.properties.id == selectedCam && el.properties.type == markerType
+            }).shift().properties.count.toFixed(2)}`;
+        }
+    }
+
+    function changeDetectionClass() {
         markerType = document.getElementById("select-detection-class").value;
+        changeDetectionClassCount();
         setDetectionClassFilter();
         setHistogramDetectionClass();
     }
