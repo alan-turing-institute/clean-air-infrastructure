@@ -4,7 +4,6 @@ Timestamp conversion functions
 from typing import Union
 from contextlib import suppress
 from datetime import date, datetime, timedelta
-from typing import Any, Union
 from dateutil import parser
 import pytz
 
