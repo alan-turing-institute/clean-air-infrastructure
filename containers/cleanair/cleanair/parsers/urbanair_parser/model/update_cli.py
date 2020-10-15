@@ -9,8 +9,8 @@ from ..state import state
 from ....instance import AirQualityInstance, AirQualityResult
 from ....loggers import get_logger
 
-# from ....metrics import AirQualityMetrics
-from ....models import ModelDataExtractor
+from ....metrics import AirQualityMetrics
+from ....models import ModelData, ModelDataExtractor
 from ....types import ClusterId, ModelName, Tag, Source
 from ....utils import FileManager
 
@@ -107,6 +107,9 @@ def metrics(instance_id: str):
         logger.setLevel(logging.DEBUG)
 
     instance_metrics = AirQualityMetrics(instance_id, secretfile=secretfile)
-    instance_metrics.evaluate_spatial_metrics()
-    instance_metrics.evaluate_temporal_metrics()
+    model_data = ModelData(secretfile=secretfile)
+    observation_df = instance_metrics.load_observation_df(model_data)
+    result_df = instance_metrics.load_result_df()
+    instance_metrics.evaluate_spatial_metrics(observation_df, result_df)
+    instance_metrics.evaluate_temporal_metrics(observation_df, result_df)
     instance_metrics.update_remote_tables()

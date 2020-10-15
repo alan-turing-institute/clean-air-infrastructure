@@ -273,7 +273,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         Args:
             full_config: A configuration class
-            prediction_data: When True get training data, else get prediction data
+            training_data: When True get training data, else get prediction data
                 Defaults to True. However, if the source  is Satellite it always gets sensor
                 readings regardless of this flag
         """
