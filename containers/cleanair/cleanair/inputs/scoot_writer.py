@@ -405,18 +405,28 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 )
 
                 site_records = expected_merged.to_dict("records")
+
+                # Drop NAN values from dictionary. They will insert to DB as Null
+                site_record_drop_null = [
+                    {
+                        key: (value if not pd.isna(value) else None)
+                        for (key, value) in record.items()
+                    }
+                    for record in site_records
+                ]
+
                 self.logger.info(
                     "Inserting records for %s detectors into database",
-                    green(len(site_records)),
+                    green(len(site_record_drop_null)),
                 )
 
                 start_session = time.time()
 
                 # Commit the records to the database
                 self.commit_records(
-                    site_records, on_conflict="overwrite", table=ScootReading,
+                    site_record_drop_null, on_conflict="overwrite", table=ScootReading,
                 )
-                n_records_inserted += len(site_records)
+                n_records_inserted += len(site_record_drop_null)
 
                 self.logger.info(
                     "Insertion took %s", green(duration(start_session, time.time())),
