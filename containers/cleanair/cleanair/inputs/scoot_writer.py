@@ -1,7 +1,7 @@
 """
 Retrieve and process data from the SCOOT traffic detector network
 """
-from typing import List
+from typing import List, Tuple
 import datetime
 import os
 import time
@@ -94,7 +94,9 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         return q_scoot_readings
 
     @staticmethod
-    def get_remote_filenames(start_datetime_utc, end_datetime_utc):
+    def get_remote_filenames(
+        start_datetime_utc: datetime.datetime, end_datetime_utc: datetime.datetime
+    ) -> List[Tuple[str, str]]:
         """Get all possible remote file details for the period in question"""
 
         # Convert datetime from UTC to local time
@@ -132,7 +134,10 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         return file_list
 
     def request_remote_data(
-        self, start_datetime_utc: str, end_datetime_utc: str, detector_ids: List[str]
+        self,
+        start_datetime_utc: datetime.datetime,
+        end_datetime_utc: datetime.datetime,
+        detector_ids: List[str],
     ) -> List[pd.DataFrame]:
         """
         Request all readings between {start_date} and {end_date}.
