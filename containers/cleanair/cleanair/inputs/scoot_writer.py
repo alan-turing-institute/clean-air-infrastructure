@@ -1,13 +1,14 @@
 """
 Retrieve and process data from the SCOOT traffic detector network
 """
+from typing import List
 import datetime
 import os
 import time
 from dateutil import rrule
 import boto3
 import botocore
-import pandas
+import pandas as pd
 import pytz
 from sqlalchemy import func, Table
 from ..databases import DBWriter
@@ -130,7 +131,9 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 )
         return file_list
 
-    def request_remote_data(self, start_datetime_utc, end_datetime_utc, detector_ids):
+    def request_remote_data(
+        self, start_datetime_utc: str, end_datetime_utc: str, detector_ids: List[str]
+    ) -> List[pd.DataFrame]:
         """
         Request all readings between {start_date} and {end_date}.
         Remove readings with unknown detector ID or detector faults.
@@ -158,7 +161,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                     filename,
                 )
                 # Read the CSV files into a dataframe
-                scoot_df = pandas.read_csv(
+                scoot_df = pd.read_csv(
                     filename,
                     names=self.csv_columns,
                     skipinitialspace=True,
@@ -199,7 +202,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         )
 
         # Combine the readings into a single data frame
-        df_combined = pandas.concat(processed_readings, ignore_index=True)
+        df_combined = pd.concat(processed_readings, ignore_index=True)
         self.logger.info(
             "Filtered %s relevant per-minute detector readings in %s",
             green(df_combined.shape[0]),
@@ -226,11 +229,11 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                     "region": "first",
                 }
             )
-        except pandas.core.base.DataError:
+        except pd.core.base.DataError:
             self.logger.warning(
                 "Data aggregation failed - returning an empty dataframe"
             )
-            return pandas.DataFrame(columns=input_df.columns)
+            return pd.DataFrame(columns=input_df.columns)
 
     def aggregate_scoot_data(self, df_readings):
         """
