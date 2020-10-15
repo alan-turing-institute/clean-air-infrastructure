@@ -91,7 +91,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
         start_date: str,
         end_date: Optional[str] = None,
         detector_ids: Optional[List[str]] = None,
-        only_missing: bool = True,
+        only_unprocessed: bool = True,
     ):
 
         expected_readings = self.gen_expected_readings(
@@ -110,7 +110,8 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             output = session.query(
                 expected_readings.c.detector_id,
                 expected_readings.c.measurement_start_utc,
-                actual_readings.c.measurement_start_utc.is_(None).label("missing"),
+                actual_readings.c.measurement_start_utc.is_(None).label("unprocessed"),
+                actual_readings.c.n_vehicles_in_interval.is_(None).label("missing"),
             ).join(
                 actual_readings,
                 and_(
@@ -121,7 +122,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                 isouter=True,
             )
 
-            if only_missing:
+            if only_unprocessed:
                 return output.filter(actual_readings.c.measurement_start_utc.is_(None))
 
             return output
@@ -133,14 +134,19 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
         end_date: Optional[str] = None,
         detector_ids: Optional[List[str]] = None,
         group_daily: bool = False,
+        missing: bool = False,
     ):
 
         reading_status_sq = self.get_reading_status(
             start_date,
             end_date,
             detector_ids,
-            only_missing=False,
+            only_unprocessed=False,
             output_type="subquery",
+        )
+
+        missing_row = (
+            reading_status_sq.c.missing if missing else reading_status_sq.c.unprocessed
         )
 
         with self.dbcnxn.open_session() as session:
@@ -155,14 +161,9 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                         ).label("day"),
                         (
                             cast(
-                                func.sum(
-                                    cast(
-                                        (reading_status_sq.c.missing == False), Integer,
-                                    )
-                                ),
-                                Float,
+                                func.sum(cast((missing_row == False), Integer,)), Float,
                             )
-                            / cast(func.count(reading_status_sq.c.missing), Float)
+                            / cast(func.count(missing_row), Float)
                         ).label("percent_complete"),
                     )
                     .group_by(
@@ -182,27 +183,22 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             return session.query(
                 reading_status_sq.c.detector_id,
                 (
-                    cast(
-                        func.sum(cast(reading_status_sq.c.missing == False, Integer)),
-                        Float,
-                    )
-                    / cast(func.count(reading_status_sq.c.missing), Float)
+                    cast(func.sum(cast(missing_row == False, Integer)), Float,)
+                    / cast(func.count(missing_row), Float)
                 ).label("percent_complete"),
             ).group_by(reading_status_sq.c.detector_id)
 
     @db_query()
     def get_percentage_readings_quantiles(
-        self,
-        start_date: str,
-        end_date: Optional[str] = None,
-        detector_ids: Optional[List[str]] = None,
+        self, missing: bool = False,
     ):
 
         percentage_by_sensor_day_sq = self.get_percentage_readings_by_sensor(
-            start_date,
-            end_date,
+            self.start_date.isoformat(),
+            self.end_date.isoformat(),
             group_daily=True,
-            detector_ids=detector_ids,
+            detector_ids=self.detector_ids,
+            missing=missing,
             output_type="subquery",
         )
 

@@ -16,10 +16,16 @@ def check(
     ndays: int = NDays,
     web: bool = Web,
     detectors: str = ScootDetectors,
+    missing: bool = typer.Option(
+        False,
+        "--missing",
+        help="Show missing data (i.e. data in database as null). Else show data expected but not in database",
+    ),
 ) -> None:
-    """Check what Scoot data is in the database"""
+    """Show percentage of scoot sensors which have data as quartiles"""
 
     typer.echo("Check scoot data")
+
     # Set logging verbosity
     # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
@@ -31,39 +37,9 @@ def check(
         detector_ids=detectors if detectors else None,
     )
 
-    # print(scoot_reader.scoot_detectors(output_type="sql"))
-
-    # print(scoot_reader.gen_date_range("2020-01-01", "2020-01-02", output_type="sql"))
-
-    # print(
-    #     scoot_reader.gen_expected_readings(
-    #         "2020-01-01", "2020-01-02", output_type="sql"
-    #     )
-    # )
-
-    # print(
-    #     scoot_reader.scoot_readings(
-    #         start="2020-01-01", upto="2020-01-02", output_type="sql"
-    #     )
-    # )
-
-    sd = "2020-10-01"
-    ed = "2020-10-14"
-    det_ids = None
-    # print(
-    #     scoot_reader.get_reading_status(
-    #         sd, ed, detector_ids=det_ids, only_missing=False, output_type="tabulate",
-    #     )
-    # )
-
-    # print(
-    #     scoot_reader.get_percentage_readings_by_sensor(
-    #         sd, ed, detector_ids=det_ids, group_daily=True, output_type="tabulate",
-    #     )
-    # )
     print(
         scoot_reader.get_percentage_readings_quantiles(
-            sd, ed, detector_ids=det_ids, output_type="tabulate",
+            missing=missing, output_type="tabulate",
         )
     )
 
