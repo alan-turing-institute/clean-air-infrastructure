@@ -1,8 +1,15 @@
 """Tables for the traffic modelling schema."""
 
-from sqlalchemy import Column, Float, ForeignKey, String, ForeignKeyConstraint
+from sqlalchemy import Column, Float, Integer, ForeignKeyConstraint
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, TIMESTAMP
 from ..base import Base
-from ..mixins import DataTableMixin, InstanceTableMixin, ModelTableMixin
+from ..mixins import (
+    DataTableMixin,
+    InstanceTableMixin,
+    MetricsTableMixin,
+    ModelTableMixin,
+    ResultTableMixin,
+)
 
 
 class TrafficInstanceTable(Base, InstanceTableMixin):
@@ -37,32 +44,41 @@ class TrafficModelTable(Base, ModelTableMixin):
     __table_args__ = {"schema": "traffic_modelling"}
 
 
-class TrafficMetricTable(Base):
+class TrafficMetricTable(Base, MetricsTableMixin):
     """
     A table for storing metrics from traffic models.
     """
 
-    __table_args__ = {"schema": "traffic_modelling"}
+    __table_args__ = (
+        ForeignKeyConstraint(["data_id"], ["traffic_modelling.traffic_data.data_id"]),
+        ForeignKeyConstraint(
+            ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
+        ),
+        {"schema": "traffic_modelling"},
+    )
     __tablename__ = "traffic_metric"
 
-    instance_id = Column(
-        String(64),
-        ForeignKey("traffic_modelling.traffic_instance.instance_id"),
-        primary_key=True,
-        nullable=False,
-    )
-    data_id = Column(
-        String(64),
-        ForeignKey("traffic_modelling.traffic_data.data_id"),
-        primary_key=True,
-        nullable=False,
-    )
     coverage50 = Column(Float, nullable=False, index=False)
     coverage75 = Column(Float, nullable=False, index=False)
     coverage95 = Column(Float, nullable=False, index=False)
     nlpl = Column(Float, nullable=False, index=False)
 
-    def __repr__(self):
-        cols = [c.name for c in self.__table__.columns]
-        vals = ["{}='{}'".format(column, getattr(self, column)) for column in cols]
-        return "<Instance(" + ", ".join(vals)
+
+class TrafficResultTable(Base, ResultTableMixin):
+    """A table for storing the results of a traffic model prediction."""
+
+    __tablename__ = "traffic_result"
+
+    __table_args__ = (
+        ForeignKeyConstraint(["data_id"], ["traffic_modelling.traffic_data.data_id"]),
+        ForeignKeyConstraint(
+            ["instance_id"], ["traffic_modelling.traffic_instance.instance_id"]
+        ),
+        {"schema": "traffic_modelling"},
+    )
+
+    measurement_end_utc = Column(TIMESTAMP, primary_key=True, nullable=False)
+    n_vehicles_in_interval = Column(Integer)
+    occupancy_percentage = Column(DOUBLE_PRECISION, nullable=True)
+    congestion_percentage = Column(DOUBLE_PRECISION, nullable=True)
+    saturation_percentage = Column(DOUBLE_PRECISION, nullable=True)

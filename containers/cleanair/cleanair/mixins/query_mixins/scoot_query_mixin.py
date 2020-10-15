@@ -47,6 +47,7 @@ class ScootQueryMixin:
                 func.ST_X(MetaPoint.location).label("lon"),
                 func.ST_Y(MetaPoint.location).label("lat"),
                 MetaPoint.location.label(geom_label),
+                MetaPoint.id.label("point_id"),
             ).join(MetaPoint, MetaPoint.id == ScootDetector.point_id)
 
             # get subset of detectors

@@ -24,7 +24,7 @@ from ..dates import (
     LOCKDOWN_BASELINE_END,
 )
 from ..preprocess import remove_outliers
-from ..metric import percent_of_baseline
+from ..metrics import percent_of_baseline
 
 
 class TrafficPercentageChange(DateRangeMixin, ScootQueryMixin, DBWriter):

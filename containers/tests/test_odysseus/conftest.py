@@ -21,10 +21,10 @@ def forecast_hours() -> int:
     return forecast_days * 24
 
 
-@pytest.fixture(scope="function", params=["2020-01-23", "2020-01-24"])
-def forecast_upto(request) -> str:
+@pytest.fixture(scope="function")
+def forecast_upto() -> str:
     """Upto date of scoot readings."""
-    return request.param
+    return "2020-01-23"
 
 
 @pytest.fixture(scope="function")
@@ -55,7 +55,7 @@ def scoot_offset() -> int:
 @pytest.fixture(scope="function")
 def scoot_limit() -> int:
     """Limit the number of detectors to this number."""
-    return 10
+    return 100
 
 
 @pytest.fixture(scope="function")
@@ -101,12 +101,14 @@ def scoot_writer(
 @pytest.fixture(scope="function")
 def detectors(scoot_writer: ScootGenerator) -> List[str]:
     """Get the list of detectors the scoot writer creates readings for."""
-    return scoot_writer.scoot_detectors(
+    detector_list = scoot_writer.scoot_detectors(
         offset=scoot_writer.offset,
         limit=scoot_writer.limit,
         borough=scoot_writer.borough,
         output_type="df",
     )["detector_id"].to_list()
+    assert len(detector_list) == scoot_writer.limit
+    return detector_list
 
 
 @pytest.fixture(scope="function")
@@ -124,7 +126,13 @@ def westminster_fishnet(
 
 @pytest.fixture(scope="function", params=["HW", "GP"])
 def model_name(request) -> str:
-    """Time series mthod used in Scan Stats"""
+    """Time series method used in Scan Stats"""
+    return request.param
+
+
+@pytest.fixture(scope="function", params=["2020-01-23", "2020-01-24"])
+def scan_forecast_upto(request) -> str:
+    """Upto date of scoot readings for use only in scan_scoot fixture."""
     return request.param
 
 
@@ -134,7 +142,7 @@ def scan_scoot(
     westminster_fishnet: Fishnet,
     borough: Borough,
     forecast_hours: int,
-    forecast_upto: str,
+    scan_forecast_upto: str,
     grid_resolution: int,
     train_hours: int,
     train_upto: str,
@@ -143,13 +151,17 @@ def scan_scoot(
     connection: Connector,
 ) -> ScanScoot:
     """Fixture for scan scoot class."""
+
+    # Test scan class with different forecast_uptos
+    scoot_writer.upto = scan_forecast_upto
+
     scoot_writer.update_remote_tables()
     westminster_fishnet.update_remote_tables()
 
     return ScanScoot(
         borough=borough,
         forecast_hours=forecast_hours,
-        forecast_upto=forecast_upto,
+        forecast_upto=scan_forecast_upto,
         train_hours=train_hours,
         train_upto=train_upto,
         grid_resolution=grid_resolution,

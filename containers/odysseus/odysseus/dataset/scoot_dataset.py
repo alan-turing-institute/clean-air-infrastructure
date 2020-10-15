@@ -1,8 +1,8 @@
 """
 A dataset for scoot.
 """
-
-from typing import Collection, Optional
+from __future__ import annotations
+from typing import Collection, List, Optional
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -15,9 +15,7 @@ from .scoot_config import ScootConfig, ScootPreprocessing
 
 
 class ScootDataset(DBReader, ScootQueryMixin):
-    """
-    A scoot dataset that queries the database given a data config dictionary.
-    """
+    """A scoot dataset that queries the database given a data config dictionary."""
 
     def __init__(
         self,
@@ -35,14 +33,36 @@ class ScootDataset(DBReader, ScootQueryMixin):
         if secretfile:
             # load a database reader super class
             super().__init__(secretfile=secretfile, **kwargs)
+
+            # load detectors and locations
+            config_dict = self.data_config.dict()
+            detectors_df = self.scoot_detectors(
+                detectors=config_dict.get("detectors"),
+                limit=config_dict.get("limit"),
+                offset=config_dict.get("offset"),
+                output_type="df",
+            )
             # load scoot from the data config
-            scoot_df = self.scoot_readings(**self.data_config.dict(), output_type="df")
+            scoot_df = self.scoot_readings(
+                detectors=detectors_df.detector_id.unique(),
+                start=self.data_config.start,
+                upto=self.data_config.upto,
+                output_type="df"
+            )
+            # assign list of detectors if it doesn't exist already
+            if not self.data_config.detectors:
+                self._data_config.detectors = list(scoot_df.detector_id.unique())
         elif isinstance(dataframe, pd.DataFrame):
+            # filter dataframe by start and upto datetime
             scoot_df = dataframe.loc[
                 (dataframe.measurement_start_utc >= data_config.start)
                 & (dataframe.measurement_start_utc < data_config.upto)
-                & (dataframe.detector_id.isin(data_config.detectors))
             ]
+            # filter dataframe by detector list
+            if data_config.detectors:
+                scoot_df = scoot_df.loc[
+                    dataframe.detector_id.isin(data_config.detectors)
+                ]
         else:
             raise ValueError(
                 "Must pass either secretfile or dataframe as an argument to the ScootDataset init."
@@ -91,6 +111,20 @@ class ScootDataset(DBReader, ScootQueryMixin):
     def target_tensor(self) -> tf.Tensor:
         """The target tensor."""
         return tf.convert_to_tensor(self.target_numpy, dtype=tf.dtypes.float64)
+
+    def split_by_detector(self) -> List:
+        """Return a list of scoot datasets. One dataset for each detector."""
+        datasets = []
+        for detector_id in self.data_config.detectors:
+            data_config = ScootConfig(
+                detectors=[detector_id],
+                start=self.data_config.start,
+                upto=self.data_config.upto,
+            )
+            datasets.append(
+                ScootDataset(data_config, self.preprocessing, dataframe=self.dataframe)
+            )
+        return datasets
 
     @staticmethod
     def validate_dataframe(

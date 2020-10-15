@@ -1,4 +1,6 @@
 """Shared arguments"""
+
+from .model_options import MaxIter
 from .instance_options import (
     ClusterIdOption,
     TagOption,
@@ -27,7 +29,6 @@ from .shared_args import (
 __all__ = [
     "AWSId",
     "AWSKey",
-    "ClusterIdOption",
     "CopernicusKey",
     "From",
     "InputDir",
@@ -35,9 +36,11 @@ __all__ = [
     "NDays_callback",
     "NDays",
     "NHours",
+    "MaxIter",
     "ScootDetectors",
     "Sources",
     "Species",
+    "ClusterIdOption",
     "UpTo_callback",
     "UpTo",
     "TagOption",
