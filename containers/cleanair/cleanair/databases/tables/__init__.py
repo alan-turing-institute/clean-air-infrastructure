@@ -21,6 +21,7 @@ from .satellite_tables import (
     SatelliteGrid,
     SatelliteForecast,
 )
+from .scan_tables import FishnetTable, ScootScanStats
 from .scoot_tables import (
     ScootDetector,
     ScootForecast,
@@ -50,6 +51,7 @@ __all__ = [
     "AQEReading",
     "AQESite",
     "DynamicFeature",
+    "FishnetTable",
     "HexGrid",
     "LAQNReading",
     "LAQNSite",
@@ -63,6 +65,7 @@ __all__ = [
     "SatelliteGrid",
     "SatelliteForecast",
     "SatelliteBox",
+    "ScootScanStats",
     "ScootDetector",
     "ScootForecast",
     "ScootReading",

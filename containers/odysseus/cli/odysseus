@@ -2,13 +2,14 @@
 
 import typer
 from cleanair.parsers.urbanair_parser import config, init, inputs
-from odysseus.parsers import baseline
+from odysseus.parsers import baseline, scan_cli
 
-app = typer.Typer(callback=init.init_callback)
+app = typer.Typer(callback=init.init_callback, help="Project Odysseus")
 app.add_typer(baseline.app, name="baseline")
 app.add_typer(config.app, name="config")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")
+app.add_typer(scan_cli.app, name="scan")
 
 if __name__ == "__main__":
     app()

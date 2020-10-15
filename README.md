@@ -61,6 +61,7 @@ A list of key developers on the project. A good place to start if you wish to co
 ### Researcher guide
 - [Setup notebooks](#setup-notebook)
 - [Training models](#training-models)
+- [Odysseus](#odysseus)
 - [GPU support with Docker](#gpu-support-with-docker)
 - [Singularity for HPC](#singularity-for-hpc)
 
@@ -677,6 +678,54 @@ or for deep gp
 urbanair model deep-gp fit <data-directory>
 ```
 
+## Odysseus
+
+To setup the production database:
+
+```bash
+az login
+odysseus init production
+```
+
+Alternatively you can use your local database (but you should ensure you have the corrent data in your local DB).
+
+```bash
+odysseus init local
+```
+
+### Scan statistics
+
+A fishnet cast over a given borough with a specified grid resolution is used to identify a given grid.
+To create a fishnet over a borough with a given resolution:
+
+```bash
+odysseus scan setup --borough NAME --grid-resolution RESOLUTION
+```
+
+where NAME is the borough name and grid resolution is a (small) integer. This will insert grid data into the fishnet table in the traffic modelling schema.
+
+To run the scan statistics for scoot on the above fishnet with a specified train and forecast period:
+
+```bash
+odysseus scan scoot BASELINE_PERIOD \
+    --borough NAME \
+    --grid-resolution RESOLUTION \
+    --forecast-upto 2020-05-20 \
+    --forecast-days 2 
+```
+
+The above command will forecast 2 days worth of scoot data using training data specified by `BASELINE_PERIOD`. It is recommended to pass this as `last3weeks` which will use the three weeks of data before the forecasting period to train the model. Other pre/mid/post lockdown training profiles are available.
+
+Upon completion, scan statistics for each grid cell of the fishnet at each of hour of the forecast period can be found in the `scoot_scan_stats` table of the traffic modelling schema.
+
+Add the `--help` option for different ways of querying scoot data and changing model parameters/forecast methods.
+
+
+
+```bash
+urbanair model deep-gp fit <data-directory>
+```
+
 ## Model fitting with docker
 
 Build a model fitting docker image with tensorflow installed:
@@ -702,6 +751,11 @@ docker run -it --rm cleanairdocker.azurecr.io/model_fitting:latest sh /app/scrip
 ```
 
 If you are running on your local machine you will also need to add `-e PGPASSWORD -e DB_SECRET_FILE -v $SECRET_DIR:/secrets` after the `run` command and set the environment variables (see above in the README).
+
+### GPU support with Docker
+
+For GPU support we strongly recommend using our docker images.
+
 
 ## Singularity for HPC
 Many scientific clusters will give you access to [Singularity](https://singularity.lbl.gov/).

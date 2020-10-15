@@ -1,1 +1,1 @@
-"""CLI parsers for the odysseus project."""
+"""Odysseus command line interface."""

@@ -1,5 +1,6 @@
 """Functions and constants for dates and times."""
 
+from .baseline import Baseline, BaselineUpto
 from .lockdown import (
     LOCKDOWN_BASELINE_END,
     LOCKDOWN_BASELINE_START,
@@ -12,6 +13,8 @@ from .normal import (
 )
 
 __all__ = [
+    "Baseline",
+    "BaselineUpto",
     "LOCKDOWN_BASELINE_END",
     "LOCKDOWN_BASELINE_START",
     "NORMAL_BASELINE_END",
