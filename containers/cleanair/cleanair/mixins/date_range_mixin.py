@@ -20,6 +20,7 @@ class DateRangeMixin:
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
+        # Convert end argument into a datetime
         self.end_datetime = as_datetime(end)
 
         # Construct the start datetime using nhours
@@ -85,7 +86,6 @@ class DateGeneratorMixin:
         )
 
         if transpose:
-
             return zip(*arg_gen)
 
         return arg_gen
