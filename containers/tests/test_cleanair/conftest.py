@@ -513,6 +513,9 @@ def scoot_generator(
         secretfile=secretfile,
         connection=connection,
     )
+
+
+@pytest.fixture(scope="function")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(

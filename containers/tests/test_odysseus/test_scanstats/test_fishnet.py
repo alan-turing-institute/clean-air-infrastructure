@@ -10,8 +10,8 @@ from cleanair.databases import DBReader
 from cleanair.databases.tables import LondonBoundary
 
 if TYPE_CHECKING:
+    from cleanair.types import Borough
     import pandas as pd
-    from odysseus.types import Borough
     from odysseus.scoot import Fishnet, ScanScoot
     from odysseus.databases.mixins import GridMixin
 

@@ -1,8 +1,8 @@
 """Arguments and options shared between CLI commands."""
 
 import typer
-from cleanair.timestamps import as_datetime
-from ..types import Borough, OptimizerName
+from cleanair.types import Borough
+from ..types import OptimizerName
 
 # pylint: disable=invalid-name
 BoroughOption = typer.Option(

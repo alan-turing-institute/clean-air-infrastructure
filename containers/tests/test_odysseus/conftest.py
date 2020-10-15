@@ -8,7 +8,7 @@ from cleanair.types import Borough
 from odysseus.scoot import Fishnet, ScanScoot
 from ..data_generators.scoot_generator import generate_scoot_df, ScootGenerator
 
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,ungrouped-imports
 
 if TYPE_CHECKING:
     from cleanair.databases import Connector

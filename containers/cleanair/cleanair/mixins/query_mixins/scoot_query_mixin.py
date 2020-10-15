@@ -22,7 +22,7 @@ class ScootQueryMixin:
 
     dbcnxn: Any
 
-    @db_query
+    @db_query()
     def scoot_detectors(
         self,
         offset: Optional[int] = None,
@@ -72,7 +72,7 @@ class ScootQueryMixin:
 
             return readings
 
-    @db_query
+    @db_query()
     def scoot_readings(
         self,
         start: datetime,
@@ -112,8 +112,12 @@ class ScootQueryMixin:
             error_message = error_message.format(borough.value)
             return ValueError(error_message)
 
-        not_implemented_error = "You passed the {arg} argument. You should call scoot_detectors "
-        not_implemented_error += "directly to use limit and offset before joining with scoot_readings."
+        not_implemented_error = (
+            "You passed the {arg} argument. You should call scoot_detectors "
+        )
+        not_implemented_error += (
+            "directly to use limit and offset before joining with scoot_readings."
+        )
         not_implemented_error += " See this issue on GitHub "
         not_implemented_error += "https://github.com/alan-turing-institute/clean-air-infrastructure/issues/533"
         if limit is not None:

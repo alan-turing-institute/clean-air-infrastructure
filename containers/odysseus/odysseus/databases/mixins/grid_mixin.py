@@ -8,8 +8,8 @@ from cleanair.databases import Connector
 from cleanair.databases.tables import FishnetTable, LondonBoundary
 
 if TYPE_CHECKING:
+    from cleanair.types import Borough
     from geoalchemy2.types import WKBElement
-    from ...types import Borough
 
 
 class GridMixin:
@@ -17,7 +17,7 @@ class GridMixin:
 
     dbcnxn: Connector
 
-    @db_query
+    @db_query()
     def st_fishnet(
         self,
         wkb_geom: WKBElement,
@@ -54,7 +54,7 @@ class GridMixin:
             )
             return session.query(stmt)
 
-    @db_query
+    @db_query()
     def fishnet_over_borough(
         self,
         borough: Borough,
@@ -112,7 +112,7 @@ class GridMixin:
                 reading[0], grid_resolution, grid_step, rotation, srid
             )
 
-    @db_query
+    @db_query()
     def fishnet_query(self, borough: Borough, grid_resolution: int) -> Any:
         """Query the Fishnet table.
 
