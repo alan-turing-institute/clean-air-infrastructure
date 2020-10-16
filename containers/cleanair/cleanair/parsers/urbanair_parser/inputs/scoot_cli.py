@@ -1,5 +1,4 @@
 """Scoot CLI"""
-from cleanair.databases.tables import scoot_tables
 import typer
 from cleanair.inputs import ScootWriter, ScootReader
 from cleanair.loggers import initialise_logging
