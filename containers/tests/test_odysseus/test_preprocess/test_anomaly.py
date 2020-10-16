@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from odysseus import preprocess
-from ..data_generators import create_daily_readings_df
+from ...data_generators.scoot_generator import create_daily_readings_df
 
 
 @pytest.fixture(scope="function")
