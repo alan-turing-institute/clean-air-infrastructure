@@ -1,15 +1,16 @@
 """
 Retrieve and process data from the SCOOT traffic detector network
 """
-from typing import List, Optional, Any
+from typing import List, Optional, Tuple, Any
 import datetime
+from datetime import timedelta
 import os
 import time
 from dateutil import rrule
 from dateutil.parser import isoparse
 import boto3
 import botocore
-import pandas
+import pandas as pd
 import pytz
 from sqlalchemy import func, Table, text, and_, cast, Integer, Float
 from ..databases import DBWriter, DBReader
@@ -250,7 +251,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
     """
 
-    def __init__(self, aws_key_id, aws_key, detector_ids=None, **kwargs):
+    def __init__(
+        self, aws_key_id: str, aws_key: str, detector_ids: List[str] = None, **kwargs
+    ) -> None:
         # Initialise parent classes
         super().__init__(**kwargs)
 
@@ -280,7 +283,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
             "region",
         ]
 
-    def request_site_entries(self):
+    def request_site_entries(self) -> List[str]:
         """Get list of known detectors"""
         with self.dbcnxn.open_session() as session:
             scoot_detector = Table(
@@ -296,7 +299,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
         return detectors
 
     @db_query()
-    def get_existing_scoot_data(self):
+    def get_existing_scoot_data(self) -> Any:
         """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
         with self.dbcnxn.open_session() as session:
             q_scoot_readings = (
@@ -319,7 +322,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
         return q_scoot_readings
 
     @staticmethod
-    def get_remote_filenames(start_datetime_utc, end_datetime_utc):
+    def get_remote_filenames(
+        start_datetime_utc: datetime.datetime, end_datetime_utc: datetime.datetime
+    ) -> List[Tuple[str, str]]:
         """Get all possible remote file details for the period in question"""
 
         # Convert datetime from UTC to local time
@@ -333,7 +338,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
         # List all the relevant CSV files for the time range under consideration
         file_list = []
         for date in rrule.rrule(
-            rrule.HOURLY, dtstart=start_datetime, until=end_datetime
+            rrule.HOURLY,
+            dtstart=start_datetime,
+            until=end_datetime - datetime.timedelta(hours=1),
         ):
             # NB. We must explicitly exclude end_datetime
             if date >= end_datetime:
@@ -356,7 +363,12 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 )
         return file_list
 
-    def request_remote_data(self, start_datetime_utc, end_datetime_utc, detector_ids):
+    def request_remote_data(
+        self,
+        start_datetime_utc: datetime.datetime,
+        end_datetime_utc: datetime.datetime,
+        detector_ids: List[str],
+    ) -> List[pd.DataFrame]:
         """
         Request all readings between {start_date} and {end_date}.
         Remove readings with unknown detector ID or detector faults.
@@ -384,7 +396,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                     filename,
                 )
                 # Read the CSV files into a dataframe
-                scoot_df = pandas.read_csv(
+                scoot_df = pd.read_csv(
                     filename,
                     names=self.csv_columns,
                     skipinitialspace=True,
@@ -425,7 +437,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
         )
 
         # Combine the readings into a single data frame
-        df_combined = pandas.concat(processed_readings, ignore_index=True)
+        df_combined = pd.concat(processed_readings, ignore_index=True)
         self.logger.info(
             "Filtered %s relevant per-minute detector readings in %s",
             green(df_combined.shape[0]),
@@ -433,7 +445,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
         )
         return df_combined
 
-    def combine_by_detector_id(self, input_df):
+    def combine_by_detector_id(self, input_df: pd.DataFrame) -> pd.DataFrame:
         """Aggregate measurements by detector ID across several readings"""
         # Group by detector_id: each column has its own combination rule
         try:
@@ -452,13 +464,13 @@ class ScootWriter(DateRangeMixin, DBWriter):
                     "region": "first",
                 }
             )
-        except pandas.core.base.DataError:
+        except pd.core.base.DataError:
             self.logger.warning(
                 "Data aggregation failed - returning an empty dataframe"
             )
-            return pandas.DataFrame(columns=input_df.columns)
+            return pd.DataFrame(columns=input_df.columns)
 
-    def aggregate_scoot_data(self, df_readings):
+    def aggregate_scoot_data(self, df_readings: pd.DataFrame) -> pd.DataFrame:
         """
         Aggregate scoot data by detector ID into hourly chunks
         """
@@ -499,7 +511,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
             yield df_aggregated
 
-    def update_remote_tables(self):
+    def update_remote_tables(self) -> None:
         """Update the database with new SCOOT traffic data."""
         self.logger.info(
             "Retrieving new %s readings from %s to %s...",
@@ -535,7 +547,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
         for start_datetime_utc in rrule.rrule(
-            rrule.HOURLY, dtstart=start_hour, until=self.end_datetime
+            rrule.HOURLY,
+            dtstart=start_hour,
+            until=self.end_datetime - timedelta(hours=1),
         ):
             end_datetime_utc = start_datetime_utc + datetime.timedelta(hours=1)
 
@@ -578,19 +592,65 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
             # Aggregate the data and add readings to database
             for df_aggregated in self.aggregate_scoot_data(df_readings):
-                site_records = df_aggregated.to_dict("records")
+
+                expected_readings = pd.DataFrame(
+                    [
+                        {
+                            "detector_id": i,
+                            "measurement_start_utc": utcstr_from_datetime(
+                                start_datetime_utc.replace(tzinfo=datetime.timezone.utc)
+                            ),
+                            "measurement_end_utc": utcstr_from_datetime(
+                                end_datetime_utc.replace(tzinfo=datetime.timezone.utc)
+                            ),
+                        }
+                        for i in unprocessed_detectors
+                    ]
+                )
+
+                # Left join processed data onto expected data. Missing data will be null
+                expected_merged = pd.merge(
+                    expected_readings,
+                    df_aggregated.reset_index(drop=True),
+                    on=["detector_id", "measurement_start_utc", "measurement_end_utc"],
+                    how="left",
+                )
+
+                n_readings = expected_merged.shape[0]
+                n_null = pd.isnull(expected_merged["n_vehicles_in_interval"]).sum()
+
+                self.logger.info(
+                    """Requested data for %s sensors. %s out of %s have data.
+                    Missing data for %s sensors will insert as null""",
+                    len(unprocessed_detectors),
+                    n_readings - n_null,
+                    n_readings,
+                    n_null,
+                )
+
+                site_records = expected_merged.to_dict("records")
+
+                # Drop NAN values from dictionary. They will insert to DB as Null
+                site_record_drop_null = [
+                    {
+                        key: (value if not pd.isna(value) else None)
+                        for (key, value) in record.items()
+                    }
+                    for record in site_records
+                ]
+
                 self.logger.info(
                     "Inserting records for %s detectors into database",
-                    green(len(site_records)),
+                    green(len(site_record_drop_null)),
                 )
 
                 start_session = time.time()
 
                 # Commit the records to the database
                 self.commit_records(
-                    site_records, on_conflict="overwrite", table=ScootReading,
+                    site_record_drop_null, on_conflict="overwrite", table=ScootReading,
                 )
-                n_records_inserted += len(site_records)
+                n_records_inserted += len(site_record_drop_null)
 
                 self.logger.info(
                     "Insertion took %s", green(duration(start_session, time.time())),
