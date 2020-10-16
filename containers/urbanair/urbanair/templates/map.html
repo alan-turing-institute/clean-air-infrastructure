@@ -191,7 +191,24 @@
                 'circle-opacity': 0.7
             }
         })
-        // This just highlights the selected camera on the map:
+        // Highlights the flagged cameras on the map:
+        map.addLayer({
+            id: 'jamcams-flaggged',
+            type: 'circle',
+            source: 'jamcams',
+            filter: [
+                '==',
+                'flag',
+                1
+            ],
+            paint: {
+                'circle-radius': 10,
+                'circle-stroke-color': 'tomato',
+                'circle-stroke-width': 1,
+                'circle-opacity': 0,
+            }
+        })
+        // Highlights the selected camera on the map:
         map.addLayer({
             id: 'jamcams-highlighted',
             type: 'circle',
@@ -208,6 +225,7 @@
                 'circle-opacity': 0
             }
         })
+
 
         // Make the cusor a pointer when over markers:
         map.on('mouseenter', 'jamcams', function() {
@@ -322,6 +340,7 @@
                             },
                             'properties': {
                                 'id': camera_id,
+                                'flag': camera.flag,
                                 'type': detection_class,
                                 'count': final_value,
                                 'red': 255 * colour[0],
