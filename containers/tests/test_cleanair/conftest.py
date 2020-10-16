@@ -506,10 +506,10 @@ def scoot_generator(
 ) -> ScootGenerator:
     """Initialise a scoot writer."""
     return ScootGenerator(
-        dataset_start_date,
-        dataset_end_date,
-        0,
-        100,
+        start=dataset_start_date.isoformat(),
+        upto=dataset_end_date.isoformat(),
+        offset=0,
+        limit=100,
         secretfile=secretfile,
         connection=connection,
     )

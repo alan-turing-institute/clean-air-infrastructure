@@ -1,6 +1,6 @@
 """Scoot CLI"""
 import typer
-from cleanair.inputs import ScootWriter
+from cleanair.inputs import ScootWriter, ScootReader
 from cleanair.loggers import initialise_logging
 from ..shared_args import UpTo, NDays, NHours, Web, AWSId, AWSKey, ScootDetectors
 from ..state import state
@@ -10,14 +10,35 @@ app = typer.Typer()
 # pylint: disable=W0613,W0612
 @app.command()
 def check(
-    upto: str = UpTo, nhours: int = NHours, ndays: int = NDays, web: bool = Web
+    upto: str = UpTo,
+    nhours: int = NHours,
+    ndays: int = NDays,
+    web: bool = Web,
+    detectors: str = ScootDetectors,
+    missing: bool = typer.Option(
+        False,
+        "--missing",
+        help="Show missing data (i.e. data in database as null). Else show data expected but not in database",
+    ),
 ) -> None:
-    """Check what Scoot data is in the database"""
+    """Show percentage of scoot sensors which have data as quartiles"""
 
     typer.echo("Check scoot data")
+
     # Set logging verbosity
     # pylint: disable=W0612
     default_logger = initialise_logging(state["verbose"])
+
+    scoot_reader = ScootReader(
+        end=upto,
+        nhours=nhours + ndays,
+        secretfile=state["secretfile"],
+        detector_ids=detectors if detectors else None,
+    )
+
+    print(
+        scoot_reader.get_percentage_quantiles(missing=missing, output_type="tabulate",)
+    )
 
 
 @app.command()
