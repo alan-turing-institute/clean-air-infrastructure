@@ -2,8 +2,8 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
-from typing import Tuple
-from datetime import timedelta
+from typing import Any, Tuple
+from datetime import datetime, timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
@@ -44,6 +44,7 @@ from cleanair.types import (
     Species,
     SVGPParams,
 )
+from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
@@ -493,6 +494,24 @@ def fake_cleanair_dataset(
         [i.dict() for i in static_feature_records],
         on_conflict="overwrite",
         table=StaticFeature,
+    )
+
+
+@pytest.fixture(scope="function")
+def scoot_generator(
+    secretfile: str,
+    connection: Any,
+    dataset_start_date: datetime,
+    dataset_end_date: datetime,
+) -> ScootGenerator:
+    """Initialise a scoot writer."""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        0,
+        100,
+        secretfile=secretfile,
+        connection=connection,
     )
 
 

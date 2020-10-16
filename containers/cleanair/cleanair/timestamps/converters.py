@@ -1,9 +1,9 @@
 """
 Timestamp conversion functions
 """
+from typing import Union
 from contextlib import suppress
 from datetime import date, datetime, timedelta
-from typing import Any, Union
 from dateutil import parser
 import pytz
 
@@ -18,7 +18,7 @@ TIMESTRINGS = [
 ]
 
 
-def as_datetime(maybe_dt: Any) -> datetime:
+def as_datetime(maybe_dt: Union[datetime, date, str]) -> datetime:
     """Convert an input that might be a datetime into a datetime"""
     # If we have a date or datetime then convert to a datetime
     if isinstance(maybe_dt, datetime):
