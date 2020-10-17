@@ -368,7 +368,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
         start_datetime_utc: datetime.datetime,
         end_datetime_utc: datetime.datetime,
         detector_ids: List[str],
-    ) -> List[pd.DataFrame]:
+    ) -> pd.DataFrame:
         """
         Request all readings between {start_date} and {end_date}.
         Remove readings with unknown detector ID or detector faults.
@@ -562,10 +562,9 @@ class ScootWriter(DateRangeMixin, DBWriter):
             ]
             if unprocessed_detectors:
                 self.logger.info(
-                    "Processing S3 data from %s to %s for %s detector(s).",
+                    "Processing S3 data from %s to %s",
                     green(start_datetime_utc),
                     green(end_datetime_utc),
-                    green(len(unprocessed_detectors)),
                 )
             else:
                 # If all detectors have been processed then skip this hour
@@ -579,7 +578,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
 
             # Load all valid remote data into a single dataframe
             df_readings = self.request_remote_data(
-                start_datetime_utc, end_datetime_utc, unprocessed_detectors
+                start_datetime_utc, end_datetime_utc, self.detector_ids
             )
 
             if df_readings.shape[0] < 1:
@@ -604,7 +603,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                                 end_datetime_utc.replace(tzinfo=datetime.timezone.utc)
                             ),
                         }
-                        for i in unprocessed_detectors
+                        for i in self.detector_ids
                     ]
                 )
 
@@ -622,7 +621,7 @@ class ScootWriter(DateRangeMixin, DBWriter):
                 self.logger.info(
                     """Requested data for %s sensors. %s out of %s have data.
                     Missing data for %s sensors will insert as null""",
-                    len(unprocessed_detectors),
+                    len(self.detector_ids),
                     n_readings - n_null,
                     n_readings,
                     n_null,
