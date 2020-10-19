@@ -137,11 +137,20 @@ class ModelConfig(
         ]
 
         # Add epoch, lat and lon
-        x_names = ["epoch", "lat", "lon"] + feature_names + dynamic_feature_names
+        x_names = ["epoch", "lat", "lon"] + (
+            feature_names + dynamic_feature_names
+            if dynamic_feature_names
+            else feature_names
+        )
 
         # Create full config and validate
         config_dict = config.dict()
-        config_dict["feature_names"] = feature_names + dynamic_feature_names
+        config_dict["feature_names"] = (
+            feature_names + dynamic_feature_names
+            if dynamic_feature_names
+            else feature_names
+        )
+
         config_dict["x_names"] = x_names
 
         return FullDataConfig(**config_dict)

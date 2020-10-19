@@ -1,6 +1,6 @@
 """Types for datasets."""
 
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
 from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
@@ -38,7 +38,7 @@ class DataConfig(BaseModel):
     }
     species: List[Species]
     features: List[FeatureNames]
-    dynamic_features: List[DynamicFeatureNames]
+    dynamic_features: Optional[List[DynamicFeatureNames]]
     buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn
 
