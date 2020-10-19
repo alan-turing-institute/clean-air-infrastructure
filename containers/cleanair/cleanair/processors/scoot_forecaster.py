@@ -65,9 +65,13 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
         start_time = time.time()
 
         with self.dbcnxn.open_session() as session:
-            q_scoot_reading = session.query(ScootReading).filter(
-                ScootReading.measurement_start_utc >= self.start_datetime,
-                ScootReading.measurement_start_utc < self.end_datetime,
+            q_scoot_reading = (
+                session.query(ScootReading)
+                .filter(
+                    ScootReading.measurement_start_utc >= self.start_datetime,
+                    ScootReading.measurement_start_utc < self.end_datetime,
+                )
+                .filter(ScootReading.n_vehicles_in_interval.isnot(None))
             )
             if self.detector_ids:
                 q_scoot_reading = q_scoot_reading.filter(
