@@ -97,6 +97,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
         detector_ids: Optional[List[str]] = None,
         only_unprocessed: bool = True,
     ) -> Any:
+
         "Check whether expected scoot data is in database"
         expected_readings = self.gen_expected_readings(
             start_date, end_date, detector_ids, output_type="subquery"
@@ -118,6 +119,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                     "expected_measurement_start_utc"
                 ),
                 actual_readings.c.measurement_start_utc,
+                actual_readings.c.n_vehicles_in_interval,
                 actual_readings.c.measurement_start_utc.is_(None).label("unprocessed"),
                 actual_readings.c.n_vehicles_in_interval.is_(None).label("missing"),
             ).join(
@@ -165,7 +167,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                     session.query(
                         reading_status_sq.c.detector_id,
                         func.date_trunc(
-                            "day", reading_status_sq.c.measurement_start_utc
+                            "day", reading_status_sq.c.expected_measurement_start_utc
                         ).label("day"),
                         (
                             cast(
@@ -177,32 +179,36 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
                     .group_by(
                         reading_status_sq.c.detector_id,
                         func.date_trunc(
-                            "day", reading_status_sq.c.measurement_start_utc
+                            "day", reading_status_sq.c.expected_measurement_start_utc
                         ),
                     )
                     .order_by(
                         reading_status_sq.c.detector_id,
                         func.date_trunc(
-                            "day", reading_status_sq.c.measurement_start_utc
+                            "day", reading_status_sq.c.expected_measurement_start_utc
                         ),
                     )
                 )
 
             return session.query(
                 reading_status_sq.c.detector_id,
+                reading_status_sq.c.expected_measurement_start_utc.label("day"),
                 (
                     cast(func.sum(cast(missing_row == False, Integer)), Float,)
                     / cast(func.count(missing_row), Float)
                 ).label("percent_complete"),
-            ).group_by(reading_status_sq.c.detector_id)
+            ).group_by(
+                reading_status_sq.c.detector_id,
+                reading_status_sq.c.expected_measurement_start_utc,
+            )
 
     @db_query()
-    def get_percentage_quantiles(self, missing: bool = False,) -> Any:
+    def get_percentage_quantiles(self, missing: bool = False, daily=True) -> Any:
         "Get percentage of sensors that have x% of expected readings"
         percentage_by_sensor_day_sq = self.get_percentage_readings(
             self.start_date.isoformat(),
             self.end_date.isoformat(),
-            group_daily=True,
+            group_daily=daily,
             detector_ids=self.detector_ids,
             missing=missing,
             output_type="subquery",

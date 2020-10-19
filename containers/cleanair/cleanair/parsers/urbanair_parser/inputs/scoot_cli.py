@@ -20,6 +20,7 @@ def check(
         "--missing",
         help="Show missing data (i.e. data in database as null). Else show data expected but not in database",
     ),
+    daily: bool = typer.Option(False, "--daily", help="Aggregate by day",),
 ) -> None:
     """Show percentage of scoot sensors which have data as quartiles"""
 
@@ -37,7 +38,9 @@ def check(
     )
 
     print(
-        scoot_reader.get_percentage_quantiles(missing=missing, output_type="tabulate",)
+        scoot_reader.get_percentage_quantiles(
+            missing=missing, daily=daily, output_type="tabulate",
+        )
     )
 
 
