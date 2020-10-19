@@ -356,13 +356,16 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         )
 
         # Get dynamic features
-        dynamic_source_data = self.get_dynamic_features(
-            start_date=start_date,
-            end_date=end_date,
-            point_ids=point_ids,
-            features=dynamic_features,
-            output_type="all",
-        )
+        if dynamic_features:
+            dynamic_source_data = self.get_dynamic_features(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=dynamic_features,
+                output_type="all",
+            )
+        else:
+            dynamic_source_data = []
 
         # Get dictionaries of wide data
         self.logger.debug("Postprocessing downloaded data")
