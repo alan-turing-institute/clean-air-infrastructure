@@ -43,6 +43,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
     @db_query()
     def gen_date_range(self, start_date: str, end_date: Optional[str] = None) -> Any:
         "Generate a data range and cross join with species"
+
         with self.dbcnxn.open_session() as session:
 
             # Generate expected time series
@@ -106,6 +107,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             start=start_date,
             upto=end_date,
             detectors=detector_ids,
+            drop_null=False,
             output_type="subquery",
         )
 
@@ -113,7 +115,10 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
 
             output = session.query(
                 expected_readings.c.detector_id,
-                expected_readings.c.measurement_start_utc,
+                expected_readings.c.measurement_start_utc.label(
+                    "expected_measurement_start_utc"
+                ),
+                actual_readings.c.measurement_start_utc,
                 actual_readings.c.measurement_start_utc.is_(None).label("unprocessed"),
                 actual_readings.c.n_vehicles_in_interval.is_(None).label("missing"),
             ).join(
