@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import List
 from datetime import datetime, timedelta
+from cleanair.types.enum_types import DynamicFeatureNames
 from sqlalchemy import func, text, cast, String
 from ..databases.tables import StaticFeature, MetaPoint
 from ..databases.materialised_views import LondonBoundaryView
@@ -55,6 +56,7 @@ class ModelConfig(
         pred_sources: List[Source],
         species: List[Species],
         features: List[FeatureNames],
+        dynamic_features: List[DynamicFeatureNames],
         buffer_sizes: List[FeatureBufferSize],
         norm_by: str,
     ) -> DataConfig:
@@ -76,6 +78,7 @@ class ModelConfig(
             pred_interest_points={src: "all" for src in pred_sources},
             species=species,
             features=features,
+            dynamic_features=dynamic_features,
             buffer_sizes=buffer_sizes,
             norm_by=norm_by,
             include_prediction_y=False,
@@ -127,12 +130,18 @@ class ModelConfig(
             for feature in config.features
         ]
 
+        dynamic_feature_names = [
+            f"value_{buff.value}_{feature.name}"
+            for buff in config.buffer_sizes
+            for feature in config.dynamic_features
+        ]
+
         # Add epoch, lat and lon
-        x_names = ["epoch", "lat", "lon"] + feature_names
+        x_names = ["epoch", "lat", "lon"] + feature_names + dynamic_feature_names
 
         # Create full config and validate
         config_dict = config.dict()
-        config_dict["feature_names"] = feature_names
+        config_dict["feature_names"] = feature_names + dynamic_feature_names
         config_dict["x_names"] = x_names
 
         return FullDataConfig(**config_dict)

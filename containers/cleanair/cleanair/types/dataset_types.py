@@ -4,7 +4,13 @@ from typing import Dict, List, Tuple, Union
 from datetime import datetime
 from nptyping import NDArray, Float64, Int
 from pydantic import BaseModel, validator
-from .enum_types import Species, Source, FeatureNames, FeatureBufferSize
+from .enum_types import (
+    Species,
+    Source,
+    FeatureNames,
+    FeatureBufferSize,
+    DynamicFeatureNames,
+)
 
 # pylint: disable=invalid-name
 FeaturesDict = Dict[Source, NDArray[Float64]]
@@ -32,6 +38,7 @@ class DataConfig(BaseModel):
     }
     species: List[Species]
     features: List[FeatureNames]
+    dynamic_features: List[DynamicFeatureNames]
     buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn
 

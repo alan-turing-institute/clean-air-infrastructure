@@ -15,6 +15,7 @@ from ....types import (
     Species,
     Source,
     FeatureNames,
+    DynamicFeatureNames,
     FeatureBufferSize,
 )
 from ....loggers import red, green
@@ -102,6 +103,12 @@ def generate_config(
         ],
         help="Features to predict on",
     ),
+    dynamic_features: List[DynamicFeatureNames] = typer.Option(
+        [
+            DynamicFeatureNames.max_n_vehicles.value,
+            DynamicFeatureNames.avg_n_vehicles.value,
+        ]
+    ),
     feature_buffer: List[FeatureBufferSize] = typer.Option(
         ["1000", "500"], help="Size of buffer for features", show_default=True
     ),
@@ -129,6 +136,7 @@ def generate_config(
         species=species,
         norm_by=norm_by,
         features=features,
+        dynamic_features=dynamic_features,
         buffer_sizes=feature_buffer,
     )
     file_manager = FileManager(DATA_CACHE)
