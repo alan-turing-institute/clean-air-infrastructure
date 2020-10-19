@@ -115,7 +115,7 @@ def fill(
         insert_method=insert_method,
         end=upto,
         nhours=nhours + ndays,
-        forcast=not readings,
+        forecast=not readings,
         secretfile=state["secretfile"],
         threadsafe=True,
     )
