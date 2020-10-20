@@ -10,6 +10,7 @@ from dateutil.parser import isoparse
 import numpy as np
 from nptyping import NDArray
 from cleanair.databases import DBWriter
+from cleanair.inputs.scoot_writer import ScootWriter
 from cleanair.databases.tables import (
     MetaPoint,
     LAQNSite,
@@ -499,17 +500,45 @@ def fake_cleanair_dataset(
 
 @pytest.fixture(scope="function")
 def scoot_generator(
-    secretfile: str,
-    connection: Any,
-    dataset_start_date: datetime,
-    dataset_end_date: datetime,
+    secretfile, connection, dataset_start_date, dataset_end_date,
 ) -> ScootGenerator:
-    """Initialise a scoot writer."""
+    """Write scoot data to database"""
     return ScootGenerator(
         dataset_start_date,
         dataset_end_date,
-        0,
-        100,
+        offset=0,
+        limit=100,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
+def scoot_single_detector_generator(
+    secretfile, connection, dataset_start_date, dataset_end_date,
+):
+    """Write scoot data to database"""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        offset=0,
+        limit=1,
+        detectors=["N04/161a1"],
+        secretfile=secretfile,
+        connection=connection,
+    ).update_remote_tables()
+
+
+@pytest.fixture(scope="function")
+def scoot_writer(secretfile, connection, dataset_start_date, dataset_end_date):
+    "Return a ScootWriter instance"
+
+    nhours = (dataset_end_date - dataset_start_date).total_seconds() / (60 * 60)
+    return ScootWriter(
+        aws_key="",
+        aws_key_id="",
+        end=dataset_end_date,
+        nhours=nhours,
         secretfile=secretfile,
         connection=connection,
     )
@@ -593,3 +622,4 @@ def model_config(secretfile, connection_class):
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
+

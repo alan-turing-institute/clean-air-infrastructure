@@ -17,11 +17,11 @@ from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..decorators import db_query
 from ..loggers import get_logger, green, duration, duration_from_seconds
-from ..mixins import DateRangeMixin, DBQueryMixin
+from ..mixins import DateRangeMixin, ScootQueryMixin
 from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
 
 
-class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
+class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
     """
     Class to get data from the SCOOT traffic detector network via the S3 bucket maintained by TfL:
     (https://s3.console.aws.amazon.com/s3/buckets/surface.data.tfl.gov.uk)
@@ -73,6 +73,33 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
                 [s[0] for s in session.query(scoot_detector.c.detector_n).distinct()]
             )
         return detectors
+
+    @db_query()
+    def __check_detectors_processed(
+        self, measurement_start_utc: datetime.datetime,
+    ) -> Any:
+        "Return detector ids which are in the database at a given hour"
+
+        with self.dbcnxn.open_session() as session:
+
+            detector_ids = session.query(ScootReading.detector_id).filter(
+                ScootReading.measurement_start_utc == measurement_start_utc.isoformat(),
+            )
+
+            return detector_ids
+
+    def check_detectors_processed(
+        self, measurement_start_utc: datetime.datetime, detector_ids: List[str]
+    ) -> bool:
+
+        all_processed_set = set(
+            self.__check_detectors_processed(measurement_start_utc, output_type="list")
+        )
+
+        print(all_processed_set)
+        print(detector_ids)
+
+        return set(detector_ids) == all_processed_set
 
     @db_query()
     def get_existing_scoot_data(self) -> Any:
@@ -284,6 +311,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
     def update_remote_tables(self) -> None:
         """Update the database with new SCOOT traffic data."""
+
         self.logger.info(
             "Retrieving new %s readings from %s to %s...",
             green("SCOOT"),
@@ -296,6 +324,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         # Use all known detectors if no list is provided
         if not self.detector_ids:
             self.detector_ids = self.request_site_entries()
+
         self.logger.info(
             "Requesting readings from %s for %s detector(s)",
             green("TfL AWS S3 storage"),
@@ -317,6 +346,7 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
 
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
+
         for start_datetime_utc in rrule.rrule(
             rrule.HOURLY,
             dtstart=start_hour,

@@ -24,14 +24,23 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         upto: str,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
+        detectors: Optional[str] = None,
         borough: Optional[Borough] = None,
         **kwargs
     ) -> None:
-        """Initialise a synthetic scoot writer."""
+        """Initialise a synthetic scoot writer
+        
+        Arguments:
+            start: Start datetime for fake data
+            upto: generate fake data up till this datetime
+            offset: Start at a different detector
+            limit: At most this many detectors
+            """
         self.start = start
         self.upto = upto
         self.offset = offset
         self.limit = limit
+        self.detectors = detectors
         self.borough = borough
         super().__init__(**kwargs)
 
@@ -40,10 +49,13 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         start = pd.date_range(self.start, self.upto, freq="H", closed="left")
         end = start + pd.DateOffset(hours=1)
         nreadings = len(start)  # number of readings for each detector
+
+        # Detectors are already in the database as static data
         detectors = self.scoot_detectors(
             offset=self.offset,
             limit=self.limit,
             borough=self.borough,
+            detectors=self.detectors,
             output_type="df",
         )["detector_id"].to_list()
         nrows = nreadings * len(detectors)
