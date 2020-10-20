@@ -40,7 +40,9 @@ jobs:
         - pylint --rcfile=.pylintrc --disable=R,C containers/cleanair/cleanair/models/mr_dgp/*
         # run linting for the tests
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
-
+        # Run type checking
+        - mypy containers/cleanair
+  
     # separate parallel job for odysseus
     - name: "odysseus"
       before_install:
