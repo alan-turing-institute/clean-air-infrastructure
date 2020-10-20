@@ -1,8 +1,16 @@
 """AQE input CLI"""
-from datetime import datetime  # , timedelta
+from datetime import datetime, timedelta  # , timedelta
 import typer
 from cleanair.processors import ScootPerDetectorForecaster
-from ..shared_args import From, UpTo, NDays, NDays_callback, NHours, ScootDetectors
+from ..shared_args import (
+    From,
+    UpTo,
+    NDays,
+    NDays_callback,
+    UpTo_callback,
+    NHours,
+    ScootDetectors,
+)
 from ..state import state
 from ....timestamps import as_datetime
 
@@ -25,10 +33,24 @@ def check(upto: str = UpTo, nhours: int = NHours, ndays: int = NDays) -> None:
 
 @app.command()
 def forecast(
-    fromdate: str = From,
-    nhours: int = NHours,
-    ndays: int = NDays,
-    modeldays: int = ModelDays,
+    trainupto: str = typer.Option(
+        "today", callback=UpTo_callback, help="Up to what datetime to train the model",
+    ),
+    traindays: int = typer.Option(
+        2, callback=NDays_callback, help="Number of days to train on", show_default=True
+    ),
+    trainhours: int = typer.Option(
+        0, help="Number of hours to train on. Added to traindays", show_default=True
+    ),
+    preddays: int = typer.Option(
+        2,
+        callback=NDays_callback,
+        help="Number of days to predict for",
+        show_default=True,
+    ),
+    predhours: int = typer.Option(
+        0, help="Number of hours to predict on. Added to preddays", show_default=True
+    ),
     detectors: str = ScootDetectors,
 ) -> None:
     """Use SCOOT readings to generate forecasts into the future"""
@@ -36,17 +58,18 @@ def forecast(
     typer.echo("Forecasting SCOOT readings")
 
     # Set time parameters
-    forecast_length_hrs = nhours + ndays  # note that this is auto-converted to hours
-    forecast_start_time = as_datetime(fromdate)
-    model_data_end_time = min(datetime.now(), forecast_start_time).replace(
+    training_end_time = as_datetime(trainupto)
+    training_forecast_start_time = training_end_time - timedelta(trainhours + traindays)
+    forecast_length_hrs = preddays + predhours + traindays + trainhours
+    model_data_end_time = min(datetime.now(), training_end_time).replace(
         second=0, microsecond=0, minute=0
     )
 
     # Fit SCOOT readings using Prophet and forecast into the future
     scoot_forecaster = ScootPerDetectorForecaster(
-        nhours=modeldays,  # note that this is auto-converted to hours
+        nhours=traindays + trainhours,  # note that this is auto-converted to hours
         end=model_data_end_time,
-        forecast_start_time=forecast_start_time,
+        forecast_start_time=training_forecast_start_time,
         forecast_length_hrs=forecast_length_hrs,
         detector_ids=detectors if detectors else None,
         secretfile=state["secretfile"],
