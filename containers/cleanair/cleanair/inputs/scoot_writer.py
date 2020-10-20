@@ -32,7 +32,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         aws_key_id: str,
         aws_key: str,
         detector_ids: Optional[List[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -41,10 +41,10 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         if not hasattr(self, "logger"):
             self.logger = get_logger(__name__)
 
-        self.detector_ids = detector_ids
-        # Use all known detectors if no list is provided
-        if not self.detector_ids:
-            self.detector_ids = self.request_site_entries()
+        # If detector_ids not provided get from database
+        self.detector_ids = (
+            detector_ids if detector_ids else self.request_site_entries()
+        )
 
         # Set up AWS access keys
         self.access_key_id = aws_key_id
@@ -376,7 +376,6 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             green(len(site_record_drop_null)),
         )
 
-        
         # Commit the records to the database
         start_session = time.time()
         self.commit_records(
@@ -392,7 +391,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         measurement_start_utc: datetime.datetime,
         measurement_end_utc: datetime.datetime,
         detector_ids: List[str],
-    ):
+    ) -> pd.DataFrame:
 
         expected_readings = pd.DataFrame(
             [
