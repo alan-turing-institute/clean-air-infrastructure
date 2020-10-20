@@ -62,19 +62,6 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.data_config = FullDataConfig(**instance_df.at[0, "data_config"])
         self.data_config = keep_only_laqn_from_data_config(self.data_config)
 
-        # self.logger.debug(observation_df)
-        # self.logger.debug(
-        #     "%s rows in the observation dataframe.", len(observation_df)
-        # )
-        # self.logger.debug("%s rows in the result dataframe.", len(result_df))
-        # self.logger.debug(
-        #     "Number of intersecting point ids is %s",
-        #     len(
-        #         set(observation_df.point_id.unique()).intersection(
-        #             result_df.point_id.unique()
-        #         )
-        #     ),
-        # )
         # empty dataframe for spatial metrics
         self.spatial_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualitySpatialMetricsTable)

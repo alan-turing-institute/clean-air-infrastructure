@@ -32,6 +32,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
+from cleanair.instance import AirQualityInstance
 from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
@@ -39,6 +40,7 @@ from cleanair.types import (
     FeatureNames,
     KernelParams,
     KernelType,
+    ModelName,
     MRDGPParams,
     Source,
     Species,
@@ -593,3 +595,12 @@ def model_config(secretfile, connection_class):
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
+
+@pytest.fixture(scope="function")
+def fake_instance(secretfile, connection_class, svgp_model_params, valid_full_config_dataset):
+    """Write an instance to the database. Return the instance."""
+    instance = AirQualityInstance(
+        valid_full_config_dataset, ModelName.svgp, svgp_model_params, secretfile=secretfile, connection=connection_class
+    )
+    instance.update_remote_tables()
+    return instance

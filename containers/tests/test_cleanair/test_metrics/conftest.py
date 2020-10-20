@@ -2,12 +2,12 @@
 
 from datetime import datetime
 from typing import List
-from uuid import UUID
+from uuid import uuid4, UUID
 import pytest
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Float64
-
+from cleanair.metrics import AirQualityMetrics
 
 # pylint: disable=redefined-outer-name
 
@@ -35,7 +35,7 @@ def y_var(num_data_points) -> NDArray[Float64]:
 @pytest.fixture(scope="function")
 def point_id() -> UUID:
     """A random point id."""
-    return UUID()
+    return uuid4()
 
 @pytest.fixture(scope="function")
 def timestamps(dataset_start_date: datetime, num_data_points) -> List:
@@ -62,3 +62,8 @@ def observation_df(point_id: UUID, timestamps: List, y_test: NDArray[Float64]) -
     dframe["point_id"] = point_id
     dframe["NO2"] = y_test
     return dframe
+
+@pytest.fixture(scope="function")
+def metrics_calculator(fake_instance, secretfile, connection_class):
+    """Test the init function of the air quality metrics class."""
+    return AirQualityMetrics(fake_instance.instance_id, secretfile=secretfile, connection=connection_class)
