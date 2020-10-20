@@ -1,6 +1,7 @@
 """Types for the cleanair package."""
 
 from .enum_types import (
+    Borough,
     ClusterId,
     Tag,
     Species,
@@ -30,6 +31,7 @@ from .model_types import (
 
 
 __all__ = [
+    "Borough",
     "BaseModelParams",
     "DataConfig",
     "FullDataConfig",
