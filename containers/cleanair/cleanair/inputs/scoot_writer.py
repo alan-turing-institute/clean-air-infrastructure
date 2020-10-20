@@ -96,9 +96,6 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             self.__check_detectors_processed(measurement_start_utc, output_type="list")
         )
 
-        print(all_processed_set)
-        print(detector_ids)
-
         return set(detector_ids) == all_processed_set
 
     @db_query()
