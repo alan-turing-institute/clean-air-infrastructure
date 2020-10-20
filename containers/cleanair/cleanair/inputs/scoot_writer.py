@@ -2,7 +2,7 @@
 Retrieve and process data from the SCOOT traffic detector network
 """
 
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 import datetime
 from datetime import timedelta
 import os
@@ -28,7 +28,11 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
     """
 
     def __init__(
-        self, aws_key_id: str, aws_key: str, detector_ids: List[str] = None, **kwargs
+        self,
+        aws_key_id: str,
+        aws_key: str,
+        detector_ids: Optional[List[str]] = None,
+        **kwargs,
     ) -> None:
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -38,6 +42,9 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             self.logger = get_logger(__name__)
 
         self.detector_ids = detector_ids
+        # Use all known detectors if no list is provided
+        if not self.detector_ids:
+            self.detector_ids = self.request_site_entries()
 
         # Set up AWS access keys
         self.access_key_id = aws_key_id
@@ -306,6 +313,124 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
             yield df_aggregated
 
+    def process_hour(
+        self, measurement_start_utc: datetime.datetime, detector_ids: List[str]
+    ) -> None:
+        "Request scoot data for a given hour and process it"
+
+        measurement_end_utc = measurement_start_utc + datetime.timedelta(hours=1)
+
+        if self.check_detectors_processed(measurement_start_utc, detector_ids):
+
+            self.logger.info(
+                "No S3 data is needed from %s. %s detector(s) have already been processed.",
+                green(measurement_start_utc),
+                green(len(detector_ids)),
+            )
+
+            return None
+
+        self.logger.info(
+            "Processing S3 data from %s to %s",
+            green(measurement_start_utc),
+            green(measurement_end_utc),
+        )
+
+        # Load all valid remote data into a single dataframe
+        df_readings = self.request_remote_data(
+            measurement_start_utc, measurement_end_utc, detector_ids
+        )
+
+        if df_readings.shape[0] < 1:
+            self.logger.warning(
+                "Skipping hour %s to %s as it has no unprocessed data",
+                green(measurement_start_utc),
+                green(measurement_end_utc),
+            )
+            return None
+
+        # Aggregate hourly readings scoot readings
+        df_aggregated_readings = self.aggregate_scoot_data(df_readings)
+
+        # Join with expected readings to get nulls where no data was retrived from S3 bucket
+        df_joined_with_expected = self.join_with_expected_readings(
+            df_aggregated_readings,
+            measurement_start_utc,
+            measurement_end_utc,
+            detector_ids,
+        )
+
+        site_records = df_joined_with_expected.to_dict("records")
+
+        # Drop NAN values from dictionary. They will insert to DB as Null
+        site_record_drop_null = [
+            {
+                key: (value if not pd.isna(value) else None)
+                for (key, value) in record.items()
+            }
+            for record in site_records
+        ]
+
+        self.logger.info(
+            "Inserting records for %s detectors into database",
+            green(len(site_record_drop_null)),
+        )
+
+        
+        # Commit the records to the database
+        start_session = time.time()
+        self.commit_records(
+            site_record_drop_null, on_conflict="overwrite", table=ScootReading,
+        )
+        self.logger.info(
+            "Insertion took %s", green(duration(start_session, time.time())),
+        )
+
+    def join_with_expected_readings(
+        self,
+        df_aggregated: pd.DataFrame,
+        measurement_start_utc: datetime.datetime,
+        measurement_end_utc: datetime.datetime,
+        detector_ids: List[str],
+    ):
+
+        expected_readings = pd.DataFrame(
+            [
+                {
+                    "detector_id": i,
+                    "measurement_start_utc": utcstr_from_datetime(
+                        measurement_start_utc.replace(tzinfo=datetime.timezone.utc)
+                    ),
+                    "measurement_end_utc": utcstr_from_datetime(
+                        measurement_end_utc.replace(tzinfo=datetime.timezone.utc)
+                    ),
+                }
+                for i in detector_ids
+            ]
+        )
+
+        # Left join processed data onto expected data. Missing data will be null
+        expected_merged = pd.merge(
+            expected_readings,
+            df_aggregated.reset_index(drop=True),
+            on=["detector_id", "measurement_start_utc", "measurement_end_utc"],
+            how="left",
+        )
+
+        n_readings = expected_merged.shape[0]
+        n_null = pd.isnull(expected_merged["n_vehicles_in_interval"]).sum()
+
+        self.logger.info(
+            """Requested data for %s sensors. %s out of %s have data.
+            Missing data for %s sensors will insert as null""",
+            len(detector_ids),
+            n_readings - n_null,
+            n_readings,
+            n_null,
+        )
+
+        return expected_merged
+
     def update_remote_tables(self) -> None:
         """Update the database with new SCOOT traffic data."""
 
@@ -317,10 +442,6 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         )
         start_update = time.time()
         n_records_inserted = 0
-
-        # Use all known detectors if no list is provided
-        if not self.detector_ids:
-            self.detector_ids = self.request_site_entries()
 
         self.logger.info(
             "Requesting readings from %s for %s detector(s)",
@@ -338,120 +459,20 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             ),
         )
 
-        # Get a per-hour summary of records in this range that are already in the database
-        db_records = self.get_existing_scoot_data(output_type="df")
+        # # Get a per-hour summary of records in this range that are already in the database
+        # db_records = self.get_existing_scoot_data(output_type="df")
 
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
 
-        for start_datetime_utc in rrule.rrule(
+        datetime_range = rrule.rrule(
             rrule.HOURLY,
             dtstart=start_hour,
             until=self.end_datetime - timedelta(hours=1),
-        ):
-            end_datetime_utc = start_datetime_utc + datetime.timedelta(hours=1)
+        )
 
-            # Filter out any detectors that have already been processed
-            processed_detectors = db_records[db_records["hour"] == start_datetime_utc][
-                "detector_id"
-            ].tolist()
-            unprocessed_detectors = [
-                d for d in self.detector_ids if d not in processed_detectors
-            ]
-            if unprocessed_detectors:
-                self.logger.info(
-                    "Processing S3 data from %s to %s",
-                    green(start_datetime_utc),
-                    green(end_datetime_utc),
-                )
-            else:
-                # If all detectors have been processed then skip this hour
-                self.logger.info(
-                    "No S3 data is needed from %s to %s. %s detector(s) have already been processed.",
-                    green(start_datetime_utc),
-                    green(end_datetime_utc),
-                    green(len(processed_detectors)),
-                )
-                continue
-
-            # Load all valid remote data into a single dataframe
-            df_readings = self.request_remote_data(
-                start_datetime_utc, end_datetime_utc, self.detector_ids
-            )
-
-            if df_readings.shape[0] < 1:
-                self.logger.warning(
-                    "Skipping hour %s to %s as it has no unprocessed data",
-                    green(start_datetime_utc),
-                    green(end_datetime_utc),
-                )
-                continue
-
-            # Aggregate the data and add readings to database
-            for df_aggregated in self.aggregate_scoot_data(df_readings):
-
-                expected_readings = pd.DataFrame(
-                    [
-                        {
-                            "detector_id": i,
-                            "measurement_start_utc": utcstr_from_datetime(
-                                start_datetime_utc.replace(tzinfo=datetime.timezone.utc)
-                            ),
-                            "measurement_end_utc": utcstr_from_datetime(
-                                end_datetime_utc.replace(tzinfo=datetime.timezone.utc)
-                            ),
-                        }
-                        for i in self.detector_ids
-                    ]
-                )
-
-                # Left join processed data onto expected data. Missing data will be null
-                expected_merged = pd.merge(
-                    expected_readings,
-                    df_aggregated.reset_index(drop=True),
-                    on=["detector_id", "measurement_start_utc", "measurement_end_utc"],
-                    how="left",
-                )
-
-                n_readings = expected_merged.shape[0]
-                n_null = pd.isnull(expected_merged["n_vehicles_in_interval"]).sum()
-
-                self.logger.info(
-                    """Requested data for %s sensors. %s out of %s have data.
-                    Missing data for %s sensors will insert as null""",
-                    len(self.detector_ids),
-                    n_readings - n_null,
-                    n_readings,
-                    n_null,
-                )
-
-                site_records = expected_merged.to_dict("records")
-
-                # Drop NAN values from dictionary. They will insert to DB as Null
-                site_record_drop_null = [
-                    {
-                        key: (value if not pd.isna(value) else None)
-                        for (key, value) in record.items()
-                    }
-                    for record in site_records
-                ]
-
-                self.logger.info(
-                    "Inserting records for %s detectors into database",
-                    green(len(site_record_drop_null)),
-                )
-
-                start_session = time.time()
-
-                # Commit the records to the database
-                self.commit_records(
-                    site_record_drop_null, on_conflict="overwrite", table=ScootReading,
-                )
-                n_records_inserted += len(site_record_drop_null)
-
-                self.logger.info(
-                    "Insertion took %s", green(duration(start_session, time.time())),
-                )
+        # Request and process scoot data for all hour
+        map(lambda h_time: self.process_hour(h_time, self.detector_ids), datetime_range)
 
         # Summarise updates
         self.logger.info(

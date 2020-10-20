@@ -44,7 +44,7 @@ def test_scoot_detector(
         max(date_range) + timedelta(hours=1), [sensor_ids[0]]
     )
 
-    # And not for any other sensors which shouldn't have been inserted
+    # And not for any other sensors as we only inserted data for one
     assert not any(
         map(
             lambda d: scoot_writer.check_detectors_processed(d, sensor_ids[1:]),
