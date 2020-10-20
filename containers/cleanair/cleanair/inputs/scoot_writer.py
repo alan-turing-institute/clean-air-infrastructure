@@ -80,16 +80,11 @@ class ScootWriter(DateRangeMixin, DBWriter, DBQueryMixin):
         with self.dbcnxn.open_session() as session:
             q_scoot_readings = (
                 session.query(
-                    func.date_trunc("hour", ScootReading.measurement_start_utc).label(
-                        "hour"
-                    ),
+                    ScootReading.measurement_start_utc.label("hour"),
                     ScootReading.detector_id,
                     func.count(ScootReading.measurement_start_utc).label("n_entries"),
                 )
-                .group_by(
-                    ScootReading.detector_id,
-                    func.date_trunc("hour", ScootReading.measurement_start_utc),
-                )
+                .group_by(ScootReading.detector_id, ScootReading.measurement_start_utc,)
                 .filter(
                     ScootReading.measurement_start_utc >= self.start_datetime,
                     ScootReading.measurement_start_utc <= self.end_datetime,
