@@ -6,6 +6,12 @@ set -e
 # set the secretfile filepath
 urbanair init local --secretfile "$DB_SECRET_FILE"
 
+# Forecast scoot data
+urbanair --secretfile processors scoot forecast --traindays 5 --preddays 2 --trainupto yesterday 
+
+# Processs scoot features
+urbanair features scoot fill --ndays 7 --upto overmorrow  --source satellite --source laqn --source hexgrid --insert-method missing --nworkers 2
+
 # generate the data config
 urbanair model data generate-config \
     --trainupto yesterday \
@@ -16,6 +22,7 @@ urbanair model data generate-config \
     --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
+    --dynamic-features max_n_vehicles \
     --feature-buffer 500 \
     --feature-buffer 100 \
     --overwrite
