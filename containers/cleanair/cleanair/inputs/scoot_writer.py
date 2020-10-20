@@ -458,9 +458,6 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             ),
         )
 
-        # # Get a per-hour summary of records in this range that are already in the database
-        # db_records = self.get_existing_scoot_data(output_type="df")
-
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
 
