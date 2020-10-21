@@ -94,16 +94,20 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
     def load_observation_df(self, model_data: ModelData) -> pd.DataFrame:
         """Load the observations for the train and test period."""
         # download only laqn data
-        self.logger.info("Reading training and test data to compare against predictions.")
-        train_df: pd.DataFrame = model_data.download_config_data(self.data_config)[Source.laqn]
-        test_df: pd.DataFrame = model_data.download_config_data(self.data_config, training_data=False)[Source.laqn]
+        self.logger.info(
+            "Reading training and test data to compare against predictions."
+        )
+        train_df: pd.DataFrame = model_data.download_config_data(self.data_config)[
+            Source.laqn
+        ]
+        test_df: pd.DataFrame = model_data.download_config_data(
+            self.data_config, training_data=False
+        )[Source.laqn]
 
         # join train and test dataframes
         train_df["forecast"] = False
         test_df["forecast"] = True
-        observation_df: pd.DataFrame = pd.concat(
-            [train_df, test_df], ignore_index=True
-        )
+        observation_df: pd.DataFrame = pd.concat([train_df, test_df], ignore_index=True)
         observation_df = preprocess_dataframe_types(observation_df)
         return observation_df
 
@@ -139,7 +143,9 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             )
         return group_metrics
 
-    def evaluate_temporal_metrics(self, observation_df: pd.DataFrame, result_df: pd.DataFrame) -> None:
+    def evaluate_temporal_metrics(
+        self, observation_df: pd.DataFrame, result_df: pd.DataFrame
+    ) -> None:
         """Evaluate metrics by grouping by the datetime."""
         joined_df = observation_df.merge(
             result_df, on=["point_id", "measurement_start_utc"], how="inner"
@@ -163,14 +169,14 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             "%s rows in the temporal metrics dataframe.", len(self.temporal_df)
         )
 
-    def evaluate_spatial_metrics(self, observation_df: pd.DataFrame, result_df: pd.DataFrame) -> None:
+    def evaluate_spatial_metrics(
+        self, observation_df: pd.DataFrame, result_df: pd.DataFrame
+    ) -> None:
         """Evaluate metrics by grouping by point id."""
         self.logger.debug(
             "Columns in left (observation) df %s", list(observation_df.columns)
         )
-        self.logger.debug(
-            "Columns in right (result) df %s", list(result_df.columns)
-        )
+        self.logger.debug("Columns in right (result) df %s", list(result_df.columns))
         joined_df = observation_df.merge(
             result_df, on=["point_id", "measurement_start_utc"], how="inner",
         )
@@ -213,6 +219,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             table=AirQualityTemporalMetricsTable,
         )
 
+
 def get_columns_of_table(table: Base) -> List[str]:
     """Get the column names of a table."""
     table_inst = inspect(table)
@@ -225,13 +232,19 @@ def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):
     cols_to_check.extend(map(lambda x: x.value + "_mean", cols_to_check))
     return joined_df.loc[joined_df[cols_to_check].dropna().index]
 
+
 def keep_only_laqn_from_data_config(data_config: FullDataConfig) -> FullDataConfig:
     """Only keep the laqn source and interest points from the data config."""
     data_config.train_sources = [Source.laqn]
-    data_config.train_interest_points = {Source.laqn: data_config.train_interest_points[Source.laqn]}
+    data_config.train_interest_points = {
+        Source.laqn: data_config.train_interest_points[Source.laqn]
+    }
     data_config.pred_sources = [Source.laqn]
-    data_config.pred_interest_points = {Source.laqn: data_config.pred_interest_points[Source.laqn]}
+    data_config.pred_interest_points = {
+        Source.laqn: data_config.pred_interest_points[Source.laqn]
+    }
     return data_config
+
 
 def preprocess_dataframe_types(dframe: pd.DataFrame) -> pd.DataFrame:
     """Convert datetimes to utc and ensure point ids are strings."""

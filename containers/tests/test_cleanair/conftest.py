@@ -596,11 +596,19 @@ def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
 
+
 @pytest.fixture(scope="function")
-def fake_instance(secretfile, connection_class, svgp_model_params, valid_full_config_dataset):
+def fake_instance(
+    secretfile, connection_class, svgp_model_params, model_config, valid_config
+):
     """Write an instance to the database. Return the instance."""
+    full_config = model_config.generate_full_config(valid_config)
     instance = AirQualityInstance(
-        valid_full_config_dataset, ModelName.svgp, svgp_model_params, secretfile=secretfile, connection=connection_class
+        full_config,
+        ModelName.svgp,
+        svgp_model_params,
+        secretfile=secretfile,
+        connection=connection_class,
     )
     instance.update_remote_tables()
     return instance
