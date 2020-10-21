@@ -135,7 +135,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             weekends = pd.DataFrame(
                 {
                     "holiday": "weekend",
-                    "ds": full_time_range_days[full_time_range_days.dayofweek > 4],
+                    "ds": full_time_range_days[full_time_range_days.dayofweek > 4], # pylint: disable=no-member
                 }
             )
 
