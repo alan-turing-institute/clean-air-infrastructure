@@ -1,9 +1,8 @@
 """AQE input CLI"""
-from datetime import datetime, timedelta  # , timedelta
+from datetime import datetime, timedelta
 import typer
 from cleanair.processors import ScootPerDetectorForecaster
 from ..shared_args import (
-    From,
     UpTo,
     NDays,
     NDays_callback,
@@ -15,13 +14,6 @@ from ..state import state
 from ....timestamps import as_datetime
 
 app = typer.Typer()
-
-ModelDays = typer.Option(  # pylint: disable=invalid-name
-    14,
-    help="Number of days to use for building the forecast model",
-    show_default=True,
-    callback=NDays_callback,
-)
 
 
 @app.command()
@@ -57,19 +49,20 @@ def forecast(
 
     typer.echo("Forecasting SCOOT readings")
 
-    # Set time parameters
-    training_end_time = as_datetime(trainupto)
-    training_forecast_start_time = training_end_time - timedelta(trainhours + traindays)
-    forecast_length_hrs = preddays + predhours + traindays + trainhours
-    model_data_end_time = min(datetime.now(), training_end_time).replace(
-        second=0, microsecond=0, minute=0
+    # Train using data from the (trainhours + traindays) hours before trainupto
+    # Forecast over the training range plus an additional (preddays + predhours) hours
+    training_end_time = min(
+        datetime.now().replace(second=0, microsecond=0, minute=0),
+        as_datetime(trainupto),
     )
+    forecast_start_time = training_end_time - timedelta(hours=trainhours + traindays)
+    forecast_length_hrs = preddays + predhours + traindays + trainhours
 
     # Fit SCOOT readings using Prophet and forecast into the future
     scoot_forecaster = ScootPerDetectorForecaster(
         nhours=traindays + trainhours,  # note that this is auto-converted to hours
-        end=model_data_end_time,
-        forecast_start_time=training_forecast_start_time,
+        end=training_end_time,
+        forecast_start_time=forecast_start_time,
         forecast_length_hrs=forecast_length_hrs,
         detector_ids=detectors if detectors else None,
         secretfile=state["secretfile"],
