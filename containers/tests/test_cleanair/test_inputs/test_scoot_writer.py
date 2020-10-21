@@ -1,13 +1,3 @@
-# init
-
-# get_remote_filenames
-
-# get_existing_scoot_data
-
-# request_remote_data
-# combine_by_detector_id
-# aggregate_scoot_data
-# update_remote_table
 import pytest
 import pandas as pd
 from pandas.util.testing import assert_frame_equal
