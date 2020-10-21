@@ -2,8 +2,8 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
-from typing import Any, Tuple
-from datetime import datetime, timedelta
+from typing import Tuple
+from datetime import timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
@@ -534,7 +534,7 @@ def scoot_single_detector_generator(
 def scoot_detector_single_hour(
     dataset_start_date, dataset_end_date, secretfile, connection
 ):
-
+    "Generete a single hour of scoot data"
     scoot_generator = ScootGenerator(
         dataset_start_date,
         dataset_end_date,

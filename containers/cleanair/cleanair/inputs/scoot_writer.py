@@ -12,7 +12,7 @@ import boto3
 import botocore
 import pandas as pd
 import pytz
-from sqlalchemy import func, Table
+from sqlalchemy import Table
 from ..databases import DBWriter
 from ..databases.tables import ScootReading
 from ..decorators import db_query
