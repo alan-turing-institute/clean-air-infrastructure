@@ -37,6 +37,7 @@ from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
+    FeatureBufferSize,
     FeatureNames,
     KernelParams,
     KernelType,
@@ -422,22 +423,16 @@ def static_feature_records(meta_records):
     return static_features
 
 
-# pylint: disable=R0913
 @pytest.fixture(scope="class")
-def fake_cleanair_dataset(
+def fake_laqn_static_dataset(
     secretfile,
     connection_class,
     meta_records,
     laqn_site_records,
-    aqe_site_records,
     laqn_reading_records,
-    aqe_reading_records,
-    satellite_box_records,
-    satellite_meta_point_and_box_records,
     static_feature_records,
-    satellite_forecast,
 ):
-    """Insert a fake air quality dataset into the database"""
+    """Only insert laqn and static features."""
 
     writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
@@ -457,6 +452,29 @@ def fake_cleanair_dataset(
         on_conflict="overwrite",
         table=LAQNReading,
     )
+
+    # Insert static features data
+    writer.commit_records(
+        [i.dict() for i in static_feature_records],
+        on_conflict="overwrite",
+        table=StaticFeature,
+    )
+
+# pylint: disable=R0913
+@pytest.fixture(scope="class")
+def fake_cleanair_dataset(
+    secretfile,
+    connection_class,
+    fake_laqn_static_dataset,
+    aqe_site_records,
+    aqe_reading_records,
+    satellite_box_records,
+    satellite_meta_point_and_box_records,
+    satellite_forecast,
+):
+    """Insert a fake air quality dataset into the database"""
+
+    writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
     # Insert AQESite data
     writer.commit_records(
@@ -491,12 +509,32 @@ def fake_cleanair_dataset(
         table=SatelliteForecast,
     )
 
-    # Insert static features data
-    writer.commit_records(
-        [i.dict() for i in static_feature_records],
-        on_conflict="overwrite",
-        table=StaticFeature,
+@pytest.fixture(scope="function")
+def laqn_config(dataset_start_date, dataset_end_date):
+    """LAQN dataset with just one feature."""
+    return DataConfig(
+        train_start_date=dataset_start_date,
+        train_end_date=dataset_end_date,
+        pred_start_date=dataset_end_date,
+        pred_end_date=dataset_end_date + timedelta(days=2),
+        include_prediction_y=False,
+        train_sources=[Source.laqn],
+        pred_sources=[Source.laqn],
+        train_interest_points={Source.laqn.value: "all"},
+        pred_interest_points={Source.laqn.value: "all"},
+        species=[Species.NO2],
+        features=[],
+        buffer_sizes=[],
+        norm_by=Source.laqn,
+        model_type=ModelName.svgp,
     )
+
+
+@pytest.fixture(scope="function")
+def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
+    """Generate full config for laqn."""
+    model_config.validate_config(laqn_config)
+    return model_config.generate_full_config(laqn_config)
 
 
 @pytest.fixture(scope="function")
@@ -598,13 +636,12 @@ def model_data(secretfile, connection_class):
 
 
 @pytest.fixture(scope="function")
-def fake_instance(
-    secretfile, connection_class, svgp_model_params, model_config, valid_config
+def fake_laqn_svgp_instance(
+    secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
 ):
     """Write an instance to the database. Return the instance."""
-    full_config = model_config.generate_full_config(valid_config)
     instance = AirQualityInstance(
-        full_config,
+        laqn_full_config,
         ModelName.svgp,
         svgp_model_params,
         secretfile=secretfile,
