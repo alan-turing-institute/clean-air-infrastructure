@@ -98,7 +98,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
     def check_detectors_processed(
         self, measurement_start_utc: datetime.datetime, detector_ids: List[str]
     ) -> bool:
-
+        "Check if a lit of detector_ids exist in the database for a given hour"
         all_processed_set = set(
             self.__check_detectors_processed(measurement_start_utc, output_type="list")
         )
@@ -259,11 +259,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         Aggregate scoot data by detector ID into hourly chunks
         """
         # Get the minimum and maximum time in the dataset
-        try:
-            time_min = datetime_from_unix(df_readings["timestamp"].min())
-            time_max = datetime_from_unix(df_readings["timestamp"].max())
-        except ValueError:
-            return
+        time_min = datetime_from_unix(df_readings["timestamp"].min())
 
         # Slice processed data into hourly chunks and aggregate these by detector ID
         start_time = time_min.replace(minute=0, second=0, microsecond=0)
@@ -305,7 +301,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
                 green(len(detector_ids)),
             )
 
-            return None
+            return
 
         self.logger.info(
             "Processing S3 data from %s to %s",
@@ -324,7 +320,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
                 green(measurement_start_utc),
                 green(measurement_end_utc),
             )
-            return None
+            return
 
         # Aggregate hourly readings scoot readings
         df_aggregated_readings = self.aggregate_scoot_data(df_readings)
@@ -361,6 +357,8 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         self.logger.info(
             "Insertion took %s", green(duration(start_session, time.time())),
         )
+
+        return
 
     def join_with_expected_readings(
         self,
