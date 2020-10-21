@@ -41,7 +41,7 @@ jobs:
         # run linting for the tests
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
         # Run type checking
-        - mypy containers/cleanair
+        - mypy --config-file .mypy.ini containers/cleanair
   
     # separate parallel job for odysseus
     - name: "odysseus"
