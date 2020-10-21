@@ -101,7 +101,11 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # Ensure indices match and drop na rows from database data
     expected_cols_df = expected_aggregated_df[cols].copy()
-    retrieved_cols_df = retrieved_data[cols].copy()
+    retrieved_cols_df = (
+        retrieved_data[cols]
+        .copy()
+        .sort_values(["detector_id", "measurement_start_utc"])
+    )
 
     expected_cols_df.reset_index(drop=True, inplace=True)
     retrieved_cols_df_drop_null = retrieved_cols_df.dropna(
