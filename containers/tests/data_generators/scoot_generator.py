@@ -42,9 +42,12 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
         self.limit = limit
         self.detectors = detectors
         self.borough = borough
+        self.readings_df = None
         super().__init__(**kwargs)
 
-    def update_remote_tables(self) -> None:
+    def generate_df(self) -> pd.DataFrame:
+        "Generate a dataframe of scoot data"
+        np.random.seed(0)
         # Theres no scoot readings in the DB - lets put in some fake ones
         start = pd.date_range(self.start, self.upto, freq="H", closed="left")
         end = start + pd.DateOffset(hours=1)
@@ -84,7 +87,11 @@ class ScootGenerator(ScootQueryMixin, DBWriter):
                 )
             )
         # create a dataframe and insert the fake records
-        readings = pd.DataFrame(data)
+        return pd.DataFrame(data)
+
+    def update_remote_tables(self) -> None:
+
+        readings = self.generate_df()
         records = readings.to_dict("records")
         self.commit_records(records, on_conflict="ignore", table=ScootReading)
 
@@ -99,7 +106,6 @@ def generate_discrete_timeseries(
 ) -> NDArray[Int]:
     """Create a timeseries with discrete values."""
     # set seed
-    np.random.seed(0)
 
     X = np.linspace(0, size, num=size)
 

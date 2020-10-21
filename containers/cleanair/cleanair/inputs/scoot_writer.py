@@ -105,24 +105,6 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
         return set(detector_ids) == all_processed_set
 
-    @db_query()
-    def get_existing_scoot_data(self) -> Any:
-        """Get all the SCOOT readings already in the database for the given time range and set of detector IDs"""
-        with self.dbcnxn.open_session() as session:
-            q_scoot_readings = (
-                session.query(
-                    ScootReading.measurement_start_utc.label("hour"),
-                    ScootReading.detector_id,
-                    func.count(ScootReading.measurement_start_utc).label("n_entries"),
-                )
-                .group_by(ScootReading.detector_id, ScootReading.measurement_start_utc,)
-                .filter(
-                    ScootReading.measurement_start_utc >= self.start_datetime,
-                    ScootReading.measurement_start_utc <= self.end_datetime,
-                )
-            )
-        return q_scoot_readings
-
     @staticmethod
     def get_remote_filenames(
         start_datetime_utc: datetime.datetime, end_datetime_utc: datetime.datetime
@@ -284,34 +266,29 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             return
 
         # Slice processed data into hourly chunks and aggregate these by detector ID
-        for start_time in rrule.rrule(
-            rrule.HOURLY,
-            dtstart=time_min.replace(minute=0, second=0, microsecond=0),
-            until=time_max,
-        ):
-            end_time = start_time + datetime.timedelta(hours=1)
+        start_time = time_min.replace(minute=0, second=0, microsecond=0)
 
-            # Construct hourly data
-            self.logger.info(
-                "Processing data from %s to %s", green(start_time), green(end_time)
-            )
-            df_hourly = df_readings.loc[
-                (df_readings["timestamp"] > start_time.timestamp())
-                & (df_readings["timestamp"] <= end_time.timestamp())
-            ].copy()
+        end_time = start_time + datetime.timedelta(hours=1)
 
-            # Drop unused columns and aggregate
-            self.logger.info(
-                "Aggregating %s readings by site", green(df_hourly.shape[0])
-            )
-            df_hourly.drop(["detector_fault", "timestamp"], axis=1, inplace=True)
-            df_aggregated = self.combine_by_detector_id(df_hourly)
+        # Construct hourly data
+        self.logger.info(
+            "Processing data from %s to %s", green(start_time), green(end_time)
+        )
+        df_hourly = df_readings.loc[
+            (df_readings["timestamp"] >= start_time.timestamp())
+            & (df_readings["timestamp"] < end_time.timestamp())
+        ].copy()
 
-            # Add timestamps
-            df_aggregated["measurement_start_utc"] = utcstr_from_datetime(start_time)
-            df_aggregated["measurement_end_utc"] = utcstr_from_datetime(end_time)
+        # Drop unused columns and aggregate
+        self.logger.info("Aggregating %s readings by site", green(df_hourly.shape[0]))
+        df_hourly.drop(["detector_fault", "timestamp"], axis=1, inplace=True)
+        df_aggregated = self.combine_by_detector_id(df_hourly)
 
-            yield df_aggregated
+        # Add timestamps
+        df_aggregated["measurement_start_utc"] = utcstr_from_datetime(start_time)
+        df_aggregated["measurement_end_utc"] = utcstr_from_datetime(end_time)
+
+        return df_aggregated
 
     def process_hour(
         self, measurement_start_utc: datetime.datetime, detector_ids: List[str]
@@ -392,6 +369,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         measurement_end_utc: datetime.datetime,
         detector_ids: List[str],
     ) -> pd.DataFrame:
+        "Join a dataframe of scoot aggregated scoot readings with a dataframe of expected detector ids and times" ""
 
         expected_readings = pd.DataFrame(
             [
