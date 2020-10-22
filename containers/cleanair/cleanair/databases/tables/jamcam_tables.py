@@ -1,5 +1,5 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text
+from sqlalchemy import Column, String, BigInteger, Text, Index
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     DATE,
@@ -66,6 +66,8 @@ class JamCamVideoStats(Base):
 
 class JamCamDayStats(Base):
     """Table of detection counts"""
+
+    Index("date_detection_class_idx", "date", "detection_class"),
 
     __tablename__ = "day_stats_v3"
     __table_args__ = {"schema": "jamcam"}
