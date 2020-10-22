@@ -1,7 +1,7 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text, Index, UniqueConstraint
 from geoalchemy2 import Geometry
 from sqlalchemy import Column, String, BigInteger, Text
+from sqlalchemy import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     DATE,
@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import (
     REAL,
     VARCHAR,
 )
+
 from ..base import Base
 
 
@@ -93,6 +94,8 @@ class JamCamDayStats(Base):
 
 class JamCamMetaData(Base):
     """Table of Jamcam data: locations, flags, etc."""
+
+    # pylint: disable=C0103
 
     __tablename__ = "metadata"
     __table_args__ = {"schema": "jamcam"}

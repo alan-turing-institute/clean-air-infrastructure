@@ -98,6 +98,7 @@ def production() -> None:
 
 @app.command()
 def tables():
+    """Initialises DB tables from SQLAlchemy definitions"""
 
     state["logger"].info("Creating tables and views")
 

@@ -179,7 +179,9 @@ def camera_today_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
 
-    data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"],)
+    data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
+
+    return all_or_404(data)
 
 
 @router.get(

@@ -2,10 +2,10 @@
 Views of London boundary static data
 """
 
-from cleanair.databases.tables import JamCamVideoStats
 from sqlalchemy import func
 from sqlalchemy import select
 from sqlalchemy.sql.functions import current_timestamp
+from cleanair.databases.tables import JamCamVideoStats
 
 from ..base import Base
 from ..views import create_materialized_view
