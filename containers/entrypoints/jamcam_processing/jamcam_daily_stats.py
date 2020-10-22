@@ -23,21 +23,21 @@ DeferredReflection.prepare(DB_ENGINE)
 SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
 detection_classes = [
-	DetectionClass('people'),
-	DetectionClass('trucks'),
-	DetectionClass('cars'),
-	DetectionClass('motorbikes'),
-	DetectionClass('bicycles'),
-	DetectionClass('buses')
+    DetectionClass("people"),
+    DetectionClass("trucks"),
+    DetectionClass("cars"),
+    DetectionClass("motorbikes"),
+    DetectionClass("bicycles"),
+    DetectionClass("buses"),
 ]
 
 detection_class_map = {
-	'people': 'person',
-	'trucks': 'truck',
-	'cars': 'car',
-	'motorbikes': 'motorbike',
-	'bicycles': 'bicycle',
-	'buses': 'bus'
+    "people": "person",
+    "trucks": "truck",
+    "cars": "car",
+    "motorbikes": "motorbike",
+    "bicycles": "bicycle",
+    "buses": "bus",
 }
 
 session: Session = SESSION_LOCAL()
@@ -46,29 +46,42 @@ date = datetime.date.today() - datetime.timedelta(days=1)
 
 data = {}
 for detection_class in detection_classes:
-	detection_class_string = detection_class_map[detection_class]
-	query = get_jamcam_hourly(
-		session,
-		camera_id=None,
-		detection_class=detection_class,
-		starttime=date,
-	)
-	result = query.all()
+    detection_class_string = detection_class_map[detection_class]
+    query = get_jamcam_hourly(
+        session, camera_id=None, detection_class=detection_class, starttime=date,
+    )
+    result = query.all()
 
-	for row in result:
-		if row.camera_id not in data.keys():
-			data[row.camera_id] = {}
-		if detection_class_string not in data[row.camera_id].keys():
-			data[row.camera_id][detection_class_string] = []
-		data[row.camera_id][detection_class_string].append(row.counts)
+    for row in result:
+        if row.camera_id not in data.keys():
+            data[row.camera_id] = {}
+        if detection_class_string not in data[row.camera_id].keys():
+            data[row.camera_id][detection_class_string] = []
+        data[row.camera_id][detection_class_string].append(row.counts)
 
 for camera_id, counts_per_class in data.items():
-	all_counts = []
-	for detection_class_string, counts in counts_per_class.items():
-		count = sum(counts) / len(counts)
-		all_counts.append(count)
-		session.add(JamCamDayStats(camera_id=camera_id, detection_class=detection_class_string, date=date, count=count, source=SOURCE))
-	count = sum(all_counts) / len(all_counts)
-	session.add(JamCamDayStats(camera_id=camera_id, detection_class='all', date=date, count=count, source=SOURCE))
+    all_counts = []
+    for detection_class_string, counts in counts_per_class.items():
+        count = sum(counts) / len(counts)
+        all_counts.append(count)
+        session.add(
+            JamCamDayStats(
+                camera_id=camera_id,
+                detection_class=detection_class_string,
+                date=date,
+                count=count,
+                source=SOURCE,
+            )
+        )
+    count = sum(all_counts) / len(all_counts)
+    session.add(
+        JamCamDayStats(
+            camera_id=camera_id,
+            detection_class="all",
+            date=date,
+            count=count,
+            source=SOURCE,
+        )
+    )
 
 session.commit()
