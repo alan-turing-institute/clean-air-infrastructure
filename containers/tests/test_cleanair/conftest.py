@@ -51,7 +51,7 @@ from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
-def valid_config(dataset_start_date, dataset_end_date):
+def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
     "Valid config for 'fake_cleanair_dataset' fixture"
 
     return DataConfig(
@@ -59,7 +59,7 @@ def valid_config(dataset_start_date, dataset_end_date):
             "train_start_date": dataset_start_date,
             "train_end_date": dataset_end_date,
             "pred_start_date": dataset_end_date,
-            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "pred_end_date": dataset_end_date + timedelta(days=num_forecast_days),
             "include_prediction_y": False,
             "train_sources": ["laqn", "aqe", "satellite"],
             "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
@@ -106,6 +106,10 @@ def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
 
+@pytest.fixture(scope="module")
+def num_forecast_days():
+    "Number of days for the model to forecast on."
+    return 2
 
 @pytest.fixture(scope="module")
 def site_open_date(dataset_start_date):
@@ -509,28 +513,28 @@ def fake_cleanair_dataset(
         table=SatelliteForecast,
     )
 
-@pytest.fixture(scope="function")
-def laqn_config(dataset_start_date, dataset_end_date):
+@pytest.fixture(scope="class")
+def laqn_config(dataset_start_date, dataset_end_date, num_forecast_days):
     """LAQN dataset with just one feature."""
     return DataConfig(
         train_start_date=dataset_start_date,
         train_end_date=dataset_end_date,
         pred_start_date=dataset_end_date,
-        pred_end_date=dataset_end_date + timedelta(days=2),
+        pred_end_date=dataset_end_date + timedelta(days=num_forecast_days),
         include_prediction_y=False,
         train_sources=[Source.laqn],
         pred_sources=[Source.laqn],
         train_interest_points={Source.laqn.value: "all"},
         pred_interest_points={Source.laqn.value: "all"},
         species=[Species.NO2],
-        features=[],
-        buffer_sizes=[],
+        features=[FeatureNames.total_a_road_length],
+        buffer_sizes=[FeatureBufferSize.two_hundred],
         norm_by=Source.laqn,
         model_type=ModelName.svgp,
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
     """Generate full config for laqn."""
     model_config.validate_config(laqn_config)
@@ -555,7 +559,7 @@ def scoot_generator(
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -567,7 +571,7 @@ def matern32_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def base_model(matern32_params: KernelParams) -> BaseModelParams:
     """Model params for SVGP and sub-MRDGP"""
     return BaseModelParams(
@@ -579,13 +583,13 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
     return SVGPParams(**base_model.dict(), jitter=0.1,)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mr_linear_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -598,7 +602,7 @@ def mr_linear_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     """Model params for sub-MRDGP"""
     return BaseModelParams(
@@ -610,7 +614,7 @@ def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
     """Create MRDGP model params."""
     return MRDGPParams(
@@ -635,7 +639,7 @@ def model_data(secretfile, connection_class):
     return ModelData(secretfile=secretfile, connection=connection_class)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def fake_laqn_svgp_instance(
     secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
 ):

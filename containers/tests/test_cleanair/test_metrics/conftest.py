@@ -13,11 +13,27 @@ from cleanair.types import Source, Species
 # pylint: disable=redefined-outer-name
 
 
-@pytest.fixture(scope="function")
-def num_data_points() -> int:
-    """Number of data points."""
-    return 5
+@pytest.fixture(scope="class")
+def point_ids(fake_laqn_svgp_instance) -> List[UUID]:
+    """Get a list of point ids."""
+    return fake_laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
 
+@pytest.fixture(scope="function")
+def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List:
+    """List of timestamps for each data point."""
+    num_periods = (dataset_end_date - dataset_start_date).days * 24
+    print(num_periods)
+    return pd.date_range(start=dataset_start_date, freq="H", periods=num_periods)
+
+@pytest.fixture(scope="function")
+def num_training_data_points(point_ids, timestamps) -> int:
+    """Number of data points."""
+    return len(point_ids) * len(timestamps)
+
+@pytest.fixture(scope="function")
+def num_forecast_data_points(point_ids, num_forecast_days) -> int:
+    """Number of data points in the forecast period."""
+    return len(point_ids) * num_forecast_days * 24
 
 @pytest.fixture(scope="function")
 def y_test() -> NDArray[Float64]:
@@ -32,22 +48,15 @@ def y_pred() -> NDArray[Float64]:
 
 
 @pytest.fixture(scope="function")
-def y_var(num_data_points) -> NDArray[Float64]:
+def y_var() -> NDArray[Float64]:
     """Predicted variance."""
-    return np.ones(num_data_points)
-
-
-
-@pytest.fixture(scope="function")
-def timestamps(dataset_start_date: datetime, num_data_points) -> List:
-    """List of timestamps for each data point."""
-    return pd.date_range(start=dataset_start_date, freq="H", periods=num_data_points)
-
+    return np.ones(5)
 
 @pytest.fixture(scope="function")
 def result_df(
     dataset_start_date: datetime,
     dataset_end_date: datetime,
+    point_ids: List[UUID],
     timestamps: List,
     y_pred: NDArray[Float64],
     y_var: NDArray[Float64],
@@ -56,7 +65,7 @@ def result_df(
     """A dataframe of predictions for the mean and variance."""
     dframe = pd.DataFrame()
     dframe["measurement_start_utc"] = timestamps
-    dframe["point_id"] = fake_laqn_svgp_instance.data_config.train_interest_points[Source.laqn][0]
+    dframe["point_id"] = point_ids
     dframe["NO2_mean"] = y_pred
     dframe["NO2_var"] = y_var
     dframe["forecast"] = dframe.measurement_start_utc.apply(lambda x: dataset_start_date <= x < dataset_end_date)
@@ -66,13 +75,12 @@ def result_df(
     dframe["data_id"] = fake_laqn_svgp_instance.data_id
     return dframe
 
-
 @pytest.fixture(scope="function")
-def observation_df(point_id: UUID, timestamps: List, y_test: NDArray[Float64]) -> None:
+def observation_df(point_ids: List[UUID], timestamps: List, y_test: NDArray[Float64]) -> None:
     """Observations."""
     dframe = pd.DataFrame()
     dframe["measurement_start_utc"] = timestamps
-    dframe["point_id"] = point_id
+    dframe["point_id"] = point_ids
     dframe["NO2"] = y_test
     return dframe
 
