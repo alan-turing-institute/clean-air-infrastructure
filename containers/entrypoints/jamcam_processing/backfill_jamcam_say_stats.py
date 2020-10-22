@@ -1,13 +1,17 @@
 #!/usr/bin/env python
+"""
+    Script to compute daily historic averages of jamcam detection counts for the odysseus frontend
+    [Backfilling when creating table]
+"""
 
 import datetime
 import sys
 
-from cleanair.databases.tables import JamCamDayStats
-from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, Session
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.mixins import DBConnectionMixin
 from urbanair.config import get_settings
 from urbanair.databases.queries import get_jamcam_hourly
 from urbanair.types import DetectionClass
@@ -20,7 +24,7 @@ DB_ENGINE = create_engine(DB_CONNECTION_STRING.connection_string, convert_unicod
 DeferredReflection.prepare(DB_ENGINE)
 SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
-detection_classes = [
+DETECTION_CLASSES = [
     DetectionClass("people"),
     DetectionClass("trucks"),
     DetectionClass("cars"),
@@ -29,7 +33,7 @@ detection_classes = [
     DetectionClass("buses"),
 ]
 
-detection_class_map = {
+DETECTION_CLASSES_MAP = {
     "people": "person",
     "trucks": "truck",
     "cars": "car",
@@ -38,6 +42,8 @@ detection_class_map = {
     "buses": "bus",
 }
 
+# pylint: disable=C0103
+
 session: Session = SESSION_LOCAL()
 
 date = datetime.date(2020, 5, 29)
@@ -45,8 +51,8 @@ today = datetime.date.today()
 while date != today:
 
     data = {}
-    for detection_class in detection_classes:
-        detection_class_string = detection_class_map[detection_class]
+    for detection_class in DETECTION_CLASSES:
+        detection_class_string = DETECTION_CLASSES_MAP[detection_class]
         sys.stdout.write("\033[K")  # clear line
         sys.stdout.write(f"Fetching data for: {date} - {detection_class_string}\r")
         sys.stdout.flush()

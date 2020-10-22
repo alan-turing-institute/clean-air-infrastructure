@@ -1,12 +1,13 @@
 #!/usr/bin/env python
+"""Script to compute daily averages of jamcam detection counts for the odysseus frontend"""
 
 import datetime
 
-from cleanair.databases.tables import JamCamDayStats
-from cleanair.mixins import DBConnectionMixin
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import DeferredReflection
 from sqlalchemy.orm import sessionmaker, Session
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.mixins import DBConnectionMixin
 from urbanair.config import get_settings
 from urbanair.databases.queries import get_jamcam_hourly
 from urbanair.types import DetectionClass
@@ -19,7 +20,7 @@ DB_ENGINE = create_engine(DB_CONNECTION_STRING.connection_string, convert_unicod
 DeferredReflection.prepare(DB_ENGINE)
 SESSION_LOCAL = sessionmaker(autocommit=False, autoflush=False, bind=DB_ENGINE)
 
-detection_classes = [
+DETECTION_CLASSES = [
     DetectionClass("people"),
     DetectionClass("trucks"),
     DetectionClass("cars"),
@@ -28,7 +29,7 @@ detection_classes = [
     DetectionClass("buses"),
 ]
 
-detection_class_map = {
+DETECTION_CLASS_MAP = {
     "people": "person",
     "trucks": "truck",
     "cars": "car",
@@ -37,15 +38,17 @@ detection_class_map = {
     "buses": "bus",
 }
 
+DATE = datetime.date.today() - datetime.timedelta(days=1)
+
+# pylint: disable=C0103
+
 session: Session = SESSION_LOCAL()
 
-date = datetime.date.today() - datetime.timedelta(days=1)
-
 data = {}
-for detection_class in detection_classes:
-    detection_class_string = detection_class_map[detection_class]
+for detection_class in DETECTION_CLASSES:
+    detection_class_string = DETECTION_CLASS_MAP[detection_class]
     query = get_jamcam_hourly(
-        session, camera_id=None, detection_class=detection_class, starttime=date,
+        session, camera_id=None, detection_class=detection_class, starttime=DATE,
     )
     result = query.all()
 
@@ -65,7 +68,7 @@ for camera_id, counts_per_class in data.items():
             JamCamDayStats(
                 camera_id=camera_id,
                 detection_class=detection_class_string,
-                date=date,
+                date=DATE,
                 count=count,
                 source=SOURCE,
             )
@@ -75,7 +78,7 @@ for camera_id, counts_per_class in data.items():
         JamCamDayStats(
             camera_id=camera_id,
             detection_class="all",
-            date=date,
+            date=DATE,
             count=count,
             source=SOURCE,
         )
