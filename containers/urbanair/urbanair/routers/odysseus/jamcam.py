@@ -158,7 +158,7 @@ def camera_daily_average(
     if commons["date"] == datetime.date.today():
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Data is only available for historical dates at this endpoint."
+            detail="Data is only available for historical dates at this endpoint.",
         )
 
     data = get_jamcam_daily(
