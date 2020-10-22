@@ -5,6 +5,7 @@ from functools import partial, reduce
 import logging
 import time
 from pathos.multiprocessing import ProcessingPool as Pool
+
 # Turn off fbprophet stdout logger
 logging.getLogger("fbprophet").setLevel(logging.CRITICAL)
 from fbprophet import Prophet
@@ -107,17 +108,18 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
         # Obtain the forecast for all features at a single detector
         def forecast_one_detector(
-            input_data,
+            detector_id_and_data,
             logger,
             features,
             forecasted_on,
             forecast_start_time,
             forecast_end_time,
         ):
+            detector_id, detector_data = detector_id_and_data
+
             # Construct the time range to predict over. This is functionally identical
             # to `make_future_dataframe` but works even in cases where there is
             # insufficient data for Prophet to run.
-            detector_id, detector_data = input_data
             pred_time_range_hrs = pd.DataFrame(
                 {
                     "ds": pd.date_range(
@@ -127,15 +129,15 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             )
 
             # Construct a list of weekends in the full time range under consideration
-            full_time_range_days = pd.date_range(
-                start=min(detector_data["measurement_start_utc"]).date(),
-                end=forecast_end_time.date(),
-                freq="D",
-            )
             weekends = pd.DataFrame(
                 {
                     "holiday": "weekend",
-                    "ds": full_time_range_days[full_time_range_days.dayofweek > 4], # pylint: disable=no-member
+                    "ds": pd.bdate_range(
+                        start=min(detector_data["measurement_start_utc"]).date(),
+                        end=forecast_end_time.date(),
+                        freq="C",
+                        weekmask="Sat Sun",
+                    ),
                 }
             )
 

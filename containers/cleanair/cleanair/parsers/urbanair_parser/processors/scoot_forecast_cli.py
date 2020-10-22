@@ -29,7 +29,10 @@ def forecast(
         "today", callback=UpTo_callback, help="Up to what datetime to train the model",
     ),
     traindays: int = typer.Option(
-        2, callback=NDays_callback, help="Number of days to train on", show_default=True
+        14,
+        callback=NDays_callback,
+        help="Number of days to train on",
+        show_default=True,
     ),
     trainhours: int = typer.Option(
         0, help="Number of hours to train on. Added to traindays", show_default=True
