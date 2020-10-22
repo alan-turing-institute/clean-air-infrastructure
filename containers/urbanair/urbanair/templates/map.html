@@ -41,6 +41,10 @@
             <br>
             <label for="controls">Date</label><br>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
+            <br>
+            <label for="controls">Lock colour scale range</label><br>
+            <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
+            <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
         </div><br>
     </div>
 
@@ -105,15 +109,28 @@
         'buses'
     ];
 
+    const DETECTION_CLASS_LABELS = [
+        'person',
+        'all',
+        'truck',
+        'car',
+        'motorbike',
+        'bus'
+    ]
+
     let markerType = 'person';
     let showGroundEstimates = true;
     let selectedCam = '';
 
+    let cameras = new Map();
+    let data = new Map();
+    for (const cls of DETECTION_CLASS_LABELS) {
+        data.set(cls, new Map());
+    }
     let mapData = {
         'type': 'FeatureCollection',
         'features': []
     };
-
     let histogramData = new Map();
 
 	mapboxgl.accessToken = 'pk.eyJ1IjoiamJyYW5kcmV0aCIsImEiOiJja2M2ZHB5eGEwcWd2Mnl0aXkzd2F4ajIwIn0.5C0L8qaycmDFzauh9kCQWw';
@@ -125,8 +142,15 @@
     });
 
     function getDate() {
-        var x = document.getElementById("date").value;
-        return x;
+        return document.getElementById("date").value;
+    }
+
+    function getColourScaleLimit(){
+        if (document.getElementById("lock-colour-scale").checked) {
+            return document.getElementById("colour-scale-limit").value;
+        } else {
+            return undefined;
+        }
     }
       
     function updateGraph() {
@@ -169,9 +193,12 @@
     map.on('load', () => {
 
         // Map setup is contained in here - as layers can only be added after loading
-        
-        loadData(getDate());
+
         map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
+        console.log(data);
+        loadData(getDate()).then(() => {
+            updateMapMarkers();
+            });
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -254,108 +281,103 @@
     function loadData(start_time){
         console.debug("Loading data");
 
-        let cameras; // To hold the camera data in between api calls
-
-        fetch("  {{ url_for('metadata') }}  ")
+        return fetch("  {{ url_for('metadata') }}  ")
         .then((response) => {
             return response.json();
         })
         .then((json) => {
-            cameras = new Map(json.map(cam => [cam.id.replace("JamCams_", ""), cam])); // Creates a list of cameras indexed by their id
-
+            cameras = new Map(json.map(cam => [cam.id, cam])); // Creates a list of cameras indexed by their id
             let start = start_time + "T00%3A00%3A00";
             // camera_hourly_average
-            camera_hourly_url = "{{ url_for('camera_hourly_average') }}"
+            const camera_hourly_url = "{{ url_for('camera_hourly_average') }}"
             return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_hourly_url}?detection_class=${detection_class}&starttime=${start}`)));
         })
         .then((responses) => {
             return Promise.all(responses.map(res => res.json()));
         })
         .then((detection_class_json_responses) => {
-            for (activities of detection_class_json_responses){
+            for (activities of detection_class_json_responses) {
 
                 let detection_class = activities[0].detection_class;
-                if (!detection_class){
-                    detection_class ='all';
+                if (!detection_class) {
+                    detection_class = 'all';
                 }
 
                 let all_counts = activities.map(({counts}) => (counts));
-                
+
                 histogramData[detection_class] = all_counts;
-                let avg_at_camera = [];
-                let last_hours = [];
-                let today = false;
 
-                for (camera_id of cameras.keys()){
+                for (const camera_id of cameras.keys()) {
 
-                    let items = activities.filter((item) => {return item.camera_id == camera_id});
+                    let items = activities.filter((item) => {
+                        return item.camera_id == camera_id
+                    });
 
-                    if (items.length > 0){
-                        let count = items.map(({counts}) => (counts));
-                        let sum_at_camera = count.reduce((previous, current) => current += previous);
-                        avg_at_camera.push(sum_at_camera/count.length);
-
-                        if (new Date(getDate()).toDateString() == new Date().toDateString()){
-                            let counts =  items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts})) 
-                            let time =  items.map(({measurement_start_utc}) => (new Date(measurement_start_utc)))
-                            let last_hour = counts.filter(function(last){return last.t == new Date(Math.max(...time)).toString()})
-                                
-                            last_hours.push(last_hour[0].y)
-                            today = true;
+                    if (items.length > 0) {
+                        if (new Date(getDate()).toDateString() == new Date().toDateString()) {
+                            let counts = items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts}))
+                            let time = items.map(({measurement_start_utc}) => (new Date(measurement_start_utc)))
+                            let last_hour = counts.filter(function (last) {
+                                return last.t == new Date(Math.max(...time)).toString()
+                            })
+                            data.get(detection_class).set(camera_id, last_hour[0].y);
+                        } else {
+                            let count = items.map(({counts}) => (counts));
+                            let sum_at_camera = count.reduce((previous, current) => current += previous);
+                            data.get(detection_class).set(camera_id, (sum_at_camera / count.length));
                         }
-                    }  
-                }
-                
-                let max_final;
-                if (today){
-                    max_final = Math.max(...last_hours);
-                } else {
-                    max_final = Math.max(...avg_at_camera);
-                }
-
-                for ([camera_id, camera] of cameras.entries()){
-                    
-                    let final_value= 0    
-                    if (today == true ){
-                        if( last_hours.length > 0){
-                            final_value= last_hours.shift()
-                        } 
-                    }  
-                    else{
-                        if (avg_at_camera.length > 0){
-                            final_value = avg_at_camera.shift()
-                        } 
-                    }       
-
-                    const colour = VIRIDIS[Math.floor(Math.min(parseInt(final_value)/max_final, 1) * 255)];
-                    mapData.features.push(
-                        {
-                            'type': 'Feature',
-                            'geometry': {
-                                'type': 'Point',
-                                'coordinates': [
-                                    camera.lon,
-                                    camera.lat
-                                ]
-                            },
-                            'properties': {
-                                'id': camera_id,
-                                'flag': camera.flag,
-                                'type': detection_class,
-                                'count': final_value,
-                                'red': 255 * colour[0],
-                                'blue': 255 * colour[1],
-                                'green': 255 * colour[2],
-                            }   
-                        }
-                    )
+                    }
                 }
             }
-            map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
-            setHistogramDetectionClass();
         });
     }
 
+
+    function injectMapData(scale_upper_limit) {
+
+        for (const detection_class of DETECTION_CLASS_LABELS) {
+            if (scale_upper_limit === undefined) {
+                scale_upper_limit = Math.max(...data.get(detection_class).values());
+            }
+            for (const [camera_id, camera] of cameras.entries()) {
+
+                let value = data.get(detection_class).get(camera_id)
+                if (value === undefined) {
+                    value = 0;
+                }
+
+                const colour = VIRIDIS[Math.floor(Math.min(value / scale_upper_limit, 1) * 255)];
+                mapData.features.push(
+                    {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': [
+                                camera.lon,
+                                camera.lat
+                            ]
+                        },
+                        'properties': {
+                            'id': camera_id,
+                            'flag': camera.flag,
+                            'type': detection_class,
+                            'count': value,
+                            'red': 255 * colour[0],
+                            'blue': 255 * colour[1],
+                            'green': 255 * colour[2],
+                        }
+                    }
+                )
+            }
+        }
+        map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
+        setHistogramDetectionClass();
+    }
+
+
+    function updateMapMarkers(){
+        injectMapData(getColourScaleLimit());
+    }
             
     function updateBar(counts, type){
         
