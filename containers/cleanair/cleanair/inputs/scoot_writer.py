@@ -442,7 +442,8 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         )
 
         # Request and process scoot data for all hour
-        map(lambda h_time: self.process_hour(h_time, self.detector_ids), datetime_range)
+        for h_time in datetime_range:
+            self.process_hour(h_time, self.detector_ids)
 
         # Summarise updates
         self.logger.info(
