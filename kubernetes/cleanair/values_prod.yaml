@@ -76,7 +76,7 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
-  
+
   - name: input-laqn
     schedule: "5 * * * *"
     concurrencyPolicy: Allow
@@ -137,6 +137,26 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
+  - name: forecast-scoot
+    schedule: "* 22 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--ndays", "2"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
   - name: air-forecast-svgp-gpu
     schedule: "30 0 * * *"
     concurrencyPolicy: Allow
@@ -146,6 +166,43 @@ cronjobs:
         repository: cleanairdocker.azurecr.io/model_fitting_gpu
         imagePullPolicy: IfNotPresent
     args: ["bash", "/app/scripts/svgp.sh"]
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+      - name: regcred
+    tolerations:
+      - key: "group"
+        operator: "Equal"
+        value: "cleangpu"
+        effect: "NoSchedule"
+    nodeSelector:
+      agentpool: cleanair
+    resources:
+      limits:
+          cpu: "6"
+          nvidia.com/gpu: 1
+      requests:
+        cpu: "3"
+        nvidia.com/gpu: 1
+
+  - name: air-forecast-mrdgp-gpu
+    schedule: "30 2 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/model_fitting_gpu
+        imagePullPolicy: IfNotPresent
+    args: ["bash", "/app/scripts/mrdgp.sh"]
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
@@ -418,7 +475,7 @@ deployments:
       resources:
         requests:
             cpu: "0.5"
-    
+
     - name: dev-api
       replicas: 1
       image:
@@ -460,7 +517,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: odysseus-api
       ports:
         - name: http
@@ -469,7 +526,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: dev-api
       ports:
         - name: http

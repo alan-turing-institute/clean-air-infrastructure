@@ -8,7 +8,7 @@ from scipy.cluster.vq import kmeans2
 import tensorflow as tf
 from nptyping import Float64, NDArray
 from .model import ModelMixin
-from ..types import FeaturesDict, KernelName, Source, Species, TargetDict
+from ..types import FeaturesDict, KernelType, Source, Species, TargetDict
 
 # turn off tensorflow warnings for gpflow
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -22,10 +22,10 @@ class SVGP(ModelMixin):
     """
 
     KERNELS = {
-        KernelName.matern12: gpflow.kernels.Matern12,
-        KernelName.matern32: gpflow.kernels.Matern32,
-        KernelName.matern52: gpflow.kernels.Matern52,
-        KernelName.rbf: gpflow.kernels.RBF,
+        KernelType.matern12: gpflow.kernels.Matern12,
+        KernelType.matern32: gpflow.kernels.Matern32,
+        KernelType.matern52: gpflow.kernels.Matern52,
+        KernelType.rbf: gpflow.kernels.RBF,
     }
 
     def setup_model(
@@ -51,9 +51,9 @@ class SVGP(ModelMixin):
             custom_config
         ), gpflow.session_manager.get_session().as_default():
             kernel_dict = self.model_params.kernel.dict()
-            kernel_dict.pop("type")
+            kernel_type = kernel_dict.pop("type")
             kernel_dict["input_dim"] = num_input_dimensions
-            kernel = SVGP.KERNELS[self.model_params.kernel.name](**kernel_dict)
+            kernel = SVGP.KERNELS[kernel_type](**kernel_dict)
 
             self.model = gpflow.models.SVGP(
                 x_array,

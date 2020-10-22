@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.2.0-gpu
+FROM tensorflow/tensorflow:2.3.1-gpu
 
 CMD nvidia-smi#set up environment
 
@@ -27,4 +27,4 @@ RUN pip install -U pip
 
 
 # Install TF and gpflow
-RUN pip install tensorflow==2.2.0 gpflow==2.1.1
+RUN pip install tensorflow==2.3.1 gpflow==2.1.3
