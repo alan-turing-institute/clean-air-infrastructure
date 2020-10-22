@@ -47,8 +47,6 @@ date = datetime.date.today() - datetime.timedelta(days=1)
 data = {}
 for detection_class in detection_classes:
 	detection_class_string = detection_class_map[detection_class]
-	sys.stdout.write(f"Fetching data for: {date} - {detection_class_string}               \r")
-	sys.stdout.flush()
 	query = get_jamcam_hourly(
 		session,
 		camera_id=None,
