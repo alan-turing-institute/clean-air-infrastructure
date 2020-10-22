@@ -292,20 +292,14 @@ cronjobs:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
     command: ["bash", "/application/containers/entrypoints/jamcam_processing/jamcam_daily_stats.py"]
-    volumeMounts:
-    - name: secrets
-      mountPath: "/secrets/"
-      readOnly: true
-    - mountPath: /application/conf/local/
-      name: credentials
-      readOnly: true
-    volumes:
-    - name: secrets
-      secret:
-        secretName: secrets
-    - name: credentials
-      secret:
-        secretName: credentials.yaml
+      volumeMounts:
+        - name: secrets
+          mountPath: "/secrets/"
+          readOnly: true
+      volumes:
+        - name: secrets
+          secret:
+            secretName: secrets
     resources:
       limits:
         cpu: "0.5"
