@@ -39,11 +39,16 @@ stages:
         docker build -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) -f containers/dockerfiles/urbanairapi.Dockerfile containers
       displayName: 'Build urbanair API image'
 
+    # JamCam cronjobs (Both Cleanair and UrbanAir packages)
+    - script: |
+        docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
+    
     # Push CleanAir and UrbanAir to ACR and remove local images
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
-        docker image rmi $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion)
+        docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion)
+        docker image rmi $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/urbanairapi:$(Build.SourceVersion) $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion)
       displayName: 'Push CleanAir and UrbanAir and remove images'
 
     # Tensorflow docker images with python 3.7
