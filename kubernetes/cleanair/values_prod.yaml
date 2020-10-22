@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 20278492ed41f82f5262034a989de2d1f56dddf3
+imageTag: 7272fe05ada2056cd9320bf7a3d86048df5eaaae
 
 # jobs:
 
@@ -279,7 +279,7 @@ cronjobs:
           cpu: "23"
           nvidia.com/gpu: 4
 
-  - name: compute_daily_average_counts
+  - name: compute-daily-average-counts
     schedule: "0 23 * * *"
     concurrencyPolicy: Allow
     restartPolicy: OnFailure
@@ -291,6 +291,8 @@ cronjobs:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
     command: ["python", "/scripts/jamcam_daily_stats.py"]
+    imagePullSecrets:
+      - name: regcred
     volumeMounts:
       - name: secrets
         mountPath: "/secrets/"
