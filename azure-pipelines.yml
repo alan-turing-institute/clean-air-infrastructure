@@ -42,7 +42,8 @@ stages:
     # JamCam cronjobs (Both Cleanair and UrbanAir packages)
     - script: |
         docker build --build-arg git_hash=$(git show -s --format=%H) -t $(CONTAINER-REGISTRY-LOGIN-SERVER)/jamcamcron:$(Build.SourceVersion) -f containers/dockerfiles/jamcam.Dockerfile containers
-    
+      displayName: "Build jamcam cronjob image"
+
     # Push CleanAir and UrbanAir to ACR and remove local images
     - script: |
         docker push $(CONTAINER-REGISTRY-LOGIN-SERVER)/cleanair:$(Build.SourceVersion)

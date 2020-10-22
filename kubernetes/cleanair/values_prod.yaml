@@ -285,21 +285,20 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-      repository: cleanairdocker.azurecr.io/cleanair
-      tag: latest
+      repository: cleanairdocker.azurecr.io/jamcamcron
       imagePullPolicy: IfNotPresent
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
-    command: ["bash", "/application/containers/entrypoints/jamcam_processing/jamcam_daily_stats.py"]
-      volumeMounts:
-        - name: secrets
-          mountPath: "/secrets/"
-          readOnly: true
-      volumes:
-        - name: secrets
-          secret:
-            secretName: secrets
+    command: ["python", "/scripts/jamcam_daily_stats.py"]
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
     resources:
       limits:
         cpu: "0.5"
@@ -352,7 +351,7 @@ cronjobs:
         cpu: "23"
         nvidia.com/gpu: 4
 
-  - name: test-jamcam-cron-view-refresh
+  - name: jamcam-cron-view-refresh
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
