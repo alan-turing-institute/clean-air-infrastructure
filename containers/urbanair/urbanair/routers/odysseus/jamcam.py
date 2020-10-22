@@ -4,7 +4,7 @@ import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
-from fastapi import APIRouter, Depends, Query, Response, HTTPException
+from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
 from sqlalchemy.orm import Session
 
 from ...databases import get_db, all_or_404
@@ -154,6 +154,12 @@ def camera_hourly_average(
 def camera_daily_average(
     commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
+
+    if commons["date"] == datetime.date.today():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Data is only available for historical dates at this endpoint."
+        )
 
     data = get_jamcam_daily(
         db, commons["camera_id"], commons["detection_class"], commons["date"],
