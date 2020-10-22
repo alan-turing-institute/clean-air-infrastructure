@@ -285,13 +285,13 @@ cronjobs:
     restartPolicy: OnFailure
     failedJobsHistoryLimit: 10
     image:
-        repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
-        tag: latest
-        imagePullPolicy: Always
+      repository: cleanairdocker.azurecr.io/cleanair
+      tag: latest
+      imagePullPolicy: IfNotPresent
     env:
       - name: DB_SECRET_FILE
         value: "/secrets/db_secrets.json"
-    command: ["bash", "/application/deployscripts/jamcam_daily_stats.py"]
+    command: ["bash", "/application/containers/entrypoints/jamcam_processing/jamcam_daily_stats.py"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
