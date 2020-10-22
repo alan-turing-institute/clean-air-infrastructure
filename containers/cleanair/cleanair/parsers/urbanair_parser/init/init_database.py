@@ -95,9 +95,10 @@ def production() -> None:
         f"{red('Credentials will expire after 5-60 minutes.')} If access required for longer contact admin"
     )
 
+
 @app.command()
 def tables():
 
     state["logger"].info("Creating tables and views")
 
-    DBInteractor(secretfile=state['secretfile'], initialise_tables=True)
+    DBInteractor(secretfile=state["secretfile"], initialise_tables=True)
