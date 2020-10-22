@@ -136,7 +136,6 @@ def test_today_stats_view(secretfile, connection, todayStatsView):
 
         refresh_materialized_view(session, "jamcam.today_stats_view")
 
-        # table_output = session.query(JamCamVideoStats).filter(JamCamVideoStats.video_upload_datetime >= func.date_trunc("day", current_timestamp()))
         view_output = session.query(todayStatsView)
 
         result = view_output.first()

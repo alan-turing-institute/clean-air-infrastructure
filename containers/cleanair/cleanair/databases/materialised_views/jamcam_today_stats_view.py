@@ -12,7 +12,7 @@ from ..views import create_materialized_view
 
 
 class JamcamTodayStatsView(Base):
-    """View of the interest points that gives London's boundary"""
+    """View that contains an average of the day's detection count for each camera-class pair"""
 
     __table__ = create_materialized_view(
         name="today_stats_view",
