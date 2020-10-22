@@ -376,6 +376,7 @@
 
 
     function updateMapMarkers(){
+        document.getElementById("colour-scale-limit").disabled = !document.getElementById("lock-colour-scale").checked;
         injectMapData(getColourScaleLimit());
     }
             
@@ -481,7 +482,9 @@
     }
 
     function updateDate(){
-        loadData(getDate());
+        loadData(getDate()).then(() => {
+            updateMapMarkers();
+            });
         updateGraph();
     }
 
