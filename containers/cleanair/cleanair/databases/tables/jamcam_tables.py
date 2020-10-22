@@ -1,5 +1,5 @@
 """Tables for jamcam results"""
-from sqlalchemy import Column, String, BigInteger, Text, Index
+from sqlalchemy import Column, String, BigInteger, Text, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     DATE,
@@ -67,17 +67,19 @@ class JamCamVideoStats(Base):
 class JamCamDayStats(Base):
     """Table of detection counts"""
 
-    Index("date_detection_class_idx", "date", "detection_class"),
+    Index("date_detection_class_idx", "date", "detection_class")
 
     __tablename__ = "day_stats_v3"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    camera_id = Column(VARCHAR(20))
-    date = Column(DATE)
-    detection_class = Column(String(20))
-    count = Column(REAL)
+    camera_id = Column(VARCHAR(20), nullable=True)
+    date = Column(DATE, nullable=True)
+    detection_class = Column(String(20), nullable=True)
+    count = Column(REAL, nullable=True)
     source = Column(SMALLINT, nullable=False)
+
+    UniqueConstraint(camera_id, date, detection_class)
 
     def __repr__(self):
         vals = [
