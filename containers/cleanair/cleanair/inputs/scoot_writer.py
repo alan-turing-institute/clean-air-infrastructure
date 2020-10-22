@@ -122,9 +122,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         # List all the relevant CSV files for the time range under consideration
         file_list = []
         for date in rrule.rrule(
-            rrule.HOURLY,
-            dtstart=start_datetime,
-            until=end_datetime - datetime.timedelta(hours=1),
+            rrule.HOURLY, dtstart=start_datetime, until=end_datetime
         ):
             # NB. We must explicitly exclude end_datetime
             if date >= end_datetime:
