@@ -284,19 +284,17 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
         return df_aggregated
 
-    def process_hour(
-        self, measurement_start_utc: datetime.datetime, detector_ids: List[str]
-    ) -> None:
+    def process_hour(self, measurement_start_utc: datetime.datetime) -> None:
         "Request scoot data for a given hour and process it"
 
         measurement_end_utc = measurement_start_utc + datetime.timedelta(hours=1)
 
-        if self.check_detectors_processed(measurement_start_utc, detector_ids):
+        if self.check_detectors_processed(measurement_start_utc, self.detector_ids):
 
             self.logger.info(
                 "No S3 data is needed from %s. %s detector(s) have already been processed.",
                 green(measurement_start_utc),
-                green(len(detector_ids)),
+                green(len(self.detector_ids)),
             )
 
             return
@@ -309,7 +307,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
         # Load all valid remote data into a single dataframe
         df_readings = self.request_remote_data(
-            measurement_start_utc, measurement_end_utc, detector_ids
+            measurement_start_utc, measurement_end_utc, self.detector_ids
         )
 
         if df_readings.shape[0] < 1:
@@ -328,7 +326,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             df_aggregated_readings,
             measurement_start_utc,
             measurement_end_utc,
-            detector_ids,
+            self.detector_ids,
         )
 
         site_records = df_joined_with_expected.to_dict("records")
@@ -443,7 +441,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
         # Request and process scoot data for all hour
         for h_time in datetime_range:
-            self.process_hour(h_time, self.detector_ids)
+            self.process_hour(h_time)
 
         # Summarise updates
         self.logger.info(
