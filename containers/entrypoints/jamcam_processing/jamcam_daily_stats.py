@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-import cProfile
-
 import datetime
-import sys
 
 from cleanair.databases.tables import JamCamDayStats
 from cleanair.mixins import DBConnectionMixin
