@@ -1,5 +1,7 @@
 """Tables for jamcam results"""
 from sqlalchemy import Column, String, BigInteger, Text, Index, UniqueConstraint
+from geoalchemy2 import Geometry
+from sqlalchemy import Column, String, BigInteger, Text
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
     DATE,
@@ -87,3 +89,29 @@ class JamCamDayStats(Base):
             for column in [c.name for c in self.__table__.columns]
         ]
         return "<JamCamDayStats(" + ", ".join(vals) + ")>"
+
+
+class JamCamMetaData(Base):
+    """Table of Jamcam data: locations, flags, etc."""
+
+    __tablename__ = "metadata"
+    __table_args__ = {"schema": "jamcam"}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    camera_id = Column(VARCHAR(20))
+    location = Column(Geometry(geometry_type="POINT"))
+    notes = Column(VARCHAR(128))
+    u0 = Column(SMALLINT)
+    v0 = Column(SMALLINT)
+    u1 = Column(SMALLINT)
+    h = Column(REAL)
+    flag = Column(SMALLINT)
+    borough_name = Column(VARCHAR)
+    borough_gss_code = Column(VARCHAR)
+
+    def __repr__(self):
+        vals = [
+            "{}='{}'".format(column, getattr(self, column))
+            for column in [c.name for c in self.__table__.columns]
+        ]
+        return "<JamCamMetaData(" + ", ".join(vals) + ")>"

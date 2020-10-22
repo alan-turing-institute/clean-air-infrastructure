@@ -1,11 +1,11 @@
 """JamCam API routes"""
 import datetime
-
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
 from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
 from sqlalchemy.orm import Session
+from urbanair.databases.queries import get_jamcam_metadata
 
 from ...databases import get_db, all_or_404
 from ...databases.queries import (
@@ -21,6 +21,7 @@ from ...databases.schemas.jamcam import (
     JamCamVideoAverage,
     JamCamFeatureCollection,
     JamCamAvailable,
+    JamCamMetaData,
     JamCamDailyAverage,
 )
 from ...types import DetectionClass
@@ -178,5 +179,15 @@ def camera_today_average(
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"],)
+
+
+@router.get(
+    "/metadata",
+    response_model=List[JamCamMetaData],
+    description="The locations and other metadata of all jamcams",
+)
+def metadata(db: Session = Depends(get_db),) -> Optional[List[JamCamMetaData]]:
+
+    data = get_jamcam_metadata(db)
 
     return all_or_404(data)

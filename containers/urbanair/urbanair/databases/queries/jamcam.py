@@ -3,17 +3,17 @@ from datetime import datetime, timedelta, date
 from typing import Optional
 
 import requests
+from cleanair.databases.materialised_views.jamcam_today_stats_view import (
+    JamcamTodayStatsView,
+)
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
+from cleanair.decorators import db_query
 from fastapi import HTTPException
 from geojson import Feature, Point, FeatureCollection
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
-
-from cleanair.databases.materialised_views.jamcam_today_stats_view import (
-    JamcamTodayStatsView,
-)
-from cleanair.databases.tables import JamCamVideoStats, JamCamDayStats
-from cleanair.decorators import db_query
 
 from ...types import DetectionClass
 
@@ -278,3 +278,13 @@ def get_jamcam_today(
         query = query.filter(JamCamDayStats.camera_id == camera_id)
 
     return query
+
+
+@db_query()
+def get_jamcam_metadata(db: Session) -> Query:
+    return db.query(
+        JamCamMetaData.camera_id.label("id"),
+        func.ST_Y(JamCamMetaData.location).label("lat"),
+        func.ST_X(JamCamMetaData.location).label("lon"),
+        JamCamMetaData.flag.label("flag"),
+    )
