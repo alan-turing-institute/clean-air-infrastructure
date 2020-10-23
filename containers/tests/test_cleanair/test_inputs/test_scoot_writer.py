@@ -51,9 +51,7 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
     "Test we can process an hour correctly"
 
     # # Check request_remote_data is patched (arguments not used)
-    remote_data = scoot_writer.request_remote_data(
-        dataset_start_date, detector_ids = []
-    )
+    remote_data = scoot_writer.request_remote_data(dataset_start_date, detector_ids=[])
     # assert remote_data.equals(
     #     request_remote_data(dataset_start_date, dataset_start_date, [])
     # )

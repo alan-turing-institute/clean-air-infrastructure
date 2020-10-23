@@ -238,7 +238,9 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             )
             return pd.DataFrame(columns=input_df.columns)
 
-    def aggregate_scoot_data_hour(self, df_readings: pd.DataFrame, start_datetime_utc: datetime.datetime) -> pd.DataFrame:
+    def aggregate_scoot_data_hour(
+        self, df_readings: pd.DataFrame, start_datetime_utc: datetime.datetime
+    ) -> pd.DataFrame:
         """
         Aggregate one hour of scoot data by detector ID
 
@@ -306,7 +308,9 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             return
 
         # Aggregate hourly readings scoot readings
-        df_aggregated_readings = self.aggregate_scoot_data_hour(df_readings, measurement_start_utc)
+        df_aggregated_readings = self.aggregate_scoot_data_hour(
+            df_readings, measurement_start_utc
+        )
 
         # Join with expected readings to get nulls where no data was retrived from S3 bucket
         df_joined_with_expected = self.join_with_expected_readings(
