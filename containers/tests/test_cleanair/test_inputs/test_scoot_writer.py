@@ -52,7 +52,7 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # # Check request_remote_data is patched (arguments not used)
     remote_data = scoot_writer.request_remote_data(
-        dataset_start_date, dataset_start_date, []
+        dataset_start_date, detector_ids = []
     )
     # assert remote_data.equals(
     #     request_remote_data(dataset_start_date, dataset_start_date, [])
@@ -60,7 +60,7 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # Check the aggregate_scoot_data method now returns its input dataframe after patching
     aggregated_df = (
-        scoot_writer.aggregate_scoot_data(remote_data)
+        scoot_writer.aggregate_scoot_data_hour(remote_data)
         .sort_values(["detector_id", "measurement_start_utc"])
         .astype(
             {
@@ -80,7 +80,7 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # Test process hour
     # Process data and insert into database
-    scoot_writer.process_hour(dataset_start_date, scoot_writer.detector_ids)
+    scoot_writer.process_hour(dataset_start_date)
 
     # Read data from database
     retrieved_data = scoot_writer.scoot_readings(
