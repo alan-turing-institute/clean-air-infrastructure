@@ -7,10 +7,16 @@ set -e
 urbanair init local --secretfile "$DB_SECRET_FILE"
 
 # Forecast scoot data
-urbanair --secretfile processors scoot forecast --traindays 5 --preddays 2 --trainupto yesterday 
+# urbanair --secretfile processors scoot forecast --traindays 5 --preddays 2 --trainupto yesterday 
 
 # Processs scoot features
-urbanair features scoot fill --ndays 7 --upto overmorrow  --source satellite --source laqn --source hexgrid --insert-method missing --nworkers 2
+urbanair features scoot fill --ndays 7 --upto overmorrow \
+    --source satellite \
+    --source laqn \
+    --source hexgrid \ 
+    --insert-method missing \
+    --nworkers 2 \
+    --use-readings
 
 # generate the data config
 urbanair model data generate-config \
@@ -22,7 +28,7 @@ urbanair model data generate-config \
     --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
-    --dynamic-features max_n_vehicles \
+    --dynamic-features avg_n_vehicles \
     --feature-buffer 500 \
     --feature-buffer 100 \
     --overwrite
