@@ -436,14 +436,12 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         # Process one hour at a time
         start_hour = self.start_datetime.replace(microsecond=0, second=0, minute=0)
 
-        datetime_range = rrule.rrule(
+        # Request and process scoot data for all hour
+        for h_time in rrule.rrule(
             rrule.HOURLY,
             dtstart=start_hour,
             until=self.end_datetime - timedelta(hours=1),
-        )
-
-        # Request and process scoot data for all hour
-        for h_time in datetime_range:
+        ):
             self.process_hour(h_time)
 
         # Summarise updates
