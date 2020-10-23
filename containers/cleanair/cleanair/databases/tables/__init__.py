@@ -39,7 +39,12 @@ from .traffic_modelling_tables import (
 from .ukmap_tables import UKMap
 from .urban_village_tables import UrbanVillage
 from .gla_scoot_tables import ScootPercentChange
-from .jamcam_tables import JamCamFrameStats, JamCamVideoStats
+from .jamcam_tables import (
+    JamCamFrameStats,
+    JamCamVideoStats,
+    JamCamDayStats,
+    JamCamMetaData,
+)
 
 __all__ = [
     "AirQualityDataTable",
@@ -56,6 +61,8 @@ __all__ = [
     "LondonBoundary",
     "JamCamFrameStats",
     "JamCamVideoStats",
+    "JamCamDayStats",
+    "JamCamMetaData",
     "MetaPoint",
     "OSHighway",
     "RectGrid",
