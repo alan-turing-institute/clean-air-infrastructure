@@ -4,28 +4,26 @@
 set -e
 
 # set the secretfile filepath
-urbanair init local --secretfile "$DB_SECRET_FILE"
+# urbanair init local --secretfile "$DB_SECRET_FILE"
+urbanair init production
 
 # Forecast scoot data
 # urbanair --secretfile processors scoot forecast --traindays 5 --preddays 2 --trainupto yesterday 
 
 # Processs scoot features
 urbanair features scoot fill --ndays 7 --upto overmorrow \
-    --source satellite \
     --source laqn \
-    --source hexgrid \ 
     --insert-method missing \
     --nworkers 2 \
     --use-readings
 
 # generate the data config
 urbanair model data generate-config \
-    --trainupto yesterday \
+    --trainupto '2020-10-21' \
     --traindays 5 \
     --preddays 2 \
     --train-source laqn \
     --pred-source laqn \
-    --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
     --dynamic-features avg_n_vehicles \
@@ -40,7 +38,7 @@ urbanair model data generate-full-config
 urbanair model data download --training-data --prediction-data --output-csv
 
 # create the model parameters
-urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
+urbanair model setup svgp --maxiter 10 --num-inducing-points 2000
 
 # fit the model and predict
 urbanair model fit svgp --refresh 100
