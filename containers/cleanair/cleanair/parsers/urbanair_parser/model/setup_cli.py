@@ -31,7 +31,7 @@ def svgp(
     ard: bool = Ard,
     input_dir: Path = InputDir,
     jitter: float = Jitter,
-    kernel: str = KernelTypeOption,
+    kernel: KernelType = KernelTypeOption,
     lengthscales: float = Lengthscales,
     likelihood_variance: float = LikelihoodVariance,
     maxiter: int = MaxIter,
@@ -46,7 +46,7 @@ def svgp(
         kernel=KernelParams(
             ARD=ard,
             lengthscales=lengthscales,
-            name=kernel,
+            name=kernel.value,
             type=kernel,
             variance=variance,
         ),
