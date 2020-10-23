@@ -563,7 +563,7 @@ def scoot_writer(
     "Return a ScootWriter instance"
 
     def request_remote_data(
-        start_datetime_utc, end_datetime_utc, detector_ids,
+        start_datetime_utc, detector_ids,
     ):
         """Patch the request_remote_data method
 
