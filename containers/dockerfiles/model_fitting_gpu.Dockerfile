@@ -12,7 +12,7 @@ ENV GIT_PYTHON_REFRESH=quiet
 WORKDIR /app
 
 # Copy the cleanair directory contents into the container
-COPY cleanair /app/cleanair[]
+COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
 
 # Install cleanair
