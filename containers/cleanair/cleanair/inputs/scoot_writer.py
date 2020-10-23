@@ -320,19 +320,25 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
             self.detector_ids,
         )
 
-        df_joined_with_expected_none = df_joined_with_expected.fillna(None)
+        site_records = df_joined_with_expected.to_dict("records")
 
-        site_records = df_joined_with_expected_none.to_dict("records")
+        site_record_drop_null = [
+            {
+                key: (value if not pd.isna(value) else None)
+                for (key, value) in record.items()
+            }
+            for record in site_records
+        ]
 
         self.logger.info(
             "Inserting records for %s detectors into database",
-            green(len(site_records)),
+            green(len(site_record_drop_null)),
         )
 
         # Commit the records to the database
         start_session = time.time()
         self.commit_records(
-            site_records, on_conflict="overwrite", table=ScootReading,
+            site_record_drop_null, on_conflict="overwrite", table=ScootReading,
         )
         self.logger.info(
             "Insertion took %s", green(duration(start_session, time.time())),
