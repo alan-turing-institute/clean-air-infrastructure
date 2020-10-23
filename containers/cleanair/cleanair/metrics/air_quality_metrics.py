@@ -150,6 +150,7 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         joined_df = observation_df.merge(
             result_df, on=["point_id", "measurement_start_utc"], how="inner"
         )
+        joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
@@ -173,14 +174,10 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self, observation_df: pd.DataFrame, result_df: pd.DataFrame
     ) -> None:
         """Evaluate metrics by grouping by point id."""
-        self.logger.debug(
-            "Columns in left (observation) df %s", list(observation_df.columns)
-        )
-        self.logger.debug("Columns in right (result) df %s", list(result_df.columns))
         joined_df = observation_df.merge(
             result_df, on=["point_id", "measurement_start_utc"], how="inner",
         )
-        self.logger.debug(joined_df)
+        joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
@@ -228,8 +225,9 @@ def get_columns_of_table(table: Base) -> List[str]:
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):
     """Remove rows with NaN as an observation."""
+    print(species)
     cols_to_check = species.copy()
-    cols_to_check.extend(map(lambda x: x.value + "_mean", cols_to_check))
+    cols_to_check.extend(map(lambda x: x + "_mean", cols_to_check))
     return joined_df.loc[joined_df[cols_to_check].dropna().index]
 
 

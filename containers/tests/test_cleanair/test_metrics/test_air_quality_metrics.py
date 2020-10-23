@@ -5,11 +5,11 @@ import pandas as pd
 from cleanair.metrics.air_quality_metrics import preprocess_dataframe_types
 from cleanair.types import Source
 
-def test_preprocess_dataframe_types(result_df):
-    """Check datetimes are converted to utc and point ids are converted to strings."""
-    processed_df = preprocess_dataframe_types(result_df)
-    assert processed_df.point_id.dtype is str
-    assert processed_df.measurement_start_utc.utc
+# def test_preprocess_dataframe_types(result_df):
+#     """Check datetimes are converted to utc and point ids are converted to strings."""
+#     processed_df = preprocess_dataframe_types(result_df)
+#     assert processed_df.point_id.dtype is str
+#     assert processed_df.measurement_start_utc.utc
 
 class TestAirQaulityMetrics:
 
