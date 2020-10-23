@@ -46,7 +46,7 @@ setuptools.setup(
     ],
     extras_require={
         "traffic": [
-            "pystan==2.19.1.1",
+            "pystan==2.18",
             "fbprophet==0.6",
             "pytz==2019.3",
         ],
