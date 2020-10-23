@@ -154,6 +154,8 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.logger.info(
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
+        print("COLUMN NAMES:", list(joined_df.columns))
+        assert "forecast" in joined_df.columns
         groups = joined_df.groupby(["measurement_start_utc", "forecast"])
         metrics_records = list()
         for (timestamp, forecast), group_df in groups:
@@ -181,6 +183,8 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
+        print("COLUMN NAMES:", list(joined_df.columns))
+        assert "forecast" in joined_df.columns
         groups = joined_df.groupby(["point_id", "forecast"])
         metrics_records = list()
         for (point_id, forecast), group_df in groups:
@@ -225,9 +229,11 @@ def get_columns_of_table(table: Base) -> List[str]:
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):
     """Remove rows with NaN as an observation."""
-    print(species)
-    cols_to_check = species.copy()
-    cols_to_check.extend(map(lambda x: x + "_mean", cols_to_check))
+    cols_to_check = []
+    for pollutant in species:
+        cols_to_check.extend(
+            [pollutant.value, pollutant.value + "_mean", pollutant.value + "_var"]
+        )
     return joined_df.loc[joined_df[cols_to_check].dropna().index]
 
 

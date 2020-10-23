@@ -18,6 +18,7 @@ def point_ids(fake_laqn_svgp_instance) -> List[UUID]:
     """Get a list of point ids."""
     return fake_laqn_svgp_instance.data_config.train_interest_points[Source.laqn]
 
+
 @pytest.fixture(scope="function")
 def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List:
     """List of timestamps for each data point."""
@@ -25,15 +26,18 @@ def timestamps(dataset_start_date: datetime, dataset_end_date: datetime) -> List
     print(num_periods)
     return pd.date_range(start=dataset_start_date, freq="H", periods=num_periods)
 
+
 @pytest.fixture(scope="function")
 def num_training_data_points(point_ids, timestamps) -> int:
     """Number of data points."""
     return len(point_ids) * len(timestamps)
 
+
 @pytest.fixture(scope="function")
 def num_forecast_data_points(point_ids, num_forecast_days) -> int:
     """Number of data points in the forecast period."""
     return len(point_ids) * num_forecast_days * 24
+
 
 @pytest.fixture(scope="function")
 def y_test() -> NDArray[Float64]:
@@ -52,10 +56,12 @@ def y_var() -> NDArray[Float64]:
     """Predicted variance."""
     return np.ones(5)
 
+
 @pytest.fixture(scope="function")
 def observation_df(model_data, metrics_calculator):
     """Load and return the observations."""
     return metrics_calculator.load_observation_df(model_data)
+
 
 @pytest.fixture(scope="function")
 def result_df(
@@ -76,7 +82,6 @@ def result_df(
     dframe["point_id"] = point_array
     dframe["NO2_mean"] = 2 * np.ones(num_training_data_points)
     dframe["NO2_var"] = np.ones(num_training_data_points)
-    dframe["forecast"] = dframe.measurement_start_utc.apply(lambda x: dataset_start_date <= x < dataset_end_date)
     dframe["source"] = Source.laqn
     dframe["pollutant"] = Species.NO2
     dframe["instance_id"] = fake_laqn_svgp_instance.instance_id
@@ -88,5 +93,7 @@ def result_df(
 def metrics_calculator(fake_laqn_svgp_instance, secretfile, connection_class):
     """Test the init function of the air quality metrics class."""
     return AirQualityMetrics(
-        fake_laqn_svgp_instance.instance_id, secretfile=secretfile, connection=connection_class
+        fake_laqn_svgp_instance.instance_id,
+        secretfile=secretfile,
+        connection=connection_class,
     )

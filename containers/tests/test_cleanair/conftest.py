@@ -106,10 +106,12 @@ def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
 
+
 @pytest.fixture(scope="module")
 def num_forecast_days():
     "Number of days for the model to forecast on."
     return 2
+
 
 @pytest.fixture(scope="module")
 def site_open_date(dataset_start_date):
@@ -464,6 +466,7 @@ def fake_laqn_static_dataset(
         table=StaticFeature,
     )
 
+
 # pylint: disable=R0913
 @pytest.fixture(scope="class")
 def fake_cleanair_dataset(
@@ -512,6 +515,7 @@ def fake_cleanair_dataset(
         on_conflict="overwrite",
         table=SatelliteForecast,
     )
+
 
 @pytest.fixture(scope="class")
 def laqn_config(dataset_start_date, dataset_end_date, num_forecast_days):
