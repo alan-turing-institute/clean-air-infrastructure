@@ -53,35 +53,34 @@ def y_var() -> NDArray[Float64]:
     return np.ones(5)
 
 @pytest.fixture(scope="function")
+def observation_df(model_data, metrics_calculator):
+    """Load and return the observations."""
+    return metrics_calculator.load_observation_df(model_data)
+
+@pytest.fixture(scope="function")
 def result_df(
     dataset_start_date: datetime,
     dataset_end_date: datetime,
+    num_training_data_points,
     point_ids: List[UUID],
     timestamps: List,
-    y_pred: NDArray[Float64],
-    y_var: NDArray[Float64],
     fake_laqn_svgp_instance,
 ) -> pd.DataFrame:
     """A dataframe of predictions for the mean and variance."""
+    point_array = []
+    for pid in point_ids:
+        point_array.extend(np.repeat(str(pid), len(timestamps)).tolist())
     dframe = pd.DataFrame()
-    dframe["measurement_start_utc"] = timestamps
-    dframe["point_id"] = point_ids
-    dframe["NO2_mean"] = y_pred
-    dframe["NO2_var"] = y_var
+    dframe["measurement_start_utc"] = np.repeat(timestamps, len(point_ids))
+    print("len of time vs points:", len(dframe.measurement_start_utc), len(point_array))
+    dframe["point_id"] = point_array
+    dframe["NO2_mean"] = 2 * np.ones(num_training_data_points)
+    dframe["NO2_var"] = np.ones(num_training_data_points)
     dframe["forecast"] = dframe.measurement_start_utc.apply(lambda x: dataset_start_date <= x < dataset_end_date)
     dframe["source"] = Source.laqn
     dframe["pollutant"] = Species.NO2
     dframe["instance_id"] = fake_laqn_svgp_instance.instance_id
     dframe["data_id"] = fake_laqn_svgp_instance.data_id
-    return dframe
-
-@pytest.fixture(scope="function")
-def observation_df(point_ids: List[UUID], timestamps: List, y_test: NDArray[Float64]) -> None:
-    """Observations."""
-    dframe = pd.DataFrame()
-    dframe["measurement_start_utc"] = timestamps
-    dframe["point_id"] = point_ids
-    dframe["NO2"] = y_test
     return dframe
 
 
