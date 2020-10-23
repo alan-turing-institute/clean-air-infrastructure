@@ -60,7 +60,7 @@ def test_process_hour(scoot_detector_single_hour, scoot_writer, dataset_start_da
 
     # Check the aggregate_scoot_data method now returns its input dataframe after patching
     aggregated_df = (
-        scoot_writer.aggregate_scoot_data_hour(remote_data)
+        scoot_writer.aggregate_scoot_data_hour(remote_data, dataset_start_date)
         .sort_values(["detector_id", "measurement_start_utc"])
         .astype(
             {
