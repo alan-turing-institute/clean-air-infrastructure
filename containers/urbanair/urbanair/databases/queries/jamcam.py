@@ -282,6 +282,7 @@ def get_jamcam_today(
 
 @db_query()
 def get_jamcam_metadata(db: Session) -> Query:
+    "Return jamcam meta data"
     return db.query(
         JamCamMetaData.camera_id.label("id"),
         func.ST_Y(JamCamMetaData.location).label("lat"),
