@@ -38,7 +38,7 @@ urbanair model data generate-full-config
 urbanair model data download --training-data --prediction-data --output-csv
 
 # create the model parameters
-urbanair model setup svgp --maxiter 10 --num-inducing-points 2000
+urbanair model setup svgp --maxiter 10000 --num-inducing-points 2000
 
 # fit the model and predict
 urbanair model fit svgp --refresh 100
