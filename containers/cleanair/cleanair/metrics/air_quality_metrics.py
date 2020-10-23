@@ -154,8 +154,6 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.logger.info(
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
-        print("COLUMN NAMES:", list(joined_df.columns))
-        assert "forecast" in joined_df.columns
         groups = joined_df.groupby(["measurement_start_utc", "forecast"])
         metrics_records = list()
         for (timestamp, forecast), group_df in groups:
@@ -183,8 +181,6 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
-        print("COLUMN NAMES:", list(joined_df.columns))
-        assert "forecast" in joined_df.columns
         groups = joined_df.groupby(["point_id", "forecast"])
         metrics_records = list()
         for (point_id, forecast), group_df in groups:

@@ -1,13 +1,13 @@
 """Test the air quality metrics class."""
 
 import pytz
-import numpy as np
-import pandas as pd
 from cleanair.metrics.air_quality_metrics import preprocess_dataframe_types
 from cleanair.types import Source
 
 
 class TestAirQaulityMetrics:
+    """Class for testing the metrics. Queries the database for observations."""
+
     def test_metrics_init(self, metrics_calculator):
         """Test the init function of the air quality metrics class."""
         # check all other sources have been removed
@@ -65,9 +65,7 @@ class TestAirQaulityMetrics:
         sdf = metrics_calculator.spatial_df
         assert len(sdf) == len(result_df.point_id.unique())
 
-    def test_metrics_update_remote_tables(
-        self, metrics_calculator, observation_df, result_df
-    ):
+    def test_metrics_update_tables(self, metrics_calculator, observation_df, result_df):
         """Evaluate the metrics then update the tables."""
         result_df = preprocess_dataframe_types(result_df)
         metrics_calculator.evaluate_temporal_metrics(observation_df, result_df)

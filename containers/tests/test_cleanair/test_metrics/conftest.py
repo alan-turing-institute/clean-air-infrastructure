@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import List
-from uuid import uuid4, UUID
+from uuid import UUID
 import pytest
 import numpy as np
 import pandas as pd
@@ -65,8 +65,6 @@ def observation_df(model_data, metrics_calculator):
 
 @pytest.fixture(scope="function")
 def result_df(
-    dataset_start_date: datetime,
-    dataset_end_date: datetime,
     num_training_data_points,
     point_ids: List[UUID],
     timestamps: List,
