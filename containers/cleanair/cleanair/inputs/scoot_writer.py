@@ -107,52 +107,40 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
 
     @staticmethod
     def get_remote_filenames(
-        start_datetime_utc: datetime.datetime, end_datetime_utc: datetime.datetime
+        start_datetime_utc: datetime.datetime,
     ) -> List[Tuple[str, str]]:
-        """Get all possible remote file details for the period in question"""
+        """Get all possible remote file details for the hour starting at start_datetime_utc"""
 
         # Convert datetime from UTC to local time
         start_datetime = start_datetime_utc.replace(
             tzinfo=datetime.timezone.utc
         ).astimezone(tz=pytz.timezone("Europe/London"))
-        end_datetime = end_datetime_utc.replace(
-            tzinfo=datetime.timezone.utc
-        ).astimezone(tz=pytz.timezone("Europe/London"))
 
         # List all the relevant CSV files for the time range under consideration
         file_list = []
-        for date in rrule.rrule(
-            rrule.HOURLY, dtstart=start_datetime, until=end_datetime
-        ):
-            # NB. We must explicitly exclude end_datetime
-            if date >= end_datetime:
-                continue
-            year, month, day, hour = (
-                str(date.year),
-                str(date.month).zfill(2),
-                str(date.day).zfill(2),
-                str(date.hour).zfill(2),
+        year, month, day, hour = (
+            str(start_datetime.year),
+            str(start_datetime.month).zfill(2),
+            str(start_datetime.day).zfill(2),
+            str(start_datetime.hour).zfill(2),
+        )
+        for timestring in [hour + str(m).zfill(2) for m in range(60)]:
+            csv_name = "{y}{m}{d}-{timestring}.csv".format(
+                y=year, m=month, d=day, timestring=timestring
             )
-            for timestring in [hour + str(m).zfill(2) for m in range(60)]:
-                csv_name = "{y}{m}{d}-{timestring}.csv".format(
-                    y=year, m=month, d=day, timestring=timestring
+            file_list.append(
+                (
+                    "Control/TIMSScoot/{y}/{m}/{d}".format(y=year, m=month, d=day),
+                    csv_name,
                 )
-                file_list.append(
-                    (
-                        "Control/TIMSScoot/{y}/{m}/{d}".format(y=year, m=month, d=day),
-                        csv_name,
-                    )
-                )
+            )
         return file_list
 
     def request_remote_data(
-        self,
-        start_datetime_utc: datetime.datetime,
-        end_datetime_utc: datetime.datetime,
-        detector_ids: List[str],
+        self, start_datetime_utc: datetime.datetime, detector_ids: List[str],
     ) -> pd.DataFrame:
         """
-        Request all readings between {start_date} and {end_date}.
+        Request all readings for the hour starting at start_datetime_utc
         Remove readings with unknown detector ID or detector faults.
         """
         start_aws = time.time()
@@ -167,9 +155,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         # Parse each CSV file into a dataframe and add these to a list
         n_failed, n_succeeded = 0, 0
         processed_readings = []
-        for filepath, filename in self.get_remote_filenames(
-            start_datetime_utc, end_datetime_utc
-        ):
+        for filepath, filename in self.get_remote_filenames(start_datetime_utc):
             try:
                 self.logger.debug("Requesting scoot file %s", filename)
                 client.download_file(
@@ -309,9 +295,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         )
 
         # Load all valid remote data into a single dataframe
-        df_readings = self.request_remote_data(
-            measurement_start_utc, measurement_end_utc, self.detector_ids
-        )
+        df_readings = self.request_remote_data(measurement_start_utc, self.detector_ids)
 
         if df_readings.shape[0] < 1:
             self.logger.warning(
