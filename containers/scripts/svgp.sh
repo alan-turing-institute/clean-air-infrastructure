@@ -4,8 +4,8 @@
 set -e
 
 # set the secretfile filepath
-# urbanair init local --secretfile "$DB_SECRET_FILE"
-urbanair init production
+urbanair init local --secretfile "$DB_SECRET_FILE"
+
 
 # Forecast scoot data
 # urbanair --secretfile processors scoot forecast --traindays 5 --preddays 2 --trainupto yesterday 
