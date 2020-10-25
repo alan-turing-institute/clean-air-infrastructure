@@ -16,4 +16,4 @@ COPY cleanair /app/cleanair
 COPY scripts/ /app/scripts
 
 # Install cleanair
-RUN pip install '/app/cleanair[models,traffic]'
+RUN pip install '/app/cleanair'
