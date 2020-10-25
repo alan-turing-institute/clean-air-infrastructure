@@ -13,6 +13,7 @@ urbanair init local --secretfile "$DB_SECRET_FILE"
 # Processs scoot features
 urbanair features scoot fill --ndays 7 --upto overmorrow \
     --source laqn \
+    --source hexgrid \
     --insert-method missing \
     --nworkers 2 \
     --use-readings
@@ -24,6 +25,7 @@ urbanair model data generate-config \
     --preddays 2 \
     --train-source laqn \
     --pred-source laqn \
+    --pred-source hexgrid \
     --species NO2 \
     --features total_a_road_length \
     --dynamic-features avg_n_vehicles \
