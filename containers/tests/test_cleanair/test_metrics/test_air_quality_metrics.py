@@ -1,8 +1,11 @@
 """Test the air quality metrics class."""
 
 import pytz
-from cleanair.metrics.air_quality_metrics import preprocess_dataframe_types
-from cleanair.types import Source
+from cleanair.metrics.air_quality_metrics import (
+    preprocess_dataframe_types,
+    remove_rows_with_nans,
+)
+from cleanair.types import Source, Species
 
 
 class TestAirQaulityMetrics:
@@ -71,3 +74,9 @@ class TestAirQaulityMetrics:
         metrics_calculator.evaluate_temporal_metrics(observation_df, result_df)
         metrics_calculator.evaluate_spatial_metrics(observation_df, result_df)
         metrics_calculator.update_remote_tables()
+
+
+def test_remove_rows_with_nans(nans_df):
+    """Rows should be removed if one of the rows contains a nan."""
+    assert len(nans_df) == 4
+    assert len(remove_rows_with_nans(nans_df, [Species.NO2])) == 1

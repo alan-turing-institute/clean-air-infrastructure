@@ -317,6 +317,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             )
         return data_output
 
+    def download_forecast_data(
+        self, full_config: FullDataConfig
+    ) -> Dict[Source, pd.DateFrame]:
+        """Download the readings for a forecast period. Used for calculating metrics."""
+        data_output: Dict[Source, pd.DataFrame] = {}
+        for source in full_config.pred_sources:
+            self.logger.info("Downloading source %s forecast data.", source.value)
+            data_output[source] = self.__download_config_data(
+                with_sensor_readings=True,
+                start_date=full_config.pred_start_date,
+                end_date=full_config.pred_end_date,
+                species=full_config.species,
+                point_ids=full_config.pred_interest_points[source],
+                features=full_config.features,
+                source=source,
+            )
+        return data_output
+
     # pylint: disable=R0913
     def __download_config_data(
         self,

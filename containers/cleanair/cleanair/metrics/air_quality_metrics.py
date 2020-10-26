@@ -100,9 +100,9 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         train_df: pd.DataFrame = model_data.download_config_data(self.data_config)[
             Source.laqn
         ]
-        test_df: pd.DataFrame = model_data.download_config_data(
-            self.data_config, training_data=False
-        )[Source.laqn]
+        test_df: pd.DataFrame = model_data.download_forecast_data(self.data_config)[
+            Source.laqn
+        ]
 
         # join train and test dataframes
         train_df["forecast"] = False
@@ -117,7 +117,8 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         result_df = self.query_results(
             self.instance_id, Source.laqn, output_type="df", with_location=False,
         )
-        return preprocess_dataframe_types(result_df)
+        result_df = preprocess_dataframe_types(result_df)
+        return result_df
 
     def __evaluate_group(
         self, group_df: pd.DataFrame, pollutant: Species

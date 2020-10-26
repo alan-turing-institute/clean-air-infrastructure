@@ -88,6 +88,19 @@ def result_df(
 
 
 @pytest.fixture(scope="function")
+def nans_df() -> pd.DataFrame:
+    """Nans in some columns."""
+    return pd.DataFrame(
+        dict(
+            NO2_mean=[1, 2, np.nan, 4],
+            NO2_var=[1, 2, 3, np.nan],
+            NO2=[1, np.nan, 3, 4],
+            nan_column=[np.nan, np.nan, np.nan, np.nan],  # should be ignored in tests
+        )
+    )
+
+
+@pytest.fixture(scope="function")
 def metrics_calculator(fake_laqn_svgp_instance, secretfile, connection_class):
     """Test the init function of the air quality metrics class."""
     return AirQualityMetrics(
