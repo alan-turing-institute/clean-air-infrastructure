@@ -189,7 +189,7 @@ def camera_today_average(
     response_model=List[JamCamMetaData],
     description="The locations and other metadata of all jamcams",
 )
-def metadata(db: Session = Depends(get_db),) -> Optional[List[JamCamMetaData]]:
+def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
 
