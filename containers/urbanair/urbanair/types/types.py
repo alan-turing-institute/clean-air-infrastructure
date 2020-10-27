@@ -12,6 +12,7 @@ class DetectionClass(str, Enum):
     person = "people"
     car = "cars"
     motorbike = "motorbikes"
+    bicycle = "bicycles"
     bus = "buses"
 
     @classmethod
@@ -23,6 +24,7 @@ class DetectionClass(str, Enum):
             "people": "person",
             "cars": "car",
             "motorbikes": "motorbike",
+            "bicycles": "bicycle",
             "buses": "bus",
         }
 

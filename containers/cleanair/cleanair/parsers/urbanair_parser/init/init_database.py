@@ -13,6 +13,8 @@ from ..state import (
     PROD_SECRET_DICT,
 )
 from ....loggers.logcolours import red, green
+from ....databases import DBInteractor
+from ..state import state
 
 app = typer.Typer(help="Initialise the CLI to connect to a database.")
 
@@ -92,3 +94,12 @@ def production() -> None:
         f"To remove credentials call {green('urbanair remove_config')}\n"
         f"{red('Credentials will expire after 5-60 minutes.')} If access required for longer contact admin"
     )
+
+
+@app.command()
+def tables():
+    """Initialises DB tables from SQLAlchemy definitions"""
+
+    state["logger"].info("Creating tables and views")
+
+    DBInteractor(secretfile=state["secretfile"], initialise_tables=True)
