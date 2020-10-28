@@ -92,36 +92,6 @@ def max_video_upload_q(db: Session) -> Query:
     )
 
 
-def get_jamcam_info(
-    jamcam_url: str = "https://api.tfl.gov.uk/Place/Type/JamCam/",
-) -> FeatureCollection:
-    "Request jamcam camera information and write to geoJSON"
-
-    cam_req = requests.get(jamcam_url)
-    if cam_req.status_code != 200:
-        raise HTTPException(
-            status_code=404,
-            detail="Could not get jamcam info. Please contact API administrator",
-        )
-
-    cam_data = cam_req.json()
-
-    output = list(
-        map(
-            lambda x: Feature(
-                id=x["id"].split("_")[1],
-                geometry=Point((x["lon"], x["lat"])),
-                properties={"camera_id": x["id"].split("_")[1]},
-            ),
-            cam_data,
-        )
-    )
-
-    out = FeatureCollection(output)
-
-    return out
-
-
 @db_query()
 def get_jamcam_available(
     db: Session,

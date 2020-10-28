@@ -77,16 +77,6 @@ def common_jamcam_params(
 
 
 @router.get(
-    "/camera_info",
-    description="GeoJSON: JamCam camera locations.",
-    response_model=JamCamFeatureCollection,
-)
-def camera_info() -> Response:
-    "Get camera info"
-    return get_jamcam_info()
-
-
-@router.get(
     "/available",
     description="""Check what jamcam data is available by hour.
     If no camera_id is provided returns an entry if data is available at any camera.
