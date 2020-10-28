@@ -16,7 +16,7 @@ from ..base import Base
 class JamCamFrameStats(Base):
     """Table of detection events"""
 
-    __tablename__ = "frame_stats_v3"
+    __tablename__ = "frame_stats_v4"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -45,7 +45,7 @@ class JamCamFrameStats(Base):
 class JamCamVideoStats(Base):
     """Table of detection counts"""
 
-    __tablename__ = "video_stats_v3"
+    __tablename__ = "video_stats_v4"
     __table_args__ = {"schema": "jamcam"}
 
     id = Column(BigInteger, primary_key=True, autoincrement=True)
