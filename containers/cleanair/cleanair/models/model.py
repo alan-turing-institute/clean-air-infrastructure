@@ -203,6 +203,7 @@ class ModelMixin:
         Args:
             logger_arg: Argument passed as a callback from GPFlow optimiser.
         """
+        # TODO save elbo every epoch
         if (self.epoch % self.refresh) == 0:
             session = self.model.enquire_session()
             objective = self.model.objective.eval(session=session)

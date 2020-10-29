@@ -14,6 +14,7 @@ from ..shared_args.model_options import (
     MinibatchSize,
     NumInducingPoints,
 )
+from ....types import FullDataConfig
 from ....types.model_types import (
     BaseModelParams,
     KernelParams,
@@ -64,58 +65,72 @@ def svgp(
 @app.command()
 def mrdgp(
     input_dir: Path = InputDir,
+    lengthscales: float = Lengthscales,
+    likelihood_variance: float = LikelihoodVariance,
     maxiter: int = MaxIter,
     num_inducing_points: int = NumInducingPoints,
+    minibatch_size: int = MinibatchSize,
+    variance: float = KernelVariance,
 ) -> None:
     """Create model params for Deep GP."""
+    # get the dimension of the data from the data config
+    file_manager = FileManager(input_dir)
+    data_config: FullDataConfig = file_manager.load_data_config(full=True)
+    num_space_dimensions = 2
+    num_time_dimensions = 1
+    num_static_features = len(data_config.feature_names)
+    num_dynamic_features = 0    # TODO once SCOOT is ready get num dynamic features
+    total_num_features = num_static_features + num_dynamic_features + num_space_dimensions + num_time_dimensions
+
+    # TODO assign value of parameter to all 
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
         type=KernelType.mr_se,
-        active_dims=[0, 1, 2],  # epoch, lat, lon
-        lengthscales=[0.1, 0.1, 0.1],
-        variance=[1.0, 1.0, 1.0],
+        active_dims=range(total_num_features),
+        lengthscales=[lengthscales] * total_num_features,
+        variance=[variance] * total_num_features,
     )
     base_laqn = BaseModelParams(
         kernel=base_laqn_kernel,
         num_inducing_points=num_inducing_points,
-        minibatch_size=100,
-        likelihood_variance=0.1,
+        minibatch_size=minibatch_size,
+        likelihood_variance=likelihood_variance,
         maxiter=maxiter,
     )
     base_sat_kernel = KernelParams(
         name="MR_SE_SAT_BASE",
         type=KernelType.mr_se,
-        active_dims=[0, 1, 2],  # epoch, lat, lon,
-        lengthscales=[0.1, 0.1, 0.1],
-        variance=[1.0, 1.0, 1.0],
+        active_dims=range(total_num_features),
+        lengthscales=[lengthscales] * total_num_features,
+        variance=[variance] * total_num_features,
     )
     base_sat = BaseModelParams(
         kernel=base_sat_kernel,
         num_inducing_points=num_inducing_points,
-        minibatch_size=100,
-        likelihood_variance=0.1,
+        minibatch_size=minibatch_size,
+        likelihood_variance=likelihood_variance,
         maxiter=maxiter,
     )
     dgp_sat_kernel = [
         KernelParams(
             name="MR_LINEAR_SAT_DGP",
             type=KernelType.mr_linear,
-            active_dims=[0],
-            variance=[1.0],
+            active_dims=[0],    # TODO only on output of base_sat
+            variance=[variance],
         ),
         KernelParams(
             name="MR_SE_SAT_DGP",
             type=KernelType.mr_se,
-            active_dims=[2, 3],
-            lengthscales=[0.1, 0.1],
-            variance=[1.0, 1.0],
+            active_dims=range(1, total_num_features), # space + static + dynamic (but not time)
+            lengthscales=[lengthscales] * (total_num_features - 1),
+            variance=[variance] * (total_num_features - 1),
         ),
     ]
     dgp_sat = BaseModelParams(
         kernel=dgp_sat_kernel,
         num_inducing_points=num_inducing_points,
-        minibatch_size=100,
-        likelihood_variance=0.1,
+        minibatch_size=minibatch_size,
+        likelihood_variance=likelihood_variance,
         maxiter=maxiter,
     )
     model_params = MRDGPParams(
@@ -127,5 +142,4 @@ def mrdgp(
         num_prediction_samples=1,
     )
     # Save model parameters
-    file_manager = FileManager(input_dir)
     file_manager.save_model_params(model_params)
