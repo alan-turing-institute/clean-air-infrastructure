@@ -73,16 +73,20 @@ def mrdgp(
     variance: float = KernelVariance,
 ) -> None:
     """Create model params for Deep GP."""
-    # get the dimension of the data from the data config
+    # get the dimension of the data from the data config to calculate number of features
     file_manager = FileManager(input_dir)
     data_config: FullDataConfig = file_manager.load_data_config(full=True)
     num_space_dimensions = 2
     num_time_dimensions = 1
     num_static_features = len(data_config.feature_names)
-    num_dynamic_features = 0    # TODO once SCOOT is ready get num dynamic features
-    total_num_features = num_static_features + num_dynamic_features + num_space_dimensions + num_time_dimensions
+    num_dynamic_features = 0  # TODO once SCOOT is ready get num dynamic features
+    total_num_features = (
+        num_static_features
+        + num_dynamic_features
+        + num_space_dimensions
+        + num_time_dimensions
+    )
 
-    # TODO assign value of parameter to all 
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
         type=KernelType.mr_se,
@@ -115,13 +119,15 @@ def mrdgp(
         KernelParams(
             name="MR_LINEAR_SAT_DGP",
             type=KernelType.mr_linear,
-            active_dims=[0],    # TODO only on output of base_sat
+            active_dims=[0],  # only active on output of base_sat
             variance=[variance],
         ),
         KernelParams(
             name="MR_SE_SAT_DGP",
             type=KernelType.mr_se,
-            active_dims=range(1, total_num_features), # space + static + dynamic (but not time)
+            active_dims=range(
+                1, total_num_features
+            ),  # space + static + dynamic (but not time)
             lengthscales=[lengthscales] * (total_num_features - 1),
             variance=[variance] * (total_num_features - 1),
         ),

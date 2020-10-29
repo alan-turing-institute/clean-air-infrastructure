@@ -1,33 +1,55 @@
 """Options for modelling."""
 
+from enum import Enum
 import typer
+from ....params import (
+    JITTER,
+    LENGTHSCALES,
+    LIKELIHOOD_VARIANCE,
+    KERNEL_VARIANCE,
+    MINIBATCH_SIZE,
+    NUM_INDUCING_POINTS,
+    MAXITER,
+)
 from ....types import KernelType
 
 # pylint: disable=C0103
 
-Ard = typer.Option(True, help="Set ARD.")
-Jitter = typer.Option(1e-5, help="Amount of jitter to add.", show_default=True)
+
+class ModelHelp(Enum):
+    """Help strings for modelling arguments."""
+
+    ard = "Automatic relevance determination (ARD) flag"
+    jitter = "Amount of jitter"
+    lengthscales = "Initialising lengthscales of the kernel"
+    likelihood_variance = "Initialising noise variance for the likelihood"
+    kernel_type = "Kernel for the Gaussian Process"
+    kernel_variance = "Initialising variance of the kernel"
+    minibatch_size = "Size of each batch for prediction"
+    num_inducing_points = "Number of inducing points"
+    maxiter = "Number of iterations to train the model for"
+    refresh = "Frequency of printing the ELBO"
+
+
+Ard = typer.Option(True, help=ModelHelp.ard.value)
+Jitter = typer.Option(JITTER, help=ModelHelp.jitter.value, show_default=True)
 Lengthscales = typer.Option(
-    1.0, help="Initialising lengthscales of the kernel.", show_default=True
+    LENGTHSCALES, help=ModelHelp.lengthscales.value, show_default=True
 )
 LikelihoodVariance = typer.Option(
-    0.1, help="Noise variance for the likelihood.", show_default=True,
+    LIKELIHOOD_VARIANCE, help=ModelHelp.likelihood_variance.value, show_default=True,
 )
 KernelType = typer.Option(
-    KernelType.matern32, help="Type of kernel.", show_default=True
+    KernelType.matern32, help=ModelHelp.kernel_type.value, show_default=True
 )
 KernelVariance = typer.Option(
-    1.0, help="Initialising variance of the kernel.", show_default=True
+    KERNEL_VARIANCE, help=ModelHelp.kernel_variance.value, show_default=True
 )
 MinibatchSize = typer.Option(
-    100, help="Size of each batch for prediction.", show_default=True
+    MINIBATCH_SIZE, help=ModelHelp.minibatch_size.value, show_default=True
 )
 NumInducingPoints = typer.Option(
-    1000, help="Number of inducing points.", show_default=True
+    NUM_INDUCING_POINTS, help=ModelHelp.num_inducing_points.value, show_default=True
 )
-MaxIter = typer.Option(
-    10000, help="Num iterations of training model", show_default=True,
-)
-Refresh = typer.Option(
-    default=10, help="Frequency of printing ELBO.", show_default=True
-)
+MaxIter = typer.Option(MAXITER, help=ModelHelp.maxiter.value, show_default=True,)
+Refresh = typer.Option(default=10, help=ModelHelp.refresh.value, show_default=True)
