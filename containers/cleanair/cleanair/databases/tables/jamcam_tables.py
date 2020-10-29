@@ -1,6 +1,6 @@
 """Tables for jamcam results"""
 from geoalchemy2 import Geometry
-from sqlalchemy import Column, String, BigInteger, Text, ForeignKey
+from sqlalchemy import Column, String, BigInteger, Text, ForeignKeyConstraint, PrimaryKeyConstraint
 from sqlalchemy import Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import (
     TIMESTAMP,
@@ -30,6 +30,13 @@ class JamCamVideoStats(Base):
     source = Column(SMALLINT, default=1, nullable=False)
     filename = Column(Text())
 
+    primary_key = PrimaryKeyConstraint(
+            camera_id,
+            video_upload_datetime,
+            detection_class,
+            name='primary_key'
+    )
+
     def __repr__(self):
         vals = [
             "{}='{}'".format(column, getattr(self, column))
@@ -47,7 +54,6 @@ class JamCamFrameStats(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     camera_id = Column(String(20))
     video_upload_datetime = Column(TIMESTAMP)
-    video_id = Column(BigInteger, ForeignKey(JamCamVideoStats.id))
     frame_id = Column(SMALLINT)
     detection_id = Column(SMALLINT)
     detection_class = Column(String(20))
@@ -60,6 +66,20 @@ class JamCamFrameStats(Base):
     creation_datetime = Column(TIMESTAMP)
     source = Column(SMALLINT, default=1, nullable=False)
     filename = Column(Text())
+
+    foreign_key = ForeignKeyConstraint(
+        [
+            camera_id,
+            video_upload_datetime,
+            detection_class
+        ],
+        [
+            JamCamVideoStats.camera_id,
+            JamCamVideoStats.video_upload_datetime,
+            JamCamVideoStats.detection_class
+        ],
+        name='video_key'
+    )
 
 
     def __repr__(self):
