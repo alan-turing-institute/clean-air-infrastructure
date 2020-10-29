@@ -8,8 +8,9 @@ from ....params import (
     LIKELIHOOD_VARIANCE,
     KERNEL_VARIANCE,
     MINIBATCH_SIZE,
-    NUM_INDUCING_POINTS,
     MAXITER,
+    MRDGP_NUM_INDUCING_POINTS,
+    SVGP_NUM_INDUCING_POINTS,
 )
 from ....types import KernelType
 
@@ -48,8 +49,15 @@ KernelVariance = typer.Option(
 MinibatchSize = typer.Option(
     MINIBATCH_SIZE, help=ModelHelp.minibatch_size.value, show_default=True
 )
-NumInducingPoints = typer.Option(
-    NUM_INDUCING_POINTS, help=ModelHelp.num_inducing_points.value, show_default=True
+MRDGPNumInducingPoints = typer.Option(
+    MRDGP_NUM_INDUCING_POINTS,
+    help=ModelHelp.num_inducing_points.value,
+    show_default=True,
+)
+SVGPNumInducingPoints = typer.Option(
+    SVGP_NUM_INDUCING_POINTS,
+    help=ModelHelp.num_inducing_points.value,
+    show_default=True,
 )
 MaxIter = typer.Option(MAXITER, help=ModelHelp.maxiter.value, show_default=True,)
 Refresh = typer.Option(default=10, help=ModelHelp.refresh.value, show_default=True)

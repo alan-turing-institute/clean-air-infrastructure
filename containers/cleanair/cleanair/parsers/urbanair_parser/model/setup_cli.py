@@ -12,7 +12,8 @@ from ..shared_args.model_options import (
     KernelVariance,
     MaxIter,
     MinibatchSize,
-    NumInducingPoints,
+    MRDGPNumInducingPoints,
+    SVGPNumInducingPoints,
 )
 from ....types import FullDataConfig
 from ....types.model_types import (
@@ -22,7 +23,7 @@ from ....types.model_types import (
     MRDGPParams,
     KernelType,
 )
-from ....utils import FileManager
+from ....utils import FileManager, total_num_features
 
 app = typer.Typer(help="Setup model parameters.")
 
@@ -37,7 +38,7 @@ def svgp(
     likelihood_variance: float = LikelihoodVariance,
     maxiter: int = MaxIter,
     minibatch_size: int = MinibatchSize,
-    num_inducing_points: int = NumInducingPoints,
+    num_inducing_points: int = SVGPNumInducingPoints,
     variance: float = KernelVariance,
 ):
     """Create model parameters for a Sparse Variational Gaussian Process."""
@@ -68,7 +69,7 @@ def mrdgp(
     lengthscales: float = Lengthscales,
     likelihood_variance: float = LikelihoodVariance,
     maxiter: int = MaxIter,
-    num_inducing_points: int = NumInducingPoints,
+    num_inducing_points: int = MRDGPNumInducingPoints,
     minibatch_size: int = MinibatchSize,
     variance: float = KernelVariance,
 ) -> None:
@@ -76,23 +77,14 @@ def mrdgp(
     # get the dimension of the data from the data config to calculate number of features
     file_manager = FileManager(input_dir)
     data_config: FullDataConfig = file_manager.load_data_config(full=True)
-    num_space_dimensions = 2
-    num_time_dimensions = 1
-    num_static_features = len(data_config.feature_names)
-    num_dynamic_features = 0  # TODO once SCOOT is ready get num dynamic features
-    total_num_features = (
-        num_static_features
-        + num_dynamic_features
-        + num_space_dimensions
-        + num_time_dimensions
-    )
+    n_features = total_num_features(data_config)
 
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
         type=KernelType.mr_se,
-        active_dims=range(total_num_features),
-        lengthscales=[lengthscales] * total_num_features,
-        variance=[variance] * total_num_features,
+        active_dims=range(n_features),
+        lengthscales=[lengthscales] * n_features,
+        variance=[variance] * n_features,
     )
     base_laqn = BaseModelParams(
         kernel=base_laqn_kernel,
@@ -104,9 +96,9 @@ def mrdgp(
     base_sat_kernel = KernelParams(
         name="MR_SE_SAT_BASE",
         type=KernelType.mr_se,
-        active_dims=range(total_num_features),
-        lengthscales=[lengthscales] * total_num_features,
-        variance=[variance] * total_num_features,
+        active_dims=range(n_features),
+        lengthscales=[lengthscales] * n_features,
+        variance=[variance] * n_features,
     )
     base_sat = BaseModelParams(
         kernel=base_sat_kernel,
@@ -115,6 +107,9 @@ def mrdgp(
         likelihood_variance=likelihood_variance,
         maxiter=maxiter,
     )
+    # the deep gp satellite kernel is a product: MR linear x MR squared exponential
+    # the linear kernel acts on the output of the base satellite gp model
+    # the squared exponential kernel acts on the spatial features (both static and dynamic)
     dgp_sat_kernel = [
         KernelParams(
             name="MR_LINEAR_SAT_DGP",
@@ -122,14 +117,15 @@ def mrdgp(
             active_dims=[0],  # only active on output of base_sat
             variance=[variance],
         ),
+        # NOTE: the below kernel acts on space + static + dynamic features
+        # but not time or the output of base_sat.
+        # thus the active dims start at index 2 (skipping time & base_sat output)
         KernelParams(
             name="MR_SE_SAT_DGP",
             type=KernelType.mr_se,
-            active_dims=range(
-                1, total_num_features
-            ),  # space + static + dynamic (but not time)
-            lengthscales=[lengthscales] * (total_num_features - 1),
-            variance=[variance] * (total_num_features - 1),
+            active_dims=range(2, n_features + 1),  # starts at index 2
+            lengthscales=[lengthscales] * (n_features - 1),
+            variance=[variance] * (n_features - 1),
         ),
     ]
     dgp_sat = BaseModelParams(
