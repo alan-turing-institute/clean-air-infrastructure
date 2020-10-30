@@ -41,7 +41,7 @@ class TestAirQaulityMetrics:
             len(observation_df.loc[~observation_df.forecast])
             == num_training_data_points
         )
-        assert observation_df.loc[observation_df.forecast]["NO2"].isnull().values.all()
+        assert observation_df.loc[observation_df.forecast]["NO2"].isnull().values.any()
         assert (
             ~observation_df.loc[~observation_df.forecast]["NO2"].isnull().values
         ).all()
