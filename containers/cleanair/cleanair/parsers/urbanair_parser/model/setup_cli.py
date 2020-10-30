@@ -82,7 +82,7 @@ def mrdgp(
     base_laqn_kernel = KernelParams(
         name="MR_SE_LAQN_BASE",
         type=KernelType.mr_se,
-        active_dims=range(n_features),
+        active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
     )
@@ -96,7 +96,7 @@ def mrdgp(
     base_sat_kernel = KernelParams(
         name="MR_SE_SAT_BASE",
         type=KernelType.mr_se,
-        active_dims=range(n_features),
+        active_dims=list(range(n_features)),
         lengthscales=[lengthscales] * n_features,
         variance=[variance] * n_features,
     )
@@ -123,7 +123,7 @@ def mrdgp(
         KernelParams(
             name="MR_SE_SAT_DGP",
             type=KernelType.mr_se,
-            active_dims=range(2, n_features + 1),  # starts at index 2
+            active_dims=list(range(2, n_features + 1)),  # starts at index 2
             lengthscales=[lengthscales] * (n_features - 1),
             variance=[variance] * (n_features - 1),
         ),
