@@ -15,11 +15,6 @@ class TestBasic:
         assert "text/html" in response.headers["content-type"]
         assert response.status_code == 200
 
-    def test_camera_info(self, client_class_odysseus):
-        "Test camera info API"
-        response = client_class_odysseus.get("/api/v1/jamcams/camera_info/")
-        assert response.status_code == 200
-
 
 class TestRaw:
     def test_setup(self, secretfile, connection_class, video_stat_records):
