@@ -4,6 +4,7 @@ from datetime import timedelta
 import numpy as np
 from nptyping import NDArray, Float
 import pytest
+import tensorflow as tf
 from cleanair.types import (
     DataConfig,
     FeaturesDict,

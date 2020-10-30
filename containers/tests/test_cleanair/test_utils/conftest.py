@@ -23,25 +23,6 @@ def model_name() -> ModelName:
     return ModelName.svgp
 
 
-@pytest.fixture(scope="function")
-def tf_session():
-    """A tensorflow session that lasts for only the scope of a function.
-
-    Yields:
-        Tensorflow session.
-    """
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        yield sess
-
-
-@pytest.fixture(autouse=True)
-def init_graph():
-    """Initialise a tensorflow graph."""
-    with tf.Graph().as_default():
-        yield
-
-
 @pytest.fixture(scope="session")
 def input_dir(tmp_path_factory) -> Path:
     """Temporary input directory."""

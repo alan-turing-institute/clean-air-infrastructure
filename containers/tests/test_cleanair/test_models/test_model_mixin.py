@@ -3,8 +3,9 @@
 from cleanair.models import SVGP
 
 
-def test_elbo_logger(svgp_model_params, x_train, y_train) -> None:
+def test_elbo_logger(tf_session, svgp_model_params, x_train, y_train) -> None:
     """Test the ELBO is saved at every iteration"""
+
     model = SVGP(svgp_model_params)
     assert len(model.elbo) == 0  # check elbo list is empty
     model.fit(x_train, y_train)
