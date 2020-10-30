@@ -232,102 +232,61 @@
 
     });
 
-    function loadData(start_time){
+    function loadData(date){
         console.debug("Loading data");
 
         let cameras; // To hold the camera data in between api calls
 
-        fetch('https://api.tfl.gov.uk/Place/Type/JamCam/')
+        fetch("  {{ url_for('metadata') }}  ")
         .then((response) => {
             return response.json();
         })
         .then((json) => {
-            cameras = new Map(json.map(cam => [cam.id.replace("JamCams_", ""), cam])); // Creates a list of cameras indexed by their id
-
-            let start = start_time + "T00%3A00%3A00";
-            // camera_hourly_average
-            camera_hourly_url = "{{ url_for('camera_hourly_average') }}"
-            return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_hourly_url}?detection_class=${detection_class}&starttime=${start}`)));
+            cameras = new Map(json.map(cam => [cam.id, cam])); // Creates a list of cameras indexed by their id
+            if (date == new Date().toISOString().split("T")[0]) {
+                const camera_today_url = "{{ url_for('camera_today_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_today_url}?detection_class=${detection_class}`)));
+            } else {
+                const camera_daily_url = "{{ url_for('camera_daily_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_daily_url}?detection_class=${detection_class}&date=${date}`)));
+            }
         })
         .then((responses) => {
             return Promise.all(responses.map(res => res.json()));
         })
         .then((detection_class_json_responses) => {
-            for (activities of detection_class_json_responses){
+            for (const activities of detection_class_json_responses){
 
                 let detection_class = activities[0].detection_class;
-                if (!detection_class){
-                    detection_class ='all';
-                }
-
                 let all_counts = activities.map(({counts}) => (counts));
-                
+                const max_count = Math.max(...all_counts);
                 histogramData[detection_class] = all_counts;
-                let avg_at_camera = [];
-                let last_hours = [];
-                let today = false;
-
-                for (camera_id of cameras.keys()){
-
-                    let items = activities.filter((item) => {return item.camera_id == camera_id});
-
-                    if (items.length > 0){
-                        let count = items.map(({counts}) => (counts));
-                        let sum_at_camera = count.reduce((previous, current) => current += previous);
-                        avg_at_camera.push(sum_at_camera/count.length);
-
-                        if (new Date(getDate()).toDateString() == new Date().toDateString()){
-                            let counts =  items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts})) 
-                            let time =  items.map(({measurement_start_utc}) => (new Date(measurement_start_utc)))
-                            let last_hour = counts.filter(function(last){return last.t == new Date(Math.max(...time)).toString()})
-                                
-                            last_hours.push(last_hour[0].y)
-                            today = true;
-                        }
-                    }  
-                }
-                
-                let max_final;
-                if (today){
-                    max_final = Math.max(...last_hours);
-                } else {
-                    max_final = Math.max(...avg_at_camera);
-                }
-
-                for ([camera_id, camera] of cameras.entries()){
-                    
-                    let final_value= 0    
-                    if (today == true ){
-                        if( last_hours.length > 0){
-                            final_value= last_hours.shift()
-                        } 
-                    }  
-                    else{
-                        if (avg_at_camera.length > 0){
-                            final_value = avg_at_camera.shift()
-                        } 
-                    }       
-
-                    const colour = VIRIDIS[Math.floor(Math.min(parseInt(final_value)/max_final, 1) * 255)];
-                    mapData.features.push(
-                        {
-                            'type': 'Feature',
-                            'geometry': {
-                                'type': 'Point',
-                                'coordinates': [
-                                    camera.lon,
-                                    camera.lat
-                                ]
-                            },
-                            'properties': {
-                                'id': camera_id,
-                                'type': detection_class,
-                                'red': 255 * colour[0],
-                                'blue': 255 * colour[1],
-                                'green': 255 * colour[2],
-                            }   
-                        }
-                    )
+                for (const measurement of activities) {
+                    const camera_id = measurement.camera_id;
+                    const camera = cameras.get(camera_id);
+                    if (camera != undefined) {
+                        const counts = parseInt(measurement.counts);
+                        const colour = VIRIDIS[Math.floor(Math.min(counts / max_count, 1) * 255)];
+                        mapData.features.push(
+                            {
+                                'type': 'Feature',
+                                'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [
+                                        camera.lon,
+                                        camera.lat
+                                    ]
+                                },
+                                'properties': {
+                                    'id': camera_id,
+                                    'type': detection_class,
+                                    'red': 255 * colour[0],
+                                    'blue': 255 * colour[1],
+                                    'green': 255 * colour[2],
+                                }
+                            }
+                        )
+                    }
                 }
             }
             map.getSource('jamcams').setData(mapData); // This loads the data into mapbox
