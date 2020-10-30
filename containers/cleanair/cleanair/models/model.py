@@ -210,9 +210,7 @@ class ModelMixin:
         self.elbo.append(objective)
         if (self.epoch % self.refresh) == 0:
             self.logger.info(
-                "Iteration: %s, ELBO: %s",
-                self.epoch,
-                objective,
+                "Iteration: %s, ELBO: %s", self.epoch, objective,
             )
         self.epoch += 1
 

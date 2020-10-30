@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 from pathlib import Path
 import pytest
 import numpy as np
@@ -97,3 +97,9 @@ def target_df(dataset_start_date, dataset_end_date) -> pd.DataFrame:
             source=np.repeat(Source.laqn.value, days * 24),
         )
     )
+
+
+@pytest.fixture(scope="function")
+def elbo() -> List[float]:
+    """ELBO observations"""
+    return [1.0] * 10
