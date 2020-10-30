@@ -12,7 +12,6 @@ from ...databases import get_db, all_or_404
 from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
-    get_jamcam_info,
     get_jamcam_hourly,
     get_jamcam_daily,
     get_jamcam_today,
