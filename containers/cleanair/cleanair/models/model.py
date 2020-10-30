@@ -47,6 +47,7 @@ class ModelMixin:
             raise NotImplementedError("Multiple pollutants not supported yet.")
         # other misc arguments
         self.model = None
+        self.elbo: List[float] = []
         self.epoch = 0
         self.batch_size = batch_size
         self.refresh = refresh
@@ -197,21 +198,21 @@ class ModelMixin:
             if x_test[source].shape[0] == 0:
                 raise ValueError("x_test has no data for {src}.".format(src=source))
 
-    def elbo_logger(self, logger_arg) -> None:
+    def elbo_logger(self, logger_arg) -> None:  # pylint: disable=unused-argument
         """Log optimisation progress.
 
         Args:
             logger_arg: Argument passed as a callback from GPFlow optimiser.
         """
-        # TODO save elbo every epoch
+        # save elbo every epoch
+        session = self.model.enquire_session()
+        objective = self.model.objective.eval(session=session)
+        self.elbo.append(objective)
         if (self.epoch % self.refresh) == 0:
-            session = self.model.enquire_session()
-            objective = self.model.objective.eval(session=session)
             self.logger.info(
-                "Model fitting. Iteration: %s, ELBO: %s, Arg: %s",
+                "Iteration: %s, ELBO: %s",
                 self.epoch,
                 objective,
-                logger_arg,
             )
         self.epoch += 1
 
