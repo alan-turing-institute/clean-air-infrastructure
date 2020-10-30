@@ -237,10 +237,14 @@ def get_jamcam_today(
 ) -> Query:
     """Get daily hourly average count"""
 
-    query = db.query(JamcamTodayStatsView)
+    query = db.query(
+        JamcamTodayStatsView.camera_id.label("camera_id"),
+        JamcamTodayStatsView.counts.label("counts"),
+        JamcamTodayStatsView.detection_class.label("detection_class")
+    )
 
     query = query.filter(
-        JamCamDayStats.detection_class
+        JamcamTodayStatsView.detection_class
         == DetectionClass.map_detection_class(detection_class)
     )
 
