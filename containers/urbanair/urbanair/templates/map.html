@@ -218,23 +218,6 @@
                 'circle-opacity': 0.7
             }
         })
-        // Highlights the flagged cameras on the map:
-        map.addLayer({
-            id: 'jamcams-flaggged',
-            type: 'circle',
-            source: 'jamcams',
-            filter: [
-                '==',
-                'flag',
-                1
-            ],
-            paint: {
-                'circle-radius': 10,
-                'circle-stroke-color': 'orange',
-                'circle-stroke-width': 2,
-                'circle-opacity': 0,
-            }
-        })
         // Highlights the selected camera on the map:
         map.addLayer({
             id: 'jamcams-highlighted',
