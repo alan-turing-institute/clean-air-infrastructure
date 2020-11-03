@@ -50,7 +50,7 @@ from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
-def valid_config(dataset_start_date, dataset_end_date):
+def valid_config(dataset_start_date, dataset_end_date) -> DataConfig:
     "Valid config for 'fake_cleanair_dataset' fixture"
 
     return DataConfig(
@@ -560,7 +560,7 @@ def scoot_writer(
     dataset_start_date,
     dataset_end_date,
 ):
-    "Return a ScootWriter instance"
+    "Return a ScootWriter instance which inserts data for all detectors but one"
 
     def request_remote_data(
         start_datetime_utc, detector_ids,
