@@ -247,6 +247,7 @@ class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
         Args:
             df_readings: A dataframe containing one hour of scoot readings.
                 If multiple hour are provided will only process the first hour
+            start_datetime_utc: A datetime. Will be truncated to an hour.
         """
         # Get the minimum and maximum time in the dataset
         time_min = start_datetime_utc
