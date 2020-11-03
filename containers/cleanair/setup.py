@@ -22,6 +22,7 @@ setuptools.setup(
         "pyeccodes==0.1.1",
         "geoalchemy2==0.6.3",
         "gitpython==3.1.0",
+        "h5py==2.10.0",
         "holidays==0.9.8",
         "nptyping==1.2.0",
         "numpy==1.18.5",
