@@ -18,7 +18,7 @@ from ..databases.tables import ScootReading
 from ..decorators import db_query
 from ..loggers import get_logger, green, duration, duration_from_seconds
 from ..mixins import DateRangeMixin, ScootQueryMixin
-from ..timestamps import datetime_from_unix, unix_from_str, utcstr_from_datetime
+from ..timestamps import unix_from_str, utcstr_from_datetime
 
 
 class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
