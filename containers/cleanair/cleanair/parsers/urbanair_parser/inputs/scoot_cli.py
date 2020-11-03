@@ -60,13 +60,12 @@ def fill(
     default_logger = initialise_logging(state["verbose"])
 
     # Update the SCOOT reading table on the database, logging any unhandled exceptions
-
     scoot_writer = ScootWriter(
         end=upto,
         nhours=nhours + ndays,
         secretfile=state["secretfile"],
         aws_key_id=aws_key_id,
         aws_key=aws_key,
-        detector_ids=detectors if detectors else None,
+        detector_ids=list(detectors) if detectors else None,
     )
     scoot_writer.update_remote_tables()
