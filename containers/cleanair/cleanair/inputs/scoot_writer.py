@@ -30,7 +30,7 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
     """Read scoot data"""
 
-    def __init__(self, detector_ids=None, **kwargs):
+    def __init__(self, detector_ids=None, **kwargs) -> None:
 
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -75,7 +75,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
         start_date: str,
         end_date: Optional[str] = None,
         detector_ids: Optional[List[str]] = None,
-    ):
+    ) -> Any:
         """Generate expected scoot readings between start_date and end_date"""
 
         detectors_sq = self.scoot_detectors(
