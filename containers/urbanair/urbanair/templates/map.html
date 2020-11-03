@@ -242,7 +242,7 @@
             return response.json();
         })
         .then((json) => {
-            cameras = new Map(json.map(cam => [cam.id.replace("JamCams_", ""), cam])); // Creates a list of cameras indexed by their id
+            cameras = new Map(json.map(cam => [cam.id, cam])); // Creates a list of cameras indexed by their id
             if (date == new Date().toISOString().split("T")[0]) {
                 const camera_today_url = "{{ url_for('camera_today_average') }}"
                 return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_today_url}?detection_class=${detection_class}`)));
@@ -264,27 +264,29 @@
                 for (const measurement of activities) {
                     const camera_id = measurement.camera_id;
                     const camera = cameras.get(camera_id);
-                    const counts = parseInt(measurement.counts);
-                    const colour = VIRIDIS[Math.floor(Math.min(counts/max_count, 1) * 255)];
-                    mapData.features.push(
-                        {
-                            'type': 'Feature',
-                            'geometry': {
-                                'type': 'Point',
-                                'coordinates': [
-                                    camera.lon,
-                                    camera.lat
-                                ]
-                            },
-                            'properties': {
-                                'id': camera_id,
-                                'type': detection_class,
-                                'red': 255 * colour[0],
-                                'blue': 255 * colour[1],
-                                'green': 255 * colour[2],
-                            }   
-                        }
-                    )
+                    if (camera != undefined) {
+                        const counts = parseInt(measurement.counts);
+                        const colour = VIRIDIS[Math.floor(Math.min(counts / max_count, 1) * 255)];
+                        mapData.features.push(
+                            {
+                                'type': 'Feature',
+                                'geometry': {
+                                    'type': 'Point',
+                                    'coordinates': [
+                                        camera.lon,
+                                        camera.lat
+                                    ]
+                                },
+                                'properties': {
+                                    'id': camera_id,
+                                    'type': detection_class,
+                                    'red': 255 * colour[0],
+                                    'blue': 255 * colour[1],
+                                    'green': 255 * colour[2],
+                                }
+                            }
+                        )
+                    }
                 }
             }
             map.getSource('jamcams').setData(mapData); // This loads the data into mapbox

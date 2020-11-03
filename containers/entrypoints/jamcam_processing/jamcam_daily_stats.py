@@ -38,7 +38,7 @@ DETECTION_CLASS_MAP = {
     "buses": "bus",
 }
 
-DATE = datetime.date.today() - datetime.timedelta(days=1)
+DATE = datetime.date.today()
 
 # pylint: disable=C0103
 
