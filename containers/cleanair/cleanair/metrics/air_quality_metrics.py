@@ -51,79 +51,17 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         self.mae = mae
         self.mse = mse
         self.r2_score = r2_score
-
-        # load the result and instance dataframes from DB
-        self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
-        self.result_df: pd.DataFrame = self.query_results(
-            instance_id, Source.laqn, output_type="df", with_location=False,
-        )
         instance_df = self.get_instances_with_params(
             instance_ids=[instance_id], output_type="df"
         )
         # check there is an instance in the database with the id passed
         if len(instance_df) == 0:
-            raise ValueError(
-                "Instance ID %s was not found in the database. Try a different ID."
-            )
+            raise ValueError("Instance ID %s not in DB. Try a different ID.")
 
-        # load the actual observations from the database
-        self.logger.info(
-            "Reading training and test data to later compare against our predictions."
-        )
+        # create a data config that only downloads laqn data
         self.data_config = FullDataConfig(**instance_df.at[0, "data_config"])
-        # NOTE: we only care about evaluating metrics on laqn
-        model_data = ModelData(secretfile=secretfile)
-        self.logger.info("Reading training data from database for LAQN.")
-        train_df: pd.DataFrame = model_data.download_source_data(
-            start_date=self.data_config.train_start_date,
-            end_date=self.data_config.train_end_date,
-            species=self.data_config.species,
-            point_ids=self.data_config.train_interest_points,
-            features=self.data_config.features,
-            source=Source.laqn,
-            with_sensor_readings=True,
-        )
-        train_df["forecast"] = False  # split into train and test
+        self.data_config = keep_only_laqn_from_data_config(self.data_config)
 
-        # only want to query laqn data
-        test_df = model_data.download_source_data(
-            start_date=self.data_config.pred_start_date,
-            end_date=self.data_config.pred_end_date,
-            species=self.data_config.species,
-            point_ids=self.data_config.pred_interest_points,
-            features=self.data_config.features,
-            source=Source.laqn,
-            with_sensor_readings=True,
-        )
-        test_df["forecast"] = True
-        self.observation_df: pd.DataFrame = pd.concat(
-            [train_df, test_df], ignore_index=True
-        )
-
-        # ensure point ids are both strings
-        self.observation_df["point_id"] = self.observation_df.point_id.apply(str)
-        self.result_df["point_id"] = self.result_df.point_id.apply(str)
-
-        # ensure both datetimes are utc
-        self.observation_df["measurement_start_utc"] = pd.to_datetime(
-            self.observation_df.measurement_start_utc, utc=True
-        )
-        self.result_df["measurement_start_utc"] = pd.to_datetime(
-            self.result_df.measurement_start_utc, utc=True
-        )
-        self.logger.debug(self.observation_df)
-        self.logger.debug(
-            "%s rows in the observation dataframe.", len(self.observation_df)
-        )
-        self.logger.debug("%s rows in the result dataframe.", len(self.result_df))
-        self.logger.debug(
-            "Number of intersecting point ids is %s",
-            len(
-                set(self.observation_df.point_id.unique()).intersection(
-                    self.result_df.point_id.unique()
-                )
-            ),
-        )
         # empty dataframe for spatial metrics
         self.spatial_df = pd.DataFrame(
             columns=get_columns_of_table(AirQualitySpatialMetricsTable)
@@ -153,6 +91,35 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
         """The air quality instance table."""
         return AirQualityInstanceTable
 
+    def load_observation_df(self, model_data: ModelData) -> pd.DataFrame:
+        """Load the observations for the train and test period."""
+        # download only laqn data
+        self.logger.info(
+            "Reading training and test data to compare against predictions."
+        )
+        train_df: pd.DataFrame = model_data.download_config_data(self.data_config)[
+            Source.laqn
+        ]
+        test_df: pd.DataFrame = model_data.download_forecast_data(self.data_config)[
+            Source.laqn
+        ]
+
+        # join train and test dataframes
+        train_df["forecast"] = False
+        test_df["forecast"] = True
+        observation_df: pd.DataFrame = pd.concat([train_df, test_df], ignore_index=True)
+        observation_df = preprocess_dataframe_types(observation_df)
+        return observation_df
+
+    def load_result_df(self) -> None:
+        """Load the results for the instance."""
+        self.logger.info("Reading results for LAQN for instance %s.", self.instance_id)
+        result_df = self.query_results(
+            self.instance_id, Source.laqn, output_type="df", with_location=False,
+        )
+        result_df = preprocess_dataframe_types(result_df)
+        return result_df
+
     def __evaluate_group(
         self, group_df: pd.DataFrame, pollutant: Species
     ) -> Dict[str, float]:
@@ -177,11 +144,14 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             )
         return group_metrics
 
-    def evaluate_temporal_metrics(self) -> None:
+    def evaluate_temporal_metrics(
+        self, observation_df: pd.DataFrame, result_df: pd.DataFrame
+    ) -> None:
         """Evaluate metrics by grouping by the datetime."""
-        joined_df = self.observation_df.merge(
-            self.result_df, on=["point_id", "measurement_start_utc"], how="inner"
+        joined_df = observation_df.merge(
+            result_df, on=["point_id", "measurement_start_utc"], how="inner"
         )
+        joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(
             "Evaluating metrics temporally - group by datetime and calculate metrics across each time slice."
         )
@@ -201,18 +171,14 @@ class AirQualityMetrics(DBWriter, InstanceQueryMixin, ResultQueryMixin):
             "%s rows in the temporal metrics dataframe.", len(self.temporal_df)
         )
 
-    def evaluate_spatial_metrics(self) -> None:
+    def evaluate_spatial_metrics(
+        self, observation_df: pd.DataFrame, result_df: pd.DataFrame
+    ) -> None:
         """Evaluate metrics by grouping by point id."""
-        self.logger.debug(
-            "Columns in left (observation) df %s", list(self.observation_df.columns)
+        joined_df = observation_df.merge(
+            result_df, on=["point_id", "measurement_start_utc"], how="inner",
         )
-        self.logger.debug(
-            "Columns in right (result) df %s", list(self.result_df.columns)
-        )
-        joined_df = self.observation_df.merge(
-            self.result_df, on=["point_id", "measurement_start_utc"], how="inner",
-        )
-        self.logger.debug(joined_df)
+        joined_df = remove_rows_with_nans(joined_df, self.data_config.species)
         self.logger.info(
             "Evaluating metrics spatially - group by point_id and calculate metrics for each sensor."
         )
@@ -260,6 +226,33 @@ def get_columns_of_table(table: Base) -> List[str]:
 
 def remove_rows_with_nans(joined_df: pd.DataFrame, species: List[Species]):
     """Remove rows with NaN as an observation."""
-    cols_to_check = species.copy()
-    cols_to_check.extend(map(lambda x: x.value + "_mean", cols_to_check))
+    cols_to_check = []
+    for pollutant in species:
+        cols_to_check.extend(
+            [pollutant.value, pollutant.value + "_mean", pollutant.value + "_var"]
+        )
     return joined_df.loc[joined_df[cols_to_check].dropna().index]
+
+
+def keep_only_laqn_from_data_config(data_config: FullDataConfig) -> FullDataConfig:
+    """Only keep the laqn source and interest points from the data config."""
+    data_config.train_sources = [Source.laqn]
+    data_config.train_interest_points = {
+        Source.laqn: data_config.train_interest_points[Source.laqn]
+    }
+    data_config.pred_sources = [Source.laqn]
+    data_config.pred_interest_points = {
+        Source.laqn: data_config.pred_interest_points[Source.laqn]
+    }
+    return data_config
+
+
+def preprocess_dataframe_types(dframe: pd.DataFrame) -> pd.DataFrame:
+    """Convert datetimes to utc and ensure point ids are strings."""
+    # ensure point ids are both strings
+    dframe["point_id"] = dframe.point_id.apply(str)
+    # ensure both datetimes are utc
+    dframe["measurement_start_utc"] = pd.to_datetime(
+        dframe.measurement_start_utc, utc=True
+    )
+    return dframe

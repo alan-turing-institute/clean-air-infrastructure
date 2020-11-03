@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 20278492ed41f82f5262034a989de2d1f56dddf3
+imageTag: 7272fe05ada2056cd9320bf7a3d86048df5eaaae
 
 # jobs:
 
@@ -76,7 +76,7 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
-  
+
   - name: input-laqn
     schedule: "5 * * * *"
     concurrencyPolicy: Allow
@@ -126,6 +126,26 @@ cronjobs:
         repository: cleanairdocker.azurecr.io/cleanair
         imagePullPolicy: IfNotPresent
     args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "0", "--nhours", "5", "--upto", "lasthour"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: forecast-scoot
+    schedule: "* 22 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--traindays", "14", "--preddays", "2", "--trainupto", "today"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -259,6 +279,32 @@ cronjobs:
           cpu: "23"
           nvidia.com/gpu: 4
 
+  - name: compute-daily-average-counts
+    schedule: "0 23 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+      repository: cleanairdocker.azurecr.io/jamcamcron
+      imagePullPolicy: IfNotPresent
+    env:
+      - name: DB_SECRET_FILE
+        value: "/secrets/db_secrets.json"
+    command: ["python", "/scripts/jamcam_daily_stats.py"]
+    imagePullSecrets:
+      - name: regcred
+    volumeMounts:
+      - name: secrets
+        mountPath: "/secrets/"
+        readOnly: true
+    volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+    resources:
+      limits:
+        cpu: "0.5"
+
   - name: test-jamcam-cron-on-half-hour
     schedule: "30 4-19 * * *"
     concurrencyPolicy: Allow
@@ -307,7 +353,7 @@ cronjobs:
         cpu: "23"
         nvidia.com/gpu: 4
 
-  - name: test-jamcam-cron-view-refresh
+  - name: jamcam-cron-view-refresh
     schedule: "0 4-19 * * *"
     concurrencyPolicy: Forbid
     restartPolicy: OnFailure
@@ -455,7 +501,7 @@ deployments:
       resources:
         requests:
             cpu: "0.5"
-    
+
     - name: dev-api
       replicas: 1
       image:
@@ -497,7 +543,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: odysseus-api
       ports:
         - name: http
@@ -506,7 +552,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: dev-api
       ports:
         - name: http
