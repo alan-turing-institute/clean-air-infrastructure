@@ -4,7 +4,7 @@ import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
-from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
 
@@ -19,7 +19,6 @@ from ...databases.queries import (
 from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
-    JamCamFeatureCollection,
     JamCamAvailable,
     JamCamMetaData,
     JamCamDailyAverage,

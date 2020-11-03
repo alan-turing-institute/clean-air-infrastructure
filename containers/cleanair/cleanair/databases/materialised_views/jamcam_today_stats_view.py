@@ -1,4 +1,3 @@
-
 """
 Views of London boundary static data
 """
@@ -26,9 +25,9 @@ class JamcamTodayStatsView(Base):
                     JamCamVideoStats.camera_id.label("camera_id"),
                     func.avg(JamCamVideoStats.counts).label("counts"),
                     JamCamVideoStats.detection_class.label("detection_class"),
-                    func.date_trunc("day", JamCamVideoStats.video_upload_datetime).label(
-                        "measurement_start_utc"
-                    ),
+                    func.date_trunc(
+                        "day", JamCamVideoStats.video_upload_datetime
+                    ).label("measurement_start_utc"),
                 ]
             )
             .where(
@@ -45,9 +44,9 @@ class JamcamTodayStatsView(Base):
                     JamCamVideoStats.camera_id.label("camera_id"),
                     func.avg(JamCamVideoStats.counts).label("counts"),
                     literal("all").label("detection_class"),
-                    func.date_trunc("day", JamCamVideoStats.video_upload_datetime).label(
-                        "measurement_start_utc"
-                    )
+                    func.date_trunc(
+                        "day", JamCamVideoStats.video_upload_datetime
+                    ).label("measurement_start_utc"),
                 ],
             )
             .where(
@@ -57,7 +56,7 @@ class JamcamTodayStatsView(Base):
             .group_by(
                 func.date_trunc("day", JamCamVideoStats.video_upload_datetime),
                 JamCamVideoStats.camera_id,
-            )
+            ),
         ),
         metadata=Base.metadata,
     )

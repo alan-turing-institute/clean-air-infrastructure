@@ -1,19 +1,16 @@
 """Jamcam database queries and external api calls"""
 from datetime import datetime, timedelta, date
 from typing import Optional
-
-import requests
-from cleanair.databases.materialised_views.jamcam_today_stats_view import (
-    JamcamTodayStatsView,
-)
-from cleanair.databases.tables import JamCamDayStats
-from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
-from cleanair.decorators import db_query
-from fastapi import HTTPException
-from geojson import Feature, Point, FeatureCollection
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
+
+from cleanair.decorators import db_query
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
+from cleanair.databases.materialised_views.jamcam_today_stats_view import (
+    JamcamTodayStatsView,
+)
 
 from ...types import DetectionClass
 
@@ -240,7 +237,7 @@ def get_jamcam_today(
     query = db.query(
         JamcamTodayStatsView.camera_id.label("camera_id"),
         JamcamTodayStatsView.counts.label("counts"),
-        JamcamTodayStatsView.detection_class.label("detection_class")
+        JamcamTodayStatsView.detection_class.label("detection_class"),
     )
 
     query = query.filter(
