@@ -1,14 +1,20 @@
 """Jamcam database queries and external api calls"""
+from datetime import datetime, timedelta, date
 from typing import Optional
-from datetime import datetime, timedelta
+
+import requests
+from cleanair.databases.materialised_views.jamcam_today_stats_view import (
+    JamcamTodayStatsView,
+)
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
+from cleanair.decorators import db_query
 from fastapi import HTTPException
+from geojson import Feature, Point, FeatureCollection
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
-from geojson import Feature, Point, FeatureCollection
-import requests
-from cleanair.databases.tables import JamCamVideoStats
-from cleanair.decorators import db_query
+
 from ...types import DetectionClass
 
 # TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
@@ -222,3 +228,64 @@ def get_jamcam_hourly(
     res = detection_class_filter(res, detection_class)
 
     return res
+
+
+@db_query()
+def get_jamcam_daily(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+    day: Optional[date] = None,
+) -> Query:
+    """Get daily hourly average count"""
+
+    query = db.query(
+        JamCamDayStats.camera_id.label("camera_id"),
+        JamCamDayStats.count.label("counts"),
+        JamCamDayStats.detection_class.label("detection_class"),
+    )
+
+    query = query.filter(
+        JamCamDayStats.detection_class
+        == DetectionClass.map_detection_class(detection_class)
+    )
+
+    if camera_id:
+        query = query.filter(JamCamDayStats.camera_id == camera_id)
+
+    if date:
+        query = query.filter(JamCamDayStats.date == day)
+
+    return query
+
+
+@db_query()
+def get_jamcam_today(
+    db: Session,
+    camera_id: Optional[str],
+    detection_class: DetectionClass = DetectionClass.all_classes,
+) -> Query:
+    """Get daily hourly average count"""
+
+    query = db.query(JamcamTodayStatsView)
+
+    query = query.filter(
+        JamCamDayStats.detection_class
+        == DetectionClass.map_detection_class(detection_class)
+    )
+
+    if camera_id:
+        query = query.filter(JamCamDayStats.camera_id == camera_id)
+
+    return query
+
+
+@db_query()
+def get_jamcam_metadata(db: Session) -> Query:
+    "Return jamcam meta data"
+    return db.query(
+        JamCamMetaData.camera_id.label("id"),
+        func.ST_Y(JamCamMetaData.location).label("lat"),
+        func.ST_X(JamCamMetaData.location).label("lon"),
+        JamCamMetaData.flag.label("flag"),
+    )

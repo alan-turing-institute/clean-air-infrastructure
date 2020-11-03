@@ -1,10 +1,14 @@
 """Types for the cleanair package."""
 
 from .enum_types import (
+    Borough,
+    ClusterId,
+    Tag,
     Species,
     Source,
     FeatureNames,
     FeatureBufferSize,
+    KernelType,
     ModelName,
 )
 from .dataset_types import (
@@ -22,12 +26,12 @@ from .model_types import (
     BaseModelParams,
     KernelParams,
     MRDGPParams,
-    ParamsDict,
     SVGPParams,
 )
 
 
 __all__ = [
+    "Borough",
     "BaseModelParams",
     "DataConfig",
     "FullDataConfig",
@@ -37,9 +41,8 @@ __all__ = [
     "IndexDict",
     "IndexedDatasetDict",
     "InterestPointDict",
-    "KernelParams",
+    "KernelType",
     "MRDGPParams",
-    "ParamsDict",
     "NDArrayTuple",
     "SVGPParams",
     "TargetDict",

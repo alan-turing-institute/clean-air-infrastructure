@@ -2,8 +2,8 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
-from typing import Tuple
-from datetime import timedelta
+from typing import Any, Tuple
+from datetime import datetime, timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
@@ -19,6 +19,7 @@ from cleanair.databases.tables import (
     SatelliteBox,
     SatelliteGrid,
     StaticFeature,
+    SatelliteForecast,
 )
 from cleanair.databases.tables.fakes import (
     MetaPointSchema,
@@ -29,19 +30,23 @@ from cleanair.databases.tables.fakes import (
     StaticFeaturesSchema,
     SatelliteBoxSchema,
     SatelliteGridSchema,
+    SatelliteForecastSchema,
 )
+from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
+    FeatureNames,
     KernelParams,
+    KernelType,
     MRDGPParams,
     Source,
     Species,
     SVGPParams,
-    FeatureNames,
 )
+from ..data_generators.scoot_generator import ScootGenerator
 
-
+# pylint: disable=W0613
 @pytest.fixture(scope="class")
 def valid_config(dataset_start_date, dataset_end_date):
     "Valid config for 'fake_cleanair_dataset' fixture"
@@ -77,14 +82,13 @@ def valid_config(dataset_start_date, dataset_end_date):
             ],
             "buffer_sizes": ["1000", "500"],
             "norm_by": "laqn",
-            "model_type": "svgp",
         }
     )
 
 
 @pytest.fixture(scope="class")
 def valid_full_config_dataset(valid_config, model_config, fake_cleanair_dataset):
-
+    "Generate a full configuration file"
     return model_config.generate_full_config(valid_config)
 
 
@@ -355,6 +359,35 @@ def satellite_meta_point_and_box_records(satellite_box_records):
 
 
 @pytest.fixture(scope="module")
+def satellite_forecast(
+    satellite_box_records, dataset_start_date, dataset_end_date,
+):
+    """Generate satellitee forecast data"""
+
+    box_ids = [i.id for i in satellite_box_records]
+    all_satellite_forecast = []
+    for box in box_ids:
+        for species in Species:
+            for reference_start_utc in rrule.rrule(
+                rrule.DAILY, dtstart=dataset_start_date, until=dataset_end_date,
+            ):
+                for measurement_start_utc in rrule.rrule(
+                    rrule.HOURLY, dtstart=reference_start_utc, count=72,
+                ):
+
+                    all_satellite_forecast.append(
+                        SatelliteForecastSchema(
+                            reference_start_utc=reference_start_utc,
+                            measurement_start_utc=measurement_start_utc,
+                            species_code=species.value,
+                            box_id=box,
+                        )
+                    )
+
+    return all_satellite_forecast
+
+
+@pytest.fixture(scope="module")
 def meta_records(
     meta_within_london,
     meta_within_london_closed,
@@ -400,6 +433,7 @@ def fake_cleanair_dataset(
     satellite_box_records,
     satellite_meta_point_and_box_records,
     static_feature_records,
+    satellite_forecast,
 ):
     """Insert a fake air quality dataset into the database"""
 
@@ -448,6 +482,13 @@ def fake_cleanair_dataset(
         [SatelliteGrid(**i.dict()) for i in sat_box_map], on_conflict="overwrite",
     )
 
+    # Insert satellite readings
+    writer.commit_records(
+        [i.dict() for i in satellite_forecast],
+        on_conflict="overwrite",
+        table=SatelliteForecast,
+    )
+
     # Insert static features data
     writer.commit_records(
         [i.dict() for i in static_feature_records],
@@ -457,9 +498,33 @@ def fake_cleanair_dataset(
 
 
 @pytest.fixture(scope="function")
+def scoot_generator(
+    secretfile: str,
+    connection: Any,
+    dataset_start_date: datetime,
+    dataset_end_date: datetime,
+) -> ScootGenerator:
+    """Initialise a scoot writer."""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        0,
+        100,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
-    return KernelParams(name="matern32", type="matern32",)
+    return KernelParams(
+        name="matern32",
+        type=KernelType.matern32,
+        lengthscales=1.0,
+        variance=1.0,
+        ARD=True,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -481,13 +546,50 @@ def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
 
 
 @pytest.fixture(scope="function")
-def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
+def mr_linear_params() -> KernelParams:
+    """Matern 32 kernel params."""
+    return KernelParams(
+        name="mr_linear",
+        type=KernelType.mr_linear,
+        lengthscales=[1.0, 1.0, 1.0],
+        variance=[1.0, 1.0, 1.0],
+        ARD=True,
+        active_dims=[0, 1, 2],
+    )
+
+
+@pytest.fixture(scope="function")
+def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
+    """Model params for sub-MRDGP"""
+    return BaseModelParams(
+        kernel=mr_linear_params,
+        likelihood_variance=1.0,
+        num_inducing_points=10,
+        maxiter=10,
+        minibatch_size=10,
+    )
+
+
+@pytest.fixture(scope="function")
+def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
     """Create MRDGP model params."""
     return MRDGPParams(
-        base_laqn=base_model.copy(),
-        base_sat=base_model.copy(),
-        dgp_sat=base_model.copy(),
+        base_laqn=sub_model.copy(),
+        base_sat=sub_model.copy(),
+        dgp_sat=sub_model.copy(),
         mixing_weight=dict(name="dgp_only", param=None),
         num_prediction_samples=10,
         num_samples_between_layers=10,
     )
+
+
+@pytest.fixture(scope="class")
+def model_config(secretfile, connection_class):
+    "Return a ModelConfig instance"
+    return ModelConfig(secretfile=secretfile, connection=connection_class)
+
+
+@pytest.fixture(scope="class")
+def model_data(secretfile, connection_class):
+    "Return a ModelData instance"
+    return ModelData(secretfile=secretfile, connection=connection_class)

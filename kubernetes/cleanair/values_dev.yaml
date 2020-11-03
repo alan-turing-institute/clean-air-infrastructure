@@ -24,7 +24,7 @@ cronjobs:
         secretName: secrets
     imagePullSecrets:
         - name: regcred
-  
+
   - name: input-laqn
     schedule: "5 * * * *"
     concurrencyPolicy: Allow
@@ -76,7 +76,27 @@ cronjobs:
         repository: cleanair
         imagePullPolicy: Never
         tag: local
-    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--ndays", "1"]
+    args: ["urbanair", "--secretfile", "db_secrets.json", "inputs", "scoot", "fill", "--nhours", "5"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
+
+  - name: forecast-scoot
+    schedule: "* 22 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--ndays", "2"]
     volumeMounts:
     - name: secrets
       mountPath: "/secrets/"
@@ -100,13 +120,13 @@ deployments:
           value: "urbanair.urbanair:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
-        - name: ROOT_PATH
-          value: /
-      envFrom:
-      - secretRef:
-          name: sentry
+      # envFrom:
+      # - secretRef:
+      #     name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -137,9 +157,9 @@ deployments:
           value: "*"
         - name: ROOT_PATH
           value: /odysseus
-      envFrom:
-      - secretRef:
-          name: sentry
+      # envFrom:
+      # - secretRef:
+      #     name: sentry
       ports:
         containerPort: 80
       restartPolicy: Always
@@ -154,7 +174,7 @@ deployments:
       resources:
         limits:
             cpu: "0.5"
-    
+
     - name: dev-api
       replicas: 1
       image:
@@ -166,6 +186,8 @@ deployments:
           value: "urbanair.developer:app"
         - name: DB_SECRET_FILE
           value: "db_secrets.json"
+        - name: MOUNT_DOCS
+          value: "true"
         - name: FORWARDED_ALLOW_IPS
           value: "*"
         - name: ROOT_PATH
@@ -194,7 +216,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: odysseus-api
       ports:
         - name: http
@@ -203,7 +225,7 @@ services:
         - name: https
           port: 443
           targetPort: 80
-    
+
     - name: dev-api
       ports:
         - name: http
@@ -225,6 +247,6 @@ ingressRules:
         - path: /dev(/|$)(.*)
           serviceName: dev-api
           servicePort: 80
-        
+
 
 development: true

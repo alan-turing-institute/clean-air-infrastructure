@@ -34,7 +34,6 @@ class DataConfig(BaseModel):
     features: List[FeatureNames]
     buffer_sizes: List[FeatureBufferSize]
     norm_by: Source = Source.laqn
-    model_type: str
 
 
 class FullDataConfig(DataConfig):

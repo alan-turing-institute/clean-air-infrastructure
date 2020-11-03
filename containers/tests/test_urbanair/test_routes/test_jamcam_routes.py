@@ -59,6 +59,7 @@ class TestRaw:
             DetectionClass.person,
             DetectionClass.car,
             DetectionClass.motorbike,
+            DetectionClass.bicycle,
             DetectionClass.bus,
         ],
     )
@@ -81,7 +82,7 @@ class TestRaw:
         unique_detections = list({x["detection_class"] for x in data})
 
         assert len(unique_detections) == 1
-        assert len(data) == len(video_stat_records) / 5
+        assert len(data) == len(video_stat_records) / len(DetectionClass.map_all())
 
     def test_24_hours_equivilant(self, client_class_odysseus):
         """Test /api/v1/jamcams/raw returns 24 hours"""
