@@ -13,8 +13,8 @@ import boto3
 import botocore
 import pandas as pd
 import pytz
-from sqlalchemy import Table
-from ..databases import DBWriter
+from sqlalchemy import Table, func, text, cast, and_, Integer, Float
+from ..databases import DBWriter, DBReader
 from ..databases.tables import ScootReading
 from ..decorators import db_query
 from ..loggers import get_logger, green, duration, duration_from_seconds
@@ -257,7 +257,6 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             )
 
 
-class ScootWriter(DateRangeMixin, DBWriter):
 class ScootWriter(DateRangeMixin, DBWriter, ScootQueryMixin):
     """
     Class to get data from the SCOOT traffic detector network via the S3 bucket maintained by TfL:
