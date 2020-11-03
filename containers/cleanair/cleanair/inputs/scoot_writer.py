@@ -207,9 +207,10 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
     @db_query()
     def get_percentage_quantiles(self, missing: bool = False, daily=True) -> Any:
         "Get percentage of sensors that have x% of expected readings"
+
         percentage_by_sensor_day_sq = self.get_percentage_readings(
-            self.start_date.isoformat(),
-            self.end_date.isoformat(),
+            self.start_datetime.isoformat(),
+            self.end_datetime.isoformat(),
             group_daily=daily,
             detector_ids=self.detector_ids,
             missing=missing,

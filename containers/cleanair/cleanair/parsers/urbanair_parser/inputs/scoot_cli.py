@@ -13,7 +13,6 @@ def check(
     upto: str = UpTo,
     nhours: int = NHours,
     ndays: int = NDays,
-    web: bool = Web,
     detectors: str = ScootDetectors,
     missing: bool = typer.Option(
         False,
