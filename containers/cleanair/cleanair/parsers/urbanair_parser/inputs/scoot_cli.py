@@ -2,7 +2,7 @@
 import typer
 from cleanair.inputs import ScootWriter, ScootReader
 from cleanair.loggers import initialise_logging
-from ..shared_args import UpTo, NDays, NHours, Web, AWSId, AWSKey, ScootDetectors
+from ..shared_args import UpTo, NDays, NHours, AWSId, AWSKey, ScootDetectors
 from ..state import state
 
 app = typer.Typer()
