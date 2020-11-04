@@ -26,7 +26,6 @@ class ScootQueryMixin:
     def scoot_detectors(
         self,
         offset: Optional[int] = None,
-        limit: Optional[int] = None,
         geom_label: str = "location",
         detectors: Optional[List] = None,
         borough: Optional[Borough] = None,
@@ -66,8 +65,6 @@ class ScootQueryMixin:
             # limit / offset detectors
             if offset:
                 readings = readings.offset(offset)
-            if limit:
-                readings = readings.limit(limit)
 
             return readings
 
