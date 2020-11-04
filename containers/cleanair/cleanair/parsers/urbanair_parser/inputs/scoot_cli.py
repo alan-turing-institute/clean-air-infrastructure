@@ -32,7 +32,7 @@ def check(
         end=upto,
         nhours=nhours + ndays,
         secretfile=state["secretfile"],
-        detector_ids=detectors if detectors else None,
+        detector_ids=list(detectors) if detectors else None,
     )
 
     print(

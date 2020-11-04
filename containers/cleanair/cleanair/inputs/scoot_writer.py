@@ -30,7 +30,7 @@ ONE_DAY_INTERVAL = text("interval '1 day'")
 class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
     """Read scoot data"""
 
-    def __init__(self, detector_ids=None, **kwargs) -> None:
+    def __init__(self, detector_ids: Optional[List[str]] = None, **kwargs: Any) -> None:
 
         # Initialise parent classes
         super().__init__(**kwargs)
@@ -188,7 +188,7 @@ class ScootReader(DateRangeMixin, ScootQueryMixin, DBReader):
             output_type="subquery",
         )
 
-        def cum_quant(lower, upper):
+        def cum_quant(lower: float, upper: float) -> Any:
             "Calculate the percentage in (lower, upper] and label the column [upper]"
             return (
                 cast(
