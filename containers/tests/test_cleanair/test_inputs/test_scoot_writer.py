@@ -135,4 +135,3 @@ def test_scoot_reader(scoot_writer, dataset_start_date, connection, secretfile):
     assert scoot_reader.get_percentage_quantiles(missing=True, output_type="df",).iloc[
         0
     ]["1"] == pytest.approx(12420 / 12421 * 100)
-
