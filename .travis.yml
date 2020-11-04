@@ -87,7 +87,7 @@ jobs:
         # Run pylint for stricter error checking.
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc containers/urbanair/* containers/tests/test_urbanair/*
-        - mypy containers/urbanair
+        - mypy --config-file .mypy.ini containers/urbanair
 
     - name: "code_style_formatting"
       install:

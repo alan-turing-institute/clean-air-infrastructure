@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
-    htpasswdfile: Union[bool, Path] = False
+    htpasswdfile: Optional[Path] = None
 
     @validator("htpasswdfile")
     @classmethod

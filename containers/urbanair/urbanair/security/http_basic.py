@@ -12,13 +12,13 @@ security = HTTPBasic()
 
 
 @cached(cache=TTLCache(maxsize=256, ttl=3600))
-def get_http_passwords():
+def get_http_passwords() -> HtpasswdFile:
     "Load a htpasswdfile from disk"
 
     return HtpasswdFile(get_settings().htpasswdfile)
 
 
-def get_http_username(credentials: HTTPBasicCredentials = Depends(security),):
+def get_http_username(credentials: HTTPBasicCredentials = Depends(security)) -> str:
     "Get username from http basic auth and check authorization. Raise 401 is not authenticated"
     ht = get_http_passwords()
     correct_username_and_password = ht.check_password(
