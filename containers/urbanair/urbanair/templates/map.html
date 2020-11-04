@@ -321,8 +321,13 @@
     function injectMapData(scale_upper_limit) {
 
         for (const detection_class of DETECTION_CLASS_LABELS) {
+            let class_upper_limit;
             if (scale_upper_limit === undefined) {
-                scale_upper_limit = Math.max(...data.get(detection_class).values());
+                class_upper_limit = Math.max(
+                    ...data.get(detection_class).values()
+                );
+            } else {
+                class_upper_limit = scale_upper_limit;
             }
             for (const [camera_id, camera] of cameras.entries()) {
 
@@ -331,7 +336,7 @@
                     value = 0;
                 }
 
-                const colour = VIRIDIS[Math.floor(Math.min(value / scale_upper_limit, 1) * 255)];
+                const colour = VIRIDIS[Math.floor(Math.min(value / class_upper_limit, 1) * 255)];
                 mapData.features.push(
                     {
                         'type': 'Feature',
