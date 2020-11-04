@@ -5,7 +5,7 @@ from typing import Optional, Any, TYPE_CHECKING
 from abc import abstractmethod
 from ...databases.mixins import ModelTableMixin
 from ...decorators import db_query
-from ...types import ModelName
+from ...types import KernelType, ModelName
 
 if TYPE_CHECKING:
     from ...databases import Connector
@@ -25,7 +25,7 @@ class ModelParamsQueryMixin:
     def query_model_params(
         self,
         model_name: ModelName,
-        kernel: Optional[str] = None,
+        kernel: Optional[KernelType] = None,
         maxiter: Optional[int] = None,
         param_id: Optional[str] = None,
     ) -> Any:
@@ -35,7 +35,7 @@ class ModelParamsQueryMixin:
             model_name: Name of the model trained.
 
         Keyword args:
-            kernel: Name of a kernel to filter by.
+            kernel: Type of kernel to filter by.
             maxiter: Number of iterations to train model for.
             param_id: The ID of the model parameters. Specifiying this
                 argument will likely mean only one row is returned.
@@ -54,7 +54,7 @@ class ModelParamsQueryMixin:
                 )
             if kernel:
                 readings = readings.filter(
-                    self.model_table.model_params["kernel"]["name"].astext == kernel
+                    self.model_table.model_params["kernel"]["type"].astext == kernel
                 )
             if maxiter:
                 readings = readings.filter(
