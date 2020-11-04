@@ -2,7 +2,7 @@
 Mixin for classes that need to keep track of date ranges
 """
 from itertools import product
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from dateutil.rrule import rrule
 from dateutil.parser import isoparse
 from ..loggers import get_logger
@@ -21,28 +21,7 @@ class DateRangeMixin:
             self.logger = get_logger(__name__)
 
         # Convert end argument into a datetime
-        if end == "now":
-            self.end_datetime = datetime.now().replace(
-                microsecond=0, second=0, minute=0
-            )
-        elif end == "lasthour":
-            self.end_datetime = (datetime.now() - timedelta(hours=1)).replace(
-                microsecond=0, second=0, minute=0
-            )
-        elif end == "today":
-            self.end_datetime = datetime.combine(date.today(), datetime.min.time())
-
-        elif end == "tomorrow":
-            self.end_datetime = datetime.combine(
-                date.today() + timedelta(days=1), datetime.min.time()
-            )
-
-        elif end == "yesterday":
-            self.end_datetime = datetime.combine(
-                date.today() - timedelta(days=1), datetime.min.time()
-            )
-        else:
-            self.end_datetime = as_datetime(end)
+        self.end_datetime = as_datetime(end)
 
         # Construct the start datetime using nhours
         self.start_datetime = self.end_datetime - timedelta(hours=nhours)
@@ -107,7 +86,6 @@ class DateGeneratorMixin:
         )
 
         if transpose:
-
             return zip(*arg_gen)
 
         return arg_gen

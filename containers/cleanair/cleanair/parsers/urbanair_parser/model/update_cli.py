@@ -32,7 +32,7 @@ def results(
     file_manager = FileManager(input_dir)
     model_params = file_manager.load_model_params(model_name)
     y_forecast = file_manager.load_forecast_from_pickle()
-    y_training_pred = file_manager.load_pred_training_from_pickle()
+    y_pred_training = file_manager.load_pred_training_from_pickle()
     full_config = file_manager.load_data_config(full=True)
 
     # load prediction data
@@ -78,18 +78,18 @@ def results(
             "Writing the training predictions to CSV for source %s", source.value
         )
 
-        training_pred_df = ModelDataExtractor.join_forecast_on_dataframe(
-            train_data[source], y_training_pred[source]
+        pred_training_df = ModelDataExtractor.join_forecast_on_dataframe(
+            train_data[source], y_pred_training[source]
         )
-        training_pred_df["point_id"] = training_pred_df.point_id.apply(str)
-        file_manager.save_training_pred_to_csv(training_pred_df, source)
+        pred_training_df["point_id"] = pred_training_df.point_id.apply(str)
+        file_manager.save_pred_training_to_csv(pred_training_df, source)
         logger.info(
             "Writing training predictions to result table for source %s", source.value
         )
         result = AirQualityResult(
             instance.instance_id,
             instance.data_id,
-            training_pred_df,
+            pred_training_df,
             secretfile=secretfile,
         )
         result.update_remote_tables()

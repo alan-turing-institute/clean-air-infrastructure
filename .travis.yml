@@ -22,6 +22,7 @@ jobs:
       install:
         - pip install -r containers/requirements.txt
         - pip install 'containers/cleanair[models,traffic,dashboard]'
+        - pip install 'containers/urbanair'
 
       before_script:
         - sh .travis/before_script.sh
@@ -31,12 +32,18 @@ jobs:
         - python -m pytest containers/tests/test_cleanair --secretfile $DB_SECRET_FILE
         - python -m pytest containers/tests/test_database_init --secretfile $DB_SECRET_FILE
 
-        # Run pylint for stricter error checking. Run for each package seperately and then run for everything else
+        # Run pylint for stricter error checking
         # NB. We need to disable the hanging indentation check because of https://github.com/psf/black/issues/48
         - pylint --rcfile=.pylintrc */ --ignore=cleanair,urbanair,odysseus,tests
-        - pylint --rcfile=.pylintrc containers/cleanair/*
+        # run linting for cleanair package without the mrdgp module
+        - pylint --rcfile=.pylintrc --ignore=mr_dgp,cleanair.egg-info containers/cleanair/*
+        # run linting for the mrdgp module but only detect warnings and errors
+        - pylint --rcfile=.pylintrc --disable=R,C containers/cleanair/cleanair/models/mr_dgp/*
+        # run linting for the tests
         - pylint --rcfile=.pylintrc containers/tests/test_cleanair containers/tests/test_database_init
-
+        # Run type checking
+        - mypy --config-file .mypy.ini containers/cleanair
+  
     # separate parallel job for odysseus
     - name: "odysseus"
       before_install:

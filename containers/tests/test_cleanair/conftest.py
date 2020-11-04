@@ -8,8 +8,10 @@ import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import pandas as pd
 from nptyping import NDArray
 from cleanair.databases import DBWriter
+from cleanair.inputs.scoot_writer import ScootWriter
 from cleanair.databases.tables import (
     MetaPoint,
     LAQNSite,
@@ -36,13 +38,15 @@ from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
     DataConfig,
+    FeatureNames,
     KernelParams,
+    KernelType,
     MRDGPParams,
     Source,
     Species,
     SVGPParams,
-    FeatureNames,
 )
+from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
@@ -496,9 +500,120 @@ def fake_cleanair_dataset(
 
 
 @pytest.fixture(scope="function")
+def scoot_generator(
+    secretfile, connection, dataset_start_date, dataset_end_date,
+) -> ScootGenerator:
+    """Write scoot data to database"""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        offset=0,
+        limit=100,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
+def scoot_single_detector_generator(
+    secretfile, connection, dataset_start_date, dataset_end_date,
+):
+    """Write scoot data to database"""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        offset=0,
+        limit=1,
+        detectors=["N04/161a1"],
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
+def scoot_detector_single_hour(
+    dataset_start_date, dataset_end_date, secretfile, connection
+):
+    "Generete a single hour of scoot data"
+    scoot_generator = ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+    scoot_data_df = scoot_generator.generate_df()
+    first_detector_id = scoot_data_df["detector_id"].unique()[0]
+    drop_first_detector_and_hours = scoot_data_df[
+        (scoot_data_df["detector_id"] != first_detector_id)
+        & (scoot_data_df["measurement_start_utc"] == pd.to_datetime(dataset_start_date))
+    ]
+    return drop_first_detector_and_hours, first_detector_id
+
+
+@pytest.fixture(scope="function")
+def scoot_writer(
+    monkeypatch,
+    scoot_detector_single_hour,
+    secretfile,
+    connection,
+    dataset_start_date,
+    dataset_end_date,
+):
+    "Return a ScootWriter instance"
+
+    def request_remote_data(
+        start_datetime_utc, detector_ids,
+    ):
+        """Patch the request_remote_data method
+
+        Drops a single scoot detector which we should then write to the database as null
+        """
+
+        drop_first_detector_and_hours = scoot_detector_single_hour[0]
+
+        unaggregated_scoot_df = drop_first_detector_and_hours.rename(
+            columns={"measurement_start_utc": "timestamp"}
+        ).drop("measurement_end_utc", axis=1)
+
+        # Convert to unix time
+        unaggregated_scoot_df["timestamp"] = unaggregated_scoot_df["timestamp"].apply(
+            lambda x: x.timestamp()
+        )
+
+        unaggregated_scoot_df["detector_fault"] = False
+
+        return unaggregated_scoot_df
+
+    def combine_by_detector_id(data_df):
+        return data_df
+
+    nhours = (dataset_end_date - dataset_start_date).total_seconds() / (60 * 60)
+
+    scoot_writer = ScootWriter(
+        aws_key="",
+        aws_key_id="",
+        end=dataset_end_date,
+        nhours=nhours,
+        secretfile=secretfile,
+        connection=connection,
+    )
+    monkeypatch.setattr(scoot_writer, "request_remote_data", request_remote_data)
+    monkeypatch.setattr(scoot_writer, "combine_by_detector_id", combine_by_detector_id)
+
+    return scoot_writer
+
+
+@pytest.fixture(scope="function")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
-    return KernelParams(name="matern32", type="matern32",)
+    return KernelParams(
+        name="matern32",
+        type=KernelType.matern32,
+        lengthscales=1.0,
+        variance=1.0,
+        ARD=True,
+    )
 
 
 @pytest.fixture(scope="function")
@@ -520,12 +635,37 @@ def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
 
 
 @pytest.fixture(scope="function")
-def mrdgp_model_params(base_model: BaseModelParams) -> MRDGPParams:
+def mr_linear_params() -> KernelParams:
+    """Matern 32 kernel params."""
+    return KernelParams(
+        name="mr_linear",
+        type=KernelType.mr_linear,
+        lengthscales=[1.0, 1.0, 1.0],
+        variance=[1.0, 1.0, 1.0],
+        ARD=True,
+        active_dims=[0, 1, 2],
+    )
+
+
+@pytest.fixture(scope="function")
+def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
+    """Model params for sub-MRDGP"""
+    return BaseModelParams(
+        kernel=mr_linear_params,
+        likelihood_variance=1.0,
+        num_inducing_points=10,
+        maxiter=10,
+        minibatch_size=10,
+    )
+
+
+@pytest.fixture(scope="function")
+def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
     """Create MRDGP model params."""
     return MRDGPParams(
-        base_laqn=base_model.copy(),
-        base_sat=base_model.copy(),
-        dgp_sat=base_model.copy(),
+        base_laqn=sub_model.copy(),
+        base_sat=sub_model.copy(),
+        dgp_sat=sub_model.copy(),
         mixing_weight=dict(name="dgp_only", param=None),
         num_prediction_samples=10,
         num_samples_between_layers=10,

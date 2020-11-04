@@ -22,6 +22,7 @@ setuptools.setup(
         "pyeccodes==0.1.1",
         "geoalchemy2==0.6.3",
         "gitpython==3.1.0",
+        "h5py==2.10.0",
         "holidays==0.9.8",
         "nptyping==1.2.0",
         "numpy==1.18.5",
@@ -44,7 +45,12 @@ setuptools.setup(
         "xarray==0.15.1",
     ],
     extras_require={
-        "traffic": ["pystan==2.19.1.1", "fbprophet==0.4", "pathos==0.2.5"],
+        "traffic": [
+            "pystan==2.19.1.1",
+            "fbprophet==0.6",
+            "pathos==0.2.5",
+            "pytz==2019.3",
+        ],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
     python_requires=">=3.6",
