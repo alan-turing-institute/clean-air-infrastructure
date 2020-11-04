@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
         if not v.exists():
             raise IOError("htpasswdfile could not be found")
+        return v
 
 
 @lru_cache()
