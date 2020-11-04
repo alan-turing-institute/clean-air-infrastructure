@@ -15,10 +15,41 @@ class ResultQueryMixin:
 
     dbcnxn: Any
 
+    # tables with polygon geom columns
+    POLYGON_GEOMS = dict(hexgrid=HexGrid, grid_100=RectGrid100,)
+
     @property
     @abstractmethod
     def result_table(self) -> ResultTableMixin:
         """The sqlalchemy table to query. The table must extend ResultTableMixin."""
+
+    @staticmethod
+    def point_id_join(table, source: Source, columns = None, with_location: bool = False):
+        """Get the columns for a result query. The geom columns may be a point or polygon."""
+        if columns is None:
+            base_query = [table]
+        else:
+            base_query = columns
+
+        # get lon, lat and geom columns from polygon geometries
+        if with_location and source.value in ResultQueryMixin.POLYGON_GEOMS:
+            # get the table with polygons in the geom column
+            polygon_table = ResultQueryMixin.POLYGON_GEOMS[source.value]
+
+            # get lon, lat of center of polygon + the geom itself
+            base_query += [
+                func.ST_X(func.ST_Centroid(polygon_table.geom)).label("lon"),
+                func.ST_Y(func.ST_Centroid(polygon_table.geom)).label("lat"),
+                func.ST_GeometryN(polygon_table.geom, 1).label("geom"),
+            ]
+        # else if we are just looking at point locations query metapoint
+        elif with_location:
+            base_query += [
+                func.ST_X(MetaPoint.location).label("lon"),
+                func.ST_Y(MetaPoint.location).label("lat"),
+                MetaPoint.location.label("geom"),
+            ]
+        return base_query
 
     @db_query()
     def query_results(
@@ -42,40 +73,16 @@ class ResultQueryMixin:
             with_location: If true, return a lat, lon & geom column.
             columns: A subset of columns to return. Columns must be in the result table.
         """
-        if columns is None:
-            base_query = [self.result_table]
-        else:
-            base_query = columns
-
-        # list of tables with polygon geom columns
-        polygon_geoms = dict(hexgrid=HexGrid, grid_100=RectGrid100,)
-
-        # get lon, lat and geom columns from polygon geometries
-        if with_location and source.value in polygon_geoms:
-            # get the table with polygons in the geom column
-            polygon_table = polygon_geoms[source.value]
-
-            # get lon, lat of center of polygon + the geom itself
-            base_query += [
-                func.ST_X(func.ST_Centroid(polygon_table.geom)).label("lon"),
-                func.ST_Y(func.ST_Centroid(polygon_table.geom)).label("lat"),
-                func.ST_GeometryN(polygon_table.geom, 1).label("geom"),
-            ]
-        # else if we are just looking at point locations query metapoint
-        elif with_location:
-            base_query += [
-                func.ST_X(MetaPoint.location).label("lon"),
-                func.ST_Y(MetaPoint.location).label("lat"),
-                MetaPoint.location.label("geom"),
-            ]
+        base_query = self.__class__.point_id_join(self.result_table, source, columns, with_location=with_location)
 
         # open connection and start the query
         with self.dbcnxn.open_session() as session:
             readings = session.query(*base_query).filter(
                 self.result_table.instance_id == instance_id
             )
-            if with_location and source.value in polygon_geoms:
+            if with_location and source.value in self.__class__.POLYGON_GEOMS:
                 # inner join on polygon table (hexgrid, grid100)
+                polygon_table = self.__class__.POLYGON_GEOMS[source.value]
                 readings = readings.join(
                     polygon_table, self.result_table.point_id == polygon_table.point_id
                 )
