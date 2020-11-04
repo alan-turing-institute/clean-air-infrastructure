@@ -17,8 +17,9 @@ class Settings(BaseSettings):
     htpasswdfile: Union[bool, Path] = False
 
     @validator("htpasswdfile")
+    @classmethod
     def check_htpasswdfile_exists(cls, v: Union[bool, Path]) -> Union[bool, Path]:
-
+        "Ensure htpasswdfile exists"
         if isinstance(v, Path) and not v.exists():
             raise IOError("htpasswdfile could not be found")
         return v
@@ -28,4 +29,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return a settings object"""
     return Settings()
-

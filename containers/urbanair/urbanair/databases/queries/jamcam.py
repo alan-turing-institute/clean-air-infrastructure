@@ -1,20 +1,18 @@
 """Jamcam database queries and external api calls"""
 from datetime import datetime, timedelta, date
 from typing import Optional
-
 import requests
+from fastapi import HTTPException
+from geojson import Feature, Point, FeatureCollection
+from sqlalchemy import func, text
+from sqlalchemy.orm import Session, Query
+from sqlalchemy.sql.selectable import Alias
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
 )
 from cleanair.databases.tables import JamCamDayStats
 from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
 from cleanair.decorators import db_query
-from fastapi import HTTPException
-from geojson import Feature, Point, FeatureCollection
-from sqlalchemy import func, text
-from sqlalchemy.orm import Session, Query
-from sqlalchemy.sql.selectable import Alias
-
 from ...types import DetectionClass
 
 # TWELVE_HOUR_INTERVAL = text("interval '12 hour'")

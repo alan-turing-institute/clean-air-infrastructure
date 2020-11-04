@@ -1,17 +1,7 @@
-"""Confif for urbanair tests"""
-from datetime import datetime, timedelta
-from itertools import product
-from fastapi.testclient import TestClient
-from fastapi.security import HTTPBasicCredentials
+"""Config for urbanair security tests"""
 import pytest
-from dateutil import rrule, parser
-from sqlalchemy import func
-from sqlalchemy.orm import sessionmaker
-import numpy as np
-from cleanair.databases import DBReader
-from cleanair.databases.tables import HexGrid, MetaPoint
-from urbanair import urbanair, odysseus, developer, databases, security
-from urbanair.types import DetectionClass
+from fastapi.testclient import TestClient
+from urbanair import urbanair, odysseus, developer, databases
 
 # pylint: disable=C0103,W0621
 

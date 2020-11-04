@@ -2,7 +2,6 @@
 from datetime import datetime, timedelta
 from itertools import product
 from fastapi.testclient import TestClient
-from fastapi.security import HTTPBasicCredentials
 import pytest
 from dateutil import rrule, parser
 from sqlalchemy import func
@@ -54,6 +53,8 @@ def client_db_overide_class(connection_class):
 
 @pytest.fixture(scope="class")
 def http_basic_overload_class():
+    "Return an override function for get_http_username"
+
     def get_http_username():
         return "local"
 

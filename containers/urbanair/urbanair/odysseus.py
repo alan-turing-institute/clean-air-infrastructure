@@ -1,7 +1,7 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI, Request, Depends, Response, HTTPException
+from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware

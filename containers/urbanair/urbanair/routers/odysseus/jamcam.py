@@ -27,10 +27,6 @@ from ...databases.schemas.jamcam import (
 )
 from ...types import DetectionClass
 
-
-from fastapi.security import HTTPBasicCredentials
-
-
 router = APIRouter()
 
 

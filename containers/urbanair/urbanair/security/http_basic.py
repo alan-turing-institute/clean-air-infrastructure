@@ -1,13 +1,13 @@
-from functools import lru_cache
+"HTTP Basic authorization"
 import logging
 from passlib.apache import HtpasswdFile
 from cachetools import cached, TTLCache
-from cachetools.keys import hashkey
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from ..config import get_settings
 
-logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
+# pylint: disable=invalid-name
+logger = logging.getLogger("fastapi")
 security = HTTPBasic()
 
 
@@ -19,12 +19,12 @@ def get_http_passwords():
 
 
 def get_http_username(credentials: HTTPBasicCredentials = Depends(security),):
-
+    "Get username from http basic auth and check authorization. Raise 401 is not authenticated"
     ht = get_http_passwords()
     correct_username_and_password = ht.check_password(
         credentials.username, credentials.password
     )
-    if not (correct_username_and_password):
+    if not correct_username_and_password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
