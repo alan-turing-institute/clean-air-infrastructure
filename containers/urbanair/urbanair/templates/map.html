@@ -59,7 +59,7 @@
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
             <strong id="panel-camera-id">CAMERA:</strong>
-            <span style="text-align: right;"><img id='img-warn' width='20px' height='20px' src="{{ url_for('static', path='img/warn.svg') }}" style="visibility: hidden" alt="Camera is not currently being used by Odysseus"/></span>
+            <span style="text-align: right;"><img id='img-warn' width='20px' height='20px' src="{{ url_for('static', path='img/warn.svg') }}" alt="Camera is not currently being used by Odysseus"/></span>
             <br>
             <p id="camera-count">Average count</p>
             <br>
@@ -419,7 +419,7 @@
         document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
         document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
-        document.getElementById('img-warn').style.visibility = (camera.flag === 1) ? "visible" : "hidden";
+        document.getElementById('img-warn').style.display = (camera.flag === 1) ? "inline" : "none";
         changeDetectionClassCount();
     }
 
