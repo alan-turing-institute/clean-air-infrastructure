@@ -227,7 +227,7 @@ pip install azure-nspkg azure-mgmt-nspkg
 # The following fails with: ERROR: azure-cli 2.6.0 has requirement azure-storage-blob<2.0.0,>=1.3.1, but you'll have azure-storage-blob 12.3.0 which is incompatible.
 # but they install fine.
 pip install -r containers/requirements.txt
-pip install -e 'containers/cleanair[models]'
+pip install -e 'containers/cleanair[models,traffic]'
 pip install -e 'containers/odysseus'
 pip install -e 'containers/urbanair'
 
