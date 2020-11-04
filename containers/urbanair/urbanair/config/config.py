@@ -1,5 +1,5 @@
 """Configurations"""
-from typing import Optional
+from typing import Optional, Union
 from functools import lru_cache
 from pathlib import Path
 from pydantic import BaseSettings, validator
@@ -14,12 +14,12 @@ class Settings(BaseSettings):
     mount_docs: bool = False
     sentry_dsn: Optional[str]
     root_path: str = ""
-    htpasswdfile: Path
+    htpasswdfile: Union[bool, Path] = False
 
     @validator("htpasswdfile")
-    def check_htpasswdfile_exists(cls, v):
+    def check_htpasswdfile_exists(cls, v: Union[bool, Path]) -> Union[bool, Path]:
 
-        if not v.exists():
+        if isinstance(v, Path) and not v.exists():
             raise IOError("htpasswdfile could not be found")
         return v
 
@@ -28,3 +28,4 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return a settings object"""
     return Settings()
+
