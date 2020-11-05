@@ -9,7 +9,10 @@ from urbanair import urbanair, odysseus, developer, databases, config, security
 
 @pytest.fixture("function")
 def get_settings_override(httpasswdfile):
+    "Override get_settings"
+
     def get_settings():
+        "get_settings with an example httpasswdfile"
         settings = config.Settings(app_name="Test", htpasswdfile=httpasswdfile)
         return settings
 

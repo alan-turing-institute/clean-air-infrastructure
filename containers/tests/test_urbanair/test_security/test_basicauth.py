@@ -1,7 +1,5 @@
 """Basic auth security tests"""
 
-from urbanair.config import get_settings
-
 
 def test_urbanair_basic_auth(client_urbanair_basic):
     """Test all paths on urbanair openapi spec have authentication"""
