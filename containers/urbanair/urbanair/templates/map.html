@@ -316,7 +316,7 @@
 
         let bins = [];
         let lables = [];
-        for (let i=0; i*bin_size<max; i++) {
+        for (let i=0; i*bin_size<=max; i++) {
             bins.push(0);
             lables.push(`${(i*bin_size)}-${((i+1)*bin_size)-1}`);
         }
