@@ -24,6 +24,7 @@ def get_http_username(credentials: HTTPBasicCredentials = Depends(security)) -> 
     correct_username_and_password = ht.check_password(
         credentials.username, credentials.password
     )
+
     if not correct_username_and_password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
