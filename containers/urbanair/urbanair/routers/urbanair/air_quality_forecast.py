@@ -97,7 +97,7 @@ def bounding_box_params(
 )
 def forecast_hexgrid_json(
     time_: datetime = Query(
-        None,
+        ...,
         alias="time",
         description="JSON forecasts for the hour containing this ISO-formatted time",
         example="2020-08-12T06:00",
@@ -174,7 +174,7 @@ def forecast_hexgrid_geometries(
 )
 def forecast_hexgrid_geojson(
     time_: datetime = Query(
-        None,
+        ...,
         alias="time",
         description="GeoJSON forecasts for the hour containing this ISO-formatted time",
         example="2020-08-12T06:00",
