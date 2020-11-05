@@ -9,7 +9,7 @@ app = typer.Typer(help="Save a model to blob storage")
 
 @app.command()
 def blob(
-    model_id: str = typer.Option(
+    instance_id: str = typer.Option(
         "", help="ID of the model to save",
     ),
     token_group: str = typer.Option(
@@ -49,7 +49,7 @@ def blob(
         blob_storage.upload_blob(
             resource_group="",
             storage_container_name=storage_container,
-            blob_name=model_id+ "/"+zipname,
+            blob_name=instance_id+ "/"+zipname,
             account_url=account_url,
             source_file=source_file,
             sas_token=SAS_TOKEN,

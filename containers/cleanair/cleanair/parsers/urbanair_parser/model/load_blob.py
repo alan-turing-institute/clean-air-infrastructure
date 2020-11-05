@@ -7,9 +7,14 @@ from pathlib import Path
 
 app = typer.Typer(help="Load a model from blob storage")
 
+# TODO move token group + container, storage container, account url to (new) secretfile
+# TODO the instance id should be loaded from the cache using the file manager
+# TODO the typer options can be moved to ..shared_args because they will be reused by save_blob
+# TODO authentication check on the cluster
+
 @app.command()
 def blob(
-    model_id: str = typer.Option(
+    instance_id: str = typer.Option(
         "", help="ID of the model to load",
     ),
     token_group: str = typer.Option(
@@ -46,7 +51,7 @@ def blob(
         blob_storage.download_blob(
             resource_group="",
             storage_container_name=storage_container,
-            blob_name=model_id+ "/"+zipname,
+            blob_name=instance_id+ "/"+zipname,
             account_url=account_url,
             target_file=target_file,
             sas_token=SAS_TOKEN,
