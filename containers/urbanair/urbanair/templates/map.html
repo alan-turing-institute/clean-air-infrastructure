@@ -168,9 +168,9 @@
     map.on('load', () => {
 
         // Map setup is contained in here - as layers can only be added after loading
-        
-        loadData(getDate());
+
         map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
+        loadData(getDate());
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -234,7 +234,9 @@
 
     function loadData(date){
         console.debug("Loading data");
-
+        mapData.features = [];
+        clearBar();
+        map.getSource('jamcams').setData(mapData); // This clears out the old data and updates the map
         let cameras; // To hold the camera data in between api calls
 
         fetch("  {{ url_for('metadata') }}  ")
@@ -294,6 +296,12 @@
         });
     }
 
+    function clearBar(){
+        histogramChartConfig.data.labels = [];
+        histogramChartConfig.data.datasets = [];
+        histogramChartConfig.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
+        histogram.update();
+    }
             
     function updateBar(counts, type){
 
