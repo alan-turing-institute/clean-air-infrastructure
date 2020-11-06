@@ -168,9 +168,9 @@
     map.on('load', () => {
 
         // Map setup is contained in here - as layers can only be added after loading
-        
-        loadData(getDate());
+
         map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
+        loadData(getDate());
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -234,7 +234,9 @@
 
     function loadData(date){
         console.debug("Loading data");
-
+        mapData.features = [];
+        clearBar();
+        map.getSource('jamcams').setData(mapData); // This clears out the old data and updates the map
         let cameras; // To hold the camera data in between api calls
 
         fetch("  {{ url_for('metadata') }}  ")
@@ -294,49 +296,42 @@
         });
     }
 
+    function clearBar(){
+        histogramChartConfig.data.labels = [];
+        histogramChartConfig.data.datasets = [];
+        histogramChartConfig.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
+        histogram.update();
+    }
             
     function updateBar(counts, type){
-        
+
         let max = Math.max(...counts);
-        let domain = 0;
+
+        let bin_size;
         if (max > 10){
-            domain = Math.ceil(Math.ceil(max) / 10);
+            bin_size = Math.ceil(Math.ceil(max) / 10);
         } else {
-            domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
-        }
-        let array = [];
-        let frequency=[];
-        array[0] = { no: 0, x: 0, y: domain};
-        frequency[0]=0;
-        for (let i = 1; i < (max / domain) ; i++){
-            frequency[i]= 0;
-            array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
-        }
-        let number;
-        for(let count of counts){
-            number = array.filter(function (item){return count<item.y})
-            frequency[parseInt(number[0].no)] +=1;
-        }
-        var data=[];
-        for(let i= 0; i < frequency.length; i++){
-            data[i]= array[i].x +"-" + (array[i].y);
+            bin_size = 2;
         }
 
-        let cmax = Math.max(...counts);
-        let interval = cmax / 10;
-        let frequency1 = [0,0,0,0,0,0,0,0,0,0];
-        for(let count of counts){
-            frequency1[count % interval] += 1
+        let bins = [];
+        let lables = [];
+        for (let i=0; i*bin_size<=max; i++) {
+            bins.push(0);
+            lables.push(`${(i*bin_size)}-${((i+1)*bin_size)-1}`);
         }
-                
-        histogramChartConfig.data.labels = data;
+        for(let count of counts) {
+            bins[Math.floor(count/bin_size)] += 1;
+        }
+
+        histogramChartConfig.data.labels = lables;
         histogramChartConfig.data.datasets = [];
         histogramChartConfig.data.datasets.push(
             {
                 label: type,
                 backgroundColor: COLORS[type],
                 borderColor: COLORS[type],
-                data: frequency,
+                data: bins,
                 fill: false,
             }
         );
