@@ -1,5 +1,5 @@
 """Traffic model fitting"""
-# pylint: skip-file
+# pylint: disable=wrong-import-position
 import datetime
 from functools import partial, reduce
 import logging
@@ -108,18 +108,19 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
 
         # Obtain the forecast for all features at a single detector
         def forecast_one_detector(
-            input_data,
+            detector_id_and_data,
             logger,
             features,
             forecasted_on,
             forecast_start_time,
             forecast_end_time,
         ):
+            detector_id, detector_data = detector_id_and_data
+
             # Construct the time range to predict over. This is functionally identical
             # to `make_future_dataframe` but works even in cases where there is
             # insufficient data for Prophet to run.
-            detector_id, detector_data = input_data
-            pred_time_range = pd.DataFrame(
+            pred_time_range_hrs = pd.DataFrame(
                 {
                     "ds": pd.date_range(
                         start=forecast_start_time, end=forecast_end_time, freq="H"
@@ -128,15 +129,15 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
             )
 
             # Construct a list of weekends in the full time range under consideration
-            full_time_range = pd.date_range(
-                start=min(detector_data["measurement_start_utc"]).date(),
-                end=forecast_end_time.date(),
-                freq="D",
-            )
             weekends = pd.DataFrame(
                 {
                     "holiday": "weekend",
-                    "ds": full_time_range[full_time_range.dayofweek > 4],
+                    "ds": pd.bdate_range(
+                        start=min(detector_data["measurement_start_utc"]).date(),
+                        end=forecast_end_time.date(),
+                        freq="C",
+                        weekmask="Sat Sun",
+                    ),
                 }
             )
 
@@ -156,7 +157,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                         model = Prophet(holidays=weekends, uncertainty_samples=False)
                         model.add_country_holidays(country_name="UK")
                         model.fit(prophet_data)
-                        forecast = model.predict(pred_time_range)[["ds", "yhat"]]
+                        forecast = model.predict(pred_time_range_hrs)[["ds", "yhat"]]
 
                 except (ValueError, RuntimeError, AttributeError):
                     default_value = 0
@@ -167,7 +168,7 @@ class ScootPerDetectorForecaster(DateRangeMixin, DBWriter):
                         red(default_value),
                     )
                     # Make a copy with a 'yhat' column included
-                    forecast = pred_time_range.assign(yhat=default_value)
+                    forecast = pred_time_range_hrs.assign(yhat=default_value)
 
                 # Rename the columns
                 forecast.rename(
