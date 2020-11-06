@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Odysseus API Access</title>
+    <link href="{{ url_for('static', path='css/auth.css') }}" rel="stylesheet">
+    <!-- Chart -->
+</head>
+<body>
+
+    <div class="topnav">
+        <a>Logout</a>
+    </div>
+
+    <div class = "container">
+
+        <div></div>
+        <div class="token">
+            <div>
+                <h3>Generate an access token</h3>
+                <p>Access tokens are short lived tokens which can be used to authenticate against the API.</p> 
+                <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
+            
+                <div id = "access", class = "access">Click the button</div>
+                <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
+            </div>
+
+        </div>
+        <div></div>    
+
+
+    </div>
+
+    <footer>
+       <div>
+           <p>Authorization for Odysseus API</p>
+           <p>Copyright © 2019-2020 Alan Turing Institute</p>
+        </div>
+        
+    </footer>
+
+</body>
+
+<script type="text/javascript">
+
+function getAccessToken() {
+
+    console.log("Access Token Requested")
+    console.log(document.getElementById("access").innerHTML)
+    document.getElementById("access").innerHTML = "Hello Houda";
+}
+
+
+</script>
+</html>

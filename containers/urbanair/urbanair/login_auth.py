@@ -2,11 +2,16 @@
 import logging
 import uuid
 from fastapi import FastAPI, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
+import json
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 import msal
+from authlib.integrations.starlette_client import OAuth
+from starlette.middleware.sessions import SessionMiddleware
+from pathlib import Path
 from .config import get_settings, AuthSettings
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -17,6 +22,7 @@ app = FastAPI(
     version="0.0.1",
     root_path=get_settings().root_path,
 )
+app.add_middleware(SessionMiddleware, secret_key="")
 
 sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
 if sentry_dsn:
@@ -27,66 +33,67 @@ else:
     logging.warning("Sentry is not logging errors")
 
 auth_settings = AuthSettings(
-    client_id="", client_secret="", authority="https://login.microsoftonline.com/",
+    client_id="",
+    client_secret="",
+    authority="https://login.microsoftonline.com/{tenant_id}",
+)
+
+oauth = OAuth()
+
+oauth.register(
+    name="azure",
+    client_id=str(auth_settings.client_id),
+    client_secret=auth_settings.client_secret.get_secret_value(),
+    access_token_url=auth_settings.authority + "/oauth2/v2.0/token",
+    access_token_params=None,
+    authorize_url=auth_settings.authority + "/oauth2/v2.0/authorize",
+    authorize_params=None,
+    client_kwargs={"scope": "openid offline_access"},
+    server_metadata_url=auth_settings.authority
+    + "/v2.0/.well-known/openid-configuration",
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str((Path(__file__).parent / "static").absolute())),
+    name="static",
+)
+templates = Jinja2Templates(
+    directory=str((Path(__file__).parent / "templates" / "auth").absolute())
 )
 
 
+@app.route("/")
+def token_mint(request: Request):
+    user = request.session.get("user")
+    if user:
+        print(user)
+        data = json.dumps(user)
+        html = f"<pre>{data}</pre>" '<a href="/logout">logout</a>'
+        return templates.TemplateResponse("auth.html", {"request": request})
+    return HTMLResponse('<a href="/login">login</a>')
+
+
 @app.get("/login")
-def login():
+async def login(request: Request):
 
-    REDIRECT_PATH = "http://localhost:8000/getAToken"
-
-    state = str(uuid.uuid4())
-
-    # return "hi"
-    auth_request_url = msal.ConfidentialClientApplication(
-        str(auth_settings.client_id),
-        authority=auth_settings.authority,
-        client_credential=auth_settings.client_secret.get_secret_value(),
-        token_cache=None,
-    ).get_authorization_request_url(scopes=[], state=state, redirect_uri=REDIRECT_PATH,)
-
-    return RedirectResponse(url=auth_request_url)
+    redirect_uri = request.url_for("authorized")
+    return await oauth.azure.authorize_redirect(request, redirect_uri)
 
 
 @app.get("/getAToken")  # Its absolute URL must match your app's redirect_uri set in AAD
-def authorized(code: str):
+async def authorized(request: Request):
 
-    # auth_code = request.query_params.get("code")
-    auth_code = code
-
-    if auth_code:
-        result = msal.ConfidentialClientApplication(
-            str(auth_settings.client_id),
-            authority=auth_settings.authority,
-            client_credential=auth_settings.client_secret.get_secret_value(),
-            token_cache=None,
-        ).acquire_token_by_authorization_code(
-            auth_code,
-            scopes=[],  # Misspelled scope would cause an HTTP 400 error here
-            redirect_uri="http://localhost:8000/getAToken",
-        )
-
-        print(result)
-        return result.get("access_token")
-        # print(result.get("refresh_token"))
-
-        # print(auth_settings.client_secret.get_secret_value())
+    token = await oauth.azure.authorize_access_token(request)
+    user = await oauth.azure.parse_id_token(request, token)
+    await oauth.azure.
+    request.session["user"] = dict(user)
+    print(token)
+    return RedirectResponse(url=request.url_for("token_mint"))
 
 
-# if request.args.get("state") != session.get("state"):
-#     return redirect(url_for("index"))  # No-OP. Goes back to Index page
-# if "error" in request.args:  # Authentication/Authorization failure
-#     return render_template("auth_error.html", result=request.args)
-# if request.args.get("code"):
-#     cache = _load_cache()
-#     result = _build_msal_app(cache=cache).acquire_token_by_authorization_code(
-#         request.args["code"],
-#         scopes=app_config.SCOPE,  # Misspelled scope would cause an HTTP 400 error here
-#         redirect_uri=url_for("authorized", _external=True),
-#     )
-#     if "error" in result:
-#         return render_template("auth_error.html", result=result)
-#     session["user"] = result.get("id_token_claims")
-#     _save_cache(cache)
-# return redirect(url_for("index"))
+@app.route("/logout")
+async def logout(request: Request):
+
+    request.session.pop("user", None)
+    return RedirectResponse(url=request.url_for("token_mint"))
