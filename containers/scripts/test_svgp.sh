@@ -14,10 +14,9 @@ urbanair model data generate-config \
     --train-source laqn \
     --pred-source laqn \
     --species NO2 \
-    --overwrite
-    # --features total_a_road_length \
-    # --feature-buffer 500 \
-    # --feature-buffer 100 \
+    --overwrite \
+    --features total_a_road_length \
+    --feature-buffer 100
 
 # check the data exists in the DB
 urbanair model data generate-full-config
