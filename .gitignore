@@ -34,3 +34,6 @@ images/
 # database
 mylocal_db/
 logfile
+
+# secrets
+*.env

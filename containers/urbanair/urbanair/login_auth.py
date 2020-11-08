@@ -32,11 +32,7 @@ if sentry_dsn:
 else:
     logging.warning("Sentry is not logging errors")
 
-auth_settings = AuthSettings(
-    client_id="",
-    client_secret="",
-    authority="https://login.microsoftonline.com/{tenant_id}",
-)
+auth_settings = AuthSettings()
 
 oauth = OAuth()
 
@@ -48,7 +44,7 @@ oauth.register(
     access_token_params=None,
     authorize_url=auth_settings.authority + "/oauth2/v2.0/authorize",
     authorize_params=None,
-    client_kwargs={"scope": "openid offline_access"},
+    client_kwargs={"scope": "openid offline_access profile"},
     server_metadata_url=auth_settings.authority
     + "/v2.0/.well-known/openid-configuration",
 )
@@ -63,14 +59,24 @@ templates = Jinja2Templates(
 )
 
 
+@app.get("/auth/token")
+def odysseus_token(request: Request):
+
+    user = request.session.get("user")
+    if user:
+        return {"token": "asdfasdfasdgssh.adfgasdfg"}
+    else:
+        return "Fail"
+
+
 @app.route("/")
 def token_mint(request: Request):
     user = request.session.get("user")
     if user:
         print(user)
-        data = json.dumps(user)
-        html = f"<pre>{data}</pre>" '<a href="/logout">logout</a>'
-        return templates.TemplateResponse("auth.html", {"request": request})
+        return templates.TemplateResponse(
+            "auth.html", {"request": request, "user": user}
+        )
     return HTMLResponse('<a href="/login">login</a>')
 
 
@@ -86,9 +92,8 @@ async def authorized(request: Request):
 
     token = await oauth.azure.authorize_access_token(request)
     user = await oauth.azure.parse_id_token(request, token)
-    await oauth.azure.
+
     request.session["user"] = dict(user)
-    print(token)
     return RedirectResponse(url=request.url_for("token_mint"))
 
 

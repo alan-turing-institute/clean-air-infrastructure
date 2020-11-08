@@ -10,6 +10,7 @@
 
     <div class="topnav">
         <a>Logout</a>
+        <a class="user">{{user.preferred_username}}</a>
     </div>
 
     <div class = "container">
@@ -20,7 +21,6 @@
                 <h3>Generate an access token</h3>
                 <p>Access tokens are short lived tokens which can be used to authenticate against the API.</p> 
                 <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
-            
                 <div id = "access", class = "access">Click the button</div>
                 <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
             </div>
@@ -47,7 +47,32 @@ function getAccessToken() {
 
     console.log("Access Token Requested")
     console.log(document.getElementById("access").innerHTML)
-    document.getElementById("access").innerHTML = "Hello Houda";
+    // document.getElementById("access").innerHTML = "Hello Houda";
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+        
+            try {
+                token = JSON.parse(this.responseText);
+                document.getElementById("access").innerHTML = token.token;
+                console.log( token.token)
+            } catch(e){
+                if (e instanceof TypeError) {
+                    text = "Failed to fetch token. Contact administrator"
+                    document.getElementById("access").innerHTML = text;
+                    console.log(text)
+                }
+                else{
+                    text = "Unknown error. Contact administrator"
+                    document.getElementById("access").innerHTML = text;
+                    console.log(text)
+                }
+            }
+        }
+    };
+    xhttp.open("GET", "{{ url_for('odysseus_token') }}", true);
+    xhttp.send();
 }
 
 

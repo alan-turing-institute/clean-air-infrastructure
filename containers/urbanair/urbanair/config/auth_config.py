@@ -11,5 +11,14 @@ class AuthSettings(BaseSettings):
 
     client_id: UUID
     client_secret: SecretStr
-    authority: HttpUrl
+    tenant_id: UUID
+    base_url: HttpUrl
 
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+    @property
+    def authority(self):
+
+        return self.base_url + str(self.tenant_id)

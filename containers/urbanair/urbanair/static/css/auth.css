@@ -50,12 +50,22 @@ body {
     background-color: #ddd;
     color: black;
   }
+
+.topnav .user {
+      color: white;
+      font-weight: bold;
+}
+
+.topnav .user:hover {
+    color: white;
+    background-color: #3A51AF;
+}
   
 .token {
     margin-top: 5vh;
     color: #0C2D48;
     font-size: 1em;
-    /* border: black dashed; */
+    /* border: black 5px dashed; */
 }
 
 .token p {
