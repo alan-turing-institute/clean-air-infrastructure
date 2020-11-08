@@ -750,6 +750,8 @@ def init_graph():
     """Initialise a tensorflow graph."""
     with tf.Graph().as_default():
         yield
+
+
 @pytest.fixture(scope="class")
 def fake_laqn_svgp_instance(
     secretfile, connection_class, svgp_model_params, laqn_full_config, model_config
