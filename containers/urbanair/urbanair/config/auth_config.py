@@ -13,6 +13,11 @@ class AuthSettings(BaseSettings):
     client_secret: SecretStr
     tenant_id: UUID
     base_url: HttpUrl
+    session_secret: SecretStr
+
+    access_token_secret: SecretStr
+    access_token_algorithm: str = "HS256"
+    access_token_expire_minutes: int
 
     class Config:
         env_file = ".env"

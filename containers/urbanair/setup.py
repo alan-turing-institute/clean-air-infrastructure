@@ -22,6 +22,7 @@ setuptools.setup(
         "geojson",
         "sentry_sdk",
         "passlib[bcrypt]",
+        "python-jose[cryptography]==3.2.0",
     ],
     python_requires=">=3.7",
 )

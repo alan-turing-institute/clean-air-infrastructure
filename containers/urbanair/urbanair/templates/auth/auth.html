@@ -9,7 +9,7 @@
 <body>
 
     <div class="topnav">
-        <a>Logout</a>
+        <a href = "{{ url_for('logout') }}">Logout</a>
         <a class="user">{{user.preferred_username}}</a>
     </div>
 
@@ -54,9 +54,8 @@ function getAccessToken() {
         if (this.readyState == 4 && this.status == 200) {
         
             try {
-                token = JSON.parse(this.responseText);
-                document.getElementById("access").innerHTML = token.token;
-                console.log( token.token)
+                response = JSON.parse(this.responseText);
+                document.getElementById("access").innerHTML = response.access_token;
             } catch(e){
                 if (e instanceof TypeError) {
                     text = "Failed to fetch token. Contact administrator"
