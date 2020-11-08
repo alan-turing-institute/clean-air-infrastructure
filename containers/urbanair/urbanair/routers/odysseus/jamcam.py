@@ -4,7 +4,7 @@ import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
-from fastapi import APIRouter, Depends, Query, Response, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
 
@@ -12,7 +12,6 @@ from ...databases import get_db, all_or_404
 from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
-    get_jamcam_info,
     get_jamcam_hourly,
     get_jamcam_daily,
     get_jamcam_today,
@@ -20,7 +19,6 @@ from ...databases.queries import (
 from ...databases.schemas.jamcam import (
     JamCamVideo,
     JamCamVideoAverage,
-    JamCamFeatureCollection,
     JamCamAvailable,
     JamCamMetaData,
     JamCamDailyAverage,
@@ -74,16 +72,6 @@ def common_jamcam_params(
         "endtime": endtime,
         "date": date,
     }
-
-
-@router.get(
-    "/camera_info",
-    description="GeoJSON: JamCam camera locations.",
-    response_model=JamCamFeatureCollection,
-)
-def camera_info() -> Response:
-    "Get camera info"
-    return get_jamcam_info()
 
 
 @router.get(
