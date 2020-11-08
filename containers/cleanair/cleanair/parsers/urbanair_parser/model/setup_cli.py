@@ -46,7 +46,7 @@ def svgp(
         kernel=KernelParams(
             ARD=ard,
             lengthscales=lengthscales,
-            name=kernel,
+            name=kernel.value,
             type=kernel,
             variance=variance,
         ),
