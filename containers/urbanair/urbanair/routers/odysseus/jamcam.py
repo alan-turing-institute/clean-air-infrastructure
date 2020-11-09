@@ -1,24 +1,27 @@
 """JamCam API routes"""
+import datetime
+
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
-from datetime import datetime
-from fastapi import APIRouter, Depends, Query, Response, HTTPException
+
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
 
 from ...databases import get_db, all_or_404
-from ...databases.schemas.jamcam import (
-    JamCamVideo,
-    JamCamVideoAverage,
-    JamCamFeatureCollection,
-    JamCamAvailable,
-    JamCamMetaData,
-)
 from ...databases.queries import (
     get_jamcam_available,
     get_jamcam_raw,
-    get_jamcam_info,
     get_jamcam_hourly,
+    get_jamcam_daily,
+    get_jamcam_today,
+)
+from ...databases.schemas.jamcam import (
+    JamCamVideo,
+    JamCamVideoAverage,
+    JamCamAvailable,
+    JamCamMetaData,
+    JamCamDailyAverage,
 )
 from ...types import DetectionClass
 
@@ -33,13 +36,14 @@ def common_jamcam_params(
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
-    starttime: datetime = Query(
+    starttime: datetime.datetime = Query(
         None, description="""ISO UTC datetime to request data from""",
     ),
-    endtime: datetime = Query(
+    endtime: datetime.datetime = Query(
         None,
         description="ISO UTC datetime to request data up to (not including this datetime)",
     ),
+    date: datetime.date = Query(None, description="ISO UTC date to request data for",),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -66,17 +70,8 @@ def common_jamcam_params(
         "detection_class": detection_class,
         "starttime": starttime,
         "endtime": endtime,
+        "date": date,
     }
-
-
-@router.get(
-    "/camera_info",
-    description="GeoJSON: JamCam camera locations.",
-    response_model=JamCamFeatureCollection,
-)
-def camera_info() -> Response:
-    "Get camera info"
-    return get_jamcam_info()
 
 
 @router.get(
@@ -142,11 +137,47 @@ def camera_hourly_average(
 
 
 @router.get(
+    "/daily",
+    response_model=List[JamCamDailyAverage],
+    description="Request averaged counts of objects at jamcam cameras day",
+)
+def camera_daily_average(
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    if commons["date"] == datetime.date.today():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Data is only available for historical dates at this endpoint.",
+        )
+
+    data = get_jamcam_daily(
+        db, commons["camera_id"], commons["detection_class"], commons["date"],
+    )
+
+    return all_or_404(data)
+
+
+@router.get(
+    "/today",
+    response_model=List[JamCamDailyAverage],
+    description="Request averaged counts of objects at jamcam cameras for today",
+)
+def camera_today_average(
+    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+) -> Optional[List[Tuple]]:
+
+    data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
+
+    return all_or_404(data)
+
+
+@router.get(
     "/metadata",
     response_model=List[JamCamMetaData],
     description="The locations and other metadata of all jamcams",
 )
-def metadata(db: Session = Depends(get_db),) -> Optional[List[JamCamMetaData]]:
+def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
 

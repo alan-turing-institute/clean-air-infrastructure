@@ -13,7 +13,7 @@ Lengthscales = typer.Option(
 LikelihoodVariance = typer.Option(
     0.1, help="Noise variance for the likelihood.", show_default=True,
 )
-KernelType = typer.Option(
+KernelOption = typer.Option(
     KernelType.matern32, help="Type of kernel.", show_default=True
 )
 KernelVariance = typer.Option(

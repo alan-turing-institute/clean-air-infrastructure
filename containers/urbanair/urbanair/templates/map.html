@@ -197,7 +197,6 @@
         // Map setup is contained in here - as layers can only be added after loading
 
         map.addSource('jamcams', { type: 'geojson', data: mapData }); // This can be used to update the data later
-        console.log(data);
         loadData(getDate()).then(() => {
             updateMapMarkers();
             });
@@ -292,7 +291,6 @@
                 let detection_class = activities[0].detection_class;
                 let all_counts = activities.map(({counts}) => (counts));
                 histogramData[detection_class] = all_counts;
-
                 for (const measurement of activities) {
                     const camera_id = measurement.camera_id;
                     const camera = cameras.get(camera_id);
@@ -307,8 +305,6 @@
 
 
     function injectMapData(scale_upper_limit) {
-
-        console.log("INJECTING MAP DATA");
 
         for (const detection_class of DETECTION_CLASS_LABELS) {
             let class_upper_limit;
@@ -354,7 +350,6 @@
         setHistogramDetectionClass();
     }
 
-
     function updateMapMarkers(){
         document.getElementById("colour-scale-limit").disabled = !document.getElementById("lock-colour-scale").checked;
         injectMapData(getColourScaleLimit());
@@ -368,47 +363,34 @@
     }
             
     function updateBar(counts, type){
-        
+
         let max = Math.max(...counts);
-        let domain = 0;
+
+        let bin_size;
         if (max > 10){
-            domain = Math.ceil(Math.ceil(max) / 10);
+            bin_size = Math.ceil(Math.ceil(max) / 10);
         } else {
-            domain = Math.ceil(Math.ceil(max) / (Math.ceil (max) -1)) ;
-        }
-        let array = [];
-        let frequency=[];
-        array[0] = { no: 0, x: 0, y: domain};
-        frequency[0]=0;
-        for (let i = 1; i < (max / domain) ; i++){
-            frequency[i]= 0;
-            array[i]= { no: i, x: array[i-1].y, y: array[i-1].y + domain};
-        }
-        let number;
-        for(let count of counts){
-            number = array.filter(function (item){return count<item.y})
-            frequency[parseInt(number[0].no)] +=1;
-        }
-        var data=[];
-        for(let i= 0; i < frequency.length; i++){
-            data[i]= array[i].x +"-" + (array[i].y);
+            bin_size = 2;
         }
 
-        let cmax = Math.max(...counts);
-        let interval = cmax / 10;
-        let frequency1 = [0,0,0,0,0,0,0,0,0,0];
-        for(let count of counts){
-            frequency1[count % interval] += 1
+        let bins = [];
+        let lables = [];
+        for (let i=0; i*bin_size<=max; i++) {
+            bins.push(0);
+            lables.push(`${(i*bin_size)}-${((i+1)*bin_size)-1}`);
         }
-                
-        histogramChartConfig.data.labels = data;
+        for(let count of counts) {
+            bins[Math.floor(count/bin_size)] += 1;
+        }
+
+        histogramChartConfig.data.labels = lables;
         histogramChartConfig.data.datasets = [];
         histogramChartConfig.data.datasets.push(
             {
                 label: type,
                 backgroundColor: COLORS[type],
                 borderColor: COLORS[type],
-                data: frequency,
+                data: bins,
                 fill: false,
             }
         );
