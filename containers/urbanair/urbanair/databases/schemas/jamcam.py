@@ -1,7 +1,7 @@
 """Return Schemas for JamCam routes"""
 # pylint: disable=C0115
 from typing import List, Tuple
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from pydantic import BaseModel, validator
 from pydantic.dataclasses import dataclass
 from sqlalchemy import text

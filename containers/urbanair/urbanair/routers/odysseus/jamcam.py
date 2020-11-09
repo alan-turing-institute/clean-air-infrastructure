@@ -139,18 +139,21 @@ def jamcam_daily_params(
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
-    date: Optional[datetime.date] = Query(None, description="(optional) ISO UTC date for which to request data",),
+    date: Optional[datetime.date] = Query(
+        None, description="(optional) ISO UTC date for which to request data",
+    ),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
        If no camera_id is provided request up to 24 hours of data
     """
+    # pylint: disable=C0301
 
     if date == datetime.date.today():
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Data is only available for historical dates at this endpoint. For today, use the /today endpoint",
-            )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Data is only available for historical dates at this endpoint. For today, use the /today endpoint",
+        )
 
     return {
         "camera_id": camera_id,
@@ -167,7 +170,6 @@ def jamcam_daily_params(
 def camera_daily_average(
     commons: dict = Depends(jamcam_daily_params), db: Session = Depends(get_db),
 ) -> Optional[List[Tuple]]:
-
 
     data = get_jamcam_daily(
         db, commons["camera_id"], commons["detection_class"], commons["date"],
