@@ -23,6 +23,7 @@ setuptools.setup(
         "sentry_sdk",
         "passlib[bcrypt]",
         "python-jose[cryptography]==3.2.0",
+        "Authlib==0.15.2",
     ],
     python_requires=">=3.7",
 )
