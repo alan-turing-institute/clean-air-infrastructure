@@ -263,8 +263,11 @@
 
     });
 
-    function loadData(start_time){
+    function loadData(date){
         console.debug("Loading data");
+        mapData.features = [];
+        clearBar();
+        map.getSource('jamcams').setData(mapData); // This clears out the old data and updates the map
 
         return fetch("  {{ url_for('metadata') }}  ")
         .then((response) => {
@@ -272,10 +275,13 @@
         })
         .then((json) => {
             cameras = new Map(json.map(cam => [cam.id, cam])); // Creates a list of cameras indexed by their id
-            let start = start_time + "T00%3A00%3A00";
-            // camera_hourly_average
-            const camera_hourly_url = "{{ url_for('camera_hourly_average') }}"
-            return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_hourly_url}?detection_class=${detection_class}&starttime=${start}`)));
+            if (date == new Date().toISOString().split("T")[0]) {
+                const camera_today_url = "{{ url_for('camera_today_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_today_url}?detection_class=${detection_class}`)));
+            } else {
+                const camera_daily_url = "{{ url_for('camera_daily_average') }}"
+                return Promise.all(DETECTION_CLASSES.map(detection_class => fetch(`${camera_daily_url}?detection_class=${detection_class}&date=${date}`)));
+            }
         })
         .then((responses) => {
             return Promise.all(responses.map(res => res.json()));
@@ -284,33 +290,15 @@
             for (activities of detection_class_json_responses) {
 
                 let detection_class = activities[0].detection_class;
-                if (!detection_class) {
-                    detection_class = 'all';
-                }
-
                 let all_counts = activities.map(({counts}) => (counts));
-
                 histogramData[detection_class] = all_counts;
 
-                for (const camera_id of cameras.keys()) {
-
-                    let items = activities.filter((item) => {
-                        return item.camera_id == camera_id
-                    });
-
-                    if (items.length > 0) {
-                        if (new Date(getDate()).toDateString() == new Date().toDateString()) {
-                            let counts = items.map(({measurement_start_utc, counts}) => ({t: new Date(measurement_start_utc), y: counts}))
-                            let time = items.map(({measurement_start_utc}) => (new Date(measurement_start_utc)))
-                            let last_hour = counts.filter(function (last) {
-                                return last.t == new Date(Math.max(...time)).toString()
-                            })
-                            data.get(detection_class).set(camera_id, last_hour[0].y);
-                        } else {
-                            let count = items.map(({counts}) => (counts));
-                            let sum_at_camera = count.reduce((previous, current) => current += previous);
-                            data.get(detection_class).set(camera_id, (sum_at_camera / count.length));
-                        }
+                for (const measurement of activities) {
+                    const camera_id = measurement.camera_id;
+                    const camera = cameras.get(camera_id);
+                    if (camera != undefined) {
+                        const counts = parseInt(measurement.counts);
+                        data.get(detection_class).set(camera_id, counts);
                     }
                 }
             }
@@ -319,6 +307,8 @@
 
 
     function injectMapData(scale_upper_limit) {
+
+        console.log("INJECTING MAP DATA");
 
         for (const detection_class of DETECTION_CLASS_LABELS) {
             let class_upper_limit;
@@ -368,6 +358,13 @@
     function updateMapMarkers(){
         document.getElementById("colour-scale-limit").disabled = !document.getElementById("lock-colour-scale").checked;
         injectMapData(getColourScaleLimit());
+    }
+
+    function clearBar(){
+        histogramChartConfig.data.labels = [];
+        histogramChartConfig.data.datasets = [];
+        histogramChartConfig.options.title.text = 'Total activity per bucket on ' + getDate() + ' by Type (all cameras)';
+        histogram.update();
     }
             
     function updateBar(counts, type){
