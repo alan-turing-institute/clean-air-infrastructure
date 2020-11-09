@@ -59,7 +59,7 @@ class JamCamVideo(JamCamCounts, UTCTime):
 class JamCamVideoAverage(JamCamAverageCounts, UTCTime):
 
     detection_class: str
-    date: date
+    measurement_start_utc: datetime
 
 
 class JamCamDailyAverage(JamCamAverageCounts):
