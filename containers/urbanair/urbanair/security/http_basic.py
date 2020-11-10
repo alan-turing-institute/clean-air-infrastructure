@@ -20,6 +20,7 @@ def get_http_passwords() -> HtpasswdFile:
 
 def get_http_username(credentials: HTTPBasicCredentials = Depends(security)) -> str:
     "Get username from http basic auth and check authorization. Raise 401 is not authenticated"
+
     ht = get_http_passwords()
     correct_username_and_password = ht.check_password(
         credentials.username, credentials.password

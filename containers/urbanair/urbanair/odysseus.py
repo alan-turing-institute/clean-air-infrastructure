@@ -7,7 +7,12 @@ import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.odysseus import static, jamcam
 from .config import get_settings
-from .security import get_http_username
+from .security import (
+    get_http_username,
+    oauth_basic_user,
+    oauth_admin_user,
+    oauth_enhanced_user,
+)
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
 
@@ -17,7 +22,6 @@ app = FastAPI(
     version="0.0.1",
     root_path=get_settings().root_path,
 )
-
 sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
 if sentry_dsn:
     sentry_sdk.init(dsn=get_settings().sentry_dsn)
@@ -35,11 +39,11 @@ app.mount(
 )
 
 app.include_router(
-    static.router, dependencies=[Depends(get_http_username)],
+    static.router, dependencies=[Depends(oauth_admin_user)],
 )
 app.include_router(
     jamcam.router,
     prefix="/api/v1/jamcams",
     tags=["jamcam"],
-    dependencies=[Depends(get_http_username)],
+    dependencies=[Depends(oauth_admin_user)],
 )

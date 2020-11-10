@@ -2,7 +2,6 @@
 from typing import Optional
 import logging
 from urllib.parse import urlencode
-import uuid
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from datetime import timedelta, datetime
@@ -11,10 +10,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-import msal
 from authlib.integrations.starlette_client import OAuth
 from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
+from pydantic import BaseModel
 from .config import get_settings, AuthSettings
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -39,6 +38,12 @@ auth_settings = AuthSettings()
 app.add_middleware(
     SessionMiddleware, secret_key=auth_settings.session_secret.get_secret_value()
 )
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 
 oauth = OAuth()
 
@@ -77,7 +82,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     return encoded_jwt
 
 
-@app.get("/auth/token")
+@app.get("/auth/token", response_model=Token)
 def odysseus_token(request: Request):
 
     user = request.session.get("user")
@@ -85,6 +90,7 @@ def odysseus_token(request: Request):
         access_token_expires = timedelta(
             minutes=auth_settings.access_token_expire_minutes
         )
+
         access_token = create_access_token(
             data={"sub": user["preferred_username"], "roles": user["groups"]},
             expires_delta=access_token_expires,
