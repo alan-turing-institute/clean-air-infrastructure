@@ -26,7 +26,7 @@ else:
     logging.warning("Sentry is not logging errors")
 
 app.mount(
-    "/odysseus/static",
+    f"{app.root_path}/static",
     StaticFiles(
         directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
     ),
