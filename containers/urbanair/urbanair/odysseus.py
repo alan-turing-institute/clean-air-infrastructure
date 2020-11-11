@@ -45,7 +45,7 @@ app.mount(
     name="static",
 )
 
-# app.include_router(static.router)
+app.include_router(static.router)
 app.include_router(
     jamcam.router,
     prefix="/api/v1/jamcams",

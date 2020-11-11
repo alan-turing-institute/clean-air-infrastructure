@@ -15,17 +15,18 @@ templates = Jinja2Templates(
 )
 
 
-@router.get("/", include_in_schema=False)
-async def index(request: Request) -> RedirectResponse:
-
-    return RedirectResponse(url=request.url_for("jamcam_map"))
-
-
 @router.get("/usage", include_in_schema=False)
 async def usage(request: Request) -> Response:
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url=request.url_for("home"))
     return templates.TemplateResponse("usage.html", {"request": request})
 
 
 @router.get("/map", include_in_schema=False)
 async def jamcam_map(request: Request) -> Response:
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url=request.url_for("home"))
+
     return templates.TemplateResponse("map.html", {"request": request})
