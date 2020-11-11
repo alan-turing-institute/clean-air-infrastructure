@@ -1,5 +1,6 @@
 """Test the air quality experiment classes"""
 
+
 class TestSetupAirQualityExperiment:
     """Test datasets are loaded using the setup experiment class"""
 

@@ -24,9 +24,7 @@ class ExperimentMixin:
     """
 
     def __init__(
-        self,
-        input_dir: Path,
-        **kwargs,
+        self, input_dir: Path, **kwargs,
     ):
         super().__init__(self, **kwargs)
 
@@ -43,7 +41,9 @@ class ExperimentMixin:
         # add instance to dictionary of instances
         self._instances[instance.instance_id] = instance
         # create a new file manager for the instance
-        self._file_managers[instance.instance_id] = FileManager(self.input_dir / instance.instance_id)
+        self._file_managers[instance.instance_id] = FileManager(
+            self.input_dir / instance.instance_id
+        )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
         """Get an instance from the lookup table"""
@@ -52,6 +52,7 @@ class ExperimentMixin:
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
+
 
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
@@ -86,19 +87,25 @@ class SetupExperimentMixin(ExperimentMixin):
         """Add a training dataset"""
         valid_data_id = self.__is_data_id_in_instances(data_id)
         if not valid_data_id:
-            raise ValueError("There are no instances in the experiment with data id:" + data_id)
+            raise ValueError(
+                "There are no instances in the experiment with data id:" + data_id
+            )
         self._training_dataset[data_id] = dataset
 
     def add_test_dataset(self, data_id: str, dataset: Any) -> None:
         """Add a test dataset"""
         valid_data_id = self.__is_data_id_in_instances(data_id)
         if not valid_data_id:
-            raise ValueError("There are no instances in the experiment with data id:" + data_id)
+            raise ValueError(
+                "There are no instances in the experiment with data id:" + data_id
+            )
         self.test_dataset[data_id] = dataset
 
     def load_datasets(self) -> None:
         """Load the datasets"""
-        data_id_list: List[str] = [instance.data_id for _, instance in self._instances.values()]
+        data_id_list: List[str] = [
+            instance.data_id for _, instance in self._instances.values()
+        ]
         for data_id in data_id_list:
             training_dataset = self.load_training_dataset(data_id)
             test_dataset = self.load_test_dataset(data_id)
@@ -112,6 +119,7 @@ class SetupExperimentMixin(ExperimentMixin):
     def get_test_dataset(self, data_id: str) -> None:
         """Get a test dataset"""
         return self._test_dataset[data_id]
+
 
 class RunnableExperimentMixin(SetupExperimentMixin):
     """Run the experiment"""
@@ -146,6 +154,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
             self.predict_on_training_set(instance_id)
             self.predict_on_test_set(instance_id)
             self.save_result(instance_id)
+
 
 class UpdateExperimentMixin(ExperimentMixin):
     """An experiment that can write to databases"""

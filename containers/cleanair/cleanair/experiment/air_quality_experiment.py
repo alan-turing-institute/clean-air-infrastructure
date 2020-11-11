@@ -9,6 +9,7 @@ from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
 
+
 class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""
 
@@ -22,7 +23,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         training_data_df: pd.DataFrame = self.model_data.download_config_data(
             data_config, training_data=True
         )
-        training_data_df_norm: pd.DataFrame = self.model_data.normalize_data(data_config, training_data_df)
+        training_data_df_norm: pd.DataFrame = self.model_data.normalize_data(
+            data_config, training_data_df
+        )
         return training_data_df_norm
 
     def load_test_dataset(self, data_id: str) -> pd.DataFrame:
@@ -48,6 +51,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         file_manager.save_test_data[test_dataset]
         file_manager.save_model_params(instance.model_params)
 
+
 class RunnableAirQualityExperiment(RunnableExperimentMixin):
     """Run an air quality experiment"""
 
@@ -71,7 +75,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         instance_id = self.find_instance_id_from_data_id(data_id)
         file_manager = self._file_managers[instance_id]
         model_data = ModelDataExtractor()
-        # load the data from this instance
+        #  load the data from this instance
         training_data_df = self._file_managers[instance_id].load_training_dataset()
         full_config = file_manager.load_data_config(full=True)
         return model_data.get_data_arrays(
@@ -84,12 +88,10 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         instance_id = self.find_instance_id_from_data_id(data_id)
         file_manager = self._file_managers[instance_id]
         model_data = ModelDataExtractor()
-        # load the data from this instance
+        #  load the data from this instance
         test_data_df = file_manager.load_test_dataset()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(
-            full_config, test_data_df, prediction=True,
-        )
+        return model_data.get_data_arrays(full_config, test_data_df, prediction=True,)
 
     def load_model(self, instance_id: str) -> Model:
         """Load the model using the instance id"""
@@ -113,7 +115,9 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         instance = self._instances[instance_id]
         X_train = self._training_dataset[instance.data_id]
         model = self._models[instance_id]
-        if Source.satellite in X_train:  # remove satellite when predicting on training set
+        if (
+            Source.satellite in X_train
+        ):  # remove satellite when predicting on training set
             X_train.pop(Source.satellite)
         y_training_result = model.predict(X_train)
         self._training_result[instance_id] = y_training_result
