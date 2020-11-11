@@ -3,10 +3,12 @@ import os
 import logging
 from fastapi import FastAPI, Depends
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from .routers.odysseus import static, jamcam
-from .config import get_settings
+from .routers.auth import auth
+from .config import get_settings, AuthSettings
 from .security import (
     get_http_username,
     oauth_basic_user,
@@ -30,6 +32,11 @@ if sentry_dsn:
 else:
     logging.warning("Sentry is not logging errors")
 
+auth_settings = AuthSettings()
+app.add_middleware(
+    SessionMiddleware, secret_key=auth_settings.session_secret.get_secret_value()
+)
+
 app.mount(
     "/static",
     StaticFiles(
@@ -38,12 +45,12 @@ app.mount(
     name="static",
 )
 
-app.include_router(
-    static.router, dependencies=[Depends(oauth_admin_user)],
-)
+# app.include_router(static.router)
 app.include_router(
     jamcam.router,
     prefix="/api/v1/jamcams",
     tags=["jamcam"],
     dependencies=[Depends(oauth_admin_user)],
 )
+
+app.include_router(auth.router)

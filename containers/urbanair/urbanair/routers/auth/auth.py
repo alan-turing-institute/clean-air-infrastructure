@@ -1,44 +1,17 @@
-"""OAUTH Login for Odysseus"""
-from typing import Optional
-import logging
-from urllib.parse import urlencode
-from fastapi import FastAPI, Depends, Request, HTTPException, status
-from fastapi.responses import RedirectResponse, HTMLResponse
+"""
+Authentication via MS routes
+"""
 from datetime import timedelta, datetime
+from urllib.parse import urlencode
 from jose import JWTError, jwt
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-import sentry_sdk
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from fastapi import APIRouter, Depends, Request, HTTPException, status
+from fastapi.responses import RedirectResponse, HTMLResponse
+from pydantic import BaseSettings, BaseModel
 from authlib.integrations.starlette_client import OAuth
-from starlette.middleware.sessions import SessionMiddleware
-from pathlib import Path
-from pydantic import BaseModel
-from .config import get_settings, AuthSettings
+from ...config import AuthSettings, auth_templates
 
-logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
-
-app = FastAPI(
-    title="My",
-    description="High resolution air pollution forecasts",
-    version="0.0.1",
-    root_path=get_settings().root_path,
-)
-
-
-sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
-if sentry_dsn:
-    sentry_sdk.init(dsn=get_settings().sentry_dsn)
-    app.add_middleware(SentryAsgiMiddleware)
-    logger.info("Adding sentry logging middleware")
-else:
-    logging.warning("Sentry is not logging errors")
-
+router = APIRouter()
 auth_settings = AuthSettings()
-
-app.add_middleware(
-    SessionMiddleware, secret_key=auth_settings.session_secret.get_secret_value()
-)
 
 
 class Token(BaseModel):
@@ -46,8 +19,8 @@ class Token(BaseModel):
     token_type: str
 
 
+# Register Azure AAD
 oauth = OAuth()
-
 oauth.register(
     name="azure",
     client_id=str(auth_settings.client_id),
@@ -61,14 +34,8 @@ oauth.register(
     + "/v2.0/.well-known/openid-configuration",
 )
 
-app.mount(
-    "/static",
-    StaticFiles(directory=str((Path(__file__).parent / "static").absolute())),
-    name="static",
-)
-templates = Jinja2Templates(
-    directory=str((Path(__file__).parent / "templates" / "auth").absolute())
-)
+
+# Define Authentication Routes
 
 
 def create_access_token(data: dict, expires_delta: timedelta):
@@ -83,7 +50,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     return encoded_jwt
 
 
-@app.get("/auth/token", response_model=Token)
+@router.get("/auth/token", response_model=Token)
 def odysseus_token(request: Request):
 
     credentials_exception = HTTPException(
@@ -106,33 +73,34 @@ def odysseus_token(request: Request):
     raise credentials_exception
 
 
-@app.get("/")
-async def welcome():
-    return HTMLResponse('<a href="/login">login</a>')
-
-
-@app.get("/home")
+@router.get("/")
 async def home(request: Request):
 
     user = request.session.get("user")
     if not user:
-        return RedirectResponse(url=request.url_for("welcome"))
+        return HTMLResponse('<a href="/login">login</a>')
 
-    return templates.TemplateResponse("auth.html", {"request": request, "user": user})
+    return auth_templates.TemplateResponse(
+        "auth.html", {"request": request, "user": user}
+    )
 
 
-@app.route("/login")
+@router.route("/login")
 async def login(request: Request):
 
     redirect_uri = request.url_for("authorized")
 
     if "http://0.0.0.0" in redirect_uri:
         redirect_uri = redirect_uri.replace("http://0.0.0.0", "http://localhost")
+    if "http://127.0.0.1" in redirect_uri:
+        redirect_uri = redirect_uri.replace("http://127.0.0.1", "http://localhost")
 
     return await oauth.azure.authorize_redirect(request, redirect_uri)
 
 
-@app.get("/getAToken")  # Its absolute URL must match your app's redirect_uri set in AAD
+@router.get(
+    "/getAToken"
+)  # Its absolute URL must match your app's redirect_uri set in AAD
 async def authorized(request: Request):
 
     token = await oauth.azure.authorize_access_token(request)
@@ -142,14 +110,15 @@ async def authorized(request: Request):
     return RedirectResponse(url=request.url_for("home"))
 
 
-@app.route("/logout")
+@router.route("/logout")
 async def logout(request: Request):
 
     request.session.pop("user", None)
     end_session_base_uri = (await oauth.azure.load_server_metadata())[
         "end_session_endpoint"
     ]
-    return_to = urlencode({"post_logout_redirect_uri": request.url_for("welcome")})
+    return_to = urlencode({"post_logout_redirect_uri": request.url_for("home")})
     logout_uri = end_session_base_uri + "?" + return_to
 
     return RedirectResponse(url=logout_uri)
+
