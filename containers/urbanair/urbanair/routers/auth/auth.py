@@ -50,12 +50,7 @@ def create_access_token(data: dict, expires_delta: timedelta):
     return encoded_jwt
 
 
-@router.get(
-    "/auth/token",
-    response_model=Token,
-    description="When using the swagger docs click the Authorize button and paste the token",
-    summary="Generate an Access Token",
-)
+@router.get("/auth/token", response_model=Token, include_in_schema=False)
 def odysseus_token(request: Request):
 
     credentials_exception = HTTPException(

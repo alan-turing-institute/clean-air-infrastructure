@@ -25,7 +25,7 @@
             <h3>Generate an access token</h3>
             <p>Access tokens are short lived tokens which can be used to authenticate against the Odysseus API.</p>
             <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
-            <p>You can alternatively create an access token via the <a href='/docs'>Swagger Docs</a></p>
+            <P>Use the token by setting the following header in your api requests: <span>"Authorization: Bearer {your token}"</span></P>
             <textarea id="access" class="access" placeholder="Click the button"></textarea>
             <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
             <button class="btn success" onclick="copyAccessToken()">Copy token to clipboard</button>
@@ -33,8 +33,10 @@
 
         <div class="token">
             <h3>API Docs</h3>
-            <p>Check the API <a href='/docs'>Swagger Docs</a> to try out the API.</p>
+            <p>Check the API <a href=" {{ url_for('get_documentation') }}">Swagger Docs</a> to try out the API.</p>
             <p>Generate a token above. When using the Swagger Docs click the <span>Authorize</span> button and copy in your token.</p>
+
+            <p>Docs are also available as <a href=" {{ url_for('get_redocumentation') }}">ReDocs</a>
         </div>
     </div>
     </div>
