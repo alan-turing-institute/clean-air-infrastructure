@@ -1,6 +1,7 @@
 """Experiments summerise multiple instances."""
 
 from abc import abstractmethod
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import pandas as pd
@@ -39,27 +40,26 @@ class ExperimentMixin:
 
     def add_instance(self, instance: InstanceMixin) -> None:
         """Add a new instance to the experiment"""
-        # TODO add instance to dictionary of instances
-        # TODO create a new file manager for the instance
+        # add instance to dictionary of instances
+        self._instances[instance.instance_id] = instance
+        # create a new file manager for the instance
+        self._file_managers[instance.instance_id] = FileManager(self.input_dir / instance.instance_id)
 
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
-
-    @abstractmethod
-    def run(self) -> None:
-        """Run the experiment for each instance"""
 
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
 
     def __init__(self, **kwargs):
         super().__init__(self, **kwargs)
-        self._dataset: Dict[str, Any] = dict()
-        self_data_config_lookup: Dict[str, Any] = dict()
+        self._test_dataset: Dict[str, Any] = dict()
+        self._training_dataset: Dict[str, Any] = dict()
+        self._data_config_lookup: Dict[str, Any] = dict()
 
     @abstractmethod
-    def load_training_dataset(self, data_id: str) -> Tuple(Any, Any):
+    def load_training_dataset(self, data_id: str) -> Any:
         """Use the data id to load the dataset"""
 
     @abstractmethod
@@ -67,29 +67,57 @@ class SetupExperimentMixin(ExperimentMixin):
         """Use the data id to load a test dataset"""
 
     def add_instance(self, instance: InstanceMixin) -> None:
+        """Add the instance and create a lookup from data id to data config"""
         super().add_instance(instance)
         self._data_config_lookup[instance.data_id] = instance.data_config
 
-    def add_dataset(self, data_id: str, dataset: Tuple[Any, Any]) -> None:
-        """Add a dataset"""
-        valid_data_id = False
+    def __is_data_id_in_instances(self, data_id: str) -> bool:
+        """Does the data id belond to an instance"""
         for _, instance in self._instances.values():
             if instance.data_id == data_id:
-                valid_data_id = True
+                return True
+        return False
+
+    def add_training_dataset(self, data_id: str, dataset: Tuple[Any, Any]) -> None:
+        """Add a training dataset"""
+        valid_data_id = self.__is_data_id_in_instances(data_id)
         if not valid_data_id:
             raise ValueError("There are no instances in the experiment with data id:" + data_id)
-        self._dataset[data_id] = dataset
+        self._training_dataset[data_id] = dataset
 
-    def load_training_datasets(self) -> Dict[str, Tuple[Any, Any]]:
-        """Get a dictionary of training datasets indexed by the data id"""
+    def add_test_dataset(self, data_id: str, dataset: Any) -> None:
+        """Add a test dataset"""
+        valid_data_id = self.__is_data_id_in_instances(data_id)
+        if not valid_data_id:
+            raise ValueError("There are no instances in the experiment with data id:" + data_id)
+        self.test_dataset[data_id] = dataset
+
+    def load_datasets(self) -> None:
+        """Load the datasets"""
         data_id_list: List[str] = [instance.data_id for _, instance in self._instances.values()]
         for data_id in data_id_list:
             training_dataset = self.load_training_dataset(data_id)
-            self.add_dataset(data_id, training_dataset)
-        return 
+            test_dataset = self.load_test_dataset(data_id)
+            self.add_training_dataset(data_id, training_dataset)
+            self.add_test_dataset(data_id, test_dataset)
 
-    def load_test_datasets(self) -> Dict[str, Any]:
-        """Get a dictionary of test datasets indexed by the data id"""
+class RunnableExperimentMixin(ExperimentMixin):
+    """Run the experiment"""
+
+    @abstractmethod
+    def run_instance(self, instance_id: str) -> None:
+        """Run the instance"""
+
+    @abstractmethod
+    def save_instance_result(self, instance_id) -> None:
+        """Save the result of the instance"""
+
+    def run_experiment(self) -> None:
+        """Run the experiment"""
+        for instance_id, instance in self._instances.values():
+            instance.fit_start_time = datetime.now()
+            self.run_instance(instance_id)
+            self.save_instance_result(instance_id)
 
 class UpdateExperimentMixin(ExperimentMixin):
     """An experiment that can write to databases"""
