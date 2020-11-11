@@ -45,6 +45,10 @@ class ExperimentMixin:
         # create a new file manager for the instance
         self._file_managers[instance.instance_id] = FileManager(self.input_dir / instance.instance_id)
 
+    def get_instance(self, instance_id: str) -> InstanceMixin:
+        """Get an instance from the lookup table"""
+        return self._instances[instance_id]
+
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
@@ -100,6 +104,14 @@ class SetupExperimentMixin(ExperimentMixin):
             test_dataset = self.load_test_dataset(data_id)
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
+
+    def get_training_dataset(self, data_id: str) -> None:
+        """Get a training dataset"""
+        return self._training_dataset[data_id]
+
+    def get_test_dataset(self, data_id: str) -> None:
+        """Get a test dataset"""
+        return self._test_dataset[data_id]
 
 class RunnableExperimentMixin(SetupExperimentMixin):
     """Run the experiment"""
@@ -178,10 +190,3 @@ class UpdateExperimentMixin(ExperimentMixin):
 
         # update the instance table
         self.update_table_from_frame(frame, self.instance_table)
-
-class ModelComparisionExperiment(SetupExperimentMixin):
-    """Compare each model on the same datasets"""
-
-class DatasetComparisonExperiment(SetupExperimentMixin):
-    """Compare different dataset configurations (e.g. features) for the same model parameters"""
-
