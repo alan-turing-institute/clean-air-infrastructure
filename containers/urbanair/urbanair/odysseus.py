@@ -34,7 +34,9 @@ else:
 
 auth_settings = AuthSettings()
 app.add_middleware(
-    SessionMiddleware, secret_key=auth_settings.session_secret.get_secret_value()
+    SessionMiddleware,
+    secret_key=auth_settings.session_secret.get_secret_value(),
+    max_age=24 * 60 * 60,
 )
 
 app.mount(
