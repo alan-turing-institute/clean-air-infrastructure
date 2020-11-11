@@ -13,7 +13,9 @@ def test_experiment_init(simple_experiment):
 def test_add_instance_to_experiment(simple_experiment, simple_instance):
     """Test an instance is added to the experiment"""
     simple_experiment.add_instance(simple_instance)
-    assert simple_instance.instance_id in simple_experiment
+    assert (
+        simple_experiment.get_instance(simple_instance.instance_id) == simple_instance
+    )
     # a directory with the instance id should be created
     assert simple_experiment.get_file_manager(
         simple_instance.instance_id
@@ -28,8 +30,8 @@ def test_add_training_dataset(simple_setup_experiment, simple_instance):
 
     simple_setup_experiment.add_instance(simple_instance)
     simple_setup_experiment.add_training_dataset(simple_instance.data_id, dataset)
-    assert (
-        simple_setup_experiment.get_training_dataset(simple_instance.data_id) == dataset
+    assert np.array_equal(
+        simple_setup_experiment.get_training_dataset(simple_instance.data_id), dataset
     )
 
 
@@ -41,7 +43,9 @@ def test_add_test_dataset(simple_setup_experiment, simple_instance):
 
     simple_setup_experiment.add_instance(simple_instance)
     simple_setup_experiment.add_test_dataset(simple_instance.data_id, dataset)
-    assert simple_setup_experiment.get_test_dataset(simple_instance.data_id) == dataset
+    assert np.array_equal(
+        simple_setup_experiment.get_test_dataset(simple_instance.data_id), dataset
+    )
 
 
 def test_load_datasets(simple_setup_experiment, different_instance, simple_instance):

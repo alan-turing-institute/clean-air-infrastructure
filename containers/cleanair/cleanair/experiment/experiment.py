@@ -26,7 +26,7 @@ class ExperimentMixin:
     def __init__(
         self, input_dir: Path, **kwargs,
     ):
-        super().__init__(self, **kwargs)
+        super().__init__(**kwargs)
 
         # create directory for saving files if it doesn't exist
         self.input_dir = input_dir
@@ -57,8 +57,8 @@ class ExperimentMixin:
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
 
-    def __init__(self, **kwargs):
-        super().__init__(self, **kwargs)
+    def __init__(self, input_dir: Path, **kwargs):
+        super().__init__(input_dir, **kwargs)
         self._test_dataset: Dict[str, Any] = dict()
         self._training_dataset: Dict[str, Any] = dict()
         self._data_config_lookup: Dict[str, Any] = dict()
@@ -78,7 +78,7 @@ class SetupExperimentMixin(ExperimentMixin):
 
     def __is_data_id_in_instances(self, data_id: str) -> bool:
         """Does the data id belond to an instance"""
-        for _, instance in self._instances.values():
+        for _, instance in self._instances.items():
             if instance.data_id == data_id:
                 return True
         return False
@@ -99,12 +99,12 @@ class SetupExperimentMixin(ExperimentMixin):
             raise ValueError(
                 "There are no instances in the experiment with data id:" + data_id
             )
-        self.test_dataset[data_id] = dataset
+        self._test_dataset[data_id] = dataset
 
     def load_datasets(self) -> None:
         """Load the datasets"""
         data_id_list: List[str] = [
-            instance.data_id for _, instance in self._instances.values()
+            instance.data_id for _, instance in self._instances.items()
         ]
         for data_id in data_id_list:
             training_dataset = self.load_training_dataset(data_id)
@@ -147,7 +147,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
     def run_experiment(self) -> None:
         """Run the experiment"""
         # make sure to load the datasets first
-        for instance_id, instance in self._instances.values():
+        for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
             self.load_model(instance_id)
             self.train_model(instance_id)
