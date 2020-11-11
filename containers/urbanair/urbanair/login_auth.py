@@ -114,6 +114,10 @@ def token_mint(request: Request):
 async def login(request: Request):
 
     redirect_uri = request.url_for("authorized")
+
+    if "http://0.0.0.0" in redirect_uri:
+        redirect_uri = redirect_uri.replace("http://0.0.0.0", "http://localhost")
+
     return await oauth.azure.authorize_redirect(request, redirect_uri)
 
 
