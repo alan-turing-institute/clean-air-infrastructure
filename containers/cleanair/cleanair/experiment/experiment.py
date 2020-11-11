@@ -101,23 +101,39 @@ class SetupExperimentMixin(ExperimentMixin):
             self.add_training_dataset(data_id, training_dataset)
             self.add_test_dataset(data_id, test_dataset)
 
-class RunnableExperimentMixin(ExperimentMixin):
+class RunnableExperimentMixin(SetupExperimentMixin):
     """Run the experiment"""
 
     @abstractmethod
-    def run_instance(self, instance_id: str) -> None:
-        """Run the instance"""
+    def save_result(self, instance_id) -> None:
+        """Save the result of the instance"""
 
     @abstractmethod
-    def save_instance_result(self, instance_id) -> None:
-        """Save the result of the instance"""
+    def load_model(self, instance_id: str) -> Any:
+        """Load the model using the instance id"""
+
+    @abstractmethod
+    def train_model(self, instance_id: str) -> None:
+        """Train the model"""
+
+    @abstractmethod
+    def predict_on_training_set(self, instance_id: str) -> Any:
+        """Predict on the training set"""
+
+    @abstractmethod
+    def predict_on_test_set(self, instance_id: str) -> Any:
+        """Predict on the test set"""
 
     def run_experiment(self) -> None:
         """Run the experiment"""
+        # make sure to load the datasets first
         for instance_id, instance in self._instances.values():
             instance.fit_start_time = datetime.now()
-            self.run_instance(instance_id)
-            self.save_instance_result(instance_id)
+            self.load_model(instance_id)
+            self.train_model(instance_id)
+            self.predict_on_training_set(instance_id)
+            self.predict_on_test_set(instance_id)
+            self.save_result(instance_id)
 
 class UpdateExperimentMixin(ExperimentMixin):
     """An experiment that can write to databases"""

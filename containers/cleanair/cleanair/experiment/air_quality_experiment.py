@@ -3,9 +3,10 @@
 from pathlib import Path
 from typing import Dict
 import pandas as pd
+from gpflow.models.model import Model
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
-from ..models import ModelData, ModelDataExtractor
-from ..types import TargetDict
+from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
+from ..types import IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
@@ -47,13 +48,14 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         file_manager.save_test_data[test_dataset]
         file_manager.save_model_params(instance.model_params)
 
-class RunnableAirQualityExperiment(RunnableExperimentMixin, SetupExperimentMixin):
+class RunnableAirQualityExperiment(RunnableExperimentMixin):
     """Run an air quality experiment"""
 
     def __init__(self, input_dir: Path, **kwargs):
         super().__init__(input_dir, **kwargs)
-        self.training_result: Dict[str, TargetDict] = dict()
-        self.test_result: Dict[str, TargetDict] = dict()
+        self._models: Dict[str, Model] = dict()
+        self._training_result: Dict[str, TargetDict] = dict()
+        self._test_result: Dict[str, TargetDict] = dict()
 
     def find_instance_id_from_data_id(self, data_id: str) -> str:
         """Search through instances to find the instance id matching the data id"""
@@ -63,7 +65,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin, SetupExperimentMixin
                 return iid
         raise ValueError("No instance found for data id:", data_id)
 
-    def load_training_dataset(self, data_id: str) -> pd.DataFrame:
+    def load_training_dataset(self, data_id: str) -> IndexedDatasetDict:
         """Load a training dataset from file"""
         # TODO we should have a directory of datasets
         instance_id = self.find_instance_id_from_data_id(data_id)
@@ -76,7 +78,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin, SetupExperimentMixin
             full_config, training_data_df, prediction=False,
         )
 
-    def load_test_dataset(self, data_id: str) -> pd.DataFrame:
+    def load_test_dataset(self, data_id: str) -> IndexedDatasetDict:
         """Load a test dataset from file"""
         # TODO we should have a directory of datasets
         instance_id = self.find_instance_id_from_data_id(data_id)
@@ -89,17 +91,48 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin, SetupExperimentMixin
             full_config, test_data_df, prediction=True,
         )
 
-    def run_instance(self, instance_id: str) -> None:
-        """Run the instance - train the model and predict"""
+    def load_model(self, instance_id: str) -> Model:
+        """Load the model using the instance id"""
         instance = self._instances[instance_id]
-        X_train, Y_train, _ =  self.load_training_dataset(instance.data_id)
-        X_test, _, _ = self.load_test_dataset(instance.data_id)
+        if instance.model_name == ModelName.svgp:
+            model = SVGP(instance.model_params)
+        elif instance.model_name == ModelName.mrdgp:
+            model = MRDGP(instance.model_params)
+        self._models[instance_id] = model
+        return model
 
-        # Fit model
+    def train_model(self, instance_id: str) -> None:
+        """Train the model"""
+        instance = self._instances[instance_id]
+        model = self._models[instance_id]
+        X_train, Y_train, _ = self._training_dataset[instance.data_id]
         model.fit(X_train, Y_train)
 
-        # Prediction
-        y_forecast = model.predict(X_test)
+    def predict_on_training_set(self, instance_id: str) -> TargetDict:
+        """Predict on the training set"""
+        instance = self._instances[instance_id]
+        X_train = self._training_dataset[instance.data_id]
+        model = self._models[instance_id]
         if Source.satellite in X_train:  # remove satellite when predicting on training set
             X_train.pop(Source.satellite)
         y_training_result = model.predict(X_train)
+        self._training_result[instance_id] = y_training_result
+        return y_training_result
+
+    def predict_on_test_set(self, instance_id: str) -> TargetDict:
+        """Predict on the test set"""
+        instance = self._instances[instance_id]
+        X_test = self._test_dataset[instance.data_id]
+        model = self._models[instance_id]
+        y_forecast = model.predict(X_test)
+        self._test_result[instance_id] = y_forecast
+        return y_forecast
+
+    def save_result(self, instance_id: str) -> None:
+        """Save the predictions on training set and test set to file"""
+        # save predictions to file
+        file_manager: FileManager = self._file_managers[instance_id]
+        y_training_result = self._training_result[instance_id]
+        y_forecast = self._test_result[instance_id]
+        file_manager.save_pred_training_to_pickle(y_training_result)
+        file_manager.save_forecast_to_pickle(y_forecast)
