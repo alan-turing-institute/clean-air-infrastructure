@@ -14,12 +14,13 @@
     </div>
 
     <div class = "container">
-        <div class="item token">
+        <div class="token">
             <h3>Generate an access token</h3>
             <p>Access tokens are short lived tokens which can be used to authenticate against the API.</p>
             <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
-            <div id = "access" class = "access">Click the button</div>
+            <textarea id="access" class="access" placeholder="Click the button"></textarea>
             <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
+            <button class="btn success" onclick="copyAccessToken()">Copy token to clipboard</button>
         </div>
     </div>
 
@@ -47,16 +48,16 @@ function getAccessToken() {
         
             try {
                 response = JSON.parse(this.responseText);
-                document.getElementById("access").innerHTML = response.access_token;
+                document.getElementById("access").value = response.access_token;
             } catch(e){
                 if (e instanceof TypeError) {
                     text = "Failed to fetch token. Contact administrator"
-                    document.getElementById("access").innerHTML = text;
+                    document.getElementById("access").value = text;
                     console.log(text)
                 }
                 else{
                     text = "Unknown error. Contact administrator"
-                    document.getElementById("access").innerHTML = text;
+                    document.getElementById("access").value = text;
                     console.log(text)
                 }
             }
@@ -64,6 +65,12 @@ function getAccessToken() {
     };
     xhttp.open("GET", "{{ url_for('odysseus_token') }}", true);
     xhttp.send();
+}
+
+
+function copyAccessToken() {
+    document.getElementById("access").select();
+    document.execCommand("copy");
 }
 
 
