@@ -50,7 +50,12 @@ def create_access_token(data: dict, expires_delta: timedelta):
     return encoded_jwt
 
 
-@router.get("/auth/token", response_model=Token)
+@router.get(
+    "/auth/token",
+    response_model=Token,
+    description="When using the swagger docs click the Authorize button and paste the token",
+    summary="Generate an Access Token",
+)
 def odysseus_token(request: Request):
 
     credentials_exception = HTTPException(
@@ -73,7 +78,7 @@ def odysseus_token(request: Request):
     raise credentials_exception
 
 
-@router.get("/")
+@router.get("/", include_in_schema=False)
 async def home(request: Request):
 
     user = request.session.get("user")
@@ -85,7 +90,7 @@ async def home(request: Request):
     )
 
 
-@router.route("/login")
+@router.route("/login", include_in_schema=False)
 async def login(request: Request):
 
     redirect_uri = request.url_for("authorized")
@@ -99,7 +104,7 @@ async def login(request: Request):
 
 
 @router.get(
-    "/getAToken"
+    "/getAToken", include_in_schema=False,
 )  # Its absolute URL must match your app's redirect_uri set in AAD
 async def authorized(request: Request):
 
@@ -110,7 +115,7 @@ async def authorized(request: Request):
     return RedirectResponse(url=request.url_for("home"))
 
 
-@router.route("/logout")
+@router.route("/logout", include_in_schema=False)
 async def logout(request: Request):
 
     request.session.pop("user", None)

@@ -15,6 +15,10 @@ body {
     margin: 0px;
 }
 
+a {
+    color: blue;
+    font-weight: bold;
+}
 .container {
     display: flex;
     justify-content: center;
@@ -26,7 +30,7 @@ body {
     min-height: 1px;
     width: 50%;
     max-width: 50%;
-}
+} 
 
 /* Add a black background color to the top navigation */
 .topnav {
@@ -54,6 +58,11 @@ body {
     background-color: #ddd;
     color: black;
   }
+
+.topnav .title {
+    float: left;
+    font-weight: bold;
+}
 
 .topnav .user {
       color: white;

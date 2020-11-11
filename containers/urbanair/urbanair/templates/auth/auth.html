@@ -11,17 +11,32 @@
     <div class="topnav">
         <a href = "{{ url_for('logout') }}">Logout</a>
         <a class="user">{{user.preferred_username}}</a>
+        <a class="title">Odysseus</a>
     </div>
 
     <div class = "container">
+        <div>
+        <div class="token">
+            <h3>Odysseus Map</h3>
+            <p>Visit the <a href="{{ url_for('jamcam_map') }}">Odysseus Map</a> to see activity at JamCam camera's across London.</p>
+        </div>
+
         <div class="token">
             <h3>Generate an access token</h3>
-            <p>Access tokens are short lived tokens which can be used to authenticate against the API.</p>
+            <p>Access tokens are short lived tokens which can be used to authenticate against the Odysseus API.</p>
             <p>The tokens will <span>expire after 60 minutes</span>. Request a new token to access the API again</p>
+            <p>You can alternatively create an access token via the <a href='/docs'>Swagger Docs</a></p>
             <textarea id="access" class="access" placeholder="Click the button"></textarea>
             <button class="btn success" onclick="getAccessToken()">+ Create a Token</button>
             <button class="btn success" onclick="copyAccessToken()">Copy token to clipboard</button>
         </div>
+
+        <div class="token">
+            <h3>API Docs</h3>
+            <p>Check the API <a href='/docs'>Swagger Docs</a> to try out the API.</p>
+            <p>Generate a token above. When using the Swagger Docs click the <span>Authorize</span> button and copy in your token.</p>
+        </div>
+    </div>
     </div>
 
     <footer>

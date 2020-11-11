@@ -1,8 +1,11 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from starlette.middleware.sessions import SessionMiddleware
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
@@ -23,6 +26,9 @@ app = FastAPI(
     description="Project Odysseus API",
     version="0.0.1",
     root_path=get_settings().root_path,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 sentry_dsn = get_settings().sentry_dsn  # pylint: disable=C0103
 if sentry_dsn:
@@ -47,7 +53,13 @@ app.mount(
     name="static",
 )
 
+# Static routes require login session
 app.include_router(static.router)
+
+# Add routes for logging in and generating access token
+app.include_router(auth.router, tags=["auth"])
+
+# Other routes protected by oauth
 app.include_router(
     jamcam.router,
     prefix="/api/v1/jamcams",
@@ -55,4 +67,29 @@ app.include_router(
     dependencies=[Depends(oauth_admin_user)],
 )
 
-app.include_router(auth.router)
+
+@app.get("/openapi.json", include_in_schema=False)
+async def get_open_api_endpoint(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return HTMLResponse('<a href="/login">login</a>')
+    return JSONResponse(
+        get_openapi(title="Odysseus API", version="0.0.1", routes=app.routes)
+    )
+
+
+@app.get("/docs", include_in_schema=False)
+async def get_documentation(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return HTMLResponse('<a href="/login">login</a>')
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
+
+
+@app.get("/redoc", include_in_schema=False)
+async def get_redocumentation(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return HTMLResponse('<a href="/login">login</a>')
+    return get_redoc_html(openapi_url="/openapi.json", title="docs")
+
