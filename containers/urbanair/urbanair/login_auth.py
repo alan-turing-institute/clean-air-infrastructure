@@ -2,7 +2,7 @@
 from typing import Optional
 import logging
 from urllib.parse import urlencode
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI, Depends, Request, HTTPException, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
@@ -35,6 +35,7 @@ else:
     logging.warning("Sentry is not logging errors")
 
 auth_settings = AuthSettings()
+
 app.add_middleware(
     SessionMiddleware, secret_key=auth_settings.session_secret.get_secret_value()
 )
@@ -85,6 +86,11 @@ def create_access_token(data: dict, expires_delta: timedelta):
 @app.get("/auth/token", response_model=Token)
 def odysseus_token(request: Request):
 
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication Error: Could not validate credentials. Ensure user logged in.",
+    )
+
     user = request.session.get("user")
     if user:
         access_token_expires = timedelta(
@@ -96,21 +102,26 @@ def odysseus_token(request: Request):
             expires_delta=access_token_expires,
         )
         return {"access_token": access_token, "token_type": "bearer"}
-    else:
-        return "Fail"
+
+    raise credentials_exception
 
 
-@app.route("/")
-def token_mint(request: Request):
-    user = request.session.get("user")
-    if user:
-        return templates.TemplateResponse(
-            "auth.html", {"request": request, "user": user}
-        )
+@app.get("/")
+async def welcome():
     return HTMLResponse('<a href="/login">login</a>')
 
 
-@app.get("/login")
+@app.get("/home")
+async def home(request: Request):
+
+    user = request.session.get("user")
+    if not user:
+        return RedirectResponse(url=request.url_for("welcome"))
+
+    return templates.TemplateResponse("auth.html", {"request": request, "user": user})
+
+
+@app.route("/login")
 async def login(request: Request):
 
     redirect_uri = request.url_for("authorized")
@@ -128,7 +139,7 @@ async def authorized(request: Request):
     user = await oauth.azure.parse_id_token(request, token)
 
     request.session["user"] = dict(user)
-    return RedirectResponse(url=request.url_for("token_mint"))
+    return RedirectResponse(url=request.url_for("home"))
 
 
 @app.route("/logout")
@@ -138,6 +149,7 @@ async def logout(request: Request):
     end_session_base_uri = (await oauth.azure.load_server_metadata())[
         "end_session_endpoint"
     ]
-    return_to = urlencode({"post_logout_redirect_uri": request.url_for("token_mint")})
+    return_to = urlencode({"post_logout_redirect_uri": request.url_for("welcome")})
     logout_uri = end_session_base_uri + "?" + return_to
+
     return RedirectResponse(url=logout_uri)
