@@ -88,7 +88,7 @@ def simple_setup_experiment(experiment_dir) -> SimpleSetupExperiment:
     return SimpleSetupExperiment(experiment_dir)
 
 @pytest.fixture(scope="function")
-def setup_aq_experiment(secretfile, connection, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance):
+def setup_aq_experiment(secretfile, connection, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(experiment_dir, secretfile=secretfile, connection=connection)
     experiment.add_instance(laqn_svgp_instance)
@@ -96,7 +96,7 @@ def setup_aq_experiment(secretfile, connection, experiment_dir, laqn_svgp_instan
     return experiment
 
 @pytest.fixture(scope="function")
-def runnable_aq_experiment(setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance):
+def runnable_aq_experiment(setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first
     setup_aq_experiment.load_datasets()
