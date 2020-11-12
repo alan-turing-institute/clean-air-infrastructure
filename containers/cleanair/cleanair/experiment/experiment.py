@@ -49,6 +49,10 @@ class ExperimentMixin:
         """Get an instance from the lookup table"""
         return self._instances[instance_id]
 
+    def get_instance_ids(self) -> List[str]:
+        """Get a list of instance ids for this experiment"""
+        return list(self._instances.keys())
+
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]

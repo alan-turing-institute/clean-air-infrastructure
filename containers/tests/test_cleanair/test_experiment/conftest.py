@@ -96,8 +96,14 @@ def setup_aq_experiment(secretfile, connection, experiment_dir, laqn_svgp_instan
     return experiment
 
 @pytest.fixture(scope="function")
-def runnable_aq_experiment(experiment_dir, laqn_svgp_instance, sat_mrdgp_instance):
+def runnable_aq_experiment(setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance):
     """A runnable air quality experiment"""
+    # load the experiment and write it to file first
+    setup_aq_experiment.load_datasets()
+    for instance_id in setup_aq_experiment.get_instance_ids():
+        setup_aq_experiment.write_instance_to_file(instance_id)
+
+    # add the instances to a runnable instance
     experiment = RunnableAirQualityExperiment(experiment_dir)
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)
