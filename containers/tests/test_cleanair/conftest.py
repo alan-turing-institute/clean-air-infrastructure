@@ -597,7 +597,7 @@ def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_config(dataset_start_date, dataset_end_date):
     """LAQN dataset with just one feature."""
     return DataConfig(
@@ -618,7 +618,7 @@ def laqn_config(dataset_start_date, dataset_end_date):
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sat_config(dataset_start_date):
     """Satellite dataset with no feature."""
     return DataConfig(
@@ -639,20 +639,20 @@ def sat_config(dataset_start_date):
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_full_config(laqn_config, model_config):
     """Generate full config for laqn."""
     model_config.validate_config(laqn_config)
     return model_config.generate_full_config(laqn_config)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sat_full_config(sat_config, model_config):
     """Generate full config for laqn + sat."""
     model_config.validate_config(sat_config)
     return model_config.generate_full_config(sat_config)
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_svgp_instance(secretfile, connection, laqn_full_config, svgp_model_params):
     """LAQN data and a SVGP model params inside an instance"""
     return AirQualityInstance(
@@ -663,7 +663,7 @@ def laqn_svgp_instance(secretfile, connection, laqn_full_config, svgp_model_para
         connection=connection,
     )
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sat_mrdgp_instance(secretfile, connection, mrdgp_model_params, sat_full_config):
     """Satellite + LAQN data with MRDGP model params"""
     return AirQualityInstance(
