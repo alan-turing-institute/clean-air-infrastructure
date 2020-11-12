@@ -32,6 +32,7 @@ from cleanair.databases.tables.fakes import (
     SatelliteGridSchema,
     SatelliteForecastSchema,
 )
+from cleanair.experiment import AirQualityInstance
 from cleanair.models import ModelConfig, ModelData
 from cleanair.types import (
     BaseModelParams,
@@ -651,3 +652,24 @@ def sat_full_config(sat_config, model_config):
     model_config.validate_config(sat_config)
     return model_config.generate_full_config(sat_config)
 
+@pytest.fixture(scope="function")
+def laqn_svgp_instance(secretfile, connection, laqn_full_config, svgp_model_params):
+    """LAQN data and a SVGP model params inside an instance"""
+    return AirQualityInstance(
+        data_config=laqn_full_config,
+        model_name=ModelName.svgp,
+        model_params=svgp_model_params,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+@pytest.fixture(scope="function")
+def sat_mrdgp_instance(secretfile, connection, mrdgp_model_params, sat_full_config):
+    """Satellite + LAQN data with MRDGP model params"""
+    return AirQualityInstance(
+        data_config=sat_full_config,
+        model_name=ModelName.mrdgp,
+        model_params=mrdgp_model_params,
+        secretfile=secretfile,
+        connection=connection,
+    )
