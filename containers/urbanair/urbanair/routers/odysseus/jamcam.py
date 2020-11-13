@@ -219,3 +219,19 @@ def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
     data = get_jamcam_metadata(db)
 
     return all_or_404(data)
+
+
+@router.get(
+    "/traffic_data",
+    description="Third party traffic data"
+)
+def traffic_data() -> Optional[dict]:
+    return {'success': True}
+
+
+@router.get(
+    "/traffic_data/{zoom}/{x}/{y}.{mimetype}",
+    description="Third party traffic data"
+)
+def traffic_data(zoom: int, x: int, y: int, mimetype: str) -> Optional[dict]:
+    return get_tomtom_data(zoom, x, y, mimetype)

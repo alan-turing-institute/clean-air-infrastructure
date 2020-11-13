@@ -200,6 +200,16 @@
         loadData(getDate()).then(() => {
             updateMapMarkers();
             });
+        map.addSource('tomtom', {
+            type: 'raster',
+            url: "/api/v1/jamcams/traffic_data",
+            tileSize: 256,
+        });
+        map.addLayer({
+            id: 'tomtom',
+            type: 'raster',
+            source: 'tomtom',
+        })
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
