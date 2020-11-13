@@ -108,7 +108,7 @@ resource "azurerm_role_definition" "configure_kubernetes" {
 # Grant the service principal the "configure_kubernetes" role
 resource "azurerm_role_assignment" "service_principal_configure_kubernetes" {
   scope              = "${azurerm_resource_group.this.id}"
-  role_definition_id = "${azurerm_role_definition.configure_kubernetes.id}"
+  role_definition_id = split("|", azurerm_role_definition.configure_kubernetes.id)[0]
   principal_id       = "${data.azuread_service_principal.this.id}"
 }
 # :: grant the managed identity for this VM "get" and "list" access to the key vault
