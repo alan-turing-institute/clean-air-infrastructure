@@ -202,8 +202,11 @@
             });
         map.addSource('tomtom', {
             type: 'raster',
-            url: "/api/v1/jamcams/traffic_data",
-            tileSize: 256,
+            tiles: [
+                "/api/v1/jamcams/traffic_data/{z}/{x}/{y}"
+            ],
+            maxzoom: 22,
+            minzoom: 0
         });
         map.addLayer({
             id: 'tomtom',

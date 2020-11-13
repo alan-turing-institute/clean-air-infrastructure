@@ -4,9 +4,10 @@ import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
+from urbanair.queries.jamcam import get_tomtom_data
 
 from ...databases import get_db, all_or_404
 from ...databases.queries import (
@@ -230,8 +231,8 @@ def traffic_data() -> Optional[dict]:
 
 
 @router.get(
-    "/traffic_data/{zoom}/{x}/{y}.{mimetype}",
+    "/traffic_data/{zoom}/{x}/{y}",
     description="Third party traffic data"
 )
-def traffic_data(zoom: int, x: int, y: int, mimetype: str) -> Optional[dict]:
-    return get_tomtom_data(zoom, x, y, mimetype)
+def traffic_data(zoom: int, x: int, y: int):
+    return Response(content=get_tomtom_data(zoom, x, y), media_type='bytes')
