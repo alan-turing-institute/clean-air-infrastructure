@@ -277,7 +277,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
 
         Args:
             full_config: A configuration class
-            prediction_data: When True get training data, else get prediction data
+            training_data: When True get training data, else get prediction data
                 Defaults to True. However, if the source  is Satellite it always gets sensor
                 readings regardless of this flag
         """
@@ -319,6 +319,24 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
                 point_ids=point_ids[source],
                 features=full_config.features,
                 dynamic_features=full_config.dynamic_features,
+                source=source,
+            )
+        return data_output
+
+    def download_forecast_data(
+        self, full_config: FullDataConfig
+    ) -> Dict[Source, pd.DateFrame]:
+        """Download the readings for a forecast period. Used for calculating metrics."""
+        data_output: Dict[Source, pd.DataFrame] = {}
+        for source in full_config.pred_sources:
+            self.logger.info("Downloading source %s forecast data.", source.value)
+            data_output[source] = self.__download_config_data(
+                with_sensor_readings=True,
+                start_date=full_config.pred_start_date,
+                end_date=full_config.pred_end_date,
+                species=full_config.species,
+                point_ids=full_config.pred_interest_points[source],
+                features=full_config.features,
                 source=source,
             )
         return data_output

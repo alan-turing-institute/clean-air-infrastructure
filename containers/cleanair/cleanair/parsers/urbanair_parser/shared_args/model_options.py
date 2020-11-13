@@ -15,7 +15,7 @@ LikelihoodVariance = typer.Option(
     help="Noise variance for the likelihood.",
     show_default=True,
 )
-KernelTypeOption = typer.Option(
+KernelOption = typer.Option(
     KernelType.matern32, help="Type of kernel.", show_default=True
 )
 KernelVariance = typer.Option(

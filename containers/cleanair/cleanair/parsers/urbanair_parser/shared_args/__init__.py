@@ -3,6 +3,17 @@ from .instance_options import (
     ClusterIdOption,
     TagOption,
 )
+from .model_options import (
+    Ard,
+    Jitter,
+    Lengthscales,
+    LikelihoodVariance,
+    KernelOption,
+    KernelVariance,
+    MaxIter,
+    MinibatchSize,
+    NumInducingPoints,
+)
 from .shared_args import (
     AWSId,
     AWSKey,
@@ -31,6 +42,7 @@ from .shared_args import (
 )
 
 __all__ = [
+    "Ard",
     "AWSId",
     "AWSKey",
     "ClusterIdOption",
@@ -38,13 +50,17 @@ __all__ = [
     "From",
     "InputDir",
     "InsertMethod",
-    "ValidInsertMethods",
-    "ValidFeatureSources",
-    "ValidDynamicFeatureSources",
+    "Jitter",
+    "KernelOption",
+    "KernelVariance",
+    "Lengthscales",
+    "LikelihoodVariance",
     "NDays_callback",
     "NDays",
     "NHours",
-    "NWorkers",
+    "MaxIter",
+    "MinibatchSize",
+    "NumInducingPoints",
     "ScootDetectors",
     "Sources",
     "Species",

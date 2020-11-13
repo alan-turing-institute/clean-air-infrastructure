@@ -137,25 +137,25 @@ cronjobs:
     imagePullSecrets:
         - name: regcred
 
-  # - name: forecast-scoot
-  #   schedule: "* 22 * * *"
-  #   concurrencyPolicy: Allow
-  #   restartPolicy: OnFailure
-  #   failedJobsHistoryLimit: 10
-  #   image:
-  #       repository: cleanairdocker.azurecr.io/cleanair
-  #       imagePullPolicy: IfNotPresent
-  #   args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--ndays", "2"]
-  #   volumeMounts:
-  #   - name: secrets
-  #     mountPath: "/secrets/"
-  #     readOnly: true
-  #   volumes:
-  #   - name: secrets
-  #     secret:
-  #       secretName: secrets
-  #   imagePullSecrets:
-  #       - name: regcred
+  - name: forecast-scoot
+    schedule: "* 22 * * *"
+    concurrencyPolicy: Allow
+    restartPolicy: OnFailure
+    failedJobsHistoryLimit: 10
+    image:
+        repository: cleanairdocker.azurecr.io/cleanair
+        imagePullPolicy: IfNotPresent
+    args: ["urbanair", "--secretfile", "db_secrets.json", "processors", "scoot", "forecast", "--traindays", "14", "--preddays", "2", "--trainupto", "today"]
+    volumeMounts:
+    - name: secrets
+      mountPath: "/secrets/"
+      readOnly: true
+    volumes:
+    - name: secrets
+      secret:
+        secretName: secrets
+    imagePullSecrets:
+        - name: regcred
 
   - name: air-forecast-svgp-gpu
     schedule: "30 0 * * *"
