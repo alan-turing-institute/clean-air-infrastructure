@@ -14,8 +14,8 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""
 
     def __init__(self, input_dir: Path, secretfile: str, **kwargs):
-        super().__init__(self, input_dir, **kwargs)
-        self.model_data = ModelData(secretfile=secretfile)
+        super().__init__(self, input_dir, secretfile=secretfile, **kwargs)
+        self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
     def load_training_dataset(self, data_id: str) -> pd.DataFrame:
         """Load a training dataset from the database"""
