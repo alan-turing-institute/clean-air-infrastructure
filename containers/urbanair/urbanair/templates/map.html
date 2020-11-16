@@ -40,12 +40,15 @@
                 <option value="all">All</option>
             </select>
             <br>
-            <label for="controls">Date</label><br>
+            <label for="date">Date</label><br>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
             <br>
             <label for="controls">Lock colour scale range</label><br>
             <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
             <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+            <br>
+            <label for="display-tomtom">Show Tomtom data</label>
+            <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
         </div><br>
     </div>
 
@@ -208,11 +211,6 @@
             maxzoom: 22,
             minzoom: 0
         });
-        map.addLayer({
-            id: 'tomtom',
-            type: 'raster',
-            source: 'tomtom',
-        })
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -469,6 +467,20 @@
             updateMapMarkers();
             });
         updateGraph();
+    }
+
+    function toggleTomtom(){
+        if (map.getLayer('tomtom')) {
+            map.removeLayer('tomtom');
+        } else {
+            map.addLayer({
+                id: 'tomtom',
+                type: 'raster',
+                source: 'tomtom',
+            },
+            'jamcams'
+            )
+        }
     }
 
 
