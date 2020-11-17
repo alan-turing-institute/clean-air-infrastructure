@@ -222,17 +222,11 @@ def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
     return all_or_404(data)
 
 
-@router.get(
-    "/traffic_data",
-    description="Third party traffic data"
-)
+@router.get("/traffic_data", description="Third party traffic data")
 def traffic_data() -> Optional[dict]:
-    return {'success': True}
+    return {"success": True}
 
 
-@router.get(
-    "/traffic_data/{zoom}/{x}/{y}",
-    description="Third party traffic data"
-)
-def traffic_data(zoom: int, x: int, y: int):
-    return Response(content=get_tomtom_data(zoom, x, y), media_type='bytes')
+@router.get("/traffic_data/{zoom}/{x}/{y}", description="Third party traffic data")
+def traffic_data_tiles(zoom: int, x: int, y: int):
+    return Response(content=get_tomtom_data(zoom, x, y), media_type="bytes")
