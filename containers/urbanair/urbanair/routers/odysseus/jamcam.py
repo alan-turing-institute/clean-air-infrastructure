@@ -228,5 +228,5 @@ def traffic_data() -> Optional[dict]:
 
 
 @router.get("/traffic_data/{zoom}/{x}/{y}", description="Third party traffic data")
-def traffic_data_tiles(zoom: int, x: int, y: int):
+def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
     return Response(content=get_tomtom_data(zoom, x, y), media_type="bytes")
