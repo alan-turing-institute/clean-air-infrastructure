@@ -2,9 +2,15 @@
 
 
 
-The external cluster is only used to run the actual model and perform predictions. All of the data setup, processing and prediction upload is done locally. 
+The external cluster is only used to run the actual model and perform predictions. All of the data setup, processing and prediction upload is done locally.  This is organised into 3 sections: Setting up locally, Running on cluster, Updating Results and correspond to `containers/scripts`, ``containers/scripts`, `containers/scripts` that complete each of these steps automatically. 
 
-## Build Docker Image
+
+
+## 1 ) Local Setup
+
+Setting up locally consists of building and pushing the docker image that computes model fitting, and downloading and setting up the experiment data.
+
+### Build Docker Image
 
 Build the latest docker image:
 
@@ -14,75 +20,7 @@ docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.a
 docker push cleanairdocker.azurecr.io/mf:latest
 ```
 
-
-
-## Setting up Cluster
-
-We now set up docker/singularity and the required folder structure on the external cluster. `ssh` into the cluster and run:
-
-```bash
-mkdir cleanair
-cd cleanair/
-mkdir containers
-cd containers
-
-singularity pull --docker-login docker://cleanairdocker.azurecr.io/mf:latest
-```
-
-This will prompt for a docker username and password. Please contact the `cleanair` owners for access. 
-
-Building the `.sif` file:
-
-```bash
-cd ../
-singularity build --docker-login containers/mf_latest.sif docker://cleanairdocker.azurecr.io/mf:latest	
-```
-
-which again will ask for a username and password prompt.
-
-To run the models we will use slurm. An example sbatch file is:
-
-```
-touch sbatch.sh
-```
-
-
-
-```
-#!/bin/bash
-#SBATCH --job-name=mrdgp
-#SBATCH --nodes=4
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=4571
-#SBATCH --time=24:00:00
-#SBATCH --gres=gpu:0
-
-#SBATCH --output=logs/slurm_%j__mrdgp,order_id-0.log
-
-#########################
-#
-# Job: m_shallow_models,order_id-0
-#
-#########################
-
-##### Setup Environment
-
-##### Run Command
-cd ~/cleanair
-# run script with arguments
-singularity run containers/model_fitting_latest.sif run.sh
-```
-
-where run.sh is
-
-```bash
-urbanair model run mrdgp example_dir/
-```
-
-
-
-### Setting Up Data - On Local Machine
+### Data setup
 
 Make sure you are in the project directory `clean-air-infrastructure/`. We use the `urbanair` CLI to download and process the required training and prediction data. 
 
@@ -115,24 +53,82 @@ urbanair model data save-cache ~/Documents/example_dir
 
 replacing `example_dir` with the required directory.
 
+## 2) Running on cluster
 
+To run on the cluster we use singularity. We first have to setup the folder structure on the cluster, setup the singularity image, move the required data over and then run models.
 
-### Setting Up Data - On Cluster
+### Setting up Cluster
+
+We now set up docker/singularity and the required folder structure on the external cluster. `ssh` into the cluster and run:
+
+```bash
+mkdir cleanair
+cd cleanair/
+mkdir containers
+cd containers
+
+singularity pull --docker-login docker://cleanairdocker.azurecr.io/model_fitting:latest
+```
+
+This will prompt for a docker username and password. Please contact the `cleanair` owners for access. 
+
+To run the models we will use slurm. Create a batch file:
+
+```
+touch sbatch.sh
+```
+
+and copy in:
+
+```
+#!/bin/bash
+#SBATCH --job-name=mrdgp
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem-per-cpu=4571
+#SBATCH --time=24:00:00
+#SBATCH --gres=gpu:0
+
+#SBATCH --output=logs/slurm_%j__mrdgp,order_id-0.log
+
+#########################
+#
+# Job: m_shallow_models,order_id-0
+#
+#########################
+
+##### Setup Environment
+
+##### Run Command
+cd ~/cleanair
+# run script with arguments
+singularity run containers/model_fitting_latest.sif run.sh
+```
+
+And create `run.sh` that contains
+
+```bash
+urbanair model run mrdgp example_dir/
+```
+
+### Moving Data to the cluster
 
 Move the saved cache folder to `cleanair/` on the external cluster, e.g:
 
-```
-scp -i ~/.ssh/ollie-pearl -C -r ~/Documents/example_dir pearl053@ui.pearl.scd.stfc.ac.uk:~/cleanair/
-
+```bash
 scp -i ~/.ssh/ollie_cluster_rsa -C -r ~/Documents/example_dir csrcqm@orac.csc.warwick.ac.uk:cleanair/
 ```
 
-## Running the Model - On Cluster
+### Running the models
 
-`ssh` on to the cluster and run
+To run the model fitting simply execute
 
 ```bash
-cd cleanair
-sh ./run.sh
+sbatch sbatch.sh
 ```
+
+## 3) Updating Results
+
+
 
