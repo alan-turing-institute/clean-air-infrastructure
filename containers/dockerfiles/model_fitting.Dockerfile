@@ -17,3 +17,8 @@ COPY scripts/ /app/scripts
 
 # Install cleanair
 RUN pip install '/app/cleanair'
+RUN pip install holidays==0.10.2
+RUN pip install LunarCalendar
+RUN pip install pystan
+RUN pip install pathos
+RUN pip install fbprophet
