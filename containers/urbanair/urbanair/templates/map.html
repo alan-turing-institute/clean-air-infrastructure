@@ -206,7 +206,7 @@
         map.addSource('tomtom', {
             type: 'raster',
             tiles: [
-                "/api/v1/jamcams/traffic_data/{z}/{x}/{y}"
+                "{{ url_for('traffic_data') }}/{z}/{x}/{y}"
             ],
             maxzoom: 22,
             minzoom: 0

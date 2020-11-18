@@ -222,11 +222,32 @@ def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
     return all_or_404(data)
 
 
-@router.get("/traffic_data", description="Third party traffic data")
+@router.get(
+    "/traffic_data", description="Third party traffic data", include_in_schema=False
+)
 def traffic_data() -> Optional[dict]:
     return {"success": True}
 
 
-@router.get("/traffic_data/{zoom}/{x}/{y}", description="Third party traffic data")
+@router.get(
+    "/traffic_data/{zoom}/{x}/{y}",
+    description="Third party traffic data",
+    include_in_schema=False,
+)
 def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
-    return Response(content=get_tomtom_data(zoom, x, y), media_type="bytes")
+
+    res = get_tomtom_data(zoom, x, y)
+    if res.ok:
+        return Response(
+            content=res.content, status_code=res.status_code, media_type="bytes"
+        )
+    elif res.status_code == 403:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid TomTom API key",
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error with request to TomTom API",
+        )
