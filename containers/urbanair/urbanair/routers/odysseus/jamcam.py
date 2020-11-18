@@ -241,13 +241,14 @@ def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
         return Response(
             content=res.content, status_code=res.status_code, media_type="bytes"
         )
-    elif res.status_code == 403:
+
+    if res.status_code == 403:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Invalid TomTom API key",
+            detail="Invalid TomTom API key"
         )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error with request to TomTom API",
-        )
+
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Error with request to TomTom API"
+    )
