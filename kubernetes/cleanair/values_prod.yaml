@@ -485,8 +485,10 @@ deployments:
         - name: ROOT_PATH
           value: /odysseus
       envFrom:
-      - secretRef:
+        - secretRef:
           name: sentry
+        - secretRef:
+          name: tomtom-api-key
       ports:
         containerPort: 80
       restartPolicy: Always
