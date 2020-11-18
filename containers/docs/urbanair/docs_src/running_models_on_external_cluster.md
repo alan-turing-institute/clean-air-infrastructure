@@ -17,7 +17,7 @@ Build the latest docker image:
 ```bash
 docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/mf -f containers/dockerfiles/model_fitting.Dockerfile containers
 
-docker push cleanairdocker.azurecr.io/mf:latest
+docker push cleanairdocker.azurecr.io/model_fitting:latest
 ```
 
 ### Data setup
