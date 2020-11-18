@@ -4,7 +4,7 @@ import os
 from fastapi import APIRouter, Request, Response
 from fastapi.templating import Jinja2Templates
 from starlette.responses import RedirectResponse
-
+from urbanair.routers.auth.auth import odysseus_token
 
 router = APIRouter()
 
@@ -28,5 +28,5 @@ async def jamcam_map(request: Request) -> Response:
     user = request.session.get("user")
     if not user:
         return RedirectResponse(url=request.url_for("home"))
-
-    return templates.TemplateResponse("map.html", {"request": request})
+    token = odysseus_token(request)['access_token']
+    return templates.TemplateResponse("map.html", {"request": request, "token": token})
