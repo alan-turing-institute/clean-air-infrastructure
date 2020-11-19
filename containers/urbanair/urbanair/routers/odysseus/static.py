@@ -28,5 +28,4 @@ async def jamcam_map(request: Request) -> Response:
     user = request.session.get("user")
     if not user:
         return RedirectResponse(url=request.url_for("home"))
-    token = odysseus_token(request)['access_token']
-    return templates.TemplateResponse("map.html", {"request": request, "token": token})
+    return templates.TemplateResponse("map.html", {"request": request})
