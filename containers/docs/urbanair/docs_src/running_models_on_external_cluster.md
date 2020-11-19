@@ -48,7 +48,7 @@ urbanair model setup mrdgp --maxiter 10 --num-inducing-points 100
 This saves the experiment data in the `urbanair` cache. To copy this to another folder run
 
 ```bash
-urbanair model data save-cache ~/Documents/example_dir
+urbanair model data save-cache example_dir
 ```
 
 replacing `example_dir` with the required directory.
@@ -103,13 +103,7 @@ and copy in:
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity run containers/model_fitting_latest.sif run.sh
-```
-
-And create `run.sh` that contains
-
-```bash
-urbanair model run mrdgp example_dir/
+singularity exec containers/model_fitting_latest.sif urbanair model fit mrdgp example_dir/
 ```
 
 ### Moving Data to the cluster
@@ -117,7 +111,7 @@ urbanair model run mrdgp example_dir/
 Move the saved cache folder to `cleanair/` on the external cluster, e.g:
 
 ```bash
-scp -i ~/.ssh/ollie_cluster_rsa -C -r ~/Documents/example_dir csrcqm@orac.csc.warwick.ac.uk:cleanair/
+scp -i $CLUSTER_KEY -C -r example_dir $CLUSTER_USER@$CLUSTER_ADDR:cleanair/
 ```
 
 ### Running the models
@@ -130,5 +124,55 @@ sbatch sbatch.sh
 
 ## 3) Updating Results
 
+To update the results in the cleanair database we need to move the results from the external cluster to the experiment directory and then push the results:
 
+```bash
+#sync folder from cluster to CACHE_FOLDER/results
+scp -i $CLUSTER_KEY -C -r $CLUSTER_USER@$CLUSTER_ADDR:cleanair/example_dir/result/*.pkl example_dir/result/
+
+cd ../../
+
+#update clean air server
+
+urbanair init production
+urbanair model update results mrdgp example_dir
+```
+
+
+
+## Using script to run the above Automatically
+
+The above steps can be run automatically using `scripts/model_fitting_setup_local.sh`,  `scripts/model_fitting_setup_cluster_and_run.sh`, `scripts/model_fitting_sync_from_cluster.sh`.
+
+Before running create a file called `.secrets/model_fitting_settings.sh` and place in the following:
+
+```bash
+#setup variables
+CACHE_DIR='<CACHE_DIR>'
+CACHE_FOLDER="<FULL_PATH_TO_FOLDER>/$CACHE_DIR"
+CLUSTER_USER='<CLUSTER_USERNAME>'
+CLUSTER_KEY='<CLUSTER_KEY>'
+CLUSTER_ADDR='<CLUSTER_IP>'
+MODEL='<MODEL_NAME (mrdgp|svgp)>'
+CLUSTER_NAME='<CLUSTER_NAME_ID_USED_TO_TAG_PREDICTIONS (orac|pearl)>'
+
+DOCKER_PASSWORD='<DOCKER_PASSWORD>'
+DOCKER_USERNAME='<DOCKER_USERNAME>'
+```
+
+And then run the following. To complete step 1 and 2:
+
+```
+cd scripts
+sh ./model_fitting_setup_local.sh
+sh ./model_fitting_setup_cluster_and_run.sh
+```
+
+once the model has completed run
+
+```
+model_fitting_sync_from_cluster.sh
+```
+
+which will automatically push the results to the server.
 
