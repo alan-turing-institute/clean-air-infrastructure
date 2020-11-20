@@ -20,9 +20,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load a training dataset from the database"""
         data_config = self._data_config_lookup[data_id]
-        training_data: Dict[Source, pd.DateFrame] = self.model_data.download_config_data(
-            data_config, training_data=True
-        )
+        training_data: Dict[
+            Source, pd.DateFrame
+        ] = self.model_data.download_config_data(data_config, training_data=True)
         training_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
             data_config, training_data
         )
@@ -31,12 +31,12 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
     def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load a test dataset from the database"""
         data_config = self._data_config_lookup[data_id]
-        prediction_data: Dict[Source, pd.DateFrame] = self.model_data.download_config_data(
-            data_config, training_data=False
-        )
-        prediction_data_norm: Dict[Source, pd.DateFrame] = self.model_data.normalize_data(
-            data_config, prediction_data
-        )
+        prediction_data: Dict[
+            Source, pd.DateFrame
+        ] = self.model_data.download_config_data(data_config, training_data=False)
+        prediction_data_norm: Dict[
+            Source, pd.DateFrame
+        ] = self.model_data.normalize_data(data_config, prediction_data)
         return prediction_data_norm
 
     def write_instance_to_file(self, instance_id: str) -> None:

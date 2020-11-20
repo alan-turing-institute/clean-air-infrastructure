@@ -3,6 +3,7 @@
 from typing import List
 from ..types import DataConfig
 
+
 def vary_static_features() -> List[DataConfig]:
     """Vary the list of static features for each data config
 

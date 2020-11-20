@@ -31,7 +31,9 @@ class TestSetupAirQualityExperiment:
             # for pollutant in instance.data_config.species:
             #     assert pollutant.value in training.columns
             for source, training_source_df in training_data.items():
-                assert_statements_for_dataset_df(training_source_df, instance.data_config)
+                assert_statements_for_dataset_df(
+                    training_source_df, instance.data_config
+                )
 
     def test_load_test_dataset(self, setup_aq_experiment):
         """Test the dataset for forecasting is loaded from the database"""

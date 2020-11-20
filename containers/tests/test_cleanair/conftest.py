@@ -760,7 +760,7 @@ def sat_full_config(sat_config, model_config):
     return model_config.generate_full_config(sat_config)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_svgp_instance(
     secretfile, connection_class, laqn_full_config, svgp_model_params
 ):

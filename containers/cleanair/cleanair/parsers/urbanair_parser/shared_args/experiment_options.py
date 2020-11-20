@@ -10,4 +10,3 @@ ClusterIdOption = typer.Option(
 TagOption = typer.Option(
     Tag.production, help="A word to tag the mode with.", show_default=True
 )
-
