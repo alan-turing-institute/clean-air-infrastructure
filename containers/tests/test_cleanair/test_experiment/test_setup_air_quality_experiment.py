@@ -5,11 +5,15 @@ from cleanair.types import FullDataConfig
 
 # pylint: disable=invalid-name
 
-def assert_statements_for_dataset_df(dataset: pd.DataFrame, data_config: FullDataConfig) -> None:
+
+def assert_statements_for_dataset_df(
+    dataset: pd.DataFrame, data_config: FullDataConfig
+) -> None:
     """Simple checks for an air quality normalised dataframe"""
     assert len(dataset) > 0
     for feature in data_config.features:
         assert feature.value in dataset.columns
+
 
 class TestSetupAirQualityExperiment:
     """Test datasets are loaded using the setup experiment class"""
@@ -39,7 +43,9 @@ class TestSetupAirQualityExperiment:
             file_manager = setup_aq_experiment.get_file_manager(instance_id)
 
             # check files do not exist yet
-            assert not (file_manager.input_dir / file_manager.TRAINING_DATA_PICKLE).exists()
+            assert not (
+                file_manager.input_dir / file_manager.TRAINING_DATA_PICKLE
+            ).exists()
             assert not (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert not (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
             assert not (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
@@ -52,4 +58,3 @@ class TestSetupAirQualityExperiment:
             assert (file_manager.input_dir / file_manager.TEST_DATA_PICKLE).exists()
             assert (file_manager.input_dir / file_manager.DATA_CONFIG_FULL).exists()
             assert (file_manager.input_dir / file_manager.MODEL_PARAMS).exists()
-

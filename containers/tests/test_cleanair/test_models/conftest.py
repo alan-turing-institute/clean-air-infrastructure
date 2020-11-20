@@ -13,11 +13,13 @@ def laqn_training_data(laqn_full_config, model_data):
     )
     return model_data.normalize_data(laqn_full_config, training_data)
 
+
 @pytest.fixture(scope="function")
 def laqn_test_data(laqn_full_config, model_data):
     """Test data for laqn."""
     test_data = model_data.download_prediction_config_data(laqn_full_config)
     return model_data.normalize_data(laqn_full_config, test_data)
+
 
 @pytest.fixture(scope="function")
 def sat_training_data(sat_full_config, model_data):

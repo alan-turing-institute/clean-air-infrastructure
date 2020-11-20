@@ -2,6 +2,7 @@
 
 import pytest
 
+
 class TestRunnableAirQualityExperiment:
     """The runnable experiment depends upon the setup experiment"""
 
@@ -12,7 +13,12 @@ class TestRunnableAirQualityExperiment:
         """Pass data ids to find the instance id"""
         for instance_id in runnable_aq_experiment.get_instance_ids():
             instance = runnable_aq_experiment.get_instance(instance_id)
-            assert instance.instance_id == runnable_aq_experiment.find_instance_id_from_data_id(instance.data_id)
+            assert (
+                instance.instance_id
+                == runnable_aq_experiment.find_instance_id_from_data_id(
+                    instance.data_id
+                )
+            )
         with pytest.raises(ValueError):
             runnable_aq_experiment.find_instance_id_from_data_id("abc")
 

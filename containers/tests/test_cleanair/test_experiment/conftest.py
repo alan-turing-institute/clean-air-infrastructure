@@ -5,7 +5,12 @@ from pathlib import Path
 import numpy as np
 import pytest
 from pydantic import BaseModel
-from cleanair.experiment import ExperimentMixin, RunnableAirQualityExperiment, SetupExperimentMixin, SetupAirQualityExperiment
+from cleanair.experiment import (
+    ExperimentMixin,
+    RunnableAirQualityExperiment,
+    SetupExperimentMixin,
+    SetupAirQualityExperiment,
+)
 from cleanair.mixins import InstanceMixin
 from cleanair.types import ModelName
 
@@ -87,16 +92,24 @@ def simple_setup_experiment(experiment_dir) -> SimpleSetupExperiment:
     """A bare bones setup experiment class"""
     return SimpleSetupExperiment(experiment_dir)
 
+
 @pytest.fixture(scope="function")
-def setup_aq_experiment(secretfile, connection, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance) -> SetupAirQualityExperiment:
+def setup_aq_experiment(
+    secretfile, connection, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
-    experiment = SetupAirQualityExperiment(experiment_dir, secretfile=secretfile, connection=connection)
+    experiment = SetupAirQualityExperiment(
+        experiment_dir, secretfile=secretfile, connection=connection
+    )
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)
     return experiment
 
+
 @pytest.fixture(scope="function")
-def runnable_aq_experiment(setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance) -> RunnableAirQualityExperiment:
+def runnable_aq_experiment(
+    setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first
     setup_aq_experiment.load_datasets()
