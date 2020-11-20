@@ -46,9 +46,9 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         data_id = instance.data_id
         training_dataset = self._training_dataset[data_id]
         test_dataset = self._test_dataset[data_id]
-        file_manager.save_data_config(self._data_config_lookup[data_id])
-        file_manager.save_training_data[training_dataset]
-        file_manager.save_test_data[test_dataset]
+        file_manager.save_data_config(self._data_config_lookup[data_id], full=True)
+        file_manager.save_training_data(training_dataset)
+        file_manager.save_test_data(test_dataset)
         file_manager.save_model_params(instance.model_params)
 
 
@@ -64,7 +64,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
     def find_instance_id_from_data_id(self, data_id: str) -> str:
         """Search through instances to find the instance id matching the data id"""
         # search through instances to find the data id
-        for iid, instance in self._instances.values():
+        for iid, instance in self._instances.items():
             if data_id == instance.data_id:
                 return iid
         raise ValueError("No instance found for data id:", data_id)
