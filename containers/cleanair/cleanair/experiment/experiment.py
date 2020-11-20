@@ -26,7 +26,7 @@ class ExperimentMixin:
     def __init__(
         self, input_dir: Path, **kwargs,
     ):
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
 
         # create directory for saving files if it doesn't exist
         self.input_dir = input_dir
@@ -107,6 +107,7 @@ class SetupExperimentMixin(ExperimentMixin):
 
     def load_datasets(self) -> None:
         """Load the datasets"""
+        # TODO check uniqueness of data id
         data_id_list: List[str] = [
             instance.data_id for _, instance in self._instances.items()
         ]

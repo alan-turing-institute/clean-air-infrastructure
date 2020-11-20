@@ -95,11 +95,11 @@ def simple_setup_experiment(experiment_dir) -> SimpleSetupExperiment:
 
 @pytest.fixture(scope="function")
 def setup_aq_experiment(
-    secretfile, connection, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+    secretfile, connection_class, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
 ) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(
-        experiment_dir, secretfile=secretfile, connection=connection
+        experiment_dir, secretfile=secretfile, connection=connection_class
     )
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)

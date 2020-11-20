@@ -726,13 +726,13 @@ def model_config(secretfile, connection_class):
     return ModelConfig(secretfile=secretfile, connection=connection_class)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def sat_config(dataset_start_date):
     """Satellite dataset with no feature."""
     return DataConfig(
@@ -753,14 +753,14 @@ def sat_config(dataset_start_date):
     )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def sat_full_config(sat_config, model_config):
     """Generate full config for laqn + sat."""
     model_config.validate_config(sat_config)
     return model_config.generate_full_config(sat_config)
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def laqn_svgp_instance(
     secretfile, connection_class, laqn_full_config, svgp_model_params
 ):

@@ -4,7 +4,7 @@ import os
 import json
 from enum import Enum
 import typer
-from ..state import DATA_CACHE
+from ..state import DATA_CACHE, EXPERIMENT_CACHE
 from ....features import FEATURE_CONFIG
 from ....timestamps import as_datetime, TIMESTRINGS
 from ....types import Source as ValidSources
@@ -129,6 +129,16 @@ Web = typer.Option(False, help="Show outputs in browser", show_default=True,)
 
 InputDir = typer.Argument(
     DATA_CACHE,
+    dir_okay=True,
+    file_okay=False,
+    writable=True,
+    readable=True,
+    resolve_path=True,
+    exists=False,
+)
+
+ExperimentDir = typer.Option(
+    EXPERIMENT_CACHE,
     dir_okay=True,
     file_okay=False,
     writable=True,
