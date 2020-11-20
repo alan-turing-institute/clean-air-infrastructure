@@ -1,7 +1,7 @@
 """Experiments for air quality model validation"""
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 import pandas as pd
 from gpflow.models.model import Model
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
@@ -17,7 +17,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         super().__init__(input_dir, secretfile=secretfile, **kwargs)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
-    def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DateFrame]:
+    def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load a training dataset from the database"""
         data_config = self._data_config_lookup[data_id]
         training_data: Dict[Source, pd.DateFrame] = self.model_data.download_config_data(
@@ -28,7 +28,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         )
         return training_data_norm
 
-    def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DateFrame]:
+    def load_test_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
         """Load a test dataset from the database"""
         data_config = self._data_config_lookup[data_id]
         prediction_data: Dict[Source, pd.DateFrame] = self.model_data.download_config_data(

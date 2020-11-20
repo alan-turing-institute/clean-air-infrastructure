@@ -12,7 +12,9 @@ def assert_statements_for_dataset_df(
     """Simple checks for an air quality normalised dataframe"""
     assert len(dataset) > 0
     for feature in data_config.features:
-        assert feature.value in dataset.columns
+        for buffer in data_config.buffer_sizes:
+            full_feature_name = "value_" + str(buffer.value) + "_" + feature.value
+            assert full_feature_name in dataset.columns
 
 
 class TestSetupAirQualityExperiment:
@@ -41,6 +43,7 @@ class TestSetupAirQualityExperiment:
 
     def test_write_instance_to_file(self, setup_aq_experiment):
         """Test the dataset and the instance are written to file"""
+        setup_aq_experiment.load_datasets()
         for instance_id in setup_aq_experiment.get_instance_ids():
             file_manager = setup_aq_experiment.get_file_manager(instance_id)
 
