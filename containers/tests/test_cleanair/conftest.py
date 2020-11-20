@@ -2,14 +2,16 @@
 Fixtures for the cleanair module.
 """
 # pylint: disable=redefined-outer-name,C0103
-from typing import Any, Tuple
-from datetime import datetime, timedelta
+from typing import Tuple
+from datetime import timedelta
 import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import pandas as pd
 from nptyping import NDArray
 from cleanair.databases import DBWriter
+from cleanair.inputs.scoot_writer import ScootWriter
 from cleanair.databases.tables import (
     MetaPoint,
     LAQNSite,
@@ -41,8 +43,8 @@ from cleanair.types import (
     FeatureNames,
     KernelParams,
     KernelType,
-    MRDGPParams,
     ModelName,
+    MRDGPParams,
     Source,
     Species,
     SVGPParams,
@@ -51,7 +53,7 @@ from ..data_generators.scoot_generator import ScootGenerator
 
 # pylint: disable=W0613
 @pytest.fixture(scope="class")
-def valid_config(dataset_start_date, dataset_end_date):
+def valid_config(dataset_start_date, dataset_end_date, num_forecast_days):
     "Valid config for 'fake_cleanair_dataset' fixture"
 
     return DataConfig(
@@ -59,7 +61,7 @@ def valid_config(dataset_start_date, dataset_end_date):
             "train_start_date": dataset_start_date,
             "train_end_date": dataset_end_date,
             "pred_start_date": dataset_end_date,
-            "pred_end_date": dataset_end_date + timedelta(days=2),
+            "pred_end_date": dataset_end_date + timedelta(days=num_forecast_days),
             "include_prediction_y": False,
             "train_sources": ["laqn", "aqe", "satellite"],
             "pred_sources": ["laqn", "aqe", "satellite", "hexgrid"],
@@ -105,6 +107,12 @@ def dataset_start_date():
 def dataset_end_date():
     "Fake dataset end date"
     return isoparse("2020-01-05")
+
+
+@pytest.fixture(scope="module")
+def num_forecast_days():
+    "Number of days for the model to forecast on."
+    return 2
 
 
 @pytest.fixture(scope="module")
@@ -423,22 +431,16 @@ def static_feature_records(meta_records):
     return static_features
 
 
-# pylint: disable=R0913
 @pytest.fixture(scope="class")
-def fake_cleanair_dataset(
+def fake_laqn_static_dataset(
     secretfile,
     connection_class,
     meta_records,
     laqn_site_records,
-    aqe_site_records,
     laqn_reading_records,
-    aqe_reading_records,
-    satellite_box_records,
-    satellite_meta_point_and_box_records,
     static_feature_records,
-    satellite_forecast,
 ):
-    """Insert a fake air quality dataset into the database"""
+    """Only insert laqn and static features."""
 
     writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
@@ -458,6 +460,30 @@ def fake_cleanair_dataset(
         on_conflict="overwrite",
         table=LAQNReading,
     )
+
+    # Insert static features data
+    writer.commit_records(
+        [i.dict() for i in static_feature_records],
+        on_conflict="overwrite",
+        table=StaticFeature,
+    )
+
+
+# pylint: disable=R0913
+@pytest.fixture(scope="class")
+def fake_cleanair_dataset(
+    secretfile,
+    connection_class,
+    fake_laqn_static_dataset,
+    aqe_site_records,
+    aqe_reading_records,
+    satellite_box_records,
+    satellite_meta_point_and_box_records,
+    satellite_forecast,
+):
+    """Insert a fake air quality dataset into the database"""
+
+    writer = DBWriter(secretfile=secretfile, connection=connection_class)
 
     # Insert AQESite data
     writer.commit_records(
@@ -492,33 +518,141 @@ def fake_cleanair_dataset(
         table=SatelliteForecast,
     )
 
-    # Insert static features data
-    writer.commit_records(
-        [i.dict() for i in static_feature_records],
-        on_conflict="overwrite",
-        table=StaticFeature,
+
+@pytest.fixture(scope="class")
+def laqn_config(dataset_start_date, dataset_end_date, num_forecast_days):
+    """LAQN dataset with just one feature."""
+    return DataConfig(
+        train_start_date=dataset_start_date,
+        train_end_date=dataset_end_date,
+        pred_start_date=dataset_end_date,
+        pred_end_date=dataset_end_date + timedelta(days=num_forecast_days),
+        include_prediction_y=False,
+        train_sources=[Source.laqn],
+        pred_sources=[Source.laqn],
+        train_interest_points={Source.laqn.value: "all"},
+        pred_interest_points={Source.laqn.value: "all"},
+        species=[Species.NO2],
+        features=[FeatureNames.total_a_road_length],
+        buffer_sizes=[FeatureBufferSize.two_hundred],
+        norm_by=Source.laqn,
+        model_type=ModelName.svgp,
     )
+
+
+@pytest.fixture(scope="class")
+def laqn_full_config(fake_laqn_static_dataset, laqn_config, model_config):
+    """Generate full config for laqn."""
+    model_config.validate_config(laqn_config)
+    return model_config.generate_full_config(laqn_config)
 
 
 @pytest.fixture(scope="function")
 def scoot_generator(
-    secretfile: str,
-    connection: Any,
-    dataset_start_date: datetime,
-    dataset_end_date: datetime,
+    secretfile, connection, dataset_start_date, dataset_end_date,
 ) -> ScootGenerator:
-    """Initialise a scoot writer."""
+    """Write scoot data to database"""
     return ScootGenerator(
         dataset_start_date,
         dataset_end_date,
-        0,
-        100,
+        offset=0,
+        limit=100,
         secretfile=secretfile,
         connection=connection,
     )
 
 
 @pytest.fixture(scope="function")
+def scoot_single_detector_generator(
+    secretfile, connection, dataset_start_date, dataset_end_date,
+):
+    """Write scoot data to database"""
+    return ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        offset=0,
+        limit=1,
+        detectors=["N04/161a1"],
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+
+@pytest.fixture(scope="function")
+def scoot_detector_single_hour(
+    dataset_start_date, dataset_end_date, secretfile, connection
+):
+    "Generete a single hour of scoot data"
+    scoot_generator = ScootGenerator(
+        dataset_start_date,
+        dataset_end_date,
+        secretfile=secretfile,
+        connection=connection,
+    )
+
+    scoot_data_df = scoot_generator.generate_df()
+    first_detector_id = scoot_data_df["detector_id"].unique()[0]
+    drop_first_detector_and_hours = scoot_data_df[
+        (scoot_data_df["detector_id"] != first_detector_id)
+        & (scoot_data_df["measurement_start_utc"] == pd.to_datetime(dataset_start_date))
+    ]
+    return drop_first_detector_and_hours, first_detector_id
+
+
+@pytest.fixture(scope="function")
+def scoot_writer(
+    monkeypatch,
+    scoot_detector_single_hour,
+    secretfile,
+    connection,
+    dataset_start_date,
+    dataset_end_date,
+):
+    "Return a ScootWriter instance"
+
+    def request_remote_data(
+        start_datetime_utc, detector_ids,
+    ):
+        """Patch the request_remote_data method
+
+        Drops a single scoot detector which we should then write to the database as null
+        """
+
+        drop_first_detector_and_hours = scoot_detector_single_hour[0]
+
+        unaggregated_scoot_df = drop_first_detector_and_hours.rename(
+            columns={"measurement_start_utc": "timestamp"}
+        ).drop("measurement_end_utc", axis=1)
+
+        # Convert to unix time
+        unaggregated_scoot_df["timestamp"] = unaggregated_scoot_df["timestamp"].apply(
+            lambda x: x.timestamp()
+        )
+
+        unaggregated_scoot_df["detector_fault"] = False
+
+        return unaggregated_scoot_df
+
+    def combine_by_detector_id(data_df):
+        return data_df
+
+    nhours = (dataset_end_date - dataset_start_date).total_seconds() / (60 * 60)
+
+    scoot_writer = ScootWriter(
+        aws_key="",
+        aws_key_id="",
+        end=dataset_end_date,
+        nhours=nhours,
+        secretfile=secretfile,
+        connection=connection,
+    )
+    monkeypatch.setattr(scoot_writer, "request_remote_data", request_remote_data)
+    monkeypatch.setattr(scoot_writer, "combine_by_detector_id", combine_by_detector_id)
+
+    return scoot_writer
+
+
+@pytest.fixture(scope="class")
 def matern32_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -530,7 +664,7 @@ def matern32_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def base_model(matern32_params: KernelParams) -> BaseModelParams:
     """Model params for SVGP and sub-MRDGP"""
     return BaseModelParams(
@@ -542,13 +676,13 @@ def base_model(matern32_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def svgp_model_params(base_model: BaseModelParams) -> SVGPParams:
     """Create a model params pydantic class."""
     return SVGPParams(**base_model.dict(), jitter=0.1,)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mr_linear_params() -> KernelParams:
     """Matern 32 kernel params."""
     return KernelParams(
@@ -561,7 +695,7 @@ def mr_linear_params() -> KernelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     """Model params for sub-MRDGP"""
     return BaseModelParams(
@@ -573,7 +707,7 @@ def sub_model(mr_linear_params: KernelParams) -> BaseModelParams:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def mrdgp_model_params(sub_model: BaseModelParams) -> MRDGPParams:
     """Create MRDGP model params."""
     return MRDGPParams(
@@ -596,26 +730,6 @@ def model_config(secretfile, connection_class):
 def model_data(secretfile, connection_class):
     "Return a ModelData instance"
     return ModelData(secretfile=secretfile, connection=connection_class)
-
-@pytest.fixture(scope="class")
-def laqn_config(dataset_start_date, dataset_end_date):
-    """LAQN dataset with just one feature."""
-    return DataConfig(
-        train_start_date=dataset_start_date,
-        train_end_date=dataset_end_date,
-        pred_start_date=dataset_end_date,
-        pred_end_date=dataset_end_date + timedelta(days=2),
-        include_prediction_y=False,
-        train_sources=[Source.laqn],
-        pred_sources=[Source.laqn],
-        train_interest_points={Source.laqn.value: "all"},
-        pred_interest_points={Source.laqn.value: "all"},
-        species=[Species.NO2],
-        features=[FeatureNames.total_a_road_length],
-        buffer_sizes=[FeatureBufferSize.two_hundred],
-        norm_by=Source.laqn,
-        model_type=ModelName.svgp,
-    )
 
 
 @pytest.fixture(scope="class")
@@ -640,19 +754,12 @@ def sat_config(dataset_start_date):
 
 
 @pytest.fixture(scope="class")
-def laqn_full_config(laqn_config, model_config):
-    """Generate full config for laqn."""
-    model_config.validate_config(laqn_config)
-    return model_config.generate_full_config(laqn_config)
-
-
-@pytest.fixture(scope="class")
 def sat_full_config(sat_config, model_config):
     """Generate full config for laqn + sat."""
     model_config.validate_config(sat_config)
     return model_config.generate_full_config(sat_config)
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="class")
 def laqn_svgp_instance(secretfile, connection_class, laqn_full_config, svgp_model_params):
     """LAQN data and a SVGP model params inside an instance"""
     return AirQualityInstance(
