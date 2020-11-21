@@ -11,16 +11,15 @@ from ....types import ExperimentName
 app = typer.Typer(help="Experiment CLI")
 
 
-@app.command
+@app.command()
 def setup(experiment_name: ExperimentName, experiment_dir: Path = ExperimentDir):
     """Compare the effect of changing static features"""
     secretfile: str = state["secretfile"]
-    experiment_name = "static_features"
-    experiment_dir = experiment_dir / experiment_name
+    experiment_dir = experiment_dir / experiment_name.value
 
     # get the function that will generate instances
     experiment_generator_function: Callable = getattr(
-        generate_air_quality_experiment, experiment_name
+        generate_air_quality_experiment, experiment_name.value
     )
 
     # generate the instances
