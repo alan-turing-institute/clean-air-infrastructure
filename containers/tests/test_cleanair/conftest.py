@@ -8,6 +8,7 @@ import pytest
 from dateutil import rrule
 from dateutil.parser import isoparse
 import numpy as np
+import tensorflow as tf
 import pandas as pd
 from nptyping import NDArray
 from cleanair.databases import DBWriter
@@ -758,6 +759,23 @@ def sat_full_config(sat_config, model_config):
     """Generate full config for laqn + sat."""
     model_config.validate_config(sat_config)
     return model_config.generate_full_config(sat_config)
+
+def tf_session():
+    """A tensorflow session that lasts for only the scope of a function.
+
+    Yields:
+        Tensorflow session.
+    """
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        yield sess
+
+
+@pytest.fixture(autouse=True, scope="function")
+def init_graph():
+    """Initialise a tensorflow graph."""
+    with tf.Graph().as_default():
+        yield
 
 
 @pytest.fixture(scope="class")
