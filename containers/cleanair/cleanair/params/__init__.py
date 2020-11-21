@@ -1,6 +1,6 @@
 """Parameters for cleanair models."""
 
-from .mrdgp_params import MRDGP_NUM_INDUCING_POINTS
+from .mrdgp_params import default_mrdgp_model_params, MRDGP_NUM_INDUCING_POINTS
 from .shared_params import (
     LENGTHSCALES,
     LIKELIHOOD_VARIANCE,
@@ -8,9 +8,12 @@ from .shared_params import (
     MINIBATCH_SIZE,
     MAXITER,
 )
-from .svgp_params import JITTER, SVGP_NUM_INDUCING_POINTS
+from .svgp_params import default_svgp_kernel, default_svgp_model_params, JITTER, SVGP_NUM_INDUCING_POINTS
 
 __all__ = [
+    "default_mrdgp_model_params",
+    "default_svgp_kernel",
+    "default_svgp_model_params",
     "JITTER",
     "LENGTHSCALES",
     "LIKELIHOOD_VARIANCE",
