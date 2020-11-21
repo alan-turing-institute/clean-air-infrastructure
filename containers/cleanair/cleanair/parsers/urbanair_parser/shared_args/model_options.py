@@ -40,7 +40,7 @@ Lengthscales = typer.Option(
 LikelihoodVariance = typer.Option(
     LIKELIHOOD_VARIANCE, help=ModelHelp.likelihood_variance.value, show_default=True,
 )
-KernelType = typer.Option(
+KernelOption = typer.Option(
     KernelType.matern32, help=ModelHelp.kernel_type.value, show_default=True
 )
 KernelVariance = typer.Option(

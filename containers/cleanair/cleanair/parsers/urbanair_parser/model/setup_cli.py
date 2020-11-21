@@ -2,14 +2,14 @@
 
 from pathlib import Path
 import typer
-from ..shared_args import InputDir
-from ..shared_args.model_options import (
+from ..shared_args import (
     Ard,
     Jitter,
+    InputDir,
+    KernelOption,
+    KernelVariance,
     Lengthscales,
     LikelihoodVariance,
-    KernelType,
-    KernelVariance,
     MaxIter,
     MinibatchSize,
     MRDGPNumInducingPoints,
@@ -33,7 +33,7 @@ def svgp(
     ard: bool = Ard,
     input_dir: Path = InputDir,
     jitter: float = Jitter,
-    kernel: str = KernelType,
+    kernel: KernelType = KernelOption,
     lengthscales: float = Lengthscales,
     likelihood_variance: float = LikelihoodVariance,
     maxiter: int = MaxIter,
@@ -48,7 +48,7 @@ def svgp(
         kernel=KernelParams(
             ARD=ard,
             lengthscales=lengthscales,
-            name=kernel,
+            name=kernel.value,
             type=kernel,
             variance=variance,
         ),
