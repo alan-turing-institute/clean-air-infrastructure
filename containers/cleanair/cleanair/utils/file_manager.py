@@ -30,6 +30,9 @@ if TYPE_CHECKING:
 class FileManager:
     """Class for managing files for the urbanair project"""
 
+    # instance filepaths
+    INSTANCE_JSON = Path("instance.json")
+
     # data config / train test data
     DATASET = Path("dataset")
     DATA_CONFIG = DATASET / "data_config.json"
@@ -331,3 +334,13 @@ class FileManager:
         elbo_fp = self.input_dir / FileManager.MODEL_ELBO_JSON
         with open(elbo_fp, "r") as elbo_file:
             return json.load(elbo_file)
+
+    def write_instance_to_json(self, instance: Any) -> None:
+        """Writes an instance to a json file"""
+        with open(self.input_dir / self.INSTANCE_JSON, "w") as json_file:
+            json.dump(instance.dict(), json_file)
+
+    def read_instance_dict_from_json(self) -> Dict:
+        """Reads a dictionary containing the instance from a json file"""
+        with open(self.input_dir / self.INSTANCE_JSON, "r") as json_file:
+            return json.load(json_file)
