@@ -81,27 +81,31 @@ class ExperimentMixin:
         for instance_id in instance_id_list:
             file_manager = self.__file_manager_from_instance_id(instance_id)
             instance_dict = file_manager.read_instance_dict_from_json()
+            model_name = instance_dict.get("model_name")
+            model_params = file_manager.load_model_params(model_name)
+            data_config = file_manager.load_data_config(full=True)
             instance = InstanceMixin(
-                data_config=getattr(instance_dict, "data_config"),
-                model_name=getattr(instance_dict, "model_name"),
-                model_params=getattr(instance_dict, "model_params"),
-                cluster_id=getattr(instance_dict, "cluster_id"),
-                fit_start_time=getattr(instance_dict, "fit_start_time"),
-                git_hash=getattr(instance_dict, "git_hash"),
-                preprocessing=getattr(instance_dict, "preprocessing"),
-                tag=getattr(instance_dict, "tag"),
+                data_config=data_config,
+                model_name=model_name,
+                model_params=model_params,
+                cluster_id=instance_dict.get("cluster_id"),
+                fit_start_time=instance_dict.get("fit_start_time"),
+                git_hash=instance_dict.get("git_hash"),
+                preprocessing=instance_dict.get("preprocessing"),
+                tag=instance_dict.get("tag"),
             )
             self.add_instance(instance, file_manager=file_manager)
 
     def read_experiment_config_from_json(self) -> ExperimentConfig:
         """Read the experiment config from a json file"""
-        with open(self._experiment_config_json_fp, "r+") as json_file:
-            return ExperimentConfig(**json.load(json_file))
+        with open(self._experiment_config_json_fp, "r") as json_file:
+            config_dict: Dict = json.load(json_file)
+        return ExperimentConfig(**config_dict)
 
     def write_experiment_config_to_json(self) -> None:
         """Writes a json file that describes the experiment"""
-        with open(self._experiment_config_json_fp, "w+") as json_file:
-            json.dump(self.get_experiment_config().json(), json_file)
+        with open(self._experiment_config_json_fp, "w") as json_file:
+            json.dump(self.get_experiment_config().dict(), json_file)
 
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
