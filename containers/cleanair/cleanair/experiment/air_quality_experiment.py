@@ -13,7 +13,13 @@ from ..utils import FileManager
 class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""
 
-    def __init__(self, name: ExperimentName, experiment_root: Path, secretfile: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        name: ExperimentName,
+        experiment_root: Path,
+        secretfile: Optional[str] = None,
+        **kwargs
+    ):
         super().__init__(name, experiment_root, secretfile=secretfile, **kwargs)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
@@ -79,9 +85,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
         #  load the data from this instance
         training_data = file_manager.load_training_data()
         full_config = file_manager.load_data_config(full=True)
-        return model_data.get_data_arrays(
-            full_config, training_data, prediction=False,
-        )
+        return model_data.get_data_arrays(full_config, training_data, prediction=False,)
 
     def load_test_dataset(self, data_id: str) -> IndexedDatasetDict:
         """Load a test dataset from file"""

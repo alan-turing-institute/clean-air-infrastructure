@@ -16,7 +16,7 @@ def default_laqn_data_config() -> DataConfig:
         trainhours=TRAIN_DAYS * 24,
         predhours=FORECAST_DAYS * 24,
         train_sources=[Source.laqn],
-        pred_sources=[Source.laqn], # TODO add hexgrid
+        pred_sources=[Source.laqn],  # TODO add hexgrid
         species=[Species.NO2],
         features=[],
         buffer_sizes=[FeatureBufferSize.one_hundred, FeatureBufferSize.five_hundred],

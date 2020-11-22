@@ -3,7 +3,11 @@
 from typing import Callable, List
 from pathlib import Path
 import typer
-from ....experiment import RunnableAirQualityExperiment, SetupAirQualityExperiment, generate_air_quality_experiment
+from ....experiment import (
+    RunnableAirQualityExperiment,
+    SetupAirQualityExperiment,
+    generate_air_quality_experiment,
+)
 from ....mixins import InstanceMixin
 from ..shared_args import ExperimentDir
 from ..state import state
@@ -13,7 +17,9 @@ app = typer.Typer(help="Experiment CLI")
 
 
 @app.command()
-def setup(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
+def setup(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
     """Setup an experiment: load data + setup model parameters"""
     secretfile: str = state["secretfile"]
 
@@ -25,7 +31,9 @@ def setup(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
     instance_list = experiment_generator_function(secretfile)
 
     # create an experiment from generated instances
-    setup_experiment = SetupAirQualityExperiment(experiment_name, experiment_root, secretfile=secretfile)
+    setup_experiment = SetupAirQualityExperiment(
+        experiment_name, experiment_root, secretfile=secretfile
+    )
     for instance in instance_list:
         setup_experiment.add_instance(instance)
     # download the data
@@ -34,6 +42,7 @@ def setup(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
     for instance in instance_list:
         setup_experiment.write_instance_to_file(instance.instance_id)
     setup_experiment.write_experiment_config_to_json()
+
 
 @app.command()
 def run(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
@@ -50,15 +59,24 @@ def run(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) 
     # run the experiment: train, predict and save results
     runnable_experiment.run_experiment()
 
+
 @app.command()
-def batch(experiment_name: ExperimentName, batch_start: int, batch_size: int, experiment_root: Path = ExperimentDir) -> None:
+def batch(
+    experiment_name: ExperimentName,
+    batch_start: int,
+    batch_size: int,
+    experiment_root: Path = ExperimentDir,
+) -> None:
     """Run a batch of experiments"""
     # get the list of instances
     # only load instances from batch_start to (batch_size + batch_size)
     # run experiment with subset of instances
     raise NotImplementedError("Coming soon - run a batch of experiments")
 
+
 @app.command()
-def update(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) -> None:
+def update(
+    experiment_name: ExperimentName, experiment_root: Path = ExperimentDir
+) -> None:
     """Update experiment results to database"""
     raise NotImplementedError("Coming soon")

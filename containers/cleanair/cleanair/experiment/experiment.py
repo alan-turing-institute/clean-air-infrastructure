@@ -36,13 +36,19 @@ class ExperimentMixin:
         self.experiment_root = experiment_root
         self.experiment_root.mkdir(parents=False, exist_ok=True)
         (self.experiment_root / self.name).mkdir(parents=False, exist_ok=True)
-        self._experiment_config_json_fp = self.experiment_root / name.value / ExperimentMixin.EXPERIMENT_CONFIG_JSON_FILENAME
+        self._experiment_config_json_fp = (
+            self.experiment_root
+            / name.value
+            / ExperimentMixin.EXPERIMENT_CONFIG_JSON_FILENAME
+        )
 
         # dictionaries to manage the experiment
         self._instances: Dict[str, InstanceMixin] = dict()
         self._file_managers: Dict[str, FileManager] = dict()
 
-    def add_instance(self, instance: InstanceMixin, file_manager: Optional[FileManager] = None) -> None:
+    def add_instance(
+        self, instance: InstanceMixin, file_manager: Optional[FileManager] = None
+    ) -> None:
         """Add a new instance to the experiment"""
         # add instance to dictionary of instances
         self._instances[instance.instance_id] = instance
@@ -54,8 +60,7 @@ class ExperimentMixin:
     def get_experiment_config(self) -> ExperimentConfig:
         """Get the experiment settings"""
         return ExperimentConfig(
-            name=self.name,
-            instance_id_list=self.get_instance_ids(),
+            name=self.name, instance_id_list=self.get_instance_ids(),
         )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
@@ -72,9 +77,7 @@ class ExperimentMixin:
 
     def __file_manager_from_instance_id(self, instance_id: str) -> FileManager:
         """Create a file manager from an instance id"""
-        return FileManager(
-            self.experiment_root / self.name.value / instance_id
-        )
+        return FileManager(self.experiment_root / self.name.value / instance_id)
 
     def add_instances_from_file(self, instance_id_list: List[str]) -> None:
         """Read all instances from json files using file managers"""
@@ -107,6 +110,7 @@ class ExperimentMixin:
         with open(self._experiment_config_json_fp, "w") as json_file:
             json.dump(self.get_experiment_config().dict(), json_file)
 
+
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
 
@@ -124,7 +128,9 @@ class SetupExperimentMixin(ExperimentMixin):
     def load_test_dataset(self, data_id: str) -> Any:
         """Use the data id to load a test dataset"""
 
-    def add_instance(self, instance: InstanceMixin, file_manager: Optional[FileManager] = None) -> None:
+    def add_instance(
+        self, instance: InstanceMixin, file_manager: Optional[FileManager] = None
+    ) -> None:
         """Add the instance and create a lookup from data id to data config"""
         super().add_instance(instance, file_manager=file_manager)
         self._data_config_lookup[instance.data_id] = instance.data_config
@@ -240,7 +246,6 @@ class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
         # convert pydantic models to dictionaries
-        
 
     def update_result_tables(self):
         """Update the result tables"""
