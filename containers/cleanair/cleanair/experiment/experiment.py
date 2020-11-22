@@ -2,16 +2,19 @@
 
 from abc import abstractmethod
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import pandas as pd
 from sqlalchemy import inspect
+from ..databases import DBWriter
 from ..databases.mixins import (
     DataTableMixin,
     InstanceTableMixin,
     ModelTableMixin,
 )
 from ..mixins import InstanceMixin
+from ..types import ExperimentConfig, ExperimentName
 from ..utils import FileManager
 
 
@@ -19,18 +22,23 @@ class ExperimentMixin:
     """An experiment contains multiple instances.
 
     Attributes:
-
-        file_manager: List of file manager classes for each instance.
+        name: Name of the experiment
+        experiment_root: Root directory of experiments
     """
 
+    EXPERIMENT_CONFIG_JSON_FILENAME = "experiment_config.json"
+
     def __init__(
-        self, input_dir: Path, **kwargs,
+        self, name: ExperimentName, experiment_root: Path, **kwargs,
     ):
         # super().__init__(**kwargs)
+        self.name = name
 
         # create directory for saving files if it doesn't exist
-        self.input_dir = input_dir
-        self.input_dir.mkdir(parents=True, exist_ok=True)
+        self.experiment_root = experiment_root
+        self.experiment_root.mkdir(parents=False, exist_ok=True)
+        (self.experiment_root / self.name).mkdir(parents=False, exist_ok=True)
+        self._experiment_config_json_fp = self.experiment_root / name.value / ExperimentMixin.EXPERIMENT_CONFIG_JSON_FILENAME
 
         # dictionaries to manage the experiment
         self._instances: Dict[str, InstanceMixin] = dict()
@@ -42,7 +50,14 @@ class ExperimentMixin:
         self._instances[instance.instance_id] = instance
         # create a new file manager for the instance
         self._file_managers[instance.instance_id] = FileManager(
-            self.input_dir / instance.instance_id
+            self.experiment_root / instance.instance_id
+        )
+
+    def get_experiment_config(self) -> ExperimentConfig:
+        """Get the experiment settings"""
+        return ExperimentConfig(
+            name=self.name,
+            instance_id_list=self.get_instance_ids(),
         )
 
     def get_instance(self, instance_id: str) -> InstanceMixin:
@@ -57,12 +72,21 @@ class ExperimentMixin:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
 
+    def read_experiment_config_from_json(self) -> ExperimentConfig:
+        """Read the experiment config from a json file"""
+        with open(self._experiment_config_json_fp, "r+") as json_file:
+            return ExperimentConfig(**json.load(json_file))
+
+    def write_experiment_config_to_json(self) -> None:
+        """Writes a json file that describes the experiment"""
+        with open(self._experiment_config_json_fp, "w+") as json_file:
+            json.dump(self.get_experiment_config().json(), json_file)
 
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
 
-    def __init__(self, input_dir: Path, **kwargs):
-        super().__init__(input_dir, **kwargs)
+    def __init__(self, name: ExperimentName, experiment_root: Path, **kwargs):
+        super().__init__(name, experiment_root, **kwargs)
         self._test_dataset: Dict[str, Any] = dict()
         self._training_dataset: Dict[str, Any] = dict()
         self._data_config_lookup: Dict[str, Any] = dict()
@@ -161,7 +185,7 @@ class RunnableExperimentMixin(SetupExperimentMixin):
             self.save_result(instance_id)
 
 
-class UpdateExperimentMixin(ExperimentMixin):
+class UpdateExperimentMixin(ExperimentMixin, DBWriter):
     """An experiment that can write to databases"""
 
     @property
@@ -179,28 +203,19 @@ class UpdateExperimentMixin(ExperimentMixin):
     def model_table(self) -> ModelTableMixin:
         """The modelling table."""
 
-    def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
-        """Update a table with the dataframe."""
-        inst = inspect(table)
-        cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
-        records = frame[cols].to_dict("records")
-        self.commit_records(
-            records, on_conflict="ignore", table=table,
-        )
+    # def update_table_from_frame(self, frame: pd.DataFrame, table) -> None:
+    #     """Update a table with the dataframe."""
+    #     inst = inspect(table)
+    #     cols = [c_attr.key for c_attr in inst.mapper.column_attrs]
+    #     records = frame[cols].to_dict("records")
+    #     self.commit_records(
+    #         records, on_conflict="ignore", table=table,
+    #     )
 
     def update_remote_tables(self):
         """Update the instance, data and model tables."""
         # convert pydantic models to dictionaries
-        frame = self.frame.copy()
-        frame["model_params"] = frame.model_params.apply(lambda x: x.dict())
-        frame["data_config"] = frame.data_config.apply(lambda x: x.dict())
-        frame["preprocessing"] = frame.preprocessing.apply(lambda x: x.dict())
+        
 
-        # update the model params table
-        self.update_table_from_frame(frame, self.model_table)
-
-        # update the data config table
-        self.update_table_from_frame(frame, self.data_table)
-
-        # update the instance table
-        self.update_table_from_frame(frame, self.instance_table)
+    def update_result_tables(self):
+        """Update the result tables"""

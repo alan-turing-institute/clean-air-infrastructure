@@ -22,7 +22,7 @@ from .dataset_types import (
     FullDataConfig,
     InterestPointDict,
 )
-from .experiment_types import ExperimentName
+from .experiment_types import ExperimentConfig, ExperimentName
 from .model_types import (
     BaseModelParams,
     KernelParams,
@@ -35,6 +35,7 @@ __all__ = [
     "Borough",
     "BaseModelParams",
     "DataConfig",
+    "ExperimentConfig",
     "ExperimentName",
     "FullDataConfig",
     "DatasetDict",

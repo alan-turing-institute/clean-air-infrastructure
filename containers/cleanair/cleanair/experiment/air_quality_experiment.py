@@ -1,20 +1,20 @@
 """Experiments for air quality model validation"""
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 import pandas as pd
 from gpflow.models.model import Model
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
-from ..types import IndexedDatasetDict, ModelName, Source, TargetDict
+from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
 
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""
 
-    def __init__(self, input_dir: Path, secretfile: str, **kwargs):
-        super().__init__(input_dir, secretfile=secretfile, **kwargs)
+    def __init__(self, name: ExperimentName, experiment_root: Path, secretfile: Optional[str] = None, **kwargs):
+        super().__init__(name, experiment_root, secretfile=secretfile, **kwargs)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
@@ -55,8 +55,8 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
 class RunnableAirQualityExperiment(RunnableExperimentMixin):
     """Run an air quality experiment"""
 
-    def __init__(self, input_dir: Path, **kwargs):
-        super().__init__(input_dir, **kwargs)
+    def __init__(self, name: ExperimentName, experiment_root: Path, **kwargs):
+        super().__init__(name, experiment_root, **kwargs)
         self._models: Dict[str, Model] = dict()
         self._training_result: Dict[str, TargetDict] = dict()
         self._test_result: Dict[str, TargetDict] = dict()
