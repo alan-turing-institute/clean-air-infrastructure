@@ -50,6 +50,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         file_manager.save_training_data(training_dataset)
         file_manager.save_test_data(test_dataset)
         file_manager.save_model_params(instance.model_params)
+        file_manager.write_instance_to_json(instance)
 
 
 class RunnableAirQualityExperiment(RunnableExperimentMixin):

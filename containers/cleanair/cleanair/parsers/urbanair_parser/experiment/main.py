@@ -7,7 +7,7 @@ from ....experiment import RunnableAirQualityExperiment, SetupAirQualityExperime
 from ....mixins import InstanceMixin
 from ..shared_args import ExperimentDir
 from ..state import state
-from ....types import ExperimentConfig, ExperimentName
+from ....types import ExperimentName
 
 app = typer.Typer(help="Experiment CLI")
 
@@ -43,9 +43,8 @@ def run(experiment_name: ExperimentName, experiment_root: Path = ExperimentDir) 
 
     # load instances from file
     experiment_config = runnable_experiment.read_experiment_config_from_json()
-    for instance_id in experiment_config.instance_id_list:
-        instance = runnable_experiment.get_file_manager(instance_id).load_instance_from_json()
-        runnable_experiment.add_instance(instance)
+    runnable_experiment.add_instances_from_file(experiment_config.instance_id_list)
+
     # load datasets from file
     runnable_experiment.load_datasets()
     # run the experiment: train, predict and save results

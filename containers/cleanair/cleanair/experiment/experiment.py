@@ -4,9 +4,7 @@ from abc import abstractmethod
 from datetime import datetime
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
-import pandas as pd
-from sqlalchemy import inspect
+from typing import Any, Dict, List, Optional, Tuple
 from ..databases import DBWriter
 from ..databases.mixins import (
     DataTableMixin,
@@ -44,14 +42,14 @@ class ExperimentMixin:
         self._instances: Dict[str, InstanceMixin] = dict()
         self._file_managers: Dict[str, FileManager] = dict()
 
-    def add_instance(self, instance: InstanceMixin) -> None:
+    def add_instance(self, instance: InstanceMixin, file_manager: Optional[FileManager] = None) -> None:
         """Add a new instance to the experiment"""
         # add instance to dictionary of instances
         self._instances[instance.instance_id] = instance
         # create a new file manager for the instance
-        self._file_managers[instance.instance_id] = FileManager(
-            self.experiment_root / instance.instance_id
-        )
+        if not file_manager:
+            file_manager = self.__file_manager_from_instance_id(instance.instance_id)
+        self._file_managers[instance.instance_id] = file_manager
 
     def get_experiment_config(self) -> ExperimentConfig:
         """Get the experiment settings"""
@@ -71,6 +69,29 @@ class ExperimentMixin:
     def get_file_manager(self, instance_id: str) -> FileManager:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
+
+    def __file_manager_from_instance_id(self, instance_id: str) -> FileManager:
+        """Create a file manager from an instance id"""
+        return FileManager(
+            self.experiment_root / self.name.value / instance_id
+        )
+
+    def add_instances_from_file(self, instance_id_list: List[str]) -> None:
+        """Read all instances from json files using file managers"""
+        for instance_id in instance_id_list:
+            file_manager = self.__file_manager_from_instance_id(instance_id)
+            instance_dict = file_manager.read_instance_dict_from_json()
+            instance = InstanceMixin(
+                data_config=getattr(instance_dict, "data_config"),
+                model_name=getattr(instance_dict, "model_name"),
+                model_params=getattr(instance_dict, "model_params"),
+                cluster_id=getattr(instance_dict, "cluster_id"),
+                fit_start_time=getattr(instance_dict, "fit_start_time"),
+                git_hash=getattr(instance_dict, "git_hash"),
+                preprocessing=getattr(instance_dict, "preprocessing"),
+                tag=getattr(instance_dict, "tag"),
+            )
+            self.add_instance(instance, file_manager=file_manager)
 
     def read_experiment_config_from_json(self) -> ExperimentConfig:
         """Read the experiment config from a json file"""
@@ -99,9 +120,9 @@ class SetupExperimentMixin(ExperimentMixin):
     def load_test_dataset(self, data_id: str) -> Any:
         """Use the data id to load a test dataset"""
 
-    def add_instance(self, instance: InstanceMixin) -> None:
+    def add_instance(self, instance: InstanceMixin, file_manager: Optional[FileManager] = None) -> None:
         """Add the instance and create a lookup from data id to data config"""
-        super().add_instance(instance)
+        super().add_instance(instance, file_manager=file_manager)
         self._data_config_lookup[instance.data_id] = instance.data_config
 
     def __is_data_id_in_instances(self, data_id: str) -> bool:
