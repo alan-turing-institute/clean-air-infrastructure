@@ -8,7 +8,12 @@ from .shared_params import (
     MINIBATCH_SIZE,
     MAXITER,
 )
-from .svgp_params import default_svgp_kernel, default_svgp_model_params, JITTER, SVGP_NUM_INDUCING_POINTS
+from .svgp_params import (
+    default_svgp_kernel,
+    default_svgp_model_params,
+    JITTER,
+    SVGP_NUM_INDUCING_POINTS,
+)
 
 __all__ = [
     "default_mrdgp_model_params",

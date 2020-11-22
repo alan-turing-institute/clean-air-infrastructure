@@ -12,8 +12,11 @@ from ..types import BaseModelParams, KernelParams, KernelType, MRDGPParams
 
 MRDGP_NUM_INDUCING_POINTS = 1000
 
+
 def default_base_laqn_kernel(
-    n_features: int, lengthscales: float = LENGTHSCALES, variance: float = KERNEL_VARIANCE
+    n_features: int,
+    lengthscales: float = LENGTHSCALES,
+    variance: float = KERNEL_VARIANCE,
 ) -> KernelParams:
     """Default kernel parameters for the base LAQN GP"""
     base_laqn_kernel = KernelParams(
@@ -25,6 +28,7 @@ def default_base_laqn_kernel(
     )
     return base_laqn_kernel
 
+
 def default_base_laqn_model_params(
     n_features: int,
     lengthscales: float = LENGTHSCALES,
@@ -32,13 +36,11 @@ def default_base_laqn_model_params(
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
-    variance: float = KERNEL_VARIANCE
+    variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default model parameters for the base LAQN GP"""
     base_laqn_kernel = default_base_laqn_kernel(
-        n_features,
-        lengthscales=lengthscales,
-        variance=variance,
+        n_features, lengthscales=lengthscales, variance=variance,
     )
     base_laqn = BaseModelParams(
         kernel=base_laqn_kernel,
@@ -51,7 +53,9 @@ def default_base_laqn_model_params(
 
 
 def default_base_sat_kernel(
-    n_features: int, lengthscales: float = LENGTHSCALES, variance: float = KERNEL_VARIANCE
+    n_features: int,
+    lengthscales: float = LENGTHSCALES,
+    variance: float = KERNEL_VARIANCE,
 ) -> KernelParams:
     """Default kernel for the base satellite GP"""
     base_sat_kernel = KernelParams(
@@ -71,13 +75,11 @@ def default_base_sat_model_params(
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
-    variance: float = KERNEL_VARIANCE
+    variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default base model params for Satellite GP"""
     base_sat_kernel = default_base_sat_kernel(
-        n_features,
-        lengthscales=lengthscales,
-        variance=variance,
+        n_features, lengthscales=lengthscales, variance=variance,
     )
     base_sat = BaseModelParams(
         kernel=base_sat_kernel,
@@ -90,7 +92,9 @@ def default_base_sat_model_params(
 
 
 def default_dgp_sat_kernel(
-    n_features: int, lengthscales: float = LENGTHSCALES, variance: float = KERNEL_VARIANCE
+    n_features: int,
+    lengthscales: float = LENGTHSCALES,
+    variance: float = KERNEL_VARIANCE,
 ) -> List[KernelParams]:
     """Default kernel for the Deep GP with Satellite"""
     # the deep gp satellite kernel is a product: MR linear x MR squared exponential
@@ -124,13 +128,11 @@ def default_dgp_sat_model_params(
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
-    variance: float = KERNEL_VARIANCE
+    variance: float = KERNEL_VARIANCE,
 ) -> BaseModelParams:
     """Default model parameters for the Deep GP satellite model"""
     dgp_sat_kernel = default_dgp_sat_kernel(
-        n_features,
-        lengthscales=lengthscales,
-        variance=variance,
+        n_features, lengthscales=lengthscales, variance=variance,
     )
     dgp_sat = BaseModelParams(
         kernel=dgp_sat_kernel,
@@ -141,6 +143,7 @@ def default_dgp_sat_model_params(
     )
     return dgp_sat
 
+
 def default_mrdgp_model_params(
     n_features: int,
     lengthscales: float = LENGTHSCALES,
@@ -148,7 +151,7 @@ def default_mrdgp_model_params(
     num_inducing_points: int = MRDGP_NUM_INDUCING_POINTS,
     maxiter: int = MAXITER,
     minibatch_size: int = MINIBATCH_SIZE,
-    variance: float = KERNEL_VARIANCE
+    variance: float = KERNEL_VARIANCE,
 ) -> MRDGPParams:
     """Get default values for model params"""
     base_laqn = default_base_laqn_model_params(

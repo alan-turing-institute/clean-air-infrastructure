@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel
 from .enum_types import KernelType
 
+
 class KernelParams(BaseModel):
     """Validation for kernel parameters."""
 

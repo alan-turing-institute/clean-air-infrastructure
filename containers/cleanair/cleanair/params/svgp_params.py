@@ -12,6 +12,7 @@ from ..types import KernelParams, KernelType, SVGPParams
 JITTER: float = 1e-5
 SVGP_NUM_INDUCING_POINTS = 2000
 
+
 def default_svgp_kernel(
     ard: bool = True,
     kernel: KernelType = KernelType.matern32,
@@ -28,6 +29,7 @@ def default_svgp_kernel(
     )
     return kernel
 
+
 def default_svgp_model_params(
     ard: bool = True,
     jitter: float = JITTER,
@@ -43,10 +45,7 @@ def default_svgp_model_params(
     model_params = SVGPParams(
         jitter=jitter,
         kernel=default_svgp_kernel(
-            ard=ard,
-            kernel=kernel,
-            lengthscales=lengthscales,
-            variance=variance,
+            ard=ard, kernel=kernel, lengthscales=lengthscales, variance=variance,
         ),
         likelihood_variance=likelihood_variance,
         num_inducing_points=num_inducing_points,
