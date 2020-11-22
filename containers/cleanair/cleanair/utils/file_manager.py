@@ -18,8 +18,12 @@ from ..types import (
 )
 
 if TYPE_CHECKING:
-    import gpflow
+    # turn off tensorflow warnings for gpflow
+    import os
     import tensorflow as tf
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    import gpflow  # pylint: disable=wrong-import-position,wrong-import-order
     from pydantic import BaseModel
 
 # pylint: disable=R0904

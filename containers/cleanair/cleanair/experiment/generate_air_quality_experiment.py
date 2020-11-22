@@ -16,7 +16,7 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
 
     # list of static features to iterate through
     static_features_list = [
-        [],
+        # [],   # BUG empty features cause error when downloading
         [FeatureNames.total_a_road_length],
         [FeatureNames.water],
         [FeatureNames.park],

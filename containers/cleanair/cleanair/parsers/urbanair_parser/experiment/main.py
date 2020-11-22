@@ -24,12 +24,18 @@ def setup(experiment_name: ExperimentName, experiment_dir: Path = ExperimentDir)
     )
 
     # generate the instances
-    instances = experiment_generator_function(secretfile)
+    instance_list = experiment_generator_function(secretfile)
 
     # create an experiment from generated instances
     setup_experiment = SetupAirQualityExperiment(experiment_dir, secretfile=secretfile)
-    map(setup_experiment.add_instance, instances)
-
-    # load datasets
+    for instance in instance_list:
+        setup_experiment.add_instance(instance)
     setup_experiment.load_datasets()
-    map(setup_experiment.write_instance_to_file, setup_experiment.get_instance_ids())
+    for instance in instance_list:
+        setup_experiment.write_instance_to_file(instance.instance_id)
+
+    # map(setup_experiment.add_instance, instances)
+
+    # # load datasets
+    # setup_experiment.load_datasets()
+    # map(setup_experiment.write_instance_to_file, setup_experiment.get_instance_ids())
