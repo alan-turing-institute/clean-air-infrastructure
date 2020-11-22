@@ -2,24 +2,36 @@
 
 from typing import List, Optional
 from ..mixins import InstanceMixin
+from ..models import ModelConfig
 from ..params import default_svgp_model_params
-from ..types import FeatureNames, ModelName, SVGPParams, Tag
+from ..types import FeatureNames, ModelName, Tag
+from .default_air_quality_data_config import default_laqn_data_config
 
 
-def svgp_vary_static_features() -> List[InstanceMixin]:
+def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
+    # default model parameters for every model
     model_params = default_svgp_model_params()
     instance_list: List[InstanceMixin] = []
+
     # list of static features to iterate through
     static_features_list = [
         [],
         [FeatureNames.total_a_road_length],
+        [FeatureNames.water],
+        [FeatureNames.park],
+        [FeatureNames.total_a_road_length, FeatureNames.water, FeatureNames.park]
     ]
+    model_config = ModelConfig(secretfile=secretfile)
     for static_features in static_features_list:
-        # TODO create a data config from static_features
-        data_config = ...
+        # create a data config from static_features
+        data_config = default_laqn_data_config()
+        data_config.features = static_features
+        model_config.validate_config(data_config)
+        full_data_config = model_config.generate_full_config(data_config)
+
         # create instance and add to list
-        instance = InstanceMixin(data_config, ModelName.svgp, model_params, tag=Tag.validation)
+        instance = InstanceMixin(full_data_config, ModelName.svgp, model_params, tag=Tag.validation)
         instance_list.append(instance)
     return instance_list
 
