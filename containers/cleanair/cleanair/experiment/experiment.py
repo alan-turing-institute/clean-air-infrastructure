@@ -35,7 +35,7 @@ class ExperimentMixin:
         # create directory for saving files if it doesn't exist
         self.experiment_root = experiment_root
         self.experiment_root.mkdir(parents=False, exist_ok=True)
-        (self.experiment_root / self.name).mkdir(parents=False, exist_ok=True)
+        (self.experiment_root / self.name.value).mkdir(parents=False, exist_ok=True)
         self._experiment_config_json_fp = (
             self.experiment_root
             / name.value
@@ -54,7 +54,7 @@ class ExperimentMixin:
         self._instances[instance.instance_id] = instance
         # create a new file manager for the instance
         if not file_manager:
-            file_manager = self.__file_manager_from_instance_id(instance.instance_id)
+            file_manager = self.create_file_manager_from_instance_id(instance.instance_id)
         self._file_managers[instance.instance_id] = file_manager
 
     def get_experiment_config(self) -> ExperimentConfig:
@@ -75,14 +75,14 @@ class ExperimentMixin:
         """Get the file manager for the given instance"""
         return self._file_managers[instance_id]
 
-    def __file_manager_from_instance_id(self, instance_id: str) -> FileManager:
+    def create_file_manager_from_instance_id(self, instance_id: str) -> FileManager:
         """Create a file manager from an instance id"""
         return FileManager(self.experiment_root / self.name.value / instance_id)
 
     def add_instances_from_file(self, instance_id_list: List[str]) -> None:
         """Read all instances from json files using file managers"""
         for instance_id in instance_id_list:
-            file_manager = self.__file_manager_from_instance_id(instance_id)
+            file_manager = self.create_file_manager_from_instance_id(instance_id)
             instance_dict = file_manager.read_instance_dict_from_json()
             model_name = instance_dict.get("model_name")
             model_params = file_manager.load_model_params(model_name)

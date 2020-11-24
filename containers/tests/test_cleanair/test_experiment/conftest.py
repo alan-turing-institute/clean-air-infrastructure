@@ -12,7 +12,7 @@ from cleanair.experiment import (
     SetupAirQualityExperiment,
 )
 from cleanair.mixins import InstanceMixin
-from cleanair.types import ModelName
+from cleanair.types import ExperimentName, ModelName
 
 # pylint: disable=redefined-outer-name
 
@@ -20,8 +20,8 @@ from cleanair.types import ModelName
 class SimpleSetupExperiment(SetupExperimentMixin):
     """A minimal implementation of setup experiment mixin"""
 
-    def __init__(self, input_dir, **kwargs):
-        super().__init__(input_dir, **kwargs)
+    def __init__(self, name, input_dir, **kwargs):
+        super().__init__(name, input_dir, **kwargs)
         self.num_ones = 10
 
     def load_training_dataset(self, data_id: str) -> Any:
@@ -44,6 +44,10 @@ class SimpleModelParams(BaseModel):
 
     kernel: str
 
+@pytest.fixture(scope="function")
+def experiment_name() -> ExperimentName:
+    """Name"""
+    return ExperimentName.svgp_vary_static_features
 
 @pytest.fixture(scope="function")
 def experiment_dir(tmp_path_factory) -> Path:
@@ -82,24 +86,24 @@ def different_instance(different_data_config, simple_model_params):
 
 
 @pytest.fixture(scope="function")
-def simple_experiment(experiment_dir) -> ExperimentMixin:
+def simple_experiment(experiment_name, experiment_dir) -> ExperimentMixin:
     """Bare bones experiment"""
-    return ExperimentMixin(experiment_dir)
+    return ExperimentMixin(experiment_name, experiment_dir)
 
 
 @pytest.fixture(scope="function")
-def simple_setup_experiment(experiment_dir) -> SimpleSetupExperiment:
+def simple_setup_experiment(experiment_name, experiment_dir) -> SimpleSetupExperiment:
     """A bare bones setup experiment class"""
-    return SimpleSetupExperiment(experiment_dir)
+    return SimpleSetupExperiment(experiment_name, experiment_dir)
 
 
 @pytest.fixture(scope="function")
 def setup_aq_experiment(
-    secretfile, connection_class, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+    secretfile, connection_class, experiment_name, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
 ) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(
-        experiment_dir, secretfile=secretfile, connection=connection_class
+        experiment_name, experiment_dir, secretfile=secretfile, connection=connection_class
     )
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)
@@ -108,7 +112,7 @@ def setup_aq_experiment(
 
 @pytest.fixture(scope="function")
 def runnable_aq_experiment(
-    setup_aq_experiment, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+    setup_aq_experiment, experiment_name, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
 ) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first
@@ -117,7 +121,7 @@ def runnable_aq_experiment(
         setup_aq_experiment.write_instance_to_file(instance_id)
 
     # add the instances to a runnable instance
-    experiment = RunnableAirQualityExperiment(experiment_dir)
+    experiment = RunnableAirQualityExperiment(experiment_name, experiment_dir)
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)
     return experiment
