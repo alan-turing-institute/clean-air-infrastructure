@@ -1,12 +1,16 @@
+import os
 import numpy as np
 import tensorflow as tf
+
+# turn off tensorflow warnings for gpflow
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+# pylint: disable=wrong-import-position,wrong-import-order
 import gpflow
-from gpflow import settings
-from gpflow import params_as_tensors
 
 
 class MR_Linear(gpflow.kernels.Linear):
-    @params_as_tensors
+    @gpflow.params_as_tensors
     def K(self, X, X2=None, presliced=False):
         # X2 in N1 x S x 1
         # X2 in N2 x S x 1
@@ -29,15 +33,17 @@ class MR_Linear(gpflow.kernels.Linear):
         if jitter_flag:
             # val =  util.add_jitter(val, self.context.jitter)
 
-            jit = tf.cast(settings.jitter, settings.float_type)
+            jit = tf.cast(gpflow.settings.jitter, gpflow.settings.float_type)
             K = (
                 K
-                + (jit * tf.eye(tf.shape(K)[1], dtype=settings.float_type))[None, :, :]
+                + (jit * tf.eye(tf.shape(K)[1], dtype=gpflow.settings.float_type))[
+                    None, :, :
+                ]
             )
 
         return K
 
-    @params_as_tensors
+    @gpflow.params_as_tensors
     def Kdiag(self, X, presliced=False):
         if not presliced:
             if isinstance(self.active_dims, np.ndarray):

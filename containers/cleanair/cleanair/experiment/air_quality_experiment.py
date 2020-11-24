@@ -1,14 +1,22 @@
 """Experiments for air quality model validation"""
 
+from __future__ import annotations
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 import pandas as pd
-from gpflow.models.model import Model
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
 from ..utils import FileManager
 
+if TYPE_CHECKING:
+    import os
+    import tensorflow as tf
+    # turn off tensorflow warnings for gpflow
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    # pylint: disable=wrong-import-position,wrong-import-order
+    from gpflow.models.model import Model
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""
