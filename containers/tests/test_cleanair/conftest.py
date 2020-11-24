@@ -761,6 +761,7 @@ def sat_full_config(sat_config, model_config):
     return model_config.generate_full_config(sat_config)
 
 
+@pytest.fixture(scope="function")
 def tf_session():
     """A tensorflow session that lasts for only the scope of a function.
 
