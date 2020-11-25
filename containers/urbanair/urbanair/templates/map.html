@@ -30,22 +30,26 @@
     <div id="controls" class="panel">
         <div class="controls-options">Options</div>
         <div class="controls-container">
-            <label for="controls">Detection Classs</label><br>
-            <select id="select-detection-class" onchange="changeDetectionClass()">
-                <option value="person">People</option>
-                <option value="car">Cars</option>
-                <option value="bus">Buses</option>
-                <option value="motorbike">Motorbikes</option>
-                <option value="truck">Trucks</option>
-                <option value="all">All</option>
-            </select>
-            <br>
-            <label for="controls">Date</label><br>
-            <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            <br>
-            <label for="controls">Lock colour scale range</label><br>
-            <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
-            <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+            <div>
+                <label for="select-detection-class">Detection Classs</label><br>
+                <select id="select-detection-class" onchange="changeDetectionClass()">
+                    <option value="person">People</option>
+                    <option value="car">Cars</option>
+                    <option value="bus">Buses</option>
+                    <option value="motorbike">Motorbikes</option>
+                    <option value="truck">Trucks</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <div>
+                <label for="date">Date</label><br>
+                <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
+            </div>
+            <div>
+                <label for="lock-colour-scale">Lock colour scale range</label><br>
+                <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
+                <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+            </div>
         </div><br>
     </div>
 
@@ -55,7 +59,7 @@
     </div>
 
     <!-- CAMERA DETAILS -->
-    <div id="detailsPanel" class="panel mono" style="visibility: hidden;">
+    <div id="detailsPanel" class="panel mono" style="display: none;">
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
             <strong id="panel-camera-id">CAMERA:</strong>
@@ -63,8 +67,10 @@
             <br>
             <p id="camera-count">Average count</p>
             <br>
-            <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
-            <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
+            <div class="image-container">
+                <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
+                <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
+            </div>
             <br>
             <label for="checkbox-ground-estimate">Show ground estimate</label>
             <input type="checkbox" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" checked>
@@ -436,11 +442,11 @@
     }
 
     function showDetailsPanel() {
-        document.getElementById('detailsPanel').style.visibility = "";
+        document.getElementById('detailsPanel').style.display = "block";
     }
 
     function hideDetailsPanel() {
-        document.getElementById('detailsPanel').style.visibility = "hidden";
+        document.getElementById('detailsPanel').style.display = "none";
         selectedCam = "";
         map.setFilter('jamcams-highlighted', ['==', ['string', ['get', 'id']], selectedCam]);
     }
