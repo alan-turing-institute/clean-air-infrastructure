@@ -7,6 +7,14 @@ from ..params import default_svgp_model_params
 from ..types import FeatureNames, ModelName, Tag
 from .default_air_quality_data_config import default_laqn_data_config
 
+# list of static features to iterate through
+STATIC_FEATURES_LIST = [
+    # [],   # BUG empty features cause error when downloading
+    [FeatureNames.total_a_road_length],
+    [FeatureNames.water],
+    [FeatureNames.park],
+    [FeatureNames.total_a_road_length, FeatureNames.water, FeatureNames.park],
+]
 
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
@@ -14,16 +22,8 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     model_params = default_svgp_model_params()
     instance_list: List[InstanceMixin] = []
 
-    # list of static features to iterate through
-    static_features_list = [
-        # [],   # BUG empty features cause error when downloading
-        [FeatureNames.total_a_road_length],
-        [FeatureNames.water],
-        [FeatureNames.park],
-        [FeatureNames.total_a_road_length, FeatureNames.water, FeatureNames.park],
-    ]
     model_config = ModelConfig(secretfile=secretfile)
-    for static_features in static_features_list:
+    for static_features in STATIC_FEATURES_LIST:
         # create a data config from static_features
         data_config = default_laqn_data_config()
         data_config.features = static_features
