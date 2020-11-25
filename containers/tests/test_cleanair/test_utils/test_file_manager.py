@@ -231,4 +231,6 @@ def test_read_write_instance(input_dir: Path, laqn_svgp_instance) -> None:
     file_manager.write_instance_to_json(laqn_svgp_instance)
     assert (file_manager.input_dir / file_manager.INSTANCE_JSON).exists()
     instance = file_manager.read_instance_from_json()
-    assert instance == laqn_svgp_instance
+    assert instance.instance_id == laqn_svgp_instance.instance_id
+    assert instance.data_id == laqn_svgp_instance.data_id
+    assert instance.param_id == laqn_svgp_instance.param_id

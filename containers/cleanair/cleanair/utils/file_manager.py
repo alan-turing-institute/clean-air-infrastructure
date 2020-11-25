@@ -238,7 +238,7 @@ class FileManager:
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "r") as params_file:
             params_dict = json.load(params_file)
-        raise ValueError("Must pass a valid model name")
+        return model_params_from_dict(model_name, params_dict)
 
     def save_model_params(self, model_params: BaseModel) -> None:
         """Load the model params from a json file"""

@@ -37,15 +37,6 @@ def test_read_experiment_config_from_json(simple_experiment, simple_instance):
     assert config.name == simple_experiment.name
     assert config.instance_id_list == simple_experiment.get_instance_ids()
 
-def test_add_instances_from_file(simple_experiment, simple_instance):
-    """Test instances are read from files and added to experiment"""
-    file_manager = simple_experiment.create_file_manager_from_instance_id(simple_instance.instance_id)
-    file_manager.write_instance_to_json(simple_instance)
-    instance_id_list = [simple_instance.instance_id]
-    assert simple_experiment.get_instance_ids() == []
-    simple_experiment.add_instances_from_file(instance_id_list)
-    assert simple_experiment.get_instance_ids() == instance_id_list
-
 # tests for setup experiment mixin
 
 def test_add_training_dataset(simple_setup_experiment, simple_instance):
