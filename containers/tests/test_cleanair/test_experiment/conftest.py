@@ -44,10 +44,12 @@ class SimpleModelParams(BaseModel):
 
     kernel: str
 
+
 @pytest.fixture(scope="function")
 def experiment_name() -> ExperimentName:
     """Name"""
     return ExperimentName.svgp_vary_static_features
+
 
 @pytest.fixture(scope="function")
 def experiment_dir(tmp_path_factory) -> Path:
@@ -99,11 +101,19 @@ def simple_setup_experiment(experiment_name, experiment_dir) -> SimpleSetupExper
 
 @pytest.fixture(scope="function")
 def setup_aq_experiment(
-    secretfile, connection_class, experiment_name, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+    secretfile,
+    connection_class,
+    experiment_name,
+    experiment_dir,
+    laqn_svgp_instance,
+    sat_mrdgp_instance,
 ) -> SetupAirQualityExperiment:
     """Setup air quality experiment class"""
     experiment = SetupAirQualityExperiment(
-        experiment_name, experiment_dir, secretfile=secretfile, connection=connection_class
+        experiment_name,
+        experiment_dir,
+        secretfile=secretfile,
+        connection=connection_class,
     )
     experiment.add_instance(laqn_svgp_instance)
     experiment.add_instance(sat_mrdgp_instance)
@@ -112,7 +122,11 @@ def setup_aq_experiment(
 
 @pytest.fixture(scope="function")
 def runnable_aq_experiment(
-    setup_aq_experiment, experiment_name, experiment_dir, laqn_svgp_instance, sat_mrdgp_instance
+    setup_aq_experiment,
+    experiment_name,
+    experiment_dir,
+    laqn_svgp_instance,
+    sat_mrdgp_instance,
 ) -> RunnableAirQualityExperiment:
     """A runnable air quality experiment"""
     # load the experiment and write it to file first

@@ -12,11 +12,13 @@ from ..utils import FileManager
 if TYPE_CHECKING:
     import os
     import tensorflow as tf
+
     # turn off tensorflow warnings for gpflow
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
     # pylint: disable=wrong-import-position,wrong-import-order
     from gpflow.models.model import Model
+
 
 class SetupAirQualityExperiment(SetupExperimentMixin):
     """Setup the air quality experiment"""

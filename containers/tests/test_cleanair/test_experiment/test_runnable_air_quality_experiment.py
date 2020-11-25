@@ -13,7 +13,9 @@ class TestRunnableAirQualityExperiment:
 
     def test_add_instances_from_file(self, simple_experiment, laqn_svgp_instance):
         """Test instances are read from files and added to experiment"""
-        file_manager = simple_experiment.create_file_manager_from_instance_id(laqn_svgp_instance.instance_id)
+        file_manager = simple_experiment.create_file_manager_from_instance_id(
+            laqn_svgp_instance.instance_id
+        )
         file_manager.write_instance_to_json(laqn_svgp_instance)
         instance_id_list = [laqn_svgp_instance.instance_id]
         assert simple_experiment.get_instance_ids() == []
@@ -37,7 +39,11 @@ class TestRunnableAirQualityExperiment:
         """Test the training dataset is loaded from file"""
         for instance_id in runnable_aq_experiment.get_instance_ids():
             instance = runnable_aq_experiment.get_instance(instance_id)
-            x_train, y_train, index_train = runnable_aq_experiment.load_training_dataset(instance.data_id)
+            (
+                x_train,
+                y_train,
+                index_train,
+            ) = runnable_aq_experiment.load_training_dataset(instance.data_id)
             for source in instance.data_config.train_sources:
                 assert source in x_train
                 assert source in y_train
@@ -49,7 +55,9 @@ class TestRunnableAirQualityExperiment:
         """Test the test dataset is loaded from a file"""
         for instance_id in runnable_aq_experiment.get_instance_ids():
             instance = runnable_aq_experiment.get_instance(instance_id)
-            x_train, _, index_train = runnable_aq_experiment.load_test_dataset(instance.data_id)
+            x_train, _, index_train = runnable_aq_experiment.load_test_dataset(
+                instance.data_id
+            )
             for source in instance.data_config.pred_sources:
                 assert source in x_train
                 assert source in index_train
@@ -110,6 +118,11 @@ class TestRunnableAirQualityExperiment:
             runnable_aq_experiment.predict_on_training_set(instance_id)
             runnable_aq_experiment.predict_on_test_set(instance_id)
             runnable_aq_experiment.save_result(instance_id)
-            result_dir = runnable_aq_experiment.experiment_root / runnable_aq_experiment.name.value / instance_id / FileManager.RESULT
+            result_dir = (
+                runnable_aq_experiment.experiment_root
+                / runnable_aq_experiment.name.value
+                / instance_id
+                / FileManager.RESULT
+            )
             assert (result_dir / FileManager.PRED_FORECAST_PICKLE).exists()
             assert (result_dir / FileManager.PRED_TRAINING_PICKLE).exists()

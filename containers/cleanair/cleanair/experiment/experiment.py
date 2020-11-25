@@ -54,7 +54,9 @@ class ExperimentMixin:
         self._instances[instance.instance_id] = instance
         # create a new file manager for the instance
         if not file_manager:
-            file_manager = self.create_file_manager_from_instance_id(instance.instance_id)
+            file_manager = self.create_file_manager_from_instance_id(
+                instance.instance_id
+            )
         self._file_managers[instance.instance_id] = file_manager
 
     def get_experiment_config(self) -> ExperimentConfig:

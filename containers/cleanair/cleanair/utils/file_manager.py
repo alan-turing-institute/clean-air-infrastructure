@@ -343,7 +343,9 @@ class FileManager:
         with open(self.input_dir / self.INSTANCE_JSON, "r") as json_file:
             instance_dict: Dict = json.load(json_file)
             model_name = instance_dict.get("model_name")
-            model_params = model_params_from_dict(model_name, instance_dict.get("model_params"))
+            model_params = model_params_from_dict(
+                model_name, instance_dict.get("model_params")
+            )
             data_config_dict = instance_dict.get("data_config")
             data_config = FullDataConfig(**data_config_dict)
             instance = InstanceMixin(
@@ -358,7 +360,10 @@ class FileManager:
             )
             return instance
 
-def model_params_from_dict(model_name: ModelName, params_dict: Dict) -> Union[SVGPParams, MRDGPParams]:
+
+def model_params_from_dict(
+    model_name: ModelName, params_dict: Dict
+) -> Union[SVGPParams, MRDGPParams]:
     """Use the model name to return the right type of model params"""
     if model_name == ModelName.svgp:
         return SVGPParams(**params_dict)

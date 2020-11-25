@@ -5,6 +5,7 @@ import pytest
 
 # pylint: disable=invalid-name
 
+
 def test_experiment_init(simple_experiment):
     """Test an experiment is initialised"""
     # check the input directory is created
@@ -23,11 +24,17 @@ def test_add_instance_to_experiment(simple_experiment, simple_instance):
         simple_instance.instance_id
     ).input_dir.exists()
 
+
 def test_write_experiment_config_to_json(simple_experiment, simple_instance):
     """Test writing experiment to json"""
     simple_experiment.add_instance(simple_instance)
     simple_experiment.write_experiment_config_to_json()
-    assert (simple_experiment.experiment_root / simple_experiment.name.value / simple_experiment.EXPERIMENT_CONFIG_JSON_FILENAME).exists()
+    assert (
+        simple_experiment.experiment_root
+        / simple_experiment.name.value
+        / simple_experiment.EXPERIMENT_CONFIG_JSON_FILENAME
+    ).exists()
+
 
 def test_read_experiment_config_from_json(simple_experiment, simple_instance):
     """Test reading experiment json"""
@@ -37,7 +44,9 @@ def test_read_experiment_config_from_json(simple_experiment, simple_instance):
     assert config.name == simple_experiment.name
     assert config.instance_id_list == simple_experiment.get_instance_ids()
 
+
 # tests for setup experiment mixin
+
 
 def test_add_training_dataset(simple_setup_experiment, simple_instance):
     """Test the training data is added to the lookup"""

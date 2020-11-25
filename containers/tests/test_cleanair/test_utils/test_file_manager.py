@@ -224,6 +224,7 @@ def test_save_load_elbo(input_dir: Path, elbo: List[float]) -> None:
     loaded_elbo = file_manager.load_elbo()
     assert elbo == loaded_elbo
 
+
 def test_read_write_instance(input_dir: Path, laqn_svgp_instance) -> None:
     """Test reading and writing instances"""
     file_manager = FileManager(input_dir)
