@@ -128,7 +128,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
     def predict_on_training_set(self, instance_id: str) -> TargetDict:
         """Predict on the training set"""
         instance = self._instances[instance_id]
-        X_train = self._training_dataset[instance.data_id]
+        X_train, _, _ = self._training_dataset[instance.data_id]
         model = self._models[instance_id]
         if (
             Source.satellite in X_train
@@ -141,7 +141,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
     def predict_on_test_set(self, instance_id: str) -> TargetDict:
         """Predict on the test set"""
         instance = self._instances[instance_id]
-        X_test = self._test_dataset[instance.data_id]
+        X_test, _, _ = self._test_dataset[instance.data_id]
         model = self._models[instance_id]
         y_forecast = model.predict(X_test)
         self._test_result[instance_id] = y_forecast

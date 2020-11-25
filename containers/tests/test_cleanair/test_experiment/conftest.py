@@ -137,5 +137,5 @@ def runnable_aq_experiment(
     # add the instances to a runnable instance
     experiment = RunnableAirQualityExperiment(experiment_name, experiment_dir)
     experiment.add_instance(laqn_svgp_instance)
-    experiment.add_instance(sat_mrdgp_instance)
+    # experiment.add_instance(sat_mrdgp_instance)
     return experiment

@@ -62,27 +62,24 @@ class TestRunnableAirQualityExperiment:
                 assert source in x_train
                 assert source in index_train
 
-    def test_load_model(self, runnable_aq_experiment):
+    def test_load_model(self, runnable_aq_experiment, tf_session):
         """Test the model is created"""
         for instance_id in runnable_aq_experiment.get_instance_ids():
             model = runnable_aq_experiment.load_model(instance_id)
             assert model.epoch == 0
 
-    def test_train_model(self, runnable_aq_experiment):
+    def test_train_model(self, runnable_aq_experiment, tf_session):
         """Test the model is fit to the data"""
+        runnable_aq_experiment.load_datasets()
         for instance_id in runnable_aq_experiment.get_instance_ids():
-            instance = runnable_aq_experiment.get_instance(instance_id)
-            runnable_aq_experiment.load_training_dataset(instance.data_id)
             model = runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             assert model.epoch > 0
 
-    def test_predict_on_training_set(self, runnable_aq_experiment):
+    def test_predict_on_training_set(self, runnable_aq_experiment, tf_session):
         """Test preditions are made on the training set"""
+        runnable_aq_experiment.load_datasets()
         for instance_id in runnable_aq_experiment.get_instance_ids():
-            instance = runnable_aq_experiment.get_instance(instance_id)
-            runnable_aq_experiment.load_training_dataset(instance.data_id)
-            runnable_aq_experiment.load_test_dataset(instance.data_id)
             runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             pred_training = runnable_aq_experiment.predict_on_training_set(instance_id)
@@ -92,12 +89,10 @@ class TestRunnableAirQualityExperiment:
                     assert prediction.shape[0] > 0
                     assert prediction.shape[1] == 1
 
-    def test_predict_on_test_set(self, runnable_aq_experiment):
+    def test_predict_on_test_set(self, runnable_aq_experiment, tf_session):
         """Test predictions are made on the test set"""
+        runnable_aq_experiment.load_datasets()
         for instance_id in runnable_aq_experiment.get_instance_ids():
-            instance = runnable_aq_experiment.get_instance(instance_id)
-            runnable_aq_experiment.load_training_dataset(instance.data_id)
-            runnable_aq_experiment.load_test_dataset(instance.data_id)
             runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             pred_test = runnable_aq_experiment.predict_on_test_set(instance_id)
@@ -107,12 +102,10 @@ class TestRunnableAirQualityExperiment:
                     assert prediction.shape[0] > 0
                     assert prediction.shape[1] == 1
 
-    def test_save_result(self, runnable_aq_experiment):
+    def test_save_result(self, runnable_aq_experiment, tf_session):
         """Test the predictions are saved to a file"""
+        runnable_aq_experiment.load_datasets()
         for instance_id in runnable_aq_experiment.get_instance_ids():
-            instance = runnable_aq_experiment.get_instance(instance_id)
-            runnable_aq_experiment.load_training_dataset(instance.data_id)
-            runnable_aq_experiment.load_test_dataset(instance.data_id)
             runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             runnable_aq_experiment.predict_on_training_set(instance_id)
