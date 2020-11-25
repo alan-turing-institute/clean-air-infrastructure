@@ -12,7 +12,8 @@ from .model_options import (
     KernelVariance,
     MaxIter,
     MinibatchSize,
-    NumInducingPoints,
+    MRDGPNumInducingPoints,
+    SVGPNumInducingPoints,
 )
 from .shared_args import (
     AWSId,
