@@ -83,20 +83,7 @@ class ExperimentMixin:
         """Read all instances from json files using file managers"""
         for instance_id in instance_id_list:
             file_manager = self.create_file_manager_from_instance_id(instance_id)
-            instance_dict = file_manager.read_instance_dict_from_json()
-            model_name = instance_dict.get("model_name")
-            model_params = file_manager.load_model_params(model_name)
-            data_config = file_manager.load_data_config(full=True)
-            instance = InstanceMixin(
-                data_config=data_config,
-                model_name=model_name,
-                model_params=model_params,
-                cluster_id=instance_dict.get("cluster_id"),
-                fit_start_time=instance_dict.get("fit_start_time"),
-                git_hash=instance_dict.get("git_hash"),
-                preprocessing=instance_dict.get("preprocessing"),
-                tag=instance_dict.get("tag"),
-            )
+            instance = file_manager.read_instance_from_json()
             self.add_instance(instance, file_manager=file_manager)
 
     def read_experiment_config_from_json(self) -> ExperimentConfig:

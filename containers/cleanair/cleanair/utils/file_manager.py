@@ -7,6 +7,7 @@ import json
 import pickle
 import pandas as pd
 from ..loggers import get_logger
+from ..mixins import InstanceMixin
 from ..types import (
     DataConfig,
     FullDataConfig,
@@ -237,10 +238,6 @@ class FileManager:
         params_fp = self.input_dir / FileManager.MODEL_PARAMS
         with open(params_fp, "r") as params_file:
             params_dict = json.load(params_file)
-        if model_name == ModelName.svgp:
-            return SVGPParams(**params_dict)
-        if model_name == ModelName.mrdgp:
-            return MRDGPParams(**params_dict)
         raise ValueError("Must pass a valid model name")
 
     def save_model_params(self, model_params: BaseModel) -> None:
@@ -336,12 +333,35 @@ class FileManager:
         with open(elbo_fp, "r") as elbo_file:
             return json.load(elbo_file)
 
-    def write_instance_to_json(self, instance: Any) -> None:
+    def write_instance_to_json(self, instance: InstanceMixin) -> None:
         """Writes an instance to a json file"""
         with open(self.input_dir / self.INSTANCE_JSON, "w") as json_file:
             json.dump(instance.dict(), json_file)
 
-    def read_instance_dict_from_json(self) -> Dict:
+    def read_instance_from_json(self) -> InstanceMixin:
         """Reads a dictionary containing the instance from a json file"""
         with open(self.input_dir / self.INSTANCE_JSON, "r") as json_file:
-            return json.load(json_file)
+            instance_dict: Dict = json.load(json_file)
+            model_name = instance_dict.get("model_name")
+            model_params = model_params_from_dict(model_name, instance_dict.get("model_params"))
+            data_config_dict = instance_dict.get("data_config")
+            data_config = FullDataConfig(**data_config_dict)
+            instance = InstanceMixin(
+                data_config=data_config,
+                model_name=model_name,
+                model_params=model_params,
+                cluster_id=instance_dict.get("cluster_id"),
+                fit_start_time=instance_dict.get("fit_start_time"),
+                git_hash=instance_dict.get("git_hash"),
+                preprocessing=instance_dict.get("preprocessing"),
+                tag=instance_dict.get("tag"),
+            )
+            return instance
+
+def model_params_from_dict(model_name: ModelName, params_dict: Dict) -> Union[SVGPParams, MRDGPParams]:
+    """Use the model name to return the right type of model params"""
+    if model_name == ModelName.svgp:
+        return SVGPParams(**params_dict)
+    if model_name == ModelName.mrdgp:
+        return MRDGPParams(**params_dict)
+    raise ValueError(f"{model_name} is not a valid model name")
