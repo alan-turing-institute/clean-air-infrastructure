@@ -29,6 +29,8 @@ html, body, #mapid {
 }
 
 .panel{
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
     color: white;
     z-index: 99999;
     position: relative;
@@ -41,11 +43,6 @@ html, body, #mapid {
     font-family: 'Roboto', sans-serif;
     font-size: 18px;
     font-weight: 700;
-}
-
-.controls-container {
-    font-family: 'Roboto', sans-serif;
-    font-size: 16px;
 }
 
 .mono{

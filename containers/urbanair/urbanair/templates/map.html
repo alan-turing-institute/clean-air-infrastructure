@@ -28,29 +28,27 @@
 
     <!-- SETTINGS -->
     <div id="controls" class="panel">
-        <div class="controls-options">Options</div>
-        <div class="controls-container">
-            <div>
-                <label for="select-detection-class">Detection Classs</label><br>
-                <select id="select-detection-class" onchange="changeDetectionClass()">
-                    <option value="person">People</option>
-                    <option value="car">Cars</option>
-                    <option value="bus">Buses</option>
-                    <option value="motorbike">Motorbikes</option>
-                    <option value="truck">Trucks</option>
-                    <option value="all">All</option>
-                </select>
-            </div>
-            <div>
-                <label for="date">Date</label><br>
-                <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
-            </div>
-            <div>
-                <label for="lock-colour-scale">Lock colour scale range</label><br>
-                <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
-                <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
-            </div>
-        </div><br>
+        <h2>Options</h2>
+        <div>
+            <label for="select-detection-class">Detection Classs</label><br>
+            <select id="select-detection-class" onchange="changeDetectionClass()">
+                <option value="person">People</option>
+                <option value="car">Cars</option>
+                <option value="bus">Buses</option>
+                <option value="motorbike">Motorbikes</option>
+                <option value="truck">Trucks</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+        <div>
+            <label for="date">Date</label><br>
+            <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
+        </div>
+        <div>
+            <label for="lock-colour-scale">Lock colour scale range</label><br>
+            <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
+            <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
+        </div>
     </div>
 
     <!-- HISTOGRAM -->
@@ -59,27 +57,28 @@
     </div>
 
     <!-- CAMERA DETAILS -->
-    <div id="detailsPanel" class="panel mono" style="display: none;">
+    <div id="detailsPanel" class="panel" style="display: none;">
         <div style="text-align: right;"><a class="close" onclick="hideDetailsPanel()" >X</a></div>
         <div>
-            <strong id="panel-camera-id">CAMERA:</strong>
+            <strong id="panel-camera-id">Camera</strong>
             <span style="text-align: right;"><img id='img-warn' width='20px' height='20px' src="{{ url_for('static', path='img/warn.svg') }}" alt="Camera is not currently being used by Odysseus"/></span>
             <br>
             <p id="camera-count">Average count</p>
             <br>
             <div class="image-container">
                 <img id='img-camera-view' class='image' src='' alr='" + camera.id}' width='281' height='230'>
-                <img id='img-ground-estimate' class='annotation image' src='' visibility="show">
+                <img id='img-ground-estimate' class='annotation image' src='' style="visibility: hidden">
             </div>
             <br>
             <label for="checkbox-ground-estimate">Show ground estimate</label>
-            <input type="checkbox" id="checkbox-ground-estimate" onchange="changeGroundEstimates()" checked>
+            <input type="checkbox" id="checkbox-ground-estimate" onchange="toggleGroundEstimates()">
             <br>
-            <span style='color: red'>Parameter estimation export in queue</span><br>
-            h &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Height (metres): <br>
-            phi &nbsp;&nbsp;&nbsp; | Heading (degrees): <br>
-            u_0,v_0 | Vanishing point (pixels):  <br>
-            S &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Scale factor (NA):
+            <div id="camera-metadata" style="display: none">
+                Height h (metres): <br>
+                Heading &phi; (degrees): <br>
+                Vanishing point u<sub>0</sub>,v<sub>0</sub> (pixels):  <br>
+                Scale factor s :
+            </div>
         </div>
         <canvas id="chart" width="400" height="250"></canvas>
     </div>
@@ -406,7 +405,7 @@
     }
 
     function updatePanel(camera) {
-        document.getElementById('panel-camera-id').innerText = `CAMERA: ${camera.id}`;
+        document.getElementById('panel-camera-id').innerText = `Camera ${camera.id}`;
         document.getElementById('img-ground-estimate').src = `/static/img/annotations/${camera.id.replace("0000", "")}_annotated_image.png`
         document.getElementById('img-camera-view').src = `https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/${camera.id}.jpg`;
         document.getElementById('img-warn').style.display = (camera.flag === 1) ? "inline" : "none";
@@ -436,9 +435,10 @@
         setHistogramDetectionClass();
     }
 
-    function changeGroundEstimates(){
+    function toggleGroundEstimates(){
         showGroundEstimates = document.getElementById("checkbox-ground-estimate").checked;
         document.getElementById('img-ground-estimate').style.visibility = (showGroundEstimates ? "" : "hidden");
+        document.getElementById('camera-metadata').style.display = (showGroundEstimates ? "block" : "none");
     }
 
     function showDetailsPanel() {
