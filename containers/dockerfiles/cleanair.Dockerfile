@@ -16,4 +16,4 @@ WORKDIR /app
 COPY cleanair /app/cleanair
 
 # Install any needed packages specified in requirements.txt
-RUN pip install '/app/cleanair[models, traffic]' pyopenssl
+RUN pip install '/app/cleanair[models]' pyopenssl
