@@ -4,9 +4,10 @@ import datetime
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
+from urbanair.queries.jamcam import get_tomtom_data
 
 from ...databases import get_db, all_or_404
 from ...databases.queries import (
@@ -219,3 +220,35 @@ def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
     data = get_jamcam_metadata(db)
 
     return all_or_404(data)
+
+
+@router.get(
+    "/traffic_data", description="Third party traffic data", include_in_schema=False
+)
+def traffic_data() -> Optional[dict]:
+    return {"success": True}
+
+
+@router.get(
+    "/traffic_data/{zoom}/{x}/{y}",
+    description="Third party traffic data",
+    include_in_schema=False,
+)
+def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
+
+    res = get_tomtom_data(zoom, x, y)
+    if res.ok:
+        return Response(
+            content=res.content, status_code=res.status_code, media_type="bytes"
+        )
+
+    if res.status_code == 403:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Invalid TomTom API key",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Error with request to TomTom API",
+    )
