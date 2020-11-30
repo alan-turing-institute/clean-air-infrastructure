@@ -26,6 +26,7 @@ setuptools.setup(
         "holidays==0.9.8",
         "nptyping==1.2.0",
         "numpy==1.18.5",
+        "pathos==0.2.5",
         "pandas==1.0.5",
         "pydantic==1.6.1",
         "python-dateutil==2.8.1",
@@ -48,8 +49,6 @@ setuptools.setup(
         "traffic": [
             "pystan==2.19.1.1",
             "fbprophet==0.6",
-            "pathos==0.2.5",
-            "pytz==2019.3",
         ],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
