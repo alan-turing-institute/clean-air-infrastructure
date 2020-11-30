@@ -8,7 +8,6 @@ from cleanair.parsers.urbanair_parser import (
     inputs,
     features,
     model,
-    processors,
 )
 
 has_prophet = importlib.util.find_spec("fbprophet")
@@ -23,6 +22,8 @@ app.add_typer(model.app, name="model")
 
 
 if has_prophet and has_pystan:
+    from cleanair.parsers.urbanair_parser import processors
+
     app.add_typer(processors.app, name="processors")
 
 if __name__ == "__main__":
