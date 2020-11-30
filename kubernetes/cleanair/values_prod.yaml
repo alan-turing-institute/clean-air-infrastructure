@@ -182,7 +182,7 @@ cronjobs:
     tolerations:
       - key: "group"
         operator: "Equal"
-        value: "cleangpu"
+        value: "cleangpu2"
         effect: "NoSchedule"
     nodeSelector:
       agentpool: cleanair
@@ -219,7 +219,7 @@ cronjobs:
     tolerations:
       - key: "group"
         operator: "Equal"
-        value: "cleangpu"
+        value: "cleangpu2"
         effect: "NoSchedule"
     nodeSelector:
       agentpool: cleanair
