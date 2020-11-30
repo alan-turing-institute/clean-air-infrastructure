@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """UrbanAir CLI"""
-
+import importlib
 import typer
 from cleanair.parsers.urbanair_parser import (
     config,
@@ -11,13 +11,19 @@ from cleanair.parsers.urbanair_parser import (
     processors,
 )
 
+has_prophet = importlib.util.find_spec("fbprophet")
+has_pystan = importlib.util.find_spec("pystan")
+
 app = typer.Typer(callback=init.init_callback)
 app.add_typer(config.app, name="config")
 app.add_typer(init.app, name="init")
 app.add_typer(inputs.app, name="inputs")
 app.add_typer(features.app, name="features")
 app.add_typer(model.app, name="model")
-app.add_typer(processors.app, name="processors")
+
+
+if has_prophet and has_pystan:
+    app.add_typer(processors.app, name="processors")
 
 if __name__ == "__main__":
     app()
