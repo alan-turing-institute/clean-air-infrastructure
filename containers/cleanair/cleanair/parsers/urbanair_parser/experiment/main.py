@@ -69,9 +69,28 @@ def batch(
 ) -> None:
     """Run a batch of experiments"""
     # get the list of instances
+    runnable_experiment = RunnableAirQualityExperiment(experiment_name, experiment_root)
     # only load instances from batch_start to (batch_size + batch_size)
+    experiment_config = runnable_experiment.read_experiment_config_from_json()
+    num_instances = len(experiment_config.instance_id_list)
+
+    # raise error if invalid batch start
+    if batch_start >= num_instances:
+        raise ValueError(
+            f"Number of instances in experiment is {num_instances}. You passed batch start of {batch_start}"
+        )
+
+    end_of_batch_index = min(batch_start + batch_size, num_instances)
+    instance_id_batch = experiment_config.instance_id_list[
+        batch_start: end_of_batch_index
+    ]
+    runnable_experiment.add_instances_from_file(instance_id_batch)
+
     # run experiment with subset of instances
-    raise NotImplementedError("Coming soon - run a batch of experiments")
+    # load datasets from file
+    runnable_experiment.load_datasets()
+    # run the experiment: train, predict and save results
+    runnable_experiment.run_experiment()
 
 
 @app.command()
