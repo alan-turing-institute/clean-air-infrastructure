@@ -30,7 +30,7 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
         secretfile: Optional[str] = None,
         **kwargs
     ):
-        super().__init__(name, experiment_root, secretfile=secretfile, **kwargs)
+        super().__init__(name, experiment_root)
         self.model_data = ModelData(secretfile=secretfile, **kwargs)
 
     def load_training_dataset(self, data_id: str) -> Dict[Source, pd.DataFrame]:
@@ -72,8 +72,8 @@ class SetupAirQualityExperiment(SetupExperimentMixin):
 class RunnableAirQualityExperiment(RunnableExperimentMixin):
     """Run an air quality experiment"""
 
-    def __init__(self, name: ExperimentName, experiment_root: Path, **kwargs):
-        super().__init__(name, experiment_root, **kwargs)
+    def __init__(self, name: ExperimentName, experiment_root: Path):
+        super().__init__(name, experiment_root)
         self._models: Dict[str, Model] = dict()
         self._training_result: Dict[str, TargetDict] = dict()
         self._test_result: Dict[str, TargetDict] = dict()

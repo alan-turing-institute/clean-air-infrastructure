@@ -105,8 +105,8 @@ class ExperimentMixin:
 class SetupExperimentMixin(ExperimentMixin):
     """Setup an experiment by loading datasets or creating model parameters"""
 
-    def __init__(self, name: ExperimentName, experiment_root: Path, **kwargs):
-        super().__init__(name, experiment_root, **kwargs)
+    def __init__(self, name: ExperimentName, experiment_root: Path):
+        super().__init__(name, experiment_root)
         self._test_dataset: Dict[str, Any] = dict()
         self._training_dataset: Dict[str, Any] = dict()
         self._data_config_lookup: Dict[str, Any] = dict()
