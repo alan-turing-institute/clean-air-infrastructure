@@ -1,8 +1,18 @@
 """Test runnable AQ experiment"""
 
 import pytest
-from cleanair.types import Source
+from cleanair.types import PredictionDict, Source
 from cleanair.utils import FileManager
+
+# pylint: disable=no-self-use,unused-argument
+
+def check_prediction(prediction: PredictionDict) -> None:
+    """Checks for the structure of predictions"""
+    for source, source_pred in prediction.items():
+        assert Source.satellite != source
+        for _, pollutant_pred in source_pred.items():
+            assert pollutant_pred["mean"].shape[0] > 0
+            assert pollutant_pred["mean"].shape == pollutant_pred["var"].shape
 
 
 class TestRunnableAirQualityExperiment:
@@ -22,6 +32,7 @@ class TestRunnableAirQualityExperiment:
         simple_experiment.add_instances_from_file(instance_id_list)
         assert simple_experiment.get_instance_ids() == instance_id_list
 
+    # pylint: disable=invalid-name
     def test_find_instance_id_from_data_id(self, runnable_aq_experiment):
         """Pass data ids to find the instance id"""
         for instance_id in runnable_aq_experiment.get_instance_ids():
@@ -83,11 +94,7 @@ class TestRunnableAirQualityExperiment:
             runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             pred_training = runnable_aq_experiment.predict_on_training_set(instance_id)
-            assert Source.satellite not in pred_training
-            for _, pollutant_prediction in pred_training.items():
-                for _, prediction in pollutant_prediction.items():
-                    assert prediction.shape[0] > 0
-                    assert prediction.shape[1] == 1
+            check_prediction(pred_training)
 
     def test_predict_on_test_set(self, runnable_aq_experiment, tf_session):
         """Test predictions are made on the test set"""
@@ -96,11 +103,7 @@ class TestRunnableAirQualityExperiment:
             runnable_aq_experiment.load_model(instance_id)
             runnable_aq_experiment.train_model(instance_id)
             pred_test = runnable_aq_experiment.predict_on_test_set(instance_id)
-            assert Source.satellite not in pred_test
-            for _, pollutant_prediction in pred_test.items():
-                for _, prediction in pollutant_prediction.items():
-                    assert prediction.shape[0] > 0
-                    assert prediction.shape[1] == 1
+            check_prediction(pred_test)
 
     def test_save_result(self, runnable_aq_experiment, tf_session):
         """Test the predictions are saved to a file"""
@@ -111,11 +114,8 @@ class TestRunnableAirQualityExperiment:
             runnable_aq_experiment.predict_on_training_set(instance_id)
             runnable_aq_experiment.predict_on_test_set(instance_id)
             runnable_aq_experiment.save_result(instance_id)
-            result_dir = (
-                runnable_aq_experiment.experiment_root
-                / runnable_aq_experiment.name.value
-                / instance_id
-                / FileManager.RESULT
-            )
-            assert (result_dir / FileManager.PRED_FORECAST_PICKLE).exists()
-            assert (result_dir / FileManager.PRED_TRAINING_PICKLE).exists()
+            instance_dir = runnable_aq_experiment.get_file_manager(
+                instance_id
+            ).input_dir
+            assert (instance_dir / FileManager.PRED_FORECAST_PICKLE).exists()
+            assert (instance_dir / FileManager.PRED_TRAINING_PICKLE).exists()

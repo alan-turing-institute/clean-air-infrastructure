@@ -16,6 +16,7 @@ STATIC_FEATURES_LIST = [
     [FeatureNames.total_a_road_length, FeatureNames.water, FeatureNames.park],
 ]
 
+
 def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
