@@ -49,6 +49,10 @@
             <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
             <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
         </div>
+        <div>
+            <label for="display-tomtom">Show Tomtom data</label>
+            <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
+        </div>
     </div>
 
     <!-- HISTOGRAM -->
@@ -205,6 +209,14 @@
         loadData(getDate()).then(() => {
             updateMapMarkers();
             });
+        map.addSource('tomtom', {
+            type: 'raster',
+            tiles: [
+                "{{ url_for('traffic_data') }}/{z}/{x}/{y}"
+            ],
+            maxzoom: 22,
+            minzoom: 0
+        });
         map.addLayer({
             id: 'jamcams',
             type: 'circle',
@@ -462,6 +474,20 @@
             updateMapMarkers();
             });
         updateGraph();
+    }
+
+    function toggleTomtom(){
+        if (map.getLayer('tomtom')) {
+            map.removeLayer('tomtom');
+        } else {
+            map.addLayer({
+                id: 'tomtom',
+                type: 'raster',
+                source: 'tomtom',
+            },
+            'jamcams'
+            )
+        }
     }
 
 
