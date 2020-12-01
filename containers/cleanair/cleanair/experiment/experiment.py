@@ -24,10 +24,12 @@ class ExperimentMixin:
         experiment_root: Root directory of experiments
     """
 
+    # pylint: disable=invalid-name
+
     EXPERIMENT_CONFIG_JSON_FILENAME = "experiment_config.json"
 
     def __init__(
-        self, name: ExperimentName, experiment_root: Path, **kwargs,
+        self, name: ExperimentName, experiment_root: Path,
     ):
         # super().__init__(**kwargs)
         self.name = name

@@ -6,6 +6,7 @@ from cleanair.utils import FileManager
 
 # pylint: disable=no-self-use,unused-argument
 
+
 def check_prediction(prediction: PredictionDict) -> None:
     """Checks for the structure of predictions"""
     for source, source_pred in prediction.items():
