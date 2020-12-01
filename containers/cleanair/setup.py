@@ -46,10 +46,7 @@ setuptools.setup(
         "xarray==0.15.1",
     ],
     extras_require={
-        "traffic": [
-            "pystan==2.19.1.1",
-            "fbprophet==0.6",
-        ],
+        "traffic": ["pystan==2.19.1.1", "fbprophet==0.6",],
         "models": ["gpflow==1.5.1", "tensorflow==1.15.0"],
     },
     python_requires=">=3.6",
