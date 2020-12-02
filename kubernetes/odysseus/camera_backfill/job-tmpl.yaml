@@ -1,54 +1,58 @@
-apiVersion: batch/v1
+apiVersion: v2
 kind: Job
 metadata:
     name: jamcam-backfill-$ITEM
-    namespace: jamcam-backfill
     labels:
       jobgroup: jamcam-backfill
 spec:
     template:
-      spec:
-        containers:
-        - name: jamcam-backfill-$ITEM
-          image:  cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis:latest
-          imagePullPolicy: Always
-          command: ["bash", "/application/deployscripts/cluster.sh"]
-          args: ["-dH", "$ITEM"]
-          volumeMounts:
-          - name: secrets
+        metadata:
+          name: jamcam-backfill-$ITEM
+          labels:
+            jobgroup: jamcam-backfill
+        spec:
+            concurrencyPolicy: Allow
+            restartPolicy: OnFailure
+            failedJobsHistoryLimit: 10
+            image:
+                repository: cleanairdocker.azurecr.io/traffic/tfl_traffic_analysis
+                tag: latest
+                imagePullPolicy: Always
+            command: ["bash", "/application/deployscripts/cluster.sh"]
+            args: ["-dH", "$ITEM"]
+            volumeMounts:
+            - name: secrets
             mountPath: "/secrets/"
             readOnly: true
-          - mountPath: /application/conf/local/
+            - mountPath: /application/conf/local/
             name: credentials
             readOnly: true
-          - mountPath: /dev/shm
+            - mountPath: /dev/shm
             name: dshm
-          resources:
+            volumes:
+            - name: secrets
+            secret:
+                secretName: secrets
+            - name: credentials
+            secret:
+                secretName: credentials.yaml
+            - name: dshm
+            emptyDir:
+                medium: Memory
+                sizeLimit: "200Gi"
+            imagePullSecrets:
+                - name: regcred
+            nodeSelector:
+                agentpool: jamcambackfill
+            tolerations:
+            - key: "group"
+                operator: "Equal"
+                value: "gpu"
+                effect: "NoSchedule"
+            resources:
             limits:
                 cpu: "23"
                 nvidia.com/gpu: 4
             requests:
                 cpu: "23"
                 nvidia.com/gpu: 4
-        restartPolicy: OnFailure
-        volumes:
-        - name: secrets
-          secret:
-            secretName: secrets
-        - name: credentials
-          secret:
-            secretName: credentials.yaml
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: "200Gi"
-        nodeSelector:
-          agentpool: jamcambf
-        tolerations:
-          - key: "group"
-            operator: "Equal"
-            value: "gpuBackFill"
-            effect: "NoSchedule"
-        imagePullSecrets:
-            - name: regcred
-        
