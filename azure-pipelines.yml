@@ -166,29 +166,6 @@ stages:
           kubectl create secret generic --namespace cleanair tomtom-api-key --from-literal=TOMTOM_API_KEY='$(TOMTOM-API-KEY)'
         fi
       displayName: 'Add secrets to Kubernetes'
-      # Add secrets for jamcambackfill
-    - script: |
-        # Check whether we need to create a new namespace
-        if [ "$(kubectl get namespace $(ODYSSEUS_NAMESPACE) 2> /dev/null | grep $(ODYSSEUS_NAMESPACE))" == "" ]; then
-        kubectl create namespace $(ODYSSEUS_NAMESPACE)
-        fi
-        echo "Adding secrets to Kubernetes"
-        if [ "$(kubectl get secret regcred --namespace cleanair 2> /dev/null | grep regcred)" == "" ]; then
-          kubectl create secret docker-registry --namespace $(ODYSSEUS_NAMESPACE) regcred --docker-server=$(CONTAINER-REGISTRY-LOGIN-SERVER) --docker-username=$(CONTAINER-REGISTRY-ADMIN-USERNAME) --docker-password=$(CONTAINER-REGISTRY-ADMIN-PASSWORD)
-        fi
-        if [ "$(kubectl get secret secrets --namespace $(ODYSSEUS_NAMESPACE) 2> /dev/null | grep secrets)" == "" ]; then
-          echo '{
-            "username": "$(CLEANAIR-INPUTS-DB-CLUSTER-USERNAME)@$(CLEANAIR-INPUTS-DB-SERVER-NAME)",
-            "password": "$(CLEANAIR-INPUTS-DB-CLUSTER-PASSWORD)",
-            "host": "$(CLEANAIR-INPUTS-DB-SERVER-NAME).postgres.database.azure.com",
-            "port": 5432,
-            "db_name": "$(CLEANAIR-INPUTS-DB-NAME)",
-            "ssl_mode": "require"
-          }' > db_secrets.json
-          kubectl create secret generic --namespace $(ODYSSEUS_NAMESPACE) secrets --from-file=db_secrets.json
-          rm -f db_secrets.json
-        fi
-      displayName: 'Add secrets to jamcam-backfill namespace'
     # Prepare Helm chart
     - script: |
         echo "Setting image tag to $(Build.SourceVersion)"
