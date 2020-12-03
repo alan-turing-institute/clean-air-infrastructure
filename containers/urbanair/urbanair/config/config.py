@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     sentry_dsn: Optional[str]
     root_path: str = ""
     htpasswdfile: Optional[Path] = None
+    tomtom_api_key: str = ""
 
     @validator("htpasswdfile")
     @classmethod
