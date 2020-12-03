@@ -61,7 +61,7 @@ spec:
         tolerations:
           - key: "group"
             operator: "Equal"
-            value: "cleanairgpu2"
+            value: "cleanairgpu"
             effect: "NoSchedule"
         imagePullSecrets:
             - name: regcred
