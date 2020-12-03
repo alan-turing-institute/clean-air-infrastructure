@@ -84,3 +84,7 @@ html, body, #mapid {
     clip: rect(0px,314px,217px,33px);
     left: 37px;
 }
+
+input[type='range']:disabled {
+    opacity: 25%;
+}

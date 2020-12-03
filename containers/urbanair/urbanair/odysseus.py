@@ -46,7 +46,7 @@ app.add_middleware(
 )
 
 app.mount(
-    "/static",
+    f"{app.root_path}/static",
     StaticFiles(
         directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
     ),

@@ -1,18 +1,17 @@
 """Jamcam database queries and external api calls"""
 from datetime import datetime, timedelta, date
 from typing import Optional
-import requests
-from fastapi import HTTPException
-from geojson import Feature, Point, FeatureCollection
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
+
+from cleanair.decorators import db_query
+from cleanair.databases.tables import JamCamDayStats
+from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
 )
-from cleanair.databases.tables import JamCamDayStats
-from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
-from cleanair.decorators import db_query
+
 from ...types import DetectionClass
 
 # TWELVE_HOUR_INTERVAL = text("interval '12 hour'")
@@ -88,36 +87,6 @@ def max_video_upload_q(db: Session) -> Query:
             "max_video_upload_datetime"
         )
     )
-
-
-def get_jamcam_info(
-    jamcam_url: str = "https://api.tfl.gov.uk/Place/Type/JamCam/",
-) -> FeatureCollection:
-    "Request jamcam camera information and write to geoJSON"
-
-    cam_req = requests.get(jamcam_url)
-    if cam_req.status_code != 200:
-        raise HTTPException(
-            status_code=404,
-            detail="Could not get jamcam info. Please contact API administrator",
-        )
-
-    cam_data = cam_req.json()
-
-    output = list(
-        map(
-            lambda x: Feature(
-                id=x["id"].split("_")[1],
-                geometry=Point((x["lon"], x["lat"])),
-                properties={"camera_id": x["id"].split("_")[1]},
-            ),
-            cam_data,
-        )
-    )
-
-    out = FeatureCollection(output)
-
-    return out
 
 
 @db_query()
@@ -265,10 +234,14 @@ def get_jamcam_today(
 ) -> Query:
     """Get daily hourly average count"""
 
-    query = db.query(JamcamTodayStatsView)
+    query = db.query(
+        JamcamTodayStatsView.camera_id.label("camera_id"),
+        JamcamTodayStatsView.counts.label("counts"),
+        JamcamTodayStatsView.detection_class.label("detection_class"),
+    )
 
     query = query.filter(
-        JamCamDayStats.detection_class
+        JamcamTodayStatsView.detection_class
         == DetectionClass.map_detection_class(detection_class)
     )
 

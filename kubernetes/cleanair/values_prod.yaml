@@ -1,6 +1,6 @@
 # This is a YAML-formatted file.
 # Variables to be passed into the templates.
-imageTag: 7272fe05ada2056cd9320bf7a3d86048df5eaaae
+imageTag: 736008ab7e8b82180398cef0b6d61216295869f2
 
 # jobs:
 
@@ -182,10 +182,10 @@ cronjobs:
     tolerations:
       - key: "group"
         operator: "Equal"
-        value: "cleangpu"
+        value: "cleangpu2"
         effect: "NoSchedule"
     nodeSelector:
-      agentpool: cleanair
+      agentpool: cleanairgpu
     resources:
       limits:
           cpu: "6"
@@ -219,10 +219,10 @@ cronjobs:
     tolerations:
       - key: "group"
         operator: "Equal"
-        value: "cleangpu"
+        value: "cleangpu2"
         effect: "NoSchedule"
     nodeSelector:
-      agentpool: cleanair
+      agentpool: cleanairgpu
     resources:
       limits:
           cpu: "6"
@@ -485,8 +485,10 @@ deployments:
         - name: ROOT_PATH
           value: /odysseus
       envFrom:
-      - secretRef:
-          name: sentry
+        - secretRef:
+            name: sentry
+        - secretRef:
+            name: tomtom-api-key
       ports:
         containerPort: 80
       restartPolicy: Always
