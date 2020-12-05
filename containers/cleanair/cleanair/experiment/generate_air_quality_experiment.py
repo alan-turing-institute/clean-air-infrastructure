@@ -21,6 +21,7 @@ def svgp_vary_static_features(secretfile: str) -> List[InstanceMixin]:
     """Default SVGP with changing static features"""
     # default model parameters for every model
     model_params = default_svgp_model_params()
+    model_params.num_inducing_points = 10   # TODO REMOVE THIS!!!
     instance_list: List[InstanceMixin] = []
 
     model_config = ModelConfig(secretfile=secretfile)

@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 import pandas as pd
+import tensorflow as tf
 from .experiment import RunnableExperimentMixin, SetupExperimentMixin
 from ..models import ModelData, ModelDataExtractor, MRDGP, SVGP
 from ..types import ExperimentName, IndexedDatasetDict, ModelName, Source, TargetDict
@@ -111,6 +112,7 @@ class RunnableAirQualityExperiment(RunnableExperimentMixin):
     def load_model(self, instance_id: str) -> Model:
         """Load the model using the instance id"""
         instance = self._instances[instance_id]
+        # with tf.compat.v1.Graph().as_default():
         if instance.model_name == ModelName.svgp:
             model = SVGP(instance.model_params)
         elif instance.model_name == ModelName.mrdgp:

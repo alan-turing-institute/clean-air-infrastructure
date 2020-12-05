@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+import tensorflow as tf
 from ..databases import DBWriter
 from ..databases.mixins import (
     DataTableMixin,
@@ -200,11 +201,15 @@ class RunnableExperimentMixin(SetupExperimentMixin):
         # make sure to load the datasets first
         for instance_id, instance in self._instances.items():
             instance.fit_start_time = datetime.now()
-            self.load_model(instance_id)
-            self.train_model(instance_id)
-            self.predict_on_training_set(instance_id)
-            self.predict_on_test_set(instance_id)
-            self.save_result(instance_id)
+            
+            with tf.compat.v1.Graph().as_default():
+                with tf.compat.v1.get_default_session():
+                    self.load_model(instance_id)
+                    self.train_model(instance_id)
+                    self.predict_on_training_set(instance_id)
+                    self.predict_on_test_set(instance_id)
+                    self.save_result(instance_id)
+                    # tf.compat.v1.reset_default_graph()
 
 
 class UpdateExperimentMixin(ExperimentMixin, DBWriter):
