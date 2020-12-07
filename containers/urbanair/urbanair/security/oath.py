@@ -1,12 +1,28 @@
 from typing import Optional, List
 from uuid import UUID
 from enum import Enum, unique
-from fastapi import Depends, HTTPException, status, Security
+from fastapi import Depends, HTTPException, status, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, SecurityScopes
 from pydantic import BaseModel, ValidationError
 from jose import JWTError, jwt, ExpiredSignatureError
 from urbanair.config.auth_config import AuthTokenSettings
 from ..config import AuthTokenSettings
+
+
+class RequiresLoginException(Exception):
+    pass
+
+
+class UserLogged:
+    async def __call__(self, request: Request):
+
+        user = request.session.get("user")
+        if user:
+            return user
+        raise RequiresLoginException
+
+
+logged_in = UserLogged()
 
 
 @unique

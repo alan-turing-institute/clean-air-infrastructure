@@ -5,6 +5,9 @@ from .oath import (
     oauth_basic_user,
     oauth_admin_user,
     oauth_enhanced_user,
+    logged_in,
+    RequiresLoginException,
+    Roles,
 )
 
 __all__ = [
@@ -13,5 +16,8 @@ __all__ = [
     "oauth_basic_user",
     "oauth_admin_user",
     "oauth_enhanced_user",
+    "logged_in",
+    "RequiresLoginException",
+    "Roles",
 ]
 

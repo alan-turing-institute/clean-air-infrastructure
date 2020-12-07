@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from pydantic import BaseSettings, BaseModel
 from authlib.integrations.starlette_client import OAuth
 from ...config import AuthSettings, auth_templates
+from ...security import logged_in
 
 router = APIRouter()
 auth_settings = AuthSettings()
@@ -51,34 +52,24 @@ def create_access_token(data: dict, expires_delta: timedelta):
 
 
 @router.get("/auth/token", response_model=Token, include_in_schema=False)
-def odysseus_token(request: Request):
+def odysseus_token(user=Depends(logged_in)):
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Authentication Error: Could not validate credentials. Ensure user logged in.",
+    access_token_expires = timedelta(minutes=auth_settings.access_token_expire_minutes)
+
+    access_token = create_access_token(
+        data={"sub": user["preferred_username"], "roles": user["groups"]},
+        expires_delta=access_token_expires,
     )
-
-    user = request.session.get("user")
-    if user:
-        access_token_expires = timedelta(
-            minutes=auth_settings.access_token_expire_minutes
-        )
-
-        access_token = create_access_token(
-            data={"sub": user["preferred_username"], "roles": user["groups"]},
-            expires_delta=access_token_expires,
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
-
-    raise credentials_exception
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.get("/", include_in_schema=False)
-async def home(request: Request):
+async def home():
+    return HTMLResponse('<a href="/login">login</a>')
 
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+
+@router.get("/user", include_in_schema=False)
+async def user_home(request: Request, user=Depends(logged_in)):
 
     return auth_templates.TemplateResponse(
         "auth.html", {"request": request, "user": user}
@@ -105,20 +96,12 @@ async def authorized(request: Request):
 
     token = await oauth.azure.authorize_access_token(request)
     user = await oauth.azure.parse_id_token(request, token)
-
     request.session["user"] = dict(user)
     return RedirectResponse(url=request.url_for("home"))
 
 
 @router.route("/logout", include_in_schema=False)
-async def logout(request: Request):
+async def logout(request: Request, _=Depends(logged_in)):
 
     request.session.pop("user", None)
-    end_session_base_uri = (await oauth.azure.load_server_metadata())[
-        "end_session_endpoint"
-    ]
-    return_to = urlencode({"post_logout_redirect_uri": request.url_for("home")})
-    logout_uri = end_session_base_uri + "?" + return_to
-
-    return RedirectResponse(url=logout_uri)
-
+    return RedirectResponse(url=request.url_for("home"))

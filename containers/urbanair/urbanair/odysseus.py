@@ -1,7 +1,8 @@
 """UrbanAir API"""
 import os
 import logging
-from fastapi import FastAPI, Depends, Request
+from typing import Union
+from fastapi import FastAPI, Depends, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.openapi.utils import get_openapi
@@ -17,6 +18,7 @@ from .security import (
     oauth_basic_user,
     oauth_admin_user,
     oauth_enhanced_user,
+    RequiresLoginException,
 )
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -53,6 +55,13 @@ app.mount(
     name="static",
 )
 
+
+@app.exception_handler(RequiresLoginException)
+async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:
+    "An exception with redirects to login"
+    return RedirectResponse(url=request.url_for("home"))
+
+
 # Static routes require login session
 app.include_router(static.router)
 
@@ -69,7 +78,7 @@ app.include_router(
 
 
 @app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint(request: Request):
+async def get_open_api_endpoint(request: Request) -> Union[JSONResponse, HTMLResponse]:
     user = request.session.get("user")
     if not user:
         return HTMLResponse('<a href="/login">login</a>')
@@ -79,7 +88,7 @@ async def get_open_api_endpoint(request: Request):
 
 
 @app.get("/docs", include_in_schema=False)
-async def get_documentation(request: Request):
+async def get_documentation(request: Request) -> HTMLResponse:
     user = request.session.get("user")
     if not user:
         return HTMLResponse('<a href="/login">login</a>')
@@ -87,7 +96,7 @@ async def get_documentation(request: Request):
 
 
 @app.get("/redoc", include_in_schema=False)
-async def get_redocumentation(request: Request):
+async def get_redocumentation(request: Request) -> HTMLResponse:
     user = request.session.get("user")
     if not user:
         return HTMLResponse('<a href="/login">login</a>')
