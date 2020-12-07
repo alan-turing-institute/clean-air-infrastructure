@@ -37,31 +37,65 @@ def test_developer_basic_auth(client_developer_basic):
 
 
 @pytest.mark.parametrize("url", ["/user", "/auth/token", "/logout", "/usage", "/map"])
-def test_odysseus_oauth_session_redirect(client_odysseus_no_loggin, url):
+def test_odysseus_oauth_session_redirect(client_odysseus_no_login, url):
     """Assert that all urls redirects to the login page when no session cookie present
     """
 
-    request = client_odysseus_no_loggin.get(url, allow_redirects=False)
+    request = client_odysseus_no_login.get(url, allow_redirects=False)
 
     assert request.status_code == 307
     assert request.headers["Location"] == "http://testserver/"
 
 
-def test_odysseus_oauth_token(client_odysseus_login):
+def test_odysseus_oauth_token(admin_token):
+    "Test we can get a valid token when we are logged in (via dependency override) so we can get acccess token"
 
-    url = "/auth/token"
-    request = client_odysseus_login[0].get(url, allow_redirects=False)
-
-    assert request.status_code == 200
-
-    token = request.json()["access_token"]
+    # Validate the token and check username and roles
     payload = jwt.decode(
-        token,
+        admin_token[0],
         auth_settings.access_token_secret.get_secret_value(),
         algorithms=[auth_settings.access_token_algorithm],
     )
     username: str = payload.get("sub")
     roles = payload.get("roles", [])
 
-    assert username == client_odysseus_login[1]
-    assert roles == client_odysseus_login[2]
+    assert username == admin_token[1]
+    assert roles == admin_token[2]
+
+
+def test_odysseus_oauth_paths(client_odysseus_logged_in_admin, admin_token):
+
+    client = client_odysseus_logged_in_admin[0]
+    api_spec = client.get("/openapi.json", allow_redirects=False)
+    paths = api_spec.json()["paths"]
+
+    auth_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # For every path in the api spec assert that it is under bearer auth
+    for path in paths.keys():
+
+        for http_method, value in paths[path].items():
+
+            assert len(value["security"]) == 1
+            assert list(value["security"][0].keys())[0] == "HTTPBearer"
+
+            if http_method == "get":
+                unauth_response = client.get(path, allow_redirects=False)
+                auth_response = client.get(
+                    path, headers=auth_headers, allow_redirects=False
+                )
+
+            print(
+                "Path = {}, Method = {}, unauth_status = {}, auth_status = {}".format(
+                    path,
+                    http_method,
+                    unauth_response.status_code,
+                    auth_response.status_code,
+                )
+            )
+            assert unauth_response.status_code == 403
+            assert auth_response.status_code != 403
+
+        # print(
+        #     [(key, value["security"][0].keys()) for key, value in paths[path].items()]
+        # )

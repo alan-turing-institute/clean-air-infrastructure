@@ -19,6 +19,7 @@ from .security import (
     oauth_admin_user,
     oauth_enhanced_user,
     RequiresLoginException,
+    logged_in,
 )
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -78,27 +79,20 @@ app.include_router(
 
 
 @app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint(request: Request) -> Union[JSONResponse, HTMLResponse]:
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_open_api_endpoint(
+    _=Depends(logged_in),
+) -> Union[JSONResponse, HTMLResponse]:
     return JSONResponse(
         get_openapi(title="Odysseus API", version="0.0.1", routes=app.routes)
     )
 
 
 @app.get("/docs", include_in_schema=False)
-async def get_documentation(request: Request) -> HTMLResponse:
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_documentation(_=Depends(logged_in)) -> HTMLResponse:
     return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
 
 
 @app.get("/redoc", include_in_schema=False)
-async def get_redocumentation(request: Request) -> HTMLResponse:
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_redocumentation(_=Depends(logged_in)) -> HTMLResponse:
     return get_redoc_html(openapi_url="/openapi.json", title="docs")
 

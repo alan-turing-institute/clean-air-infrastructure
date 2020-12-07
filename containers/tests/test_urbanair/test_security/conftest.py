@@ -74,7 +74,7 @@ def get_oauth_settings_override():
 
 
 @pytest.fixture(scope="function")
-def client_odysseus_login(
+def client_odysseus_logged_in_admin(
     client_db_overide, get_settings_override, get_oauth_settings_override, monkeypatch
 ):
     """A fast api client fixture
@@ -91,3 +91,16 @@ def client_odysseus_login(
 
     return test_client, get_oauth_settings_override[1], get_oauth_settings_override[2]
 
+
+@pytest.fixture(scope="function")
+def admin_token(client_odysseus_logged_in_admin):
+    "Get an admin token from the API"
+
+    # Get a token from api as if we were logged in
+    url = "/auth/token"
+    request = client_odysseus_logged_in_admin[0].get(url, allow_redirects=False)
+    assert request.status_code == 200
+    token = request.json()["access_token"]
+    username = client_odysseus_logged_in_admin[1]
+    roles = client_odysseus_logged_in_admin[2]
+    return (token, username, roles)
