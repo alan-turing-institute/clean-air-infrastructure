@@ -3,9 +3,16 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
+from urbanair import responses
 from urbanair.types import DetectionClass
 
 # pylint: disable=C0115,R0201
+
+
+@pytest.fixture()
+def oauth_basic_headers(basic_token):
+
+    return {"Authorization": f"Bearer {basic_token[0]}"}
 
 
 class TestBasic:
@@ -27,10 +34,13 @@ class TestRaw:
             writer.commit_records(
                 video_stat_records, on_conflict="overwrite", table=JamCamVideoStats,
             )
+
         except IntegrityError:
             pytest.fail("Dummy data insert")
 
-    def test_24_hours(self, client_class_odysseus, video_stat_records):
+    def test_24_hours(
+        self, client_class_odysseus, oauth_basic_headers, video_stat_records
+    ):
         """Test 24 hour request startime/endtime"""
 
         # Check response
@@ -40,11 +50,13 @@ class TestRaw:
                 "starttime": "2020-01-01T00:00:00",
                 "endtime": "2020-01-02T00:00:00",
             },
+            headers=oauth_basic_headers,
         )
-        assert response.status_code == 200
 
         data = response.json()
-        print(data)
+        print(response.status_code)
+        assert response.status_code == 200
+
         assert len(data) == len(video_stat_records)
 
     @pytest.mark.parametrize(

@@ -85,9 +85,9 @@ def client_class_odysseus(client_db_overide_class, http_basic_overload_class):
 
     odysseus.app.dependency_overrides = {}
     odysseus.app.dependency_overrides[databases.get_db] = client_db_overide_class
-    odysseus.app.dependency_overrides[
-        security.http_basic.get_http_username
-    ] = http_basic_overload_class
+    # odysseus.app.dependency_overrides[
+    #     security.http_basic.get_http_username
+    # ] = http_basic_overload_class
 
     test_client = TestClient(odysseus.app)
 
