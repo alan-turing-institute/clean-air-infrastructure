@@ -42,8 +42,8 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: "200Gi"
-        nodeSelector:
-          agentpool: jamcambf
+        # nodeSelector:
+        #   agentpool: jamcambf, jamcambf2, jamcambf3
         tolerations:
           - key: "group"
             operator: "Equal"
