@@ -85,6 +85,9 @@ def test_odysseus_oauth_paths(client_odysseus_logged_in_admin, admin_token):
                     path, headers=auth_headers, allow_redirects=False
                 )
 
+            else:
+                pytest.raises(NotImplementedError("Test not implemented"))
+
             print(
                 "Path = {}, Method = {}, unauth_status = {}, auth_status = {}".format(
                     path,
@@ -96,6 +99,3 @@ def test_odysseus_oauth_paths(client_odysseus_logged_in_admin, admin_token):
             assert unauth_response.status_code == 403
             assert auth_response.status_code != 403
 
-        # print(
-        #     [(key, value["security"][0].keys()) for key, value in paths[path].items()]
-        # )
