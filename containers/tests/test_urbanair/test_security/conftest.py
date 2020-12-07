@@ -62,15 +62,51 @@ def client_odysseus_no_login(client_db_overide, get_settings_override, monkeypat
 
 @pytest.fixture("function")
 def get_oauth_settings_override():
+    def oauth_settings(role: security.Roles):
 
-    roles = [str(security.Roles.admin.value)]
-    username = "test@domain.com"
+        roles = [role.value.hex]
+        username = "test@domain.com"
 
-    class UserLogged:
-        async def __call__(self, request: Request):
-            return {"preferred_username": username, "groups": roles}
+        class UserLogged:
+            async def __call__(self, request: Request):
+                return {"preferred_username": username, "groups": roles}
 
-    return UserLogged(), username, roles
+        return UserLogged(), username, roles
+
+    return oauth_settings
+
+
+@pytest.fixture(scope="function")
+def client_odysseus_logged_in_basic(
+    client_db_overide, get_settings_override, get_oauth_settings_override, monkeypatch
+):
+    """A fast api client fixture
+    TODO: connection is valid for whole module so database will not reset on each function
+    """
+
+    auth_override = get_oauth_settings_override(security.Roles.basic)
+
+    odysseus.app.dependency_overrides = {}
+    odysseus.app.dependency_overrides[databases.get_db] = client_db_overide
+    odysseus.app.dependency_overrides[security.logged_in] = auth_override[0]
+    monkeypatch.setattr(security.http_basic, "get_settings", get_settings_override)
+    test_client = TestClient(odysseus.app)
+
+    return test_client, auth_override[1], auth_override[2]
+
+
+@pytest.fixture(scope="function")
+def basic_token(client_odysseus_logged_in_basic):
+    "Get an admin token from the API"
+
+    # Get a token from api as if we were logged in
+    url = "/auth/token"
+    request = client_odysseus_logged_in_basic[0].get(url, allow_redirects=False)
+    assert request.status_code == 200
+    token = request.json()["access_token"]
+    username = client_odysseus_logged_in_basic[1]
+    roles = client_odysseus_logged_in_basic[2]
+    return (token, username, roles)
 
 
 @pytest.fixture(scope="function")
@@ -81,15 +117,15 @@ def client_odysseus_logged_in_admin(
     TODO: connection is valid for whole module so database will not reset on each function
     """
 
+    auth_override = get_oauth_settings_override(security.Roles.admin)
+
     odysseus.app.dependency_overrides = {}
     odysseus.app.dependency_overrides[databases.get_db] = client_db_overide
-    odysseus.app.dependency_overrides[security.logged_in] = get_oauth_settings_override[
-        0
-    ]
+    odysseus.app.dependency_overrides[security.logged_in] = auth_override[0]
     monkeypatch.setattr(security.http_basic, "get_settings", get_settings_override)
     test_client = TestClient(odysseus.app)
 
-    return test_client, get_oauth_settings_override[1], get_oauth_settings_override[2]
+    return test_client, auth_override[1], auth_override[2]
 
 
 @pytest.fixture(scope="function")

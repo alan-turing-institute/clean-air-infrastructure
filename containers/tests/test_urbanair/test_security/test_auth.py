@@ -63,13 +63,14 @@ def test_odysseus_oauth_token(admin_token):
     assert roles == admin_token[2]
 
 
-def test_odysseus_oauth_paths(client_odysseus_logged_in_admin, admin_token):
-
-    client = client_odysseus_logged_in_admin[0]
+def test_odysseus_oauth_basic_paths(client_odysseus_logged_in_basic, basic_token):
+    "Test basic user paths"
+    client = client_odysseus_logged_in_basic[0]
     api_spec = client.get("/openapi.json", allow_redirects=False)
     paths = api_spec.json()["paths"]
 
-    auth_headers = {"Authorization": f"Bearer {admin_token}"}
+    # print(basic_token)
+    auth_headers = {"Authorization": f"Bearer {basic_token[0]}"}
 
     # For every path in the api spec assert that it is under bearer auth
     for path in paths.keys():
@@ -98,4 +99,22 @@ def test_odysseus_oauth_paths(client_odysseus_logged_in_admin, admin_token):
             )
             assert unauth_response.status_code == 403
             assert auth_response.status_code != 403
+
+
+def test_odysseus_oauth_admin_only(
+    client_odysseus_logged_in_admin, admin_token, basic_token
+):
+
+    client = client_odysseus_logged_in_admin[0]
+    admin_headers = {"Authorization": f"Bearer {admin_token[0]}"}
+    basic_headers = {"Authorization": f"Bearer {basic_token[0]}"}
+
+    admin_response = client.get("/api/v1/jamcams/admin-check", headers=admin_headers)
+    basic_response = client.get("/api/v1/jamcams/admin-check", headers=basic_headers)
+
+    assert admin_response.status_code != 403
+    assert basic_response.status_code == 403
+
+    print(admin_response.content)
+    print(basic_response.content)
 

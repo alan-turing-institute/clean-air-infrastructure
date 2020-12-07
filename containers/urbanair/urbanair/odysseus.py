@@ -71,10 +71,7 @@ app.include_router(auth.router, tags=["auth"])
 
 # Other routes protected by oauth
 app.include_router(
-    jamcam.router,
-    prefix="/api/v1/jamcams",
-    tags=["jamcam"],
-    dependencies=[Depends(oauth_admin_user)],
+    jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"],
 )
 
 

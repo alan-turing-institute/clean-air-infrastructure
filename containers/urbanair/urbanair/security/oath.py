@@ -55,13 +55,13 @@ async def get_bearer_user(
         authenticate_value = f"Bearer"
 
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=status.HTTP_403_FORBIDDEN,
         detail="Authentication Error: Could not validate credentials",
         headers={"WWW-Authenticate": authenticate_value},
     )
 
     credentials_timeout_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=status.HTTP_403_FORBIDDEN,
         detail="Authentication Error: Credentials have expired",
         headers={"WWW-Authenticate": authenticate_value},
     )
@@ -75,22 +75,24 @@ async def get_bearer_user(
         )
         username: str = payload.get("sub")
         roles = payload.get("roles", [])
+
         if username is None:
             raise credentials_exception
         token_data = TokenData(username=username, roles=roles)
+
     except (JWTError, ValidationError) as e:
         if isinstance(e, ExpiredSignatureError):
             raise credentials_timeout_exception
         raise credentials_exception
 
+    # Check user has required roles
     for role in security_roles.scopes:
-
         role_uuid = UUID(role)
         if role_uuid in token_data.roles:
             return token_data
 
     raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=status.HTTP_403_FORBIDDEN,
         detail="Not enough permissions to access this resource",
         headers={"WWW-Authenticate": authenticate_value},
     )
