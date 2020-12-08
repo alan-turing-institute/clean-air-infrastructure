@@ -10,10 +10,21 @@ fi
 
 cd ../../
 
-#Build and push current model fitting docker image
-docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting:latest -f containers/dockerfiles/model_fitting.Dockerfile containers
 
-docker push cleanairdocker.azurecr.io/model_fitting:latest
+if [ $# -ne 0 ]; then
+
+    if [ "$1" != '--no_build' ]; then
+
+        if [ -d "$CACHE_FOLDER" ]; then
+
+            #Build and push current model fitting docker image
+            docker build --build-arg git_hash=$(git show -s --format=%H) -t cleanairdocker.azurecr.io/model_fitting:latest -f containers/dockerfiles/model_fitting.Dockerfile containers
+
+            docker push cleanairdocker.azurecr.io/model_fitting:latest
+
+        fi
+    fi
+fi
 
 #Download data for experiment and setup mrdgp 
 
@@ -21,11 +32,11 @@ urbanair init production
 
 urbanair model data generate-config \
     --trainupto yesterday \
-    --traindays 1 \
+    --traindays 5 \
     --preddays 1 \
     --train-source laqn \
-    --train-source satellite \
     --pred-source laqn \
+    --pred-source hexgrid \
     --species NO2 \
     --overwrite
     

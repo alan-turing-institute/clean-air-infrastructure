@@ -19,9 +19,8 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
     tee sbatch.sh << END
 #!/bin/bash
 #SBATCH --job-name=mrdgp
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=12
 #SBATCH --time=24:00:00
 #SBATCH --gres=gpu:0
 
@@ -39,7 +38,7 @@ ssh -T -i $CLUSTER_KEY $CLUSTER_USER@$CLUSTER_ADDR  << HERE
 ##### Run Command
 cd ~/cleanair
 # run script with arguments
-singularity exec containers/model_fitting_latest.sif urbanair $MODEL fit mrdgp $CACHE_DIR/
+singularity exec containers/model_fitting_latest.sif urbanair model fit $MODEL $CACHE_DIR/
 END
     
 HERE
