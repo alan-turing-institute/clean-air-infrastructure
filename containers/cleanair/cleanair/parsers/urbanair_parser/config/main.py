@@ -1,7 +1,7 @@
 """Configurations for urbanair."""
 
-import typer
 import shutil
+import typer
 from ..state import APP_DIR
 from ....loggers.logcolours import red
 
