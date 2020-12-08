@@ -10,8 +10,8 @@
 </script>
 
 <!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+<!--<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">-->
+<!--<link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">-->
 
 <!-- Style -->
 <link href="{{ url_for('static', path='css/map.css') }}" rel="stylesheet">
@@ -22,15 +22,25 @@
 <link href='https://api.mapbox.com/mapbox-gl-js/v1.11.0/mapbox-gl.css' rel='stylesheet' />
 
 
-<a class="logo"></a>
-
 <div id="sidebar">
+
+    <!-- TITLE -->
+    <div class="panel">
+        <a  href="https://www.turing.ac.uk/research/research-projects/project-odysseus-understanding-london-busyness-and-exiting-lockdown"
+            target="_blank"
+            >
+            <img width=208px
+                 src="{{ url_for('static', path='img/odysseus_logo.png') }}"
+            />
+        </a>
+        <h1>London Activity Map</h1>
+    </div>
 
     <!-- SETTINGS -->
     <div id="controls" class="panel">
-        <h2>Options</h2>
-        <div>
-            <label for="select-detection-class">Detection Classs</label><br>
+        <h3>Options</h3>
+        <div class="setting">
+            <label for="select-detection-class">Detection Class</label>
             <select id="select-detection-class" onchange="changeDetectionClass()">
                 <option value="person">People</option>
                 <option value="car">Cars</option>
@@ -40,16 +50,16 @@
                 <option value="all">All</option>
             </select>
         </div>
-        <div>
-            <label for="date">Date</label><br>
+        <div class="setting">
+            <label for="date">Date</label>
             <input type="date" id="date" min="2020-05-29" onchange="updateDate()">
         </div>
-        <div>
-            <label for="lock-colour-scale">Lock colour scale range</label><br>
+        <div class="setting">
+            <label for="lock-colour-scale">Lock colour scale range</label>
             <input type="checkbox" id="lock-colour-scale" onchange="updateMapMarkers()">
             <input type="range" id="colour-scale-limit" min="0" max="100" onchange="updateMapMarkers()">
         </div>
-        <div>
+        <div class="setting">
             <label for="display-tomtom">Show Tomtom data</label>
             <input type="checkbox" id="display-tomtom" onchange="toggleTomtom()">
         </div>
@@ -86,6 +96,20 @@
         </div>
         <canvas id="chart" width="400" height="250"></canvas>
     </div>
+
+    <!-- CREDITS -->
+    <div class="panel">
+
+        <p>P O'Hara et al. 2020 available here: <a href="https://ciuk2020.co.uk/">ciuk2020.co.uk</a></p>
+
+        <a href="https://wmlg.io/" target="_blank">Warwick Machine Learning Group</a><br>
+        <a href="https://www.turing.ac.uk/" target="_blank">Alan Turing Institute</a><br>
+        data from:<br>
+        TfL<br>
+        <a target="_blank" href="https://developer.tomtom.com/traffic-api/traffic-api-documentation-traffic-flow/raster-flow-tiles">TomTom</a><br>
+        Mapbox
+    </div>
+
 
 </div>
 
@@ -549,6 +573,8 @@
     };
     var detailsChartContext = document.getElementById('chart').getContext('2d');
     window.detailsChart = new Chart(detailsChartContext, detailsChartConfig);
+
+    Chart.defaults.global.defaultFontColor = 'white';
 
     var histogramChartConfig = {
         type: 'bar',
