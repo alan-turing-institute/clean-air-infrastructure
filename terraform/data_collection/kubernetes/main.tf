@@ -103,15 +103,15 @@ resource "azurerm_kubernetes_cluster_node_pool" "jamcambf" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
   vm_size               = "Standard_NC24"
   enable_auto_scaling   = true
-  max_count             = 5
+  max_count             = 3
   min_count             = 0
-  node_count            = 5
+  node_count            = 3
   os_disk_size_gb       = 100
   node_taints           = ["group=gpuBackFill:NoSchedule"]
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "jamcambf2" {
-  name                  = "jamcambf"
+  name                  = "jamcambf2"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
   vm_size               = "Standard_NC24_Promo"
   enable_auto_scaling   = true
@@ -123,13 +123,13 @@ resource "azurerm_kubernetes_cluster_node_pool" "jamcambf2" {
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "jamcambf3" {
-  name                  = "jamcambf"
+  name                  = "jamcambf3"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  vm_size               = "Standard_NC24sv3"
+  vm_size               = "Standard_NC24s_v3"
   enable_auto_scaling   = true
-  max_count             = 4
+  max_count             = 3
   min_count             = 0
-  node_count            = 4
+  node_count            = 3
   os_disk_size_gb       = 100
   node_taints           = ["group=gpuBackFill:NoSchedule"]
 }
