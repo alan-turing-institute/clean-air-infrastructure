@@ -1,20 +1,26 @@
 body {
     padding: 0;
     margin: 0;
+    font-family: 'Helvetica', sans-serif;
 }
 html, body, #mapid {
     height: 100%;
     width: 100%;
 }
 
+a:link {
+    color: white;
+}
+
+a:visited {
+    color: white;
+}
+
+
 #sidebar{
-    top: 0px;
-    right: 0px;
+    /*top: 0px;*/
+    /*right: 0px;*/
     position: absolute;
-    /* display: flex;
-    flex-direction: column;
-    flex-wrap: wrap; */
-    justify-content: flex-start;
     overflow: auto;
     height: 100%;
 }
@@ -33,16 +39,14 @@ html, body, #mapid {
 }
 
 .panel{
+    /*font-family: 'Roboto', sans-serif;*/
+    font-size: 16px;
     color: white;
     z-index: 99999;
     position: relative;
     background: rgb(32, 32, 32);
-    border: rgb(58, 58, 58);
-    border-style: solid;
-    border-radius: 5px;
-    /* display: block; */
-    padding: 10px;
-    margin: 5px;
+    border-top: solid 1px rgb(58, 58, 58);
+    padding: 10px 20px;
 }
 
 .controls-options{
@@ -51,38 +55,69 @@ html, body, #mapid {
     font-weight: 700;
 }
 
-.controls-container {
-    font-family: 'Roboto', sans-serif;
-    font-size: 16px;
-}
-
 .mono{
     font-family: 'Roboto Mono', sans-serif;
 }
 
-.logo{
-    background-image: url('/static/img/odysseus_logo.png');
-    background-size: contain;
-    z-index: 99999;
-    position: absolute;
-    top: 20px;
-    left: 30px;
-    /*background: white;*/
-    /*border-radius: 20px;*/
-    width: 208px;
-    height: 65px;
+.image-container {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    top: 0;
+    left: 0;
+    width: 281px;
+    height: 230px;
 }
 
 .image{
     display: block;
-    margin-left: auto;
-    margin-right: auto;
+    position: relative;
+    top: 0;
+    left: 0;
 }
 
 .annotation{
     position: absolute;
-    clip: rect(0px,314px,217px,33px);
-    left: 37px;
+    object-fit: cover;
+    width: 281px;
+    height: 230px;
+
+    /*clip: rect(0px,314px,217px,33px);*
+    /*left: 4px;*/
+}
+
+.setting{
+    display: flex;
+    justify-content: space-between;
+}
+
+select, input {
+    border: 2px solid rgb(58, 58, 58);
+    /*border-radius: 5px;*/
+
+    background: grey;
+    color: white;
+
+    padding: 6px 8px;
+    font-family: inherit;
+    font-size: 100%;
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="50"><polygon points="0,0 100,0 50,50" style="fill:white;"/></svg>');
+    background-position: right 10px top 50%;
+    background-size: 10px;
+    background-repeat: no-repeat;
+}
+
+input:hover,
+select:hover {
+    outline: none;
+    border: 2px solid yellow;
 }
 
 input[type='range']:disabled {
