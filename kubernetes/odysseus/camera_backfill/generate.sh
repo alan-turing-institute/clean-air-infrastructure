@@ -7,13 +7,14 @@ do
     then
         continue
     fi
+    fold="2020$(printf %02d $m)"
+    mkdir ./jobs/$fold
+
     for d in {1..31}
     do
         for H in {4..20}
         do
             a="2020$(printf %02d $m)$(printf %02d $d)-$(printf %02d $H)"
-            fold="2020$(printf %02d $m)$(printf %02d $d)"
-            mkdir ./jobs/$fold
             cat job-tmpl.yaml | sed "s/\$ITEM/$a/" > ./jobs/$fold/job-$a.yaml
         done
     done
