@@ -8,6 +8,15 @@ html, body, #mapid {
     width: 100%;
 }
 
+a:link {
+    color: white;
+}
+
+a:visited {
+    color: white;
+}
+
+
 #sidebar{
     /*top: 0px;*/
     /*right: 0px;*/
