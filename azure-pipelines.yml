@@ -5,6 +5,7 @@ pr: none
 
 variables:
   namespace: "cleanair"
+  odysseus_namespace: "jamcam-backfill"
   helm_release: "cleanair"
   kubernetes_cluster_name: "cleanair-kubernetes"
   kubernetes_cluster_resource_group: "RG_CLEANAIR_KUBERNETES_CLUSTER"
