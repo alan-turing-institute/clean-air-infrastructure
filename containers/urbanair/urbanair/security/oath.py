@@ -45,7 +45,7 @@ bearer_scheme = HTTPBearer()
 async def get_bearer_user(
     security_roles: SecurityScopes,
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-):
+) -> TokenData:
 
     token = credentials.credentials
 
@@ -104,7 +104,6 @@ async def oauth_basic_user(
         scopes=[Roles.admin.value.hex, Roles.enhanced.value.hex, Roles.basic.value.hex],
     )
 ) -> TokenData:
-
     return user
 
 

@@ -97,7 +97,7 @@ async def authorized(request: Request):
     token = await oauth.azure.authorize_access_token(request)
     user = await oauth.azure.parse_id_token(request, token)
     request.session["user"] = dict(user)
-    return RedirectResponse(url=request.url_for("home"))
+    return RedirectResponse(url=request.url_for("user_home"))
 
 
 @router.route("/logout", include_in_schema=False)
