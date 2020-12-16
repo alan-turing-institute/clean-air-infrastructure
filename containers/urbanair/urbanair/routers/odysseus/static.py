@@ -4,6 +4,8 @@ import os
 
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.templating import Jinja2Templates
+from starlette.responses import RedirectResponse
+from urbanair.routers.auth.auth import odysseus_token
 
 from ...security import logged_in
 
@@ -23,5 +25,4 @@ async def usage(request: Request, _=Depends(logged_in)) -> Response:
 
 @router.get("/map", include_in_schema=False)
 async def jamcam_map(request: Request, _=Depends(logged_in)) -> Response:
-
     return templates.TemplateResponse("map.html", {"request": request})
