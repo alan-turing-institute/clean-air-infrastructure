@@ -1,5 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
+import sys
 from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
 from itertools import groupby
@@ -370,7 +371,7 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
             self.logger.error(
                 "Failed to download static features. This could mean that feature processing needs to be re-ran"
             )
-            exit()
+            sys.exit()
 
         # Get dictionaries of wide data
         self.logger.debug("Postprocessing downloaded data")
