@@ -57,7 +57,7 @@ app.mount(
 
 @app.exception_handler(RequiresLoginException)
 async def exception_handler(
-    request: Request, exc: RequiresLoginException
+    request: Request, _: RequiresLoginException
 ) -> Response:  # pylint: disable=W0613
     "An exception with redirects to login"
     return RedirectResponse(url=request.url_for("home"))
