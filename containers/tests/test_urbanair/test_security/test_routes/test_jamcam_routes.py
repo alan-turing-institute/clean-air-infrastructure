@@ -3,8 +3,6 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
-from starlette.datastructures import Headers
-from urbanair import responses
 from urbanair.types import DetectionClass
 
 # pylint: disable=C0115,R0201
