@@ -4,8 +4,6 @@ import os
 
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.templating import Jinja2Templates
-from starlette.responses import RedirectResponse
-from urbanair.routers.auth.auth import odysseus_token
 
 from ...security import logged_in
 
