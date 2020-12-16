@@ -63,6 +63,7 @@ def client_odysseus_no_login(client_db_overide, get_settings_override, monkeypat
 @pytest.fixture("function")
 def get_oauth_settings_override():
     """Fixture to replace user details"""
+
     def oauth_settings(role: security.Roles):
 
         roles = [role.value.hex]
@@ -70,6 +71,7 @@ def get_oauth_settings_override():
 
         class UserLogged:
             """User details for auth tests"""
+
             async def __call__(self, request: Request):
                 return {"preferred_username": username, "groups": roles}
 

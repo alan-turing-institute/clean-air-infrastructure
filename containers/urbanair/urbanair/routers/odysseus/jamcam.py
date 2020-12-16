@@ -1,5 +1,6 @@
 """JamCam API routes"""
 import datetime
+
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 

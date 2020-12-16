@@ -5,6 +5,7 @@ from urbanair.security.oath import auth_settings
 
 # pylint: disable=C0103
 
+
 def test_urbanair_basic_auth(client_urbanair_basic):
     """Test all paths on urbanair openapi spec have authentication"""
 
