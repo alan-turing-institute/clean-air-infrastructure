@@ -1,22 +1,23 @@
 """UrbanAir API"""
-import os
 import logging
-from fastapi import FastAPI, Depends, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from fastapi.openapi.utils import get_openapi
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
-from starlette.middleware.sessions import SessionMiddleware
+import os
+from typing import Union
+
 import sentry_sdk
+from fastapi import FastAPI, Depends, Request, Response
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-from .routers.odysseus import static, jamcam
-from .routers.auth import auth
+from starlette.middleware.sessions import SessionMiddleware
+
 from .config import get_settings, AuthSettings
+from .routers.auth import auth
+from .routers.odysseus import static, jamcam
 from .security import (
-    get_http_username,
-    oauth_basic_user,
-    oauth_admin_user,
-    oauth_enhanced_user,
+    RequiresLoginException,
+    logged_in,
 )
 
 logger = logging.getLogger("fastapi")  # pylint: disable=invalid-name
@@ -38,10 +39,10 @@ if sentry_dsn:
 else:
     logging.warning("Sentry is not logging errors")
 
-auth_settings = AuthSettings()
+AUTH_SETTINGS = AuthSettings()
 app.add_middleware(
     SessionMiddleware,
-    secret_key=auth_settings.session_secret.get_secret_value(),
+    secret_key=AUTH_SETTINGS.session_secret.get_secret_value(),
     max_age=24 * 60 * 60,
 )
 
@@ -53,6 +54,15 @@ app.mount(
     name="static",
 )
 
+
+@app.exception_handler(RequiresLoginException)
+async def exception_handler(
+    request: Request, exc: RequiresLoginException
+) -> Response:  # pylint: disable=W0613
+    "An exception with redirects to login"
+    return RedirectResponse(url=request.url_for("home"))
+
+
 # Static routes require login session
 app.include_router(static.router)
 
@@ -61,35 +71,33 @@ app.include_router(auth.router, tags=["auth"])
 
 # Other routes protected by oauth
 app.include_router(
-    jamcam.router,
-    prefix="/api/v1/jamcams",
-    tags=["jamcam"],
-    dependencies=[Depends(oauth_admin_user)],
+    jamcam.router, prefix="/api/v1/jamcams", tags=["jamcam"],
 )
 
 
 @app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint(request: Request):
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_open_api_endpoint(
+    _=Depends(logged_in),
+) -> Union[JSONResponse, HTMLResponse]:
+    """
+        Serves OpenAPI endpoints
+    """
     return JSONResponse(
         get_openapi(title="Odysseus API", version="0.0.1", routes=app.routes)
     )
 
 
 @app.get("/docs", include_in_schema=False)
-async def get_documentation(request: Request):
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_documentation(_=Depends(logged_in)) -> HTMLResponse:
+    """
+        Serves swagger API docs
+    """
     return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
 
 
 @app.get("/redoc", include_in_schema=False)
-async def get_redocumentation(request: Request):
-    user = request.session.get("user")
-    if not user:
-        return HTMLResponse('<a href="/login">login</a>')
+async def get_redocumentation(_=Depends(logged_in)) -> HTMLResponse:
+    """
+        Serves redoc API docs
+    """
     return get_redoc_html(openapi_url="/openapi.json", title="docs")
-

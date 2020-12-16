@@ -5,13 +5,18 @@ from .oath import (
     oauth_basic_user,
     oauth_admin_user,
     oauth_enhanced_user,
+    logged_in,
+    RequiresLoginException,
+    Roles,
 )
 
 __all__ = [
-    "get_http_user",
+    "get_http_username",
     "get_bearer_user",
     "oauth_basic_user",
     "oauth_admin_user",
     "oauth_enhanced_user",
+    "logged_in",
+    "RequiresLoginException",
+    "Roles",
 ]
-

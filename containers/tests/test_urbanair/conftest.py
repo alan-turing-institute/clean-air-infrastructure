@@ -17,7 +17,7 @@ from urbanair.types import DetectionClass
 
 @pytest.fixture(scope="module")
 def client_db_overide(connection_module):
-    "Client database setup"
+    """Client database setup"""
 
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_module
@@ -35,7 +35,7 @@ def client_db_overide(connection_module):
 
 @pytest.fixture(scope="class")
 def client_db_overide_class(connection_class):
-    "Client database setup with class fixture scope"
+    """Client database setup with class fixture scope"""
 
     SESSION_LOCAL = sessionmaker(
         autocommit=False, autoflush=False, bind=connection_class
@@ -53,7 +53,7 @@ def client_db_overide_class(connection_class):
 
 @pytest.fixture(scope="class")
 def http_basic_overload_class():
-    "Return an override function for get_http_username"
+    """Return an override function for get_http_username"""
 
     def get_http_username():
         return "local"
@@ -78,16 +78,13 @@ def client_class_urbanair(client_db_overide_class, http_basic_overload_class):
 
 
 @pytest.fixture()
-def client_class_odysseus(client_db_overide_class, http_basic_overload_class):
+def client_class_odysseus(client_db_overide_class):
     """A fast api client fixture
     TODO: connection is valid for whole module so database will not reset on each function
     """
 
     odysseus.app.dependency_overrides = {}
     odysseus.app.dependency_overrides[databases.get_db] = client_db_overide_class
-    odysseus.app.dependency_overrides[
-        security.http_basic.get_http_username
-    ] = http_basic_overload_class
 
     test_client = TestClient(odysseus.app)
 

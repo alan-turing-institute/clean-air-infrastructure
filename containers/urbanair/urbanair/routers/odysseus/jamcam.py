@@ -24,6 +24,7 @@ from ...databases.schemas.jamcam import (
     JamCamMetaData,
     JamCamDailyAverage,
 )
+from ...security import oauth_basic_user, oauth_admin_user
 from ...types import DetectionClass
 
 router = APIRouter()
@@ -82,7 +83,9 @@ def common_jamcam_params(
     response_model=List[JamCamAvailable],
 )
 def camera_available(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
@@ -102,7 +105,9 @@ def camera_available(
     response_model=List[JamCamVideo],
 )
 def camera_raw_counts(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
@@ -122,7 +127,9 @@ def camera_raw_counts(
     description="Request counts of objects at jamcam cameras averaged by hour",
 )
 def camera_hourly_average(
-    commons: dict = Depends(common_jamcam_params), db: Session = Depends(get_db),
+    commons: dict = Depends(common_jamcam_params),
+    db: Session = Depends(get_db),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
@@ -144,6 +151,7 @@ def jamcam_daily_params(
     date: Optional[datetime.date] = Query(
         None, description="(optional) ISO UTC date for which to request data",
     ),
+    _=Depends(oauth_basic_user),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -170,7 +178,9 @@ def jamcam_daily_params(
     description="Request averaged counts of objects at jamcam cameras day",
 )
 def camera_daily_average(
-    commons: dict = Depends(jamcam_daily_params), db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_daily_params),
+    db: Session = Depends(get_db),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_daily(
@@ -185,6 +195,7 @@ def jamcam_today_params(
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
+    _=Depends(oauth_basic_user),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -203,7 +214,9 @@ def jamcam_today_params(
     description="Request averaged counts of objects at jamcam cameras for today",
 )
 def camera_today_average(
-    commons: dict = Depends(jamcam_today_params), db: Session = Depends(get_db),
+    commons: dict = Depends(jamcam_today_params),
+    db: Session = Depends(get_db),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
@@ -216,7 +229,9 @@ def camera_today_average(
     response_model=List[JamCamMetaData],
     description="The locations and other metadata of all jamcams",
 )
-def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
+def metadata(
+    db: Session = Depends(get_db), _=Depends(oauth_basic_user),
+) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
 
@@ -226,7 +241,7 @@ def metadata(db: Session = Depends(get_db),) -> Optional[List[Tuple]]:
 @router.get(
     "/traffic_data", description="Third party traffic data", include_in_schema=False
 )
-def traffic_data() -> Optional[dict]:
+def traffic_data(_=Depends(oauth_basic_user),) -> Optional[dict]:
     return {"success": True}
 
 
@@ -235,7 +250,9 @@ def traffic_data() -> Optional[dict]:
     description="Third party traffic data",
     include_in_schema=False,
 )
-def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
+def traffic_data_tiles(
+    zoom: int, x: int, y: int, _=Depends(oauth_basic_user)
+) -> Optional[Response]:
 
     res = get_tomtom_data(zoom, x, y)
     if res.ok:
@@ -253,3 +270,11 @@ def traffic_data_tiles(zoom: int, x: int, y: int) -> Optional[Response]:
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Error with request to TomTom API",
     )
+
+
+@router.get("/admin-check", include_in_schema=False)
+def admin_check(_=Depends(oauth_admin_user),):
+    """Only admins can access this route
+    """
+
+    return {"user": "admin"}

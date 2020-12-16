@@ -4,12 +4,14 @@ from typing import Optional
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session, Query
 from sqlalchemy.sql.selectable import Alias
+
 from cleanair.decorators import db_query
 from cleanair.databases.tables import JamCamDayStats
 from cleanair.databases.tables import JamCamVideoStats, JamCamMetaData
 from cleanair.databases.materialised_views.jamcam_today_stats_view import (
     JamcamTodayStatsView,
 )
+
 from ...types import DetectionClass
 
 # TWELVE_HOUR_INTERVAL = text("interval '12 hour'")

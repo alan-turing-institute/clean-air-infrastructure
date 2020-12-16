@@ -8,7 +8,7 @@ from ..config import get_settings
 
 # pylint: disable=invalid-name
 logger = logging.getLogger("fastapi")
-security = HTTPBasic()
+http_scheme = HTTPBasic()
 
 
 @cached(cache=TTLCache(maxsize=256, ttl=3600))
@@ -18,7 +18,7 @@ def get_http_passwords() -> HtpasswdFile:
     return HtpasswdFile(get_settings().htpasswdfile)
 
 
-def get_http_username(credentials: HTTPBasicCredentials = Depends(security)) -> str:
+def get_http_username(credentials: HTTPBasicCredentials = Depends(http_scheme)) -> str:
     "Get username from http basic auth and check authorization. Raise 401 is not authenticated"
 
     ht = get_http_passwords()
