@@ -3,6 +3,7 @@ from jose import jwt
 import pytest
 from urbanair.security.oath import auth_settings
 
+# pylint: disable=C0103
 
 def test_urbanair_basic_auth(client_urbanair_basic):
     """Test all paths on urbanair openapi spec have authentication"""
@@ -104,6 +105,7 @@ def test_odysseus_oauth_basic_paths(client_odysseus_logged_in_basic, basic_token
 def test_odysseus_oauth_admin_only(
     client_odysseus_logged_in_admin, admin_token, basic_token
 ):
+    """Test that the admin only endpoints are accessable by admins only"""
 
     client = client_odysseus_logged_in_admin[0]
     admin_headers = {"Authorization": f"Bearer {admin_token[0]}"}
@@ -117,4 +119,3 @@ def test_odysseus_oauth_admin_only(
 
     print(admin_response.content)
     print(basic_response.content)
-

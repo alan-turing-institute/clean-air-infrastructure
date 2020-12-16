@@ -5,12 +5,12 @@ from cleanair.databases import DBWriter
 from cleanair.databases.tables import JamCamVideoStats
 from urbanair.types import DetectionClass
 
-# pylint: disable=C0115,R0201
+# pylint: disable=C0115,R0201,W0621
 
 
 @pytest.fixture()
 def oauth_basic_headers(basic_token_class):
-
+    """Pytest fixture giving a basic access token"""
     return {"Authorization": f"Bearer {basic_token_class[0]}"}
 
 
