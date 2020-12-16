@@ -1,9 +1,10 @@
 """Static routes"""
 # pylint: disable=C0116
 import os
+
 from fastapi import APIRouter, Request, Response, Depends
 from fastapi.templating import Jinja2Templates
-from starlette.responses import RedirectResponse
+
 from ...security import logged_in
 
 router = APIRouter()

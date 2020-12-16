@@ -1,6 +1,5 @@
 """JamCam API routes"""
 import datetime
-
 # pylint: disable=C0116
 from typing import List, Dict, Tuple, Optional
 
@@ -8,7 +7,6 @@ from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from urbanair.databases.queries import get_jamcam_metadata
 from urbanair.queries.jamcam import get_tomtom_data
-from urbanair.security.oath import oauth_admin_user
 
 from ...databases import get_db, all_or_404
 from ...databases.queries import (
@@ -25,8 +23,8 @@ from ...databases.schemas.jamcam import (
     JamCamMetaData,
     JamCamDailyAverage,
 )
-from ...types import DetectionClass
 from ...security import oauth_basic_user, oauth_admin_user
+from ...types import DetectionClass
 
 router = APIRouter()
 
@@ -86,7 +84,7 @@ def common_jamcam_params(
 def camera_available(
     commons: dict = Depends(common_jamcam_params),
     db: Session = Depends(get_db),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_available(
@@ -108,7 +106,7 @@ def camera_available(
 def camera_raw_counts(
     commons: dict = Depends(common_jamcam_params),
     db: Session = Depends(get_db),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_raw(
@@ -130,7 +128,7 @@ def camera_raw_counts(
 def camera_hourly_average(
     commons: dict = Depends(common_jamcam_params),
     db: Session = Depends(get_db),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_hourly(
@@ -152,7 +150,7 @@ def jamcam_daily_params(
     date: Optional[datetime.date] = Query(
         None, description="(optional) ISO UTC date for which to request data",
     ),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -181,7 +179,7 @@ def jamcam_daily_params(
 def camera_daily_average(
     commons: dict = Depends(jamcam_daily_params),
     db: Session = Depends(get_db),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_daily(
@@ -196,7 +194,7 @@ def jamcam_today_params(
     detection_class: DetectionClass = Query(
         DetectionClass.all_classes, description="Class of object"
     ),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Dict:
     """Common parameters in jamcam routes.
        If a camera_id is provided request up to 1 week of data
@@ -217,7 +215,7 @@ def jamcam_today_params(
 def camera_today_average(
     commons: dict = Depends(jamcam_today_params),
     db: Session = Depends(get_db),
-    user=Depends(oauth_basic_user),
+    _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_today(db, commons["camera_id"], commons["detection_class"])
@@ -231,7 +229,7 @@ def camera_today_average(
     description="The locations and other metadata of all jamcams",
 )
 def metadata(
-    db: Session = Depends(get_db), user=Depends(oauth_basic_user),
+    db: Session = Depends(get_db), _=Depends(oauth_basic_user),
 ) -> Optional[List[Tuple]]:
 
     data = get_jamcam_metadata(db)
@@ -242,7 +240,7 @@ def metadata(
 @router.get(
     "/traffic_data", description="Third party traffic data", include_in_schema=False
 )
-def traffic_data(user=Depends(oauth_basic_user),) -> Optional[dict]:
+def traffic_data(_=Depends(oauth_basic_user),) -> Optional[dict]:
     return {"success": True}
 
 
@@ -252,7 +250,7 @@ def traffic_data(user=Depends(oauth_basic_user),) -> Optional[dict]:
     include_in_schema=False,
 )
 def traffic_data_tiles(
-    zoom: int, x: int, y: int, user=Depends(oauth_basic_user)
+    zoom: int, x: int, y: int, _=Depends(oauth_basic_user)
 ) -> Optional[Response]:
 
     res = get_tomtom_data(zoom, x, y)
@@ -274,9 +272,8 @@ def traffic_data_tiles(
 
 
 @router.get("/admin-check", include_in_schema=False)
-def admin_check(user=Depends(oauth_admin_user),):
+def admin_check(_=Depends(oauth_admin_user),):
     """Only admins can access this route
     """
 
     return {"user": "admin"}
-

@@ -1,23 +1,21 @@
 """UrbanAir API"""
-import os
 import logging
+import os
 from typing import Union
-from fastapi import FastAPI, Depends, Request, Response
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from fastapi.openapi.utils import get_openapi
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
-from starlette.middleware.sessions import SessionMiddleware
+
 import sentry_sdk
+from fastapi import FastAPI, Depends, Request, Response
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.utils import get_openapi
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-from .routers.odysseus import static, jamcam
-from .routers.auth import auth
+from starlette.middleware.sessions import SessionMiddleware
+
 from .config import get_settings, AuthSettings
+from .routers.auth import auth
+from .routers.odysseus import static, jamcam
 from .security import (
-    get_http_username,
-    oauth_basic_user,
-    oauth_admin_user,
-    oauth_enhanced_user,
     RequiresLoginException,
     logged_in,
 )
@@ -41,10 +39,10 @@ if sentry_dsn:
 else:
     logging.warning("Sentry is not logging errors")
 
-auth_settings = AuthSettings()
+AUTH_SETTINGS = AuthSettings()
 app.add_middleware(
     SessionMiddleware,
-    secret_key=auth_settings.session_secret.get_secret_value(),
+    secret_key=AUTH_SETTINGS.session_secret.get_secret_value(),
     max_age=24 * 60 * 60,
 )
 
@@ -58,7 +56,7 @@ app.mount(
 
 
 @app.exception_handler(RequiresLoginException)
-async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:
+async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:  # pylint: disable=W0613
     "An exception with redirects to login"
     return RedirectResponse(url=request.url_for("home"))
 
@@ -79,6 +77,9 @@ app.include_router(
 async def get_open_api_endpoint(
     _=Depends(logged_in),
 ) -> Union[JSONResponse, HTMLResponse]:
+    """
+        Serves OpenAPI endpoints
+    """
     return JSONResponse(
         get_openapi(title="Odysseus API", version="0.0.1", routes=app.routes)
     )
@@ -86,10 +87,15 @@ async def get_open_api_endpoint(
 
 @app.get("/docs", include_in_schema=False)
 async def get_documentation(_=Depends(logged_in)) -> HTMLResponse:
+    """
+        Serves swagger API docs
+    """
     return get_swagger_ui_html(openapi_url="/openapi.json", title="docs")
 
 
 @app.get("/redoc", include_in_schema=False)
 async def get_redocumentation(_=Depends(logged_in)) -> HTMLResponse:
+    """
+        Serves redoc API docs
+    """
     return get_redoc_html(openapi_url="/openapi.json", title="docs")
-

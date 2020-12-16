@@ -11,7 +11,7 @@ from .oath import (
 )
 
 __all__ = [
-    "get_http_user",
+    "get_http_username",
     "get_bearer_user",
     "oauth_basic_user",
     "oauth_admin_user",
@@ -20,4 +20,3 @@ __all__ = [
     "RequiresLoginException",
     "Roles",
 ]
-
