@@ -2,6 +2,8 @@
 import datetime
 
 # pylint: disable=C0116
+# mypy: allow_untyped_defs
+
 from typing import List, Dict, Tuple, Optional
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status, Response
@@ -273,7 +275,7 @@ def traffic_data_tiles(
 
 
 @router.get("/admin-check", include_in_schema=False)
-def admin_check(_=Depends(oauth_admin_user),):
+def admin_check(_: dict = Depends(oauth_admin_user),) -> dict:
     """Only admins can access this route
     """
 

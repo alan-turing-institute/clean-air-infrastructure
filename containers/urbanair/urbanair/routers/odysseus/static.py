@@ -17,10 +17,10 @@ templates = Jinja2Templates(
 
 
 @router.get("/usage", include_in_schema=False)
-async def usage(request: Request, _=Depends(logged_in)) -> Response:
+async def usage(request: Request, _: dict = Depends(logged_in)) -> Response:
     return templates.TemplateResponse("usage.html", {"request": request})
 
 
 @router.get("/map", include_in_schema=False)
-async def jamcam_map(request: Request, _=Depends(logged_in)) -> Response:
+async def jamcam_map(request: Request, _: dict = Depends(logged_in)) -> Response:
     return templates.TemplateResponse("map.html", {"request": request})

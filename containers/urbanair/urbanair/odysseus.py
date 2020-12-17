@@ -77,7 +77,7 @@ app.include_router(
 
 @app.get("/openapi.json", include_in_schema=False)
 async def get_open_api_endpoint(
-    _=Depends(logged_in),
+    _: dict = Depends(logged_in),
 ) -> Union[JSONResponse, HTMLResponse]:
     """
         Serves OpenAPI endpoints
@@ -88,7 +88,7 @@ async def get_open_api_endpoint(
 
 
 @app.get("/docs", include_in_schema=False)
-async def get_documentation(_=Depends(logged_in)) -> HTMLResponse:
+async def get_documentation(_: dict = Depends(logged_in)) -> HTMLResponse:
     """
         Serves swagger API docs
     """
@@ -96,7 +96,7 @@ async def get_documentation(_=Depends(logged_in)) -> HTMLResponse:
 
 
 @app.get("/redoc", include_in_schema=False)
-async def get_redocumentation(_=Depends(logged_in)) -> HTMLResponse:
+async def get_redocumentation(_: dict = Depends(logged_in)) -> HTMLResponse:
     """
         Serves redoc API docs
     """

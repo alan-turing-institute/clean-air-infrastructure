@@ -21,7 +21,7 @@ class RequiresLoginException(Exception):  # pylint: disable=C0115
 
 
 class UserLogged:  # pylint: disable=C0115
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> dict:
 
         user = request.session.get("user")
         if user:

@@ -26,6 +26,6 @@ class AuthSettings(AuthTokenSettings):
     session_secret: SecretStr
 
     @property
-    def authority(self):
+    def authority(self) -> str:
         """Makes authorised URL"""
         return self.base_url + str(self.tenant_id)
