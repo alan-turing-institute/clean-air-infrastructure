@@ -1,5 +1,6 @@
 """Vizualise available sensor data for a model fit"""
 from __future__ import annotations
+import sys
 from typing import Dict, List, Tuple, overload, Callable
 from datetime import datetime, timedelta
 from dateutil.parser import isoparse
@@ -8,6 +9,7 @@ from cleanair.types.enum_types import DynamicFeatureNames
 import pandas as pd
 import numpy as np
 from nptyping import NDArray, Float64
+from pydantic import ValidationError
 from sqlalchemy import func, text, column, String, cast, and_
 from sqlalchemy.sql.expression import Alias
 from sqlalchemy.dialects.postgresql import UUID
@@ -362,16 +364,21 @@ class ModelData(ModelDataExtractor, DBReader, DBQueryMixin):
         else:
             f_get_data = self.get_static_features
 
-        # Get source dataframe
-        source_data = f_get_data(
-            start_date=start_date,
-            end_date=end_date,
-            point_ids=point_ids,
-            features=features,
-            source=source,
-            species=species,
-            output_type="all",
-        )
+        try:
+            source_data = f_get_data(
+                start_date=start_date,
+                end_date=end_date,
+                point_ids=point_ids,
+                features=features,
+                source=source,
+                species=species,
+                output_type="all",
+            )
+        except ValidationError:
+            self.logger.error(
+                "Failed to download static features. This could mean that feature processing needs to be re-ran"
+            )
+            sys.exit()
 
         # Get dynamic features
         if dynamic_features:
